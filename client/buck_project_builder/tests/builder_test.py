@@ -48,27 +48,39 @@ class BuilderTest(unittest.TestCase):
         with patch.object(parser.Parser, "parse_file", return_value=build_file):
             builder = Builder("/ROOT")
 
-            targets = builder.compute_targets_to_build("//project:a")
+            targets = builder.compute_targets_to_build(["//project:a"])
             self.assert_targets_equal(
                 targets, ["//project:a", "//project:b", "//project:c", "//project:d"]
             )
 
-            targets = builder.compute_targets_to_build("//project:b")
+            targets = builder.compute_targets_to_build(["//project:b"])
             self.assert_targets_equal(targets, ["//project:b", "//project:d"])
 
-            targets = builder.compute_targets_to_build("//project:c")
+            targets = builder.compute_targets_to_build(["//project:c"])
             self.assert_targets_equal(
                 targets, ["//project:b", "//project:c", "//project:d"]
             )
 
-            targets = builder.compute_targets_to_build("//project:d")
+            targets = builder.compute_targets_to_build(["//project:d"])
             self.assert_targets_equal(targets, ["//project:d"])
 
-            targets = builder.compute_targets_to_build("//project:e")
+            targets = builder.compute_targets_to_build(["//project:e"])
             self.assert_targets_equal(targets, ["//project:e"])
 
+            targets = builder.compute_targets_to_build(["//project:a", "//project:e"])
+            self.assert_targets_equal(
+                targets,
+                [
+                    "//project:a",
+                    "//project:b",
+                    "//project:c",
+                    "//project:d",
+                    "//project:e",
+                ],
+            )
+
             self.assertRaises(
-                BuilderException, builder.compute_targets_to_build, "//project:f"
+                BuilderException, builder.compute_targets_to_build, ["//project:f"]
             )
 
     def test_compute_targets_to_build_complex(self):
@@ -97,7 +109,7 @@ class BuilderTest(unittest.TestCase):
         ):
             builder = Builder("/ROOT")
 
-            targets = builder.compute_targets_to_build("//project1:a")
+            targets = builder.compute_targets_to_build(["//project1:a"])
             self.assert_targets_equal(
                 targets,
                 [
@@ -109,22 +121,22 @@ class BuilderTest(unittest.TestCase):
                 ],
             )
 
-            targets = builder.compute_targets_to_build("//project1:b")
+            targets = builder.compute_targets_to_build(["//project1:b"])
             self.assert_targets_equal(targets, ["//project1:b", "//project2:d"])
 
-            targets = builder.compute_targets_to_build("//project2:c")
+            targets = builder.compute_targets_to_build(["//project2:c"])
             self.assert_targets_equal(
                 targets, ["//project2:c", "//project2:e", "//project2:d"]
             )
 
-            targets = builder.compute_targets_to_build("//project2:d")
+            targets = builder.compute_targets_to_build(["//project2:d"])
             self.assert_targets_equal(targets, ["//project2:d"])
 
-            targets = builder.compute_targets_to_build("//project2:e")
+            targets = builder.compute_targets_to_build(["//project2:e"])
             self.assert_targets_equal(targets, ["//project2:e", "//project2:d"])
 
             self.assertRaises(
-                BuilderException, builder.compute_targets_to_build, "//project1:f"
+                BuilderException, builder.compute_targets_to_build, ["//project1:f"]
             )
 
     def test_targets_to_build_file_wildcard(self):
@@ -148,15 +160,27 @@ class BuilderTest(unittest.TestCase):
         ):
             builder = Builder("/ROOT")
 
-            targets = builder.compute_targets_to_build("//project1:")
+            targets = builder.compute_targets_to_build(["//project1:"])
             self.assert_targets_equal(
                 targets,
                 ["//project1:a", "//project1:b", "//project2:c", "//project2:d"],
             )
 
-            targets = builder.compute_targets_to_build("//project2:")
+            targets = builder.compute_targets_to_build(["//project2:"])
             self.assert_targets_equal(
                 targets, ["//project2:c", "//project2:d", "//project2:e"]
+            )
+
+            targets = builder.compute_targets_to_build(["//project1:", "//project2:"])
+            self.assert_targets_equal(
+                targets,
+                [
+                    "//project1:a",
+                    "//project1:b",
+                    "//project2:c",
+                    "//project2:d",
+                    "//project2:e",
+                ],
             )
 
     def test_targets_to_build_directory_wildcard(self):
@@ -200,7 +224,7 @@ class BuilderTest(unittest.TestCase):
                     "/ROOT/project2/TARGETS",
                 ],
             ):
-                targets = builder.compute_targets_to_build("//...")
+                targets = builder.compute_targets_to_build(["//..."])
                 self.assert_targets_equal(
                     targets,
                     [
@@ -220,7 +244,7 @@ class BuilderTest(unittest.TestCase):
                     "/ROOT/project1/subproject/TARGETS",
                 ],
             ):
-                targets = builder.compute_targets_to_build("//project1/...")
+                targets = builder.compute_targets_to_build(["//project1/..."])
                 self.assert_targets_equal(
                     targets,
                     [
@@ -234,13 +258,15 @@ class BuilderTest(unittest.TestCase):
             with patch.object(
                 glob, "iglob", return_value=["/ROOT/project1/subproject/TARGETS"]
             ):
-                targets = builder.compute_targets_to_build("//project1/subproject/...")
+                targets = builder.compute_targets_to_build(
+                    ["//project1/subproject/..."]
+                )
                 self.assert_targets_equal(
                     targets, ["//project1/subproject:c", "//project1/subproject:d"]
                 )
 
             with patch.object(glob, "iglob", return_value=["/ROOT/project2/TARGETS"]):
-                targets = builder.compute_targets_to_build("//project2/...")
+                targets = builder.compute_targets_to_build(["//project2/..."])
                 self.assert_targets_equal(targets, ["//project2:e", "//project1:b"])
 
     def test_normalize_targets(self):

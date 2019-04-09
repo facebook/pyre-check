@@ -27,12 +27,15 @@ class Builder(object):
         self.build_file_name = build_file_name
         self.parser = parser.Parser(buck_root, build_file_name)
 
-    def compute_targets_to_build(self, target: str) -> List[BuildTarget]:
+    def compute_targets_to_build(self, targets: List[str]) -> List[BuildTarget]:
         """
-            Compute the set of targets to build for the given target using a
+            Compute the set of targets to build for the given targets using a
             breadth-first traversal.
         """
-        normalized_targets = self._normalize_target(target)
+        normalized_targets = set()
+        for target in targets:
+            normalized_targets.update(self._normalize_target(target))
+
         targets_to_parse = deque(normalized_targets)
         targets_seen = set(normalized_targets)
         targets_not_found = []
