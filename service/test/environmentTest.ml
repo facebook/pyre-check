@@ -127,12 +127,22 @@ let test_register_modules _ =
 let test_purge _ =
   Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
   Handler.register_protocol ~handle:(File.Handle.create "test.py") (Type.Primitive "MyProtocol");
+    Handler.DependencyHandler.add_dependent
+    ~handle:(File.Handle.create "test.py")
+    (Reference.create "typing");
+  assert_equal
+    (Some (File.Handle.Set.Tree.singleton (File.Handle.create "test.py")))
+    (Handler.DependencyHandler.dependents (!&"typing"));
+
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
     (Handler.protocols ())
     [Type.Primitive "MyProtocol"];
 
   Handler.purge [File.Handle.create "test.py"];
+  assert_equal
+    (Some File.Handle.Set.Tree.empty)
+    (Handler.DependencyHandler.dependents (!&"typing"));
   assert_equal
     ~printer:(List.to_string ~f:Type.show)
     (Handler.protocols ())

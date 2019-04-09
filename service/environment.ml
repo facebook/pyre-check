@@ -453,14 +453,21 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let purge ?(debug = false) handles =
     let purge_dependents keys =
-      let remove_handle dependents =
-        File.Handle.Set.Tree.filter
-          ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-          dependents
+      let new_dependents = Reference.Table.create () in
+      let recompute_dependents key dependents =
+        let handles = File.Handle.Set.Tree.of_list handles in
+        Hashtbl.set
+          new_dependents
+          ~key
+          ~data:(
+          File.Handle.Set.Tree.diff
+            dependents
+            handles
+        )
       in
-      List.iter
-        ~f:(fun key -> Dependents.get key >>| remove_handle >>| Dependents.add key |> ignore)
-        keys;
+      List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
+      Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
+      Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
     in
     List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
