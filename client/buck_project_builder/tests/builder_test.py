@@ -105,6 +105,12 @@ class BuilderTest(unittest.TestCase):
                 expected_targets=["//project:f", "//project:g"],
             )
 
+            targets = builder.compute_targets_to_build(
+                ["//project:e", "//project:f", "//project:g"],
+                fail_on_unbuilt_target=False,
+            )
+            self.assert_targets_equal(targets, ["//project:e"])
+
     def test_compute_targets_to_build_complex(self):
         # Dependency graph:
         #    a

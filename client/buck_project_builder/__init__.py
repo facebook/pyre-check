@@ -8,7 +8,7 @@
 import glob
 import os
 from collections import deque
-from typing import List, NamedTuple, Optional
+from typing import Iterable, List, NamedTuple, Optional
 
 from . import parser
 from .build_target import BuildTarget
@@ -29,12 +29,21 @@ class Builder(object):
         self.build_file_name = build_file_name
         self.parser = parser.Parser(buck_root, build_file_name)
 
-    def build_all_targets(self, targets: List[str], output_directory: str) -> None:
-        targets_to_build = self.compute_targets_to_build(targets)
+    def build_all_targets(
+        self,
+        targets: Iterable[str],
+        output_directory: str,
+        fail_on_unbuilt_target: bool = True,
+    ) -> None:
+        targets_to_build = self.compute_targets_to_build(
+            targets, fail_on_unbuilt_target=fail_on_unbuilt_target
+        )
         for target in targets_to_build:
             target.build(output_directory)
 
-    def compute_targets_to_build(self, targets: List[str]) -> List[BuildTarget]:
+    def compute_targets_to_build(
+        self, targets: Iterable[str], fail_on_unbuilt_target: bool = True
+    ) -> List[BuildTarget]:
         """
             Compute the set of targets to build for the given targets using a
             breadth-first traversal.
@@ -66,7 +75,7 @@ class Builder(object):
             targets_to_parse.extend(new_targets)
             targets_seen.update(new_targets)
 
-        if targets_not_found:
+        if targets_not_found and fail_on_unbuilt_target:
             raise BuilderException(
                 "Target(s) could not be built: {}".format(", ".join(targets_not_found)),
                 targets=targets_not_found,
