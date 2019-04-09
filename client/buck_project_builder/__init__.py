@@ -27,6 +27,11 @@ class Builder(object):
         self.build_file_name = build_file_name
         self.parser = parser.Parser(buck_root, build_file_name)
 
+    def build_all_targets(self, targets: List[str], output_directory: str) -> None:
+        targets_to_build = self.compute_targets_to_build(targets)
+        for target in targets_to_build:
+            target.build(output_directory)
+
     def compute_targets_to_build(self, targets: List[str]) -> List[BuildTarget]:
         """
             Compute the set of targets to build for the given targets using a

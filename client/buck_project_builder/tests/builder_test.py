@@ -384,3 +384,16 @@ class BuilderTest(unittest.TestCase):
                 fake_iglob.assert_called_once_with(
                     "/ROOT/project2/**/TARGETS", recursive=True
                 )
+
+    def test_build_all_targets(self):
+        with patch.object(
+            Builder, "compute_targets_to_build"
+        ) as compute_targets_to_build:
+            fake_targets = [MagicMock(), MagicMock(), MagicMock()]
+            compute_targets_to_build.return_value = fake_targets
+
+            builder = Builder("/ROOT")
+            builder.build_all_targets(["//target:"], "/output")
+
+            for fake_target in fake_targets:
+                fake_target.build.assert_called_once_with("/output")
