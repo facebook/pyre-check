@@ -270,15 +270,12 @@ details()                show additional information about the current trace fra
                 )
                 return
 
-            self.sources = set(
-                self._get_leaves_issue_instance(
-                    session, issue_instance_id, SharedTextKind.SOURCE
-                )
+            self.sources = self._get_leaves_issue_instance(
+                session, issue_instance_id, SharedTextKind.SOURCE
             )
-            self.sinks = set(
-                self._get_leaves_issue_instance(
-                    session, issue_instance_id, SharedTextKind.SINK
-                )
+
+            self.sinks = self._get_leaves_issue_instance(
+                session, issue_instance_id, SharedTextKind.SINK
             )
 
         self.current_issue_instance_id = selected_issue.id
@@ -480,7 +477,9 @@ details()                show additional information about the current trace fra
     def set_frame(self, frame_id: int) -> None:
         with self.db.make_session() as session:
             selected_frame = (
-                session.query(TraceFrame).filter(TraceFrame.id == frame_id).scalar()
+                session.query(TraceFrame.id, TraceFrame.kind)
+                .filter(TraceFrame.id == frame_id)
+                .first()
             )
 
             if selected_frame is None:
@@ -490,15 +489,20 @@ details()                show additional information about the current trace fra
                 )
                 return
 
-            leaves = {leaf.contents for leaf in selected_frame.leaves}
             if selected_frame.kind == TraceKind.POSTCONDITION:
                 self.sinks = set()
-                self.sources = leaves
+                self.sources = self._get_leaves_trace_frame(
+                    session, int(selected_frame.id), SharedTextKind.SOURCE
+                )
+
             else:
-                self.sinks = leaves
+                self.sinks = self._get_leaves_trace_frame(
+                    session, int(selected_frame.id), SharedTextKind.SINK
+                )
+
                 self.sources = set()
 
-        self.current_frame_id = selected_frame.id
+        self.current_frame_id = int(selected_frame.id)
         self.current_issue_instance_id = -1
 
         self._generate_trace_from_frame()
@@ -1097,7 +1101,7 @@ details()                show additional information about the current trace fra
         return filtered_results
 
     def _create_issue_output_string(
-        self, issue: IssueQueryResult, sources: List[str], sinks: List[str]
+        self, issue: IssueQueryResult, sources: Set[str], sinks: Set[str]
     ) -> str:
         sources_output = f"\n{' ' * 10}".join(sources)
         sinks_output = f"\n{' ' * 10}".join(sinks)
@@ -1227,10 +1231,11 @@ details()                show additional information about the current trace fra
 
     def _get_leaves_issue_instance(
         self, session: Session, issue_instance_id: int, kind: SharedTextKind
-    ) -> List[str]:
+    ) -> Set[str]:
         message_ids = [
             int(id)
             for id, in session.query(SharedText.id)
+            .distinct(SharedText.id)
             .join(
                 IssueInstanceSharedTextAssoc,
                 SharedText.id == IssueInstanceSharedTextAssoc.shared_text_id,
@@ -1242,10 +1247,11 @@ details()                show additional information about the current trace fra
 
     def _get_leaves_trace_frame(
         self, session: Session, trace_frame_id: int, kind: SharedTextKind
-    ) -> List[str]:
+    ) -> Set[str]:
         message_ids = [
             int(id)
             for id, in session.query(SharedText.id)
+            .distinct(SharedText.id)
             .join(TraceFrameLeafAssoc, SharedText.id == TraceFrameLeafAssoc.leaf_id)
             .filter(TraceFrameLeafAssoc.trace_frame_id == trace_frame_id)
             .filter(SharedText.kind == kind)
@@ -1254,11 +1260,11 @@ details()                show additional information about the current trace fra
 
     def _leaf_dict_lookups(
         self, message_ids: List[int], kind: SharedTextKind
-    ) -> List[str]:
+    ) -> Set[str]:
         leaf_dict = (
             self.sources_dict if kind == SharedTextKind.SOURCE else self.sinks_dict
         )
-        return [leaf_dict[id] for id in message_ids if id in leaf_dict]
+        return {leaf_dict[id] for id in message_ids if id in leaf_dict}
 
     def _show_current_issue_instance(self):
         with self.db.make_session() as session:
