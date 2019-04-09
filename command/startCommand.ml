@@ -448,6 +448,8 @@ let request_handler_thread
               | None -> Log.warning "Failed to parse handshake as LSP."
             )
         with
+        | End_of_file ->
+            Log.warning "Got end of file while waiting for handshake."
         | Sys_error error
         | Yojson.Json_error error ->
             Log.warning "Failed to complete handshake: %s" error
