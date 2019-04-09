@@ -258,7 +258,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 ).items():
                     link = os.path.join(self.get_root(), relative_link)
                     try:
-                        _add_symbolic_link(link, path)
+                        add_symbolic_link(link, path)
                         self._symbolic_links[path] = link
                         tracked_files.append(link)
                     except OSError:
@@ -299,7 +299,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self._merge_into_paths(source_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
-            _add_symbolic_link(merged, original)
+            add_symbolic_link(merged, original)
 
     # Exposed for testing.
     def _merge_into_paths(
@@ -421,7 +421,7 @@ def _delete_symbolic_link(link_path: str) -> None:
     os.unlink(link_path)
 
 
-def _add_symbolic_link(link_path: str, actual_path: str) -> None:
+def add_symbolic_link(link_path: str, actual_path: str) -> None:
     directory = os.path.dirname(link_path)
     try:
         os.makedirs(directory)

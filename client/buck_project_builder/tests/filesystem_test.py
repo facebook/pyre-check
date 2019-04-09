@@ -8,7 +8,7 @@ from typing import Iterable
 from unittest.mock import call, patch
 
 from .. import filesystem
-from ..filesystem import Glob, Sources, resolve_sources
+from ..filesystem import Glob, Sources, link_paths, resolve_sources
 
 
 class FilesystemTest(unittest.TestCase):
@@ -127,3 +127,22 @@ class FilesystemTest(unittest.TestCase):
                 call("/project", ["other_dir/*.py"], exclude=[]),
             ]
         )
+
+    def test_link_paths(self):
+        with patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+            link_paths(["/src/a.py", "/src/b/c.py"], "/src", "/output")
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/output/a.py", "/src/a.py"),
+                    call("/output/b/c.py", "/src/b/c.py"),
+                ]
+            )
+
+        with patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+            link_paths(["/src/a.py", "/src/b/c.py"], "/src", "/src/.pyre")
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/src/.pyre/a.py", "/src/a.py"),
+                    call("/src/.pyre/b/c.py", "/src/b/c.py"),
+                ]
+            )

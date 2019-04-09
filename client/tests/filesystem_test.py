@@ -21,11 +21,11 @@ from ..filesystem import (  # noqa
     MercurialBackedFilesystem,
     SharedAnalysisDirectory,
     __name__ as filesystem_name,
-    _add_symbolic_link,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
     _find_python_paths,
     acquire_lock,
+    add_symbolic_link,
     find_root,
     remove_if_exists,
 )
@@ -617,14 +617,14 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.symlink")
     @patch("os.makedirs")
     def test_add_symbolic_link(self, makedirs, symlink, unlink):
-        _add_symbolic_link("/a/link", "file.py")
+        add_symbolic_link("/a/link", "file.py")
         # standard use-cases
         makedirs.assert_called_once_with("/a")
         symlink.assert_called_once_with("file.py", "/a/link")
 
         symlink.reset_mock()
         makedirs.reset_mock()
-        _add_symbolic_link("/a/b/c/d/link", "file.py")
+        add_symbolic_link("/a/b/c/d/link", "file.py")
         makedirs.assert_called_once_with("/a/b/c/d")
         symlink.assert_called_once_with("file.py", "/a/b/c/d/link")
 
@@ -634,7 +634,7 @@ class FilesystemTest(unittest.TestCase):
         error = OSError()
         error.errno = errno.EEXIST
         symlink.side_effect = [error, None]
-        _add_symbolic_link("/a/b/link", "file.py")
+        add_symbolic_link("/a/b/link", "file.py")
         makedirs.assert_called_once_with("/a/b")
         symlink.assert_called_with("file.py", "/a/b/link")
         unlink.assert_called_once_with("/a/b/link")
@@ -644,7 +644,7 @@ class FilesystemTest(unittest.TestCase):
         makedirs.reset_mock()
         unlink.reset_mock()
         symlink.side_effect = OSError()
-        _add_symbolic_link("/a/link", "file.py")
+        add_symbolic_link("/a/link", "file.py")
         makedirs.assert_called_once_with("/a")
         symlink.assert_called_once_with("file.py", "/a/link")
         unlink.assert_not_called()
@@ -677,7 +677,7 @@ class FilesystemTest(unittest.TestCase):
             },
         )
 
-    @patch.object(filesystem, "_add_symbolic_link")
+    @patch.object(filesystem, "add_symbolic_link")
     @patch.object(filesystem, "_delete_symbolic_link")
     @patch.object(filesystem, "_compute_symbolic_link_mapping", return_value={})
     @patch.object(os.path, "isfile")

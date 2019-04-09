@@ -6,6 +6,7 @@
 # pyre-strict
 
 import ast
+import os
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type  # noqa
 
 from . import filesystem
@@ -50,6 +51,17 @@ class BuildTarget:
     def rule_name(self) -> str:
         raise NotImplementedError
 
+    def build(self, output_directory: str) -> None:
+        source_directory = os.path.join(self.buck_root, self.build_file_directory)
+        sources = filesystem.resolve_sources(source_directory, self.sources)
+        if self.base_module:
+            base_path = os.path.join(*self.base_module.split("."))
+        else:
+            base_path = self.build_file_directory
+        filesystem.link_paths(
+            sources, source_directory, os.path.join(output_directory, base_path)
+        )
+
 
 class NonPythonTarget(BuildTarget):
     def __init__(
@@ -68,6 +80,9 @@ class NonPythonTarget(BuildTarget):
 
     def rule_name(self) -> str:
         return self._rule_name
+
+    def build(self, output_directory: str) -> None:
+        pass
 
 
 class PythonBinary(BuildTarget):

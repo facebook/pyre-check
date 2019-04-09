@@ -11,17 +11,7 @@ from unittest.mock import MagicMock, patch
 from .. import Builder, BuilderException, parser
 from ..build_target import BuildTarget, PythonBinary, PythonLibrary
 from ..filesystem import Sources
-
-
-def base(
-    name: str,
-    dependencies: Optional[List[str]] = None,
-    sources: Optional[Sources] = None,
-    base_module: Optional[str] = None,
-) -> BuildTarget.BaseInformation:
-    return BuildTarget.BaseInformation(
-        {}, name, dependencies or [], sources or Sources(), base_module
-    )
+from .test_common import base
 
 
 class BuilderTest(unittest.TestCase):

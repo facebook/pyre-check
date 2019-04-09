@@ -8,7 +8,7 @@
 import os
 from typing import Iterable, List, NamedTuple, Optional
 
-from ..filesystem import get_filesystem
+from ..filesystem import add_symbolic_link, get_filesystem
 
 
 Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
@@ -33,3 +33,17 @@ def resolve_sources(directory: str, sources: Sources) -> Iterable[str]:
         matches = filesystem.list(directory, glob.patterns, exclude=glob.exclude)
         result.update([os.path.join(directory, match) for match in matches])
     return result
+
+
+def link_paths(
+    paths: Iterable[str], source_directory: str, output_directory: str
+) -> None:
+    """
+        For each path in the source directory, creates a symbolic link in the output
+        directory to the original path at the appropriate location (based on its
+        position relative to the source directory).
+    """
+    for path in paths:
+        relative_path = os.path.relpath(path, source_directory)
+        link_path = os.path.join(output_directory, relative_path)
+        add_symbolic_link(link_path, path)
