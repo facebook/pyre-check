@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 from collections import namedtuple
-from typing import Dict, Iterable, List, Optional, cast  # noqa
+from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
 from . import log
 from .filesystem import find_root
@@ -34,22 +34,22 @@ def presumed_target_root(target):
 
 
 # Expects the targets to be already normalized.
-def _find_built_source_directories(targets: Iterable[str]) -> BuckOut:
+def _find_built_source_directories(
+    targets_to_destinations: Iterable[Tuple[str, str]]
+) -> BuckOut:
     targets_not_found = []
     source_directories = []
     buck_root = find_buck_root(os.getcwd())
     if buck_root is None:
         raise Exception("No .buckconfig found in ancestors of the current directory.")
 
-    targets = sorted(targets)
-    for target in targets:
-        target_path = target
-        target_prefix_index = target_path.find("//")
-        if target_prefix_index != -1:
-            target_path = target_path[target_prefix_index + 2 :]
-        target_path = target_path.replace(":", "/")
+    directories = set()
+    for target, destination in targets_to_destinations:
+        directories.add((target, os.path.dirname(destination)))
+
+    for target, directory in directories:
         discovered_source_directories = glob.glob(
-            os.path.join(buck_root, "buck-out/gen/", target_path + "#*link-tree")
+            os.path.join(directory + "*#*link-tree")
         )
         if len(discovered_source_directories) == 0:
             targets_not_found.append(target)
@@ -66,10 +66,10 @@ def _find_built_source_directories(targets: Iterable[str]) -> BuckOut:
                 )
             ]
         )
-    return BuckOut(source_directories, targets_not_found)
+    return BuckOut(set(source_directories), set(targets_not_found))
 
 
-def _normalize(targets: List[str]) -> List[str]:
+def _normalize(targets: List[str]) -> List[Tuple[str, str]]:
     LOG.info(
         "Normalizing target%s `%s`",
         "s:" if len(targets) > 1 else "",
@@ -91,21 +91,23 @@ def _normalize(targets: List[str]) -> List[str]:
             List[str], list(filter(bool, targets_to_destinations))
         )
         # The output is of the form //target //corresponding.par
-        targets_to_destinations = [
-            target.split(" ")[0] for target in targets_to_destinations
-        ]
-        if not targets_to_destinations:
+        result = []
+        for target in targets_to_destinations:
+            pair = target.split(" ")
+            if len(pair) != 2:
+                pass
+            else:
+                result.append((pair[0], pair[1]))
+        if not result:
             LOG.warning(
                 "Provided targets do not contain any binary or unittest targets."
             )
             return []
         else:
             LOG.info(
-                "Found %d buck target%s.",
-                len(targets_to_destinations),
-                "s" if len(targets_to_destinations) > 1 else "",
+                "Found %d buck target%s.", len(result), "s" if len(result) > 1 else ""
             )
-        return targets_to_destinations
+        return result
     except subprocess.TimeoutExpired as error:
         LOG.error("Buck output so far: %s", error.stderr.decode().strip())
         raise BuckException(
@@ -229,19 +231,20 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
 
 def generate_source_directories(
     original_targets: Iterable[str], build: bool, prompt: bool = True
-):
+) -> Set[str]:
     original_targets = list(original_targets)
-    targets = _normalize(original_targets)
+    targets_to_destinations = _normalize(original_targets)
+    targets = [pair[0] for pair in targets_to_destinations]
     if build:
         _build_targets(targets, original_targets)
-    buck_out = _find_built_source_directories(targets)
+    buck_out = _find_built_source_directories(targets_to_destinations)
     source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
         if (not build) and not prompt or log.get_yes_no_input("Build target?"):
             # Build all targets to ensure buck doesn't remove some link trees as we go.
             _build_targets(targets, original_targets)
-            buck_out = _find_built_source_directories(targets)
+            buck_out = _find_built_source_directories(targets_to_destinations)
             source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
