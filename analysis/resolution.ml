@@ -385,16 +385,7 @@ let parse_annotation
     ?(allow_invalid_type_parameters=false)
     ({ aliases; module_definition; _ } as resolution)
     expression =
-  let expression =
-    let is_local_access =
-      Expression.show expression
-      |> String.is_substring ~substring:"$local_"
-    in
-    if is_local_access then
-      Expression.delocalize expression
-    else
-      expression
-  in
+  let expression = Expression.delocalize expression in
   let aliases annotation =
     if allow_invalid_type_parameters then
       aliases annotation
