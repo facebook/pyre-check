@@ -556,14 +556,7 @@ let populate_shared_memory
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
       add_table OrderEdges.write_through edges;
-      let add_backedge key targets =
-        let targets = TypeOrder.Target.Set.of_list targets in
-        OrderBackedges.write_through key (Set.to_list targets)
-      in
-      add_table add_backedge backedges;
-
       add_table OrderBackedges.write_through backedges;
-
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
       OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations);
