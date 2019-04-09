@@ -656,18 +656,14 @@ details()                show additional information about the current trace fra
 
         leaves_strings = []
         for frame in branches:
-            if frame.kind == TraceKind.POSTCONDITION:
-                shared_text_kind = SharedTextKind.SOURCE
-            elif frame.kind == TraceKind.PRECONDITION:
-                shared_text_kind = SharedTextKind.SINK
-            else:
-                assert False, f"{frame.kind} is invalid"
             leaves_strings.append(
                 ", ".join(
                     [
                         leaf
                         for leaf in self._get_leaves_trace_frame(
-                            session, int(frame.id), shared_text_kind
+                            session,
+                            int(frame.id),
+                            self._trace_kind_to_shared_text_kind(frame.kind),
                         )
                         if leaf in filter_leaves
                     ]
@@ -1118,14 +1114,8 @@ details()                show additional information about the current trace fra
         )
 
     def _create_trace_frame_output_string(self, trace_frame):
-        if trace_frame.kind == TraceKind.POSTCONDITION:
-            leaves_label = "Sources"
-            leaf_kind = SharedTextKind.SOURCE
-        elif trace_frame.kind == TraceKind.PRECONDITION:
-            leaves_label = "Sinks"
-            leaf_kind = SharedTextKind.SINK
-        else:
-            assert False, f"{trace_frame.kind} is not valid."
+        leaf_kind = self._trace_kind_to_shared_text_kind(trace_frame.kind)
+        leaves_label = "Sources" if leaf_kind == SharedTextKind.SOURCE else "Sinks"
 
         with self.db.make_session() as session:
             leaves_output = f"\n{' ' * 13}".join(
@@ -1316,3 +1306,11 @@ details()                show additional information about the current trace fra
                 .filter(Issue.callable == callable)
                 .scalar()
             )
+
+    def _trace_kind_to_shared_text_kind(self, trace_kind: TraceKind) -> SharedTextKind:
+        if trace_kind == TraceKind.POSTCONDITION:
+            return SharedTextKind.SOURCE
+        if trace_kind == TraceKind.PRECONDITION:
+            return SharedTextKind.SINK
+
+        assert False, f"{trace_kind} is invalid"
