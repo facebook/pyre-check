@@ -32,7 +32,14 @@ class Incremental(Reporting):
             arguments = self._arguments
             arguments.terminal = False
             arguments.no_watchman = False
-            Start(arguments, self._configuration, self._analysis_directory).run()
+            exit_code = (
+                Start(arguments, self._configuration, self._analysis_directory)
+                .run()
+                .exit_code()
+            )
+            if exit_code != ExitCode.SUCCESS:
+                self._exit_code = ExitCode.FAILURE
+                return
         else:
             self._refresh_file_monitor()
 
