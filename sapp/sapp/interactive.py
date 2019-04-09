@@ -1088,11 +1088,19 @@ details()                show additional information about the current trace fra
         filter_leaves = (
             self.sources if trace_frame.kind == TraceKind.POSTCONDITION else self.sinks
         )
-        filtered_results = [
-            frame
-            for frame in results
-            if filter_leaves.intersection({leaf.contents for leaf in frame.leaves})
-        ]
+
+        filtered_results = []
+        for frame in results:
+            if filter_leaves.intersection(
+                set(
+                    self._get_leaves_trace_frame(
+                        session,
+                        int(frame.id),
+                        self._trace_kind_to_shared_text_kind(frame.kind),
+                    )
+                )
+            ):
+                filtered_results.append(frame)
 
         return filtered_results
 
