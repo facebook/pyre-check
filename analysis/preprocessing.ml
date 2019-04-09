@@ -20,6 +20,8 @@ let convert_to_old_accesses source =
       include Transform.Identity
       type t = unit
 
+      let transform_expression_children _ _ = false
+
       let expression _ expression =
         Expression.convert_to_old_access expression
     end)
@@ -55,6 +57,8 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
 let expand_string_annotations ({ Source.handle; _ } as source) =
   let module Transform = Transform.Make(struct
       type t = unit
+
+      let transform_expression_children _ _ = true
 
       let transform_children _ _ = true
 

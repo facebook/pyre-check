@@ -13,6 +13,7 @@ open Statement
 
 module type Transformer = sig
   type t
+  val transform_expression_children: t -> Expression.t -> bool
   val expression: t -> Expression.t -> Expression.t
   val transform_children: t -> Statement.t -> bool
   val statement: t -> Statement.t -> t * Statement.t list
@@ -26,10 +27,14 @@ end
 
 
 module Identity : sig
+  val transform_expression_children: 't -> Expression.t -> bool
   val expression: 't -> Expression.t -> Expression.t
   val transform_children: 't -> Statement.t -> bool
   val statement: 't -> Statement.t -> 't * Statement.t list
 end = struct
+  let transform_expression_children _ _ =
+    true
+
   let expression _ expression =
     expression
 
@@ -130,9 +135,17 @@ module Make (Transformer : Transformer) = struct
               operator;
               right = transform_expression right;
             }
-        | Call expression ->
-            (* TODO: T37313693 *)
-            Call expression
+        | Call { callee; arguments } ->
+            let transform_arguments arguments =
+              let transform_argument { Call.Argument.name; value } =
+                { Call.Argument.name; value = transform_expression value }
+              in
+              transform_list arguments ~f:(transform_argument);
+            in
+            Call {
+              callee = transform_expression callee;
+              arguments = transform_arguments arguments;
+            }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator {
               ComparisonOperator.left = transform_expression left;
@@ -232,10 +245,10 @@ module Make (Transformer : Transformer) = struct
 
       let initial_state = !state in
       let expression =
-        {
-          expression with
-          Node.value = transform_children (Node.value expression)
-        }
+        if Transformer.transform_expression_children !state expression then
+          { expression with Node.value = transform_children (Node.value expression) }
+        else
+          expression
       in
       let expression = Transformer.expression !state expression in
       state := initial_state;

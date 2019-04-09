@@ -145,6 +145,10 @@ module ConstantPropagationState(Context: Context) = struct
         let module Transform =
           Transform.Make(struct
             type t = unit
+
+            let transform_expression_children _ _ =
+              true
+
             let expression _ expression =
               match Node.value expression with
               | Access (SimpleAccess access) ->
@@ -555,6 +559,9 @@ let run
                       Transform.Make(struct
                         type t = unit
 
+                        let transform_expression_children _ _ =
+                          true
+
                         let expression _ expression =
                           let value =
                             match Node.value expression with
@@ -618,6 +625,9 @@ let run
     let module Transform =
       Transform.Make(struct
         type t = unit
+
+        let transform_expression_children _ _ =
+          true
 
         let expression _ expression =
           let value =
@@ -698,6 +708,9 @@ let run
             Reference.drop_prefix ~prefix:qualifier sanitized
           else
             sanitized
+
+        let transform_expression_children _ _ =
+          true
 
         let expression _ expression =
           let value =
