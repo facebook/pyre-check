@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import builtins
+import itertools
 import os
 import sys
 from collections import defaultdict
@@ -418,6 +419,7 @@ details()                show additional information about the current trace fra
         callers: Optional[List[str]] = None,
         callees: Optional[List[str]] = None,
         kind: Optional[TraceKind] = None,
+        limit: Optional[int] = 10,
     ):
         """Display trace frames independent of the current issue.
 
@@ -425,6 +427,8 @@ details()                show additional information about the current trace fra
             callers: list[str]                  filter traces by this caller name
             callees: list[str]                  filter traces by this callee name
             kind: precondition|postcondition    the type of trace frames to show
+            limit: int (default: 10)            how many trace frames to display
+                                                (specify limit=None for all)
 
         Sample usage:
             frames(callers=["module.function"], kind=postcondition)
@@ -458,11 +462,19 @@ details()                show additional information about the current trace fra
                     )
                 query = query.filter(TraceFrame.kind == kind)
 
+            if limit is not None and not isinstance(limit, int):
+                raise UserError("'limit' should be an int.")
+
             trace_frames = query.group_by(TraceFrame.id).order_by(
                 TraceFrame.caller, TraceFrame.callee
             )
 
-            self._output_trace_frames(self._group_trace_frames(trace_frames))
+            total_trace_frames = trace_frames.count()
+            limit = limit or total_trace_frames
+
+            self._output_trace_frames(
+                self._group_trace_frames(trace_frames, limit), limit, total_trace_frames
+            )
 
     @catch_keyboard_interrupt()
     def set_frame(self, frame_id: int) -> None:
@@ -817,7 +829,7 @@ details()                show additional information about the current trace fra
         return -1
 
     def _group_trace_frames(
-        self, trace_frames: Iterable[TraceFrame]
+        self, trace_frames: Iterable[TraceFrame], limit: int
     ) -> Dict[Tuple[str, str], List[TraceFrame]]:
         """Buckets together trace frames that have the same caller:caller_port.
         """
@@ -825,7 +837,7 @@ details()                show additional information about the current trace fra
         caller_buckets: DefaultDict[Tuple[str, str], List[TraceFrame]] = defaultdict(
             list
         )
-        for trace_frame in trace_frames:
+        for trace_frame in itertools.islice(trace_frames, limit):
             caller_buckets[(trace_frame.caller, trace_frame.caller_port)].append(
                 trace_frame
             )
@@ -882,7 +894,10 @@ details()                show additional information about the current trace fra
             print(f"{' ' * 8}[{frame.filename}:{frame.callee_location}]")
 
     def _output_trace_frames(
-        self, trace_buckets: Dict[Tuple[str, str], List[TraceFrame]]
+        self,
+        trace_buckets: Dict[Tuple[str, str], List[TraceFrame]],
+        limit: int,
+        total_trace_frames: int,
     ) -> None:
         if not trace_buckets:
             print("No trace frames found.")
@@ -907,6 +922,12 @@ details()                show additional information about the current trace fra
                     f"{int(trace_frame.id):<{max_len_id}} "
                     f"    {trace_frame.callee}:{trace_frame.callee_port}"
                 )
+
+        if limit < total_trace_frames:
+            print(
+                f"...\nShowing {limit}/{total_trace_frames} matching frames. "
+                "To see more, call 'frames' with the 'limit' argument."
+            )
 
     def _output_trace_tuples(self, trace_tuples):
         expand = "+"

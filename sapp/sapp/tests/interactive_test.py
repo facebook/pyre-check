@@ -1501,7 +1501,7 @@ else:
             TraceFrame(id=5, caller="caller2", caller_port="port3"),
         ]
 
-        buckets = self.interactive._group_trace_frames(trace_frames)
+        buckets = self.interactive._group_trace_frames(trace_frames, 5)
 
         self.assertEqual(3, len(buckets.keys()))
         self.assertIn(("caller1", "port1"), buckets.keys())
@@ -1631,6 +1631,27 @@ else:
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- call1:root ->",
                 "1        call2:param0",
+                "",
+            ],
+        )
+
+    def testListFramesWithLimit(self):
+        self._set_up_branched_trace()
+        self.interactive.set_run(1)
+
+        self._clear_stdout()
+        self.interactive.frames(limit=3)
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call1:root ->",
+                "3        call2:param2",
+                "4        call2:param2",
+                "1        leaf:source",
+                "...",
+                "Showing 3/6 matching frames. To see more, call 'frames' with "
+                "the 'limit' argument.",
                 "",
             ],
         )
