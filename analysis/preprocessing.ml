@@ -62,94 +62,64 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
 
       let transform_children _ _ = true
 
-      let transform_string_annotation_expression handle =
+      let rec transform_string_annotation_expression handle =
         let rec transform_expression
             ({
               Node.location = {
                 Location.start = { Location.line = start_line; column = start_column};
                 _;
               } as location;
-              value
+              value;
             } as expression) =
           let value =
-            let transform_element = function
-              | Access.Call ({ Node.value = arguments ; _ } as call) ->
-                  let transform_argument ({ Argument.value; _ } as argument) =
-                    { argument with Argument.value = transform_expression value }
-                  in
-                  Access.Call {
-                    call with
-                    Node.value = List.map arguments ~f:transform_argument;
-                  }
-              | element ->
-                  element
-            in
             match value with
-            | Access (SimpleAccess access) ->
-                (* This will hit any generic type named Literal, but otherwise from ... import
-                   Literal woudln't work as this has to be before qualification. *)
-                let transform_everything_but_literal (reversed_access, in_literal) element =
-                  let element, in_literal =
-                    match element, in_literal with
-                    | Access.Identifier "Literal", _ ->
-                        transform_element element, true
-                    | Access.Identifier "__getitem__", _ ->
-                        transform_element element, in_literal
-                    | Access.Call _, true ->
-                        element, false
-                    | _, _ ->
-                        transform_element element, false
-                  in
-                  element :: reversed_access, in_literal
+            | Name (Name.Attribute { base; attribute }) ->
+                Name (Name.Attribute { base = transform_expression base; attribute })
+            | Call { callee = { Node.value = Name (Name.Identifier "Literal"); _ }; _ }
+            | Call {
+                callee = { Node.value = Name (Name.Attribute { attribute = "Literal"; _ }); _ };
+                _;
+              } ->
+                (* Don't transform arguments in Literals. This will hit any generic type named
+                   Literal, but otherwise `from ... import Literal` wouldn't work as this has
+                   to be before qualification. *)
+                value
+            | Call { callee; arguments } ->
+                let transform_argument ({ Call.Argument.value; _ } as argument) =
+                  { argument with Call.Argument.value = transform_expression value }
                 in
-                let access =
-                  List.fold access ~f:transform_everything_but_literal ~init:([], false)
-                  |> fst
-                  |> List.rev
-                in
-                Access (SimpleAccess (access))
-            | Access (ExpressionAccess { expression; access }) ->
-                Access
-                  (ExpressionAccess {
-                      expression = transform_expression expression;
-                      access = List.map access ~f:transform_element;
-                    })
+                Call {
+                  callee = transform_expression callee;
+                  arguments = List.map ~f:transform_argument arguments;
+                }
             | String { StringLiteral.value; _ } ->
-                let parsed =
+                begin
                   try
-                    (* Start at column + 1 since parsing begins after
-                       the opening quote of the string literal. *)
-                    match
+                    let parsed =
+                      (* Start at column + 1 since parsing begins after
+                         the opening quote of the string literal. *)
                       Parser.parse
                         ~start_line
                         ~start_column:(start_column + 1)
                         [value ^ "\n"]
                         ~handle
-                    with
-                    | [{ Node.value = Expression expression; _ }] ->
-                        begin
-                          match Expression.convert_to_old_access expression with
-                          | { Node.value = Access access; _ } -> Some access
-                          | _ -> failwith "Not an access"
-                        end
+                    in
+                    match parsed with
+                    | [{ Node.value = Expression { Node.value = (Name _ as expression); _ }; _ }]
+                    | [{ Node.value = Expression { Node.value = (Call _ as expression); _ }; _ }] ->
+                        expression
                     | _ ->
-                        failwith "Not an access"
+                        failwith "Invalid annotation"
                   with
                   | Parser.Error _
                   | Failure _ ->
-                      begin
-                        Log.debug
-                          "Invalid string annotation `%s` at %a"
-                          value
-                          Location.Reference.pp
-                          location;
-                        None
-                      end
-                in
-                parsed
-                >>| (fun parsed -> Access parsed)
-                |> Option.value
-                  ~default:(Access (SimpleAccess (Access.create "$unparsed_annotation")))
+                      Log.debug
+                        "Invalid string annotation `%s` at %a"
+                        value
+                        Location.Reference.pp
+                        location;
+                      Name (Name.Identifier "$unparsed_annotation")
+                end
             | Tuple elements ->
                 Tuple (List.map elements ~f:transform_expression)
             | _ ->
@@ -201,34 +171,36 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
         (), [statement]
 
       let expression _ expression =
-        let transform_call_access = function
-          | ({ Node.value = [
+        let transform_arguments = function
+          | [
               ({
-                Argument.name = None;
+                Call.Argument.name = None;
                 value = ({ Node.value = String _; _ } as value)
               } as type_argument);
               value_argument;
-            ]; _ } as call) ->
+            ] ->
               let annotation = transform_string_annotation_expression handle value in
-              let value = [{ type_argument with value = annotation }; value_argument] in
-              { call with value }
-          | _ as call -> call
+              [{ type_argument with value = annotation }; value_argument]
+          | arguments -> arguments
         in
         let value =
           match Node.value expression with
-          | Access (SimpleAccess [
-              Identifier "cast" as cast_identifier;
-              Call call;
-            ]) ->
-              let call = Access.Call (transform_call_access call) in
-              Access (SimpleAccess [cast_identifier; call])
-          | Access (SimpleAccess [
-              Identifier "typing" as typing_identifier;
-              Identifier "cast" as cast_identifier;
-              Call call;
-            ]) ->
-              let call = Access.Call (transform_call_access call) in
-              Access (Access.SimpleAccess [typing_identifier; cast_identifier; call])
+          | Call {
+              callee = ({ Node.value = Name (Name.Identifier "cast"); _ } as callee);
+              arguments;
+            } ->
+              Call { callee; arguments = transform_arguments arguments }
+          | Call {
+              callee = ({
+                  Node.value = Name (Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "cast"
+                    });
+                  _;
+                } as callee);
+              arguments;
+            } ->
+              Call { callee; arguments = transform_arguments arguments }
           | value -> value
         in
         { expression with Node.value }
@@ -1745,9 +1717,9 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
 
 let preprocess_steps ~force source =
   source
-  |> convert_to_old_accesses
   |> expand_relative_imports
   |> expand_string_annotations
+  |> convert_to_old_accesses
   |> expand_format_string
   |> replace_platform_specific_code
   |> replace_version_specific_code

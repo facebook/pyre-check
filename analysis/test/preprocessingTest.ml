@@ -62,8 +62,8 @@ let test_expand_string_annotations _ =
     let parse =
       parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
     assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_string_annotations (parse source))
+      (parse ~convert:false expected)
+      (Preprocessing.expand_string_annotations (parse ~convert:false source))
   in
 
   assert_expand

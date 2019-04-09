@@ -82,6 +82,7 @@ let parse_untrimmed
     ?(silent = false)
     ?(docstring = None)
     ?(ignore_lines = [])
+    ?(convert = true)
     source =
   let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
@@ -109,9 +110,11 @@ let parse_untrimmed
         ~handle
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
-      |> Preprocessing.convert_to_old_accesses
     in
-    source
+    if convert then
+      Preprocessing.convert_to_old_accesses source
+    else
+      source
   with
   | Pyre.ParserError _
   | Generator.Error ->
@@ -146,11 +149,12 @@ let parse
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
+    ?(convert = true)
     source =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring
+    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~convert
   in
   match local_mode with
   | Some local_mode ->

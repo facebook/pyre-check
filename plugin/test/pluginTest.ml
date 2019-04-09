@@ -18,7 +18,7 @@ let assert_environment_contains source expected =
   let (module Handler: Environment.Handler) =
     environment ~sources:[] ()
   in
-  let source = Preprocessing.preprocess (parse source) in
+  let source = Preprocessing.preprocess (parse ~convert:false source) in
   Test.populate
     ~configuration:(Configuration.Analysis.create ())
     (module Handler)
@@ -27,7 +27,7 @@ let assert_environment_contains source expected =
   let expected =
     List.map
       expected
-      ~f:(fun definition -> (Preprocessing.preprocess (parse definition)))
+      ~f:(fun definition -> (Preprocessing.preprocess (parse ~convert:false definition)))
   in
   let class_types =
     let get_name_if_class { Node.value; _ } =
