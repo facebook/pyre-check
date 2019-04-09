@@ -8,7 +8,7 @@ import unittest
 from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
-from .. import Builder, BuilderException, parser
+from .. import Builder, BuilderException, Target, parser
 from ..build_target import BuildTarget, PythonBinary, PythonLibrary
 from ..filesystem import Sources
 from .test_common import base
@@ -23,6 +23,26 @@ class BuilderTest(unittest.TestCase):
     ) -> None:
         self.assert_target_names_equal(
             [target.target for target in targets], target_names
+        )
+
+    def assert_raises_builder_exception(self, function, *args, expected_targets=None):
+        try:
+            function(*args)
+        except BuilderException as error:
+            self.assert_target_names_equal(error.targets, expected_targets)
+        else:
+            self.fail("Expected BuilderException to be thrown.")
+
+    def test_parse_target(self):
+        builder = Builder("/ROOT")
+        self.assertEqual(builder._parse_target("//a:b"), Target("a", "b"))
+
+        self.assert_raises_builder_exception(
+            builder._parse_target, "//a:", expected_targets=["//a:"]
+        )
+
+        self.assert_raises_builder_exception(
+            builder._parse_target, "//a/...", expected_targets=["//a/..."]
         )
 
     def test_compute_targets_to_build_simple(self):
@@ -79,8 +99,10 @@ class BuilderTest(unittest.TestCase):
                 ],
             )
 
-            self.assertRaises(
-                BuilderException, builder.compute_targets_to_build, ["//project:f"]
+            self.assert_raises_builder_exception(
+                builder.compute_targets_to_build,
+                ["//project:e", "//project:f", "//project:g"],
+                expected_targets=["//project:f", "//project:g"],
             )
 
     def test_compute_targets_to_build_complex(self):
@@ -135,8 +157,10 @@ class BuilderTest(unittest.TestCase):
             targets = builder.compute_targets_to_build(["//project2:e"])
             self.assert_targets_equal(targets, ["//project2:e", "//project2:d"])
 
-            self.assertRaises(
-                BuilderException, builder.compute_targets_to_build, ["//project1:f"]
+            self.assert_raises_builder_exception(
+                builder.compute_targets_to_build,
+                ["//project1:f"],
+                expected_targets=["//project1:f"],
             )
 
     def test_targets_to_build_file_wildcard(self):

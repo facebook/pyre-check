@@ -18,7 +18,9 @@ Target = NamedTuple("Target", [("build_file_directory", str), ("name", str)])
 
 
 class BuilderException(Exception):
-    pass
+    def __init__(self, message: str, targets: Optional[List[str]] = None) -> None:
+        super(BuilderException, self).__init__(message)
+        self.targets = targets or []  # type: List[str]
 
 
 class Builder(object):
@@ -66,14 +68,15 @@ class Builder(object):
 
         if targets_not_found:
             raise BuilderException(
-                "Target(s) not found: {}".format(", ".join(targets_not_found))
+                "Target(s) could not be built: {}".format(", ".join(targets_not_found)),
+                targets=targets_not_found,
             )
         return build_targets
 
     def _parse_target(self, target: str) -> Target:
         if target.endswith("...") or target.endswith(":"):
             raise BuilderException(
-                "Target {} is not an absolute target.".format(target)
+                "Target {} is not an absolute target.".format(target), targets=[target]
             )
         split = _strip(target, left="//").split(":")
         return Target(split[0], split[1])
