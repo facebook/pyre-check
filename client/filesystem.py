@@ -456,24 +456,52 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
 
 
 class Filesystem:
-    def list(self, root: str, pattern: str) -> List[str]:
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
+        """
+            Return the list of files that match any of the patterns within root.
+            If exclude is provided, files that match an exclude pattern are omitted.
+
+            Note: The `find` command does not understand globs properly.
+                e.g. 'a/*.py' will match 'a/b/c.py'
+            For this reason, avoid calling this method with glob patterns.
+        """
+
+        command = ["find", "."]
+        command += self._match_any(patterns)
+        if exclude:
+            command += ["-and", "!"]
+            command += self._match_any(exclude)
         return (
-            subprocess.run(
-                ["find", root, "-name", "*{}".format(pattern)], stdout=subprocess.PIPE
-            )
+            subprocess.run(command, stdout=subprocess.PIPE, cwd=root)
             .stdout.decode("utf-8")
             .split()
         )
 
+    def _match_any(self, patterns: List[str]) -> List[str]:
+        expression = []
+        for pattern in patterns:
+            if expression:
+                expression.append("-or")
+            expression.extend(["-path", "./{}".format(pattern)])
+        return ["(", *expression, ")"]
+
 
 class MercurialBackedFilesystem(Filesystem):
-    def list(self, root: str, pattern: str) -> List[str]:
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
         try:
+            command = ["hg", "files"]
+            for pattern in patterns:
+                command += ["--include", pattern]
+            if exclude:
+                for pattern in exclude:
+                    command += ["--exclude", pattern]
             return (
                 subprocess.run(
-                    ["hg", "files", "--include", "**{}".format(pattern)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
+                    command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=root
                 )
                 .stdout.decode("utf-8")
                 .split()

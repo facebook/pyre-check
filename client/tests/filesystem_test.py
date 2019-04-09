@@ -244,61 +244,131 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory.cleanup()
         rmtree.assert_called_with(shared_analysis_directory.get_root())
 
-    @patch.object(subprocess, "run")
-    def test_filesystem_list_bare(self, run):
+    def test_filesystem_list_bare(self):
         filesystem = Filesystem()
-        filesystem.list(".", ".pyre_configuration.local")
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "find",
+                            ".",
+                            "(",
+                            "-path",
+                            "./**/*.py",
+                            "-or",
+                            "-path",
+                            "./foo.cpp",
+                            ")",
+                            "-and",
+                            "!",
+                            "(",
+                            "-path",
+                            "./bar/*.py",
+                            ")",
+                        ],
+                        stdout=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
 
         def fail_command(arguments, **kwargs):
             return subprocess.CompletedProcess(
                 args=[], returncode=1, stdout="".encode("utf-8")
             )
 
-        run.side_effect = fail_command
-        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
-        run.assert_has_calls(
-            [
-                call(
-                    ["find", ".", "-name", "*.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                ),
-                call().stdout.decode("utf-8"),
-                call().stdout.decode().split(),
-                call(
-                    ["find", ".", "-name", "*.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                ),
-            ]
-        )
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    )
+                ]
+            )
 
-    @patch.object(subprocess, "run")
-    def test_filesystem_list_mercurial(self, run):
+    def test_filesystem_list_mercurial(self):
         filesystem = MercurialBackedFilesystem()
-        filesystem.list(".", ".pyre_configuration.local")
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "hg",
+                            "files",
+                            "--include",
+                            "**/*.py",
+                            "--include",
+                            "foo.cpp",
+                            "--exclude",
+                            "bar/*.py",
+                        ],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
 
         def fail_command(arguments, **kwargs):
             return subprocess.CompletedProcess(
                 args=[], returncode=1, stdout="".encode("utf-8")
             )
 
-        run.side_effect = fail_command
-        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
-        run.assert_has_calls(
-            [
-                call(
-                    ["hg", "files", "--include", "**.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                ),
-                call().stdout.decode("utf-8"),
-                call().stdout.decode().split(),
-                call(
-                    ["hg", "files", "--include", "**.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                ),
-            ]
-        )
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    )
+                ]
+            )
 
     @patch.object(filesystem, "_compute_symbolic_link_mapping")
     @patch("os.getcwd")
