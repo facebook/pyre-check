@@ -1308,8 +1308,12 @@ let expand_type_checking_imports source =
       let statement _ ({ Node.value; _ } as statement) =
         let is_type_checking { Node.value; _ } =
           match value with
-          | Access (SimpleAccess [Access.Identifier "typing"; Access.Identifier "TYPE_CHECKING"])
-          | Access (SimpleAccess [Access.Identifier "TYPE_CHECKING"]) ->
+          | Name (
+              Name.Attribute {
+                base = { Node.value = Name (Name.Identifier "typing"); _ };
+                attribute = "TYPE_CHECKING";
+              })
+          | Name (Name.Identifier "TYPE_CHECKING") ->
               true
           | _ ->
               false
@@ -1719,12 +1723,12 @@ let preprocess_steps ~force source =
   source
   |> expand_relative_imports
   |> expand_string_annotations
-  |> convert_to_old_accesses
   |> expand_format_string
   |> replace_platform_specific_code
   |> replace_version_specific_code
   |> expand_type_checking_imports
   |> expand_wildcard_imports ~force
+  |> convert_to_old_accesses
   |> qualify
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub

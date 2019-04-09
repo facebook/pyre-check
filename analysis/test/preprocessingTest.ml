@@ -1351,8 +1351,8 @@ let test_replace_platform_specific_code _ =
 let test_expand_type_checking_imports _ =
   let assert_expanded source expected =
     assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_type_checking_imports (parse source))
+      (parse ~convert:false expected)
+      (Preprocessing.expand_type_checking_imports (parse ~convert:false source))
   in
   assert_expanded
     {|
