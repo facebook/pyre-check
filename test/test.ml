@@ -109,6 +109,7 @@ let parse_untrimmed
         ~handle
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
+      |> Preprocessing.convert_to_old_accesses
     in
     source
   with

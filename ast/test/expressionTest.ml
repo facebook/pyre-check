@@ -500,9 +500,7 @@ let test_convert_accesses _ =
     let converted =
       new_access
       |> Node.create_with_default_location
-      |> Access.create_from_expression
-      |> (fun access -> Access access)
-      |> Node.create_with_default_location
+      |> convert_to_old_access
     in
     assert_equal
       ~printer:(Expression.show)

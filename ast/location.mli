@@ -32,6 +32,8 @@ module Reference : sig
   val create: start: Lexing.position -> stop: Lexing.position -> t
   val create_with_handle: handle: File.Handle.t -> t
 
+  val start: t -> position
+  val stop: t -> position
   val any: t
   val synthetic: t
 end

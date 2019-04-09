@@ -337,7 +337,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       | {
         Node.value =
           Assign {
-            Assign.target = { Node.value = Access (SimpleAccess target); _};
+            Assign.target = { Node.value = Access (SimpleAccess target); _ };
             annotation = Some annotation;
             _;
           };
@@ -362,6 +362,9 @@ let create ~resolution ?(verify = true) ~configuration source =
     in
     String.split ~on:'\n' source
     |> Parser.parse
+    |> Source.create
+    |> Preprocessing.convert_to_old_accesses
+    |> Source.statements
     |> List.filter_map ~f:filter_define_signature
   in
   let create_model

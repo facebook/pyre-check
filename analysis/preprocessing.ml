@@ -15,6 +15,19 @@ open Statement
 exception MissingWildcardImport
 
 
+let convert_to_old_accesses source =
+  let module Transform = Transform.Make(struct
+      include Transform.Identity
+      type t = unit
+
+      let expression _ expression =
+        Expression.convert_to_old_access expression
+    end)
+  in
+  Transform.transform () source
+  |> Transform.source
+
+
 let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer(struct
       type t = Reference.t
@@ -109,8 +122,12 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                         [value ^ "\n"]
                         ~handle
                     with
-                    | [{ Node.value = Expression { Node.value = Access access; _ } ; _ }] ->
-                        Some access
+                    | [{ Node.value = Expression expression; _ }] ->
+                        begin
+                          match Expression.convert_to_old_access expression with
+                          | { Node.value = Access access; _ } -> Some access
+                          | _ -> failwith "Not an access"
+                        end
                     | _ ->
                         failwith "Not an access"
                   with
@@ -283,8 +300,10 @@ let expand_format_string ({ Source.handle; _ } as source) =
               try
                 let string = input_string ^ "\n" in
                 match Parser.parse [string ^ "\n"] ~start_line:line ~start_column ~handle with
-                | [{ Node.value = Expression expression; _ }] -> [expression]
-                | _ -> failwith "Not an expression"
+                | [{ Node.value = Expression expression; _ }] ->
+                    [Expression.convert_to_old_access expression]
+                | _ ->
+                    failwith "Not an expression"
               with
               | Parser.Error _
               | Failure _ ->
@@ -947,7 +966,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         let qualify_element reversed_lead element =
           let element =
             match element with
-            | Access.Call ({ Node.value = arguments ; _ } as call) ->
+            | Access.Call ({ Node.value = arguments; _ } as call) ->
                 let qualify_strings =
                   match reversed_lead with
                   | [Access.Identifier "TypeVar"; Access.Identifier "typing"] ->
@@ -1106,7 +1125,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               try
                 match Parser.parse [value ^ "\n"] ~handle with
                 | [{ Node.value = Expression expression; _ }] ->
-                    qualify_expression ~qualify_strings ~scope expression
+                    Expression.convert_to_old_access expression
+                    |> qualify_expression ~qualify_strings ~scope
                     |> Expression.show
                     |> fun value -> String { StringLiteral.value; kind }
                 | _ ->
@@ -1721,6 +1741,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
 
 let preprocess_steps ~force source =
   source
+  |> convert_to_old_accesses
   |> expand_relative_imports
   |> expand_string_annotations
   |> expand_format_string

@@ -317,10 +317,7 @@ let test_access _ =
           (SimpleAccess [
               Access.Identifier "a";
               Access.Identifier "__getitem__";
-              Access.Call (+[{
-                  Argument.name = None;
-                  value = +Access (SimpleAccess [Access.Identifier "b"]);
-                }]);
+              Access.Call (+[{ Argument.name = None; value = !"b" }]);
             ]))
     ];
   assert_parsed_equal

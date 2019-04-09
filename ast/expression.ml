@@ -405,43 +405,6 @@ module Access = struct
     List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
-  let create_from_expression nested_access =
-    let rec flatten nested_access =
-      match Node.value nested_access with
-      | Name (Name.Identifier identifier) ->
-          None, [Identifier identifier]
-      | Name (
-          Name.Attribute {
-            base = { Node.value = Name (Name.Identifier base); _ };
-            attribute;
-          }
-        ) ->
-          None, [Identifier attribute; Identifier base]
-      | Name (Name.Attribute { base; attribute }) ->
-          let base_expression, access = flatten base in
-          base_expression, (Identifier attribute) :: access
-      | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
-          let arguments =
-            let convert { Call.Argument.name; value } = { Argument.name; value } in
-            { Node.location; value = List.map ~f:convert arguments }
-          in
-          None, [Call arguments; Identifier callee]
-      | Call { callee; arguments } ->
-          let base_expression, access = flatten callee in
-          let arguments =
-            let convert { Call.Argument.name; value } = { Argument.name; value } in
-            { Node.location = callee.Node.location; value = List.map ~f:convert arguments }
-          in
-          base_expression, (Call arguments) :: access
-      | _ ->
-          Some nested_access, []
-    in
-    let base_expression, flattened = flatten nested_access in
-    match base_expression with
-    | Some expression -> ExpressionAccess { expression; access = List.rev flattened }
-    | None -> SimpleAccess (List.rev flattened)
-
-
   let create name =
     let identifier_names name =
       if String.equal name "..." then
@@ -952,6 +915,153 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
+let rec convert_to_old_access { Node.location; value } =
+  (* Can't use `Visit` module due to circularity :( *)
+  let rec convert expression =
+    let convert_argument { Call.Argument.name; value } =
+      { Argument.name; value = convert_to_old_access value }
+    in
+    let convert_generator { Comprehension.target; iterator; conditions; async } =
+      {
+        Comprehension.target = convert_to_old_access target;
+        iterator = convert_to_old_access iterator;
+        conditions = List.map ~f:convert_to_old_access conditions;
+        async;
+      }
+    in
+    let convert_entry { Dictionary.key; value } =
+      { Dictionary.key = convert_to_old_access key; value = convert_to_old_access value }
+    in
+    let convert_parameter { Node.value = { Parameter.value; annotation; name }; location } =
+      let value =
+        {
+          Parameter.name;
+          value = value >>| convert_to_old_access;
+          annotation = annotation >>| convert_to_old_access;
+        }
+      in
+      { Node.location; value }
+    in
+    match expression with
+    | Name (Name.Identifier identifier) ->
+        None, [Access.Identifier identifier]
+    | Name (
+        Name.Attribute {
+          base = { Node.value = Name (Name.Identifier base); _ };
+          attribute;
+        }
+      ) ->
+        None, [Access.Identifier attribute; Access.Identifier base]
+    | Name (Name.Attribute { base; attribute }) ->
+        let base_expression, access = convert (Node.value base) in
+        base_expression, (Access.Identifier attribute) :: access
+    | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
+        let arguments =
+          { Node.location; value = List.map ~f:convert_argument arguments }
+        in
+        None, [Call arguments; Access.Identifier callee]
+    | Call { callee; arguments } ->
+        let base_expression, access = convert (Node.value callee) in
+        let arguments =
+          { Node.location = callee.Node.location; value = List.map ~f:convert_argument arguments }
+        in
+        base_expression, (Call arguments) :: access
+    | Await expression ->
+        Await (convert_to_old_access expression) |> Option.some, []
+    | BooleanOperator { BooleanOperator.left; right; operator } ->
+        BooleanOperator {
+          BooleanOperator.left = convert_to_old_access left;
+          right = convert_to_old_access right;
+          operator
+        } |> Option.some,
+        []
+    | ComparisonOperator { ComparisonOperator.left; right; operator } ->
+        ComparisonOperator {
+          ComparisonOperator.left = convert_to_old_access left;
+          right = convert_to_old_access right;
+          operator
+        } |> Option.some,
+        []
+    | Dictionary { Dictionary.entries; keywords } ->
+        Dictionary {
+          Dictionary.entries = List.map ~f:convert_entry entries;
+          keywords = List.map ~f:convert_to_old_access keywords;
+        } |> Option.some,
+        []
+    | DictionaryComprehension { Comprehension.element; generators } ->
+        DictionaryComprehension {
+          Comprehension.element = convert_entry element;
+          generators = List.map ~f:convert_generator generators
+        } |> Option.some,
+        []
+    | Generator { Comprehension.element; generators } ->
+        Generator {
+          Comprehension.element = convert_to_old_access element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Lambda { Lambda.parameters; body } ->
+        Lambda {
+          Lambda.parameters = List.map ~f:convert_parameter parameters;
+          body = convert_to_old_access body;
+        } |> Option.some,
+        []
+    | List elements ->
+        List (List.map ~f:convert_to_old_access elements) |> Option.some, []
+    | ListComprehension { Comprehension.element; generators } ->
+        ListComprehension {
+          Comprehension.element = convert_to_old_access element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Set elements ->
+        Set (List.map ~f:convert_to_old_access elements) |> Option.some, []
+    | SetComprehension { Comprehension.element; generators } ->
+        SetComprehension {
+          Comprehension.element = convert_to_old_access element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Starred (Starred.Once expression) ->
+        Starred (Starred.Once (convert_to_old_access expression)) |> Option.some, []
+    | Starred (Starred.Twice expression) ->
+        Starred (Starred.Twice (convert_to_old_access expression)) |> Option.some, []
+    | Ternary { Ternary.target; test; alternative } ->
+        Ternary {
+          Ternary.target = convert_to_old_access target;
+          test = convert_to_old_access test;
+          alternative = convert_to_old_access alternative;
+        } |> Option.some,
+        []
+    | Tuple elements ->
+        Tuple (List.map ~f:convert_to_old_access elements) |> Option.some, []
+    | UnaryOperator { UnaryOperator.operand; operator } ->
+        UnaryOperator {
+          UnaryOperator.operand = convert_to_old_access operand;
+          operator;
+        } |> Option.some,
+        []
+    | Yield expression ->
+        Yield (expression >>| convert_to_old_access) |> Option.some, []
+    | _ ->
+        Some expression, []
+  in
+  let value =
+    match convert value with
+    | Some expression, [] ->
+        expression
+    | Some expression, flattened ->
+        Access (
+          ExpressionAccess {
+            expression = Node.create ~location expression;
+            access = List.rev flattened
+          })
+    | None, flattened ->
+        Access (SimpleAccess (List.rev flattened))
+  in
+  { Node.location; value }
+
+
 let exists_in_list ?(match_prefix=false) ~expression_list target_string =
   let rec matches expected actual =
     match expected, delocalize_qualified actual with
@@ -1209,9 +1319,28 @@ module PrettyPrinter = struct
           BooleanOperator.pp_boolean_operator operator
           pp_expression_t right
 
-    | Call _ ->
-        (* TODO: T37313693 *)
-        ()
+    | Call { Call.callee; arguments } ->
+        begin
+          match Node.value callee with
+          | Name (Name.Attribute { base; attribute = "__getitem__" }) ->
+              Format.fprintf
+                formatter
+                "%a[%a]"
+                pp_expression_t base
+                pp_argument_list
+                  (List.map
+                    ~f:(fun { Call.Argument.name; value } -> { Argument.name; value })
+                    arguments)
+          | _ ->
+              Format.fprintf
+                formatter
+                "%a(%a)"
+                pp_expression_t callee
+                pp_argument_list
+                  (List.map
+                    ~f:(fun { Call.Argument.name; value } -> { Argument.name; value })
+                    arguments)
+        end
 
     | String { StringLiteral.value; kind } ->
         let bytes =
@@ -1275,9 +1404,15 @@ module PrettyPrinter = struct
     | ListComprehension list_comprehension ->
         Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
 
-    | Name _ ->
-        (* TODO: T37313693 *)
-        ()
+    | Name (Name.Identifier name) ->
+        Format.fprintf formatter "%s" name
+
+    | Name (Name.Attribute { base; attribute }) ->
+        Format.fprintf
+          formatter
+          "%a.%s"
+          pp_expression (Node.value base)
+          attribute
 
     | Set set ->
         Format.fprintf formatter "set(%a)" pp_expression_list set

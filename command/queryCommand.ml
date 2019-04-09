@@ -25,15 +25,17 @@ let parse_query
   | [{
       Node.value = Statement.Expression {
           Node.value =
-            Access
-              (SimpleAccess [
-                  Access.Identifier name;
-                  Access.Call { Node.value = arguments; _ };
-                ]);
+            Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
           _;
         };
       _;
     }] ->
+      let arguments =
+        let convert_argument { Call.Argument.name; value } =
+          { Argument.name; value = convert_to_old_access value }
+        in
+        List.map ~f:convert_argument arguments
+      in
       let expression { Argument.value; _ } = value in
       let access = function
         | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } -> access
@@ -45,7 +47,7 @@ let parse_query
         | _ -> raise (InvalidQuery "expected access")
       in
       let string_of_expression = function
-        | {Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } ->
+        | { Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } ->
             value
         | _ ->
             raise (InvalidQuery "expected string")
