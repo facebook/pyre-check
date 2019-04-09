@@ -1291,7 +1291,7 @@ let test_decode_serialized_ocaml_values context =
         Globals.serialize_key (Reference.create "string_global");
       kind = "Global";
       actual_key = "string_global";
-      actual_value = Some "(str: m)";
+      actual_value = Some "((annotation(Primitive str))(mutability Mutable))";
     };
   assert_decode
     ~key:(Dependents.serialize_key (!&"module"))

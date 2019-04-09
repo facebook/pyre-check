@@ -637,7 +637,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_value =
                           value
                           >>| Node.value
-                          >>| Annotation.show;
+                          >>| Annotation.sexp_of_t
+                          >>| Sexp.to_string;
                       }
                   | Ok (Dependents.Decoded (key, value)) ->
                       Some {
