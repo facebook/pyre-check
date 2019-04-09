@@ -6,10 +6,20 @@
 # pyre-strict
 
 import os
-from typing import Iterable
+from typing import Iterable, List, NamedTuple, Optional
 
 from ..filesystem import get_filesystem
-from .build_target import Sources
+
+
+Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
+
+
+class Sources:
+    def __init__(
+        self, files: Optional[List[str]] = None, globs: Optional[List[Glob]] = None
+    ) -> None:
+        self.files = files or []  # type: List[str]
+        self.globs = globs or []  # type: List[Glob]
 
 
 def resolve_sources(directory: str, sources: Sources) -> Iterable[str]:

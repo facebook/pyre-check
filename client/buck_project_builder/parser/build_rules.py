@@ -9,13 +9,12 @@ from typing import Callable, Dict, List, Optional
 
 from ..build_target import (
     BuildTarget,
-    Glob,
     NonPythonTarget,
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
-    Sources,
 )
+from ..filesystem import Glob, Sources
 
 
 def parse_base_information(

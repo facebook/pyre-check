@@ -7,13 +7,8 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from .. import Parser, ParserException
-from ...build_target import (
-    Glob,
-    NonPythonTarget,
-    PythonBinary,
-    PythonLibrary,
-    PythonUnitTest,
-)
+from ...build_target import NonPythonTarget, PythonBinary, PythonLibrary, PythonUnitTest
+from ...filesystem import Glob
 
 
 TARGETS_FILE_1 = """

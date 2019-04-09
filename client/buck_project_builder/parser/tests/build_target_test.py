@@ -8,7 +8,7 @@ import unittest
 from typing import List, Optional
 
 from .. import build_rules
-from ...build_target import Glob, Sources
+from ...filesystem import Glob, Sources
 
 
 def _get_call(tree: ast.AST) -> ast.Call:

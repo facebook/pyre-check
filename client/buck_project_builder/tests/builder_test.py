@@ -9,7 +9,8 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import Builder, BuilderException, parser
-from ..build_target import BuildTarget, PythonBinary, PythonLibrary, Sources
+from ..build_target import BuildTarget, PythonBinary, PythonLibrary
+from ..filesystem import Sources
 
 
 def base(

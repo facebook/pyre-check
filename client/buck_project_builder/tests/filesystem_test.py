@@ -8,8 +8,7 @@ from typing import Iterable
 from unittest.mock import call, patch
 
 from .. import filesystem
-from ..build_target import Glob, Sources
-from ..filesystem import resolve_sources
+from ..filesystem import Glob, Sources, resolve_sources
 
 
 class FilesystemTest(unittest.TestCase):

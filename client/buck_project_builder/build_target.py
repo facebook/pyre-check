@@ -8,16 +8,7 @@
 import ast
 from typing import Dict, List, Mapping, NamedTuple, Optional, Type  # noqa
 
-
-Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
-
-
-class Sources:
-    def __init__(
-        self, files: Optional[List[str]] = None, globs: Optional[List[Glob]] = None
-    ) -> None:
-        self.files = files or []  # type: List[str]
-        self.globs = globs or []  # type: List[Glob]
+from . import filesystem
 
 
 class BuildTarget:
@@ -28,7 +19,7 @@ class BuildTarget:
             ("keywords", Dict[str, ast.expr]),
             ("name", str),
             ("dependencies", List[str]),
-            ("sources", Sources),
+            ("sources", filesystem.Sources),
             ("base_module", Optional[str]),
         ],
     )
@@ -43,7 +34,7 @@ class BuildTarget:
         self.build_file_directory = build_file_directory
         self.name = base_information.name  # type: str
         self.dependencies = base_information.dependencies  # type: List[str]
-        self.sources = base_information.sources  # type: Sources
+        self.sources = base_information.sources  # type: filesystem.Sources
         self.base_module = base_information.base_module  # type: Optional[str]
 
     def __str__(self) -> str:
