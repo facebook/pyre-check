@@ -553,6 +553,10 @@ let float =
   Primitive "float"
 
 
+let number =
+  Primitive "numbers.Number"
+
+
 let generator ?(async=false) parameter =
   let none = Optional Bottom in
   if async then

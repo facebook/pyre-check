@@ -1,0 +1,151 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.bool_parameter",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 25,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.bool_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 13,
+              "start": 24,
+              "end": 26
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.float_parameter",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 21,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.float_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 9,
+              "start": 24,
+              "end": 26
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.int_parameter",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 17,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "breadcrumbs.int_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "breadcrumbs.py",
+              "line": 5,
+              "start": 24,
+              "end": 26
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "type": "scalar" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

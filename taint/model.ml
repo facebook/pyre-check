@@ -24,7 +24,7 @@ type t = {
 [@@deriving show, sexp]
 
 
-type breadcrumbs = Breadcrumb.t list
+type breadcrumbs = Features.Breadcrumb.t list
 [@@deriving show, sexp]
 
 
@@ -47,7 +47,7 @@ let raise_invalid_model message =
 let add_breadcrumbs breadcrumbs init =
   List.fold
     breadcrumbs
-    ~f:(fun set breadcrumb -> SimpleFeatures.Breadcrumb breadcrumb :: set)
+    ~f:(fun set breadcrumb -> Features.Simple.Breadcrumb breadcrumb :: set)
     ~init
 
 
@@ -149,7 +149,7 @@ let rec parse_annotations ~configuration annotation =
     let open Configuration in
     match expression.Node.value with
     | Access (SimpleAccess [Identifier breadcrumb]) ->
-        [Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
+        [Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions ->
         List.concat_map ~f:extract_breadcrumbs expressions
     | _ ->

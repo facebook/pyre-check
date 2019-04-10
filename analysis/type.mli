@@ -144,6 +144,7 @@ val list: t -> t
 val meta: t -> t
 val named_tuple: t
 val none: t
+val number: t
 val object_primitive: t
 val optional: t -> t
 val sequence: t -> t

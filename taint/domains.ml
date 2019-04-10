@@ -186,87 +186,12 @@ end
 module TraceInfoSet = AbstractElementSetDomain.Make(TraceInfo)
 
 
-module Breadcrumb = struct
-  type first_kind =
-    | FirstField
-    | FirstIndex
-  [@@deriving show, sexp, compare]
-
-  type t =
-    (* Used to determine 'foo' from request.foo and request.GET['foo'] *)
-    | First of { kind: first_kind; name: string }
-    | HasFirst of first_kind
-    | Obscure
-    | SimpleVia of string  (* Declared breadcrumbs *)
-    | Tito
-  [@@deriving show, sexp, compare]
-
-  let to_json = function
-    | First { name; kind = FirstField } ->
-        `Assoc ["first-field", `String name ]
-    | First { name; kind = FirstIndex } ->
-        `Assoc ["first-index", `String name ]
-    | HasFirst FirstField ->
-        `Assoc ["has", `String "first-field"]
-    | HasFirst FirstIndex ->
-        `Assoc ["has", `String "first-index"]
-    | Obscure ->
-        `Assoc ["via", `String "obscure" ]
-    | SimpleVia name ->
-        `Assoc ["via", `String name ]
-    | Tito ->
-        `Assoc ["via", `String "tito" ]
-
-  let simple_via ~allowed name =
-    if List.mem allowed name ~equal:String.equal then
-      SimpleVia name
-    else
-      Format.sprintf "Unrecognized Via annotation `%s`" name
-      |> failwith
-
-end
-
-
-(* Simple set of features that are unrelated, thus cheap to maintain *)
-module SimpleFeatures = struct
-  type t =
-    | LeafName of string
-    | TitoPosition of Location.Reference.t
-    | Breadcrumb of Breadcrumb.t
-  [@@deriving show, sexp, compare]
-end
-module SimpleFeatureSet = AbstractSetDomain.Make(SimpleFeatures)
-
-
-(* Set of complex features, where element can be abstracted and joins are
-   expensive. Should only be used for elements that need this kind of
-   joining.
-*)
-module ComplexFeatures = struct
-  type t =
-    | ReturnAccessPath of AbstractTreeDomain.Label.path
-  [@@deriving show, sexp, compare]
-
-  let less_or_equal ~left ~right =
-    match left, right with
-    | ReturnAccessPath left_path, ReturnAccessPath right_path ->
-        AbstractTreeDomain.Label.is_prefix ~prefix:right_path left_path
-
-  let widen set =
-    if List.length set > 3 then
-      [ReturnAccessPath []]
-    else
-      set
-end
-module ComplexFeatureSet = AbstractElementSetDomain.Make(ComplexFeatures)
-
-
 module FlowDetails = struct
   module Slots = struct
     type 'a slot =
       | TraceInfo: TraceInfoSet.t slot
-      | SimpleFeature: SimpleFeatureSet.t slot
-      | ComplexFeature: ComplexFeatureSet.t slot
+      | SimpleFeature: Features.SimpleSet.t slot
+      | ComplexFeature: Features.ComplexSet.t slot
 
     let slot_name (type a) (slot: a slot) =
       match slot with
@@ -277,8 +202,8 @@ module FlowDetails = struct
     let slot_domain (type a) (slot: a slot) =
       match slot with
       | TraceInfo -> (module TraceInfoSet : AbstractDomain.S with type t = a)
-      | SimpleFeature -> (module SimpleFeatureSet : AbstractDomain.S with type t = a)
-      | ComplexFeature -> (module ComplexFeatureSet : AbstractDomain.S with type t = a)
+      | SimpleFeature -> (module Features.SimpleSet : AbstractDomain.S with type t = a)
+      | ComplexFeature -> (module Features.ComplexSet : AbstractDomain.S with type t = a)
   end
 
   include AbstractProductDomain.Make(Slots)
@@ -288,18 +213,18 @@ module FlowDetails = struct
     ]
 
   let trace_info = ProductSlot (Slots.TraceInfo, TraceInfoSet.Element)
-  let simple_feature = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Element)
-  let simple_feature_set = ProductSlot (Slots.SimpleFeature, SimpleFeatureSet.Set)
+  let simple_feature = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.Element)
+  let simple_feature_set = ProductSlot (Slots.SimpleFeature, Features.SimpleSet.Set)
 
   let gather_leaf_names accumulator = function
-    | SimpleFeatures.LeafName name ->
+    | Features.Simple.LeafName name ->
         name :: accumulator
     | Breadcrumb _
     | TitoPosition _ ->
         accumulator
 
-  let complex_feature = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Element)
-  let complex_feature_set = ProductSlot (Slots.ComplexFeature, ComplexFeatureSet.Set)
+  let complex_feature = ProductSlot (Slots.ComplexFeature, Features.ComplexSet.Element)
+  let complex_feature_set = ProductSlot (Slots.ComplexFeature, Features.ComplexSet.Set)
 
 end
 
@@ -310,10 +235,10 @@ module type TAINT_DOMAIN = sig
   type leaf
   val leaf: leaf AbstractDomain.part
   val trace_info: TraceInfo.t AbstractDomain.part
-  val simple_feature: SimpleFeatures.t AbstractDomain.part
-  val simple_feature_set: SimpleFeatures.t list AbstractDomain.part
-  val complex_feature: ComplexFeatures.t AbstractDomain.part
-  val complex_feature_set: ComplexFeatures.t list AbstractDomain.part
+  val simple_feature: Features.Simple.t AbstractDomain.part
+  val simple_feature_set: Features.Simple.t list AbstractDomain.part
+  val complex_feature: Features.Complex.t AbstractDomain.part
+  val complex_feature_set: Features.Complex.t list AbstractDomain.part
 
   (* Add trace info at call-site *)
   val apply_call:
@@ -375,7 +300,7 @@ end = struct
       let leaf_kind_json = `String (Leaf.show leaf) in
       let breadcrumbs, tito_positions, leaf_json =
         let gather_json (breadcrumbs, tito, leaves) = function
-          | SimpleFeatures.LeafName name ->
+          | Features.Simple.LeafName name ->
               (breadcrumbs, tito, `Assoc ["kind", leaf_kind_json; "name", `String name] :: leaves)
           | TitoPosition location ->
               let tito_location_json =
@@ -384,11 +309,11 @@ end = struct
               in
               (breadcrumbs, tito_location_json :: tito, leaves)
           | Breadcrumb breadcrumb ->
-              let breadcrumb_json = Breadcrumb.to_json breadcrumb in
+              let breadcrumb_json = Features.Breadcrumb.to_json breadcrumb in
               (breadcrumb_json :: breadcrumbs, tito, leaves)
         in
         let gather_return_access_path leaves = function
-          | ComplexFeatures.ReturnAccessPath path ->
+          | Features.Complex.ReturnAccessPath path ->
               let path_name = AbstractTreeDomain.Label.show_path path in
               `Assoc ["kind", leaf_kind_json; "name", `String path_name] :: leaves
         in
@@ -453,7 +378,8 @@ end = struct
     if needs_leaf_name then
       let add_leaf_names info_set =
         let add_leaf_name info_set callee =
-          SimpleFeatures.LeafName (Interprocedural.Callable.external_target_name callee) :: info_set
+          Features.Simple.LeafName (Interprocedural.Callable.external_target_name callee)
+          :: info_set
         in
         List.fold callees ~f:add_leaf_name ~init:info_set
       in
@@ -498,7 +424,7 @@ module MakeTaintTree(Taint : TAINT_DOMAIN)() = struct
     in
     let essential_complex_features set =
       let simplify_feature = function
-        | ComplexFeatures.ReturnAccessPath _ -> None
+        | Features.Complex.ReturnAccessPath _ -> None
       in
       List.filter_map ~f:simplify_feature set
     in
@@ -526,7 +452,7 @@ module MakeTaintEnvironment(Taint : TAINT_DOMAIN)() = struct
               ancestors
               ~f:FlowDetails.gather_leaf_names
               ~init:[]
-            |> List.map ~f:(fun name -> SimpleFeatures.LeafName name)
+            |> List.map ~f:(fun name -> Features.Simple.LeafName name)
           in
           let join_ancestor_leaf_names leaves =
             leaves @ ancestor_leaf_names
@@ -590,5 +516,5 @@ let local_return_taint =
   BackwardTaint.create [
     Part (BackwardTaint.leaf, Sinks.LocalReturn);
     Part (BackwardTaint.trace_info, TraceInfo.Declaration);
-    Part (BackwardTaint.complex_feature, ComplexFeatures.ReturnAccessPath [])
+    Part (BackwardTaint.complex_feature, Features.Complex.ReturnAccessPath [])
   ]

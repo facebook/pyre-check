@@ -447,12 +447,15 @@ let test_integration _ =
   in
   let run_test path =
     let check_expectation ~suffix actual =
-      let output_filename ~suffix =
-        Path.with_suffix path ~suffix:(suffix ^ ".actual")
+      let output_filename ~suffix ~initial =
+        if initial then
+          Path.with_suffix path ~suffix:suffix
+        else
+          Path.with_suffix path ~suffix:(suffix ^ ".actual")
       in
-      let write_output ~suffix content =
+      let write_output ~suffix ?(initial=false) content =
         try
-          output_filename ~suffix
+          output_filename ~suffix ~initial
           |> File.create ~content
           |> File.write
         with Unix.Unix_error _ ->
@@ -460,7 +463,7 @@ let test_integration _ =
       in
       let remove_old_output ~suffix =
         try
-          output_filename ~suffix
+          output_filename ~suffix ~initial:false
           |> Path.show
           |> Sys.remove
         with Sys_error _ ->
@@ -472,25 +475,28 @@ let test_integration _ =
           Path.with_suffix path ~suffix
           |> File.create
           |> File.content
-          |> (fun content -> Option.value_exn content)
         with Unix.Unix_error _ ->
-          ""
+          None
       in
-      let expected = get_expected ~suffix in
-      if String.equal expected actual then
-        remove_old_output ~suffix
-      else begin
-        write_output ~suffix actual;
-        Printf.printf "Expectations differ for %s %s\n" suffix (Path.show path);
-        assert_bool
-          (Format.asprintf
-             "Expectations differ for %s %s\n%a"
-             suffix
-             (Path.show path)
-             (Test.diff ~print:String.pp)
-             (expected, actual))
-          false
-      end
+      match get_expected ~suffix with
+      | None ->
+          (* expected file does not exist, create it *)
+          write_output ~suffix actual ~initial:true
+      | Some expected ->
+          if String.equal expected actual then
+            remove_old_output ~suffix
+          else begin
+            write_output ~suffix actual;
+            Printf.printf "Expectations differ for %s %s\n" suffix (Path.show path);
+            assert_bool
+              (Format.asprintf
+                 "Expectations differ for %s %s\n%a"
+                 suffix
+                 (Path.show path)
+                 (Test.diff ~print:String.pp)
+                 (expected, actual))
+              false
+          end
     in
     let serialized_models =
       let source =
