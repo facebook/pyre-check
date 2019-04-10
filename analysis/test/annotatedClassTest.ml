@@ -1261,7 +1261,7 @@ let test_constraints _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
     let target =
-      let { Source.statements; _ } = parse source in
+      let { Source.statements; _ } = parse ~convert:true source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
           when Reference.show name = target ->
@@ -1515,7 +1515,7 @@ let test_constraints _ =
 
 let test_inferred_generic_base _ =
   let assert_inferred_generic ~target source expected =
-    let ({ Source.statements; _ } as source) = parse source in
+    let ({ Source.statements; _ } as source) = parse ~convert:true source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
@@ -1596,7 +1596,7 @@ let test_inferred_generic_base _ =
 
 let test_metaclasses _ =
   let assert_metaclass ~source ~target metaclass =
-    let ({ Source.statements; _ } as source) = parse source in
+    let ({ Source.statements; _ } as source) = parse ~convert:true source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }

@@ -82,7 +82,7 @@ let parse_untrimmed
     ?(silent = false)
     ?(docstring = None)
     ?(ignore_lines = [])
-    ?(convert = true)
+    ?(convert = false)
     source =
   let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
@@ -149,7 +149,7 @@ let parse
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
-    ?(convert = true)
+    ?(convert = false)
     source =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
@@ -181,14 +181,19 @@ let parse_list named_sources =
 
 
 let parse_single_statement ?(preprocess = false) source =
-  let preprocess = if preprocess then Preprocessing.preprocess else Fn.id in
-  match preprocess (parse source)  with
+  let source =
+    if preprocess then
+      Preprocessing.preprocess (parse source)
+    else
+      parse ~convert:true source
+  in
+  match source with
   | { Source.statements = [statement]; _ } -> statement
   | _ -> failwith "Could not parse single statement"
 
 
 let parse_last_statement source =
-  match parse source with
+  match parse ~convert:true source with
   | { Source.statements; _ } when List.length statements > 0 ->
       List.last_exn statements
   | _ -> failwith "Could not parse last statement"
@@ -273,11 +278,13 @@ let assert_type_equal =
 
 let add_defaults_to_environment ~configuration environment_handler =
   let source =
-    parse {|
-      class unittest.mock.Base: ...
-      class unittest.mock.Mock(unittest.mock.Base): ...
-      class unittest.mock.NonCallableMock: ...
-    |};
+    parse
+      ~convert:true
+      {|
+        class unittest.mock.Base: ...
+        class unittest.mock.Mock(unittest.mock.Base): ...
+        class unittest.mock.NonCallableMock: ...
+      |};
   in
   Service.Environment.populate
     ~configuration
@@ -692,7 +699,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           digest_size: int
         def md5(input: _DataType) -> _Hash: ...
       |}
-    |> Preprocessing.qualify;
+    |> Preprocessing.qualify
+    |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "typing")
       ~handle:"typing.pyi"
@@ -825,13 +833,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         @overload
         def cast(tp: str, obj: Any) -> Any: ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
       ~qualifier:Reference.empty
       ~handle:"builtins.pyi"
       builtins
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
@@ -840,7 +850,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
@@ -854,7 +865,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         environ: typing.Dict[str, str] = ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
@@ -864,7 +876,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_call(command, shell): ...
         def check_output(command, shell): ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
@@ -875,7 +888,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         class ABC(metaclass=ABCMeta): ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
@@ -898,7 +912,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           class IntFlag(int, Flag):  # type: ignore
             pass
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "threading")
       ~handle:"threading.pyi"
@@ -906,7 +921,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Thread:
           pass
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
@@ -915,7 +931,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
@@ -997,7 +1014,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def copy(self: _DefaultDictT) -> _DefaultDictT:
                 ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
@@ -1009,14 +1027,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def asynccontextmanager(func: Any) -> Any:
             ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
     parse
       ~qualifier:(Reference.create "taint")
       ~handle:"taint.pyi"
       {|
         __global_sink: Any = ...
       |}
-    |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses;
   ]
 
 

@@ -1650,8 +1650,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~qualifier:(!&"a") a_source;
-        parse ~handle:"b.py" ~qualifier:(!&"b") b_source;
+        parse ~convert:true ~handle:"a.py" ~qualifier:(!&"a") a_source;
+        parse ~convert:true ~handle:"b.py" ~qualifier:(!&"b") b_source;
       ]
     in
     List.zip_exn handles sources

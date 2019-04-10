@@ -47,7 +47,7 @@ let populate_with_sources ?(environment = create_environment ()) sources =
 
 
 let populate ?(environment = create_environment ()) ?handle ?qualifier source =
-  populate_with_sources ~environment [parse ?handle ?qualifier source]
+  populate_with_sources ~environment [parse ~convert:true ?handle ?qualifier source]
 
 
 let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifier source =
@@ -98,7 +98,9 @@ let test_register_class_definitions _ =
   let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   Environment.register_class_definitions
     (module Handler)
-    (parse {|
+    (parse
+      ~convert:true
+      {|
        class C:
          ...
        class D(C):
@@ -121,7 +123,9 @@ let test_register_class_definitions _ =
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
-      (parse {|
+      (parse
+        ~convert:true
+        {|
          class C:
            ...
        |})
@@ -134,7 +138,7 @@ let test_register_class_definitions _ =
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
-      (parse "class int: pass")
+      (parse ~convert:true "class int: pass")
   in
   assert_equal
     ~cmp:Type.Set.equal
@@ -149,6 +153,7 @@ let test_register_class_metadata _ =
   in
   let source =
     parse
+      ~convert:true
       {|
        class A: pass
        class B(A): pass
@@ -605,7 +610,9 @@ let test_connect_type_order _ =
   in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
-    parse {|
+    parse
+      ~convert:true
+      {|
        class C:
          ...
        class D(C):
@@ -1470,7 +1477,7 @@ let test_purge _ =
   Test.populate
     ~configuration
     handler
-    [parse ~handle:"test.py" source];
+    [parse ~convert:true ~handle:"test.py" source];
   assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   let dependencies handle =

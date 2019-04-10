@@ -1026,6 +1026,15 @@ let rec convert_to_old_access { Node.location; value } =
         Starred (Starred.Once (convert_to_old_access expression)) |> Option.some, []
     | Starred (Starred.Twice expression) ->
         Starred (Starred.Twice (convert_to_old_access expression)) |> Option.some, []
+    | String { StringLiteral.value; kind } ->
+        let kind =
+          match kind with
+          | StringLiteral.Format expressions ->
+              StringLiteral.Format (List.map expressions ~f:convert_to_old_access)
+          | _ ->
+              kind
+        in
+        String { StringLiteral.value; kind } |> Option.some, []
     | Ternary { Ternary.target; test; alternative } ->
         Ternary {
           Ternary.target = convert_to_old_access target;

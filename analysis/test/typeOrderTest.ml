@@ -3068,7 +3068,7 @@ let test_solve_less_or_equal _ =
         Test.populate
           ~configuration
           (Environment.handler environment)
-          (parse source :: typeshed_stubs ());
+          (parse ~convert:true source :: typeshed_stubs ());
         environment
       in
       Environment.handler environment

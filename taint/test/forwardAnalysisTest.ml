@@ -40,7 +40,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
   let environment =
     let models =
       models
-      >>| (fun model -> [Test.parse model])
+      >>| (fun model -> [Test.parse ~convert:true model])
       |> Option.value ~default:[]
     in
     let environment =

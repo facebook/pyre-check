@@ -59,7 +59,7 @@ let assert_backward precondition statement postcondition =
       ~pp_diff:(diff ~print:State.pp)
   in
   let parsed =
-    (parse statement)
+    (parse ~convert:true statement)
     |> function
     | { Source.statements = statements; _ } -> statements
   in

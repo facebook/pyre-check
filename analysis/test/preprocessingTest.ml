@@ -62,8 +62,8 @@ let test_expand_string_annotations _ =
     let parse =
       parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
     assert_source_equal
-      (parse ~convert:false expected)
-      (Preprocessing.expand_string_annotations (parse ~convert:false source))
+      (parse expected)
+      (Preprocessing.expand_string_annotations (parse source))
   in
 
   assert_expand
@@ -168,13 +168,14 @@ let test_expand_format_string _ =
     "f'foo{1+2}'"
     "foo{1+2}"
     [
-      +Access
-        (ExpressionAccess {
-            expression = +Integer 1;
-            access = [
-              Access.Identifier "__add__";
-              Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-            ]});
+      +Call {
+        callee = +Name (
+          Name.Attribute {
+            base = +Integer 1;
+            attribute = "__add__";
+          });
+        arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+      }
     ];
 
   (* Ensure we fix up locations. *)
@@ -210,7 +211,9 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
+    let parse =
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle
+    in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -1351,8 +1354,8 @@ let test_replace_platform_specific_code _ =
 let test_expand_type_checking_imports _ =
   let assert_expanded source expected =
     assert_source_equal
-      (parse ~convert:false expected)
-      (Preprocessing.expand_type_checking_imports (parse ~convert:false source))
+      (parse expected)
+      (Preprocessing.expand_type_checking_imports (parse source))
   in
   assert_expanded
     {|
@@ -1504,12 +1507,12 @@ let test_expand_wildcard_imports _ =
 let test_expand_implicit_returns _ =
   let assert_expand source expected =
     assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_implicit_returns (parse source))
+      (parse ~convert:true expected)
+      (Preprocessing.expand_implicit_returns (parse ~convert:true source))
   in
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
-      (Preprocessing.expand_implicit_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse ~convert:true source))
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
@@ -1773,6 +1776,7 @@ let test_classes _ =
 
 let test_replace_mypy_extensions_stub _ =
   let given = parse
+      ~convert:true
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
@@ -1788,6 +1792,7 @@ let test_replace_mypy_extensions_stub _ =
     |}
   in
   let expected = parse
+      ~convert:true
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
@@ -1806,14 +1811,18 @@ let test_replace_mypy_extensions_stub _ =
 
 let test_expand_typed_dictionaries _ =
   let assert_expand ?(qualifier = Reference.empty) source expected =
+    let expected =
+      parse ~qualifier expected
+      |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses
+    in
     let actual =
       parse ~qualifier source
       |> Preprocessing.qualify
+      |> Preprocessing.convert_to_old_accesses
       |> Preprocessing.expand_typed_dictionary_declarations
     in
-    assert_source_equal
-      (Preprocessing.qualify (parse ~qualifier expected))
-      actual
+    assert_source_equal expected actual
   in
   assert_expand
     {|
@@ -1948,15 +1957,14 @@ let test_expand_typed_dictionaries _ =
   ()
 
 
-
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
-    let parse source =
+    let parse ~convert source =
       let handle = File.Handle.create "test.py" in
-      parse ~qualifier:(Source.qualifier ~handle) source
+      parse ~convert ~qualifier:(Source.qualifier ~handle) source
     in
-    let parsed = source |> parse in
-    let expected = expected >>| parse in
+    let parsed = source |> parse ~convert:false in
+    let expected = expected >>| parse ~convert:true in
     let printer source =
       source
       >>| Format.asprintf "%a" Source.pp

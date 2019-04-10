@@ -76,7 +76,7 @@ let list_orderless_equal left right =
 let test_initial _ =
   let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
     let resolution =
-      parse environment
+      parse ~convert:true environment
       |> (fun source -> source :: (Test.typeshed_stubs ()))
       |> (fun sources -> Test.resolution ~sources ())
     in
@@ -257,7 +257,9 @@ let test_widen _ =
 
 let test_check_annotation _ =
   let assert_check_annotation source expression descriptions =
-    let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) () in
+    let resolution =
+      Test.resolution ~sources:(parse ~convert:true source :: Test.typeshed_stubs ()) ()
+    in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
     let errors = List.map ~f:(Error.description ~show_error_traces:false) (Set.to_list errors) in
@@ -343,6 +345,7 @@ let test_redirect _ =
         | Some source ->
             [
               parse
+                ~convert:true
                 ~qualifier:Reference.empty
                 ~handle:"source.pyi"
                 source
@@ -431,6 +434,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
+            ~convert:true
             ~qualifier:(!&qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
@@ -1262,6 +1266,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
+        ~convert:true
         ~qualifier:(!&"os")
         {|
           sep: str = '/'
@@ -1274,6 +1279,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
+        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1287,6 +1293,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
+        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1302,6 +1309,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
+        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1316,6 +1324,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
+        ~convert:true
         ~qualifier:(!&"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
@@ -1336,7 +1345,10 @@ let test_forward_access _ =
       { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.integer; element = Attribute "attribute" };
       {
-        annotation = parse_annotation ~resolution "typing.Callable('int.__add__')[[Named(other, int)], int]";
+        annotation =
+          parse_annotation
+            ~resolution
+            "typing.Callable('int.__add__')[[Named(other, int)], int]";
         element = Attribute "__add__";
       };
       {
@@ -2013,31 +2025,37 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
+          ~convert:true
           ~qualifier:(!&"loop.b")
           {|
             b: int = 1
           |};
         parse
+          ~convert:true
           ~qualifier:(!&"loop.a")
           {|
             from loop.b import b
           |};
         parse
+          ~convert:true
           ~qualifier:(!&"loop")
           {|
             from loop.a import b
           |};
         parse
+          ~convert:true
           ~qualifier:(!&"no_loop.b")
           {|
             b: int = 1
           |};
         parse
+          ~convert:true
           ~qualifier:(!&"no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
+          ~convert:true
           ~qualifier:(!&"no_loop")
           {|
             from no_loop.a import c
@@ -2075,7 +2093,8 @@ let test_object_callables _ =
             callable: typing.Callable[..., unknown][[..., int][..., str]] = ...
             submodule: Submodule[int] = ...
           |}
-        |> Preprocessing.qualify;
+        |> Preprocessing.qualify
+        |> Preprocessing.convert_to_old_accesses;
       ]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
@@ -2095,7 +2114,7 @@ let test_object_callables _ =
 let test_callable_selection _ =
   let assert_resolved source access annotation =
     assert_resolved
-      [parse source]
+      [parse ~convert:true source]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
@@ -2114,6 +2133,7 @@ let test_forward_expression _ =
     let expression =
       parse expression
       |> Preprocessing.expand_format_string
+      |> Preprocessing.convert_to_old_accesses
       |> function
       | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
           expression
@@ -2432,7 +2452,7 @@ let test_forward_statement _ =
       postcondition =
     let forwarded =
       let parsed =
-        parse statement
+        parse ~convert:true statement
         |> function
         | { Source.statements = statement::rest; _ } -> statement::rest
         | _ -> failwith "unable to parse test"
@@ -2918,7 +2938,7 @@ let test_forward _ =
       postcondition =
     let forwarded =
       let parsed =
-        parse statement
+        parse ~convert:true statement
         |> function
         | { Source.statements = statement::rest; _ } -> statement::rest
         | _ -> failwith "unable to parse test"
@@ -2945,7 +2965,7 @@ let test_coverage _ =
       TypeCheck.run
         ~configuration:Test.mock_configuration
         ~environment
-        ~source:(parse ~handle source)
+        ~source:(parse ~convert:true ~handle source)
       |> ignore;
       Coverage.get ~handle:(File.Handle.create handle)
       |> (fun coverage -> Option.value_exn coverage)

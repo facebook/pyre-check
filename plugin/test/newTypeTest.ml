@@ -16,7 +16,7 @@ let test_transform_ast _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let handle = File.Handle.create qualifier in
     let parse =
-      parse ~qualifier:(Source.qualifier ~handle)
+      parse ~convert:true ~qualifier:(Source.qualifier ~handle)
     in
     assert_source_equal
       (parse expected)

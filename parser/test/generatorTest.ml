@@ -14,7 +14,7 @@ open Test
 
 
 let assert_parsed_equal source statements =
-  let parsed_source = parse_untrimmed source in
+  let parsed_source = parse_untrimmed ~convert:true source in
   let module Visit = Visit.Make(struct
       type t = bool
 

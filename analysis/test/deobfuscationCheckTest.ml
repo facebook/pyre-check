@@ -16,14 +16,18 @@ let assert_deobfuscation source expected =
   let configuration = mock_configuration in
   let qualifier = !&"qualifier" in
   let actual =
-    let source = parse ~qualifier source in
+    let source = parse ~convert:true ~qualifier source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     DeobfuscationCheck.run ~configuration ~environment ~source
     |> function
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
-  assert_equal ~cmp:Source.equal ~printer:Source.show (parse ~qualifier expected) actual
+  assert_equal
+    ~cmp:Source.equal
+    ~printer:Source.show
+    (parse ~convert:true ~qualifier expected)
+    actual
 
 
 let test_forward _ =
