@@ -158,6 +158,19 @@ let test_transform_ast _ =
         class T(typing.NamedTuple):
           def T.__init__(self): ...
           T._fields: typing.Tuple[()] = ()
+    |};
+
+  (* TODO (T42893621): properly handle this case *)
+  assert_expand
+    {|
+      class Foo:
+        def __init__($parameter$self):
+          $parameter$self.t = typing.NamedTuple('T', 'a')
+    |}
+    {|
+      class Foo:
+        def __init__($parameter$self):
+          $parameter$self.t = typing.NamedTuple('T', 'a')
     |}
 
 

@@ -160,7 +160,9 @@ let transform_ast ({ Source.statements; _ } as source) =
           let name = Reference.from_access (Access.delocalize name) in
           begin
             match extract_attributes expression with
-            | Some attributes ->
+            | Some attributes
+              (* TODO (T42893621): properly handle the excluded case *)
+              when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$self") name) ->
                 let constructor = tuple_constructor ~parent:name ~location attributes in
                 let attributes = tuple_attributes ~parent:name ~location attributes in
                 Class {
@@ -170,7 +172,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                   decorators = [];
                   docstring = None;
                 }
-            | None ->
+            | _ ->
                 value
           end
       | Class ({ Class.name; bases; body; _ } as original) ->
