@@ -134,7 +134,12 @@
         "name": "forward",
         "roots": [
           {
-            "decl": null,
+            "root": {
+              "filename": "select.py",
+              "line": 4,
+              "start": 21,
+              "end": 28
+            },
             "leaves": [ { "kind": "UserControlled" } ],
             "features": [
               { "has": "first-field" },
@@ -289,7 +294,12 @@
         "name": "forward",
         "roots": [
           {
-            "decl": null,
+            "root": {
+              "filename": "select.py",
+              "line": 8,
+              "start": 21,
+              "end": 28
+            },
             "leaves": [ { "kind": "UserControlled" } ],
             "features": [
               { "has": "first-index" },

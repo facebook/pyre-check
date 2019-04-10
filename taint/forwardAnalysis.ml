@@ -60,8 +60,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let create ~existing_model parameters =
       (* Use primed sources to populate initial state of parameters *)
       let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
-      let prime_parameter state (parameter_root, name, _) =
-        let prime = ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint in
+      let prime_parameter state (parameter_root, name, original) =
+        let location = original.Node.location in
+        let prime =
+          ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
+          |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
+        in
         let root = AccessPath.Root.Variable name in
         let taint = ForwardState.assign ~root ~path:[] prime state.taint in
         { state with taint }
