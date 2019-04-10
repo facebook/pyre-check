@@ -1148,7 +1148,7 @@ let compute_dependencies
     ~configuration
     update_environment_with
     check =
-  let old_signature_hashes, new_signature_hashes, old_exports =
+  let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = File.Handle.Table.create () in
       let add_signature_hash file =
@@ -1171,19 +1171,6 @@ let compute_dependencies
     (* Clear and re-populate ASTs in shared memory. *)
     let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
 
-    (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
-       them to analyze possible dependencies. *)
-    let old_exports =
-      let old_exports = Reference.Table.create () in
-      let store_exports qualifier =
-        Ast.SharedMemory.Modules.get_exports ~qualifier
-        >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
-        |> ignore
-      in
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
-      |> List.iter ~f:store_exports;
-      old_exports
-    in
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
       List.filter
@@ -1205,9 +1192,8 @@ let compute_dependencies
       ~preprocessing_state:None
       ~files:update_environment_with
     |> ignore;
-
     let new_signature_hashes = signature_hashes ~default:(-1) in
-    old_signature_hashes, new_signature_hashes, old_exports
+    old_signature_hashes, new_signature_hashes
   in
 
   let dependents =
@@ -1218,55 +1204,22 @@ let compute_dependencies
       ~section:`Server
       "Handling type check request for files %a"
       Sexp.pp [%message (handles: File.Handle.t list)];
+    let signature_hash_changed handle =
+      (* If the hash is not found, then the handle was not part of
+         handles, hence its hash cannot have changed. *)
+      Hashtbl.find old_signature_hashes handle
+      >>= (fun old_hash ->
+          Hashtbl.find new_signature_hashes handle
+          >>| fun new_hash -> old_hash <> new_hash)
+      |> Option.value ~default:false
+    in
     let get_dependencies handle =
-      let signature_hash_changed =
-        (* If the hash is not found, then the handle was not part of
-           handles, hence its hash cannot have changed. *)
-        Hashtbl.find old_signature_hashes handle
-        >>= (fun old_hash ->
-            Hashtbl.find new_signature_hashes handle
-            >>| fun new_hash ->
-            old_hash <> new_hash)
-        |> Option.value ~default:false
-      in
-      let has_starred_import () =
-        let was_starred_import { Node.value; _ } =
-          (* Heuristic: if the list of exports for a module we import matches exactly
-             what that module exports, this was a starred import before preprocessing. *)
-          let open Statement in
-          match value with
-          | Import { Import.from = Some from; imports } ->
-              begin
-                let check_against_imports ~exports =
-                  let import_names = List.map imports ~f:(fun { Import.name; _ } -> name ) in
-                  List.equal ~equal:Reference.equal import_names exports
-                in
-                match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
-                | Some exports ->
-                    check_against_imports ~exports
-                | _ ->
-                    Hashtbl.find old_exports from
-                    >>| (fun exports -> check_against_imports ~exports)
-                    |> Option.value ~default:false
-              end
-          | _ ->
-              false
-        in
-
-        Ast.SharedMemory.Sources.get handle
-        >>| Source.statements
-        |> Option.value ~default:[]
-        |> List.exists ~f:was_starred_import
-      in
-      if signature_hash_changed or has_starred_import () then
-        let qualifier = Ast.Source.qualifier ~handle in
-        Handler.dependencies qualifier
-      else
-        None
+      Ast.Source.qualifier ~handle
+      |> Handler.dependencies
     in
     Dependencies.transitive_of_list
       ~get_dependencies
-      ~handles
+      ~handles:(List.filter handles ~f:signature_hash_changed)
     |> Fn.flip Set.diff (File.Handle.Set.of_list check)
   in
 

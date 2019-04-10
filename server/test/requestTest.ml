@@ -473,7 +473,17 @@ let test_process_type_check_request context =
     ]
     ~check:["b.py", "from a import *"]
     ~expected_errors:["b.py", []]
-    ~expected_deferred_state:["c.py"]
+    ~expected_deferred_state:[]
+    ();
+  assert_response
+    ~sources:[
+      "a.py", "var = 42";
+      "b.py", "from a import *";
+      "c.py", "from b import *";
+    ]
+    ~check:["a.py", "var = ''"]
+    ~expected_errors:["a.py", []]
+    ~expected_deferred_state:["b.py"; "c.py"]
     ();
 
   (* Check nonexistent handles. *)
@@ -670,8 +680,7 @@ let test_process_get_definition_request context =
 
 
 let () =
-  "request">:::
-  [
+  "request">:::[
     "generate_lsp_response">::test_generate_lsp_response;
     "process_client_shutdown_request">::test_process_client_shutdown_request;
     "process_type_query_request">::test_process_type_query_request;
