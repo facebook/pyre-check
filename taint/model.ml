@@ -259,7 +259,7 @@ let rec parse_annotations ~configuration annotation =
       |> raise_invalid_model
 
 
-let taint_parameter ~configuration model (root, _name, annotation) =
+let taint_parameter ~configuration model (root, _name, parameter) =
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs } ->
@@ -273,6 +273,7 @@ let taint_parameter ~configuration model (root, _name, annotation) =
     | Sanitize ->
         raise_invalid_model "Sanitize annotation must be in return position"
   in
+  let annotation = parameter.Node.value.Parameter.annotation in
   parse_annotations ~configuration annotation
   |> List.fold ~init:model ~f:add_to_model
 

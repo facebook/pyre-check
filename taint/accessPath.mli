@@ -19,7 +19,7 @@ module Root : sig
     | Variable of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
 
-  val normalize_parameters: 'a Parameter.t list -> (t * Identifier.t * 'a option) list
+  val normalize_parameters: 'a Parameter.t list -> (t * Identifier.t * 'a Parameter.t) list
 
   val parameter_name: t -> string option
 end

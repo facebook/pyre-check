@@ -22,7 +22,7 @@ module type FixpointState = sig
 
   val create:
     existing_model:TaintResult.call_model
-    -> (Root.t * Identifier.t * 'a option) list
+    -> (Root.t * Identifier.t * 'a Parameter.t) list
     -> t
 
 end

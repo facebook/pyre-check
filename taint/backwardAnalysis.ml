@@ -582,7 +582,8 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
       BackwardTaint.simple_feature_set
       ~f:(Features.add_type_breadcrumb ~resolution annotation)
   in
-  let split_and_simplify model (parameter, name, annotation) =
+  let split_and_simplify model (parameter, name, original) =
+    let annotation = original.Node.value.Parameter.annotation in
     let partition =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Fn.id
