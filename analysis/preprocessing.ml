@@ -1767,8 +1767,8 @@ let preprocess_steps ~force source =
   |> expand_type_checking_imports
   |> expand_wildcard_imports ~force
   |> qualify
-  |> convert_to_old_accesses
   |> expand_implicit_returns
+  |> convert_to_old_accesses
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
 

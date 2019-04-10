@@ -1507,12 +1507,12 @@ let test_expand_wildcard_imports _ =
 let test_expand_implicit_returns _ =
   let assert_expand source expected =
     assert_source_equal
-      (parse ~convert:true expected)
-      (Preprocessing.expand_implicit_returns (parse ~convert:true source))
+      (parse expected)
+      (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
-      (Preprocessing.expand_implicit_returns (parse ~convert:true source))
+      (Preprocessing.expand_implicit_returns (parse source))
       (Source.create ~handle:(File.Handle.create "test.py")
          [
            +Define {
@@ -1582,7 +1582,7 @@ let test_expand_implicit_returns _ =
     |}
     [
       +While {
-        While.test = !"derp";
+        While.test = +Name (Name.Identifier "derp");
         body = [+Pass];
         orelse = [];
       };
