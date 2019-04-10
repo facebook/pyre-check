@@ -692,8 +692,9 @@ let extract_source_model ~define ~resolution exit_taint =
 
 let run
     ~environment
-    ~define:({ Node.value = { Define.signature = { parameters; _}; _ }; _ } as define)
+    ~define
     ~existing_model =
+  let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } = define in
   let module Context = struct
     let definition = define
     let environment = environment
@@ -723,10 +724,19 @@ let run
       Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
 
     let return_sink =
+      let return_location =
+        match return_annotation with
+        | Some node -> node.Node.location
+        | None -> define.Node.location
+      in
       BackwardState.read
         ~root:AccessPath.Root.LocalResult
         ~path:[]
         existing_model.TaintResult.backward.sink_taint
+      |> BackwardState.Tree.apply_call
+        return_location
+        ~callees:[]
+        ~port:AccessPath.Root.LocalResult
   end
   in
   let module AnalysisInstance = AnalysisInstance(Context) in
