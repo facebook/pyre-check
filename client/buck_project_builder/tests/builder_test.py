@@ -8,7 +8,7 @@ import unittest
 from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
-from .. import Builder, BuilderException, Target, parser
+from .. import BuilderException, FastBuckBuilder, Target, parser
 from ..build_target import BuildTarget, PythonBinary, PythonLibrary
 from ..filesystem import Sources
 from .test_common import base
@@ -34,7 +34,7 @@ class BuilderTest(unittest.TestCase):
             self.fail("Expected BuilderException to be thrown.")
 
     def test_parse_target(self):
-        builder = Builder("/ROOT")
+        builder = FastBuckBuilder("/ROOT")
         self.assertEqual(builder._parse_target("//a:b"), Target("a", "b"))
 
         self.assert_raises_builder_exception(
@@ -66,7 +66,7 @@ class BuilderTest(unittest.TestCase):
         }
 
         with patch.object(parser.Parser, "parse_file", return_value=build_file):
-            builder = Builder("/ROOT")
+            builder = FastBuckBuilder("/ROOT")
 
             targets = builder.compute_targets_to_build(["//project:a"])
             self.assert_targets_equal(
@@ -105,9 +105,9 @@ class BuilderTest(unittest.TestCase):
                 expected_targets=["//project:f", "//project:g"],
             )
 
+            builder = FastBuckBuilder("/ROOT", fail_on_unbuilt_target=False)
             targets = builder.compute_targets_to_build(
-                ["//project:e", "//project:f", "//project:g"],
-                fail_on_unbuilt_target=False,
+                ["//project:e", "//project:f", "//project:g"]
             )
             self.assert_targets_equal(targets, ["//project:e"])
 
@@ -135,7 +135,7 @@ class BuilderTest(unittest.TestCase):
         with patch.object(
             parser.Parser, "parse_file", side_effect=build_file_mapping.get
         ):
-            builder = Builder("/ROOT")
+            builder = FastBuckBuilder("/ROOT")
 
             targets = builder.compute_targets_to_build(["//project1:a"])
             self.assert_targets_equal(
@@ -188,7 +188,7 @@ class BuilderTest(unittest.TestCase):
         with patch.object(
             parser.Parser, "parse_file", side_effect=build_file_mapping.get
         ):
-            builder = Builder("/ROOT")
+            builder = FastBuckBuilder("/ROOT")
 
             targets = builder.compute_targets_to_build(["//project1:"])
             self.assert_targets_equal(
@@ -243,7 +243,7 @@ class BuilderTest(unittest.TestCase):
         with patch.object(
             parser.Parser, "parse_file", side_effect=build_file_mapping.get
         ):
-            builder = Builder("/ROOT")
+            builder = FastBuckBuilder("/ROOT")
 
             with patch.object(
                 glob,
@@ -324,7 +324,7 @@ class BuilderTest(unittest.TestCase):
         with patch.object(
             parser.Parser, "parse_file", side_effect=build_file_mapping.get
         ):
-            builder = Builder("/ROOT")
+            builder = FastBuckBuilder("/ROOT")
 
             # Regular targets
             normalized_targets = builder._normalize_target("//project1:a")
@@ -415,15 +415,15 @@ class BuilderTest(unittest.TestCase):
                     "/ROOT/project2/**/TARGETS", recursive=True
                 )
 
-    def test_build_all_targets(self):
+    def test_build(self):
         with patch.object(
-            Builder, "compute_targets_to_build"
+            FastBuckBuilder, "compute_targets_to_build"
         ) as compute_targets_to_build:
             fake_targets = [MagicMock(), MagicMock(), MagicMock()]
             compute_targets_to_build.return_value = fake_targets
 
-            builder = Builder("/ROOT")
-            builder.build_all_targets(["//target:"], "/output")
+            builder = FastBuckBuilder("/ROOT", output_directory="/output")
+            builder.build(["//target:"])
 
             for fake_target in fake_targets:
                 fake_target.build.assert_called_once_with("/output")

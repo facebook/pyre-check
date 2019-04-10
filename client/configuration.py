@@ -136,6 +136,9 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
         self.strict = False  # type: bool
 
+        self.use_buck_builder = False  # type: bool
+        self.ignore_unbuilt_dependencies = False  # type: bool
+
         # Handle search path from multiple sources
         self._search_path = []
         if preserve_pythonpath:
@@ -437,6 +440,12 @@ class Configuration:
                 # We rely on the configuration SHA1 to make
                 if configuration.consume("saved_state"):
                     self.file_hash = configuration.file_hash
+
+                if configuration.consume("use_buck_builder", default=False):
+                    self.use_buck_builder = True
+
+                if configuration.consume("ignore_unbuilt_dependencies", default=False):
+                    self.ignore_unbuilt_dependencies = True
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()

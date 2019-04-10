@@ -9,6 +9,8 @@ import os
 from typing import List, Optional
 
 from .. import filesystem, monitor, project_files_monitor
+from ..buck_project_builder import BuilderException
+from ..buck_project_builder.parser import ParserException
 from .command import ExitCode
 from .reporting import Reporting
 
@@ -84,7 +86,15 @@ class Start(Reporting):
                         self._exit_code = ExitCode.FAILURE
                         return
 
-                    self._analysis_directory.prepare()
+                    try:
+                        self._analysis_directory.prepare()
+                    except (BuilderException, ParserException) as error:
+                        LOG.error(
+                            "Failure occurred while building Buck targets: %s", error
+                        )
+                        self._exit_code = ExitCode.FAILURE
+                        return
+
                     self._call_client(command=self.NAME).check()
 
                     try:  # TODO(T41488848) guard this block with a no_watchman check

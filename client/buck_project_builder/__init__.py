@@ -7,10 +7,12 @@
 
 import glob
 import os
+import tempfile
 from collections import deque
 from typing import Iterable, List, NamedTuple, Optional
 
 from . import parser
+from ..filesystem import BuckBuilder
 from .build_target import BuildTarget
 
 
@@ -23,27 +25,28 @@ class BuilderException(Exception):
         self.targets = targets or []  # type: List[str]
 
 
-class Builder(object):
-    def __init__(self, buck_root: str, build_file_name: str = "TARGETS") -> None:
+class FastBuckBuilder(BuckBuilder):
+    def __init__(
+        self,
+        buck_root: str,
+        build_file_name: str = "TARGETS",
+        fail_on_unbuilt_target: bool = True,
+        output_directory: Optional[str] = None,
+    ) -> None:
         self.buck_root = buck_root
         self.build_file_name = build_file_name
+        self.fail_on_unbuilt_target = fail_on_unbuilt_target
+        self.output_directory = output_directory
         self.parser = parser.Parser(buck_root, build_file_name)
 
-    def build_all_targets(
-        self,
-        targets: Iterable[str],
-        output_directory: str,
-        fail_on_unbuilt_target: bool = True,
-    ) -> None:
-        targets_to_build = self.compute_targets_to_build(
-            targets, fail_on_unbuilt_target=fail_on_unbuilt_target
-        )
+    def build(self, targets: Iterable[str]) -> Iterable[str]:
+        output_directory = self.output_directory or tempfile.mkdtemp(prefix="pyre_tmp_")
+        targets_to_build = self.compute_targets_to_build(targets)
         for target in targets_to_build:
             target.build(output_directory)
+        return [output_directory]
 
-    def compute_targets_to_build(
-        self, targets: Iterable[str], fail_on_unbuilt_target: bool = True
-    ) -> List[BuildTarget]:
+    def compute_targets_to_build(self, targets: Iterable[str]) -> List[BuildTarget]:
         """
             Compute the set of targets to build for the given targets using a
             breadth-first traversal.
@@ -75,7 +78,7 @@ class Builder(object):
             targets_to_parse.extend(new_targets)
             targets_seen.update(new_targets)
 
-        if targets_not_found and fail_on_unbuilt_target:
+        if targets_not_found and self.fail_on_unbuilt_target:
             raise BuilderException(
                 "Target(s) could not be built: {}".format(", ".join(targets_not_found)),
                 targets=targets_not_found,

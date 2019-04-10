@@ -3,10 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 from typing import List
 
+from ..buck_project_builder import BuilderException
+from ..buck_project_builder.parser import ParserException
 from .command import ExitCode
 from .reporting import Reporting
+
+
+LOG = logging.getLogger(__name__)
 
 
 class Check(Reporting):
@@ -41,7 +47,12 @@ class Check(Reporting):
         return flags
 
     def _run(self, retries: int = 1) -> None:
-        self._analysis_directory.prepare()
+        try:
+            self._analysis_directory.prepare()
+        except (BuilderException, ParserException) as error:
+            LOG.error("Failure occurred while building Buck targets: %s", error)
+            self._exit_code = ExitCode.FAILURE
+            return
 
         result = self._call_client(command="check")
         errors = self._get_errors(result)

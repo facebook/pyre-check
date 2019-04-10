@@ -13,7 +13,13 @@ from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, filesystem, resolve_analysis_directory
+from .. import (
+    buck,
+    buck_project_builder,
+    commands,
+    filesystem,
+    resolve_analysis_directory,
+)
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     AnalysisDirectory,
@@ -426,20 +432,42 @@ class FilesystemTest(unittest.TestCase):
         root = shared_analysis_directory.get_root()
         self.assertEqual(root, "/scratch/path/to/local")
 
+    @patch.object(tempfile, "mkdtemp", return_value="/tmp/pyre_tmp_xyz")
+    @patch.object(filesystem, "find_root", return_value="/buck_root")
     @patch("os.makedirs")
     @patch(filesystem_name + ".acquire_lock")
-    @patch.object(SharedAnalysisDirectory, "_clear")
-    @patch.object(SharedAnalysisDirectory, "_merge")
-    def test_prepare(self, merge, clear, acquire_lock, makedirs):
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="/analysis_root")
+    def test_prepare(self, get_root, acquire_lock, makedirs, find_root, mkdtemp):
         @contextmanager
         def acquire(*args, **kwargs):
             yield
 
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
-        acquire_lock.side_effect = acquire
-        shared_analysis_directory.prepare()
-        merge.assert_has_calls([call()])
-        clear.assert_has_calls([call()])
+        with patch.object(SharedAnalysisDirectory, "_clear") as clear, patch.object(
+            SharedAnalysisDirectory, "_merge"
+        ) as merge:
+            shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+            acquire_lock.side_effect = acquire
+            shared_analysis_directory.prepare()
+            merge.assert_has_calls([call()])
+            clear.assert_has_calls([call()])
+
+        with patch.object(
+            buck_project_builder.FastBuckBuilder,
+            "build",
+            return_value=["/tmp/pyre_tmp_xyz"],
+        ) as build, patch.object(
+            SharedAnalysisDirectory, "_clear"
+        ) as clear, patch.object(
+            SharedAnalysisDirectory, "_merge"
+        ) as merge:
+            buck_builder = buck_project_builder.FastBuckBuilder("/buck_root")
+            shared_analysis_directory = SharedAnalysisDirectory(
+                [], ["//target/..."], buck_builder=buck_builder
+            )
+            shared_analysis_directory.prepare()
+            build.assert_called_once_with({"//target/..."})
+            merge.assert_has_calls([call()])
+            clear.assert_has_calls([call()])
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")
@@ -451,9 +479,13 @@ class FilesystemTest(unittest.TestCase):
         arguments.build = False
         arguments.command = commands.Check
         arguments.current_directory = "/root/local"
+        arguments.use_buck_builder = False
+        arguments.ignore_unbuilt_dependencies = False
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.local_configuration_root = "/root/local"
+        configuration.use_buck_builder = False
+        configuration.ignore_unbuilt_dependencies = False
 
         with self.assertRaises(EnvironmentException):
             buck_builder = buck.SimpleBuckBuilder(build=False)

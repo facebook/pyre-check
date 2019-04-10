@@ -131,6 +131,16 @@ def main() -> int:
         action="store_true",
         help="Freshly build all the necessary artifacts.",
     )
+    buck_arguments.add_argument(
+        "--use-buck-builder",
+        action="store_true",
+        help="Use Pyre's experimental builder for Buck projects.",
+    )
+
+    # Let buck project builder succeed even with unbuilt dependencies.
+    buck_arguments.add_argument(
+        "--ignore-unbuilt-dependencies", action="store_true", help=argparse.SUPPRESS
+    )
 
     source_directories = parser.add_argument_group("source-directories")
     source_directories.add_argument(

@@ -250,6 +250,19 @@ class ConfigurationTest(unittest.TestCase):
             configuration = Configuration()
             self.assertEqual(configuration.typeshed, "TYPE/VERSION_HASH/SHED/")
 
+        # Test buck builder fields
+        json_load.side_effect = [
+            {"use_buck_builder": True, "ignore_unbuilt_dependencies": True},
+            {},
+        ]
+        configuration = Configuration()
+        self.assertTrue(configuration.use_buck_builder)
+        self.assertTrue(configuration.ignore_unbuilt_dependencies)
+        json_load.side_effect = [{}, {}]
+        configuration = Configuration()
+        self.assertFalse(configuration.use_buck_builder)
+        self.assertFalse(configuration.ignore_unbuilt_dependencies)
+
         # Test multiple definitions of the ignore_all_errors files.
         json_load.side_effect = [
             {"ignore_all_errors": ["buck-out/dev/gen"]},
