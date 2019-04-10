@@ -19,10 +19,10 @@ DictEntries = Dict[str, Any]
 
 def time_str(delta: timedelta):
     minutes, seconds = divmod(delta.total_seconds(), 60)
-    ret = f"{int(seconds)}s"
-    if minutes > 0.0:
-        ret = "{int(minutes)}m " + ret
-    return ret
+    seconds_string = f"{int(seconds)}s"
+    if minutes > 0:
+        return f"{int(minutes)}m {seconds_string}"
+    return seconds_string
 
 
 class PipelineStep(Generic[T_in, T_out], metaclass=ABCMeta):
