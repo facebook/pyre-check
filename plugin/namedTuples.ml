@@ -20,15 +20,17 @@ let transform_ast ({ Source.statements; _ } as source) =
         Node.location;
         value =
           Access
-            (SimpleAccess [
-                Access.Identifier module_name;
-                Access.Identifier named_tuple;
-                Access.Call { Node.value = arguments; _ };
-              ]);
-      } when (module_name = "typing" &&
-              named_tuple = "NamedTuple") ||
-             (module_name = "collections" &&
-              named_tuple = "namedtuple") ->
+            ((SimpleAccess [
+                 Access.Identifier "typing";
+                 Access.Identifier "NamedTuple";
+                 Access.Call { Node.value = arguments; _ };
+               ])
+            | (SimpleAccess [
+                  Access.Identifier "collections";
+                  Access.Identifier "namedtuple";
+                  Access.Call { Node.value = arguments; _ };
+                ]));
+      } ->
           let any_annotation =
             Node.create
               (Access (SimpleAccess (Access.create "typing.Any")))
@@ -181,7 +183,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                 Expression.Call.Argument.value = { Node.value = Access (SimpleAccess name); _ };
                 _;
               } ->
-                Access.show name = "typing.NamedTuple"
+                String.equal (Access.show name) "typing.NamedTuple"
             | _ ->
                 false
           in

@@ -10,6 +10,7 @@ open Pyre
 open PyreParser
 
 
+
 type 'success parse_result =
   | Success of 'success
   | SyntaxError of File.Handle.t
@@ -245,11 +246,16 @@ let find_stubs
       let typeshed_directories =
         let list_subdirectories typeshed_path =
           let root = Path.absolute typeshed_path in
-          if Core.Sys.is_directory root = `Yes then
+          let is_directory path =
+            match Core.Sys.is_directory path with
+            | `Yes -> true
+            | _ -> false
+          in
+          if is_directory root then
             match Core.Sys.ls_dir root with
             | entries ->
                 let select_directories sofar path =
-                  if Core.Sys.is_directory (root ^/ path) = `Yes &&
+                  if is_directory (root ^/ path) &&
                      not (String.equal path "tests") &&
                      not (String.is_prefix path ~prefix:".")
                   then
@@ -425,7 +431,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       in
       match relative with
       | Some handle ->
-          handle = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
+          String.equal handle "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
           not (Set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
       | _ ->
           true

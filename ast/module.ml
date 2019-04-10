@@ -101,7 +101,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           let export aliases { Import.name; alias } =
             let alias = Option.value alias ~default:name in
             let name =
-              if Reference.show alias = "*" then from else Reference.combine from name
+              if String.equal (Reference.show alias) "*" then from else Reference.combine from name
             in
             (* The problem this bit solves is that we may generate an alias prefix <- prefix.rest
                after qualification, which would cause an infinite loop when folding over
@@ -160,7 +160,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
             | { Node.value = Expression.String { value = name; _ }; _ } ->
                 Reference.create name
                 |> Reference.last
-                |> (fun last -> if last = "" then None else Some last)
+                |> (fun last -> if String.is_empty last then None else Some last)
                 >>| Reference.create
             | _ -> None
           in

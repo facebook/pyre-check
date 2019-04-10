@@ -10,6 +10,7 @@ open Expression
 open Statement
 
 
+
 let transform_ast ({ Source.statements; qualifier; _ } as source) =
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
@@ -20,8 +21,8 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
               Node.value =
                 Access
                   (SimpleAccess [
-                      Access.Identifier typing;
-                      Access.Identifier new_type;
+                      Access.Identifier "typing";
+                      Access.Identifier "NewType";
                       Access.Call {
                         Node.value = [
                           {
@@ -43,7 +44,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
               _;
             };
           _;
-        } when typing = "typing" && new_type = "NewType" ->
+        } ->
           let name = Reference.create ~prefix:qualifier name in
           let constructor =
             Define {

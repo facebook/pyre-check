@@ -120,9 +120,9 @@ let name reference =
         |> Node.create_with_default_location
     | identifier :: rest ->
         Name (Name.Attribute {
-          base = create rest;
-          attribute = identifier;
-        })
+            base = create rest;
+            attribute = identifier;
+          })
         |> Node.create_with_default_location
   in
   match create (List.rev reference) with
@@ -207,9 +207,9 @@ let is_empty =
 let rec is_prefix ~prefix reference =
   match prefix, reference with
   | [], _ -> true
-  | prefix_head :: prefix, _ when prefix_head = "" ->
+  | "" :: prefix, _ ->
       is_prefix ~prefix reference
-  | prefix_head :: prefix, head :: reference when prefix_head = head ->
+  | prefix_head :: prefix, head :: reference when String.equal prefix_head head ->
       is_prefix ~prefix reference
   | _ ->
       false
@@ -223,9 +223,9 @@ let rec is_strict_prefix ~prefix reference =
   match prefix, reference with
   | [], _ :: _ ->
       true
-  | prefix_head :: prefix, _ when prefix_head = "" ->
+  | "" :: prefix, _ ->
       is_strict_prefix ~prefix reference
-  | prefix_head :: prefix, head :: reference when prefix_head = head ->
+  | prefix_head :: prefix, head :: reference when String.equal prefix_head head ->
       is_strict_prefix ~prefix reference
   | _ ->
       false
