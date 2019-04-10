@@ -8,8 +8,8 @@
 import glob
 import os
 import tempfile
-from collections import deque
-from typing import Iterable, List, NamedTuple, Optional
+from collections import defaultdict, deque
+from typing import Iterable, List, Mapping, NamedTuple, Optional
 
 from . import parser
 from ..filesystem import BuckBuilder
@@ -84,6 +84,18 @@ class FastBuckBuilder(BuckBuilder):
                 targets=targets_not_found,
             )
         return build_targets
+
+    def compute_reverse_dependencies(
+        self, targets: Iterable[BuildTarget]
+    ) -> Mapping[str, Iterable[BuildTarget]]:
+        """
+            Compute the set of targets which depend on each target.
+        """
+        result = defaultdict(list)
+        for target in targets:
+            for dependency in target.dependencies:
+                result[dependency].append(target)
+        return result
 
     def _parse_target(self, target: str) -> Target:
         if target.endswith("...") or target.endswith(":"):

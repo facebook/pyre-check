@@ -299,6 +299,30 @@ class BuilderTest(unittest.TestCase):
                 targets = builder.compute_targets_to_build(["//project2/..."])
                 self.assert_targets_equal(targets, ["//project2:e", "//project1:b"])
 
+    def test_compute_reverse_dependencies(self):
+        # Dependency graph:
+        #    a
+        #  /  \
+        # b <- c
+        # |  /
+        # d      e
+        builder = FastBuckBuilder("/ROOT")
+
+        a = PythonBinary("/ROOT", "project", base("a", ["//project:b", "//project:c"]))
+        b = PythonLibrary("/ROOT", "project", base("b", ["//project:d"]))
+        c = PythonLibrary("/ROOT", "project", base("c", ["//project:b", "//project:d"]))
+        d = PythonLibrary("/ROOT", "project", base("d"))
+        e = PythonLibrary("/ROOT", "project", base("e"))
+
+        targets = [a, b, c, d, e]
+        reverse_dependencies = builder.compute_reverse_dependencies(targets)
+        self.assertDictEqual(
+            dict(reverse_dependencies),
+            {"//project:b": [a, c], "//project:c": [a], "//project:d": [b, c]},
+        )
+        self.assertEqual(reverse_dependencies["//project:a"], [])
+        self.assertEqual(reverse_dependencies["//project:e"], [])
+
     def test_normalize_targets(self):
         build_file_1 = MagicMock()
         build_file_1.targets = {
