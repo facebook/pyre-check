@@ -1562,8 +1562,16 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
       Assign {
-        target = node (Access (SimpleAccess (Access.create "TypedDict")));
-        annotation = Some (node (Access (SimpleAccess (Access.create "typing._SpecialForm"))));
+        target = node (Name (Name.Identifier "TypedDict"));
+        annotation = Some (
+          node (
+            Name (
+              Name.Attribute {
+                base = { Node.value = Name (Name.Identifier "typing"); location };
+                attribute = "_SpecialForm"
+              })
+          )
+        );
         value = node Ellipsis;
         parent = None;
       } |> node
@@ -1768,8 +1776,8 @@ let preprocess_steps ~force source =
   |> expand_wildcard_imports ~force
   |> qualify
   |> expand_implicit_returns
-  |> convert_to_old_accesses
   |> replace_mypy_extensions_stub
+  |> convert_to_old_accesses
   |> expand_typed_dictionary_declarations
 
 

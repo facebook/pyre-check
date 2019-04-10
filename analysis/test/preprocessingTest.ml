@@ -1776,7 +1776,6 @@ let test_classes _ =
 
 let test_replace_mypy_extensions_stub _ =
   let given = parse
-      ~convert:true
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
@@ -1792,7 +1791,6 @@ let test_replace_mypy_extensions_stub _ =
     |}
   in
   let expected = parse
-      ~convert:true
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
