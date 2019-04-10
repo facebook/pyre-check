@@ -2326,19 +2326,22 @@ let suppress ~mode ~resolution error =
   if Location.Instantiated.equal (Location.Instantiated.synthetic) (location error) then
     true
   else
-    match mode with
-    | Source.Infer ->
-        suppress_in_infer error
-    | Source.Strict ->
-        suppress_in_strict error
-    | Source.Declare ->
-        true
-    | Source.DefaultButDontCheck suppressed_codes
-      when List.exists suppressed_codes ~f:((=) (code error)) ->
-        true
-    | _ ->
-        suppress_in_default ~resolution error
-
+    try
+      match mode with
+      | Source.Infer ->
+          suppress_in_infer error
+      | Source.Strict ->
+          suppress_in_strict error
+      | Source.Declare ->
+          true
+      | Source.DefaultButDontCheck suppressed_codes
+        when List.exists suppressed_codes ~f:((=) (code error)) ->
+          true
+      | _ ->
+          suppress_in_default ~resolution error
+    with TypeOrder.Untracked annotation ->
+      Log.warning "`%s` not found in the type order." (Type.show annotation);
+      false
 
 let dequalify
     dequalify_map

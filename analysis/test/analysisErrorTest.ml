@@ -1235,7 +1235,16 @@ let test_suppress _ =
   assert_suppressed
     Source.Strict
     ~location:Location.Instantiated.synthetic
-    (missing_return Type.integer)
+    (missing_return Type.integer);
+  assert_suppressed
+    Source.Declare
+    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
+  assert_not_suppressed
+    Source.Default
+    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"));
+  assert_not_suppressed
+    Source.Strict
+    (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"))
 
 
 let () =
