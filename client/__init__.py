@@ -170,17 +170,18 @@ def resolve_analysis_directory(
             commands.Check,
             commands.Restart,
         ]
+        buck_builder = buck.SimpleBuckBuilder(build=build, prompt=prompt)
+
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
             targets=targets,
+            buck_builder=buck_builder,
             original_directory=arguments.original_directory,
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
             extensions=configuration.extensions,
             search_path=configuration.search_path,
             isolate=isolate,
-            build=build,
-            prompt=prompt,
         )
     return analysis_directory
 

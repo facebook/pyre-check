@@ -21,6 +21,15 @@ from .exceptions import EnvironmentException
 LOG = logging.getLogger(__name__)
 
 
+class BuckBuilder:
+    def build(self, targets: Iterable[str]) -> Iterable[str]:
+        """
+            Build the given targets, and return a list of output directories
+            containing the target output.
+        """
+        raise NotImplementedError
+
+
 def translate_path(root: str, path: str) -> str:
     if os.path.isabs(path):
         return path
@@ -135,8 +144,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         extensions: Optional[List[str]] = None,
         search_path: Optional[List[str]] = None,
         isolate: bool = False,
-        build: bool = False,
-        prompt: bool = False,
+        buck_builder: Optional[BuckBuilder] = None,
     ):
         self._source_directories = set(source_directories)
         self._targets = set(targets)
@@ -146,8 +154,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._extensions = set(extensions or []) | {"py", "pyi"}
         self._search_path = search_path or []
         self._isolate = isolate
-        self._build = build
-        self._prompt = prompt
+        self._buck_builder = buck_builder or buck.SimpleBuckBuilder()
 
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
@@ -177,9 +184,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     # Exposed for testing.
     def _resolve_source_directories(self):
         if self._targets:
-            new_source_directories = buck.generate_source_directories(
-                self._targets, build=self._build, prompt=self._prompt
-            )
+            new_source_directories = self._buck_builder.build(self._targets)
             original_directory = self._original_directory
             if original_directory is not None:
                 new_source_directories = translate_paths(

@@ -456,8 +456,13 @@ class FilesystemTest(unittest.TestCase):
         configuration.local_configuration_root = "/root/local"
 
         with self.assertRaises(EnvironmentException):
+            buck_builder = buck.SimpleBuckBuilder(build=False)
             analysis_directory = SharedAnalysisDirectory(
-                [], [], original_directory="/root", filter_paths=[], build=False
+                [],
+                [],
+                original_directory="/root",
+                filter_paths=[],
+                buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()
 
@@ -468,13 +473,13 @@ class FilesystemTest(unittest.TestCase):
             arguments.source_directories = ["arguments_source_directory"]
             configuration.source_directories = ["configuration_source_directory"]
 
+            buck_builder = buck.SimpleBuckBuilder(build=False, prompt=True)
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
                 original_directory="/root",
                 filter_paths=[],
-                build=False,
-                prompt=True,
+                buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(

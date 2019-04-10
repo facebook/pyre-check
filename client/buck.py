@@ -11,7 +11,7 @@ from collections import namedtuple
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
 from . import log
-from .filesystem import find_root
+from .filesystem import BuckBuilder, find_root
 
 
 LOG = logging.getLogger(__name__)
@@ -22,6 +22,21 @@ BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 class BuckException(Exception):
     pass
+
+
+class SimpleBuckBuilder(BuckBuilder):
+    def __init__(self, build: bool = True, prompt: bool = True) -> None:
+        self._build = build
+        self._prompt = prompt
+
+    def build(self, targets: Iterable[str]) -> Iterable[str]:
+        """
+            Shell out to buck to build the targets, then yield the paths to the
+            link trees.
+        """
+        return generate_source_directories(
+            targets, build=self._build, prompt=self._prompt
+        )
 
 
 def presumed_target_root(target):
