@@ -1364,7 +1364,11 @@ let process_type_check_files
       List.partition_tf ~f:is_stub update_environment_with
     in
     Log.info "Parsing %d updated stubs..." (List.length stubs);
-    let { Service.Parser.parsed = stubs; _ } =
+    let {
+      Service.Parser.parsed = stubs;
+      syntax_error = stub_syntax_errors;
+      system_error = stub_system_errors;
+    } =
       Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files:stubs
     in
     let sources =
@@ -1379,13 +1383,30 @@ let process_type_check_files
       List.filter ~f:keep sources
     in
     Log.info "Parsing %d updated sources..." (List.length sources);
-    let { Service.Parser.parsed = sources; _ } =
+    let {
+      Service.Parser.parsed = sources;
+      syntax_error = source_syntax_errors;
+      system_error = source_system_errors;
+    } =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler
         ~preprocessing_state:None
         ~files:sources
     in
+    let unparsed =
+      List.concat [
+        stub_syntax_errors;
+        stub_system_errors;
+        source_syntax_errors;
+        source_system_errors;
+      ]
+    in
+    if not (List.is_empty unparsed) then
+      Log.warning
+        "Unable to parse `%s`."
+        (List.map unparsed ~f:File.Handle.show
+         |> String.concat ~sep:", ");
     stubs @ sources
   in
   Log.log
