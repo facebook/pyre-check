@@ -54,7 +54,7 @@ class BuildTarget:
     def build(self, output_directory: str) -> None:
         source_directory = os.path.join(self.buck_root, self.build_file_directory)
         sources = filesystem.resolve_sources(source_directory, self.sources)
-        if self.base_module:
+        if self.base_module is not None:
             base_path = os.path.join(*self.base_module.split("."))
         else:
             base_path = self.build_file_directory

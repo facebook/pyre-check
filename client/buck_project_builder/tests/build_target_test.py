@@ -76,6 +76,25 @@ class BuildTargetTest(unittest.TestCase):
                 ]
             )
 
+        # Empty base_module should also work.
+        target = PythonLibrary(
+            "/ROOT",
+            "project",
+            base("library", sources=Sources(files=["a.py", "b.py"]), base_module=""),
+        )
+        with patch.object(
+            filesystem,
+            "resolve_sources",
+            return_value=["/ROOT/project/a.py", "/ROOT/project/b.py"],
+        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+            target.build("/out")
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/out/a.py", "/ROOT/project/a.py"),
+                    call("/out/b.py", "/ROOT/project/b.py"),
+                ]
+            )
+
     def test_build_python_unittest(self):
         target = PythonUnitTest(
             "/ROOT",
