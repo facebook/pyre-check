@@ -1150,6 +1150,7 @@ let compute_dependencies
     ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
     ~configuration
     files =
+  let timer = Timer.start () in
   let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = File.Handle.Table.create () in
@@ -1224,15 +1225,18 @@ let compute_dependencies
         ~handles:(List.filter handles ~f:signature_hash_changed)
       |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
     in
-    Statistics.event
-      ~name:"scheduled dependencies"
+    Statistics.performance
+      ~name:"Computed dependencies"
+      ~timer
       ~randomly_log_every:100
       ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
-      ~integers:["number of dependencies", File.Handle.Set.length deferred_files]
+      ~integers:[
+        "number of dependencies", File.Handle.Set.length deferred_files;
+        "number of files", List.length handles;
+      ]
       ();
     deferred_files
   in
-
   Log.log
     ~section:`Server
     "Inferred affected files: %a"
@@ -1300,27 +1304,11 @@ let process_type_check_files
   (* Compute requests we do not serve immediately. *)
   let deferred_state =
     if should_analyze_dependencies then
-      let timer = Timer.start () in
-      let result =
-        compute_dependencies
-          update_environment_with
-          ~state
-          ~configuration
+      compute_dependencies
+        update_environment_with
+        ~state
+        ~configuration
         |> fun files -> Deferred.add deferred_state ~files
-      in
-      begin
-        let handles =
-          List.map update_environment_with ~f:(File.handle ~configuration)
-          |> List.to_string ~f:File.Handle.show
-        in
-        Statistics.performance
-          ~randomly_log_every:1000
-          ~name:"Computed dependencies"
-          ~normals:["handles", handles]
-          ~timer
-          ();
-        result
-      end
     else
       deferred_state
   in
