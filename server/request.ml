@@ -1149,8 +1149,7 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
 let compute_dependencies
     ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
     ~configuration
-    update_environment_with
-    check =
+    files =
   let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = File.Handle.Table.create () in
@@ -1166,13 +1165,13 @@ let compute_dependencies
         with (File.NonexistentHandle _) ->
           Log.log ~section:`Server "Unable to get handle for %a" File.pp file
       in
-      List.iter update_environment_with ~f:add_signature_hash;
+      List.iter files ~f:add_signature_hash;
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
 
     (* Clear and re-populate ASTs in shared memory. *)
-    let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
+    let handles = List.map files ~f:(File.handle ~configuration) in
 
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
@@ -1186,14 +1185,14 @@ let compute_dependencies
     Ast.SharedMemory.Sources.remove ~handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
-      List.filter_map update_environment_with ~f:find_target
+      List.filter_map files ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Service.Parser.parse_sources
       ~configuration
       ~scheduler
       ~preprocessing_state:None
-      ~files:update_environment_with
+      ~files
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
@@ -1201,8 +1200,7 @@ let compute_dependencies
 
   let dependents =
     let handle file = File.handle file ~configuration in
-    let handles = List.map update_environment_with ~f:handle in
-    let check = List.map check ~f:handle in
+    let handles = List.map files ~f:handle in
     Log.log
       ~section:`Server
       "Handling type check request for files %a"
@@ -1224,7 +1222,7 @@ let compute_dependencies
       Dependencies.transitive_of_list
         ~get_dependencies
         ~handles:(List.filter handles ~f:signature_hash_changed)
-      |> Fn.flip Set.diff (File.Handle.Set.of_list check)
+      |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
     in
     Statistics.event
       ~name:"scheduled dependencies"
@@ -1306,7 +1304,6 @@ let process_type_check_files
       let result =
         compute_dependencies
           update_environment_with
-          check
           ~state
           ~configuration
         |> fun files -> Deferred.add deferred_state ~files
