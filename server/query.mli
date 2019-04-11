@@ -3,6 +3,7 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
 
-val command: Command.t
+exception InvalidQuery of string
+
+val parse_query: configuration: Configuration.Analysis.t -> string -> Protocol.Request.t

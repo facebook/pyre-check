@@ -418,7 +418,7 @@ let test_query context =
     |> Path.create_absolute
   in
   let assert_type_query_response ?handle ?qualifier ~source ~query response =
-    let query = Commands.Query.parse_query ~configuration:(configuration ~local_root) query in
+    let query = Query.parse_query ~configuration:(configuration ~local_root) query in
     assert_response
       ?handle
       ?qualifier

@@ -1,5 +1,6 @@
 (tests
  (names
+  queryTest
   requestTest
   operationsTest
   savedStateTest)

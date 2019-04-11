@@ -16,7 +16,6 @@
   codexGeneratorTest
   languageServerTest
   persistentClientTest
-  queryTest
   serverProtocolTest
   serverTest
   WatchmanTest)
