@@ -27,42 +27,28 @@ let record_overrides overrides =
   Reference.Map.iteri overrides ~f:record_override_edge
 
 
-let record_path_of_definitions ~path ~source =
+let callables ~resolution ~source =
   let defines = Preprocessing.defines ~include_stubs:true source in
-  let record_classes { Node.value = class_node; _ } =
-    (*
-    Log.info "Recording class %a -> %a"
-      Access.pp class_node.Class.name
-      File.Handle.pp path;
-    *)
-    Callable.add_class_definition class_node.Class.name path
-  in
   let record_toplevel_definition definition =
     let name = definition.Node.value.Define.signature.name in
     match definition.Node.value.Define.signature.parent with
     | None ->
-        (*
-        Log.info "Recording function %a -> %a"
-          Access.pp name
-          File.Handle.pp path;
-        *)
         (* Only record top-level definitions. *)
-        let () = Callable.add_function_definition name path in
         Callable.create_function name, definition
     | Some class_name ->
-        if not (Callable.class_exists class_name) then
-          begin
-            Log.error "Method's class non-existing";
-            Format.asprintf
-              "Class %a for method %a not found"
-              Reference.pp class_name
-              Reference.pp name
-            |> failwith
-          end
-        else
-          Callable.create_method name, definition
+        let class_exists =
+          Reference.expression class_name
+          |> Resolution.parse_annotation resolution
+          |> Resolution.class_definition resolution
+          |> Option.is_some
+        in
+        if not class_exists then
+          Log.warning
+            "Class %a for method %a is not part of the type environment"
+            Reference.pp class_name
+            Reference.pp name;
+        (Callable.create_method name, definition)
   in
-  List.iter ~f:record_classes (Preprocessing.classes source);
   List.map ~f:record_toplevel_definition defines
 
 
@@ -77,6 +63,8 @@ let analyze
     ~environment
     ~handles:paths
     () =
+  let resolution = TypeCheck.resolution environment () in
+
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =
@@ -150,7 +138,7 @@ let analyze
       Ast.SharedMemory.Sources.get path
       >>|
       (fun source ->
-         record_path_of_definitions ~path ~source
+         callables ~resolution ~source
          |> List.fold ~f:classify_source ~init:result)
       |> Option.value ~default:result
     in

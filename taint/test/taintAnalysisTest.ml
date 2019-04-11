@@ -99,7 +99,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
       ~source
   in
   let all_callables =
-    Service.StaticAnalysis.record_path_of_definitions ~path:handle ~source
+    Service.StaticAnalysis.callables ~resolution:(TypeCheck.resolution environment ()) ~source
     |> List.map ~f:(fun (callable, _define) -> (callable :> Callable.t))
     |> List.rev_append (Callable.Map.keys overrides)
   in

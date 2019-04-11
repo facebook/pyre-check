@@ -10,8 +10,6 @@ open Statement
 open Analysis
 open Pyre
 
-module SharedMemory = Memory
-
 
 type method_name = {
   class_name: string;
@@ -131,35 +129,8 @@ module OverrideKey = struct
 end
 
 
-(* Maps global function names and class names to their defining file.
-   Note, global functions and class names cannot clash. *)
-module FileOfDefinition = SharedMemory.WithCache (
-  struct
-    include String
-    type out = string
-    let from_string = ident
-  end)
-    (struct
-      type t = File.Handle.t
-      let prefix = Prefix.make ()
-      let description = "File of global function or class"
-    end)
-
-
 module Set = Caml.Set.Make(Key)
 module OverrideSet = Caml.Set.Make(OverrideKey)
-
-
-let add_function_definition function_name handle =
-  FileOfDefinition.add (Reference.show function_name) handle
-
-
-let add_class_definition class_name handle =
-  FileOfDefinition.add (Reference.show class_name) handle
-
-
-let class_exists class_name =
-  FileOfDefinition.mem (Reference.show class_name)
 
 
 let define_matches search { Node.value = { Define.name; _ } ; _ } =

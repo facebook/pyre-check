@@ -93,12 +93,7 @@ end
 
 module Set : Caml.Set.S with type elt = t
 
-(* Shared heap access to top-level definitions. *)
-val add_function_definition: Reference.t -> File.Handle.t -> unit
-val add_class_definition: Reference.t -> File.Handle.t -> unit
 val get_definition: resolution: Analysis.Resolution.t -> [< real_target ] -> Define.t Node.t option
-val class_exists: Reference.t -> bool
-
 
 module Map : Core.Map.S with type Key.t = t
 module Hashable : Core.Hashable.S with type t := t
