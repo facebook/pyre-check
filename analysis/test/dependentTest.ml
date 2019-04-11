@@ -46,7 +46,7 @@ let test_index _ =
     let keyset = Hashtbl.find_exn table (File.Handle.create "test.py") in
     assert_true (Hash_set.mem keyset key)
   in
-  assert_table_contains_key class_keys (primitive "baz.baz");
+  assert_table_contains_key class_keys "baz.baz";
   assert_table_contains_key function_keys (!&"foo");
   assert_table_contains_key alias_keys (primitive "_T")
 

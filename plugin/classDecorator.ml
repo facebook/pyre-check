@@ -33,7 +33,6 @@ let transform_environment ~options (module Handler: Handler) resolution source =
               match options annotated_class with
               | None -> ()
               | Some { init; repr; eq } ->
-                  let class_type = Annotated.Class.annotation ~resolution annotated_class in
                   let generated_methods =
                     let create_method ~name ~parameters ~return_annotation =
                       {
@@ -161,7 +160,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                     |> Source.statements
                   in
                   Handler.set_class_definition
-                    ~primitive:class_type
+                    ~name:(Reference.show parent)
                     ~definition:{
                       Node.location;
                       value = { ast_class with Class.body = generated_methods };

@@ -61,10 +61,8 @@ let test_class_keys _ =
       keys
       expected
   in
-  assert_classes [Type.Primitive "C"] ~expected:[Type.Primitive "C"];
-  assert_classes
-    [Type.Primitive "C"; Type.Primitive "D"]
-    ~expected:[Type.Primitive "D"; Type.Primitive "C"]
+  assert_classes ["C"] ~expected:["C"];
+  assert_classes ["C"; "D"] ~expected:["D"; "C"]
 
 
 let test_function_keys _ =
@@ -127,7 +125,7 @@ let test_register_modules _ =
 let test_purge _ =
   Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
   Handler.register_protocol ~handle:(File.Handle.create "test.py") (Type.Primitive "MyProtocol");
-    Handler.DependencyHandler.add_dependent
+  Handler.DependencyHandler.add_dependent
     ~handle:(File.Handle.create "test.py")
     (Reference.create "typing");
   assert_equal
@@ -181,14 +179,14 @@ let test_normalize_dependencies _ =
     [!&"aardvark"; !&"first.module"; !&"second.module"];
 
 
-  DependencyHandler.add_class_key ~handle (Type.Primitive "T1");
-  DependencyHandler.add_class_key ~handle (Type.Primitive "T3");
-  DependencyHandler.add_class_key ~handle (Type.Primitive "T2");
+  DependencyHandler.add_class_key ~handle "T1";
+  DependencyHandler.add_class_key ~handle "T3";
+  DependencyHandler.add_class_key ~handle "T2";
   DependencyHandler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Type.show)
+    ~printer:(String.concat ~sep:", ")
     (DependencyHandler.get_class_keys ~handle)
-    [Type.Primitive "T1"; Type.Primitive "T2"; Type.Primitive "T3"];
+    ["T1"; "T2"; "T3"];
 
   DependencyHandler.add_alias_key ~handle (Type.Primitive "C_Alias");
   DependencyHandler.add_alias_key ~handle (Type.Primitive "A_Alias");

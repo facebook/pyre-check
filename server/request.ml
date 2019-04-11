@@ -434,7 +434,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           }
         in
         parse_and_validate (Reference.access annotation)
-        |> Handler.class_definition
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
         >>| List.map ~f:to_attribute
@@ -502,12 +503,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         (* Class definitions. *)
         let map =
-          let keys =
+          let names =
             List.filter_map handles ~f:ClassKeys.get
             |> List.concat
           in
-          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
-          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
+          let types =
+            List.map names ~f:(fun name -> Type.Primitive name)
+          in
+          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys:names)
+          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys:types)
         in
         (* Aliases. *)
         let map =
@@ -676,7 +680,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Type.show;
+                          >>| List.to_string ~f:Fn.id;
                       }
                   | Ok (GlobalKeys.Decoded (key, value)) ->
                       Some {
@@ -931,7 +935,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
         parse_and_validate (Reference.access annotation)
-        |> Handler.class_definition
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.methods ~resolution
         >>| List.map ~f:to_method
@@ -1022,7 +1027,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
 
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
-        |> Handler.class_definition
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
         >>| List.map ~f:(Annotated.Class.annotation ~resolution)

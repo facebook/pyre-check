@@ -1240,10 +1240,10 @@ let test_decode_serialized_ocaml_values context =
       (Some response)
   in
   assert_decode
-    ~key:(ClassDefinitions.serialize_key Type.integer)
+    ~key:(ClassDefinitions.serialize_key "int")
     ~value:(Node.create_with_default_location (Test.parse_single_class "class C: pass"))
     ~response:{
-      TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
+      TypeQuery.serialized_key = ClassDefinitions.serialize_key "int";
       kind = "Class";
       actual_key = "int";
       actual_value =

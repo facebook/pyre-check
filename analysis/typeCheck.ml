@@ -3979,7 +3979,9 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
 
   let class_definition annotation =
     let primitive, _ = Type.split annotation in
-    Handler.class_definition primitive
+    primitive
+    |> Type.primitive_name
+    >>= Handler.class_definition
   in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in

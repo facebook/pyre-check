@@ -99,8 +99,8 @@ let test_register_class_definitions _ =
   Environment.register_class_definitions
     (module Handler)
     (parse
-      ~convert:true
-      {|
+       ~convert:true
+       {|
        class C:
          ...
        class D(C):
@@ -124,8 +124,8 @@ let test_register_class_definitions _ =
     Environment.register_class_definitions
       (module Handler)
       (parse
-        ~convert:true
-        {|
+         ~convert:true
+         {|
          class C:
            ...
        |})
@@ -676,8 +676,8 @@ let test_populate _ =
     (Type.parametric "collections.defaultdict" [Type.Any; Type.Any]);
 
   (* Check custom class definitions. *)
-  assert_is_some (Handler.class_definition (Type.Primitive "None"));
-  assert_is_some (Handler.class_definition (Type.Primitive "typing.Optional"));
+  assert_is_some (Handler.class_definition "None");
+  assert_is_some (Handler.class_definition "typing.Optional");
 
   (* Check type aliases. *)
   let environment =
@@ -1478,7 +1478,7 @@ let test_purge _ =
     ~configuration
     handler
     [parse ~convert:true ~handle:"test.py" source];
-  assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
+  assert_is_some (Handler.class_definition "baz.baz");
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   let dependencies handle =
     let handle = File.Handle.create handle in
@@ -1495,7 +1495,7 @@ let test_purge _ =
 
   Handler.purge [File.Handle.create "test.py"];
 
-  assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
+  assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
   assert_equal (Handler.protocols ()) [];
   assert_equal

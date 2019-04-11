@@ -56,7 +56,7 @@ module AliasKeyValue = struct
 end
 
 module ClassKeyValue = struct
-  type t = Type.t list
+  type t = Identifier.t list
   let prefix = Prefix.make ()
   let description = "Class keys"
 end
@@ -152,7 +152,7 @@ module ErrorsValue = struct
 end
 
 (** Shared memory maps *)
-module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
+module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 
 module ClassMetadata = Memory.WithCache (TypeKey) (ClassMetadataValue)
 

@@ -281,7 +281,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match ClassKeys.get handle with
           | Some keys ->
               ClassKeys.remove_batch (ClassKeys.KeySet.singleton handle);
-              ClassKeys.add handle (List.dedup_and_sort ~compare:Type.compare keys)
+              ClassKeys.add handle (List.dedup_and_sort ~compare:Identifier.compare keys)
           | None ->
               ()
         end;
@@ -407,8 +407,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
         Class.is_unit_test definition
       in
       let successor_classes =
-        successors
-        |> List.filter_map ~f:ClassDefinitions.get
+        let get_class successor_type =
+          successor_type
+          |> Type.primitive_name
+          >>= ClassDefinitions.get
+        in
+        List.filter_map ~f:get_class successors
       in
       List.exists ~f:is_unit_test successor_classes
     in
@@ -434,9 +438,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Globals.add reference global
 
 
-  let set_class_definition ~primitive ~definition =
+  let set_class_definition ~name ~definition =
     let definition =
-      match ClassDefinitions.get primitive with
+      match ClassDefinitions.get name with
       | Some { Node.location; value = preexisting } ->
           {
             Node.location;
@@ -445,7 +449,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       | _ ->
           definition
     in
-    ClassDefinitions.add primitive definition
+    ClassDefinitions.add name definition
 
   let register_alias ~handle ~key ~data =
     DependencyHandler.add_alias_key ~handle key;
@@ -460,10 +464,10 @@ module SharedHandler: Analysis.Environment.Handler = struct
           new_dependents
           ~key
           ~data:(
-          File.Handle.Set.Tree.diff
-            dependents
-            handles
-        )
+            File.Handle.Set.Tree.diff
+              dependents
+              handles
+          )
       in
       List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
       Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
@@ -480,6 +484,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     (* Remove the connection to the parent (if any) for all
        classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+    |> List.map ~f:(fun name -> Type.Primitive name)
     |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles

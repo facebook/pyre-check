@@ -266,6 +266,7 @@ val is_not_instantiated: t -> bool
 
 val contains_literal: t -> bool
 
+val primitive_name: t -> Identifier.t option
 val primitives: t -> t list
 val elements: t -> t list
 

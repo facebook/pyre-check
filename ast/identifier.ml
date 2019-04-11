@@ -32,6 +32,16 @@ module Set = Set.Make(struct
   end)
 
 
+include Hashable.Make(struct
+    type nonrec t = t
+    let compare = compare
+    let hash = hash
+    let hash_fold_t = hash_fold_t
+    let sexp_of_t = sexp_of_t
+    let t_of_sexp = t_of_sexp
+  end)
+
+
 let pp format identifier =
   Format.fprintf format "%a" String.pp identifier
 

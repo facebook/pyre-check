@@ -9,7 +9,7 @@ open Statement
 
 
 type t = {
-  class_definitions: (Class.t Node.t) Type.Table.t;
+  class_definitions: (Class.t Node.t) Identifier.Table.t;
   class_metadata: Resolution.class_metadata Type.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Reference.Table.t;
@@ -30,12 +30,12 @@ module type Handler = sig
     -> reference: Reference.t
     -> global: Resolution.global
     -> unit
-  val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
+  val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Type.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
-  val class_definition: Type.t -> Class.t Node.t option
+  val class_definition: Identifier.t -> Class.t Node.t option
   val class_metadata: Type.t -> Resolution.class_metadata option
 
   val register_protocol: handle: File.Handle.t -> Type.t -> unit
@@ -52,7 +52,7 @@ module type Handler = sig
   val is_module: Reference.t -> bool
   val module_definition: Reference.t -> Module.t option
 
-  val in_class_definition_keys: Type.t -> bool
+  val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
   val dependencies: Reference.t -> File.Handle.Set.Tree.t option
@@ -123,7 +123,7 @@ val infer_protocol_edges
   -> TypeOrder.Edge.Set.t
 (* If classes_to_infer is not None, only infers protocols for the specified classes. *)
 val infer_protocols
-  :  ?classes_to_infer: Type.t list
+  :  ?classes_to_infer: Identifier.t list
   -> handler: (module Handler)
   -> Resolution.t
   -> unit

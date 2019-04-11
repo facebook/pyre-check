@@ -2034,6 +2034,11 @@ let collect annotation ~predicate =
   fst (CollectorTransform.visit [] annotation)
 
 
+let primitive_name = function
+  | Primitive name -> Some name
+  | _ -> None
+
+
 let primitives annotation =
   let predicate = function | Primitive _ -> true | _ -> false in
   collect annotation ~predicate
