@@ -438,57 +438,6 @@ module Access = struct
     |> Node.create ~location
 
 
-  let new_expression ?(location = Location.Reference.any) access =
-    let convert_arguments { Node.value = arguments; _ } =
-      let convert { Argument.name; value } = { Call.Argument.name; value } in
-      List.map ~f:convert arguments
-    in
-    let rec create_nested_access expression access =
-      match expression, access with
-      | Some expression, Identifier identifier :: [] ->
-          Name (Name.Attribute {
-              base = expression;
-              attribute = identifier;
-            })
-          |> Node.create ~location
-      | Some expression, Call arguments :: [] ->
-          create_call_expression expression (convert_arguments arguments)
-          |> Node.create ~location
-      | None, Identifier identifier :: [] ->
-          Name (Name.Identifier identifier)
-          |> Node.create ~location
-      | None, Identifier identifier :: [Identifier base] ->
-          Name (Name.Attribute {
-              base = (Name (Name.Identifier base)) |> Node.create ~location;
-              attribute = identifier;
-            })
-          |> Node.create ~location
-      | None, Call arguments :: [Identifier base] ->
-          create_call_expression
-            ((Name (Name.Identifier base)) |> Node.create ~location)
-            (convert_arguments arguments)
-          |> Node.create ~location
-      | _, Identifier identifier :: access ->
-          Name (Name.Attribute {
-              base = create_nested_access expression access;
-              attribute = identifier;
-            })
-          |> Node.create ~location
-      | _, Call arguments :: access ->
-          create_call_expression
-            (create_nested_access expression access)
-            (convert_arguments arguments)
-          |> Node.create ~location
-      | _ ->
-          failwith "Invalid access chain."
-    in
-    match access with
-    | SimpleAccess access ->
-        create_nested_access None (List.rev access)
-    | ExpressionAccess { expression; access } ->
-        create_nested_access (Some expression) (List.rev access)
-
-
   let sanitized access =
     let sanitized element =
       match element with
