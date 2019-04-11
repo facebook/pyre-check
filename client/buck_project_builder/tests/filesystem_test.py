@@ -3,12 +3,13 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import subprocess
 import unittest
 from typing import Iterable
 from unittest.mock import call, patch
 
 from .. import filesystem
-from ..filesystem import Glob, Sources, link_paths, resolve_sources
+from ..filesystem import Glob, Sources, build_thrift_stubs, link_paths, resolve_sources
 
 
 class FilesystemTest(unittest.TestCase):
@@ -144,5 +145,47 @@ class FilesystemTest(unittest.TestCase):
                 [
                     call("/src/.pyre/a.py", "/src/a.py"),
                     call("/src/.pyre/b/c.py", "/src/b/c.py"),
+                ]
+            )
+
+    def test_build_thrift_stubs(self):
+        with patch.object(subprocess, "call") as subprocess_call:
+            build_thrift_stubs(
+                "/root", ["project/foo/bar.thrift", "project/foo/baz.thrift"], "/out"
+            )
+            subprocess_call.assert_has_calls(
+                [
+                    call(
+                        [
+                            "thrift",
+                            "--gen",
+                            "mstch_pyi",
+                            "-I",
+                            ".",
+                            "--templates",
+                            "thrift/compiler/generate/templates",
+                            "-o",
+                            "/out",
+                            "project/foo/bar.thrift",
+                        ],
+                        stderr=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                    call(
+                        [
+                            "thrift",
+                            "--gen",
+                            "mstch_pyi",
+                            "-I",
+                            ".",
+                            "--templates",
+                            "thrift/compiler/generate/templates",
+                            "-o",
+                            "/out",
+                            "project/foo/baz.thrift",
+                        ],
+                        stderr=subprocess.PIPE,
+                        cwd="/root",
+                    ),
                 ]
             )

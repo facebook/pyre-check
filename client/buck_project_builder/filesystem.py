@@ -6,6 +6,7 @@
 # pyre-strict
 
 import os
+import subprocess
 from typing import Iterable, List, NamedTuple, Optional
 
 from ..filesystem import add_symbolic_link, get_filesystem
@@ -47,3 +48,24 @@ def link_paths(
         relative_path = os.path.relpath(path, source_directory)
         link_path = os.path.join(output_directory, relative_path)
         add_symbolic_link(link_path, path)
+
+
+def build_thrift_stubs(
+    buck_root: str, thrift_sources: Iterable[str], output_directory: str
+) -> str:
+    command = [
+        "thrift",
+        "--gen",
+        "mstch_pyi",
+        "-I",
+        ".",
+        "--templates",
+        "thrift/compiler/generate/templates",
+        "-o",
+        output_directory,
+    ]
+    for thrift_source in thrift_sources:
+        subprocess.call(
+            command + [thrift_source], stderr=subprocess.PIPE, cwd=buck_root
+        )
+    return os.path.join(output_directory, "gen-py")
