@@ -14,6 +14,78 @@ open Pyre
 
 exception InvalidQuery of string
 
+let help () =
+  let help = function
+    | Attributes _ ->
+        Some "attributes(class_name)"
+    | ComputeHashesToKeys ->
+        None
+    | CoverageInFile _ ->
+        Some "coverage_in_file('path')"
+    | DecodeOcamlValues _ ->
+        None
+    | DumpDependencies _ ->
+        Some "dump_dependencies('path')"
+    | DumpMemoryToSqlite _ ->
+        None
+    | IsCompatibleWith _ ->
+        Some "is_compatible_with(T1, T2)"
+    | Join  _ ->
+        Some "join(T1, T2)"
+    | LessOrEqual _ ->
+        Some "less_or_equal(T1, T2)"
+    | Meet _ ->
+        Some "meet(T1, T2)"
+    | Methods _ ->
+        Some "methods(class_name)"
+    | NormalizeType _ ->
+        Some "normalize_type(T)"
+    | PathOfModule _ ->
+        Some "path_of_module(module)"
+    | SaveServerState _ ->
+        Some "save_server_state('path')"
+    | Signature _ ->
+        Some "signature(function_name)"
+    | Superclasses _ ->
+        Some "superclasses(class_name)"
+    | Type _ ->
+        Some "type(expression)"
+    | TypeAtPosition _ ->
+        Some "type_at_position('path', line_number, column_number)"
+    | TypesInFile _ ->
+        Some "types_in_file('path')"
+  in
+  let path = Path.current_working_directory () in
+  let file = File.create path in
+  List.filter_map ~f:help [
+    Attributes (Reference.create "");
+    ComputeHashesToKeys;
+    CoverageInFile file;
+    DecodeOcamlValues [];
+    DumpDependencies file;
+    DumpMemoryToSqlite path;
+    IsCompatibleWith (Access.create "", Access.create "");
+    Join (Access.create "", Access.create "");
+    LessOrEqual (Access.create "", Access.create "");
+    Meet (Access.create "", Access.create "");
+    Methods (Reference.create "");
+    NormalizeType (Access.create "");
+    PathOfModule (Reference.create "");
+    SaveServerState path;
+    Signature (Reference.create "");
+    Superclasses (Access.create "");
+    Type (Node.create_with_default_location Expression.True);
+    TypeAtPosition {
+      file;
+      position = Location.any_position;
+    };
+    TypesInFile file;
+  ]
+  |> List.sort ~compare:String.compare
+  |> String.concat ~sep:"\n  "
+  |> Format.sprintf "Possible queries:\n  %s"
+
+
 let parse_query
     ~configuration:({ Configuration.Analysis.local_root = root; _ } as configuration)
     query =
@@ -56,7 +128,7 @@ let parse_query
       begin
         match String.lowercase name, arguments with
         | "attributes", [name] ->
-             Request.TypeQueryRequest (Attributes (reference name))
+            Request.TypeQueryRequest (Attributes (reference name))
         | "compute_hashes_to_keys", [] ->
             Request.TypeQueryRequest ComputeHashesToKeys
         | "decode_ocaml_values", pairs ->

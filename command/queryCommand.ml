@@ -1,5 +1,4 @@
 (** Copyright (c) 2016-present, Facebook, Inc.
-
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
@@ -16,6 +15,9 @@ let run_query serialized local_root () =
   let local_root = Path.create_absolute local_root in
   let configuration = Configuration.Analysis.create ~local_root () in
   (fun () ->
+     if serialized = "help" then
+       Log.print "%s" (Query.help ())
+     else
      let response =
        try
          let query = Query.parse_query ~configuration serialized in
@@ -42,11 +44,13 @@ let run_query serialized local_root () =
              ]
        with
        | Query.InvalidQuery reason ->
+           Log.info "%s" (Query.help ());
            `Assoc [
              "error",
              `String (Format.sprintf "Unable to parse query \"%s\": %s." serialized reason);
            ]
        | PyreParser.Parser.Error error ->
+           Log.info "%s" (Query.help ());
            let error =
              String.split ~on:'\n' error
              |> (fun lines -> List.drop lines 1)

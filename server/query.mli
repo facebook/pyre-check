@@ -6,4 +6,6 @@
 
 exception InvalidQuery of string
 
+val help: unit -> string
+
 val parse_query: configuration: Configuration.Analysis.t -> string -> Protocol.Request.t
