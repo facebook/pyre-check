@@ -224,7 +224,18 @@ def main() -> int:
         "query, rage, restart, start, stop}"
     )
 
-    incremental = parsed_commands.add_parser(commands.Incremental.NAME)
+    incremental_help = """
+    Connects to a running Pyre server and returns the current type errors for your
+    project. If no server exists for your projects, starts a new one. Running `pyre`
+    implicitly runs `pyre incremental`.
+
+    By default, incremental checks ensure that all dependencies of changed files are
+    analyzed before returning results. If you'd like to get partial type checking
+    results eagerly, you can run `pyre incremental --nonblocking`.
+    """
+    incremental = parsed_commands.add_parser(
+        commands.Incremental.NAME, epilog=incremental_help
+    )
     incremental.set_defaults(command=commands.Incremental)
     incremental.add_argument(
         "--nonblocking",
