@@ -62,7 +62,7 @@ module ClassKeyValue = struct
 end
 
 module ProtocolValue = struct
-  type t = Type.Set.Tree.t
+  type t = Identifier.Set.Tree.t
   let prefix = Prefix.make ()
   let description = "Protocols"
 end
@@ -74,7 +74,7 @@ module DependentKeyValue = struct
 end
 
 module ProtocolKeyValue = struct
-  type t = Type.t list
+  type t = Identifier.t list
   let prefix = Prefix.make ()
   let description = "Protocol keys"
 end

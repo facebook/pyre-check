@@ -14,7 +14,7 @@ open Statement
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
-  protocols: Type.Hash_set.t;
+  protocols: Identifier.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -37,8 +37,8 @@ module type Handler = sig
   val class_definition: Identifier.t -> Class.t Node.t option
   val class_metadata: Identifier.t -> Resolution.class_metadata option
 
-  val register_protocol: handle: File.Handle.t -> Type.t -> unit
-  val protocols: unit -> Type.t list
+  val register_protocol: handle: File.Handle.t -> Identifier.t -> unit
+  val protocols: unit -> Identifier.t list
 
   val register_module
     :  qualifier: Reference.t
@@ -392,7 +392,7 @@ let register_class_definitions (module Handler: Handler) source =
 
             if Annotated.Class.is_protocol annotated then
               begin
-                Handler.register_protocol ~handle primitive
+                Handler.register_protocol ~handle name
               end;
 
             Handler.set_class_definition
@@ -943,15 +943,12 @@ let infer_protocol_edges
   let protocols =
     (* Skip useless protocols for better performance. *)
     let skip_protocol protocol =
-      match Type.primitive_name protocol with
-      | None -> true
-      | Some protocol ->
-          match Handler.class_definition protocol with
-          | Some protocol_definition ->
-              let protocol_definition = Annotated.Class.create protocol_definition in
-              List.is_empty (Annotated.Class.methods protocol_definition ~resolution)
-          | _ ->
-              true
+      match Handler.class_definition protocol with
+      | Some protocol_definition ->
+          let protocol_definition = Annotated.Class.create protocol_definition in
+          List.is_empty (Annotated.Class.methods protocol_definition ~resolution)
+      | _ ->
+          true
     in
     List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
   in
@@ -962,8 +959,7 @@ let infer_protocol_edges
       let protocol_methods =
         let names_of_methods protocol =
           protocol
-          |> Type.primitive_name
-          >>= Handler.class_definition
+          |> Handler.class_definition
           >>| Annotated.Class.create
           >>| Annotated.Class.methods ~resolution
           >>| List.map ~f:Annotated.Class.Method.name
@@ -1007,6 +1003,7 @@ let infer_protocol_edges
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in
   let add_protocol_edges edges protocol =
+    let protocol = Type.Primitive protocol in
     infer_implementations handler resolution ~implementing_classes ~protocol
     |> Set.union edges
   in
@@ -1098,7 +1095,7 @@ module Builder = struct
   let create () =
     let class_definitions = Identifier.Table.create () in
     let class_metadata = Identifier.Table.create () in
-    let protocols = Type.Hash_set.create () in
+    let protocols = Identifier.Hash_set.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in

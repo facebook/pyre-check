@@ -11,7 +11,7 @@ open Statement
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
-  protocols: Type.Hash_set.t;
+  protocols: Identifier.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -38,8 +38,8 @@ module type Handler = sig
   val class_definition: Identifier.t -> Class.t Node.t option
   val class_metadata: Identifier.t -> Resolution.class_metadata option
 
-  val register_protocol: handle: File.Handle.t -> Type.t -> unit
-  val protocols: unit -> Type.t list
+  val register_protocol: handle: File.Handle.t -> Identifier.t -> unit
+  val protocols: unit -> Identifier.t list
 
   val register_module
     :  qualifier: Reference.t

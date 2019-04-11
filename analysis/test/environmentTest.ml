@@ -1341,17 +1341,23 @@ let test_protocols _ =
     |} in
   let module Handler = (val environment) in
 
+  let cmp left right =
+    let left = List.sort ~compare:Identifier.compare left in
+    let right = List.sort ~compare:Identifier.compare right in
+    List.equal ~equal:Identifier.equal left right
+  in
+
   assert_equal
-    ~cmp:(List.equal ~equal:Type.equal)
-    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
+    ~cmp
+    ~printer:(String.concat ~sep:",")
     (Handler.protocols ())
-    ([Type.Primitive "B"; Type.Primitive "E"]);
+    (["B"; "E"]);
 
   let environment = populate "" in
   let module Handler = (val environment) in
   assert_equal
-    ~cmp:(List.equal ~equal:Type.equal)
-    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
+    ~cmp
+    ~printer:(String.concat ~sep:",")
     (Handler.protocols ())
     ([
       "typing.Sized";
@@ -1364,8 +1370,7 @@ let test_protocols _ =
       "typing.AsyncContextManager";
       "typing.Collection";
       "typing.Awaitable";
-    ]
-      |> List.map ~f:(fun primitive -> Type.Primitive primitive));
+    ]);
   ()
 
 
@@ -1491,7 +1496,7 @@ let test_purge _ =
     (Some ["test.py"]);
   assert_equal
     (Handler.protocols ())
-    [Type.Primitive "P"];
+    ["P"];
 
   Handler.purge [File.Handle.create "test.py"];
 

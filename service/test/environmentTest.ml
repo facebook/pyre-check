@@ -124,7 +124,7 @@ let test_register_modules _ =
 
 let test_purge _ =
   Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
-  Handler.register_protocol ~handle:(File.Handle.create "test.py") (Type.Primitive "MyProtocol");
+  Handler.register_protocol ~handle:(File.Handle.create "test.py") "MyProtocol";
   Handler.DependencyHandler.add_dependent
     ~handle:(File.Handle.create "test.py")
     (Reference.create "typing");
@@ -133,16 +133,16 @@ let test_purge _ =
     (Handler.DependencyHandler.dependents (!&"typing"));
 
   assert_equal
-    ~printer:(List.to_string ~f:Type.show)
+    ~printer:(String.concat ~sep:", ")
     (Handler.protocols ())
-    [Type.Primitive "MyProtocol"];
+    ["MyProtocol"];
 
   Handler.purge [File.Handle.create "test.py"];
   assert_equal
     (Some File.Handle.Set.Tree.empty)
     (Handler.DependencyHandler.dependents (!&"typing"));
   assert_equal
-    ~printer:(List.to_string ~f:Type.show)
+    ~printer:(String.concat ~sep:", ")
     (Handler.protocols ())
     []
 
@@ -202,8 +202,8 @@ let test_normalize _ =
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.integer;
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.string;
   Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
-  [Type.Primitive "C"; Type.Primitive "B"; Type.Primitive "A"]
-  |> Type.Set.Tree.of_list
+  ["C"; "B"; "A"]
+  |> Identifier.Set.Tree.of_list
   |> Protocols.add SharedMemory.SingletonKey.key;
   let indices =
     let index_of annotation =
@@ -218,7 +218,7 @@ let test_normalize _ =
     (Some indices);
   assert_equal
     (Protocols.get SharedMemory.SingletonKey.key)
-    (Some (Type.Set.Tree.of_list [Type.Primitive "A"; Type.Primitive "B"; Type.Primitive "C"]))
+    (Some (Identifier.Set.Tree.of_list ["A"; "B"; "C"]))
 
 
 let test_populate context =

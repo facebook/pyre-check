@@ -342,14 +342,14 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependencyHandler.add_protocol_key ~handle protocol;
     match Protocols.get SharedMemory.SingletonKey.key with
     | None ->
-        Protocols.add SharedMemory.SingletonKey.key (Type.Set.Tree.singleton protocol)
+        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.singleton protocol)
     | Some protocols ->
-        Protocols.add SharedMemory.SingletonKey.key (Type.Set.Tree.add protocols protocol)
+        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.add protocols protocol)
 
   let protocols () =
     Protocols.get SharedMemory.SingletonKey.key
-    |> Option.value ~default:Type.Set.Tree.empty
-    |> Type.Set.Tree.to_list
+    |> Option.value ~default:Identifier.Set.Tree.empty
+    |> Identifier.Set.Tree.to_list
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
     let string =
@@ -510,10 +510,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
           ()
       | Some protocols ->
           Protocols.remove_batch (Protocols.KeySet.singleton Memory.SingletonKey.key);
-          Protocols.add Memory.SingletonKey.key (Type.Set.Tree.diff protocols removed_protocols)
+          Protocols.add
+            Memory.SingletonKey.key
+            (Identifier.Set.Tree.diff protocols removed_protocols)
     in
     List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
-    |> Type.Set.Tree.of_list
+    |> Identifier.Set.Tree.of_list
     |> purge_protocols;
 
     DependencyHandler.clear_keys_batch handles;
@@ -586,7 +588,7 @@ let populate_shared_memory
 
     protocols
     |> Hash_set.to_list
-    |> Type.Set.Tree.of_list
+    |> Identifier.Set.Tree.of_list
     |> Protocols.write_through SharedMemory.SingletonKey.key;
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
@@ -629,8 +631,8 @@ let normalize_shared_memory () =
     | Some protocols ->
         Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
         let protocols =
-          Type.Set.Tree.to_list protocols
-          |> Type.Set.Tree.of_list
+          Identifier.Set.Tree.to_list protocols
+          |> Identifier.Set.Tree.of_list
         in
         Protocols.add SharedMemory.SingletonKey.key protocols
   end;
