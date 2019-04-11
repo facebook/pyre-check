@@ -1812,12 +1812,10 @@ let test_expand_typed_dictionaries _ =
     let expected =
       parse ~qualifier expected
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses
     in
     let actual =
       parse ~qualifier source
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses
       |> Preprocessing.expand_typed_dictionary_declarations
     in
     assert_source_equal expected actual

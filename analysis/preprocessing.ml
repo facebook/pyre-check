@@ -1603,43 +1603,67 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             Node.create (if total then Expression.True else Expression.False) ~location
           in
           [{
-            Argument.name = None;
+            Call.Argument.name = None;
             value = Node.create (Expression.Tuple (name :: total :: fields)) ~location;
           }]
         in
-        let access =
-          Access
-            (SimpleAccess [
-                Access.Identifier "mypy_extensions";
-                Access.Identifier "TypedDict";
-                Access.Identifier "__getitem__";
-                Access.Call (Node.create arguments ~location);
-              ]);
+        let name =
+          Call {
+            callee = {
+              Node.location;
+              value = Name (
+                Name.Attribute {
+                  base = {
+                    Node.location;
+                    value = Name (
+                      Name.Attribute {
+                        base = {
+                          Node.location;
+                          value = Name (Name.Identifier "mypy_extensions");
+                        };
+                        attribute = "TypedDict";
+                      }
+                    );
+                  };
+                  attribute = "__getitem__";
+                });
+            };
+            arguments;
+          }
+          |> Node.create ~location
         in
         let annotation =
-          let node value = Node.create value ~location in
-          Access
-            (SimpleAccess [
-                Access.Identifier "typing";
-                Access.Identifier "Type";
-                Access.Identifier "__getitem__";
-                Access.Call
-                  (node [{ Expression.Record.Argument.name = None; value = node access }]);
-              ])
-          |> node
+          Call {
+            callee = {
+              Node.location;
+              value = Name (
+                Name.Attribute {
+                  base = {
+                    Node.location;
+                    value = Name (
+                      Name.Attribute {
+                        base = {
+                          Node.location;
+                          value = Name (Name.Identifier "typing");
+                        };
+                        attribute = "Type";
+                      }
+                    );
+                  };
+                  attribute = "__getitem__";
+                });
+            };
+            arguments = [{ Call.Argument.name = None; value = name }];
+          }
+          |> Node.create ~location
           |> Option.some
         in
-        let access = Node.create access ~location in
         Assign {
           target;
           annotation;
-          value = access;
+          value = name;
           parent;
         };
-      in
-      let is_typed_dictionary ~module_name ~typed_dictionary =
-        String.equal module_name "mypy_extensions" &&
-        String.equal typed_dictionary "TypedDict"
       in
       let extract_totality arguments =
         let is_total ~total = String.equal (Identifier.sanitized total) "total" in
@@ -1663,35 +1687,39 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           target;
           value = {
             Node.value =
-              Access
-                (SimpleAccess [
-                    Access.Identifier module_name;
-                    Access.Identifier typed_dictionary;
-                    Access.Call {
-                      Node.value =
-                        { Argument.name = None; value = name }
-                        :: {
-                          Argument.name = None;
-                          value = { Node.value = Dictionary { Dictionary.entries; _ }; _};
+              Call {
+                callee = {
+                  Node.value = Name (
+                      Name.Attribute {
+                        base = {
+                          Node.value = Name (Name.Identifier "mypy_extensions");
                           _;
-                        }
-                        :: argument_tail;
-                      _;
-                    };
-                  ]);
+                        };
+                        attribute = "TypedDict";
+                      }
+                    );
+                  _;
+                };
+                arguments =
+                  { Call.Argument.name = None; value = name } ::
+                  {
+                    Call.Argument.name = None;
+                    value = { Node.value = Dictionary { Dictionary.entries; _ }; _ };
+                    _;
+                  } ::
+                  argument_tail;
+              };
             _;
           };
           parent;
           _;
-        }
-        when is_typed_dictionary ~module_name ~typed_dictionary ->
+        } ->
           typed_dictionary_declaration_assignment
             ~name
             ~fields:(List.map entries ~f:(fun { Dictionary.key; value } -> key, value))
             ~target
             ~parent
-            ~total:(extract_totality
-              (List.map ~f:(fun argument -> Expression.convert_argument argument) argument_tail))
+            ~total:(extract_totality argument_tail)
       | Class {
           name = class_name;
           bases =
@@ -1699,19 +1727,18 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
               Expression.Call.Argument.name = None;
               value = {
                 Node.value =
-                  Access
-                    (SimpleAccess [
-                        Access.Identifier module_name;
-                        Access.Identifier typed_dictionary;
-                      ]);
+                  Name (
+                    Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
+                      attribute = "TypedDict"
+                    });
                 _;
               };
             } :: bases_tail;
           body;
           decorators = _;
           docstring = _;
-        }
-        when is_typed_dictionary ~module_name ~typed_dictionary ->
+        } ->
           let string_literal identifier =
             Expression.String { value = identifier; kind = StringLiteral.String }
             |> Node.create ~location
@@ -1719,16 +1746,16 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           let fields =
             let extract = function
               | {
-                Node.value =
-                  Assign {
-                    target = { Node.value = Access (SimpleAccess name); _ };
-                    annotation = Some annotation;
-                    value = { Node.value = Ellipsis; _ };
-                    parent = _;
-                  };
-                _;
-              } ->
-                  Reference.drop_prefix ~prefix:class_name (Reference.from_access name)
+                  Node.value =
+                    Assign {
+                      target = { Node.value = Name name; _ };
+                      annotation = Some annotation;
+                      value = { Node.value = Ellipsis; _ };
+                      parent = _;
+                    };
+                  _;
+                } ->
+                  Reference.drop_prefix ~prefix:class_name (Reference.from_name name)
                   |> Reference.single
                   >>| (fun name -> string_literal name, annotation)
               | _ ->
@@ -1744,12 +1771,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
               in
               class_name
               |> Format.asprintf "$local_%s$%s" qualifier
-              |> fun identifier -> [Access.Identifier identifier]
+              |> fun identifier -> Name (Name.Identifier identifier)
             in
             typed_dictionary_declaration_assignment
               ~name:(string_literal class_name)
               ~fields
-              ~target:(Node.create (Access (SimpleAccess qualified)) ~location)
+              ~target:(Node.create qualified ~location)
               ~parent:None
               ~total:(extract_totality bases_tail)
           in
@@ -1777,8 +1804,8 @@ let preprocess_steps ~force source =
   |> qualify
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub
-  |> convert_to_old_accesses
   |> expand_typed_dictionary_declarations
+  |> convert_to_old_accesses
 
 
 let preprocess source =
