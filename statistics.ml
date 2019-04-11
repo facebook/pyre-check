@@ -190,7 +190,14 @@ let coverage ?(flush = false) ?randomly_log_every ~path ~coverage  () =
   |> log ~flush ?randomly_log_every "perfpipe_pyre_coverage"
 
 
-let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals = []) () =
+let event
+    ?(flush = false)
+    ?randomly_log_every
+    ?(section = `Event)
+    ~name
+    ?(integers = [])
+    ?(normals = [])
+    () =
   let integer (name, value) = Format.asprintf "%s: %d" name value in
   let normal (name, value) = Format.asprintf "%s: %s" name value in
   Log.log
@@ -200,7 +207,7 @@ let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals 
     (List.map ~f:integer integers @ List.map ~f:normal normals
      |> String.concat ~sep:", ");
   sample ~integers:integers ~normals:(("name", name) :: normals) ()
-  |> log ~flush "perfpipe_pyre_events"
+  |> log ?randomly_log_every ~flush "perfpipe_pyre_events"
 
 
 let log_exception caught_exception ~fatal ~origin =

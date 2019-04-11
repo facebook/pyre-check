@@ -1220,10 +1220,19 @@ let compute_dependencies
       Ast.Source.qualifier ~handle
       |> Handler.dependencies
     in
-    Dependencies.transitive_of_list
-      ~get_dependencies
-      ~handles:(List.filter handles ~f:signature_hash_changed)
-    |> Fn.flip Set.diff (File.Handle.Set.of_list check)
+    let deferred_files =
+      Dependencies.transitive_of_list
+        ~get_dependencies
+        ~handles:(List.filter handles ~f:signature_hash_changed)
+      |> Fn.flip Set.diff (File.Handle.Set.of_list check)
+    in
+    Statistics.event
+      ~name:"scheduled dependencies"
+      ~randomly_log_every:100
+      ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
+      ~integers:["number of dependencies", File.Handle.Set.length deferred_files]
+      ();
+    deferred_files
   in
 
   Log.log

@@ -38,6 +38,7 @@ val coverage
 
 val event
   :  ?flush: bool
+  -> ?randomly_log_every: int
   -> ?section: Log.section
   -> name: string
   -> ?integers: (string * int) list
