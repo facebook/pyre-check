@@ -154,7 +154,7 @@ end
 (** Shared memory maps *)
 module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 
-module ClassMetadata = Memory.WithCache (TypeKey) (ClassMetadataValue)
+module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
 
 module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 

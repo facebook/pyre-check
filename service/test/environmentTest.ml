@@ -254,7 +254,7 @@ let test_populate context =
     ~printer:(List.to_string ~f:Reference.show) (GlobalKeys.find_unsafe (File.Handle.create "a.py"))
     (List.map ~f:Reference.create ["a.C"; "a.D"; "a.foo"; "a.bar"]);
   let assert_successors name expected_successors =
-    let { Resolution.successors; _ } = ClassMetadata.find_unsafe (Type.Primitive name) in
+    let { Resolution.successors; _ } = ClassMetadata.find_unsafe name in
     assert_equal
       ~printer:(List.to_string ~f:Type.show)
       expected_successors

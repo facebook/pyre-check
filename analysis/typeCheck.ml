@@ -3974,7 +3974,9 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
 
   let class_metadata annotation =
     let primitive, _ = Type.split annotation in
-    Handler.class_metadata primitive
+    primitive
+    |> Type.primitive_name
+    >>= Handler.class_metadata
   in
 
   let class_definition annotation =

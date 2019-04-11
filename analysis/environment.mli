@@ -10,7 +10,7 @@ open Statement
 
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
-  class_metadata: Resolution.class_metadata Type.Table.t;
+  class_metadata: Resolution.class_metadata Identifier.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
@@ -31,12 +31,12 @@ module type Handler = sig
     -> global: Resolution.global
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
-  val register_class_metadata: Type.t -> unit
+  val register_class_metadata: Identifier.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val class_definition: Identifier.t -> Class.t Node.t option
-  val class_metadata: Type.t -> Resolution.class_metadata option
+  val class_metadata: Identifier.t -> Resolution.class_metadata option
 
   val register_protocol: handle: File.Handle.t -> Type.t -> unit
   val protocols: unit -> Type.t list

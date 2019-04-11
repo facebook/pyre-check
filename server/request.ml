@@ -503,15 +503,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         (* Class definitions. *)
         let map =
-          let names =
+          let keys =
             List.filter_map handles ~f:ClassKeys.get
             |> List.concat
           in
-          let types =
-            List.map names ~f:(fun name -> Type.Primitive name)
-          in
-          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys:names)
-          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys:types)
+          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
+          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
         in
         (* Aliases. *)
         let map =

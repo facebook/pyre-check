@@ -184,15 +184,15 @@ let test_register_class_metadata _ =
     ~top:Type.Any
     all_annotations;
 
-  Handler.register_class_metadata (Type.Primitive "A");
-  Handler.register_class_metadata (Type.Primitive "B");
-  Handler.register_class_metadata (Type.Primitive "C");
-  Handler.register_class_metadata (Type.Primitive "D");
-  Handler.register_class_metadata (Type.Primitive "E");
+  Handler.register_class_metadata "A";
+  Handler.register_class_metadata "B";
+  Handler.register_class_metadata "C";
+  Handler.register_class_metadata "D";
+  Handler.register_class_metadata "E";
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =
-      Option.value_exn (Handler.class_metadata (Type.Primitive class_name))
+      Option.value_exn (Handler.class_metadata class_name)
     in
     let expected =
       List.map expected ~f:(fun annotation -> Type.Primitive annotation)

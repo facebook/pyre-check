@@ -13,7 +13,7 @@ open Statement
 
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
-  class_metadata: Resolution.class_metadata Type.Table.t;
+  class_metadata: Resolution.class_metadata Identifier.Table.t;
   protocols: Type.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
@@ -30,12 +30,12 @@ module type Handler = sig
     -> global: Resolution.global
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
-  val register_class_metadata: Type.t -> unit
+  val register_class_metadata: Identifier.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val class_definition: Identifier.t -> Class.t Node.t option
-  val class_metadata: Type.t -> Resolution.class_metadata option
+  val class_metadata: Identifier.t -> Resolution.class_metadata option
 
   val register_protocol: handle: File.Handle.t -> Type.t -> unit
   val protocols: unit -> Type.t list
@@ -195,8 +195,8 @@ let handler
       Hashtbl.set class_definitions ~key:name ~data:definition
 
 
-    let register_class_metadata annotation =
-      let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+    let register_class_metadata class_name =
+      let successors = TypeOrder.successors (module TypeOrderHandler) (Type.Primitive class_name) in
       let in_test =
         let is_unit_test { Node.value = definition; _ } =
           Class.is_unit_test definition
@@ -211,7 +211,7 @@ let handler
       in
       Hashtbl.set
         class_metadata
-        ~key:annotation
+        ~key:class_name
         ~data:{
           is_test = in_test;
           successors;
@@ -1083,8 +1083,8 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
   in
   (annotation
    |> Type.primitive_name
-   >>= Handler.class_definition
-   >>= fun definition -> Handler.class_metadata annotation
+   >>= fun name -> Handler.class_definition name
+   >>= fun definition -> Handler.class_metadata name
    >>| (fun { Resolution.successors; _ } -> propagate definition successors))
   |> ignore
 
@@ -1097,7 +1097,7 @@ let built_in_annotations =
 module Builder = struct
   let create () =
     let class_definitions = Identifier.Table.create () in
-    let class_metadata = Type.Table.create () in
+    let class_metadata = Identifier.Table.create () in
     let protocols = Type.Hash_set.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
@@ -1156,7 +1156,7 @@ module Builder = struct
         (List.map bases ~f:successor) @ [Type.object_primitive]
       in
       Hashtbl.set
-        ~key:(Type.Primitive name)
+        ~key:name
         ~data:{
           Resolution.successors;
           is_test = false;

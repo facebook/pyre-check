@@ -1259,13 +1259,13 @@ let test_decode_serialized_ocaml_values context =
         Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
     };
   assert_decode
-    ~key:(ClassMetadata.serialize_key Type.integer)
+    ~key:(ClassMetadata.serialize_key "int")
     ~value:{
       Resolution.successors = [Type.string];
       is_test = false;
     }
     ~response:{
-      TypeQuery.serialized_key = ClassMetadata.serialize_key Type.integer;
+      TypeQuery.serialized_key = ClassMetadata.serialize_key "int";
       kind = "Class metadata";
       actual_key = "int";
       actual_value = Some {|{"successors":"(str)","is_test":false}|};

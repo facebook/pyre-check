@@ -56,7 +56,11 @@ let populate
       all_annotations;
     Type.Cache.disable ();
     (* TODO(T30713406): Merge with class registration. *)
-    List.iter ~f:Handler.register_class_metadata all_annotations;
+    List.iter  all_annotations
+      ~f:(fun annotation ->
+          match Type.primitive_name annotation with
+          | Some name -> Handler.register_class_metadata name
+          | _ -> ());
     Type.Cache.enable ();
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
@@ -399,9 +403,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Dependents.get
 
   module TypeOrderHandler = ServiceTypeOrder.Handler
-  let register_class_metadata annotation =
+  let register_class_metadata class_name =
     let open Statement in
-    let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
+    let successors = TypeOrder.successors (module TypeOrderHandler) (Type.Primitive class_name) in
     let in_test =
       let is_unit_test { Node.value = definition; _ } =
         Class.is_unit_test definition
@@ -417,7 +421,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       List.exists ~f:is_unit_test successor_classes
     in
     ClassMetadata.add
-      annotation
+      class_name
       {
         Resolution.is_test = in_test;
         successors;
