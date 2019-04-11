@@ -17,43 +17,47 @@ exception InvalidQuery of string
 let help () =
   let help = function
     | Attributes _ ->
-        Some "attributes(class_name)"
+        Some
+          "attributes(class_name): Returns a list of attributes, including functions, for a class."
     | ComputeHashesToKeys ->
         None
     | CoverageInFile _ ->
-        Some "coverage_in_file('path')"
+        Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
     | DecodeOcamlValues _ ->
         None
     | DumpDependencies _ ->
-        Some "dump_dependencies('path')"
+        Some
+          (Format.sprintf "%s: %s"
+             "dump_dependencies('path')"
+             "Writes the dependencies of 'path' to `.pyre/dependencies.dot`.")
     | DumpMemoryToSqlite _ ->
         None
     | IsCompatibleWith _ ->
-        Some "is_compatible_with(T1, T2)"
+        Some "is_compatible_with(T1, T2): Returns whether T2 can be used in place of T1."
     | Join  _ ->
-        Some "join(T1, T2)"
+        Some "join(T1, T2): Returns the least common supertype of T1 and T2."
     | LessOrEqual _ ->
         Some "less_or_equal(T1, T2)"
     | Meet _ ->
-        Some "meet(T1, T2)"
+        Some "meet(T1, T2): Returns the greatest common subtype of T1 and T2."
     | Methods _ ->
-        Some "methods(class_name)"
+        Some "methods(class_name): Evaluates to the list of methods for `class_name`."
     | NormalizeType _ ->
-        Some "normalize_type(T)"
+        Some "normalize_type(T): Resolves all type aliases for `T`."
     | PathOfModule _ ->
-        Some "path_of_module(module)"
+        Some "path_of_module(module): Gives an absolute path for `module`."
     | SaveServerState _ ->
-        Some "save_server_state('path')"
+        Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
     | Signature _ ->
-        Some "signature(function_name)"
+        Some "signature(function_name): Gives a human-readable signature for `function_name`."
     | Superclasses _ ->
-        Some "superclasses(class_name)"
+        Some "superclasses(class_name): Returns the list of superclasses for `class_name`."
     | Type _ ->
-        Some "type(expression)"
+        Some "type(expression): Evaluates the type of `expression`."
     | TypeAtPosition _ ->
-        Some "type_at_position('path', line_number, column_number)"
+        Some "type_at_position('path', line, column): Returns the type for the given cursor."
     | TypesInFile _ ->
-        Some "types_in_file('path')"
+        Some "types_in_file('path'): Returns the list of all types for a given path."
   in
   let path = Path.current_working_directory () in
   let file = File.create path in
