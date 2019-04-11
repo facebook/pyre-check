@@ -311,26 +311,20 @@ def main() -> int:
     )
     initialize.set_defaults(command=commands.Initialize)
 
-    query = parsed_commands.add_parser(commands.Query.NAME)
-    query_message = """One of:
-    `attributes(type)`,
-    `dump_dependencies(path)`,
-    `dump_memory_to_sqlite`,
-    `join(left, right)`,
-    `less_or_equal(left, right)`,
-    `meet(left, right)`,
-    `methods(type)`,
-    `normalize_type(type)`,
-    `path_of_module(module)`,
-    `save_server_state(path)`,
-    `signature(name)`,
-    `superclasses(type)`,
-    `type(name)`,
-    `type_at_position(path, row, column)`,
-    `types_in_file(path)`
-    `type_check(path, ...)`.
+    query_message = """
+    `https://pyre-check.org/docs/querying-pyre.html` contains examples and documentation
+    for this command, which queries a running pyre server for type, function and
+    attribute information.
+
+    To get a full list of queries, you can run `pyre query help`.
     """
-    query.add_argument("query", help=query_message)
+    query = parsed_commands.add_parser(commands.Query.NAME, epilog=query_message)
+    query_argument_message = """
+    The query for the server, in the following format: "type(1+2)".
+
+     `pyre query help` will give a full list of available queries for the Pyre server.
+    """
+    query.add_argument("query", help=query_argument_message)
     query.set_defaults(command=commands.Query)
 
     arguments = parser.parse_args()
