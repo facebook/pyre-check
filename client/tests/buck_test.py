@@ -28,42 +28,53 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
-    @patch("{}.find_root".format(buck.__name__), return_value="/root")
-    @patch("os.path.dirname", return_value="buck-out/dir")
-    def test_find_built_source_directories(self, find_root, dirname) -> None:
+    @patch("{}.find_buck_root".format(buck.__name__), return_value="/root")
+    def test_find_built_source_directories(self, find_root) -> None:
         trees = [
             "blah-vs_debugger#link-tree",
             "blah-blah#link-tree",
             "blah-interp#link-tree",
             "blah-ipython#link-tree",
         ]
-        with patch.object(glob, "glob", return_value=trees):
+        with patch.object(glob, "glob", return_value=trees) as glob_glob:
             self.assertEqual(
-                buck._find_built_source_directories([("target", "buck-out/target")]),
+                buck._find_built_source_directories([("//:target", "buck-out/target")]),
                 BuckOut({"blah-blah#link-tree"}, set()),
             )
+            glob_glob.assert_called_once_with("/root/buck-out/target#*link-tree")
 
-        with patch.object(glob, "glob", return_value=["new_tree"]):
+        with patch.object(glob, "glob", return_value=["new_tree"]) as glob_glob:
             found_trees = buck._find_built_source_directories(
                 [
-                    ("//path/...", "buck-out/path"),
                     ("//path/targets:another", "buck-out/targets/another"),
                     ("//path/targets:name", "buck-out/targets/name"),
-                    ("//path/targets:namelibrary", "buck-out/targets/namelibrary"),
+                    (
+                        "//path/targets/subdir:namelibrary",
+                        "buck-out/targets/subdir/namelibrary",
+                    ),
                 ]
             )
             self.assertEqual(
-                found_trees,
-                BuckOut({"new_tree", "new_tree", "new_tree", "new_tree"}, set()),
+                found_trees, BuckOut({"new_tree", "new_tree", "new_tree"}, set())
+            )
+            glob_glob.assert_has_calls(
+                [
+                    call("/root/buck-out/targets/another#*link-tree"),
+                    call("/root/buck-out/targets/name#*link-tree"),
+                    call("/root/buck-out/targets/subdir/namelibrary#*link-tree"),
+                ],
+                any_order=True,
             )
 
-        with patch.object(glob, "glob", return_value=[]):
+        with patch.object(glob, "glob", return_value=[]) as glob_glob:
             found_trees = buck._find_built_source_directories(
                 [
-                    ("//path/...", "buck-out/path"),
                     ("//path/targets:another", "buck-out/targets/another"),
                     ("//path/targets:name", "buck-out/targets/name"),
-                    ("//path/targets:namelibrary", "buck-out/targets/namelibrary"),
+                    (
+                        "//path/targets/subdir:namelibrary",
+                        "buck-out/targets/subdir/namelibrary",
+                    ),
                 ]
             )
             self.assertEqual(
@@ -71,12 +82,19 @@ class BuckTest(unittest.TestCase):
                 BuckOut(
                     set(),
                     {
-                        "//path/...",
                         "//path/targets:another",
                         "//path/targets:name",
-                        "//path/targets:namelibrary",
+                        "//path/targets/subdir:namelibrary",
                     },
                 ),
+            )
+            glob_glob.assert_has_calls(
+                [
+                    call("/root/buck-out/targets/another#*link-tree"),
+                    call("/root/buck-out/targets/name#*link-tree"),
+                    call("/root/buck-out/targets/subdir/namelibrary#*link-tree"),
+                ],
+                any_order=True,
             )
 
     @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")

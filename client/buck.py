@@ -63,8 +63,9 @@ def _find_built_source_directories(
         directories.add((target, os.path.dirname(destination)))
 
     for target, directory in directories:
+        target_name = target.split(":")[1]
         discovered_source_directories = glob.glob(
-            os.path.join(directory + "*#*link-tree")
+            os.path.join(buck_root, directory, "{}#*link-tree".format(target_name))
         )
         if len(discovered_source_directories) == 0:
             targets_not_found.append(target)
