@@ -3,11 +3,14 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import call, patch
 
-from .. import filesystem
-from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest
+from .. import build_target, filesystem
+from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest, ThriftLibrary
 from ..filesystem import Glob, Sources
 from .test_common import base
 
@@ -120,4 +123,96 @@ class BuildTargetTest(unittest.TestCase):
                         "/out/project/tests/test_b.py", "/ROOT/project/tests/test_b.py"
                     ),
                 ]
+            )
+
+    @patch.object(tempfile, "TemporaryDirectory")
+    @patch.object(os, "makedirs")
+    def test_build_thrift_library(self, makedirs, TemporaryDirectory):
+        TemporaryDirectory.return_value.__enter__.return_value = "/tmp_dir"
+
+        with patch.object(
+            filesystem, "build_thrift_stubs", return_value="/tmp_dir/gen-py"
+        ) as build_thrift_stubs, patch.object(
+            build_target,
+            "find_python_paths",
+            return_value=[
+                "/tmp_dir/gen-py/project/foo/bar.pyi",
+                "/tmp_dir/gen-py/project/foo/baz.pyi",
+            ],
+        ) as find_python_paths, patch.object(
+            shutil, "copy2"
+        ) as copy2:
+            target = ThriftLibrary(
+                "/ROOT",
+                "project",
+                base("thrift_library"),
+                ["foo/bar.thrift", "baz.thrift"],
+            )
+            target.build("/out")
+            build_thrift_stubs.assert_called_once_with(
+                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+            )
+            find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
+            copy2.assert_has_calls(
+                [
+                    call(
+                        "/tmp_dir/gen-py/project/foo/bar.pyi",
+                        "/out/project/foo/bar.pyi",
+                    ),
+                    call(
+                        "/tmp_dir/gen-py/project/foo/baz.pyi",
+                        "/out/project/foo/baz.pyi",
+                    ),
+                ]
+            )
+
+        # The base_module is also taken into account by Thrift.
+        with patch.object(
+            filesystem, "build_thrift_stubs", return_value="/tmp_dir/gen-py"
+        ) as build_thrift_stubs, patch.object(
+            build_target,
+            "find_python_paths",
+            return_value=["/tmp_dir/gen-py/base/module/foo/bar.pyi"],
+        ) as find_python_paths, patch.object(
+            shutil, "copy2"
+        ) as copy2:
+            target = ThriftLibrary(
+                "/ROOT",
+                "project",
+                base("thrift_library", base_module="base.module"),
+                ["foo/bar.thrift", "baz.thrift"],
+            )
+            target.build("/out")
+            build_thrift_stubs.assert_called_once_with(
+                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+            )
+            find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
+            copy2.assert_called_once_with(
+                "/tmp_dir/gen-py/base/module/foo/bar.pyi",
+                "/out/base/module/foo/bar.pyi",
+            )
+
+        # Empty base_module should also work.
+        with patch.object(
+            filesystem, "build_thrift_stubs", return_value="/tmp_dir/gen-py"
+        ) as build_thrift_stubs, patch.object(
+            build_target,
+            "find_python_paths",
+            return_value=["/tmp_dir/gen-py/foo/bar.pyi"],
+        ) as find_python_paths, patch.object(
+            shutil, "copy2"
+        ) as copy2:
+            target = ThriftLibrary(
+                "/ROOT",
+                "project",
+                base("thrift_library", base_module=""),
+                ["foo/bar.thrift", "baz.thrift"],
+            )
+            target.build("/out")
+            build_thrift_stubs.assert_called_once_with(
+                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+            )
+            find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
+            copy2.assert_called_once_with(
+                "/tmp_dir/gen-py/foo/bar.pyi", "/out/foo/bar.pyi"
             )

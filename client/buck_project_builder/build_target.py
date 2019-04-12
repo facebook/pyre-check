@@ -7,9 +7,12 @@
 
 import ast
 import os
-from typing import Dict, List, Mapping, NamedTuple, Optional, Type  # noqa
+import shutil
+import tempfile
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Type  # noqa
 
 from . import filesystem
+from ..filesystem import find_python_paths
 
 
 class BuildTarget:
@@ -74,9 +77,7 @@ class NonPythonTarget(BuildTarget):
         self._rule_name = rule_name
         # We don't want to include dependencies of these targets.
         base_information = base_information._replace(dependencies=[])
-        super(NonPythonTarget, self).__init__(
-            buck_root, build_file_directory, base_information
-        )
+        super().__init__(buck_root, build_file_directory, base_information)
 
     def rule_name(self) -> str:
         return self._rule_name
@@ -98,3 +99,36 @@ class PythonLibrary(BuildTarget):
 class PythonUnitTest(BuildTarget):
     def rule_name(self) -> str:
         return "python_unittest"
+
+
+class ThriftLibrary(BuildTarget):
+    def __init__(
+        self,
+        buck_root: str,
+        build_file_directory: str,
+        base_information: BuildTarget.BaseInformation,
+        thrift_sources: Iterable[str],
+    ) -> None:
+        super().__init__(buck_root, build_file_directory, base_information)
+        self._thrift_sources = thrift_sources
+
+    def rule_name(self) -> str:
+        return "thrift_library"
+
+    def build(self, output_directory: str) -> None:
+        thrift_sources_relative_to_buck_root = [
+            os.path.join(self.build_file_directory, source)
+            for source in self._thrift_sources
+        ]
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            thrift_output_directory = filesystem.build_thrift_stubs(
+                self.buck_root,
+                thrift_sources_relative_to_buck_root,
+                temporary_directory,
+            )
+
+            for output_file in find_python_paths(thrift_output_directory):
+                relative_path = os.path.relpath(output_file, thrift_output_directory)
+                destination_path = os.path.join(output_directory, relative_path)
+                os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+                shutil.copy2(output_file, destination_path)

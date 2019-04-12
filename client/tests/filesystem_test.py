@@ -29,9 +29,9 @@ from ..filesystem import (  # noqa
     __name__ as filesystem_name,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
-    _find_python_paths,
     acquire_lock,
     add_symbolic_link,
+    find_python_paths,
     find_root,
     remove_if_exists,
 )
@@ -64,7 +64,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            os.path.relpath(path, root) for path in _find_python_paths(root)
+            os.path.relpath(path, root) for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,

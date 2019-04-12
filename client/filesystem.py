@@ -310,7 +310,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     def _merge_into_paths(
         self, source_directory: str, all_paths: Dict[str, str]
     ) -> None:
-        paths = _find_python_paths(root=source_directory)
+        paths = find_python_paths(root=source_directory)
         for path in paths:
             relative = os.path.relpath(path, source_directory)
             if not path:
@@ -368,7 +368,7 @@ def find_paths_with_extensions(root: str, extensions: Iterable[str]) -> List[str
     return output.split("\n")
 
 
-def _find_python_paths(root: str) -> List[str]:
+def find_python_paths(root: str) -> List[str]:
     try:
         return find_paths_with_extensions(root, ["py", "pyi"])
     except subprocess.CalledProcessError:
