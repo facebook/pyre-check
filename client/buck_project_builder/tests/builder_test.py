@@ -9,7 +9,7 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import BuilderException, FastBuckBuilder, Target, parser
-from ..build_target import BuildTarget, PythonBinary, PythonLibrary
+from ..build_target import BuildTarget, PythonBinary, PythonLibrary, ThriftLibrary
 from ..filesystem import Sources
 from .test_common import base
 
@@ -298,6 +298,40 @@ class BuilderTest(unittest.TestCase):
             with patch.object(glob, "iglob", return_value=["/ROOT/project2/TARGETS"]):
                 targets = builder.compute_targets_to_build(["//project2/..."])
                 self.assert_targets_equal(targets, ["//project2:e", "//project1:b"])
+
+    def test_compute_targets_to_build_duplicates(self):
+        # Dependency graph:
+        #     a
+        #   /   \
+        # b-py  c-py
+        #        |
+        #        b
+        build_file = MagicMock()
+        thrift_target = ThriftLibrary("/ROOT", "project", base("b"), ["b.thrift"])
+        build_file.targets = {
+            "a": PythonBinary(
+                "/ROOT",
+                "project",
+                base("a", dependencies=["//project:b-py", "//project:c-py"]),
+            ),
+            "b": thrift_target,
+            "b-py": thrift_target,
+            "c-py": ThriftLibrary(
+                "/ROOT",
+                "project",
+                base("c", dependencies=["//project:b"]),
+                ["c.thrift"],
+            ),
+        }
+
+        with patch.object(parser.Parser, "parse_file", return_value=build_file):
+            builder = FastBuckBuilder("/ROOT")
+
+            # b and b-py refer to the same build target; we should only build it once.
+            targets = builder.compute_targets_to_build(["//project:a"])
+            self.assert_targets_equal(
+                targets, ["//project:a", "//project:b", "//project:c"]
+            )
 
     def test_compute_reverse_dependencies(self):
         # Dependency graph:

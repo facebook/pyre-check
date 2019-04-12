@@ -46,7 +46,7 @@ class FastBuckBuilder(BuckBuilder):
             target.build(output_directory)
         return [output_directory]
 
-    def compute_targets_to_build(self, targets: Iterable[str]) -> List[BuildTarget]:
+    def compute_targets_to_build(self, targets: Iterable[str]) -> Iterable[BuildTarget]:
         """
             Compute the set of targets to build for the given targets using a
             breadth-first traversal.
@@ -58,7 +58,7 @@ class FastBuckBuilder(BuckBuilder):
         targets_to_parse = deque(normalized_targets)
         targets_seen = set(normalized_targets)
         targets_not_found = []
-        build_targets = []
+        build_targets = set()
 
         while targets_to_parse:
             next_target_string = targets_to_parse.popleft()
@@ -68,7 +68,7 @@ class FastBuckBuilder(BuckBuilder):
                 targets_not_found.append(next_target_string)
                 continue
             target_to_build = build_file.targets[next_target.name]
-            build_targets.append(target_to_build)
+            build_targets.add(target_to_build)
 
             new_targets = [
                 dependency

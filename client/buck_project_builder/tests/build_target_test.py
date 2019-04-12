@@ -16,6 +16,41 @@ from .test_common import base
 
 
 class BuildTargetTest(unittest.TestCase):
+    def test_equality(self):
+        self.assertEqual(
+            PythonBinary("/ROOT", "project", base("foo")),
+            PythonBinary("/ROOT", "project", base("foo")),
+        )
+        self.assertNotEqual(
+            PythonBinary("/ROOT", "project", base("foo")),
+            PythonLibrary("/ROOT", "project", base("foo")),
+        )
+        self.assertNotEqual(
+            PythonBinary("/ROOT", "project", base("foo")),
+            PythonBinary("/ROOT2", "project", base("foo")),
+        )
+        self.assertNotEqual(
+            PythonBinary("/ROOT", "project", base("foo")),
+            PythonBinary("/ROOT", "project2", base("foo")),
+        )
+        self.assertNotEqual(
+            PythonBinary("/ROOT", "project", base("foo")),
+            PythonBinary("/ROOT", "project", base("food")),
+        )
+        self.assertEqual(
+            len(
+                {
+                    PythonBinary("/ROOT", "project", base("foo")),
+                    PythonBinary("/ROOT", "project", base("foo")),
+                    PythonBinary("/ROOT2", "project", base("foo")),
+                    PythonBinary("/ROOT2", "project", base("foo")),
+                    PythonLibrary("/ROOT", "project", base("foo")),
+                    PythonLibrary("/ROOT", "project", base("foo")),
+                }
+            ),
+            3,
+        )
+
     def test_build_python_binary(self):
         target = PythonBinary(
             "/ROOT",

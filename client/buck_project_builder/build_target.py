@@ -47,6 +47,16 @@ class BuildTarget:
     def __repr__(self) -> str:
         return str(self)
 
+    def __hash__(self) -> int:
+        return hash((type(self), self.buck_root, self.target))
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, type(self))
+            and self.buck_root == other.buck_root
+            and self.target == other.target
+        )
+
     @property
     def target(self) -> str:
         return "//{}:{}".format(self.build_file_directory, self.name)
