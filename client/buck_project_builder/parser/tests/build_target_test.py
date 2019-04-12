@@ -83,6 +83,30 @@ non_python(
 )
 """
 
+THRIFT_LIBRARY_TARGET_1 = """
+thrift_library(
+    name = "thrift_target_1",
+    languages = ["cpp", "py"],
+    thrift_srcs = {
+        "foo.thrift": [],
+        "bar.thrift": [],
+    },
+)
+"""
+
+THRIFT_LIBRARY_TARGET_2 = """
+thrift_library(
+    name = "thrift_target_2",
+    thrift_srcs = {
+        "baz.thrift": []
+    },
+    py_base_module = "foo.bar",
+    deps = [
+        ":thrift_target_1-py"
+    ]
+)
+"""
+
 
 class BuildTargetTest(unittest.TestCase):
     def assert_sources_equal(
@@ -178,3 +202,24 @@ class BuildTargetTest(unittest.TestCase):
         self.assertListEqual(target.dependencies, [])
         self.assert_sources_equal(target.sources, files=[], globs=[])
         self.assertIsNone(target.base_module)
+
+    def test_thrift_library(self):
+        tree = ast.parse(THRIFT_LIBRARY_TARGET_1)
+        call = _get_call(tree)
+        target = build_rules.parse_thrift_library(call, "/ROOT", "some/project")
+        self.assertEqual(target.target, "//some/project:thrift_target_1")
+        self.assertEqual(target.name, "thrift_target_1")
+        self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(
+            sorted(target._thrift_sources), sorted(["foo.thrift", "bar.thrift"])
+        )
+        self.assertIsNone(target.base_module)
+
+        tree = ast.parse(THRIFT_LIBRARY_TARGET_2)
+        call = _get_call(tree)
+        target = build_rules.parse_thrift_library(call, "/ROOT", "some/project")
+        self.assertEqual(target.target, "//some/project:thrift_target_2")
+        self.assertEqual(target.name, "thrift_target_2")
+        self.assertListEqual(target.dependencies, ["//some/project:thrift_target_1-py"])
+        self.assertListEqual(sorted(target._thrift_sources), sorted(["baz.thrift"]))
+        self.assertEqual(target.base_module, "foo.bar")

@@ -7,7 +7,13 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from .. import Parser, ParserException
-from ...build_target import NonPythonTarget, PythonBinary, PythonLibrary, PythonUnitTest
+from ...build_target import (
+    NonPythonTarget,
+    PythonBinary,
+    PythonLibrary,
+    PythonUnitTest,
+    ThriftLibrary,
+)
 from ...filesystem import Glob
 
 
@@ -51,6 +57,15 @@ cpp_python_extension(
 TARGETS_FILE_2 = """
 python_binary(
     name = 1234,
+)
+"""
+
+TARGETS_FILE_3 = """
+thrift_library(
+    name = "foo",
+    thrift_srcs = {
+        "bar.thrift": []
+    },
 )
 """
 
@@ -108,3 +123,19 @@ class ParserTest(unittest.TestCase):
             mocked_open.assert_called_once_with(
                 "/buck_root/my/other_module/TARGETS", "r"
             )
+
+        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_3)) as mocked_open:
+            result = parser.parse_file("my/thrift_module")
+            mocked_open.assert_called_once_with(
+                "/buck_root/my/thrift_module/TARGETS", "r"
+            )
+
+            self.assertEqual(result.path, "my/thrift_module")
+            self.assertEqual(len(result.targets), 2)
+
+            self.assertEqual(result.targets["foo"], result.targets["foo-py"])
+
+            target = result.targets["foo"]
+            self.assertIsInstance(target, ThriftLibrary)
+            self.assertEqual(target.target, "//my/thrift_module:foo")
+            self.assertListEqual(target._thrift_sources, ["bar.thrift"])

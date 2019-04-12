@@ -13,6 +13,7 @@ from ..build_target import (
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
+    ThriftLibrary,
 )
 from ..filesystem import Glob, Sources
 
@@ -63,6 +64,30 @@ def non_python_target_parser(
         return NonPythonTarget(buck_root, build_file_directory, base, rule_name)
 
     return parse_non_python_target
+
+
+def parse_thrift_library(
+    call: ast.Call, buck_root: str, build_file_directory: str
+) -> ThriftLibrary:
+    keywords = _get_keywords(call)
+    name = _get_string(keywords["name"])
+    dependencies = _get_dependencies(build_file_directory, keywords.get("deps"))
+    base_module = (
+        _get_string(keywords["py_base_module"])
+        if "py_base_module" in keywords
+        else None
+    )
+    base_information = BuildTarget.BaseInformation(
+        keywords, name, dependencies, Sources(), base_module
+    )
+
+    thrift_sources_dict = keywords["thrift_srcs"]
+    assert isinstance(thrift_sources_dict, ast.Dict)
+    thrift_sources = [_get_string(key) for key in thrift_sources_dict.keys]
+
+    return ThriftLibrary(
+        buck_root, build_file_directory, base_information, thrift_sources
+    )
 
 
 # AST helper methods
