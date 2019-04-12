@@ -651,6 +651,15 @@ module OrderImplementation = struct
         let overload =
           map_implementation overload ~f:(Type.namespace_free_variables)
         in
+        let does_not_leak_namespaced_variables (external_constraints, _) =
+          let predicate = function
+            | Type.Variable variable ->
+                List.exists namespaced_variables ~f:((=) variable)
+            | _ ->
+                false
+          in
+          not (TypeConstraints.exists external_constraints ~predicate)
+        in
         let instantiate_return (external_constraints, partial_solution) =
           let instantiated_return =
             Type.instantiate overload.annotation ~constraints:(Type.Map.find partial_solution)
@@ -662,6 +671,7 @@ module OrderImplementation = struct
         |> List.map
           ~f:(OrderedConstraints.extract_partial_solution ~order ~variables:namespaced_variables)
         |> List.concat_map ~f:Option.to_list
+        |> List.filter ~f:does_not_leak_namespaced_variables
         |> List.map ~f: instantiate_return
       in
       let overloads =

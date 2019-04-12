@@ -10,6 +10,8 @@ val empty: t
 
 type solution = Type.t Type.Map.t
 
+val exists: t -> predicate: (Type.t -> bool) -> bool
+
 module type OrderedConstraintsType = sig
   type order
   val add_lower_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option

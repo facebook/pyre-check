@@ -10,6 +10,7 @@ open Pyre
 
 open Analysis
 open TypeConstraints
+open Test
 
 
 let child = Type.Primitive "Child"
@@ -321,11 +322,32 @@ let test_partial_solution _ =
   ()
 
 
+let test_exists _ =
+  let order = () in
+  let unconstrained_a = variable ~name:"A" Type.Unconstrained in
+  let constraints_with_child =
+    DiamondOrderedConstraints.add_lower_bound
+      TypeConstraints.empty
+      ~order
+      ~variable:unconstrained_a
+      ~bound:child
+    |> function | Some constraints -> constraints | None -> failwith "add bound failed"
+  in
+  assert_true
+    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal child));
+  assert_true
+    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal Type.Top));
+  assert_false
+    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal Type.Bottom));
+  ()
+
+
 let () =
   "constraints">:::[
     "add_bound">::test_add_bound;
     "single_variable">::test_single_variable_solution;
     "multiple_variables">::test_multiple_variable_solution;
     "partial_solution">::test_partial_solution;
+    "exists">::test_exists;
   ]
   |> Test.run;

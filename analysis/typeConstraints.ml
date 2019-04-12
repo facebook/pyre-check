@@ -45,6 +45,13 @@ let empty = VariableMap.empty
 type solution = Type.t Type.Map.t
 
 
+let exists constraints ~predicate =
+  let exists_in_interval_bounds { upper_bound; lower_bound } =
+    Type.exists upper_bound ~predicate || Type.exists lower_bound ~predicate
+  in
+  VariableMap.exists constraints ~f:exists_in_interval_bounds
+
+
 module type OrderedConstraintsType = sig
   type order
   val add_lower_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option
