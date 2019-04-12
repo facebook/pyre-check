@@ -72,31 +72,25 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               value;
             } as expression) =
           let value =
+            let ends_with_literal = function
+              | Name.Identifier "Literal" -> true
+              | Name.Attribute { attribute = "Literal"; _ } -> true
+              | _ -> false
+            in
             match value with
             | Name (Name.Attribute { base; attribute }) ->
                 Name (Name.Attribute { base = transform_expression base; attribute })
             | Call {
                 callee = {
                   Node.value = Name (
-                    Name.Attribute {
-                      base = { Node.value = Name (Name.Identifier "Literal"); _ };
-                      attribute = "__getitem__";
-                    });
+                      Name.Attribute {
+                        base = { Node.value = Name base; _ };
+                        attribute = "__getitem__";
+                      });
                   _;
                 };
                 _;
-              }
-            | Call {
-                callee = {
-                  Node.value = Name (
-                    Name.Attribute {
-                      base = { Node.value = Name (Name.Attribute { attribute = "Literal"; _ }); _ };
-                      attribute = "__getitem__";
-                    });
-                  _;
-                };
-                _;
-              } ->
+              } when ends_with_literal base ->
                 (* Don't transform arguments in Literals. This will hit any generic type named
                    Literal, but otherwise `from ... import Literal` wouldn't work as this has
                    to be before qualification. *)

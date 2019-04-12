@@ -138,7 +138,20 @@ let test_expand_string_annotations _ =
       def foo(x: typing.Any):
         y = typing.cast(typing.List[Foo], x)
         z = typing.cast(typing.Dict[str, Foo], x)
-    |}
+    |};
+  assert_expand
+    "def foo(f: Literal['A']): ..."
+    "def foo(f: Literal['A']): ...";
+  assert_expand
+    "def foo(f: typing_extensions.Literal['A']): ..."
+    "def foo(f: typing_extensions.Literal['A']): ...";
+  assert_expand
+    "def foo(f: typing_extensions.Literal['A', 'B']): ..."
+    "def foo(f: typing_extensions.Literal['A', 'B']): ...";
+  assert_expand
+    "def foo(f: te.Literal['A', 'B']): ..."
+    "def foo(f: te.Literal['A', 'B']): ...";
+  ()
 
 
 let test_expand_format_string _ =
