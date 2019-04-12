@@ -5,7 +5,8 @@
 
 # pyre-strict
 import ast
-from typing import Callable, Dict, List, Optional
+import os
+from typing import Callable, Dict, Iterable, List, Optional
 
 from ..build_target import (
     BuildTarget,
@@ -13,6 +14,7 @@ from ..build_target import (
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
+    PythonWheel,
     ThriftLibrary,
 )
 from ..filesystem import Glob, Sources
@@ -87,6 +89,73 @@ def parse_thrift_library(
 
     return ThriftLibrary(
         buck_root, build_file_directory, base_information, thrift_sources
+    )
+
+
+def parse_python_wheel(
+    expressions: Iterable[ast.stmt], buck_root: str, build_file_directory: str
+) -> PythonWheel:
+    # Python wheels defined at a/b/c get a target name of //a/b/c:c.
+    name = os.path.basename(build_file_directory)
+
+    # TODO(T38892701): Support dependencies on wheels.
+    # There are some occurrences in the codebase where wheels specify dependencies,
+    # but it is not always the case that each version has the same dependencies.
+    # We currently compute all dependencies at the beginning of a build, but these
+    # dependencies are platform-specific, so we need to incorporate an additional
+    # stage to determine platform-specific dependencies into the build process.
+    base_information = BuildTarget.BaseInformation({}, name, [], Sources(), None)
+
+    python_wheel_default_calls = []
+    python_wheel_calls = []
+    for expression in expressions:
+        assert isinstance(expression, ast.Expr)
+        call = expression.value
+        assert isinstance(call, ast.Call)
+        named = call.func
+        assert isinstance(named, ast.Name)
+        rule = named.id
+        if rule == "python_wheel_default":
+            python_wheel_default_calls.append(call)
+        elif rule == "python_wheel":
+            python_wheel_calls.append(call)
+
+    # Parse python_wheel_default expression
+    if not len(python_wheel_default_calls) == 1:
+        raise ValueError(
+            "Expected a single `python_wheel_default` expression for wheel {}".format(
+                name
+            )
+        )
+    keywords = _get_keywords(python_wheel_default_calls[0])
+    platform_versions = keywords["platform_versions"]
+    assert isinstance(platform_versions, ast.Dict)
+    keys = [_get_string(key) for key in platform_versions.keys]
+    values = [_get_string(value) for value in platform_versions.values]
+    platforms_to_wheel_version = dict(zip(keys, values))
+
+    # Parse each python_wheel expression
+    wheel_versions_to_url_mapping = {}
+    for python_wheel_call in python_wheel_calls:
+        python_wheel_keywords = _get_keywords(python_wheel_call)
+        assert (
+            "version" in python_wheel_keywords
+            and "platform_urls" in python_wheel_keywords
+        )
+        version = _get_string(python_wheel_keywords["version"])
+        platform_urls = python_wheel_keywords["platform_urls"]
+        assert isinstance(platform_urls, ast.Dict)
+        keys = [_get_string(key) for key in platform_urls.keys]
+        values = [_get_string(value) for value in platform_urls.values]
+        url_mapping = dict(zip(keys, values))
+        wheel_versions_to_url_mapping[version] = url_mapping
+
+    return PythonWheel(
+        buck_root,
+        build_file_directory,
+        base_information,
+        platforms_to_wheel_version,
+        wheel_versions_to_url_mapping,
     )
 
 

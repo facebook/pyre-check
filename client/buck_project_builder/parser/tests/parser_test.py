@@ -12,6 +12,7 @@ from ...build_target import (
     PythonBinary,
     PythonLibrary,
     PythonUnitTest,
+    PythonWheel,
     ThriftLibrary,
 )
 from ...filesystem import Glob
@@ -65,7 +66,37 @@ thrift_library(
     name = "foo",
     thrift_srcs = {
         "bar.thrift": []
+    }
+)
+"""
+
+TARGETS_FILE_4 = """
+python_wheel(
+    platform_urls = {
+        "platform_1": "platform_1_1.0_url",
+        "platform_2": "platform_2_1.0_url",
     },
+    version = "1.0",
+)
+
+python_wheel(
+    platform_urls = {
+        "platform_1": "platform_1_2.0_url",
+        "platform_2": "platform_2_2.0_url",
+    },
+    version = "2.0",
+)
+
+python_wheel_default(
+    platform_versions = {
+        "platform_1": "1.0",
+        "platform_2": "2.0",
+    },
+)
+
+python_library(
+    name="library_target",
+    srcs=["a.py", "b.py"]
 )
 """
 
@@ -139,3 +170,26 @@ class ParserTest(unittest.TestCase):
             self.assertIsInstance(target, ThriftLibrary)
             self.assertEqual(target.target, "//my/thrift_module:foo")
             self.assertListEqual(target._thrift_sources, ["bar.thrift"])
+
+        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_4)) as mocked_open:
+            result = parser.parse_file("my/wheel")
+            mocked_open.assert_called_once_with("/buck_root/my/wheel/TARGETS", "r")
+
+            self.assertEqual(result.path, "my/wheel")
+            self.assertEqual(len(result.targets), 2)
+
+            target = result.targets["wheel"]
+            self.assertIsInstance(target, PythonWheel)
+            self.assertEqual(target.target, "//my/wheel:wheel")
+            self.assertListEqual(target.sources.files, [])
+            self.assertListEqual(target.sources.globs, [])
+            self.assertListEqual(target.dependencies, [])
+
+            # Even though the entire file must be scanned for a python_wheel,
+            # other targets should still be parsed.
+            target = result.targets["library_target"]
+            self.assertIsInstance(target, PythonLibrary)
+            self.assertEqual(target.target, "//my/wheel:library_target")
+            self.assertListEqual(target.sources.files, ["a.py", "b.py"])
+            self.assertListEqual(target.sources.globs, [])
+            self.assertListEqual(target.dependencies, [])

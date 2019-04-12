@@ -107,6 +107,31 @@ thrift_library(
 )
 """
 
+PYTHON_WHEEL_TARGET = """
+python_wheel(
+    platform_urls = {
+        "platform_1": "platform_1_1.0_url",
+        "platform_2": "platform_2_1.0_url",
+    },
+    version = "1.0",
+)
+
+python_wheel(
+    platform_urls = {
+        "platform_1": "platform_1_2.0_url",
+        "platform_2": "platform_2_2.0_url",
+    },
+    version = "2.0",
+)
+
+python_wheel_default(
+    platform_versions = {
+        "platform_1": "1.0",
+        "platform_2": "2.0",
+    },
+)
+"""
+
 
 class BuildTargetTest(unittest.TestCase):
     def assert_sources_equal(
@@ -223,3 +248,29 @@ class BuildTargetTest(unittest.TestCase):
         self.assertListEqual(target.dependencies, ["//some/project:thrift_target_1-py"])
         self.assertListEqual(sorted(target._thrift_sources), sorted(["baz.thrift"]))
         self.assertEqual(target.base_module, "foo.bar")
+
+    def test_python_wheel(self):
+        tree = ast.parse(PYTHON_WHEEL_TARGET)
+        assert isinstance(tree, ast.Module)
+        target = build_rules.parse_python_wheel(
+            tree.body, "/ROOT", "some/project/wheel"
+        )
+        self.assertEqual(target.target, "//some/project/wheel:wheel")
+        self.assertEqual(target.name, "wheel")
+        self.assertDictEqual(
+            target._platforms_to_wheel_version,
+            {"platform_1": "1.0", "platform_2": "2.0"},
+        )
+        self.assertDictEqual(
+            target._wheel_versions_to_url_mapping,
+            {
+                "1.0": {
+                    "platform_1": "platform_1_1.0_url",
+                    "platform_2": "platform_2_1.0_url",
+                },
+                "2.0": {
+                    "platform_1": "platform_1_2.0_url",
+                    "platform_2": "platform_2_2.0_url",
+                },
+            },
+        )

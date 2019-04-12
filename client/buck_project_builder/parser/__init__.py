@@ -98,7 +98,14 @@ class Parser(object):
                     # we resolve both target strings to the same build target.
                     name_with_suffix = "{}-py".format(target.name)
                     targets[name_with_suffix] = target  # pyre-ignore: fixed on master
-            except (AssertionError, ValueError) as error:
+                elif rule == "python_wheel_default":
+                    # Python wheels aren't real targets, so we handle them specially.
+                    target = build_rules.parse_python_wheel(
+                        expressions, self.buck_root, build_file_directory
+                    )
+                    # pyre-ignore: Incompatible parameter type [6]; fixed on master.
+                    targets[target.name] = target
+            except (AssertionError, KeyError, ValueError) as error:
                 raise ParserException(
                     "Error occurred parsing targets in file {}, "
                     "at line {}, column {}: {}".format(
