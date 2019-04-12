@@ -5,8 +5,12 @@
 
 # pyre-strict
 
+import io
 import os
 import subprocess
+import urllib.parse
+import urllib.request
+import zipfile
 from typing import Iterable, List, NamedTuple, Optional
 
 from ..filesystem import add_symbolic_link, get_filesystem
@@ -69,3 +73,16 @@ def build_thrift_stubs(
             command + [thrift_source], stderr=subprocess.PIPE, cwd=buck_root
         )
     return os.path.join(output_directory, "gen-py")
+
+
+def download_and_extract_zip_file(url: str, output_directory: str) -> None:
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.netloc != "pypi.facebook.com":
+        raise ValueError(
+            "Cannot download file `{}`. "
+            "It comes from an untrusted location.".format(url)
+        )
+    with urllib.request.urlopen(url) as response:
+        buffer = io.BytesIO(response.read())
+        with zipfile.ZipFile(buffer) as zip_file:
+            zip_file.extractall(output_directory)

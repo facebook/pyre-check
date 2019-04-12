@@ -43,7 +43,10 @@ class FastBuckBuilder(BuckBuilder):
         output_directory = self.output_directory or tempfile.mkdtemp(prefix="pyre_tmp_")
         targets_to_build = self.compute_targets_to_build(targets)
         for target in targets_to_build:
-            target.build(output_directory)
+            try:
+                target.build(output_directory)
+            except ValueError as error:
+                raise BuilderException(str(error), targets=[target.target])
         return [output_directory]
 
     def compute_targets_to_build(self, targets: Iterable[str]) -> Iterable[BuildTarget]:

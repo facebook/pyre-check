@@ -10,7 +10,13 @@ import unittest
 from unittest.mock import call, patch
 
 from .. import build_target, filesystem
-from ..build_target import PythonBinary, PythonLibrary, PythonUnitTest, ThriftLibrary
+from ..build_target import (
+    PythonBinary,
+    PythonLibrary,
+    PythonUnitTest,
+    PythonWheel,
+    ThriftLibrary,
+)
 from ..filesystem import Glob, Sources
 from .test_common import base
 
@@ -251,3 +257,69 @@ class BuildTargetTest(unittest.TestCase):
             copy2.assert_called_once_with(
                 "/tmp_dir/gen-py/foo/bar.pyi", "/out/foo/bar.pyi"
             )
+
+    def test_build_python_wheel(self):
+        version_url_mapping = {
+            "1.0": {
+                "py3-platform007": "py3-platform007_1.0_url",
+                "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_1.0_url",
+            },
+            "2.0": {
+                "py3-platform007": "py3-platform007_2.0_url",
+                "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_2.0_url",
+            },
+        }
+        target = PythonWheel(
+            "/ROOT",
+            "project",
+            base("wheel"),
+            {"py3-platform007": "1.0", "py3-gcc-5-glibc-2.23": "2.0"},
+            version_url_mapping,
+        )
+        with patch.object(
+            filesystem, "download_and_extract_zip_file"
+        ) as download_and_extract_zip_file:
+            target.build("/out")
+            download_and_extract_zip_file.assert_called_with(
+                "py3-platform007_1.0_url", "/out"
+            )
+
+        target = PythonWheel(
+            "/ROOT",
+            "project",
+            base("wheel"),
+            {"py3-platform007": "2.0", "py3-gcc-5-glibc-2.23": "2.0"},
+            version_url_mapping,
+        )
+        with patch.object(
+            filesystem, "download_and_extract_zip_file"
+        ) as download_and_extract_zip_file:
+            target.build("/out")
+            download_and_extract_zip_file.assert_called_with(
+                "py3-platform007_2.0_url", "/out"
+            )
+
+        target = PythonWheel(
+            "/ROOT",
+            "project",
+            base("wheel"),
+            {"py3-gcc-5-glibc-2.23": "2.0"},
+            version_url_mapping,
+        )
+        with patch.object(
+            filesystem, "download_and_extract_zip_file"
+        ) as download_and_extract_zip_file:
+            target.build("/out")
+            download_and_extract_zip_file.assert_called_with(
+                "py3-gcc-5-glibc-2.23_2.0_url", "/out"
+            )
+
+        # Raises if no platform could be found.
+        target = PythonWheel(
+            "/ROOT",
+            "project",
+            base("wheel"),
+            {"py2-platform007": "2.0"},
+            version_url_mapping,
+        )
+        self.assertRaises(ValueError, target.build, "/out")

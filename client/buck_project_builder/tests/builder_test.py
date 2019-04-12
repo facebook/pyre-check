@@ -9,7 +9,13 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 from .. import BuilderException, FastBuckBuilder, Target, parser
-from ..build_target import BuildTarget, PythonBinary, PythonLibrary, ThriftLibrary
+from ..build_target import (
+    BuildTarget,
+    PythonBinary,
+    PythonLibrary,
+    PythonWheel,
+    ThriftLibrary,
+)
 from ..filesystem import Sources
 from .test_common import base
 
@@ -332,6 +338,31 @@ class BuilderTest(unittest.TestCase):
             self.assert_targets_equal(
                 targets, ["//project:a", "//project:b", "//project:c"]
             )
+
+    def test_targets_to_build_wheels(self):
+        build_file_1 = MagicMock()
+        build_file_1.targets = {
+            "a": PythonBinary(
+                "/ROOT", "project1", base("a", ["//project2/wheel:wheel"])
+            )
+        }
+        build_file_2 = MagicMock()
+        build_file_2.targets = {
+            "wheel": PythonWheel("/ROOT", "project2/wheel", base("wheel"), {}, {})
+        }
+        build_file_mapping = {"project1": build_file_1, "project2/wheel": build_file_2}
+        with patch.object(
+            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+        ):
+            builder = FastBuckBuilder("/ROOT")
+
+            targets = builder.compute_targets_to_build(["//project1:a"])
+            self.assert_targets_equal(
+                targets, ["//project1:a", "//project2/wheel:wheel"]
+            )
+
+            targets = builder.compute_targets_to_build(["//project2/wheel:wheel"])
+            self.assert_targets_equal(targets, ["//project2/wheel:wheel"])
 
     def test_compute_reverse_dependencies(self):
         # Dependency graph:

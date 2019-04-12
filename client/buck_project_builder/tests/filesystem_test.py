@@ -3,13 +3,23 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import io
 import subprocess
 import unittest
+import urllib.request
+import zipfile
 from typing import Iterable
 from unittest.mock import call, patch
 
 from .. import filesystem
-from ..filesystem import Glob, Sources, build_thrift_stubs, link_paths, resolve_sources
+from ..filesystem import (
+    Glob,
+    Sources,
+    build_thrift_stubs,
+    download_and_extract_zip_file,
+    link_paths,
+    resolve_sources,
+)
 
 
 class FilesystemTest(unittest.TestCase):
@@ -189,3 +199,13 @@ class FilesystemTest(unittest.TestCase):
                     ),
                 ]
             )
+
+    def test_download_and_extract_zip_file(self):
+        with patch.object(urllib.request, "urlopen"), patch.object(
+            io, "BytesIO"
+        ), patch.object(zipfile, "ZipFile"):
+            download_and_extract_zip_file("https://pypi.facebook.com/blahblah", "/out")
+
+        self.assertRaises(
+            ValueError, download_and_extract_zip_file, "https://pypi.org/blah", "/out"
+        )

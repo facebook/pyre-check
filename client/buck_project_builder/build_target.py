@@ -142,3 +142,43 @@ class ThriftLibrary(BuildTarget):
                 destination_path = os.path.join(output_directory, relative_path)
                 os.makedirs(os.path.dirname(destination_path), exist_ok=True)
                 shutil.copy2(output_file, destination_path)
+
+
+class PythonWheel(BuildTarget):
+    def __init__(
+        self,
+        buck_root: str,
+        build_file_directory: str,
+        base_information: BuildTarget.BaseInformation,
+        platforms_to_wheel_version: Mapping[str, str],
+        wheel_versions_to_url_mapping: Mapping[str, Mapping[str, str]],
+    ) -> None:
+        super(PythonWheel, self).__init__(
+            buck_root, build_file_directory, base_information
+        )
+        self._platforms_to_wheel_version = platforms_to_wheel_version
+        self._wheel_versions_to_url_mapping = wheel_versions_to_url_mapping
+
+    def rule_name(self) -> str:
+        return "python_wheel"
+
+    def _find_best_match(self) -> str:
+        # TODO(T38892701): This inference could be done more intelligently:
+        #   - handling platform overrides (these are directory-specific)
+        #   - handling different python platforms
+        platforms = ["platform007", "gcc-5-glibc-2.23"]
+        python_version = 3
+        for platform in platforms:
+            try:
+                python_platform = "py{}-{}".format(python_version, platform)
+                wheel_version = self._platforms_to_wheel_version[python_platform]
+                return self._wheel_versions_to_url_mapping[wheel_version][
+                    python_platform
+                ]
+            except KeyError:
+                continue
+        raise ValueError("No suitable wheel could be found for {}".format(self.target))
+
+    def build(self, output_directory: str) -> None:
+        wheel_url = self._find_best_match()
+        filesystem.download_and_extract_zip_file(wheel_url, output_directory)
