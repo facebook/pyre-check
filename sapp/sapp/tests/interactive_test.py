@@ -277,7 +277,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_run(1)
+        self.interactive.run(1)
         self.interactive.issues()
         output = self.stdout.getvalue().strip()
 
@@ -295,8 +295,8 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_run(2)
-        self.interactive.set_run(3)
+        self.interactive.run(2)
+        self.interactive.run(3)
         stderr = self.stderr.getvalue().strip()
 
         self.assertIn("Run 2 doesn't exist", stderr)
@@ -316,16 +316,16 @@ class InteractiveTest(TestCase):
             self._add_to_session(session, runs)
             session.commit()
 
-        self.interactive.set_latest_run("c")
+        self.interactive.latest_run("c")
         self.assertEqual(self.interactive.current_run_id, 6)
 
-        self.interactive.set_latest_run("b")
+        self.interactive.latest_run("b")
         self.assertEqual(self.interactive.current_run_id, 5)
 
-        self.interactive.set_latest_run("a")
+        self.interactive.latest_run("a")
         self.assertEqual(self.interactive.current_run_id, 3)
 
-        self.interactive.set_latest_run("d")
+        self.interactive.latest_run("d")
         self.assertEqual(self.interactive.current_run_id, 3)
         self.assertIn("No runs with kind 'd'", self.stderr.getvalue())
 
@@ -348,14 +348,14 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
 
-        self.interactive.set_issue_instance(2)
+        self.interactive.issue(2)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", stdout)
         self.assertIn("Issue 2", stdout)
         self.assertNotIn("Issue 3", stdout)
 
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", stdout)
@@ -369,7 +369,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         stderr = self.stderr.getvalue().strip()
 
         self.assertIn("Issue 1 doesn't exist", stderr)
@@ -745,9 +745,9 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("Use 'set_issue_instance(ID)' or 'set_frame(ID)'", stderr)
+        self.assertIn("Use 'issue_instance(ID)' or 'frame(ID)'", stderr)
 
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("     1    leaf       source file.py:1|1|1", output)
@@ -771,7 +771,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_frame(1)
+        self.interactive.frame(1)
 
         self._clear_stdout()
         self.interactive.trace()
@@ -833,7 +833,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Missing trace frame: call2:param0", stdout)
@@ -883,7 +883,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.next_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
@@ -941,7 +941,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
 
         self.interactive.jump(1)
@@ -987,7 +987,7 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
         self.interactive.sources = {"source1"}
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self._clear_stdout()
         self.interactive.trace()
         self.assertEqual(
@@ -1071,7 +1071,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
 
         self.assertEqual(self.interactive.sources, {"source1"})
         self.assertEqual(self.interactive.sinks, {"sink1"})
@@ -1087,7 +1087,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         # Parent at root
         self.interactive.prev_cursor_location()
         with patch("click.prompt", return_value=0):
@@ -1135,7 +1135,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         # Parent at root
         self.interactive.prev_cursor_location()
 
@@ -1159,7 +1159,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.prev_cursor_location()
 
         # We are testing for the source location, which differs between branches
@@ -1268,7 +1268,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
 
         self._clear_stdout()
         self.interactive.prev_cursor_location()
@@ -1637,7 +1637,7 @@ else:
 
     def testListFramesWithLimit(self):
         self._set_up_branched_trace()
-        self.interactive.set_run(1)
+        self.interactive.run(1)
 
         self._clear_stdout()
         self.interactive.frames(limit=3)
@@ -1672,16 +1672,16 @@ else:
 
         self.interactive.setup()
 
-        self.interactive.set_frame(0)
+        self.interactive.frame(0)
         self.assertIn("Trace frame 0 doesn't exist.", self.stderr.getvalue())
 
         self._clear_stdout()
-        self.interactive.set_frame(1)
+        self.interactive.frame(1)
         self.assertIn("Trace frame 1", self.stdout.getvalue())
         self.assertNotIn("Trace frame 2", self.stdout.getvalue())
 
         self._clear_stdout()
-        self.interactive.set_frame(2)
+        self.interactive.frame(2)
         self.assertNotIn("Trace frame 1", self.stdout.getvalue())
         self.assertIn("Trace frame 2", self.stdout.getvalue())
 
@@ -1708,7 +1708,7 @@ else:
         self._set_up_branched_trace()
         self.interactive.setup()
 
-        self.interactive.set_frame(3)
+        self.interactive.frame(3)
         self.interactive.current_trace_frame_index = 1
 
         self._clear_stdout()
@@ -1732,7 +1732,7 @@ else:
         self._set_up_branched_trace()
         self.interactive.setup()
 
-        self.interactive.set_frame(3)
+        self.interactive.frame(3)
         self.interactive.current_trace_frame_index = 1
 
         self._clear_stdout()

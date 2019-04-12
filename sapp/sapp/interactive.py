@@ -81,27 +81,27 @@ class Interactive:
     help_message = f"""
 Commands =======================================================================
 
-help()                   show this message
-help(COMMAND)            more info about a command
-state()                  show the internal state of the tool for debugging
+help()            show this message
+help(COMMAND)     more info about a command
+state()           show the internal state of the tool for debugging
 
-runs()                   list all completed static analysis runs
-set_run(ID)              select a specific run for browsing issues
-set_latest_run(KIND)     sets run to the latest of the specified kind
-issues()                 list all issues for the selected run
-set_issue_instance(ID)   select a specific issue for browsing a trace
-show()                   show info about selected issue or trace frame
-trace()                  show a trace of the selected issue or trace frame
-prev()/p()               move backward within the trace
-next()/n()               move forward within the trace
-jump(NUM)                jump to a specific trace frame in a trace
-branch(INDEX)            select a trace branch
-{list_string}                   show source code at the current trace frame
+runs()            list all completed static analysis runs
+run(ID)           select a specific run for browsing issues
+latest_run(KIND)  sets run to the latest of the specified kind
+issues()          list all issues for the selected run
+issue(ID)         select a specific issue for browsing a trace
+show()            show info about selected issue or trace frame
+trace()           show a trace of the selected issue or trace frame
+prev()/p()        move backward within the trace
+next()/n()        move forward within the trace
+jump(NUM)         jump to a specific trace frame in a trace
+branch(INDEX)     select a trace branch
+{list_string}            show source code at the current trace frame
 
-frames()                 show trace frames independently of an issue
-set_frame(ID)            select a trace frame to explore
-parents()                show trace frames that call the current trace frame
-details()                show additional information about the current trace frame
+frames()          show trace frames independently of an issue
+frame(ID)         select a trace frame to explore
+parents()         show trace frames that call the current trace frame
+details()         show additional information about the current trace frame
 """
     welcome_message = "Interactive issue exploration. Type 'commands()' for help."
 
@@ -116,9 +116,9 @@ details()                show additional information about the current trace fra
             "state": self.state,
             "runs": self.runs,
             "issues": self.issues,
-            "set_run": self.set_run,
-            "set_latest_run": self.set_latest_run,
-            "set_issue_instance": self.set_issue_instance,
+            "run": self.run,
+            "latest_run": self.latest_run,
+            "issue": self.issue,
             "show": self.show,
             "trace": self.trace,
             "next": self.next_cursor_location,
@@ -129,7 +129,7 @@ details()                show additional information about the current trace fra
             "branch": self.branch,
             "list": self.list_source_code,
             "frames": self.frames,
-            "set_frame": self.set_frame,
+            "frame": self.frame,
             "parents": self.parents,
             "details": self.details,
         }
@@ -207,7 +207,7 @@ details()                show additional information about the current trace fra
         print(f"Found {len(run_strings)} runs.")
 
     @catch_keyboard_interrupt()
-    def set_run(self, run_id):
+    def run(self, run_id):
         with self.db.make_session() as session:
             selected_run = (
                 session.query(Run)
@@ -227,14 +227,14 @@ details()                show additional information about the current trace fra
         print(f"Set run to {run_id}.")
 
     @catch_user_error()
-    def set_latest_run(self, run_kind: str) -> None:
+    def latest_run(self, run_kind: str) -> None:
         """Sets the current run to the latest run of a given kind.
 
         Parameters (required):
             run_kind: str    the run kind to filter by
 
         Example:
-            set_latest_run("master") will set the current run to the latest
+            latest_run("master") will set the current run to the latest
             run whose kind field is "master"
         """
         if not run_kind or not isinstance(run_kind, str):
@@ -255,7 +255,15 @@ details()                show additional information about the current trace fra
         print(f"Set run to {self.current_run_id}.")
 
     @catch_keyboard_interrupt()
-    def set_issue_instance(self, issue_instance_id):
+    def issue(self, issue_instance_id):
+        """Select an issue.
+
+        Parameters:
+            issue_instance_id: int    id of the issue instance to select
+
+        Note: We are selecting issue instances, even though the command is called
+        issue.
+        """
         with self.db.make_session() as session:
             selected_issue = (
                 session.query(IssueInstance)
@@ -474,7 +482,7 @@ details()                show additional information about the current trace fra
             )
 
     @catch_keyboard_interrupt()
-    def set_frame(self, frame_id: int) -> None:
+    def frame(self, frame_id: int) -> None:
         with self.db.make_session() as session:
             selected_frame = (
                 session.query(TraceFrame.id, TraceFrame.kind)
@@ -1300,7 +1308,7 @@ details()                show additional information about the current trace fra
 
         if self.current_issue_instance_id == -1 and self.current_frame_id == -1:
             raise UserError(
-                "Use 'set_issue_instance(ID)' or 'set_frame(ID)' to select an"
+                "Use 'issue_instance(ID)' or 'frame(ID)' to select an"
                 " entrypoint first."
             )
 
