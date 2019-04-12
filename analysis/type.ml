@@ -727,7 +727,6 @@ let union parameters =
   else
     let normalize parameters =
       let parameters = List.filter parameters ~f:(function | Bottom -> false | _ -> true) in
-      let parameters = List.filter parameters ~f:(Fn.non is_escaped_free_variable) in
       match parameters with
       | [] -> Bottom
       | [parameter] -> parameter
@@ -2307,6 +2306,31 @@ let mark_free_variables_as_escaped ?specific annotation =
     List.fold variables ~init:Map.empty ~f:mark_as_escaped
   in
   instantiate annotation ~constraints:(Map.find constraints)
+
+
+let collapse_escaped_variable_unions annotation =
+  let module ConcreteTransform = Transform.Make(struct
+      type state = unit
+
+      let visit_children_before _ _ =
+        true
+
+      let visit_children_after =
+        false
+
+      let visit new_state annotation =
+        let transformed_annotation =
+          match annotation with
+          | Union parameters ->
+              List.filter parameters ~f:(Fn.non is_escaped_free_variable)
+              |> union
+          | _ ->
+              annotation
+        in
+        { Transform.transformed_annotation; new_state }
+    end)
+  in
+  snd (ConcreteTransform.visit () annotation)
 
 
 let upper_bound { constraints; _ } =

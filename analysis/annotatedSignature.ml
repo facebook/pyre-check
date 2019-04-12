@@ -635,6 +635,10 @@ let select
           in
           Type.instantiate annotation ~widen:false ~constraints:(Map.find solution)
           |> Type.mark_free_variables_as_escaped
+          (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+             properly handle some typeshed stubs which only sometimes bind type variables and
+             expect them to fall out in this way (see Mapping.get) *)
+          |> Type.collapse_escaped_variable_unions
         in
         Type.Callable.map ~f:instantiate callable
         |> (function

@@ -1345,6 +1345,28 @@ let test_visit _ =
   ()
 
 
+let test_collapse_escaped_variable_unions _ =
+  let assert_types_equal annotation expected  =
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      expected
+      annotation
+  in
+  let escaped = Type.mark_free_variables_as_escaped (Type.variable "Escapee") in
+  assert_types_equal
+    (Type.union [Type.integer; escaped])
+    (Type.Union [Type.integer; escaped]);
+  assert_types_equal
+    (Type.collapse_escaped_variable_unions (Type.Union [Type.integer; escaped]))
+    Type.integer;
+  let unescaped = Type.variable "NotEscaped" in
+  assert_types_equal
+    (Type.collapse_escaped_variable_unions (Type.Union [Type.integer; unescaped]))
+    (Type.Union [Type.integer; unescaped]);
+  ()
+
+
 
 
 let () =
@@ -1375,6 +1397,7 @@ let () =
     "variables">::test_variables;
     "lambda">::test_lambda;
     "visit">:: test_visit;
+    "collapse_escaped_variable_unions">:: test_collapse_escaped_variable_unions;
   ]
   |> Test.run;
   "callable">:::[
