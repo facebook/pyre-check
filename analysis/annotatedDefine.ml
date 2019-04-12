@@ -41,7 +41,7 @@ let parameter_annotations { Define.signature = { parameters; _ }; _ } ~resolutio
 let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
   match parent with
   | Some parent ->
-      let annotation = Resolution.parse_reference resolution parent in
-      Resolution.class_definition resolution annotation
+      let parent_type = Type.Primitive (Reference.show parent) in
+      Resolution.class_definition resolution parent_type
       >>| Class.create
   | _ -> None

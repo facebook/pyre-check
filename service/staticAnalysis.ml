@@ -37,8 +37,7 @@ let callables ~resolution ~source =
         Callable.create_function name, definition
     | Some class_name ->
         let class_exists =
-          Reference.expression class_name
-          |> Resolution.parse_annotation resolution
+          Type.Primitive (Reference.show class_name)
           |> Resolution.class_definition resolution
           |> Option.is_some
         in

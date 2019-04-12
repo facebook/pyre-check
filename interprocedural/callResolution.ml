@@ -52,8 +52,8 @@ let is_local identifier =
 
 
 let is_class ~resolution access =
-  Access.expression access
-  |> Resolution.parse_annotation resolution
+  Reference.from_access access
+  |> fun reference -> Type.Primitive (Reference.show reference)
   |> Resolution.class_definition resolution
   |> Option.is_some
 
