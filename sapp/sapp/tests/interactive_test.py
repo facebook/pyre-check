@@ -518,8 +518,8 @@ class InteractiveTest(TestCase):
 
         trace_frames[0].callee = "call3"
         trace_frames[0].callee_port = "param1"
-        trace_frames[1].callee = "call3"
-        trace_frames[1].callee_port = "param1"
+        trace_frames[1].caller = "call3"
+        trace_frames[1].caller_port = "param1"
 
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
@@ -533,7 +533,7 @@ class InteractiveTest(TestCase):
             next_frames = self.interactive._next_backward_trace_frames(
                 session, trace_frames[1]
             )
-            self.assertEqual(len(next_frames), 2)
+            self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[0].id))
 
     def testNavigateTraceFrames(self):
@@ -1776,7 +1776,7 @@ else:
         self.assertEqual(self.interactive.current_trace_frame_index, 3)
         self.assertEqual(
             [
-                trace_tuple.trace_frame.callee
+                self.interactive._get_callable_from_trace_tuple(trace_tuple)[0]
                 for trace_tuple in self.interactive.trace_tuples
             ],
             ["A", "B", "F", "caller"],
@@ -1797,7 +1797,7 @@ else:
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
         self.assertEqual(
             [
-                trace_tuple.trace_frame.callee
+                self.interactive._get_callable_from_trace_tuple(trace_tuple)[0]
                 for trace_tuple in self.interactive.trace_tuples
             ],
             ["caller", "F", "D", "E"],

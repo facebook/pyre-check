@@ -61,13 +61,13 @@ class TraceTuple(NamedTuple):
     trace_frame: TraceFrame
     branches: int = 1
     missing: bool = False
-    # Placeholder flag is used when we need to "fake" a trace node to display
-    #   the entire trace.
     # Suppose we select a trace frame (A->B) and the generated trace is
     #   (A->B), (B->C), (C->D) with D as leaf.
     # When we display traces, we only use the callee, so this trace would look
     #   like B->C->D. If we also want to see A->, then we need to add a
-    #   placeholder trace tuple whose callee is A.
+    #   placeholder trace tuple. We do this by setting our trace tuples to
+    #   [(A->B, placeholder=True), (A->B), (B->C), (C->D)]. When placeholder is
+    #   True, that means we need to output the caller rather than the callee.
     placeholder: bool = False
 
 
@@ -514,24 +514,34 @@ details()                show additional information about the current trace fra
     @catch_user_error()
     def parents(self) -> None:
         self._verify_entrypoint_selected()
-        current_trace_frame = self.trace_tuples[
-            self.current_trace_frame_index
-        ].trace_frame
+        current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
 
         # Don't allow calling from the leaf node in a trace. Instead, call
         # parents() from the placeholder of the caller of the leaf node.
-        if self._is_leaf(current_trace_frame):
+        if self._is_leaf(current_trace_tuple.trace_frame):
             raise UserError("Try running from a non-leaf node.")
+
+        # Backwards trace checks against the given frame's _caller_.
+        # If we have A->B as a placeholder, we want parents that call A, since A
+        #   is what is displayed in the trace.
+        # If we have A->B as a non-placeholder, we want parents that call B,
+        #   since B is what is displayed in the trace. So we go to (A->B)'s child
+        #   B->C, and look for frames that call B.
+        if not current_trace_tuple.placeholder:
+            delta_from_child = -1 if self._is_before_root() else 1
+            current_trace_tuple = self.trace_tuples[
+                self.current_trace_frame_index + delta_from_child
+            ]
 
         with self.db.make_session() as session:
             parent_trace_frames = self._next_trace_frames(
-                session, current_trace_frame, backwards=True
+                session, current_trace_tuple.trace_frame, backwards=True
             )
 
         if len(parent_trace_frames) == 0:
             print(
-                f"No parents calling [{current_trace_frame.callee} "
-                f": {current_trace_frame.callee_port}]."
+                f"No parents calling [{current_trace_tuple.trace_frame.caller} "
+                f": {current_trace_tuple.trace_frame.caller_port}]."
             )
             return
 
@@ -562,8 +572,7 @@ details()                show additional information about the current trace fra
                         callee_port="root",
                         filename=issue.filename,
                         callee_location=issue.location,
-                    ),
-                    placeholder=True,
+                    )
                 )
             ]
             + self._create_trace_tuples(precondition_navigation)
@@ -583,18 +592,7 @@ details()                show additional information about the current trace fra
 
         first_trace_frame = navigation[0][0]
         placeholder_tuple = [
-            TraceTuple(
-                trace_frame=TraceFrame(
-                    caller=None,
-                    caller_port=None,
-                    callee=first_trace_frame.caller,
-                    callee_port=first_trace_frame.caller_port,
-                    filename=first_trace_frame.filename,
-                    callee_location=first_trace_frame.callee_location,
-                    kind=first_trace_frame.kind,
-                ),
-                placeholder=True,
-            )
+            TraceTuple(trace_frame=first_trace_frame, placeholder=True)
         ]
 
         self.trace_tuples = self._create_trace_tuples(navigation)
@@ -940,12 +938,16 @@ details()                show additional information about the current trace fra
             len("⎇"),
         )
         max_length_callable = max(
-            max(len(trace_tuple.trace_frame.callee) for trace_tuple in trace_tuples),
+            max(
+                len(self._get_callable_from_trace_tuple(trace_tuple)[0])
+                for trace_tuple in trace_tuples
+            ),
             len("[callable]"),
         )
         max_length_condition = max(
             max(
-                len(trace_tuple.trace_frame.callee_port) for trace_tuple in trace_tuples
+                len(self._get_callable_from_trace_tuple(trace_tuple)[1])
+                for trace_tuple in trace_tuples
             ),
             len("[port]"),
         )
@@ -964,26 +966,28 @@ details()                show additional information about the current trace fra
             prefix += f" {(i + 1):<{max_length_index}}"
 
             if trace_tuple.missing:
-                output_string = (
+                print(
                     f" {prefix}"
                     f" [Missing trace frame: {trace_tuple.trace_frame.callee}:"
                     f"{trace_tuple.trace_frame.callee_port}]"
                 )
-            else:
-                branches_string = (
-                    f"{expand}"
-                    f"{str(trace_tuple.branches):{max_length_split - len(expand)}}"
-                    if trace_tuple.branches > 1
-                    else " " * max_length_split
-                )
-                output_string = (
-                    f" {prefix}"
-                    f"{branches_string}"
-                    f" {trace_tuple.trace_frame.callee:{max_length_callable}}"
-                    f" {trace_tuple.trace_frame.callee_port:{max_length_condition}}"
-                    f" {trace_tuple.trace_frame.filename}"
-                    f":{trace_tuple.trace_frame.callee_location}"
-                )
+                continue
+
+            callable, callable_port = self._get_callable_from_trace_tuple(trace_tuple)
+            branches_string = (
+                f"{expand}"
+                f"{str(trace_tuple.branches):{max_length_split - len(expand)}}"
+                if trace_tuple.branches > 1
+                else " " * max_length_split
+            )
+            output_string = (
+                f" {prefix}"
+                f"{branches_string}"
+                f" {callable:{max_length_callable}}"
+                f" {callable_port:{max_length_condition}}"
+                f" {trace_tuple.trace_frame.filename}"
+                f":{trace_tuple.trace_frame.callee_location}"
+            )
 
             print(output_string)
 
@@ -1072,8 +1076,8 @@ details()                show additional information about the current trace fra
             .filter(TraceFrame.kind == trace_frame.kind)
         )
         if backwards:
-            query = query.filter(TraceFrame.callee == trace_frame.callee).filter(
-                TraceFrame.callee_port == trace_frame.callee_port
+            query = query.filter(TraceFrame.callee == trace_frame.caller).filter(
+                TraceFrame.callee_port == trace_frame.caller_port
             )
         else:
             query = query.filter(TraceFrame.caller == trace_frame.callee).filter(
@@ -1132,7 +1136,7 @@ details()                show additional information about the current trace fra
 
         return "\n".join(
             [
-                f"Trace frame {trace_frame.id or 'placeholder'}",
+                f"Trace frame {trace_frame.id}",
                 f"     Caller: {trace_frame.caller} : {trace_frame.caller_port}",
                 f"     Callee: {trace_frame.callee} : {trace_frame.callee_port}",
                 f"       Kind: {trace_frame.kind}",
@@ -1175,18 +1179,7 @@ details()                show additional information about the current trace fra
     def _update_trace_tuples_new_parent(self, parent_trace_frame: TraceFrame) -> None:
         # Construct the placeholder trace tuple and the actual one.
         new_head = [
-            TraceTuple(
-                trace_frame=TraceFrame(
-                    caller=None,
-                    caller_port=None,
-                    callee=parent_trace_frame.caller,
-                    callee_port=parent_trace_frame.caller_port,
-                    filename=parent_trace_frame.filename,
-                    callee_location=parent_trace_frame.callee_location,
-                    kind=parent_trace_frame.kind,
-                ),
-                placeholder=True,
-            ),
+            TraceTuple(trace_frame=parent_trace_frame, placeholder=True),
             TraceTuple(trace_frame=parent_trace_frame),
         ]
 
@@ -1322,3 +1315,13 @@ details()                show additional information about the current trace fra
             return SharedTextKind.SINK
 
         assert False, f"{trace_kind} is invalid"
+
+    def _get_callable_from_trace_tuple(
+        self, trace_tuple: TraceTuple
+    ) -> Tuple[str, str]:
+        """Returns either (caller, caller_port) or (callee, callee_port).
+        """
+        trace_frame = trace_tuple.trace_frame
+        if trace_tuple.placeholder:
+            return trace_frame.caller, trace_frame.caller_port
+        return trace_frame.callee, trace_frame.callee_port
