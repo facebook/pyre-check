@@ -460,7 +460,7 @@ details()                show additional information about the current trace fra
                 query = query.filter(TraceFrame.kind == kind)
 
             if limit is not None and not isinstance(limit, int):
-                raise UserError("'limit' should be an int.")
+                raise UserError("'limit' should be an int or None.")
 
             trace_frames = query.group_by(TraceFrame.id).order_by(
                 TraceFrame.caller, TraceFrame.callee
@@ -773,20 +773,40 @@ details()                show additional information about the current trace fra
 
         self._output_file_lines(current_trace_frame, file_lines, context)
 
-    def details(self) -> None:
+    def details(
+        self, *, limit: Optional[int] = 5, kind: Optional[TraceKind] = None
+    ) -> None:
         """Show additional info about the current trace frame.
+
+        Parameters (all optional):
+            limit: int    number of related post/pre conditions to show
+                          (pass limit=None to show all)
         """
         self._verify_entrypoint_selected()
+        if limit is not None and not isinstance(limit, int):
+            raise UserError("'limit' should be an int or None.")
+        if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION, None}:
+            raise UserError(
+                "Try 'details(kind=postcondition)'" " or 'details(kind=precondition)'."
+            )
 
-        current_trace_frame = self.trace_tuples[
-            self.current_trace_frame_index
-        ].trace_frame
+        current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
+        current_trace_frame = current_trace_tuple.trace_frame
+        callable, _port = self._get_callable_from_trace_tuple(current_trace_tuple)
 
         print(self._create_trace_frame_output_string(current_trace_frame))
         print(
-            f"\nIssues in callable ({current_trace_frame.callee}):",
+            f"\nIssues in callable ({callable}):",
             self._num_issues_with_callable(current_trace_frame.callee),
         )
+
+        if kind is None or kind == TraceKind.POSTCONDITION:
+            print(f"\nPostconditions with caller ({callable}):")
+            self.frames(callers=[callable], kind=TraceKind.POSTCONDITION, limit=limit)
+
+        if kind is None or kind == TraceKind.PRECONDITION:
+            print(f"\nPreconditions with caller ({callable}):")
+            self.frames(callers=[callable], kind=TraceKind.PRECONDITION, limit=limit)
 
     def warning(self, message: str) -> None:
         # pyre-fixme[6]: Expected `Optional[_Writer]` for 2nd param but got `TextIO`.

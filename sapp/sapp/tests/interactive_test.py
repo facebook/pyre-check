@@ -1826,17 +1826,30 @@ else:
             )
 
     def testDetails(self):
-        trace_frame = TraceFrame(
-            id=1,
-            kind=TraceKind.PRECONDITION,
-            caller="call1",
-            caller_port="root",
-            callee="call2",
-            callee_port="param0",
-            callee_location=SourceLocation(1, 1),
-            filename="file.py",
-            run_id=1,
-        )
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="call2",
+                callee_port="param0",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call2",
+                caller_port="param1",
+                callee="call3",
+                callee_port="param2",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
         issues = [
             self._generic_issue(id=1, callable="call2"),
             self._generic_issue(id=2, callable="call3"),
@@ -1847,22 +1860,44 @@ else:
             self._generic_issue_instance(id=2, issue_id=2),
             self._generic_issue_instance(id=3, issue_id=3),
         ]
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
 
         with self.db.make_session(expire_on_commit=False) as session:
-            session.add(trace_frame)
+            self._add_to_session(session, trace_frames)
             self._add_to_session(session, issues)
             self._add_to_session(session, issue_instances)
+            session.add(run)
             session.commit()
 
         self.interactive.setup()
-        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frame)]
+        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frames[0])]
         self.interactive.current_issue_instance_id = 1
         self.interactive.current_trace_frame_index = 0
 
         self._clear_stdout()
         self.interactive.details()
-        self.assertIn("Trace frame 1", self.stdout.getvalue())
-        self.assertIn("Issues in callable (call2): 2", self.stdout.getvalue())
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "Trace frame 1",
+                "     Caller: call1 : root",
+                "     Callee: call2 : param0",
+                "       Kind: TraceKind.precondition",
+                "      Sinks: ",
+                "   Location: file.py:1|1|1",
+                "",
+                "Issues in callable (call2): 2",
+                "",
+                "Postconditions with caller (call2):",
+                "No trace frames found.",
+                "",
+                "Preconditions with caller (call2):",
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call2:param1 ->",
+                "2        call3:param2",
+                "",
+            ],
+        )
 
     def mock_pager(self, output_string):
         self.pager_calls += 1
