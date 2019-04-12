@@ -518,6 +518,16 @@ def main():
     buck_arguments.add_argument(
         "--target", action="append", dest="targets", help="The buck target to check"
     )
+    buck_arguments.add_argument(
+        "--use-buck-builder",
+        action="store_true",
+        help="Use Pyre's experimental builder for Buck projects.",
+    )
+
+    # Let buck project builder succeed even with unbuilt dependencies.
+    buck_arguments.add_argument(
+        "--ignore-unbuilt-dependencies", action="store_true", help=argparse.SUPPRESS
+    )
 
     source_directories = parser.add_argument_group("source-directories")
     source_directories.add_argument(
