@@ -1151,6 +1151,13 @@ let compute_dependencies
     ~configuration
     files =
   let timer = Timer.start () in
+  let handle file =
+    try
+      Some (File.handle file ~configuration)
+    with File.NonexistentHandle _ ->
+      None
+  in
+  let handles = List.filter_map files ~f:handle in
   let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = File.Handle.Table.create () in
@@ -1170,9 +1177,6 @@ let compute_dependencies
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
-
-    (* Clear and re-populate ASTs in shared memory. *)
-    let handles = List.map files ~f:(File.handle ~configuration) in
 
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
@@ -1200,8 +1204,6 @@ let compute_dependencies
   in
 
   let dependents =
-    let handle file = File.handle file ~configuration in
-    let handles = List.map files ~f:handle in
     Log.log
       ~section:`Server
       "Handling type check request for files %a"

@@ -496,8 +496,15 @@ let test_process_type_check_request context =
   let { Request.response; _ } =
     Request.process_type_check_request ~state ~configuration ~files
   in
-  assert_equal (Some (Protocol.TypeCheckResponse [])) response
-
+  assert_equal (Some (Protocol.TypeCheckResponse [])) response;
+  (* Ensure we don't raise an exception when a untracked files is passed in. *)
+  Request.process_type_check_request
+    ~state
+    ~configuration
+    ~files:[
+      File.create (Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py");
+      ]
+  |> ignore
 
 let test_process_deferred_state context =
   let test_with_number_of_dependents dependents_number =
