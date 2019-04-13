@@ -288,9 +288,23 @@ let metaclass definition ~resolution =
     in
     List.find_map ~f:get_metaclass bases
   in
-  definition :: superclasses ~resolution definition
-  |> List.find_map ~f:get_metaclass
-  |> Option.value ~default:(Type.Primitive "type")
+  (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
+     for why we need to consider all metaclasses. *)
+  let metaclass_candidates =
+    definition :: superclasses ~resolution definition
+    |> List.filter_map ~f:get_metaclass
+  in
+  match metaclass_candidates with
+  | [] ->
+      Type.Primitive "type"
+  | first :: candidates ->
+      let candidate = List.fold candidates ~init:first ~f:(Resolution.meet resolution) in
+      match candidate with
+      | Type.Bottom ->
+          (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
+          first
+      | _ ->
+          candidate
 
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =

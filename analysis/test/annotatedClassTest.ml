@@ -1644,7 +1644,75 @@ let test_metaclasses _ =
         pass
     |}
     ~target:"D"
-    "Meta"
+    "Meta";
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class C(metaclass=Meta):
+        pass
+      class Other(metaclass=MoreMeta):
+        pass
+      class D(C, Other):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta";
+
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class C(metaclass=Meta):
+        pass
+      class Other(metaclass=MoreMeta):
+        pass
+      class D(Other, C):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta";
+
+  (* If we don't have a "most derived metaclass", pick an arbitrary one. *)
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class OtherMeta(Meta):
+        pass
+      class C(metaclass=MoreMeta):
+        pass
+      class Other(metaclass=OtherMeta):
+        pass
+      class D(Other, C):
+        pass
+    |}
+    ~target:"D"
+    "OtherMeta";
+
+   assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class OtherMeta(Meta):
+        pass
+      class C(metaclass=MoreMeta):
+        pass
+      class Other(metaclass=OtherMeta):
+        pass
+      class D(C, Other):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta"
 
 
 let test_overrides _ =
