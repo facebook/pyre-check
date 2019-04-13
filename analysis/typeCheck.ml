@@ -91,7 +91,7 @@ module AccessState = struct
     (* Resolve `super()` calls. *)
     | (Access.Identifier "super") :: (Access.Call _) :: tail ->
         (Resolution.parent resolution
-         >>| (fun parent -> Resolution.parse_reference resolution parent)
+         >>| (fun parent -> Type.Primitive (Reference.show parent))
          >>= Resolution.class_metadata resolution
          >>| (fun { Resolution.successors; _ } -> successors)
          >>|  List.filter

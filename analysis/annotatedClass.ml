@@ -72,10 +72,8 @@ let annotation { Node.value = { Class.name; _ }; _ } ~resolution =
   Resolution.parse_reference resolution name
 
 
-let successors class_node ~resolution =
-  annotation class_node ~resolution
-  |> Type.split
-  |> (fun (primitive, _ ) -> primitive)
+let successors { Node.value = { Class.name; _ }; _ } ~resolution =
+  Type.Primitive (Reference.show name)
   |> Resolution.class_metadata resolution
   >>| (fun { Resolution.successors; _ } -> successors)
   |> Option.value ~default:[]
