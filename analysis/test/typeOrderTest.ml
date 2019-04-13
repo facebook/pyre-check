@@ -682,38 +682,6 @@ let test_successors _ =
     ]
 
 
-let test_predecessors _ =
-  (* Butterfly:
-      0 - 2
-        X
-      1 - 3 *)
-  assert_equal (predecessors butterfly !"0") [Type.Bottom];
-  assert_equal (predecessors butterfly !"3") [!"1"; !"0"; Type.Bottom];
-
-  (*          0 - 3
-              /   /   \
-              BOTTOM - 1      TOP
-              |  \       /
-              4 -- 2 ---           *)
-  assert_equal (predecessors order !"0") [!"bottom"; Type.Bottom];
-  assert_equal (predecessors order !"3") [!"1"; !"0"; !"bottom"; Type.Bottom]
-
-
-let test_greatest _ =
-  let smaller_than value = function
-    | Type.Primitive name ->
-        begin
-          try
-            (Int.of_string name) < value
-          with _ ->
-            false
-        end
-    | _ -> false
-  in
-  assert_equal (greatest butterfly ~matches:(smaller_than 3)) [!"2"];
-  assert_equal (greatest butterfly ~matches:(smaller_than 2)) [!"0"; !"1"]
-
-
 let test_less_or_equal _ =
   (* Primitive types. *)
   assert_true (less_or_equal order ~left:Type.Bottom ~right:Type.Top);
@@ -3620,7 +3588,6 @@ let () =
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "deduplicate">::test_deduplicate;
     "default">::test_default;
-    "greatest">::test_greatest;
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
     "is_instantiated">::test_is_instantiated;
@@ -3631,7 +3598,6 @@ let () =
     "is_compatible_with">::test_is_compatible_with;
     "meet">::test_meet;
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
-    "predecessors">::test_predecessors;
     "remove_extra_edges">::test_remove_extra_edges;
     "successors">::test_successors;
     "to_dot">::test_to_dot;

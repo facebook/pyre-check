@@ -100,8 +100,6 @@ val method_resolution_order_linearize
   -> Type.t
   -> Type.t list
 val successors: (module Handler) -> Type.t -> Type.t list
-val predecessors: (module Handler) -> Type.t -> Type.t list
-val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 

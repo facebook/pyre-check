@@ -117,7 +117,6 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.Primitive "A");
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
   assert_equal (TypeOrder.successors order (Type.Primitive "C")) [];
-  assert_equal (TypeOrder.predecessors order (Type.Primitive "C")) [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
