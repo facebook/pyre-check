@@ -213,7 +213,8 @@ let test_check_missing_return _ =
           return 1
     |}
     [
-      "Undefined name [18]: Global name `a` is undefined.";
+      "Undefined name [18]: Global name `a` is not defined, or there is at least one control \
+       flow path that doesn't define `a`.";
       "Incompatible return type [7]: Expected `None` but got `int`."
     ];
 
@@ -258,7 +259,8 @@ let test_check_missing_return _ =
     |}
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
-      "Undefined name [18]: Global name `unknown_call` is undefined.";
+      "Undefined name [18]: Global name `unknown_call` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown_call`.";
     ];
 
   assert_type_errors

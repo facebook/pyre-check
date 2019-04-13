@@ -301,7 +301,10 @@ let test_decorators _ =
       def f(x: int) -> int:
         return x
     |}
-    ["Undefined name [18]: Global name `my_decorator` is undefined."];
+    [
+      "Undefined name [18]: Global name `my_decorator` is not defined, or there is at least one \
+       control flow path that doesn't define `my_decorator`.";
+    ];
 
   assert_type_errors
     {|

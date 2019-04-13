@@ -1144,8 +1144,16 @@ let messages ~concise ~signature location kind =
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
       @ trace
-  | UndefinedName access ->
+  | UndefinedName access when concise ->
       [Format.asprintf "Global name `%a` is undefined." pp_reference access]
+  | UndefinedName access ->
+      [
+        Format.asprintf
+          "Global name `%a` is not defined, or there is at least one control flow path that \
+           doesn't define `%a`."
+          pp_reference access
+          pp_reference access;
+      ]
   | UndefinedImport access when concise ->
       [Format.asprintf "Could not find `%a`." pp_reference access]
   | UndefinedImport access ->

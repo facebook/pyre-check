@@ -2153,7 +2153,10 @@ let test_forward_expression _ =
           errors
       | `Undefined count ->
           let rec errors sofar count =
-            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            let error =
+              "Undefined name [18]: Global name `undefined` is not defined, or there is \
+               at least one control flow path that doesn't define `undefined`."
+            in
             match count with
             | 0 -> sofar
             | count -> errors (error :: sofar) (count - 1)
@@ -2190,7 +2193,8 @@ let test_forward_expression _ =
   assert_forward
     ~errors:(`Specific [
         "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-        "Undefined name [18]: Global name `undefined` is undefined.";
+        "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
+         control flow path that doesn't define `undefined`.";
       ])
     "await undefined"
     Type.Top;
@@ -2366,7 +2370,10 @@ let test_forward_expression _ =
   assert_forward
     ~precondition:["x", Type.undeclared]
     ~postcondition:["x", Type.undeclared]
-    ~errors:(`Specific ["Undefined name [18]: Global name `x` is undefined."])
+    ~errors:(`Specific [
+        "Undefined name [18]: Global name `x` is not defined, or there is at least \
+         one control flow path that doesn't define `x`.";
+      ])
     "[x]"
     (Type.list Type.undeclared);
 
@@ -2468,7 +2475,10 @@ let test_forward_statement _ =
           errors
       | `Undefined count ->
           let rec errors sofar count =
-            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            let error =
+              "Undefined name [18]: Global name `undefined` is not defined, or there is \
+               at least one control flow path that doesn't define `undefined`."
+            in
             match count with
             | 0 -> sofar
             | count -> errors (error :: sofar) (count - 1)
@@ -2500,28 +2510,40 @@ let test_forward_statement _ =
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = y"
     ["x", Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = y"
     ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = [y]"
     ["x", Type.list Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
@@ -2675,7 +2697,8 @@ let test_forward_statement _ =
     ~errors:(`Specific [
         "Incompatible variable type [9]: y is declared to have type `int` " ^
         "but is used as type `unknown`.";
-        "Undefined name [18]: Global name `x` is undefined.";
+        "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+         flow path that doesn't define `x`.";
       ])
     ~postcondition_immutables:["y", (false, Type.integer)]
     []

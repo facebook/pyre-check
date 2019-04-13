@@ -285,7 +285,8 @@ let test_check_undefined_type _ =
 
     |}
     [
-      "Undefined name [18]: Global name `Derp` is undefined.";
+      "Undefined name [18]: Global name `Derp` is not defined, or there is at least one \
+       control flow path that doesn't define `Derp`.";
       "Incompatible return type [7]: Expected `None` but got `unknown`.";
     ]
 
@@ -703,7 +704,8 @@ let test_check_immutable_annotations _ =
         constant = 1
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified.";
     ];
@@ -729,7 +731,8 @@ let test_check_immutable_annotations _ =
         return constant
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
@@ -837,7 +840,8 @@ let test_check_immutable_annotations _ =
         foo.attribute = 1
     |}
     [
-      "Undefined name [18]: Global name `attribute` is undefined.";
+      "Undefined name [18]: Global name `attribute` is not defined, or there is at least one \
+       control flow path that doesn't define `attribute`.";
     ];
 
   assert_type_errors
@@ -848,7 +852,8 @@ let test_check_immutable_annotations _ =
         constant = 1
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified."
     ];
@@ -881,7 +886,8 @@ let test_check_immutable_annotations _ =
         constant = "hi"
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Union[int, str]` but no type is specified."
     ];
@@ -897,7 +903,8 @@ let test_check_immutable_annotations _ =
         constant = None
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `typing." ^
       "Optional[int]` but no type is specified."
     ];
@@ -913,7 +920,8 @@ let test_check_immutable_annotations _ =
         constant = 1.0
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `float` " ^
       "but no type is specified."
     ];
@@ -929,7 +937,8 @@ let test_check_immutable_annotations _ =
         constant = B()
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but " ^
       "no type is specified."
     ];
@@ -947,7 +956,8 @@ let test_check_immutable_annotations _ =
         constant = "hi"
     |}
     [
-      "Undefined name [18]: Global name `constant` is undefined.";
+      "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
+       control flow path that doesn't define `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but " ^
       "no type is specified.";
     ];

@@ -216,7 +216,8 @@ let test_check_return_control_flow _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is undefined.";
+      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+       one control flow path that doesn't define `unknown_condition`.";
     ];
 
   assert_type_errors
@@ -229,7 +230,8 @@ let test_check_return_control_flow _ =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is undefined.";
+      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+       one control flow path that doesn't define `unknown_condition`.";
     ];
 
   assert_type_errors

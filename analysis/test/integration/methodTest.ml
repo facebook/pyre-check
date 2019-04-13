@@ -757,7 +757,10 @@ let test_check_method_resolution _ =
       def foo() -> None:
         bar().baz()
     |}
-    ["Undefined name [18]: Global name `bar` is undefined."];
+    [
+      "Undefined name [18]: Global name `bar` is not defined, or there is at least one control \
+       flow path that doesn't define `bar`.";
+    ];
 
   assert_type_errors
     {|

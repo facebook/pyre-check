@@ -265,6 +265,7 @@ let test_process_display_type_errors_request _ =
   let assert_response ~paths ~errors ~expected_errors =
     let actual_errors =
       let state =
+
         let serialized_errors errors =
           let entry (path, errors) =
             let errors =
@@ -299,7 +300,9 @@ let test_process_display_type_errors_request _ =
       let expected_error (path, undefined_globals) =
         let undefined_global global =
           Format.asprintf
-            "Undefined name [18]: Global name `%s` is undefined."
+            "Undefined name [18]: Global name `%s` is not defined, or there is at least one \
+             control flow path that doesn't define `%s`."
+            global
             global
         in
         path,

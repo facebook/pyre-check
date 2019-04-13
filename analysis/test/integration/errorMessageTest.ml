@@ -123,7 +123,8 @@ let test_show_error_traces _ =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` " ^
       "but no type is specified. Attribute `attribute` declared on line 3, type `str` deduced " ^
       "from test.py:7:4.";
-      "Undefined name [18]: Global name `x` is undefined.";
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -137,7 +138,8 @@ let test_show_error_traces _ =
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but " ^
       "no type is specified. Global variable `constant` declared on line 2, type `int` deduced " ^
       "from test.py:5:2.";
-      "Undefined name [18]: Global name `x` is undefined.";
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -152,7 +154,8 @@ let test_show_error_traces _ =
       "Missing global annotation [5]: Globally accessible variable `constant` has type " ^
       "`typing.Union[int, str]` but no type is specified. Global variable `constant` declared " ^
       "on line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
-      "Undefined name [18]: Global name `x` is undefined.";
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
     ];
 
   assert_type_errors ~show_error_traces:true
@@ -166,7 +169,8 @@ let test_show_error_traces _ =
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type " ^
       "`int` but no type is specified. Attribute `attribute` declared on line 3, " ^
       "type `int` deduced from test.py:5:4.";
-      "Undefined name [18]: Global name `x` is undefined.";
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
     ];
 
   assert_type_errors ~show_error_traces:true

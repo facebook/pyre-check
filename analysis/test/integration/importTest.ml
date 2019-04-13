@@ -40,7 +40,8 @@ let test_check_imports _ =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
-      "Undefined name [18]: Global name `durp` is undefined."
+      "Undefined name [18]: Global name `durp` is not defined, or there is at least one control \
+       flow path that doesn't define `durp`."
     ];
   assert_type_errors
     {|

@@ -803,7 +803,8 @@ let test_check_missing_attribute _ =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
       "but no type is specified.";
-      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
+       flow path that doesn't define `unknown`.";
     ];
   assert_type_errors
     {|
@@ -846,7 +847,8 @@ let test_check_missing_attribute _ =
     |}
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
-      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown`.";
     ];
 
   assert_type_errors

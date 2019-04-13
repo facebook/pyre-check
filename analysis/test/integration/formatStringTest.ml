@@ -57,7 +57,10 @@ let test_format_string _ =
       def foo() -> None:
         f'{{{x}}}'
     |}
-    ["Undefined name [18]: Global name `x` is undefined."]
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ]
 
 
 let () =

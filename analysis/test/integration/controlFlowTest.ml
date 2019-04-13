@@ -248,7 +248,8 @@ let test_check_unbound_variables _ =
     [
       "Incompatible return type [7]: Expected `int` but got " ^
       "`typing.Union[int, typing.Undeclared]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
+      "Undefined name [18]: Global name `result` is not defined, or there is at least one \
+       control flow path that doesn't define `result`.";
     ];
   assert_type_errors
     {|
@@ -258,10 +259,12 @@ let test_check_unbound_variables _ =
         return result
     |}
     [
-      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Undefined name [18]: Global name `narnia` is not defined, or there is at least one \
+       control flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got " ^
       "`typing.Union[typing.Undeclared, unknown]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
+      "Undefined name [18]: Global name `result` is not defined, or there is at least one \
+       control flow path that doesn't define `result`.";
     ];
   assert_type_errors
     {|
@@ -273,10 +276,12 @@ let test_check_unbound_variables _ =
         return result
     |}
     [
-      "Undefined name [18]: Global name `narnia` is undefined.";
+      "Undefined name [18]: Global name `narnia` is not defined, or there is at least one \
+       control flow path that doesn't define `narnia`.";
       "Incompatible return type [7]: Expected `int` but got " ^
       "`typing.Union[typing.Undeclared, unknown]`.";
-      "Undefined name [18]: Global name `result` is undefined.";
+      "Undefined name [18]: Global name `result` is not defined, or there is at least one \
+       control flow path that doesn't define `result`.";
     ];
 
   assert_type_errors
@@ -286,7 +291,8 @@ let test_check_unbound_variables _ =
         return unknown
     |}
     [
-      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown`.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
   assert_type_errors

@@ -392,7 +392,8 @@ let test_check_globals _ =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
-      "Undefined name [18]: Global name `MappBoo` is undefined.";
+      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least \
+       one control flow path that doesn't define `MappBoo`.";
     ];
 
   assert_type_errors
