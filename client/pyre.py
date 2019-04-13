@@ -250,10 +250,21 @@ def main() -> int:
         ),
     )
 
-    rage = parsed_commands.add_parser(commands.Rage.NAME)
+    rage = parsed_commands.add_parser(
+        commands.Rage.NAME,
+        epilog="""
+        Collects troubleshooting diagnostics for Pyre, and writes this information to
+        the terminal.
+        """,
+    )
     rage.set_defaults(command=commands.Rage)
 
-    check = parsed_commands.add_parser(commands.Check.NAME)
+    check = parsed_commands.add_parser(
+        commands.Check.NAME,
+        epilog="""
+      Runs a one-time check of a project without initializing a type check server.
+    """,
+    )
     check.set_defaults(command=commands.Check)
 
     color = parsed_commands.add_parser(commands.Color.NAME)
@@ -261,6 +272,7 @@ def main() -> int:
     color.set_defaults(command=commands.Color)
 
     deobfuscate = parsed_commands.add_parser(commands.Deobfuscate.NAME)
+
     deobfuscate.set_defaults(command=commands.Deobfuscate)
 
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
@@ -279,7 +291,14 @@ def main() -> int:
     )
     analyze.add_argument("--dump-call-graph", action="store_true")
 
-    persistent = parsed_commands.add_parser(commands.Persistent.NAME)
+    persistent = parsed_commands.add_parser(
+        commands.Persistent.NAME,
+        epilog="""
+        Entry point for IDE integration to Pyre. Communicates with a
+        Pyre server using the Language Server Protocol, accepts input from stdin and
+        writing diagnostics and responses from the Pyre server to stdout.
+        """,
+    )
     persistent.add_argument(
         "--no-watchman",
         action="store_true",
@@ -287,7 +306,9 @@ def main() -> int:
     )
     persistent.set_defaults(command=commands.Persistent, noninteractive=True)
 
-    start = parsed_commands.add_parser(commands.Start.NAME)
+    start = parsed_commands.add_parser(
+        commands.Start.NAME, epilog="Starts a pyre server as a daemon."
+    )
     start.add_argument(
         "--terminal", action="store_true", help="Run the server in the terminal."
     )
@@ -298,10 +319,15 @@ def main() -> int:
     )
     start.set_defaults(command=commands.Start)
 
-    stop = parsed_commands.add_parser(commands.Stop.NAME)
+    stop = parsed_commands.add_parser(
+        commands.Stop.NAME, epilog="Signals the Pyre server to stop."
+    )
     stop.set_defaults(command=commands.Stop)
 
-    restart = parsed_commands.add_parser(commands.Restart.NAME)
+    restart = parsed_commands.add_parser(
+        commands.Restart.NAME,
+        epilog="Restarts a server. Equivalent to `pyre stop && pyre start`.",
+    )
     restart.add_argument(
         "--terminal", action="store_true", help="Run the server in the terminal."
     )
