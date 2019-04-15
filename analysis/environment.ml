@@ -54,7 +54,7 @@ module type Handler = sig
   val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
-  val dependencies: Reference.t -> File.Handle.Set.Tree.t option
+  val dependencies: Reference.t -> Reference.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
 
@@ -227,15 +227,13 @@ let handler
        *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
        * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
       let purge_dependents keys =
+        let qualifiers =
+          List.map handles ~f:(fun handle -> Source.qualifier ~handle)
+          |> Reference.Set.of_list
+        in
         let remove_paths entry =
-          match entry with
-          | Some set ->
-              Set.filter
-                ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-                set
-              |> Option.some
-          | None ->
-              None
+          entry
+          >>| fun entry -> Set.diff entry qualifiers
         in
         List.iter
           ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
@@ -840,9 +838,7 @@ let register_dependencies (module Handler: Handler) source =
               in
               List.map imports ~f:qualify_builtins
             in
-            List.iter
-              ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency)
-              imports
+            List.iter ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency) imports
         | _ ->
             ()
     end)

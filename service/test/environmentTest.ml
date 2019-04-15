@@ -129,7 +129,7 @@ let test_purge _ =
     ~handle:(File.Handle.create "test.py")
     (Reference.create "typing");
   assert_equal
-    (Some (File.Handle.Set.Tree.singleton (File.Handle.create "test.py")))
+    (Some (Reference.Set.Tree.singleton (!&"test")))
     (Handler.DependencyHandler.dependents (!&"typing"));
 
   assert_equal
@@ -139,7 +139,7 @@ let test_purge _ =
 
   Handler.purge [File.Handle.create "test.py"];
   assert_equal
-    (Some File.Handle.Set.Tree.empty)
+    (Some Reference.Set.Tree.empty)
     (Handler.DependencyHandler.dependents (!&"typing"));
   assert_equal
     ~printer:(String.concat ~sep:", ")

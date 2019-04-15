@@ -250,9 +250,11 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
+      let qualifier = Source.qualifier ~handle in
       match Dependents.get dependent with
-      | None -> Dependents.add dependent (File.Handle.Set.Tree.singleton handle)
-      | Some dependencies -> Dependents.add dependent (File.Handle.Set.Tree.add dependencies handle)
+      | None -> Dependents.add dependent (Reference.Set.Tree.singleton qualifier)
+      | Some dependencies ->
+          Dependents.add dependent (Reference.Set.Tree.add dependencies qualifier)
 
     let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
     let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
@@ -319,9 +321,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
         match Dependents.get name with
         | Some unnormalized ->
             Dependents.remove_batch (Dependents.KeySet.singleton name);
-            File.Handle.Set.Tree.to_list unnormalized
-            |> List.sort ~compare:File.Handle.compare
-            |> File.Handle.Set.Tree.of_list
+            Reference.Set.Tree.to_list unnormalized
+            |> List.sort ~compare:Reference.compare
+            |> Reference.Set.Tree.of_list
             |> Dependents.add name
         | None ->
             ()
@@ -458,15 +460,19 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let purge_dependents keys =
       let new_dependents = Reference.Table.create () in
       let recompute_dependents key dependents =
-        let handles = File.Handle.Set.Tree.of_list handles in
+        let qualifiers =
+          handles
+          |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+          |> Reference.Set.Tree.of_list
+        in
         Hashtbl.set
           new_dependents
           ~key
           ~data:(
-            File.Handle.Set.Tree.diff
-              dependents
-              handles
-          )
+          Reference.Set.Tree.diff
+            dependents
+            qualifiers
+        )
       in
       List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
       Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));

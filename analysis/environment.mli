@@ -55,7 +55,7 @@ module type Handler = sig
   val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
-  val dependencies: Reference.t -> File.Handle.Set.Tree.t option
+  val dependencies: Reference.t -> Reference.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
 
@@ -73,7 +73,7 @@ end
     [Analysis]. *)
 val handler: t -> (module Handler)
 
-val dependencies: (module Handler) -> Reference.t -> File.Handle.Set.Tree.t option
+val dependencies: (module Handler) -> Reference.t -> Reference.Set.Tree.t option
 
 val connect_definition
   :  resolution: Resolution.t

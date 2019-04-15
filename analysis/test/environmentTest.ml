@@ -1389,24 +1389,23 @@ let test_import_dependencies context =
           parse ~handle:"builtins.pyi" ~qualifier:Reference.empty "";
         ]
     in
-    let dependencies handle =
-      let handle = File.Handle.create handle in
-      Environment.dependencies environment (Source.qualifier ~handle)
-      >>| String.Set.Tree.map ~f:File.Handle.show
+    let dependencies qualifier =
+      Environment.dependencies environment (!&qualifier)
+      >>| String.Set.Tree.map ~f:Reference.show
       >>| String.Set.Tree.to_list
     in
     assert_equal
-      (dependencies "subdirectory/b.py")
-      (Some ["test.py"]);
+      (dependencies "subdirectory.b")
+      (Some ["test"]);
     assert_equal
-      (dependencies "a.py")
-      (Some ["test.py"]);
+      (dependencies "a")
+      (Some ["test"]);
     assert_equal
-      (dependencies "builtins.pyi")
-      (Some ["test.py"]);
+      (dependencies "")
+      (Some ["test"]);
     assert_equal
-      (dependencies "sys.py")
-      (Some ["test.py"])
+      (dependencies "sys")
+      (Some ["test"])
   in
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
@@ -1421,18 +1420,17 @@ let test_register_dependencies _ =
   Environment.register_dependencies
     (module Handler)
     (parse ~handle:"test.py" source);
-  let dependencies handle =
-    let handle = File.Handle.create handle in
-    Environment.dependencies (module Handler) (Source.qualifier ~handle)
-    >>| String.Set.Tree.map ~f:File.Handle.show
+  let dependencies qualifier =
+    Environment.dependencies (module Handler) (!&qualifier)
+    >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
   assert_equal
-    (dependencies "subdirectory/b.py")
-    (Some ["test.py"]);
+    (dependencies "subdirectory.b")
+    (Some ["test"]);
   assert_equal
-    (dependencies "a.py")
-    (Some ["test.py"])
+    (dependencies "a")
+    (Some ["test"])
 
 
 let test_purge _ =
@@ -1456,12 +1454,12 @@ let test_purge _ =
   let dependencies handle =
     let handle = File.Handle.create handle in
     Handler.dependencies (Source.qualifier ~handle)
-    >>| String.Set.Tree.map ~f:File.Handle.show
+    >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
   assert_equal
     (dependencies "a.py")
-    (Some ["test.py"]);
+    (Some ["test"]);
   assert_equal
     (Handler.protocols ())
     ["P"];

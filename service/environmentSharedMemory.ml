@@ -104,7 +104,7 @@ module GlobalValue = struct
 end
 
 module DependentValue = struct
-  type t = File.Handle.Set.Tree.t
+  type t = Reference.Set.Tree.t
   let prefix = Prefix.make ()
   let description = "Dependent"
 end

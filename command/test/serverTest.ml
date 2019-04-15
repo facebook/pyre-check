@@ -1296,15 +1296,14 @@ let test_decode_serialized_ocaml_values context =
   assert_decode
     ~key:(Dependents.serialize_key (!&"module"))
     ~value:(
-      ["dependentA.py"; "dependentB.py"]
-      |> List.map ~f:File.Handle.create
-      |> File.Handle.Set.Tree.of_list)
+      [!&"dependentA"; !&"dependentB"]
+      |> Reference.Set.Tree.of_list)
     ~response: {
       TypeQuery.serialized_key =
         Dependents.serialize_key (!&"module");
       kind = "Dependent";
       actual_key = "module";
-      actual_value = Some "(dependentA.py dependentB.py)";
+      actual_value = Some "(dependentA dependentB)";
     };
   assert_decode
     ~key:(Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py")

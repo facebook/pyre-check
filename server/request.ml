@@ -650,8 +650,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = Reference.show key;
                         actual_value =
                           value
-                          >>| File.Handle.Set.Tree.to_list
-                          >>| List.to_string ~f:File.Handle.show;
+                          >>| Reference.Set.Tree.to_list
+                          >>| List.to_string ~f:Reference.show;
                       }
                   | Ok (Protocols.Decoded (key, value)) ->
                       Some {
@@ -858,12 +858,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.DumpDependencies file ->
         let () =
           try
-            let handle = File.handle ~configuration file in
+            let qualifier =
+              File.handle ~configuration file
+              |> fun handle -> Source.qualifier ~handle
+            in
             Path.create_relative
               ~root:(Configuration.Analysis.pyre_root configuration)
               ~relative:"dependencies.dot"
             |> File.create
-              ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~handle)
+              ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~qualifier)
             |> File.write
           with File.NonexistentHandle _ ->
             ()
@@ -1219,14 +1222,15 @@ let compute_dependencies
           >>| fun new_hash -> old_hash <> new_hash)
       |> Option.value ~default:false
     in
-    let get_dependencies handle =
-      Ast.Source.qualifier ~handle
-      |> Handler.dependencies
-    in
     let deferred_files =
+      let modules =
+        List.filter handles ~f:signature_hash_changed
+        |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+      in
       Dependencies.transitive_of_list
-        ~get_dependencies
-        ~handles:(List.filter handles ~f:signature_hash_changed)
+        ~get_dependencies:Handler.dependencies
+        ~modules
+      |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get
       |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
     in
     Statistics.performance
