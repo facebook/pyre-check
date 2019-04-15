@@ -204,10 +204,6 @@ let handler
         List.filter_map successors ~f:(Hashtbl.find class_definitions)
         |> List.exists ~f:is_unit_test
       in
-      let successors =
-        let successors = List.map successors ~f:(fun name -> Type.Primitive name) in
-        List.append successors [Type.Any; Type.Top]
-      in
       Hashtbl.set
         class_metadata
         ~key:class_name
@@ -1072,7 +1068,7 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
       |> List.map ~f:snd
     in
     successors
-    |> List.filter_map ~f:(Resolution.class_definition resolution)
+    |> List.filter_map ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
@@ -1148,8 +1144,11 @@ module Builder = struct
       let successors =
         let successor { Expression.Call.Argument.value; _ } =
           Type.create value ~aliases:(fun _ -> None)
+          |> Type.split
+          |> fst
+          |> Type.primitive_name
         in
-        (List.map bases ~f:successor) @ [Type.object_primitive]
+        (List.filter_map bases ~f:successor) @ ["object"]
       in
       Hashtbl.set
         ~key:name

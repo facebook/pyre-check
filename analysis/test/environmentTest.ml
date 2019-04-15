@@ -193,13 +193,9 @@ let test_register_class_metadata _ =
     let { Resolution.successors; _ } =
       Option.value_exn (Handler.class_metadata class_name)
     in
-    let expected =
-      List.map expected ~f:(fun annotation -> Type.Primitive annotation)
-      |> (fun expected -> expected @ [Type.Any; Type.Top])
-    in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal_primitive)
       expected
       successors
   in

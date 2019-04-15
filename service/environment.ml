@@ -415,10 +415,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
       in
       List.exists ~f:is_unit_test successor_classes
     in
-    let successors =
-      let successors = List.map successors ~f:(fun name -> Type.Primitive name) in
-      List.append successors [Type.Any; Type.Top]
-    in
     ClassMetadata.add
       class_name
       {

@@ -121,8 +121,8 @@ let test_superclasses _ =
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal_primitive)
       expected
       actual
   in
@@ -134,16 +134,14 @@ let test_superclasses _ =
       ~cmp:(List.equal ~equal) expected actual
   in
 
-  assert_successors !"Foo" [Type.object_primitive; Type.Any; Type.Top];
+  assert_successors !"Foo" ["object"];
   assert_successors
     !"SubRedundant"
     [
-      Type.Primitive "SubFooBar";
-      Type.Primitive "Foo";
-      Type.Primitive "Bar";
-      Type.object_primitive;
-      Type.Any;
-      Type.Top;
+      "SubFooBar";
+      "Foo";
+      "Bar";
+      "object";
     ];
   assert_superclasses !"Foo" [!"object"];
   assert_superclasses !"SubFoo" [!"Foo"; !"object"];

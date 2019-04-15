@@ -1261,7 +1261,7 @@ let test_decode_serialized_ocaml_values context =
   assert_decode
     ~key:(ClassMetadata.serialize_key "int")
     ~value:{
-      Resolution.successors = [Type.string];
+      Resolution.successors = ["str"];
       is_test = false;
     }
     ~response:{

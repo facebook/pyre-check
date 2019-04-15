@@ -373,6 +373,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 Resolution.class_metadata resolution annotation
                 >>| (fun { Resolution.successors; _ } -> successors)
                 |> Option.value ~default:[]
+                |> List.map ~f:(fun name -> Type.Primitive name)
               in
               let base_annotation =
                 (* Our model definitions are ambiguous. Models could either refer to a class

@@ -256,18 +256,18 @@ let test_populate context =
   let assert_successors name expected_successors =
     let { Resolution.successors; _ } = ClassMetadata.find_unsafe name in
     assert_equal
-      ~printer:(List.to_string ~f:Type.show)
+      ~printer:(String.concat ~sep:", ")
       expected_successors
       successors
   in
-  assert_successors "a.C" [Type.Primitive "a.D"; Type.Primitive "object"; Type.Any; Type.Top];
+  assert_successors "a.C" ["a.D"; "object"];
   (* Ensure that the memory doesn't get clobbered on a re-write. *)
   Service.Environment.populate
     (module Handler)
     ~configuration
     ~scheduler:(Scheduler.mock ())
     [Option.value_exn (Ast.SharedMemory.Sources.get (File.Handle.create "a.py"))];
-  assert_successors "a.C" [Type.Primitive "a.D"; Type.Primitive "object"; Type.Any; Type.Top]
+  assert_successors "a.C" ["a.D"; "object"]
 
 
 let () =

@@ -30,7 +30,7 @@ val bases: t -> Expression.t Expression.Call.Argument.t list
 val get_decorator: t -> decorator: string -> decorator list
 
 val annotation: t -> resolution: Resolution.t -> Type.t
-val successors: t -> resolution: Resolution.t -> Type.t list
+val successors: t -> resolution: Resolution.t -> Type.primitive list
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
 module Method : sig

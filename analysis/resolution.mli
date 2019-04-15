@@ -11,7 +11,7 @@ type global = Annotation.t Node.t
 [@@deriving eq, show]
 
 type class_metadata = {
-  successors: Type.t list;
+  successors: Type.primitive list;
   is_test: bool;
 }
 

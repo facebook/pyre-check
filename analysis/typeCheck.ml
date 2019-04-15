@@ -95,7 +95,8 @@ module AccessState = struct
          >>= Resolution.class_metadata resolution
          >>| (fun { Resolution.successors; _ } -> successors)
          >>|  List.filter
-           ~f:(fun name -> Option.is_some (Resolution.class_definition resolution name))
+           ~f:(fun name -> Option.is_some
+                  (Resolution.class_definition resolution (Type.Primitive name)))
          >>| List.hd
          >>| function
          | Some superclass ->
@@ -103,7 +104,7 @@ module AccessState = struct
                Resolution.set_local
                  resolution
                  ~reference:(Reference.create "$super")
-                 ~annotation:(Annotation.create superclass)
+                 ~annotation:(Annotation.create (Type.Primitive superclass))
              in
              Access.SimpleAccess (Access.Identifier "$super" :: tail), resolution
          | None ->

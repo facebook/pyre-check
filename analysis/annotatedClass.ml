@@ -259,7 +259,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
 
 let superclasses definition ~resolution =
   successors ~resolution definition
-  |> List.filter_map ~f:(Resolution.class_definition resolution)
+  |> List.filter_map ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
   |> List.map ~f:create
 
 
