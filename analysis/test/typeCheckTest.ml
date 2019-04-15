@@ -2345,7 +2345,10 @@ let test_forward_expression _ =
     (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
-  assert_forward "[]" (Type.list (Type.variable "_T" |> Type.mark_free_variables_as_escaped));
+  Type.VariableNamespace.reset ();
+  let empty_list = Type.list (Type.variable "_T" |> Type.mark_free_variables_as_escaped) in
+  Type.VariableNamespace.reset ();
+  assert_forward "[]" empty_list;
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);

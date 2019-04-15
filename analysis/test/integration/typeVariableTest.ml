@@ -495,6 +495,12 @@ let test_unbound_variables _ =
       "but is used as type `typing.DefaultDict[Variable[collections._KT], " ^
       "typing.Dict[Variable[_T], Variable[_S]]]`.";
     ];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[typing.List[int], typing.List[str]]:
+        return [], []
+    |}
+    [];
   ()
 
 

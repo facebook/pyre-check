@@ -100,6 +100,22 @@ type variable_state =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+module VariableNamespace = struct
+  type t = int
+  [@@deriving compare, eq, sexp, show, hash]
+
+  let fresh = ref 1
+
+  let reset () =
+    fresh := 1
+
+  let create_fresh () =
+    let namespace = !fresh in
+    fresh := namespace + 1;
+    namespace
+end
+
+
 type tuple =
   | Bounded of t list
   | Unbounded of t
@@ -129,7 +145,7 @@ and variable = {
   constraints: constraints;
   variance: variance;
   state: variable_state;
-  namespace: int;
+  namespace: VariableNamespace.t;
 }
 
 
@@ -2241,15 +2257,16 @@ let mark_variables_as_bound ?(simulated = false) annotation =
   instantiate annotation ~constraints
 
 
-let namespace_variable ({ namespace = namespace; _ } as variable) =
+let namespace_variable variable ~namespace =
   (* TODO(T42603764): use process unique ids instead *)
-  { variable with namespace = namespace + 1 }
+  { variable with namespace }
 
 
-let namespace_free_variables annotation =
+let namespace_free_variables annotation ~namespace =
   let constraints annotation =
     match annotation with
-    | Variable ({ state = Free _; _ } as variable) -> Some (Variable (namespace_variable variable))
+    | Variable ({ state = Free _; _ } as variable) ->
+        Some (Variable (namespace_variable variable ~namespace))
     | _ -> None
   in
   instantiate annotation ~constraints
@@ -2293,6 +2310,7 @@ let instantiate_free_variables ~replacement annotation =
   instantiate annotation ~constraints:(Map.find constraints)
 
 let mark_free_variables_as_escaped ?specific annotation =
+  let namespace = VariableNamespace.create_fresh () in
   let constraints =
     let variables =
       match specific with
@@ -2302,10 +2320,11 @@ let mark_free_variables_as_escaped ?specific annotation =
           free_variables annotation
     in
     let mark_as_escaped sofar variable =
-      Map.set
-        sofar
-        ~key:(Variable variable)
-        ~data:(Variable {variable with state = Free { escaped = true }})
+      let data =
+        namespace_variable { variable with state = Free { escaped = true }} ~namespace
+        |> (fun variable -> Variable variable)
+      in
+      Map.set sofar ~key:(Variable variable) ~data
     in
     List.fold variables ~init:Map.empty ~f:mark_as_escaped
   in

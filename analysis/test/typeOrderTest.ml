@@ -3044,6 +3044,7 @@ let test_solve_less_or_equal _ =
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.mark_variables_as_bound ~simulated:false)
+      ?(replace_escaped_variables_with_any = false)
       expected =
     let parse_annotation annotation =
       annotation
@@ -3117,12 +3118,19 @@ let test_solve_less_or_equal _ =
       |> String.concat ~sep:";\n"
       |> Printf.sprintf "{\n%s\n}"
     in
+    let replace =
+      if replace_escaped_variables_with_any then
+        Type.Map.map ~f:Type.convert_escaped_free_variables_to_anys
+      else
+        Fn.id
+    in
     assert_equal
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
       (solve_less_or_equal handler ~constraints ~left ~right
-       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
+       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler)
+       |> List.map ~f:replace)
   in
   assert_solve ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
   assert_solve ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
@@ -3260,11 +3268,10 @@ let test_solve_less_or_equal _ =
     [["T_Unconstrained", "int"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
-    ~postprocess:(fun value ->
-        Type.namespace_free_variables value |> Type.mark_free_variables_as_escaped)
+    ~replace_escaped_variables_with_any:true
     ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    [["T_Unconstrained", "G_invariant[T]"]];
+    [["T_Unconstrained", "G_invariant[typing.Any]"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"

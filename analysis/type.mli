@@ -63,6 +63,12 @@ type literal =
 
 type variable_state
 
+module VariableNamespace : sig
+  type t
+  val reset: unit -> unit
+  val create_fresh: unit -> t
+end
+
 type tuple =
   | Bounded of t list
   | Unbounded of t
@@ -88,7 +94,7 @@ and variable = {
   constraints: constraints;
   variance: variance;
   state: variable_state;
-  namespace: int;
+  namespace: VariableNamespace.t;
 }
 
 and t =
@@ -293,8 +299,8 @@ val class_variable_value: t -> t option
 
 val assume_any: t -> t
 val mark_variables_as_bound: ?simulated: bool -> t -> t
-val namespace_variable: variable -> variable
-val namespace_free_variables: t -> t
+val namespace_variable: variable -> namespace: VariableNamespace.t -> variable
+val namespace_free_variables: t -> namespace: VariableNamespace.t -> t
 val free_variables: t -> variable list
 val free_simulated_bound_variables: t -> t
 (* Does not contain free variables. *)

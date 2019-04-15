@@ -546,6 +546,7 @@ module OrderImplementation = struct
           []
       in
       let overload_to_instantiated_return_and_altered_constraints overload =
+        let namespace = Type.VariableNamespace.create_fresh () in
         let namespaced_variables =
           Type.Callable {
             Type.Callable.kind = Anonymous;
@@ -554,10 +555,10 @@ module OrderImplementation = struct
             implicit = None;
           }
           |> Type.free_variables
-          |> List.map ~f:Type.namespace_variable
+          |> List.map ~f:(Type.namespace_variable ~namespace)
         in
         let overload =
-          map_implementation overload ~f:(Type.namespace_free_variables)
+          map_implementation overload ~f:(Type.namespace_free_variables ~namespace)
         in
         let does_not_leak_namespaced_variables (external_constraints, _) =
           let predicate = function

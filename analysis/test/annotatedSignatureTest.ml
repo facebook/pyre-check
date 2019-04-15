@@ -72,6 +72,7 @@ let test_select _ =
       |> Type.instantiate ~constraints:begin
         function
         | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
+            Type.VariableNamespace.reset ();
             Some (Type.mark_free_variables_as_escaped variable)
         | _ ->
             None
@@ -94,6 +95,7 @@ let test_select _ =
           failwith "Could not extract signatures"
     in
     let callable = parse_callable callable in
+    Type.VariableNamespace.reset ();
     let signature =
       let arguments =
         match parse_single_access (Format.asprintf "call%s" arguments) with
