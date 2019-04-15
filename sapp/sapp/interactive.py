@@ -15,6 +15,8 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
+    TypeVar,
     Union,
 )
 
@@ -46,6 +48,9 @@ from .models import (
     TraceFrameLeafAssoc,
     TraceKind,
 )
+
+
+T = TypeVar("T")
 
 
 class IssueQueryResult(NamedTuple):
@@ -314,17 +319,17 @@ details()         show additional information about the current trace frame
         self,
         use_pager: bool = None,
         *,
-        codes: Optional[List[int]] = None,
-        callables: Optional[List[str]] = None,
-        filenames: Optional[List[str]] = None,
+        codes: Optional[Union[int, List[int]]] = None,
+        callables: Optional[Union[str, List[str]]] = None,
+        filenames: Optional[Union[str, List[str]]] = None,
     ):
         """Lists issues for the selected run.
 
         Parameters (all optional):
-            use_pager: bool         use a unix style pager for output
-            codes: list[int]        issue codes to filter on
-            callables: list[str]    callables to filter on (supports wildcards)
-            filenames: list[str]    filenames to filter on (supports wildcards)
+            use_pager: bool                use a unix style pager for output
+            codes: int or list[int]        issue codes to filter on
+            callables: str or list[str]    callables to filter on (supports wildcards)
+            filenames: str or list[str]    filenames to filter on (supports wildcards)
 
         String filters support LIKE wildcards (%, _) from SQL:
             % matches anything (like .* in regex)
@@ -351,17 +356,18 @@ details()         show additional information about the current trace frame
             ).filter(IssueInstance.run_id == self.current_run_id)
 
             if codes is not None:
-                self._verify_list_filter(codes, "codes")
-                query = query.filter(Issue.code.in_(codes))
+                query = self._add_list_or_int_filter_to_query(
+                    codes, query, Issue.code, "codes"
+                )
 
             if callables is not None:
-                self._verify_list_filter(callables, "callables")
-                query = self._add_list_filter_to_query(callables, query, Issue.callable)
+                query = self._add_list_or_string_filter_to_query(
+                    callables, query, Issue.callable, "callables"
+                )
 
             if filenames is not None:
-                self._verify_list_filter(filenames, "filenames")
-                query = self._add_list_filter_to_query(
-                    filenames, query, IssueInstance.filename
+                query = self._add_list_or_string_filter_to_query(
+                    filenames, query, IssueInstance.filename, "filenames"
                 )
 
             issues = query.join(Issue, IssueInstance.issue_id == Issue.id).join(
@@ -421,22 +427,22 @@ details()         show additional information about the current trace frame
     def frames(
         self,
         *,
-        callers: Optional[List[str]] = None,
-        callees: Optional[List[str]] = None,
+        callers: Optional[Union[str, List[str]]] = None,
+        callees: Optional[Union[str, List[str]]] = None,
         kind: Optional[TraceKind] = None,
         limit: Optional[int] = 10,
     ):
         """Display trace frames independent of the current issue.
 
         Parameters (all optional):
-            callers: list[str]                  filter traces by this caller name
-            callees: list[str]                  filter traces by this callee name
+            callers: str or list[str]            filter traces by this caller name
+            callees: str or list[str]            filter traces by this callee name
             kind: precondition|postcondition    the type of trace frames to show
             limit: int (default: 10)            how many trace frames to display
                                                 (specify limit=None for all)
 
         Sample usage:
-            frames(callers=["module.function"], kind=postcondition)
+            frames(callers="module.function", kind=postcondition)
 
         String filters support LIKE wildcards (%, _) from SQL:
             % matches anything (like .* in regex)
@@ -448,15 +454,13 @@ details()         show additional information about the current trace frame
             )
 
             if callers is not None:
-                self._verify_list_filter(callers, "callers")
-                query = self._add_list_filter_to_query(
-                    callers, query, TraceFrame.caller
+                query = self._add_list_or_string_filter_to_query(
+                    callers, query, TraceFrame.caller, "callers"
                 )
 
             if callees is not None:
-                self._verify_list_filter(callees, "callees")
-                query = self._add_list_filter_to_query(
-                    callees, query, TraceFrame.callee
+                query = self._add_list_or_string_filter_to_query(
+                    callees, query, TraceFrame.callee, "callees"
                 )
 
             if kind is not None:
@@ -869,18 +873,45 @@ details()         show additional information about the current trace frame
             )
         return caller_buckets
 
-    def _verify_list_filter(self, filter: List, argument_name: str) -> None:
-        # Check this because filter is user input
-        if not isinstance(filter, list):
-            raise UserError(f"'{argument_name}' should be a list.")
+    def _add_list_or_string_filter_to_query(
+        self,
+        filter: Union[str, List[str]],
+        query: Query,
+        column: InstrumentedAttribute,
+        argument_name: str,
+    ):
+        return self._add_list_or_element_filter_to_query(
+            filter, query, column, argument_name, str
+        )
 
-        if not filter:
-            raise UserError(f"'{argument_name}' should be non-empty.")
+    def _add_list_or_int_filter_to_query(
+        self,
+        filter: Union[int, List[int]],
+        query: Query,
+        column: InstrumentedAttribute,
+        argument_name: str,
+    ):
+        return self._add_list_or_element_filter_to_query(
+            filter, query, column, argument_name, int
+        )
 
-    def _add_list_filter_to_query(
-        self, filter: List[str], query: Query, column: InstrumentedAttribute
+    def _add_list_or_element_filter_to_query(
+        self,
+        filter: Union[T, List[T]],
+        query: Query,
+        column: InstrumentedAttribute,
+        argument_name: str,
+        element_type: Type,
     ) -> Query:
-        return query.filter(or_(*[column.like(item) for item in filter]))
+        if isinstance(filter, element_type):
+            return query.filter(column.like(filter))
+        if isinstance(filter, list):
+            if not filter:
+                raise UserError(f"'{argument_name}' should be non-empty.")
+            return query.filter(or_(*[column.like(item) for item in filter]))
+        raise UserError(
+            f"'{argument_name}' should be {element_type} or " f"list of {element_type}."
+        )
 
     def _output_file_lines(
         self, trace_frame: TraceFrame, file_lines: List[str], context: int

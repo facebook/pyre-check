@@ -174,11 +174,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(codes=1000)
+        self.interactive.issues(codes="a string")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'codes' should be a list", stderr)
+        self.assertIn("'codes' should be", stderr)
 
-        self.interactive.issues(codes=[1000])
+        self.interactive.issues(codes=1000)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
@@ -195,11 +195,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(callables="function3")
+        self.interactive.issues(callables=1234)
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'callables' should be a list", stderr)
+        self.assertIn("'callables' should be", stderr)
 
-        self.interactive.issues(callables=["%sub%"])
+        self.interactive.issues(callables="%sub%")
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -216,11 +216,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(filenames="hello.py")
+        self.interactive.issues(filenames=1234)
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'filenames' should be a list", stderr)
+        self.assertIn("'filenames' should be", stderr)
 
-        self.interactive.issues(filenames=["module/s%"])
+        self.interactive.issues(filenames="module/s%")
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -1357,19 +1357,18 @@ class InteractiveTest(TestCase):
         except UserError:
             self.fail("Unexpected UserError")
 
-    def testVerifyListFilter(self):
+    def testAddListOrElementFilterErrors(self):
         with self.assertRaises(UserError):
-            self.interactive._verify_list_filter("not a list", "arg0")
+            self.interactive._add_list_or_element_filter_to_query(
+                "not a list", None, None, "arg0", int
+            )
 
         with self.assertRaises(UserError):
-            self.interactive._verify_list_filter([], "arg0")
+            self.interactive._add_list_or_element_filter_to_query(
+                [], None, None, "arg0", str
+            )
 
-        try:
-            self.interactive._verify_list_filter(["elem", "elem"], "arg0")
-        except UserError:
-            self.fail("Unexpected UserError")
-
-    def testAddListFilterToQuery(self):
+    def testAddListOrStringFilterToQuery(self):
         shared_texts = [
             SharedText(id=1, contents="prefix"),
             SharedText(id=2, contents="suffix"),
@@ -1383,20 +1382,20 @@ class InteractiveTest(TestCase):
 
             query = session.query(SharedText.contents)
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["prefix", "suffix"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["prefix", "suffix"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("suffix",)],
             )
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["%prefix%"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["%prefix%"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("prefix_suffix",)],
             )
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["%fix%"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["%fix%"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("suffix",), ("prefix_suffix",), ("fix",)],
             )
