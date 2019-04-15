@@ -13,7 +13,7 @@ module Callable = Type.Callable
 exception Cyclic
 exception Incomplete
 exception Untracked of Type.t
-exception InconsistentMethodResolutionOrder of Type.t
+exception InconsistentMethodResolutionOrder of Type.primitive
 
 
 module Target = struct
@@ -322,7 +322,7 @@ let raise_if_untracked order annotation =
 let method_resolution_order_linearize
     ((module Handler: Handler) as order)
     ~get_successors
-    annotation =
+    class_name =
   let rec merge = function
     | [] ->
         []
@@ -333,7 +333,7 @@ let method_resolution_order_linearize
           let is_valid_head head =
             let not_in_tail target = function
               | [] -> true
-              | _ :: tail -> not (List.exists ~f:(Type.equal target) tail)
+              | _ :: tail -> not (List.exists ~f:(Identifier.equal target) tail)
             in
             List.for_all ~f:(not_in_tail head) linearizations
           in
@@ -342,47 +342,34 @@ let method_resolution_order_linearize
           |> List.find ~f:(is_valid_head)
           |> (function
               | Some head -> head
-              | None -> raise (InconsistentMethodResolutionOrder annotation))
+              | None -> raise (InconsistentMethodResolutionOrder class_name))
         in
         let strip_head head = function
           | [] -> None
-          | successor_head :: [] when (Type.equal successor_head head) -> None
-          | successor_head :: tail when (Type.equal successor_head head) -> Some tail
+          | successor_head :: [] when (Identifier.equal successor_head head) -> None
+          | successor_head :: tail when (Identifier.equal successor_head head) -> Some tail
           | successor -> Some successor
         in
         let head = find_valid_head linearized_successors in
         let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
         head :: merge linearized_successors
   in
-  let rec linearize annotation =
-    let primitive, actual_parameters = Type.split annotation in
+  let rec linearize class_name =
     let linearized_successors =
-      let create_annotation { Target.target = index; parameters } =
-        let annotation = Handler.find_unsafe (Handler.annotations ()) index in
-        let parameters =
-          (* We currently ignore the actual type variable mapping. *)
-          if List.length parameters = List.length actual_parameters then
-            actual_parameters
-          else
-            []
-        in
-        match annotation, parameters with
-        | _, [] ->
-            annotation
-        | Type.Primitive name, _ ->
-            Type.Parametric { name; parameters }
-        | _ ->
-            failwith (Format.asprintf "Unexpected type %a" Type.pp annotation)
+      let create_annotation { Target.target = index; _ } =
+        index
+        |> Handler.find_unsafe (Handler.annotations ())
+        |> Type.primitive_name
       in
-      index_of order primitive
+      index_of order (Type.Primitive class_name)
       |> get_successors
       |> Option.value ~default:[]
-      |> List.map ~f:create_annotation
+      |> List.filter_map ~f:create_annotation
       |> List.map ~f:linearize
     in
-    annotation :: merge linearized_successors
+    class_name :: merge linearized_successors
   in
-  linearize annotation
+  linearize class_name
 
 
 let successors ((module Handler: Handler) as order) annotation =

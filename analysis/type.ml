@@ -82,6 +82,10 @@ open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
 
+type primitive = Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type literal =
   | Boolean of bool
   | Integer of int
@@ -136,7 +140,7 @@ and t =
   | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
-  | Primitive of Identifier.t
+  | Primitive of primitive
   | Top
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }

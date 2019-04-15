@@ -592,18 +592,18 @@ let test_default _ =
 let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order ((module Handler: Handler) as order) annotation expected =
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
       expected
       (method_resolution_order_linearize
          order
          annotation
          ~get_successors:(Handler.find (Handler.edges ())))
   in
-  assert_method_resolution_order butterfly !"3" [!"3"; Type.Top];
-  assert_method_resolution_order butterfly !"0" [!"0"; !"3"; !"2"; Type.Top];
-  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top];
+  assert_method_resolution_order butterfly "3" ["3"];
+  assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
+  assert_method_resolution_order diamond_order "D" ["D"; "C"; "B"; "A"];
   (* The subclass gets chosen first even if after the superclass when both are inherited. *)
-  assert_method_resolution_order triangle_order !"C" [!"C"; !"B"; !"A"; Type.Top]
+  assert_method_resolution_order triangle_order "C" ["C"; "B"; "A"]
 
 
 let test_successors _ =
@@ -611,74 +611,24 @@ let test_successors _ =
       0 - 2
         X
       1 - 3 *)
-  assert_equal (successors butterfly !"3") [Type.Top];
-  assert_equal (successors butterfly !"0") [!"3"; !"2"; Type.Top];
+  assert_equal (successors butterfly "3") [];
+  assert_equal (successors butterfly "0") ["3"; "2"];
 
   (*          0 - 3
               /   /   \
               BOTTOM - 1      TOP
               |  \       /
               4 -- 2 ---           *)
-  assert_equal (successors order !"3") [Type.Top];
-  assert_equal (successors order !"0") [!"3"; Type.Top];
+  assert_equal (successors order "3") [];
+  assert_equal (successors order "0") ["3"];
   assert_equal
-    (successors order !"bottom")
+    (successors order "bottom")
     [
-      !"4";
-      !"2";
-      !"1";
-      !"0";
-      !"3";
-      Type.Top;
-    ];
-
-  (*  BOTTOM - Iterator[_T] - Iterable[_T] - Generic[_T] - Object
-                    \                            /
-                      --------------------------                    *)
-  let order =
-    let order = Builder.create () |> TypeOrder.handler in
-    insert order Type.Bottom;
-    insert order Type.Any;
-    insert order Type.Top;
-    insert order !"typing.Iterator";
-    insert order !"typing.Iterable";
-    insert order !"typing.Generic";
-    connect order ~predecessor:Type.Bottom ~successor:!"typing.Iterable";
-    connect
-      order
-      ~predecessor:!"typing.Iterator"
-      ~successor:!"typing.Iterable"
-      ~parameters:[Type.variable "_T"];
-    connect
-      order
-      ~predecessor:!"typing.Iterator"
-      ~successor:!"typing.Generic"
-      ~parameters:[Type.variable "_T"];
-    connect
-      order
-      ~predecessor:!"typing.Iterable"
-      ~successor:!"typing.Generic"
-      ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
-    order in
-
-  assert_equal
-    (successors
-       order
-       (Type.parametric "typing.Iterable" [Type.integer]))
-    [
-      Type.parametric "typing.Generic" [Type.integer];
-      Type.Any;
-    ];
-
-  assert_equal
-    (successors
-       order
-       (Type.parametric "typing.Iterator" [Type.integer]))
-    [
-      Type.parametric "typing.Iterable" [Type.integer];
-      Type.parametric "typing.Generic" [Type.integer];
-      Type.Any;
+      "4";
+      "2";
+      "1";
+      "0";
+      "3";
     ]
 
 

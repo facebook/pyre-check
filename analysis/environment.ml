@@ -196,18 +196,17 @@ let handler
 
 
     let register_class_metadata class_name =
-      let successors = TypeOrder.successors (module TypeOrderHandler) (Type.Primitive class_name) in
+      let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
       let in_test =
         let is_unit_test { Node.value = definition; _ } =
           Class.is_unit_test definition
         in
-        let class_name_of successor =
-          successor
-          |> Type.primitive_name
-          >>= Hashtbl.find class_definitions
-        in
-        List.filter_map successors ~f:class_name_of
+        List.filter_map successors ~f:(Hashtbl.find class_definitions)
         |> List.exists ~f:is_unit_test
+      in
+      let successors =
+        let successors = List.map successors ~f:(fun name -> Type.Primitive name) in
+        List.append successors [Type.Any; Type.Top]
       in
       Hashtbl.set
         class_metadata

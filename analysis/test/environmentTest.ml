@@ -116,7 +116,7 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.Primitive "B");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.Primitive "A");
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  assert_equal (TypeOrder.successors order (Type.Primitive "C")) [];
+  assert_equal (TypeOrder.successors order "C") [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
@@ -634,21 +634,19 @@ let test_connect_type_order _ =
   Environment.connect_type_order (module Handler) resolution source;
   let assert_successors annotation successors =
     assert_equal
-      ~printer:(List.to_string ~f:Type.show)
+      ~printer:(List.to_string ~f:Type.show_primitive)
       successors
       (TypeOrder.successors order annotation)
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
-  assert_successors (Type.Primitive "C") [];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"];
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
 
   TypeOrder.connect_annotations_to_top order ~top:Type.Any all_annotations;
 
-  assert_successors (Type.Primitive "C") [Type.Any; Type.Top];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Top];
-  assert_successors
-    (Type.Primitive "CallMe")
-    [Type.Primitive "typing.Callable"; Type.object_primitive; Type.Any; Type.Top]
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
+  assert_successors "CallMe" ["typing.Callable"; "object"]
 
 
 let test_populate _ =
@@ -1261,36 +1259,11 @@ let test_supertypes_type_order _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    [Type.object_primitive; Type.Any; Type.Top]
-    (TypeOrder.successors order (Type.Primitive "foo"));
+    ["object"]
+    (TypeOrder.successors order "foo");
   assert_equal
-    [Type.Primitive "foo"; Type.object_primitive; Type.Any; Type.Top]
-    (TypeOrder.successors order (Type.Primitive "bar"));
-
-  let environment =
-    populate {|
-      _T = typing.TypeVar('_T')
-      class typing.Iterable(typing.Generic[_T]): pass
-      class typing.Iterator(typing.Generic[_T], typing.Iterable[_T]): pass
-    |} in
-  let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  assert_equal
-    ~printer:(List.to_string ~f:Type.show)
-    [
-      Type.Parametric {
-        name = "typing.Protocol";
-        parameters = [Type.integer];
-      };
-      Type.Parametric {
-        name = "typing.Generic";
-        parameters = [Type.integer];
-      };
-      Type.object_primitive;
-      Type.Any;
-      Type.Top;
-    ]
-    (TypeOrder.successors order (Type.parametric "typing.Iterable" [Type.integer]))
+    ["foo"; "object"]
+    (TypeOrder.successors order "bar")
 
 
 let test_class_definition _ =

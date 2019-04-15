@@ -405,20 +405,19 @@ module SharedHandler: Analysis.Environment.Handler = struct
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let register_class_metadata class_name =
     let open Statement in
-    let successors = TypeOrder.successors (module TypeOrderHandler) (Type.Primitive class_name) in
+    let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
     let in_test =
       let is_unit_test { Node.value = definition; _ } =
         Class.is_unit_test definition
       in
       let successor_classes =
-        let get_class successor_type =
-          successor_type
-          |> Type.primitive_name
-          >>= ClassDefinitions.get
-        in
-        List.filter_map ~f:get_class successors
+        List.filter_map ~f:ClassDefinitions.get successors
       in
       List.exists ~f:is_unit_test successor_classes
+    in
+    let successors =
+      let successors = List.map successors ~f:(fun name -> Type.Primitive name) in
+      List.append successors [Type.Any; Type.Top]
     in
     ClassMetadata.add
       class_name

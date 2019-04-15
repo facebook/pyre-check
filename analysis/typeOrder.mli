@@ -5,7 +5,6 @@
 
 open Core
 
-
 exception Cyclic
 exception Incomplete
 exception Untracked of Type.t
@@ -97,9 +96,9 @@ val is_instantiated: (module Handler) -> Type.t -> bool
 val method_resolution_order_linearize
   :  (module Handler)
   -> get_successors:(int -> Target.t list option)
-  -> Type.t
-  -> Type.t list
-val successors: (module Handler) -> Type.t -> Type.t list
+  -> Type.primitive
+  -> Type.primitive list
+val successors: (module Handler) -> Type.primitive -> Type.primitive list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 
