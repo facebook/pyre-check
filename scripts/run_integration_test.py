@@ -298,4 +298,11 @@ if __name__ == "__main__":
         "repository_location", help="Path to directory with fake commit list"
     )
     arguments = parser.parse_args()
-    sys.exit(run_integration_test(arguments.repository_location))
+    retries = 3
+    while retries > 0:
+        try:
+            sys.exit(run_integration_test(arguments.repository_location))
+        except Exception:
+            # Retry the integration test for uncaught exceptions. Caught issues will
+            # result in an exit code of 1.
+            retries = retries - 1
