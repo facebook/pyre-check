@@ -253,12 +253,17 @@ def run_integration_test(repository_path) -> int:
         discrepancies = {}
         repository = Repository(base_directory, repository_path)
         with _watch_directory(repository.get_repository_directory()):
-            repository.run_pyre("start")
-            for commit in repository:
-                (actual_error, expected_error) = repository.get_pyre_errors()
-                if actual_error != expected_error:
-                    discrepancies[commit] = (actual_error, expected_error)
-            repository.run_pyre("stop")
+            try:
+                repository.run_pyre("start")
+                for commit in repository:
+                    (actual_error, expected_error) = repository.get_pyre_errors()
+                    if actual_error != expected_error:
+                        discrepancies[commit] = (actual_error, expected_error)
+                repository.run_pyre("stop")
+            except Exception as uncaught_pyre_exception:
+                LOG.error("Uncaught exception: `%s`", str(uncaught_pyre_exception))
+                LOG.info("Pyre rage: %s", repository.run_pyre("rage"))
+                raise uncaught_pyre_exception
 
         if discrepancies:
             LOG.error("Pyre rage:")
