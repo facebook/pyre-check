@@ -26,6 +26,21 @@ class TypeAnnotation:
         self.start_column = start_column
         self.stop_column = stop_column
 
+    def __hash__(self):
+        return hash(
+            (self.start_line, self.stop_line, self.start_column, self.stop_column)
+        )
+
+    def __eq__(self, other: object):
+        if not isinstance(other, TypeAnnotation):
+            return False
+        return (
+            self.start_line == other.start_line
+            and self.stop_line == other.stop_line
+            and self.start_column == other.start_column
+            and self.stop_column == other.stop_column
+        )
+
     @staticmethod
     def create_from_json(data):
         start = data["location"]["start"]
@@ -108,4 +123,4 @@ class Color(Command):
             TypeAnnotation.create_from_json(type)
             for type in coverage["response"]["types"]
         ]
-        PrintColor(type_annotations, self.path).print_results()
+        PrintColor(set(type_annotations), self.path).print_results()
