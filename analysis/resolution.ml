@@ -40,7 +40,7 @@ type t = {
   module_definition: Reference.t -> Module.t option;
   class_definition: Type.t -> (Class.t Node.t) option;
   class_metadata: Type.t -> class_metadata option;
-  constructor: instantiated: Type.t -> resolution: t -> Class.t Node.t -> Type.t;
+  constructor: (resolution: t -> Type.primitive -> Type.t option);
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
   generics: resolution: t -> Class.t Node.t -> Type.t list;
 
@@ -247,8 +247,9 @@ let function_definitions resolution reference =
 
 let full_order ({ order; _ } as resolution) =
   let constructor instantiated =
-    class_definition resolution instantiated
-    >>| constructor resolution ~instantiated
+    instantiated
+    |> Type.primitive_name
+    >>= constructor resolution
   in
   let implements =
     implements resolution

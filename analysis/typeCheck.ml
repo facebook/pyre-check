@@ -4000,7 +4000,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~module_definition:(fun _ -> None)
         ~class_definition:(fun _ -> None)
         ~class_metadata:(fun _ -> None)
-        ~constructor:(fun ~instantiated:_ ~resolution:_ _ -> Type.Top)
+        ~constructor:(fun ~resolution:_ _ -> None)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ~generics:(fun ~resolution:_ _ -> [])
         ()
@@ -4023,9 +4023,11 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     |> fun { State.resolved; _ } -> resolved
   in
 
-  let constructor ~instantiated ~resolution class_node =
-    AnnotatedClass.create class_node
-    |> AnnotatedClass.constructor ~instantiated ~resolution
+  let constructor ~resolution class_name =
+    let instantiated = Type.Primitive class_name in
+    Resolution.class_definition resolution instantiated
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.constructor ~instantiated ~resolution
   in
 
   let implements ~resolution ~protocol annotation =
