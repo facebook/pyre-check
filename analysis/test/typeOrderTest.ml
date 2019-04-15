@@ -3372,6 +3372,25 @@ let test_solve_less_or_equal _ =
       ["T3", "str"; "T4", "int"];
       ["T3", "typing.Union[int, str]"; "T4", "typing.Union[int, str]"];
     ];
+
+  (* Free Variable <-> Free Variable constraints *)
+  assert_solve
+    ~postprocess:Fn.id
+    ~leave_unbound_in_left:["T1"]
+    ~left:"T1"
+    ~right:"T2"
+    [["T2", "T1"]; ["T1", "T2"]];
+  assert_solve
+    ~postprocess:Fn.id
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Callable[[T], T]"
+    ~right:"typing.Callable[[T1], T2]"
+    [["T2", "T1"]; ["T1", "T2"]];
+  assert_solve
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Tuple[typing.Callable[[T], T], int]"
+    ~right:"typing.Tuple[typing.Callable[[T1], T2], T1]"
+    [["T2", "int"; "T1", "int"]];
   ()
 
 

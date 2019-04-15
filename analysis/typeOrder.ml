@@ -607,6 +607,39 @@ module OrderImplementation = struct
       in
       List.concat_map overloads ~f:overload_to_instantiated_return_and_altered_constraints
 
+    (* ## solve_less_or_equal, a brief explanation: ##
+
+       At the heart of our handling of generics is this function, solve_less_or_equal.
+
+       This function takes:
+         * a statement of the form F(T1, T2, ... Tn) =<= G(T1, T2, ... Tn), where F and G are types
+           which may contain any number of free type variables.
+           In this context a free type variable is one whose value we are trying to determine.
+           This could be a function level generic, an "escaped" type variable from some sort of
+           incomplete initialization, or even some sort of synthetic type variable we're using to
+           answer a question like, "if this is an iterable, what kind of iterable is it?" for
+           correctly handling *args parameters.
+         * a precondition set of constraints (as defined in TypeConstraints.mli) from a previous
+           call to solve_less_or_equal (or from somewhere else).  This is how you're able to define
+           conjunctions of =<= statements, as when you are trying to satisfy a number of
+           argument <-> parameter pairs in signature selection
+       and returns:
+         * an arbitrarily ordered list of constraints (again as defined in Typeconstraints.mli) that
+           each are sufficient to satisfy the given statement and the precondition constraints.  If
+           this list is empty, there is no way to satify those requirements (at least as well as
+           we can know that).
+
+       The general strategy undertaken to achieve this behavior is to pairwise recursively break up
+       the types in the same way, e.g. we expect to get a tuple on the right if we have a tuple on
+       the left, and to handle that by enforcing that each of the contained types be less than
+       their pair on the other side (as tuples are covariant).
+       Certain pairs, such as X =<= Union[...] or comparing callables with overloads naturally
+       create multiple disjoint possibilities which give rise to the list of constraints that we end
+       up returning.
+
+       Once you have enforced all of the statements you would like to ensure are true, you can
+       extract possible solutions to the constraints set you have built up with
+       List.filter_map ~f:OrderedConstraints.solve *)
 
     and solve_less_or_equal_safe
         ({ handler; constructor; implements; any_is_bottom } as order) ~constraints ~left ~right =
@@ -628,6 +661,8 @@ module OrderImplementation = struct
             | List.Or_unequal_lengths.Unequal_lengths -> []
           in
           match left, right with
+          | _, _ when Type.equal left right ->
+              [constraints]
           | _, Type.Any
           | _, Type.Top ->
               [constraints]
@@ -637,10 +672,25 @@ module OrderImplementation = struct
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
           | Type.Variable left_variable, Type.Variable right_variable
             when (not (Type.is_resolved left)) && (not (Type.is_resolved right)) ->
-              constraints
-              |> OrderedConstraints.add_lower_bound ~order ~variable:right_variable ~bound:left
-              >>= OrderedConstraints.add_upper_bound ~order ~variable:left_variable ~bound:right
-              |> Option.to_list
+              (* Either works because constraining V1 to be less or equal to V2 implies
+                 that V2 is greater than or equal to V1.  Therefore either constraint is sufficient,
+                 and we should consider both.  This approach simplifies things downstream for
+                 the constraint solver *)
+              let right_greater_than_left, left_less_than_right =
+                OrderedConstraints.add_lower_bound
+                  constraints
+                  ~order
+                  ~variable:right_variable
+                  ~bound:left
+                |> Option.to_list,
+                OrderedConstraints.add_upper_bound
+                  constraints
+                  ~order
+                  ~variable:left_variable
+                  ~bound:right
+                |> Option.to_list
+              in
+              right_greater_than_left @ left_less_than_right
           | Type.Variable variable, bound when (not (Type.is_resolved left)) ->
               OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
               |> Option.to_list

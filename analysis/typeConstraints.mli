@@ -10,13 +10,21 @@ val empty: t
 
 type solution = Type.t Type.Map.t
 
+(* Checks a predicate against all of the bounds accumulated in a set of constraints *)
 val exists: t -> predicate: (Type.t -> bool) -> bool
 
 module type OrderedConstraintsType = sig
+  (* This module defines a system to construct and solve a set of constraints on type variables.
+     These constraints are built up in the form of intervals on the type lattice defined by the
+     given order module.
+     The solve system can handle chained constraints of the form X =<= F(Y) && Y =<= T, but declines
+     to solve cyclic ones, e.g. X =<= Y, Y =<= X. *)
   type order
   val add_lower_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option
   val add_upper_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option
   val solve: t -> order: order -> solution option
+  (* This solves the constraints for the given variables, and then substitutes those solution in
+     for those variables in the constraints for the remaining constraints. *)
   val extract_partial_solution
     :  t
     -> order: order

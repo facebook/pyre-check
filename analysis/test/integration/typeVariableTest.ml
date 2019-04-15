@@ -614,15 +614,24 @@ let test_distinguish _ =
         return x
       T1 = typing.TypeVar("T1")
       T2 = typing.TypeVar("T2")
-      def bar(x: typing.Callable[[T1], T2], y: typing.Callable[[T2], T1]) -> None:
-        pass
+      def bar(x: typing.Callable[[T1], T2], y: typing.Callable[[T2], T1]) -> typing.Tuple[T1, T2]:
+         ...
       def baz() -> None:
-         bar(foo, foo)
+         x = bar(foo, foo)
     |}
     [
-      "Mutually recursive type variables [36]: Solving type variables for call `bar` " ^
-      "led to infinite recursion"
+      "Incomplete Type [37]: Type `typing.Tuple[Variable[T1], Variable[T1]]` inferred for `x" ^
+      "` is incomplete, add an explicit annotation.";
     ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def identity(x: T) -> T:
+        return x
+      def f() -> None:
+        reveal_type(map(identity, [1, 2, 3]))
+    |}
+    ["Revealed type [-1]: Revealed type for `map.(...)` is `typing.Iterator[int]`."];
   ()
 
 
