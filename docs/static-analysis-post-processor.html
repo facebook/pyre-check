@@ -88,7 +88,7 @@ Location: source.py:9|22|32
 Found 1 issues with run_id 1.
 </code></pre>
 <p>As expected, we have 1 issue. To select it:</p>
-<pre><code class="hljs css language-text">In [2]: set_issue_instance(1)
+<pre><code class="hljs css language-text">In [2]: issue(1)
 Set issue to 1.
 Issue 1
     Code: 5001
@@ -174,9 +174,9 @@ In [10]:
 <p><code>issues()</code>: list all issues for the selected run</p>
 <p><code>show()</code>: show info about selected issue</p>
 <h3><a class="anchor" aria-hidden="true" id="selection-commands"></a><a href="#selection-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Selection commands</h3>
-<p><code>set_run(ID)</code>: select a specific run for browsing issues</p>
-<p><code>set_latest_run(KIND)</code>: select the latest run of the given kind</p>
-<p><code>set_issue_instance(ID)</code>: select a specific issue for browsing a trace</p>
+<p><code>run(ID)</code>: select a specific run for browsing issues</p>
+<p><code>latest_run(KIND)</code>: select the latest run of the given kind</p>
+<p><code>issue(ID)</code>: select a specific issue for browsing a trace</p>
 <h3><a class="anchor" aria-hidden="true" id="trace-commands"></a><a href="#trace-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Trace commands</h3>
 <p><code>trace()</code>: show a trace of the selected issue</p>
 <p><code>prev()</code>/<code>p()</code>: move backward within the trace</p>
@@ -186,7 +186,7 @@ In [10]:
 <p><code>list()</code>: show source code</p>
 <h3><a class="anchor" aria-hidden="true" id="debugging-commands"></a><a href="#debugging-commands" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Debugging commands</h3>
 <p><code>frames()</code>: show trace frames independently of an issue</p>
-<p><code>set_frame(ID)</code>: select a trace frame</p>
+<p><code>frame(ID)</code>: select a trace frame</p>
 <p><code>parents()</code>: show the callers of the current trace frame</p>
 <p><code>details()</code>: additional details about the current trace frame</p>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/static-analysis.html"><span class="arrow-prev">← </span><span>Pyre Static Analysis</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
