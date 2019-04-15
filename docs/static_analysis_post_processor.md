@@ -59,7 +59,7 @@ Found 1 issues with run_id 1.
 ```
 As expected, we have 1 issue. To select it:
 ```text
-In [2]: set_issue_instance(1)
+In [2]: issue(1)
 Set issue to 1.
 Issue 1
     Code: 5001
@@ -161,11 +161,11 @@ In [10]:
 
 ### Selection commands
 
-`set_run(ID)`: select a specific run for browsing issues
+`run(ID)`: select a specific run for browsing issues
 
-`set_latest_run(KIND)`: select the latest run of the given kind
+`latest_run(KIND)`: select the latest run of the given kind
 
-`set_issue_instance(ID)`: select a specific issue for browsing a trace
+`issue(ID)`: select a specific issue for browsing a trace
 
 ### Trace commands
 
@@ -185,7 +185,7 @@ In [10]:
 
 `frames()`: show trace frames independently of an issue
 
-`set_frame(ID)`: select a trace frame
+`frame(ID)`: select a trace frame
 
 `parents()`: show the callers of the current trace frame
 
