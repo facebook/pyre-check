@@ -295,9 +295,13 @@ details()         show additional information about the current trace frame
         self.current_frame_id = -1
         self.current_trace_frame_index = 1  # first one after the source
 
-        self._generate_trace_from_issue()
-
         print(f"Set issue to {issue_instance_id}.")
+        if selected_issue.run_id != self.current_run_id:
+            self.current_run_id = int(selected_issue.run_id)
+            print(f"Set run to {self.current_run_id}.")
+            print()
+
+        self._generate_trace_from_issue()
         self.show()
 
     @catch_keyboard_interrupt()
@@ -489,7 +493,7 @@ details()         show additional information about the current trace frame
     def frame(self, frame_id: int) -> None:
         with self.db.make_session() as session:
             selected_frame = (
-                session.query(TraceFrame.id, TraceFrame.kind)
+                session.query(TraceFrame.id, TraceFrame.kind, TraceFrame.run_id)
                 .filter(TraceFrame.id == frame_id)
                 .first()
             )
@@ -517,9 +521,13 @@ details()         show additional information about the current trace frame
         self.current_frame_id = int(selected_frame.id)
         self.current_issue_instance_id = -1
 
-        self._generate_trace_from_frame()
-
         print(f"Set trace frame to {frame_id}.")
+        if selected_frame.run_id != self.current_run_id:
+            self.current_run_id = int(selected_frame.run_id)
+            print(f"Set run to {self.current_run_id}.")
+            print()
+
+        self._generate_trace_from_frame()
         self.show()
 
     @catch_keyboard_interrupt()

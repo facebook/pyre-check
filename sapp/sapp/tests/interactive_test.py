@@ -374,6 +374,30 @@ class InteractiveTest(TestCase):
 
         self.assertIn("Issue 1 doesn't exist", stderr)
 
+    def testSetIssueUpdatesRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        issue = self._generic_issue(id=1)
+        issue_instances = [
+            self._generic_issue_instance(id=1, run_id=1, issue_id=1),
+            self._generic_issue_instance(id=2, run_id=2, issue_id=1),
+        ]
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+
+        with self.db.make_session() as session:
+            session.add(issue)
+            session.add(shared_text)
+            self._add_to_session(session, runs)
+            self._add_to_session(session, issue_instances)
+            session.commit()
+
+        self.interactive.setup()
+        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.interactive.issue(1)
+        self.assertEqual(int(self.interactive.current_run_id), 1)
+
     def testGetSources(self):
         issue_instance = self._generic_issue_instance()
         sources = [
@@ -1683,6 +1707,53 @@ else:
         self.interactive.frame(2)
         self.assertNotIn("Trace frame 1", self.stdout.getvalue())
         self.assertIn("Trace frame 2", self.stdout.getvalue())
+
+    def testSetFrameUpdatesRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="call2",
+                callee_port="param0",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call2",
+                caller_port="param1",
+                callee="call3",
+                callee_port="param2",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, runs)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(shared_text)
+            session.commit()
+
+        self.interactive.setup()
+        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.interactive.frame(1)
+        self.assertEqual(int(self.interactive.current_run_id), 1)
 
     def testIsBeforeRoot(self):
         self.interactive.trace_tuples = [
