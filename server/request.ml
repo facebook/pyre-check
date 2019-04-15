@@ -1272,6 +1272,8 @@ let process_type_check_files
       | exception ((File.NonexistentHandle _) as uncaught_exception) ->
           Statistics.log_exception uncaught_exception ~fatal:false ~origin:"server";
           updated, removed
+      | handle when (not (Path.file_exists (File.path file))) ->
+          updated, handle :: removed
       | handle ->
           begin
             match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
@@ -1312,7 +1314,7 @@ let process_type_check_files
         update_environment_with
         ~state
         ~configuration
-        |> fun files -> Deferred.add deferred_state ~files
+      |> fun files -> Deferred.add deferred_state ~files
     else
       deferred_state
   in
@@ -1328,23 +1330,16 @@ let process_type_check_files
     in
     (* Watchman only notifies Pyre that a file has been updated, we have to detect
        removals manually and update our handle set. *)
-    let () =
-      List.filter update_environment_with ~f:(fun file -> not (Path.file_exists (File.path file)))
-      |> List.filter_map ~f:handle
-      |> (fun handles -> handles @ removed_handles)
-      |> fun handles -> Ast.SharedMemory.HandleKeys.remove ~handles;
-    in
-    let handles = List.filter_map update_environment_with ~f:handle in
-    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
+    Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
       List.filter_map update_environment_with ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
+    let handles = List.filter_map update_environment_with ~f:handle in
+    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
-    update_environment_with
-    |> List.iter ~f:(LookupCache.evict ~state ~configuration);
-    SharedMem.collect `aggressive;
+    List.iter update_environment_with ~f:(LookupCache.evict ~state ~configuration);
 
     let stubs, sources =
       let is_stub file =
