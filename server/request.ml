@@ -940,7 +940,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
-        >>| Annotated.Class.methods ~resolution
+        >>| Annotated.Class.methods
         >>| List.map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
@@ -1033,7 +1033,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
-        >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+        >>| List.map ~f:Annotated.Class.annotation
         >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
         |> Option.value
           ~default:(

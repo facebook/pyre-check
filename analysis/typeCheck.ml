@@ -491,7 +491,7 @@ module State = struct
                      ~kind:(
                        Error.UninitializedAttribute {
                          name;
-                         parent = Annotated.Class.annotation definition ~resolution;
+                         parent = Annotated.Class.annotation definition;
                          mismatch = {
                            Error.expected;
                            actual = (Type.optional expected);
@@ -1410,25 +1410,19 @@ module State = struct
               when not (Define.is_class_toplevel define || Define.is_static_method define) ->
                 let resolved, is_class_method =
                   let parent_annotation =
-                    Resolution.parse_reference resolution parent
-                    |> function
-                    | Type.Primitive name ->
-                        let variables =
-                          TypeOrder.variables (Resolution.order resolution) (Type.Primitive name)
-                        in
-                        begin
-                          match variables with
-                          | None
-                          | Some [] ->
-                              Type.Primitive name
-                          | Some variables ->
-                              Type.Parametric { name; parameters = variables }
-                          | exception _ ->
-                              Type.Primitive name
-
-                        end
-                    | annotation ->
-                        annotation
+                    let parent_name = Reference.show parent in
+                    let parent_type = Type.Primitive parent_name in
+                    let variables =
+                      TypeOrder.variables (Resolution.order resolution) parent_type
+                    in
+                    match variables with
+                    | None
+                    | Some [] ->
+                        parent_type
+                    | Some variables ->
+                        Type.Parametric { name = parent_name; parameters = variables }
+                    | exception _ ->
+                        parent_type
                   in
                   if Define.is_class_method define || Define.is_class_property define then
                     (* First parameter of a method is a class object. *)
@@ -1684,7 +1678,7 @@ module State = struct
                    let remove_unused_parameter_denotation ~key ~data map =
                      String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                    in
-                   Method.create ~define ~parent:(Annotated.Class.annotation definition ~resolution)
+                   Method.create ~define ~parent:(Annotated.Class.annotation definition)
                    |> Method.parameter_annotations ~resolution
                    |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
                  in
@@ -2914,9 +2908,10 @@ module State = struct
               let state =
                 let is_valid_enumeration_assignment =
                   let parent_annotation =
-                    parent
-                    >>| Resolution.parse_reference resolution
-                    |> (fun annotation -> Option.value annotation ~default:Type.Top)
+                    match parent with
+                    | None -> Type.Top
+                    | Some reference ->
+                        Type.Primitive (Reference.show reference)
                   in
                   let resolved = Type.weaken_literals resolved in
                   let compatible =
@@ -3031,9 +3026,10 @@ module State = struct
                       _;
                     } =
                   let parent_annotation =
-                    define_parent
-                    >>| Resolution.parse_reference resolution
-                    |> (fun annotation -> Option.value annotation ~default:Type.Top)
+                    match define_parent with
+                    | None -> Type.Top
+                    | Some reference ->
+                        Type.Primitive (Reference.show reference)
                   in
                   explicit && (not (Type.equal parent_annotation attribute_parent))
                 in

@@ -29,7 +29,7 @@ val name: t -> Reference.t
 val bases: t -> Expression.t Expression.Call.Argument.t list
 val get_decorator: t -> decorator: string -> decorator list
 
-val annotation: t -> resolution: Resolution.t -> Type.t
+val annotation: t -> Type.t
 val successors: t -> resolution: Resolution.t -> Type.primitive list
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
@@ -84,7 +84,7 @@ val immediate_superclasses
   -> t option
 
 
-val methods: t -> resolution: Resolution.t -> Method.t list
+val methods: t -> Method.t list
 
 val is_protocol: t -> bool
 

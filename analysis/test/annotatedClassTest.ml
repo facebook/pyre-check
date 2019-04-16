@@ -378,15 +378,11 @@ let test_methods _ =
   let assert_methods source methods =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution =
-          populate source
-          |> fun environment -> TypeCheck.resolution environment ()
-        in
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.methods ~resolution
+          |> Class.methods
           |> List.map ~f:(fun definition -> Method.define definition |> method_name)
         in
         assert_equal methods actuals

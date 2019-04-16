@@ -68,8 +68,8 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
   List.filter_map ~f:(matches decorator) decorators
 
 
-let annotation { Node.value = { Class.name; _ }; _ } ~resolution =
-  Resolution.parse_reference resolution name
+let annotation { Node.value = { Class.name; _ }; _ } =
+  Type.Primitive (Reference.show name)
 
 
 let successors { Node.value = { Class.name; _ }; _ } ~resolution =
@@ -229,11 +229,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
         parameters
   in
   let right =
-    let target =
-      annotation ~resolution target
-      |> Type.split
-      |> fst
-    in
+    let target = annotation target in
     match target with
     | Primitive name ->
         Type.parametric name parameters
@@ -265,7 +261,7 @@ let superclasses definition ~resolution =
 
 let immediate_superclasses definition ~resolution =
   let (module Handler: TypeOrder.Handler) = Resolution.order resolution in
-  let annotation = annotation definition ~resolution in
+  let annotation = annotation definition in
 
   let has_definition { TypeOrder.Target.target; _ } =
     Handler.find (Handler.annotations ()) target
@@ -307,10 +303,10 @@ let metaclass definition ~resolution =
           candidate
 
 
-let methods ({ Node.value = { Class.body; _ }; _ } as definition) ~resolution =
+let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
     | { Node.value = Define define; _ } ->
-        Some (Method.create ~define ~parent:(annotation definition ~resolution))
+        Some (Method.create ~define ~parent:(annotation definition))
     | _ ->
         None
   in
@@ -368,7 +364,7 @@ module Attribute = struct
           toplevel;
         };
       } =
-    let class_annotation = annotation parent ~resolution in
+    let class_annotation = annotation parent in
     let initialized =
       match value with
       | Some { Node.value = Ellipsis; _ }
@@ -699,7 +695,7 @@ let attributes
   | Some result ->
       result
   | None ->
-      let instantiated = Option.value instantiated ~default:(annotation definition ~resolution) in
+      let instantiated = Option.value instantiated ~default:(annotation definition) in
       let definition_attributes
           ~in_test
           ~instantiated
@@ -961,7 +957,7 @@ let rec fallback_attribute ~resolution ~name definition =
           ~transitive:true
           ~resolution
           ~name
-          ~instantiated:(annotation definition ~resolution)
+          ~instantiated:(annotation definition)
         |> Option.some
     | _ ->
         None
@@ -974,7 +970,7 @@ let rec fallback_attribute ~resolution ~name definition =
         ~transitive:true
         ~resolution
         ~name:"__getattr__"
-        ~instantiated:(annotation definition ~resolution)
+        ~instantiated:(annotation definition)
     in
     if Attribute.defined fallback then
       let annotation =
@@ -1018,7 +1014,7 @@ let rec fallback_attribute ~resolution ~name definition =
 
 let constructor definition ~instantiated ~resolution =
   let return_annotation =
-    let class_annotation = annotation definition ~resolution in
+    let class_annotation = annotation definition in
     match class_annotation with
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
@@ -1050,7 +1046,7 @@ let constructor definition ~instantiated ~resolution =
   in
   let definitions =
     definition :: superclasses ~resolution definition
-    |> List.map ~f:(fun definition -> annotation ~resolution definition)
+    |> List.map ~f:(fun definition -> annotation definition)
   in
   let definition_index attribute =
     attribute
@@ -1114,10 +1110,10 @@ let overrides definition ~resolution ~name =
         parent
         ~resolution
         ~name
-        ~instantiated:(annotation parent ~resolution)
+        ~instantiated:(annotation parent)
     in
     if Attribute.defined potential_override then
-      annotation ~resolution definition
+      annotation definition
       |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
       |> (fun constraints -> Attribute.instantiate ~constraints potential_override)
       |> Option.some
@@ -1134,7 +1130,7 @@ let has_method ?transitive definition ~resolution ~name =
     definition
     ~resolution
     ~name
-    ~instantiated:(annotation definition ~resolution)
+    ~instantiated:(annotation definition)
   |> Attribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
@@ -1145,12 +1141,12 @@ let inferred_callable_type definition ~resolution =
     let extract_callable { Method.define = ({ Define.signature = { name; _ }; _ } as define); _ } =
       Option.some_if (Reference.is_suffix ~suffix:(Reference.create "__call__") name) define
     in
-    methods definition ~resolution
+    methods definition
     |> List.filter_map ~f:extract_callable
   in
   if List.is_empty explicit_callables then
     None
   else
-    let parent = annotation definition ~resolution in
+    let parent = annotation definition in
     let callable = Callable.create ~parent:(Some parent) explicit_callables ~resolution in
     Some (Type.Callable callable)

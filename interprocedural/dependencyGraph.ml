@@ -242,7 +242,7 @@ let create_overrides ~environment ~source =
       Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
     in
     let annotated_class = Annotated.Class.create class_node in
-    let methods = Annotated.Class.methods ~resolution annotated_class in
+    let methods = Annotated.Class.methods annotated_class in
     List.filter_map methods ~f:(get_method_overrides annotated_class)
   in
   let record_overrides map (ancestor_method, overriding_type) =

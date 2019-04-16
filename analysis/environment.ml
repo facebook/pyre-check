@@ -851,7 +851,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
         let classes_to_analyze =
           (* Get all implementing classes. *)
           let names =
-            Class.methods protocol_definition ~resolution
+            Class.methods protocol_definition
             |> List.map ~f:Class.Method.name
           in
           if List.is_empty names then
@@ -931,7 +931,7 @@ let infer_protocol_edges
       match Handler.class_definition protocol with
       | Some protocol_definition ->
           let protocol_definition = Annotated.Class.create protocol_definition in
-          List.is_empty (Annotated.Class.methods protocol_definition ~resolution)
+          List.is_empty (Annotated.Class.methods protocol_definition)
       | _ ->
           true
     in
@@ -946,7 +946,7 @@ let infer_protocol_edges
           protocol
           |> Handler.class_definition
           >>| Annotated.Class.create
-          >>| Annotated.Class.methods ~resolution
+          >>| Annotated.Class.methods
           >>| List.map ~f:Annotated.Class.Method.name
           |> Option.value ~default:[]
         in
