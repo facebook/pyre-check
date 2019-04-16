@@ -625,6 +625,7 @@ let run_start_command
     changed_files_path
     saved_state_project
     configuration_file_hash
+    store_type_check_resolution
     verbose
     expected_version
     sections
@@ -679,7 +680,7 @@ let run_start_command
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)
-      ~store_type_check_resolution:false
+      ~store_type_check_resolution
       ()
   in
   let log_path = log_path >>| Path.create_absolute in
@@ -752,5 +753,9 @@ let command =
         "-configuration-file-hash"
         (optional string)
         ~doc:"SHA1 of the .pyre_configuration used to initialize this server."
+      +> flag
+        "-store-type-check-resolution"
+        no_arg
+        ~doc:"Store extra information, needed for `types_at_position` and `types_in_file` queries."
       ++ Specification.base_command_line_arguments)
     run_start_command
