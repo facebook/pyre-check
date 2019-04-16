@@ -15,7 +15,7 @@ open Statement
 exception MissingWildcardImport
 
 
-let convert_to_old_accesses source =
+let convert source =
   let module Transform = Transform.Make(struct
       include Transform.Identity
       type t = unit
@@ -1799,7 +1799,6 @@ let preprocess_steps ~force source =
   |> expand_implicit_returns
   |> replace_mypy_extensions_stub
   |> expand_typed_dictionary_declarations
-  |> convert_to_old_accesses
 
 
 let preprocess source =

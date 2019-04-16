@@ -30,6 +30,7 @@ let test_coverage _ =
             ~content:"#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n"
             (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
         ]
+        ~convert:true
     in
     Coverage.coverage ~number_of_files:3 ~sources:parsed
   in

@@ -40,6 +40,7 @@ let test_parse_stubs_modules_list _ =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files
+      ~convert:false
   in
   assert_equal (List.length files) (List.length handles);
   let get_handle_at position =
@@ -239,6 +240,7 @@ let test_parse_source _ =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
+      ~convert:false
   in
   let handle = File.handle ~configuration file in
   assert_equal handles [handle];
@@ -395,6 +397,7 @@ let test_register_modules _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files
+        ~convert:true
     in
     (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in

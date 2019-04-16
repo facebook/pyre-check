@@ -1442,6 +1442,7 @@ let test_expand_wildcard_imports _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files:(file_to_check :: files)
+        ~convert:true
     in
     let file_to_check_handle =
       List.find_exn parsed ~f:(fun handle -> File.Handle.show handle = "test.py")
@@ -1968,12 +1969,12 @@ let test_expand_typed_dictionaries _ =
 
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
-    let parse ~convert source =
+    let parse source =
       let handle = File.Handle.create "test.py" in
-      parse ~convert ~qualifier:(Source.qualifier ~handle) source
+      parse ~qualifier:(Source.qualifier ~handle) source
     in
-    let parsed = source |> parse ~convert:false in
-    let expected = expected >>| parse ~convert:true in
+    let parsed = source |> parse in
+    let expected = expected >>| parse in
     let printer source =
       source
       >>| Format.asprintf "%a" Source.pp

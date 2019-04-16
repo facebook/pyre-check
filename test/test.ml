@@ -112,7 +112,7 @@ let parse_untrimmed
         (Generator.parse (Lexer.read state) buffer)
     in
     if convert then
-      Preprocessing.convert_to_old_accesses source
+      Preprocessing.convert source
     else
       source
   with
@@ -176,6 +176,7 @@ let parse_list named_sources =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:(List.map ~f:create_file named_sources)
+      ~convert:true
   in
   parsed
 
@@ -184,6 +185,7 @@ let parse_single_statement ?(preprocess = false) source =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse source)
+      |> Preprocessing.convert
     else
       parse ~convert:true source
   in
@@ -700,7 +702,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def md5(input: _DataType) -> _Hash: ...
       |}
     |> Preprocessing.qualify
-    |> Preprocessing.convert_to_old_accesses;
+    |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "typing")
       ~handle:"typing.pyi"
@@ -834,14 +836,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def cast(tp: str, obj: Any) -> Any: ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
       ~qualifier:Reference.empty
       ~handle:"builtins.pyi"
       builtins
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
@@ -851,7 +853,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           POST: typing.Dict[str, typing.Any] = ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
@@ -866,7 +868,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         environ: typing.Dict[str, str] = ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
@@ -877,7 +879,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_output(command, shell): ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
@@ -889,7 +891,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class ABC(metaclass=ABCMeta): ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
@@ -913,7 +915,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             pass
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "threading")
       ~handle:"threading.pyi"
@@ -922,7 +924,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           pass
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
@@ -932,7 +934,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Literal: _SpecialForm = ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
@@ -1015,7 +1017,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
                 ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
@@ -1028,7 +1030,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
     parse
       ~qualifier:(Reference.create "taint")
       ~handle:"taint.pyi"
@@ -1036,7 +1038,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         __global_sink: Any = ...
       |}
       |> Preprocessing.qualify
-      |> Preprocessing.convert_to_old_accesses;
+      |> Preprocessing.convert;
   ]
 
 
@@ -1123,6 +1125,7 @@ let assert_errors
         parse ~handle ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
+        |> Preprocessing.convert
         |> Plugin.apply_to_ast
       in
       let source = parse ~qualifier ~handle ~source in

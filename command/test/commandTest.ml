@@ -60,14 +60,19 @@ let environment () =
           def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass
       |}
-      |> Preprocessing.qualify;
+      |> Preprocessing.qualify
+      |> Preprocessing.convert;
     ];
   environment
 
 
 let make_errors ?handle ?qualifier source =
   let configuration = Configuration.Analysis.create () in
-  let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
+  let source =
+    parse ?handle ?qualifier source
+    |> Preprocessing.preprocess
+    |> Preprocessing.convert
+  in
   let environment = Environment.handler (environment ()) in
   Service.Environment.populate
     environment

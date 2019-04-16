@@ -18,6 +18,7 @@ val parse_sources
   -> scheduler: Scheduler.t
   -> preprocessing_state: ProjectSpecificPreprocessing.state option
   -> files: File.t list
+  -> convert: bool
   -> parse_sources_result
 
 type result = {

@@ -1038,7 +1038,8 @@ let exists_in_list ?(match_prefix=false) ~expression_list target_string =
     | _ ->
         false
   in
-  List.exists ~f:(matches (String.split ~on:'.' target_string)) expression_list
+  List.map ~f:convert_to_old_access expression_list
+  |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 
 
 module PrettyPrinter = struct

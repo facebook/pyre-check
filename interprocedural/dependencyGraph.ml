@@ -68,7 +68,8 @@ let create_callgraph ~environment ~source =
     in
     Callable.RealMap.set dependencies ~key:caller_callable ~data:callees
   in
-  Preprocessing.defines source
+  Preprocessing.convert source
+  |> Preprocessing.defines
   |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 
 
@@ -255,7 +256,8 @@ let create_overrides ~environment ~source =
   let record_overrides_list map relations =
     List.fold relations ~init:map ~f:record_overrides
   in
-  Preprocessing.classes source
+  Preprocessing.convert source
+  |> Preprocessing.classes
   |> List.map ~f:class_method_overrides
   |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
 

@@ -1833,6 +1833,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   Parser.parse [value]
                   |> Source.create
                   |> Preprocessing.preprocess
+                  |> Preprocessing.convert
                   |> Source.statements
                 in
                 match parsed with

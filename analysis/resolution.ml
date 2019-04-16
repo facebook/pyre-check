@@ -236,6 +236,7 @@ let function_definitions resolution reference =
       in
       let result =
         Ast.SharedMemory.Sources.get_for_qualifier qualifier
+        >>| Preprocessing.convert
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter
           ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
@@ -385,7 +386,10 @@ let parse_annotation
     ?(allow_invalid_type_parameters=false)
     ({ aliases; module_definition; _ } as resolution)
     expression =
-  let expression = Expression.delocalize expression in
+  let expression =
+    Expression.delocalize expression
+    |> Expression.convert_to_old_access
+  in
   let aliases annotation =
     if allow_invalid_type_parameters then
       aliases annotation

@@ -255,7 +255,11 @@ let environment ~local_root =
 
 let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty) source =
   let configuration = CommandTest.mock_analysis_configuration () in
-  let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
+  let source =
+    parse ~handle ~qualifier source
+    |> Preprocessing.preprocess
+    |> Preprocessing.convert
+  in
   let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
   Test.populate ~configuration environment [source];
@@ -301,7 +305,11 @@ let assert_response
   Ast.SharedMemory.HandleKeys.add
     ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create handle));
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
+  let parsed =
+    parse ~handle ?qualifier source
+    |> Preprocessing.preprocess
+    |> Preprocessing.convert
+  in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -1734,6 +1742,7 @@ let test_incremental_lookups context =
       ~qualifier:(Source.qualifier ~handle)
       (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
+    |> Analysis.Preprocessing.convert
   in
   let source =
     {|
@@ -1815,6 +1824,7 @@ let test_incremental_repopulate context =
       ~qualifier:(Source.qualifier ~handle)
       (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
+    |> Analysis.Preprocessing.convert
   in
   let source =
     {|
@@ -1841,6 +1851,7 @@ let test_incremental_repopulate context =
     ~scheduler:(Scheduler.mock ())
     ~preprocessing_state:None
     ~files:[file]
+    ~convert:true
   |> ignore;
   Test.populate ~configuration environment_handler [parse source];
 

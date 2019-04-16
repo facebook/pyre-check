@@ -364,7 +364,7 @@ let create ~resolution ?(verify = true) ~configuration source =
     String.split ~on:'\n' source
     |> Parser.parse
     |> Source.create
-    |> Preprocessing.convert_to_old_accesses
+    |> Preprocessing.convert
     |> Source.statements
     |> List.filter_map ~f:filter_define_signature
   in

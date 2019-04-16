@@ -4103,10 +4103,10 @@ let run
     ~source:({
         Source.handle;
         qualifier;
-        statements;
         metadata = { Source.Metadata.local_mode; debug; version; number_of_lines; _ };
         _;
       } as source) =
+  let ({ Source.statements; _ } as source) = Preprocessing.convert source in
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
 

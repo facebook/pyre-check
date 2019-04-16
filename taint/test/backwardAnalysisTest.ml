@@ -31,6 +31,7 @@ let assert_taint ?(qualifier = "qualifier") source expected =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
+      ~convert:true
     |> ignore;
     match Ast.SharedMemory.Sources.get handle with
     | Some source -> source

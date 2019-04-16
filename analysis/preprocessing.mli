@@ -5,7 +5,7 @@
 
 open Ast
 
-val convert_to_old_accesses: Source.t -> Source.t
+val convert: Source.t -> Source.t
 
 val expand_relative_imports: Source.t -> Source.t
 

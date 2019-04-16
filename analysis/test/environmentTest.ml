@@ -57,6 +57,7 @@ let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifie
       source
       |> parse ?handle ?qualifier
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     ]
 
 
@@ -211,7 +212,11 @@ let test_register_aliases _ =
       let (module Handler: Environment.Handler) =
         Environment.handler (create_environment ())
       in
-      let sources = List.map sources ~f:Preprocessing.preprocess in
+      let sources =
+        List.map
+          sources
+          ~f:(fun source -> source |> Preprocessing.preprocess |> Preprocessing.convert)
+      in
       let register
           ({
             Source.handle;
@@ -567,6 +572,7 @@ let test_register_globals _ =
           attribute: int = 1
       |}
     |> Preprocessing.preprocess
+    |> Preprocessing.convert
   in
   Environment.register_values (module Handler) resolution source;
   assert_global "qualifier.undefined" None;
@@ -593,6 +599,7 @@ let test_register_globals _ =
         GLOBAL2: alias = ...
       |}
     |> Preprocessing.preprocess
+    |> Preprocessing.convert
   in
   Environment.register_values (module Handler) resolution source;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
@@ -1493,6 +1500,7 @@ let test_infer_protocols _ =
     let source =
       Test.parse source
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     in
     let environment = Environment.handler (create_environment ()) in
     Test.populate ~configuration environment [source];
@@ -1620,7 +1628,11 @@ let test_propagate_nested_classes _ =
   let test_propagate sources aliases =
     Type.Cache.disable ();
     Type.Cache.enable ();
-    let sources = List.map sources ~f:Preprocessing.preprocess in
+    let sources =
+      List.map
+        sources
+        ~f:(fun source -> source |> Preprocessing.preprocess |> Preprocessing.convert)
+    in
     let handler =
       populate_with_sources
         ~environment:(create_environment ~include_helpers:false ())

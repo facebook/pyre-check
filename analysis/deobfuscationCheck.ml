@@ -436,6 +436,7 @@ let run
       let transformations = Location.Reference.Table.create ()
     end)
   in
+  let source = Preprocessing.convert source in
 
   (* Constant propagation. *)
   let source =

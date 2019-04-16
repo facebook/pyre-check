@@ -33,6 +33,7 @@ let generate_lookup source =
       ~qualifier:(Source.qualifier ~handle:(File.Handle.create "test.py"))
       ~handle:"test.py" source
     |> Preprocessing.preprocess
+    |> Preprocessing.convert
   in
   let configuration = Configuration.Analysis.create ~debug:true ~infer:false () in
   let environment = Test.environment ~configuration () in

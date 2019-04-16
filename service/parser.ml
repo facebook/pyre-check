@@ -66,7 +66,13 @@ module FixpointResult = struct
 end
 
 
-let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configuration ~files =
+let parse_sources_job
+  ~preprocessing_state
+  ~show_parser_errors
+  ~force
+  ~configuration
+  ~files
+  ~convert =
   let parse ({ FixpointResult.parsed; not_parsed } as result) file =
     let use_parsed_source source =
       let source =
@@ -102,15 +108,18 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
         handle
       in
 
+      let convert = if convert then Analysis.Preprocessing.convert else Fn.id in
       if force then
         let handle =
           Analysis.Preprocessing.preprocess source
+          |> convert
           |> fun preprocessed -> store_result ~preprocessed ~file
         in
         { result with parsed = Success handle :: parsed }
       else
         match Analysis.Preprocessing.try_preprocess source with
         | Some preprocessed ->
+            let preprocessed = convert preprocessed in
             let handle = store_result ~preprocessed ~file in
             { result with parsed = Success handle :: parsed }
         | None ->
@@ -134,7 +143,7 @@ type parse_sources_result = {
 }
 
 
-let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
+let parse_sources ~configuration ~scheduler ~preprocessing_state ~files ~convert =
   let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
     let { FixpointResult.parsed = new_parsed; not_parsed = new_not_parsed } =
       Scheduler.map_reduce
@@ -147,7 +156,8 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
               ~preprocessing_state
               ~force
               ~configuration
-              ~files)
+              ~files
+              ~convert)
         ~reduce:FixpointResult.merge
         ~inputs:not_parsed
         ()
@@ -400,6 +410,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
         ~scheduler
         ~preprocessing_state:(Some preprocessing_state)
         ~files:(List.map ~f:File.create stub_paths)
+        ~convert:false
     in
     log_parse_errors ~syntax_error ~system_error ~description:"external file";
     Statistics.performance ~name:"stubs parsed" ~timer ();
@@ -445,6 +456,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
         ~configuration
         ~scheduler
         ~files:(List.map ~f:File.create paths)
+        ~convert:false
     in
     log_parse_errors ~syntax_error ~system_error ~description:"file";
     Statistics.performance ~name:"sources parsed" ~timer ();

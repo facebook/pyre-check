@@ -349,7 +349,8 @@ let test_redirect _ =
                 ~qualifier:Reference.empty
                 ~handle:"source.pyi"
                 source
-              |> Preprocessing.preprocess;
+              |> Preprocessing.preprocess
+              |> Preprocessing.convert;
             ]
         | None ->
             []
@@ -439,6 +440,7 @@ let test_resolve_exports _ =
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
+          |> Preprocessing.convert
         in
         List.map sources ~f:to_source
       in
@@ -495,6 +497,7 @@ let test_forward_access _ =
       let source =
         parse source
         |> Preprocessing.preprocess
+        |> Preprocessing.convert
       in
       to_resolution (source :: additional_sources)
       |> Resolution.with_parent ~parent
@@ -1248,7 +1251,7 @@ let test_forward_access _ =
     |}
   in
   let resolution_with_generics =
-    to_resolution [parse source_with_generics |>  Preprocessing.preprocess]
+    to_resolution [parse source_with_generics |> Preprocessing.preprocess |> Preprocessing.convert]
   in
   assert_fold
     ~source:source_with_generics
@@ -1333,6 +1336,7 @@ let test_forward_access _ =
         ~qualifier:(!&"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     ]
     ~source:""
     "has_getattr.any_attribute"
@@ -1499,7 +1503,8 @@ let test_forward_access _ =
     to_resolution
       [
         parse "Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})"
-        |>  Preprocessing.preprocess
+        |> Preprocessing.preprocess
+        |> Preprocessing.convert
       ]
   in
   assert_fold
@@ -2099,7 +2104,7 @@ let test_object_callables _ =
             submodule: Submodule[int] = ...
           |}
         |> Preprocessing.qualify
-        |> Preprocessing.convert_to_old_accesses;
+        |> Preprocessing.convert;
       ]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
@@ -2138,7 +2143,7 @@ let test_forward_expression _ =
     let expression =
       parse expression
       |> Preprocessing.expand_format_string
-      |> Preprocessing.convert_to_old_accesses
+      |> Preprocessing.convert
       |> function
       | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
           expression

@@ -485,11 +485,13 @@ let test_implements _ =
       definition
       |> parse
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     in
     let protocol =
       protocol
       |> parse
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     in
     Test.populate
       ~configuration
@@ -815,6 +817,7 @@ let test_callable_implements _ =
       protocol
       |> parse
       |> Preprocessing.preprocess
+      |> Preprocessing.convert
     in
     Test.populate
       ~configuration

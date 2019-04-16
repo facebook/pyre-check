@@ -150,6 +150,7 @@ let test_backward _ =
 let fixpoint_parse source =
   parse source
   |> Preprocessing.preprocess
+  |> Preprocessing.convert
   |> Preprocessing.defines
   |> List.hd_exn
 
@@ -338,7 +339,9 @@ let assert_infer
   in
   let source =
     parse source
-    |> Preprocessing.preprocess in
+    |> Preprocessing.preprocess
+    |> Preprocessing.convert
+  in
   let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
   let environment = Test.environment () in
   Test.populate ~configuration environment [source];

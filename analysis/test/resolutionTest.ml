@@ -285,6 +285,7 @@ let test_function_definitions _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files
+        ~convert:true
     in
     assert_true (List.is_empty syntax_error);
     assert_true (List.is_empty system_error);

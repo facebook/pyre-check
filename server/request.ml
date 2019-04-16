@@ -1203,6 +1203,7 @@ let compute_dependencies
       ~scheduler
       ~preprocessing_state:None
       ~files
+      ~convert:true
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
@@ -1360,7 +1361,12 @@ let process_type_check_files
       syntax_error = stub_syntax_errors;
       system_error = stub_system_errors;
     } =
-      Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files:stubs
+      Service.Parser.parse_sources
+        ~configuration
+        ~scheduler
+        ~preprocessing_state:None
+        ~files:stubs
+        ~convert:true
     in
     let sources =
       let keep file =
@@ -1384,6 +1390,7 @@ let process_type_check_files
         ~scheduler
         ~preprocessing_state:None
         ~files:sources
+        ~convert:true
     in
     let unparsed =
       List.concat [

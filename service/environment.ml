@@ -20,6 +20,7 @@ let populate
     ~scheduler
     sources =
   let resolution = TypeCheck.resolution (module Handler) () in
+  let sources = List.map ~f:Preprocessing.convert sources in
   let populate () =
     List.iter ~f:(Environment.register_module (module Handler)) sources;
 
