@@ -99,7 +99,6 @@ let test_register_class_definitions _ =
   Environment.register_class_definitions
     (module Handler)
     (parse
-       ~convert:true
        {|
        class C:
          ...
@@ -123,7 +122,6 @@ let test_register_class_definitions _ =
     Environment.register_class_definitions
       (module Handler)
       (parse
-         ~convert:true
          {|
          class C:
            ...
@@ -137,7 +135,7 @@ let test_register_class_definitions _ =
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
-      (parse ~convert:true "class int: pass")
+      (parse "class int: pass")
   in
   assert_equal
     ~cmp:Type.Set.equal
@@ -152,7 +150,6 @@ let test_register_class_metadata _ =
   in
   let source =
     parse
-      ~convert:true
       {|
        class A: pass
        class B(A): pass
@@ -214,7 +211,7 @@ let test_register_aliases _ =
       let sources =
         List.map
           sources
-          ~f:(fun source -> source |> Preprocessing.preprocess |> Preprocessing.convert)
+          ~f:(fun source -> source |> Preprocessing.preprocess)
       in
       let register
           ({
@@ -571,7 +568,6 @@ let test_register_globals _ =
           attribute: int = 1
       |}
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   Environment.register_values (module Handler) resolution source;
   assert_global "qualifier.undefined" None;
@@ -598,7 +594,6 @@ let test_register_globals _ =
         GLOBAL2: alias = ...
       |}
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   Environment.register_values (module Handler) resolution source;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
@@ -612,7 +607,6 @@ let test_connect_type_order _ =
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
     parse
-      ~convert:true
       {|
        class C:
          ...

@@ -395,7 +395,7 @@ let register_class_definitions (module Handler: Handler) source =
             new_annotations
     end)
   in
-  Visit.visit Type.Set.empty source
+  Visit.visit Type.Set.empty (Preprocessing.convert source)
 
 
 let register_aliases (module Handler: Handler) sources =
@@ -595,7 +595,7 @@ let register_aliases (module Handler: Handler) sources =
         in
         List.iter ~f:show_unresolved unresolved
   in
-  List.concat_map ~f:collect_aliases sources
+  List.concat_map ~f:collect_aliases (List.map ~f:Preprocessing.convert sources)
   |> resolve_aliases;
   Type.Cache.enable ()
 
@@ -603,7 +603,8 @@ let register_aliases (module Handler: Handler) sources =
 let register_values
     (module Handler: Handler)
     resolution
-    ({ Source.handle; qualifier; statements; _ } as source) =
+    ({ Source.handle; qualifier; _ } as source) =
+  let ({ Source.statements; _ }) as source = Preprocessing.convert source in
   let qualified_reference reference =
     let reference =
       let builtins = Reference.create "builtins" in
@@ -802,7 +803,7 @@ let connect_type_order (module Handler: Handler) resolution source =
             ()
     end)
   in
-  Visit.visit () source
+  Visit.visit () (Preprocessing.convert source)
   |> ignore
 
 

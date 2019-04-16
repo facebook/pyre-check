@@ -23,7 +23,6 @@ let populate
   let populate () =
     List.iter ~f:(Environment.register_module (module Handler)) sources;
 
-    let sources = List.map ~f:Preprocessing.convert sources in
     let all_annotations =
       List.fold
         ~init:Environment.built_in_annotations
@@ -72,7 +71,6 @@ let populate
     EnvironmentSharedMemory.GlobalKeys.LocalChanges.commit_all ();
     EnvironmentSharedMemory.GlobalKeys.LocalChanges.pop_stack ()
   in
-  let sources = List.map ~f:Preprocessing.convert sources in
   Scheduler.iter
     scheduler
     ~configuration
