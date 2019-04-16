@@ -15,6 +15,7 @@ from .analysis_output import AnalysisOutput
 from .context import Context, pass_context
 from .database_saver import DatabaseSaver
 from .db import DB
+from .extensions import prompt_extension
 from .filesystem import find_root
 from .interactive import Interactive
 from .model_generator import ModelGenerator
@@ -90,7 +91,9 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 def explore(ctx: Context):
     scope_vars = Interactive(ctx.database, ctx.repository).setup()
     config = Config()
-    config.InteractiveShellApp.extensions = ctx.ipython_extensions
+    config.InteractiveShellApp.extensions = [
+        prompt_extension.__name__
+    ] + ctx.ipython_extensions
     config.InteractiveShellApp.profile = "sapp"
     config.InteractiveShellApp.display_banner = False
 
