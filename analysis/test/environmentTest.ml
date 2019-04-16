@@ -47,7 +47,7 @@ let populate_with_sources ?(environment = create_environment ()) sources =
 
 
 let populate ?(environment = create_environment ()) ?handle ?qualifier source =
-  populate_with_sources ~environment [parse ~convert:true ?handle ?qualifier source]
+  populate_with_sources ~environment [parse ?handle ?qualifier source]
 
 
 let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifier source =
@@ -57,7 +57,6 @@ let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifie
       source
       |> parse ?handle ?qualifier
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     ]
 
 
@@ -1455,7 +1454,7 @@ let test_purge _ =
   Test.populate
     ~configuration
     handler
-    [parse ~convert:true ~handle:"test.py" source];
+    [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition "baz.baz");
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   let dependencies handle =
@@ -1500,7 +1499,6 @@ let test_infer_protocols _ =
     let source =
       Test.parse source
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     in
     let environment = Environment.handler (create_environment ()) in
     Test.populate ~configuration environment [source];
@@ -1631,7 +1629,7 @@ let test_propagate_nested_classes _ =
     let sources =
       List.map
         sources
-        ~f:(fun source -> source |> Preprocessing.preprocess |> Preprocessing.convert)
+        ~f:(fun source -> source |> Preprocessing.preprocess)
     in
     let handler =
       populate_with_sources

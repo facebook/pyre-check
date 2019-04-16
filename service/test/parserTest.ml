@@ -397,7 +397,7 @@ let test_register_modules _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files
-        ~convert:true
+        ~convert:false
     in
     (* Check specific file. *)
     let qualifier = Option.value_exn (get_qualifier file) in

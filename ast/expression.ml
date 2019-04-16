@@ -665,6 +665,15 @@ let create_name ~location name =
   |> create_name_from_identifiers
 
 
+let is_simple_name name =
+  let rec is_simple = function
+    | Name (Name.Identifier _ ) -> true
+    | Name (Name.Attribute { base; _ }) -> is_simple (Node.value base)
+    | _ -> false
+  in
+  is_simple (Name name)
+
+
 let convert_argument { Argument.name; value } =
   { Call.Argument.name; value }
 

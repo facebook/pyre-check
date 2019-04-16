@@ -68,7 +68,7 @@ let initialize sources =
       ~scheduler
       ~preprocessing_state:None
       ~files
-      ~convert:true
+      ~convert:false
     |> ignore;
     let add_module handle =
       match SharedMemory.Sources.get handle with

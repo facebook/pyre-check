@@ -235,6 +235,7 @@ module Visit = struct
 end
 
 let create_of_source environment source =
+  let source = Preprocessing.convert source in
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let walk_define ({

@@ -176,18 +176,18 @@ let parse_list named_sources =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:(List.map ~f:create_file named_sources)
-      ~convert:true
+      ~convert:false
   in
   parsed
 
 
-let parse_single_statement ?(preprocess = false) source =
+let parse_single_statement ?(convert=true) ?(preprocess = false) source =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse source)
       |> Preprocessing.convert
     else
-      parse ~convert:true source
+      parse ~convert source
   in
   match source with
   | { Source.statements = [statement]; _ } -> statement
@@ -281,7 +281,6 @@ let assert_type_equal =
 let add_defaults_to_environment ~configuration environment_handler =
   let source =
     parse
-      ~convert:true
       {|
         class unittest.mock.Base: ...
         class unittest.mock.Mock(unittest.mock.Base): ...
@@ -701,8 +700,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           digest_size: int
         def md5(input: _DataType) -> _Hash: ...
       |}
-    |> Preprocessing.qualify
-    |> Preprocessing.convert;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "typing")
       ~handle:"typing.pyi"
@@ -835,15 +833,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         @overload
         def cast(tp: str, obj: Any) -> Any: ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
       ~qualifier:Reference.empty
       ~handle:"builtins.pyi"
       builtins
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
@@ -852,8 +848,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
@@ -867,8 +862,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         environ: typing.Dict[str, str] = ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
@@ -878,8 +872,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_call(command, shell): ...
         def check_output(command, shell): ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
@@ -890,8 +883,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         class ABC(metaclass=ABCMeta): ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
@@ -914,8 +906,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           class IntFlag(int, Flag):  # type: ignore
             pass
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "threading")
       ~handle:"threading.pyi"
@@ -923,8 +914,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Thread:
           pass
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
@@ -933,8 +923,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
@@ -1016,8 +1005,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def copy(self: _DefaultDictT) -> _DefaultDictT:
                 ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
@@ -1029,16 +1017,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def asynccontextmanager(func: Any) -> Any:
             ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "taint")
       ~handle:"taint.pyi"
       {|
         __global_sink: Any = ...
       |}
-      |> Preprocessing.qualify
-      |> Preprocessing.convert;
+      |> Preprocessing.qualify;
   ]
 
 

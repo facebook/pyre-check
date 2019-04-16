@@ -1071,7 +1071,6 @@ let test_filter _ =
     environment
     [
       parse
-        ~convert:true
         {|
           class Foo: ...
           class MockChild(unittest.mock.Mock): ...

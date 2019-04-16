@@ -76,7 +76,7 @@ let list_orderless_equal left right =
 let test_initial _ =
   let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
     let resolution =
-      parse ~convert:true environment
+      parse environment
       |> (fun source -> source :: (Test.typeshed_stubs ()))
       |> (fun sources -> Test.resolution ~sources ())
     in
@@ -258,7 +258,7 @@ let test_widen _ =
 let test_check_annotation _ =
   let assert_check_annotation source expression descriptions =
     let resolution =
-      Test.resolution ~sources:(parse ~convert:true source :: Test.typeshed_stubs ()) ()
+      Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) ()
     in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
@@ -345,12 +345,10 @@ let test_redirect _ =
         | Some source ->
             [
               parse
-                ~convert:true
                 ~qualifier:Reference.empty
                 ~handle:"source.pyi"
                 source
-              |> Preprocessing.preprocess
-              |> Preprocessing.convert;
+              |> Preprocessing.preprocess;
             ]
         | None ->
             []
@@ -435,12 +433,10 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~convert:true
             ~qualifier:(!&qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
-          |> Preprocessing.convert
         in
         List.map sources ~f:to_source
       in
@@ -497,7 +493,6 @@ let test_forward_access _ =
       let source =
         parse source
         |> Preprocessing.preprocess
-        |> Preprocessing.convert
       in
       to_resolution (source :: additional_sources)
       |> Resolution.with_parent ~parent
@@ -1251,7 +1246,7 @@ let test_forward_access _ =
     |}
   in
   let resolution_with_generics =
-    to_resolution [parse source_with_generics |> Preprocessing.preprocess |> Preprocessing.convert]
+    to_resolution [parse source_with_generics |> Preprocessing.preprocess]
   in
   assert_fold
     ~source:source_with_generics
@@ -1274,7 +1269,6 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~convert:true
         ~qualifier:(!&"os")
         {|
           sep: str = '/'
@@ -1287,7 +1281,6 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1301,7 +1294,6 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1317,7 +1309,6 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~convert:true
         ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
@@ -1332,11 +1323,9 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~convert:true
         ~qualifier:(!&"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     ]
     ~source:""
     "has_getattr.any_attribute"
@@ -1504,7 +1493,6 @@ let test_forward_access _ =
       [
         parse "Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})"
         |> Preprocessing.preprocess
-        |> Preprocessing.convert
       ]
   in
   assert_fold
@@ -2035,37 +2023,31 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~convert:true
           ~qualifier:(!&"loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~convert:true
           ~qualifier:(!&"loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~convert:true
           ~qualifier:(!&"loop")
           {|
             from loop.a import b
           |};
         parse
-          ~convert:true
           ~qualifier:(!&"no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~convert:true
           ~qualifier:(!&"no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~convert:true
           ~qualifier:(!&"no_loop")
           {|
             from no_loop.a import c
@@ -2103,8 +2085,7 @@ let test_object_callables _ =
             callable: typing.Callable[..., unknown][[..., int][..., str]] = ...
             submodule: Submodule[int] = ...
           |}
-        |> Preprocessing.qualify
-        |> Preprocessing.convert;
+        |> Preprocessing.qualify;
       ]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
@@ -2124,7 +2105,7 @@ let test_object_callables _ =
 let test_callable_selection _ =
   let assert_resolved source access annotation =
     assert_resolved
-      [parse ~convert:true source]
+      [parse source]
       access
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
@@ -3003,7 +2984,7 @@ let test_coverage _ =
       TypeCheck.run
         ~configuration:Test.mock_configuration
         ~environment
-        ~source:(parse ~convert:true ~handle source)
+        ~source:(parse ~handle source)
       |> ignore;
       Coverage.get ~handle:(File.Handle.create handle)
       |> (fun coverage -> Option.value_exn coverage)

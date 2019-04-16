@@ -42,7 +42,7 @@ let test_handle _ =
 let test_aliased_export _ =
   let assert_aliased_exports ?(qualifier = Reference.empty) ?handle source aliased_exports =
     let module_definition =
-      let { Source.statements; _ } = parse ~convert:true source in
+      let { Source.statements; _ } = parse source in
       Module.create ?handle ~qualifier ~local_mode:Source.Default ~stub:false statements
     in
     let assert_aliased_export (source, expected_target) =
@@ -147,7 +147,7 @@ let test_aliased_export _ =
 
 let test_wildcard_exports _ =
   let module_from_source ~source ~qualifier =
-    let { Source.statements; _ } = parse ~convert:true source in
+    let { Source.statements; _ } = parse source in
     Module.create ~qualifier ~local_mode:Source.Default ~stub:false statements
   in
   let assert_wildcard_exports ?(qualifier = Reference.empty) source expected =

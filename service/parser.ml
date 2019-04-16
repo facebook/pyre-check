@@ -103,23 +103,21 @@ let parse_sources_job
         add_module_from_source preprocessed;
         let handle = File.handle ~configuration file in
         Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
-        Plugin.apply_to_ast preprocessed
+        let convert = if convert then Analysis.Preprocessing.convert else Fn.id in
+        Plugin.apply_to_ast (convert preprocessed)
         |> Ast.SharedMemory.Sources.add handle;
         handle
       in
 
-      let convert = if convert then Analysis.Preprocessing.convert else Fn.id in
       if force then
         let handle =
           Analysis.Preprocessing.preprocess source
-          |> convert
           |> fun preprocessed -> store_result ~preprocessed ~file
         in
         { result with parsed = Success handle :: parsed }
       else
         match Analysis.Preprocessing.try_preprocess source with
         | Some preprocessed ->
-            let preprocessed = convert preprocessed in
             let handle = store_result ~preprocessed ~file in
             { result with parsed = Success handle :: parsed }
         | None ->

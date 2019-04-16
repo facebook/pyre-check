@@ -29,7 +29,7 @@ let populate source =
     Test.populate
       ~configuration
       (Environment.handler environment)
-      (parse ~convert:true source :: typeshed_stubs ());
+      (parse source :: typeshed_stubs ());
     environment
   in
   Environment.handler environment

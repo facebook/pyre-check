@@ -317,7 +317,7 @@ let run_with_taint_models tests =
   in
   let environment =
     Test.environment
-      ~sources:(Test.typeshed_stubs () @ [Test.parse ~convert:true model_source])
+      ~sources:(Test.typeshed_stubs () @ [Test.parse model_source])
       ()
   in
   let () =

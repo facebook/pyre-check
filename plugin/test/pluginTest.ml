@@ -20,7 +20,6 @@ let assert_environment_contains source expected =
   let source =
     parse source
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   Test.populate
     ~configuration:(Configuration.Analysis.create ())

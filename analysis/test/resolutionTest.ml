@@ -54,9 +54,8 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:([
-          parse ~convert:true ~qualifier:(!&"empty") ~handle:"empty.pyi" "class Empty: ...";
+          parse ~qualifier:(!&"empty") ~handle:"empty.pyi" "class Empty: ...";
           parse
-            ~convert:true
             ~qualifier:(!&"empty.stub")
             ~local_mode:Source.PlaceholderStub
             ~handle:"empty/stub.pyi"
@@ -85,7 +84,7 @@ let make_resolution source =
       Test.populate
         ~configuration
         (Environment.handler environment)
-        (parse ~convert:true source :: typeshed_stubs ());
+        (parse source :: typeshed_stubs ());
       environment
     in
     Environment.handler environment
@@ -285,7 +284,7 @@ let test_function_definitions _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files
-        ~convert:true
+        ~convert:false
     in
     assert_true (List.is_empty syntax_error);
     assert_true (List.is_empty system_error);
@@ -294,7 +293,7 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~convert:true
+            ~convert:false
             ~qualifier:(!&(String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content

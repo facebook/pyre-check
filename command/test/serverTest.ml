@@ -258,7 +258,6 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty)
   let source =
     parse ~handle ~qualifier source
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
@@ -308,7 +307,6 @@ let assert_response
   let parsed =
     parse ~handle ?qualifier source
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
@@ -1352,7 +1350,7 @@ let test_decode_serialized_ocaml_values context =
         ~qualifier:((!&"handle"))
         ~local_mode:Ast.Source.Default
         ~stub:false
-        [Test.parse_single_statement "x = 2"])
+        [Test.parse_single_statement ~convert:false "x = 2"])
     ~response:{
       TypeQuery.serialized_key =
         Ast.SharedMemory.Modules.Modules.serialize_key !&"handle";
@@ -1657,8 +1655,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~convert:true ~handle:"a.py" ~qualifier:(!&"a") a_source;
-        parse ~convert:true ~handle:"b.py" ~qualifier:(!&"b") b_source;
+        parse ~handle:"a.py" ~qualifier:(!&"a") a_source;
+        parse ~handle:"b.py" ~qualifier:(!&"b") b_source;
       ]
     in
     List.zip_exn handles sources
@@ -1742,7 +1740,6 @@ let test_incremental_lookups context =
       ~qualifier:(Source.qualifier ~handle)
       (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
-    |> Analysis.Preprocessing.convert
   in
   let source =
     {|
@@ -1824,7 +1821,6 @@ let test_incremental_repopulate context =
       ~qualifier:(Source.qualifier ~handle)
       (Parser.parse ~handle (String.split_lines (content ^ "\n")))
     |> Analysis.Preprocessing.preprocess
-    |> Analysis.Preprocessing.convert
   in
   let source =
     {|

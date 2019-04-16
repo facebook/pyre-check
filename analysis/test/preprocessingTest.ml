@@ -1442,7 +1442,7 @@ let test_expand_wildcard_imports _ =
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files:(file_to_check :: files)
-        ~convert:true
+        ~convert:false
     in
     let file_to_check_handle =
       List.find_exn parsed ~f:(fun handle -> File.Handle.show handle = "test.py")

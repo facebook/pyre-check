@@ -485,13 +485,11 @@ let test_implements _ =
       definition
       |> parse
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     in
     let protocol =
       protocol
       |> parse
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     in
     Test.populate
       ~configuration
@@ -502,8 +500,8 @@ let test_implements _ =
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match get_last_statement definition,
-          get_last_statement protocol with
+    match get_last_statement (Preprocessing.convert definition),
+          get_last_statement (Preprocessing.convert protocol) with
     | { Node.value = Statement.Class definition; _ },
       { Node.value = Statement.Class protocol; _ } ->
         assert_equal
@@ -817,7 +815,6 @@ let test_callable_implements _ =
       protocol
       |> parse
       |> Preprocessing.preprocess
-      |> Preprocessing.convert
     in
     Test.populate
       ~configuration
@@ -828,7 +825,7 @@ let test_callable_implements _ =
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match  get_last_statement protocol with
+    match get_last_statement (Preprocessing.convert protocol) with
     | { Node.value = Statement.Class protocol; _ } ->
         assert_equal
           ~printer:(function

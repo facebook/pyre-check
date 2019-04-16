@@ -301,6 +301,7 @@ end
 
 val create_name_from_identifiers: (Identifier.t Node.t) list -> expression_t Name.t
 val create_name: location: Location.t -> string -> expression_t Name.t
+val is_simple_name: expression_t Name.t -> bool
 val convert_argument: Argument.t -> t Call.Argument.t
 
 val delocalize: t -> t

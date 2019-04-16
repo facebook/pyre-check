@@ -6,6 +6,7 @@
 open Core
 
 open Pyre
+open Expression
 open Statement
 
 
@@ -85,14 +86,13 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
     let aliased_exports aliases { Node.value; _ } =
       match value with
       | Assign {
-          Assign.target = { Node.value = Access (SimpleAccess ([_] as target)); _ };
-          value = { Node.value = Access (SimpleAccess value_access); _ };
+          Assign.target = { Node.value = Name (Name.Identifier target); _ };
+          value = { Node.value = Name value; _ };
           _;
-        } ->
-          let target = Reference.from_access target in
-          let value = Reference.from_access value_access in
-          if Reference.is_strict_prefix ~prefix:qualifier value &&
-             List.for_all value_access ~f:(function | Access.Identifier _ -> true | _ -> false) then
+        } when Expression.is_simple_name value ->
+          let target = Reference.create target in
+          let value = Reference.from_name value in
+          if Reference.is_strict_prefix ~prefix:qualifier value then
             Map.set aliases ~key:(Reference.sanitized target) ~data:value
           else
             aliases
@@ -151,11 +151,10 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       in
       match value with
       | Assign {
-          Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ };
+          Assign.target = { Node.value = Name (Name.Identifier target); _ };
           value = { Node.value = (Expression.List names); _ };
           _;
-        }
-        when Access.equal (Access.sanitized target) (Access.create "__all__") ->
+        } when String.equal (Identifier.sanitized target) "__all__" ->
           let to_reference = function
             | { Node.value = Expression.String { value = name; _ }; _ } ->
                 Reference.create name
@@ -165,8 +164,9 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
             | _ -> None
           in
           public_values, Some (List.filter_map ~f:to_reference names)
-      | Assign { Assign.target = { Node.value = Expression.Access (SimpleAccess target); _ }; _ } ->
-          public_values @ (filter_private [target |> Reference.from_access]), dunder_all
+      | Assign { Assign.target = { Node.value = Name target; _ }; _ }
+        when Expression.is_simple_name target ->
+          public_values @ (filter_private [target |> Reference.from_name]), dunder_all
       | Class { Record.Class.name; _ } ->
           public_values @ (filter_private [name]), dunder_all
       | Define { Define.signature = { name; _ }; _ } ->

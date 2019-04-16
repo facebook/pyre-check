@@ -1013,7 +1013,7 @@ let test_dequalify _ =
       ~printer:(Format.asprintf "%a" Type.pp)
       ~pp_diff:(diff ~print:Type.pp)
       (Type.dequalify
-         (Preprocessing.dequalify_map (parse ~convert:true map))
+         (Preprocessing.dequalify_map (parse map))
          source)
       expected
   in

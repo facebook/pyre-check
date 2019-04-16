@@ -16,7 +16,7 @@ let configuration = Configuration.Analysis.create ()
 
 let populate source =
   let environment = Environment.Builder.create () in
-  Test.populate ~configuration (Environment.handler environment) [parse ~convert:true source];
+  Test.populate ~configuration (Environment.handler environment) [parse source];
   environment
   |> Environment.handler
 
@@ -35,7 +35,7 @@ let test_index _ =
   Test.populate
     ~configuration
     (Environment.handler environment)
-    [parse ~convert:true ~handle:"test.py" source];
+    [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;
