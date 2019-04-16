@@ -59,7 +59,8 @@ class WatchmanSubscriber(object):
         try:
             import pywatchman  # noqa
 
-            return pywatchman.client(timeout=3600.0)
+            # The client will block indefinitely when timeout is None.
+            return pywatchman.client(timeout=None)
         except ImportError as exception:
             LOG.info("Not starting %s due to %s", self._name, str(exception))
             sys.exit(1)
