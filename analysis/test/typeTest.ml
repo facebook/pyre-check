@@ -19,7 +19,14 @@ let test_create _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~aliases (parse_single_expression source))
+      (Type.create ~aliases (parse_single_expression source));
+
+    (* Test creation from new AST. *)
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      annotation
+      (Type.create ~convert:false ~aliases (parse_single_expression ~convert:false source))
   in
 
   assert_create "foo" (Type.Primitive "foo");
@@ -886,7 +893,6 @@ let test_is_meta _ =
        (Type.Parametric { name = "typing.Type"; parameters = [Type.integer] }))
 
 
-
 let test_is_none _ =
   assert_false (Type.is_none (Type.Primitive "None"));
   assert_false (Type.is_none Type.integer);
@@ -898,6 +904,7 @@ let test_is_none _ =
 let test_is_type_alias _ =
   assert_true (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
   assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" [Type.Top]))
+
 
 let test_is_unknown _ =
   assert_false (Type.is_unknown Type.Bottom);
@@ -1089,6 +1096,7 @@ let test_from_overloads _ =
       "typing.Callable('foo')[[int], int][[[str], str]]";
     ]
     "typing.Callable('foo')[[int], int][[[int], int][[str], str]]"
+
 
 let test_with_return_annotation _ =
   let assert_with_return_annotation annotation callable expected =
@@ -1381,8 +1389,6 @@ let test_collapse_escaped_variable_unions _ =
     (Type.Variable.collapse_all_escaped_variable_unions (Type.Union [Type.integer; unescaped]))
     (Type.Union [Type.integer; unescaped]);
   ()
-
-
 
 
 let () =

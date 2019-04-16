@@ -241,7 +241,8 @@ module Callable : sig
 end
 
 val create
-  :  aliases:(t -> t option)
+  : ?convert: bool
+  -> aliases:(t -> t option)
   -> Expression.t
   -> t
 
