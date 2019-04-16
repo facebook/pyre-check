@@ -21,9 +21,13 @@ from typing import (
 )
 
 import click
+import IPython
+from IPython import paths
 from IPython.core import page
 from prompt_toolkit import prompt
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.contrib.completers import PathCompleter
+from prompt_toolkit.history import FileHistory, History
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
@@ -165,6 +169,10 @@ details()         show additional information about the current trace frame
         # Active trace frame of the current trace
         self.current_trace_frame_index: int = -1
 
+        # Persist history for prompts that opt-into it, by specifying
+        # history_key on self.prompt().
+        self.prompt_history: Dict[str, History] = {}
+
     def setup(self) -> Dict[str, Callable]:
         with self.db.make_session() as session:
             latest_run_id = (
@@ -241,9 +249,37 @@ details()         show additional information about the current trace frame
         self.current_run_id = int(selected_run.id)
         print(f"Set run to {run_id}.")
 
-    def prompt(self, *args, **kwargs) -> str:
+    def _get_profile_basedir(self) -> str:
+        profile_name = IPython.get_ipython().profile
+        return paths.locate_profile(profile=profile_name)
+
+    def _get_prompt_history(self, key: Optional[str]) -> Optional[History]:
+        if key is None:
+            return None
+
+        history = self.prompt_history.get(key)
+        if not history:
+            basedir = os.path.join(self._get_profile_basedir(), "prompt_history")
+            os.makedirs(basedir, exist_ok=True)
+            history = FileHistory(os.path.join(basedir, key))
+            self.prompt_history[key] = history
+        return history
+
+    def prompt(
+        self,
+        message: Optional[str] = "",
+        history_key: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> str:
         try:
-            ret = prompt(*args, **kwargs)
+            ret = prompt(
+                message,
+                history=self._get_prompt_history(history_key),
+                auto_suggest=AutoSuggestFromHistory(),
+                *args,
+                **kwargs,
+            )
             if ret == "":
                 raise KeyboardInterrupt()
             return ret
@@ -260,7 +296,11 @@ details()         show additional information about the current trace frame
         """
         try:
             if not location:
-                location = self.prompt("Analysis results: ", completer=PathCompleter())
+                location = self.prompt(
+                    "Analysis results: ",
+                    history_key="analysis_results",
+                    completer=PathCompleter(),
+                )
             self.current_analysis_output = AnalysisOutput.from_str(location)
         except AnalysisOutputError as e:
             raise UserError(f"Error loading results: {e}")
