@@ -1460,7 +1460,7 @@ else:
                 trace_frame=TraceFrame(
                     filename="file.py",
                     callee="callee",
-                    callee_location=SourceLocation(2, 1, 1),
+                    callee_location=SourceLocation(2, 10, 25),
                 )
             )
         ]
@@ -1472,9 +1472,10 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "In callee [file.py:2|1|1]",
+                    "In callee [file.py:2|10|25]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
+                    "                  ^^^^^^^^^^^^^^^",
                     "     3  else:",
                     '     4      print("This was false")',
                     "",
@@ -1489,9 +1490,10 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "In callee [file.py:2|1|1]",
+                    "In callee [file.py:2|10|25]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
+                    "                  ^^^^^^^^^^^^^^^",
                     "     3  else:",
                     "",
                 ],

@@ -1002,7 +1002,8 @@ details()         show additional information about the current trace frame
             f"In {trace_frame.caller or trace_frame.callee} "
             f"[{trace_frame.filename}:{trace_frame.callee_location}]"
         )
-        center_line_number = trace_frame.callee_location.line_no
+        location = trace_frame.callee_location
+        center_line_number = location.line_no
         line_number_width = len(str(center_line_number + context))
 
         for i in range(
@@ -1020,6 +1021,11 @@ details()         show additional information about the current trace frame
                     TerminalFormatter(),
                 )
             print(f"{prefix} {line}", end="")
+            if i == center_line_number:
+                print(
+                    " " * (len(prefix) + location.begin_column),
+                    "^" * (location.end_column - location.begin_column),
+                )
 
     def _output_trace_expansion(
         self, trace_frames: List[TraceFrame], leaves_strings: List[str]
