@@ -113,20 +113,22 @@ let test_create _ =
   assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
-    (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound=int)"
-    (Type.variable ~constraints:(Type.Bound Type.integer) "_T");
+    (Type.variable ~constraints:(Type.Variable.Bound Type.integer) "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound='C')"
-    (Type.variable ~constraints:(Type.Bound (Type.Primitive "C")) "_T");
+    (Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "C")) "_T");
   assert_create
     "typing.TypeVar('_T', 'C', X)"
-    (Type.variable ~constraints:(Type.Explicit [Type.Primitive "C"; Type.Primitive "X"]) "_T");
+    (Type.variable
+       ~constraints:(Type.Variable.Explicit [Type.Primitive "C"; Type.Primitive "X"])
+       "_T");
   assert_create
     "typing.TypeVar('_T', int, name=float)"
-    (Type.variable ~constraints:(Type.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
 
   (* Check that type aliases are resolved. *)
   let assert_alias source resolved =
@@ -528,7 +530,8 @@ let test_expression _ =
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Named($0, int), Variable(variable, int), Keywords(keywords, str)], int))";
+    ("typing.Callable.__getitem__(([Named($0, int), Variable(variable, int), " ^
+     "Keywords(keywords, str)], int))");
 
   assert_expression
     (Type.TypedDictionary {
@@ -621,7 +624,7 @@ let test_concise _ =
       })
     "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
-  assert_concise (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T") "T"
+  assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T"
 
 
 let test_union _ =
@@ -679,10 +682,10 @@ let test_primitives _ =
 
   assert_equal
     []
-    (Type.primitives (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
+    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
+    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
 
   assert_equal
     [Type.integer]
@@ -747,10 +750,10 @@ let test_elements _ =
 
   assert_equal
     []
-    (Type.elements (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.elements (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
 
   assert_equal
     [Type.integer; Type.Primitive "parametric"]
@@ -804,8 +807,9 @@ let test_exists _ =
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
 
-  assert_true (top_exists (Type.variable ~constraints:(Type.Explicit [Type.Top]) "T"));
-  assert_false (top_exists (Type.variable ~constraints:(Type.Explicit [Type.integer]) "T"));
+  assert_true (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+  assert_false
+    (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" [Type.integer; Type.Top]));
   assert_false (top_exists (Type.parametric "parametric" [Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
@@ -928,11 +932,12 @@ let test_is_unknown _ =
 
 
 let test_is_resolved _ =
-  assert_false (Type.is_resolved (Type.variable "_T"));
-  assert_false (Type.is_resolved (Type.union [Type.integer; Type.variable "_T"]));
+  assert_false (Type.Variable.all_variables_are_resolved (Type.variable "_T"));
+  assert_false
+    (Type.Variable.all_variables_are_resolved (Type.union [Type.integer; Type.variable "_T"]));
 
-  assert_true (Type.is_resolved Type.integer);
-  assert_true (Type.is_resolved (Type.union [Type.integer; Type.string]))
+  assert_true (Type.Variable.all_variables_are_resolved Type.integer);
+  assert_true (Type.Variable.all_variables_are_resolved (Type.union [Type.integer; Type.string]))
 
 
 let test_class_name _ =
@@ -1134,7 +1139,7 @@ let test_variables _ =
     in
     let variables =
       Type.create ~aliases (parse_single_expression source)
-      |> Type.free_variables
+      |> Type.Variable.all_free_variables
       |> List.map ~f:(fun variable -> Type.Variable variable)
     in
     assert_equal (List.map expected ~f:Type.variable) variables
@@ -1353,16 +1358,16 @@ let test_collapse_escaped_variable_unions _ =
       expected
       annotation
   in
-  let escaped = Type.mark_free_variables_as_escaped (Type.variable "Escapee") in
+  let escaped = Type.Variable.mark_all_free_variables_as_escaped (Type.variable "Escapee") in
   assert_types_equal
     (Type.union [Type.integer; escaped])
     (Type.Union [Type.integer; escaped]);
   assert_types_equal
-    (Type.collapse_escaped_variable_unions (Type.Union [Type.integer; escaped]))
+    (Type.Variable.collapse_all_escaped_variable_unions (Type.Union [Type.integer; escaped]))
     Type.integer;
   let unescaped = Type.variable "NotEscaped" in
   assert_types_equal
-    (Type.collapse_escaped_variable_unions (Type.Union [Type.integer; unescaped]))
+    (Type.Variable.collapse_all_escaped_variable_unions (Type.Union [Type.integer; unescaped]))
     (Type.Union [Type.integer; unescaped]);
   ()
 

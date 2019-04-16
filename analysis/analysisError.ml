@@ -368,10 +368,9 @@ let messages ~concise ~signature location kind =
       ]
   | IncompleteType { target; annotation; attempted_action } ->
       let inferred =
-        if Type.is_escaped_free_variable annotation then
-          ""
-        else
-          Format.asprintf "`%a` " pp_type annotation
+        match annotation with
+        | Type.Variable variable when Type.Variable.is_escaped_and_free variable -> ""
+        | _ ->  Format.asprintf "`%a` " pp_type annotation
       in
       let consequence =
         match attempted_action with

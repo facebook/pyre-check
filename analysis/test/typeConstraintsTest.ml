@@ -83,7 +83,7 @@ let test_add_bound _ =
       expected_is_some
       result
   in
-  let unconstrained = variable Type.Unconstrained in
+  let unconstrained = variable Type.Variable.Unconstrained in
   assert_bound_result
     ~variable:unconstrained
     ~kind:`Lower
@@ -97,22 +97,22 @@ let test_add_bound _ =
     false;
 
   assert_bound_result
-    ~variable:(variable (Type.Bound child))
+    ~variable:(variable (Type.Variable.Bound child))
     ~kind:`Lower
     ~bound:left_parent
     false;
   assert_bound_result
-    ~variable:(variable (Type.Bound child))
+    ~variable:(variable (Type.Variable.Bound child))
     ~kind:`Lower
     ~bound:child
     true;
   assert_bound_result
-    ~variable:(variable (Type.Bound child))
+    ~variable:(variable (Type.Variable.Bound child))
     ~kind:`Upper
     ~bound:left_parent
     true;
 
-  let explicit_parent_a_parent_b = variable (Type.Explicit [left_parent; right_parent]) in
+  let explicit_parent_a_parent_b = variable (Type.Variable.Explicit [left_parent; right_parent]) in
   assert_bound_result
     ~variable:explicit_parent_a_parent_b
     ~kind:`Lower
@@ -173,7 +173,7 @@ let test_single_variable_solution _ =
     []
     (Some []);
 
-  let unconstrained = variable Type.Unconstrained in
+  let unconstrained = variable Type.Variable.Unconstrained in
 
   expect_sequence_solution
     [unconstrained, `Lower, child]
@@ -200,7 +200,7 @@ let test_single_variable_solution _ =
     [unconstrained, `Upper, Type.list (Type.Variable unconstrained)]
     None;
 
-  let bounded_by_parent_A = variable (Type.Bound left_parent) in
+  let bounded_by_parent_A = variable (Type.Variable.Bound left_parent) in
 
   expect_sequence_solution
     [bounded_by_parent_A, `Lower, child]
@@ -210,7 +210,7 @@ let test_single_variable_solution _ =
     None;
 
   let explicit_int_string_parent_A =
-    variable (Type.Explicit [Type.integer; Type.string; left_parent])
+    variable (Type.Variable.Explicit [Type.integer; Type.string; left_parent])
   in
 
   expect_sequence_solution
@@ -223,8 +223,8 @@ let test_single_variable_solution _ =
 
 
 let test_multiple_variable_solution _ =
-  let unconstrained_a = variable ~name:"A" Type.Unconstrained in
-  let unconstrained_b = variable ~name:"B" Type.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
   expect_sequence_solution
     [
       unconstrained_a, `Lower, Type.Variable unconstrained_b;
@@ -238,7 +238,7 @@ let test_multiple_variable_solution _ =
       unconstrained_b, `Lower, Type.Variable unconstrained_a;
     ]
     None;
-  let unconstrained_c = variable ~name:"C" Type.Unconstrained in
+  let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
   expect_sequence_solution
     [
       unconstrained_a, `Lower, Type.Variable unconstrained_b;
@@ -246,7 +246,7 @@ let test_multiple_variable_solution _ =
       unconstrained_c, `Lower, child;
     ]
     (Some [unconstrained_a, child; unconstrained_b, child; unconstrained_c, child]);
-  let unrelated = variable ~name:"unrelated" Type.Unconstrained in
+  let unrelated = variable ~name:"unrelated" Type.Variable.Unconstrained in
   expect_sequence_solution
     [unconstrained_a, `Lower, Type.Variable unrelated]
     (Some [unconstrained_a, Type.Variable unrelated]);
@@ -288,9 +288,9 @@ let test_partial_solution _ =
       (parse expected_partial_solution, parse expected_remainder_solution)
       (partial_result, remainder_solution)
   in
-  let unconstrained_a = variable ~name:"A" Type.Unconstrained in
-  let unconstrained_b = variable ~name:"B" Type.Unconstrained in
-  let unconstrained_c = variable ~name:"C" Type.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unconstrained in
+  let unconstrained_c = variable ~name:"C" Type.Variable.Unconstrained in
 
   expect_split_solution
     ~variables:[unconstrained_a]
@@ -324,7 +324,7 @@ let test_partial_solution _ =
 
 let test_exists _ =
   let order = () in
-  let unconstrained_a = variable ~name:"A" Type.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unconstrained in
   let constraints_with_child =
     DiamondOrderedConstraints.add_lower_bound
       TypeConstraints.empty

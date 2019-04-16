@@ -164,7 +164,7 @@ module State = struct
       ?key:_
       ({ resolution; errors; _ } as state)
       ~statement =
-    Type.VariableNamespace.reset ();
+    Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
       | Type.Top, Type.Top -> None

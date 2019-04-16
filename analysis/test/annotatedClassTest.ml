@@ -722,7 +722,8 @@ let test_implements _ =
     |}
     (Implements {
         parameters =
-          [Type.variable "T" ~constraints:(Type.Bound (Type.union [Type.integer; Type.string]))]
+          [Type.variable "T"
+             ~constraints:(Type.Variable.Bound (Type.union [Type.integer; Type.string]))]
       });
 
   assert_conforms
@@ -1460,7 +1461,9 @@ let test_constraints _ =
     |}
     [Type.variable "_T", Type.integer];
 
-  let t_bound = Type.variable ~constraints:(Type.Bound (Type.Primitive "Bound")) "T_Bound" in
+  let t_bound =
+    Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "Bound")) "T_Bound"
+  in
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.Primitive "Bound"])
@@ -1499,7 +1502,7 @@ let test_constraints _ =
     |}
     [];
   let t_explicit =
-    Type.variable ~constraints:(Type.Explicit [Type.integer; Type.string]) "T_Explicit"
+    Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.string]) "T_Explicit"
   in
   assert_constraints
     ~target:"Foo"

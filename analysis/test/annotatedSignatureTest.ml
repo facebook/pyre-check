@@ -72,8 +72,8 @@ let test_select _ =
       |> Type.instantiate ~constraints:begin
         function
         | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
-            Type.VariableNamespace.reset ();
-            Some (Type.mark_free_variables_as_escaped variable)
+            Type.Variable.Namespace.reset ();
+            Some (Type.Variable.mark_all_free_variables_as_escaped variable)
         | _ ->
             None
       end
@@ -95,7 +95,7 @@ let test_select _ =
           failwith "Could not extract signatures"
     in
     let callable = parse_callable callable in
-    Type.VariableNamespace.reset ();
+    Type.Variable.Namespace.reset ();
     let signature =
       let arguments =
         match parse_single_access (Format.asprintf "call%s" arguments) with
@@ -441,14 +441,16 @@ let test_select _ =
     "('string')"
     (`NotFoundMismatchWithClosest
        ("[[ESCAPED[_R]], ESCAPED[_R]]", Type.literal_string "string", "\"string\"",
-        Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R", None, 1));
+        Type.variable
+          ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
     "(['string'])"
     (`NotFoundMismatchWithClosest
        ("[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]", Type.list Type.string, "['string']",
-        Type.list (Type.variable ~constraints:(Type.Explicit [Type.integer; Type.float]) "_R"),
+        Type.list (Type.variable
+                     ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
   assert_select "[[], _R]" "()" (`Found "[[], ESCAPED[_R]]");
@@ -479,7 +481,9 @@ let test_select _ =
        ("[[ESCAPED[_T_float_or_str]], None]",
         Type.union [Type.integer; Type.string],
         "union",
-        Type.variable "_T_float_or_str" ~constraints:(Type.Explicit [Type.float; Type.string]),
+        Type.variable
+          "_T_float_or_str"
+          ~constraints:(Type.Variable.Explicit [Type.float; Type.string]),
         None,
         1)
     );

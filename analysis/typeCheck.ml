@@ -394,7 +394,7 @@ module State = struct
         } ->
           let parameters =
             List.map parameters ~f:Type.Callable.Parameter.annotation
-            |> List.concat_map ~f:Type.free_variables
+            |> List.concat_map ~f:Type.Variable.all_free_variables
             |> List.map ~f:(fun variable -> Type.Variable variable)
           in
           List.fold
@@ -407,7 +407,7 @@ module State = struct
     let critical_errors =
       List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
       |> (fun errors ->
-          Type.free_variables annotation
+          Type.Variable.all_free_variables annotation
           |> List.map ~f:(fun variable -> Type.Variable variable)
           |> List.fold
             ~f:(check_invalid_variables resolution)
@@ -448,7 +448,7 @@ module State = struct
       check_and_correct_annotation errors ~resolution ~location ~define ~annotation ~resolved
     in
     let annotation =
-      if bind_variables then Type.mark_variables_as_bound annotation else annotation
+      if bind_variables then Type.Variable.mark_all_variables_as_bound annotation else annotation
     in
     { state with errors }, annotation
 
@@ -743,7 +743,8 @@ module State = struct
       let { accumulator; resolved; target; resolution; _ } = state in
       let accesses_incomplete_type =
         match resolved with
-        | Some { Annotation.annotation; _ } when Type.contains_escaped_free_variable annotation ->
+        | Some { Annotation.annotation; _ }
+          when Type.Variable.contains_escaped_free_variable annotation ->
             let full_lead =
               expression
               >>| (fun expression -> Access.ExpressionAccess { expression; access = lead })
@@ -755,7 +756,7 @@ module State = struct
       in
       let resolved =
         let convert_escaped_to_anys ({ Annotation.annotation; _ } as full_annotation) =
-          let annotation = Type.convert_escaped_free_variables_to_anys annotation in
+          let annotation = Type.Variable.convert_all_escaped_free_variables_to_anys annotation in
           { full_annotation with annotation }
         in
         resolved
@@ -931,9 +932,9 @@ module State = struct
                           | TypedDictionary { name; fields; total } ->
                               Type.TypedDictionary.constructor ~name ~fields ~total
                               |> Option.some
-                          | Variable { constraints = Type.Unconstrained; _ } ->
+                          | Variable { constraints = Type.Variable.Unconstrained; _ } ->
                               backup
-                          | Variable { constraints = Type.Explicit constraints; _ }
+                          | Variable { constraints = Type.Variable.Explicit constraints; _ }
                             when List.length constraints > 1 ->
                               backup
                           | Any ->
@@ -941,9 +942,9 @@ module State = struct
                           | meta_parameter ->
                               let parent =
                                 match meta_parameter with
-                                | Variable { constraints = Type.Explicit [parent]; _ } ->
+                                | Variable { constraints = Type.Variable.Explicit [parent]; _ } ->
                                     parent
-                                | Variable { constraints = Type.Bound parent; _ } ->
+                                | Variable { constraints = Type.Variable.Bound parent; _ } ->
                                     parent
                                 | _ ->
                                     meta_parameter
@@ -990,7 +991,7 @@ module State = struct
                   let reset_instantiated data = { data with instantiated = annotation } in
                   let was_variable, annotation =
                     match annotation with
-                    | Type.Variable variable -> true, Type.upper_bound variable
+                    | Type.Variable variable -> true, Type.Variable.upper_bound variable
                     | _ -> false, annotation
                   in
                   let data =
@@ -1301,14 +1302,15 @@ module State = struct
     let check_return_annotation state =
       let add_variance_error (state, annotation) =
         let state =
-          if Type.is_contravariant annotation then
-            emit_error
-              ~state
-              ~location
-              ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
-              ~define:define_node
-          else
-            state
+          match annotation with
+          | Type.Variable variable when Type.Variable.is_contravariant variable ->
+              emit_error
+                ~state
+                ~location
+                ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
+                ~define:define_node
+          | _ ->
+              state
         in
         state, annotation
       in
@@ -1388,14 +1390,17 @@ module State = struct
           in
           let add_variance_error (state, annotation) =
             let state =
-              if not (Statement.Define.is_constructor define) && Type.is_covariant annotation then
-                emit_error
-                  ~state
-                  ~location
-                  ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
-                  ~define:define_node
-              else
-                state
+              match annotation with
+              | Type.Variable variable
+                when not (Statement.Define.is_constructor define) &&
+                     Type.Variable.is_covariant variable ->
+                  emit_error
+                    ~state
+                    ~location
+                    ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
+                    ~define:define_node
+              | _ ->
+                  state
             in
             state, annotation
           in
@@ -1538,7 +1543,7 @@ module State = struct
                     Annotation.create Type.Any
           in
           let annotation =
-            let annotation = Type.mark_variables_as_bound annotation in
+            let annotation = Type.Variable.mark_all_variables_as_bound annotation in
             if String.is_prefix ~prefix:"**" name then
               Type.dictionary ~key:Type.string ~value:annotation
             else if String.is_prefix ~prefix:"*" name then
@@ -1550,7 +1555,7 @@ module State = struct
             match mutability with
             | Immutable { original; scope } ->
                 Annotation.Immutable {
-                  original = Type.mark_variables_as_bound original;
+                  original = Type.Variable.mark_all_variables_as_bound original;
                   scope;
                 }
             | _ ->
@@ -1648,7 +1653,7 @@ module State = struct
                  let errors =
                    let expected = Type.Callable.Overload.return_annotation implementation in
                    let actual = Type.Callable.Overload.return_annotation original_implementation in
-                   if Type.is_resolved expected &&
+                   if Type.Variable.all_variables_are_resolved expected &&
                       not (Resolution.less_or_equal resolution ~left:actual ~right:expected) then
                      let error =
                        Error.create
@@ -1693,7 +1698,7 @@ module State = struct
                    | Some actual ->
                        begin
                          let is_compatible =
-                           let expected = Type.mark_variables_as_bound expected in
+                           let expected = Type.Variable.mark_all_variables_as_bound expected in
                            Resolution.constraints_solution_exists
                              resolution
                              ~left:expected
@@ -1916,7 +1921,7 @@ module State = struct
         let resolved =
           if Type.equal Type.Bottom resolved then
             Type.variable "_T"
-            |> Type.mark_free_variables_as_escaped
+            |> Type.Variable.mark_all_free_variables_as_escaped
           else
             resolved
         in
@@ -2430,14 +2435,14 @@ module State = struct
         let key =
           if List.is_empty keywords && Type.equal Type.Bottom key then
             Type.variable "_KT"
-            |> Type.mark_free_variables_as_escaped
+            |> Type.Variable.mark_all_free_variables_as_escaped
           else
             key
         in
         let value =
           if List.is_empty keywords && Type.equal Type.Bottom value then
             Type.variable "_VT"
-            |> Type.mark_free_variables_as_escaped
+            |> Type.Variable.mark_all_free_variables_as_escaped
           else
             value
         in
@@ -2634,7 +2639,7 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
-    Type.VariableNamespace.reset ();
+    Type.Variable.Namespace.reset ();
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
@@ -2651,7 +2656,7 @@ module State = struct
         else
           annotation
       in
-      let return_annotation = Type.mark_variables_as_bound return_annotation in
+      let return_annotation = Type.Variable.mark_all_variables_as_bound return_annotation in
       let actual =
         Resolution.resolve_mutable_literals
           resolution
@@ -3168,7 +3173,9 @@ module State = struct
                 let state, annotation =
                   if not explicit &&
                      not is_type_alias &&
-                     Type.contains_escaped_free_variable (Annotation.annotation annotation) then
+                     Type.Variable.contains_escaped_free_variable
+                       (Annotation.annotation annotation)
+                  then
                     let kind =
                       Error.IncompleteType {
                         target = Access.SimpleAccess access;
@@ -3177,7 +3184,8 @@ module State = struct
                       }
                     in
                     let converted =
-                      Type.convert_escaped_free_variables_to_anys (Annotation.annotation annotation)
+                      Type.Variable.convert_all_escaped_free_variables_to_anys
+                        (Annotation.annotation annotation)
                     in
                     emit_error ~state ~location ~kind ~define:define_node,
                     { annotation with annotation = converted }
@@ -3922,7 +3930,7 @@ module State = struct
                 | None -> []
                 | Some annotation ->
                     let annotation = Resolution.parse_annotation resolution annotation in
-                    Type.free_variables annotation
+                    Type.Variable.all_free_variables annotation
                     |> List.map ~f:(fun variable -> Type.Variable variable)
               in
               List.concat_map parameters ~f:extract_variables

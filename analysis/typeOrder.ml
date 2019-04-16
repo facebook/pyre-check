@@ -304,7 +304,7 @@ let contains (module Handler: Handler) annotation =
 
 let is_instantiated (module Handler: Handler) annotation =
   let is_invalid = function
-    | Type.Variable { constraints = Type.Unconstrained; _ } -> true
+    | Type.Variable { constraints = Type.Variable.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
         not (Handler.contains (Handler.indices ()) (Type.Primitive name))
@@ -389,11 +389,11 @@ let variables (module Handler: Handler) annotation =
   | left, _ when String.equal (Type.show left) "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+      Some [Type.Variable (Type.Variable.create ~variance:Covariant "_T_meta")]
   | left, _ when String.equal (Type.show left) "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just
          proxying to the Callable instance in the type order here. *)
-      Some [Type.variable ~variance:Type.Covariant "_T_meta"]
+      Some [Type.Variable (Type.Variable.create ~variance:Covariant "_T_meta")]
   | primitive, _ ->
       Handler.find (Handler.indices ()) Type.generic
       >>= fun generic_index ->
@@ -546,7 +546,7 @@ module OrderImplementation = struct
           []
       in
       let overload_to_instantiated_return_and_altered_constraints overload =
-        let namespace = Type.VariableNamespace.create_fresh () in
+        let namespace = Type.Variable.Namespace.create_fresh () in
         let namespaced_variables =
           Type.Callable {
             Type.Callable.kind = Anonymous;
@@ -554,11 +554,11 @@ module OrderImplementation = struct
             overloads = [];
             implicit = None;
           }
-          |> Type.free_variables
-          |> List.map ~f:(Type.namespace_variable ~namespace)
+          |> Type.Variable.all_free_variables
+          |> List.map ~f:(Type.Variable.namespace ~namespace)
         in
         let overload =
-          map_implementation overload ~f:(Type.namespace_free_variables ~namespace)
+          map_implementation overload ~f:(Type.Variable.namespace_all_free_variables ~namespace)
         in
         let does_not_leak_namespaced_variables (external_constraints, _) =
           let predicate = function
@@ -572,7 +572,7 @@ module OrderImplementation = struct
         let instantiate_return (external_constraints, partial_solution) =
           let instantiated_return =
             Type.instantiate overload.annotation ~constraints:(Type.Map.find partial_solution)
-            |> Type.mark_free_variables_as_escaped ~specific:namespaced_variables
+            |> Type.Variable.mark_all_free_variables_as_escaped ~specific:namespaced_variables
           in
           instantiated_return, external_constraints
         in
@@ -632,7 +632,8 @@ module OrderImplementation = struct
     and solve_less_or_equal_safe
         ({ handler; constructor; implements; any_is_bottom } as order) ~constraints ~left ~right =
       let rec solve_less_or_equal_throws order ~constraints ~left ~right =
-        if (Type.is_resolved left) && (Type.is_resolved right) then
+        if (Type.Variable.all_variables_are_resolved left) &&
+           (Type.Variable.all_variables_are_resolved right) then
           if less_or_equal order ~left ~right then [constraints] else []
         else
           let solve_all constraints ~lefts ~rights =
@@ -659,7 +660,8 @@ module OrderImplementation = struct
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
           | Type.Variable left_variable, Type.Variable right_variable
-            when (not (Type.is_resolved left)) && (not (Type.is_resolved right)) ->
+            when (not (Type.Variable.all_variables_are_resolved left)) &&
+                 (not (Type.Variable.all_variables_are_resolved right)) ->
               (* Either works because constraining V1 to be less or equal to V2 implies
                  that V2 is greater than or equal to V1.  Therefore either constraint is sufficient,
                  and we should consider both.  This approach simplifies things downstream for
@@ -679,10 +681,12 @@ module OrderImplementation = struct
                 |> Option.to_list
               in
               right_greater_than_left @ left_less_than_right
-          | Type.Variable variable, bound when (not (Type.is_resolved left)) ->
+          | Type.Variable variable, bound
+            when not (Type.Variable.all_variables_are_resolved left) ->
               OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
               |> Option.to_list
-          | bound, Type.Variable variable when (not (Type.is_resolved right)) ->
+          | bound, Type.Variable variable
+            when not (Type.Variable.all_variables_are_resolved right) ->
               OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
               |> Option.to_list
           | Type.Callable _, Type.Parametric { name; _ } ->
@@ -730,7 +734,8 @@ module OrderImplementation = struct
               >>= solve_parameters
               |> Option.value ~default:[]
           | Type.Parametric _, Type.Primitive _ ->
-              if less_or_equal order ~left:(Type.mark_variables_as_bound left) ~right then
+              let left = Type.Variable.mark_all_variables_as_bound left in
+              if less_or_equal order ~left ~right then
                 [constraints]
               else
                 []
@@ -956,7 +961,7 @@ module OrderImplementation = struct
       (* We have to consider both the variables' constraint and its full value against the union. *)
       | Type.Variable variable, Type.Union union ->
           List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
-          less_or_equal order ~left:(Type.upper_bound variable) ~right
+          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
 
       (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
       | left, Type.Union right ->
@@ -966,7 +971,7 @@ module OrderImplementation = struct
          optional. *)
       | Type.Variable variable, Type.Optional optional ->
           less_or_equal order ~left ~right:optional ||
-          less_or_equal order ~left:(Type.upper_bound variable) ~right
+          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
 
       (* A <= B -> A <= Optional[B].*)
       | Type.Optional left, Type.Optional right ->
@@ -977,7 +982,7 @@ module OrderImplementation = struct
           false
 
       | Type.Variable variable, right ->
-          less_or_equal order ~left:(Type.upper_bound variable) ~right
+          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
 
       (* Tuple variables are covariant. *)
       | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
@@ -1278,8 +1283,8 @@ module OrderImplementation = struct
       let union = Type.union [left; right] in
       if Type.equal left right then
         left
-      else if Type.contains_escaped_free_variable left ||
-              Type.contains_escaped_free_variable right then
+      else if Type.Variable.contains_escaped_free_variable left ||
+              Type.Variable.contains_escaped_free_variable right then
         union
       else
         match left, right with
@@ -1321,7 +1326,7 @@ module OrderImplementation = struct
 
         | other, Type.Variable variable
         | Type.Variable variable, other ->
-            join order (Type.upper_bound variable) other
+            join order (Type.Variable.upper_bound variable) other
 
         | Type.Parametric _, Type.Parametric _
         | Type.Parametric _, Type.Primitive _
@@ -1384,7 +1389,7 @@ module OrderImplementation = struct
                          List.length left = List.length variables ->
                       let join_parameters left right variable =
                         join_parameters left right variable
-                        |> Type.instantiate_free_variables ~replacement:Type.Top
+                        |> Type.Variable.instantiate_all_free_variables ~replacement:Type.Top
                       in
                       Some (List.map3_exn ~f:join_parameters left right variables)
                   | _ ->
@@ -2336,7 +2341,7 @@ module Builder = struct
 
     (* Since the builtin type hierarchy is not primitive, it's special cased. *)
     let type_builtin = Type.Primitive ("type") in
-    let type_variable = Type.variable "_T" in
+    let type_variable = Type.Variable (Type.Variable.create "_T") in
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
     connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
@@ -2359,7 +2364,10 @@ module Builder = struct
       ~successor:typing_mapping;
     connect
       handler
-      ~parameters:[Type.variable "_T"; Type.variable "_T2"]
+      ~parameters:[
+        Type.Variable (Type.Variable.create "_T");
+        Type.Variable (Type.Variable.create "_T2");
+      ]
       ~predecessor:typing_mapping
       ~successor:Type.generic;
 

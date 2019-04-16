@@ -343,7 +343,7 @@ let check_invalid_type_parameters resolution annotation =
             | "typing.Iterator"
             | "Optional"
             | "typing.Optional" ->
-                [Type.variable "T"]
+                [Type.Variable (Type.Variable.create "T")]
             | _ ->
                 class_definition resolution (Type.Primitive name)
                 >>| generics resolution
@@ -443,7 +443,7 @@ let is_invariance_mismatch resolution ~left ~right =
       in
       let due_to_invariant_variable (variable, left, right) =
         match variable with
-        | Type.Variable { variance = Type.Invariant; _ } ->
+        | Type.Variable { variance = Type.Variable.Invariant; _ } ->
             less_or_equal resolution ~left ~right
         | _ ->
             false

@@ -118,5 +118,5 @@ val solve_constraints: t -> TypeConstraints.t -> Type.t Type.Map.t option
 val partial_solve_constraints
   :  t
   -> TypeConstraints.t
-  -> variables: Type.variable list
+  -> variables: Type.Variable.t list
   -> (TypeConstraints.t * TypeConstraints.solution) option

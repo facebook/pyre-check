@@ -167,7 +167,7 @@ end
 let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Expression.Call.Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
-    |> Type.free_variables
+    |> Type.Variable.all_free_variables
     |> List.map ~f:(fun variable -> Type.Variable variable)
   in
   List.concat_map ~f:find_type_variables bases
@@ -482,7 +482,7 @@ module Attribute = struct
       let free_variables =
         let variables =
           Annotation.annotation annotation
-          |> Type.free_variables
+          |> Type.Variable.all_free_variables
           |> List.map ~f:(fun variable -> Type.Variable variable)
           |> Type.Set.of_list
         in
@@ -813,7 +813,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
     if Identifier.equal name protocol_name then
       Resolution.solve_less_or_equal
         resolution
-        ~left:(Type.mark_variables_as_bound annotation ~simulated:true)
+        ~left:(Type.Variable.mark_all_variables_as_bound annotation ~simulated:true)
         ~right:protocol_annotation
         ~constraints
     else
@@ -850,7 +850,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
   implements ~constraints:TypeConstraints.empty all_instance_methods all_protocol_methods
   |> List.filter_map ~f:(Resolution.solve_constraints resolution)
   |> List.hd
-  >>| Type.Map.map ~f:Type.free_simulated_bound_variables
+  >>| Type.Map.map ~f:Type.Variable.free_all_simulated_bound_variables
   >>| instantiate_protocol_generics
   >>| (fun parameters -> TypeOrder.Implements { parameters })
   |> Option.value ~default:TypeOrder.DoesNotImplement

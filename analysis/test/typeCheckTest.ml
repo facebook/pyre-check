@@ -95,7 +95,7 @@ let test_initial _ =
           | None -> []
           | Some annotation ->
               let annotation = Resolution.parse_annotation resolution annotation in
-              Type.free_variables annotation
+              Type.Variable.all_free_variables annotation
               |> List.map ~f:(fun variable -> Type.Variable variable)
         in
         List.concat_map define.signature.parameters ~f:extract_variables
@@ -179,8 +179,8 @@ let test_initial _ =
     ~environment:"T = typing.TypeVar('T')"
     "def foo(x: T): ..."
     (create
-       ~immutables:["x", (false, Type.mark_variables_as_bound (Type.variable "T"))]
-       ["x", Type.mark_variables_as_bound (Type.variable "T")])
+       ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
+       ["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")])
 
 
 let test_less_or_equal _ =
@@ -932,7 +932,9 @@ let test_forward_access _ =
           MissingAttribute {
             name = "undefined";
             missing_definer =
-              Type (Type.variable ~constraints:(Type.Bound (Type.Primitive "Class")) "TV_Bound");
+              Type (Type.variable
+                      ~constraints:(Type.Variable.Bound (Type.Primitive "Class"))
+                      "TV_Bound");
           };
       };
     ];
@@ -1037,7 +1039,10 @@ let test_forward_access _ =
             missing_definer =
               Type
                 (Type.variable
-                   ~constraints:(Type.Explicit [Type.Primitive "Class"; Type.Primitive "Other"])
+                   ~constraints:(Type.Variable.Explicit [
+                       Type.Primitive "Class";
+                       Type.Primitive "Other";
+                     ])
                    "TV_Explicit");
           };
       };
@@ -2345,9 +2350,11 @@ let test_forward_expression _ =
     (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
-  Type.VariableNamespace.reset ();
-  let empty_list = Type.list (Type.variable "_T" |> Type.mark_free_variables_as_escaped) in
-  Type.VariableNamespace.reset ();
+  Type.Variable.Namespace.reset ();
+  let empty_list =
+    Type.list (Type.variable "_T" |> Type.Variable.mark_all_free_variables_as_escaped)
+  in
+  Type.Variable.Namespace.reset ();
   assert_forward "[]" empty_list;
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));

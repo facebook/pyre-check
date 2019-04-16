@@ -16,10 +16,10 @@ type interval = {
 
 module VariableMap
   = Map.Make(struct
-    type nonrec t = Type.variable
-    let compare = Type.compare_variable
-    let sexp_of_t = Type.sexp_of_variable
-    let t_of_sexp = Type.variable_of_sexp
+    type nonrec t = Type.Variable.t
+    let compare = Type.Variable.compare
+    let sexp_of_t = Type.Variable.sexp_of_t
+    let t_of_sexp = Type.Variable.t_of_sexp
   end)
 
 
@@ -28,7 +28,7 @@ type t = interval VariableMap.t
 
 let pp format constraints =
   let show ~key ~data sofar =
-    Printf.sprintf "%s => %s" (Type.show_variable key) (show_interval data) :: sofar
+    Printf.sprintf "%s => %s" (Type.Variable.show key) (show_interval data) :: sofar
   in
   VariableMap.fold constraints ~init:[] ~f:show
   |> String.concat ~sep:"\n"
@@ -54,13 +54,13 @@ let exists constraints ~predicate =
 
 module type OrderedConstraintsType = sig
   type order
-  val add_lower_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option
-  val add_upper_bound: t -> order: order -> variable: Type.variable -> bound: Type.t -> t option
+  val add_lower_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
+  val add_upper_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
   val solve: t -> order: order -> solution option
   val extract_partial_solution
     :  t
     -> order: order
-    -> variables: Type.variable list
+    -> variables: Type.Variable.t list
     -> (t * solution) option
 end
 
@@ -98,10 +98,10 @@ module OrderedConstraints(Order: OrderType) = struct
         >>| (function | Type.Bottom  -> upper_bound interval | other -> other)
       in
       match exogenous_constraint with
-      | Type.Explicit explicits ->
+      | Type.Variable.Explicit explicits ->
           let explicits =
             match lower_bound interval with
-            | Type.Variable { constraints = Type.Explicit left_constraints; _ } ->
+            | Type.Variable { constraints = Explicit left_constraints; _ } ->
                 let exists_in_explicits left_constraint =
                   List.exists explicits ~f:(Type.equal left_constraint)
                 in
@@ -202,7 +202,7 @@ module OrderedConstraints(Order: OrderType) = struct
       in
       let handle_independent_constraint ~key:variable ~data:interval partial_solution =
         let add_actualized_interval partial_solution =
-          let { Type.constraints = exogenous_constraint; _ } = variable in
+          let { Type.Variable.constraints = exogenous_constraint; _ } = variable in
           Interval.actualize interval ~order ~exogenous_constraint
           >>| (fun data -> Type.Map.set partial_solution ~key:(Type.Variable variable) ~data)
         in

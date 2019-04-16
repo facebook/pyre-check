@@ -12,6 +12,49 @@ open PyreParser
 
 
 module Record = struct
+  module Variable = struct
+    module RecordNamespace = struct
+      type t =  int
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+    type state =
+      | Free of { escaped: bool }
+      | InFunction
+      | InSimulatedCall
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'annotation constraints =
+      | Bound of 'annotation
+      | Explicit of 'annotation list
+      | Unconstrained
+      | LiteralIntegers
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type variance =
+      | Covariant
+      | Contravariant
+      | Invariant
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation record = {
+      variable: Identifier.t;
+      constraints: 'annotation constraints;
+      variance: variance;
+      state: state;
+      namespace: RecordNamespace.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
+      {
+        variable = name;
+        constraints;
+        variance;
+        state = Free { escaped = false };
+        namespace = 0;
+      }
+  end
   module Callable = struct
     module RecordParameter = struct
       type 'annotation named = {
@@ -93,59 +136,14 @@ type literal =
 [@@deriving compare, eq, sexp, show, hash]
 
 
-type variable_state =
-  | Free of { escaped: bool }
-  | InFunction
-  | InSimulatedCall
-[@@deriving compare, eq, sexp, show, hash]
-
-
-module VariableNamespace = struct
-  type t = int
-  [@@deriving compare, eq, sexp, show, hash]
-
-  let fresh = ref 1
-
-  let reset () =
-    fresh := 1
-
-  let create_fresh () =
-    let namespace = !fresh in
-    fresh := namespace + 1;
-    namespace
-end
-
-
 type tuple =
   | Bounded of t list
   | Unbounded of t
 
 
-and constraints =
-  | Bound of t
-  | Explicit of t list
-  | Unconstrained
-  | LiteralIntegers
-
-
-and variance =
-  | Covariant
-  | Contravariant
-  | Invariant
-
-
 and typed_dictionary_field = {
   name: string;
   annotation: t;
-}
-
-
-and variable = {
-  variable: Identifier.t;
-  constraints: constraints;
-  variance: variance;
-  state: variable_state;
-  namespace: VariableNamespace.t;
 }
 
 
@@ -161,7 +159,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of variable
+  | Variable of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -241,22 +239,6 @@ module Cache = struct
   let enable () =
     enabled := true
 end
-
-
-let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable {
-    variable = name;
-    constraints;
-    variance;
-    state = Free { escaped = false };
-    namespace = 0;
-  }
-
-
-let is_escaped_free_variable = function
-  | Variable { state = Free { escaped }; _ } -> escaped
-  | _ -> false
-
 
 let reverse_substitute name =
   match name with
@@ -770,6 +752,10 @@ let union parameters =
       normalize parameters
 
 
+let variable ?constraints ?variance name =
+  Variable (Record.Variable.create ?constraints ?variance name)
+
+
 let yield parameter =
   Parametric {
     name = "Yield";
@@ -1068,8 +1054,8 @@ module Transform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Bound bound ->
-                  Bound (visit_annotation bound ~state)
+              | Record.Variable.Bound bound ->
+                  Record.Variable.Bound (visit_annotation bound ~state)
               | Explicit constraints ->
                   Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained ->
@@ -1680,7 +1666,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 List.find_map ~f:bound arguments
               in
               if not (List.is_empty explicits) then
-                Explicit explicits
+                Record.Variable.Explicit explicits
               else if Option.is_some bound then
                 Bound (Option.value_exn bound)
               else
@@ -1692,7 +1678,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
                 } when String.equal (Identifier.sanitized name) "covariant" ->
-                    Some Covariant
+                    Some Record.Variable.Covariant
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
@@ -1702,7 +1688,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     None
               in
               List.find_map arguments ~f:variance_definition
-              |> Option.value ~default:Invariant
+              |> Option.value ~default:Record.Variable.Invariant
             in
             variable value ~constraints ~variance
 
@@ -1883,18 +1869,6 @@ let contains_callable annotation =
 
 let is_callable = function
   | Callable _ -> true
-  | _ -> false
-
-
-let is_contravariant annotation =
-  match annotation with
-  | Variable { variance = Contravariant; _ } -> true
-  | _ -> false
-
-
-let is_covariant annotation =
-  match annotation with
-  | Variable { variance = Covariant; _ } -> true
   | _ -> false
 
 
@@ -2246,136 +2220,178 @@ let assume_any = function
   | Top -> Any
   | annotation -> annotation
 
+module Variable = struct
+  module Namespace = struct
+    include Record.Variable.RecordNamespace
+    let fresh = ref 1
 
-let mark_variables_as_bound ?(simulated = false) annotation =
-  let state = if simulated then InSimulatedCall else InFunction in
-  let constraints annotation =
-    match annotation with
-    | Variable variable -> Some (Variable { variable with state })
-    | _ -> None
-  in
-  instantiate annotation ~constraints
+    let reset () =
+      fresh := 1
 
+    let create_fresh () =
+      let namespace = !fresh in
+      fresh := namespace + 1;
+      namespace
+  end
+  include Record.Variable
 
-let namespace_variable variable ~namespace =
-  (* TODO(T42603764): use process unique ids instead *)
-  { variable with namespace }
+  type t = type_t record
+  [@@deriving compare, eq, sexp, show, hash]
 
-
-let namespace_free_variables annotation ~namespace =
-  let constraints annotation =
-    match annotation with
-    | Variable ({ state = Free _; _ } as variable) ->
-        Some (Variable (namespace_variable variable ~namespace))
-    | _ -> None
-  in
-  instantiate annotation ~constraints
-
-
-let free_simulated_bound_variables annotation =
-  let constraints annotation =
-    match annotation with
-    | Variable ({ state = InSimulatedCall;  _ } as variable) ->
-        Some (Variable { variable with state = Free { escaped = false } })
-    | _ -> None
-  in
-  instantiate annotation ~constraints
-
-
-let free_variables annotation =
-  let is_free_variable = function
-    | Variable { state = Free _; _ } -> true
+  let is_contravariant = function
+    | { variance = Contravariant; _ } -> true
     | _ -> false
-  in
-  let to_variable = function
-    | Variable variable -> variable
-    | _ -> failwith("collect got a non-variable")
-  in
-  collect annotation ~predicate:is_free_variable
-  |> List.map ~f:to_variable
 
+  let is_covariant = function
+    | { variance = Covariant; _ } -> true
+    | _ -> false
 
-let is_resolved annotation =
-  List.is_empty (free_variables annotation)
+  let is_free = function
+    | { state = Free _; _ } -> true
+    | _ -> false
 
+  let namespace variable ~namespace =
+    { variable with namespace }
 
-let instantiate_free_variables ~replacement annotation =
-  let constraints =
-    free_variables annotation
-    |> List.map ~f:(fun variable -> Variable variable)
-    |> List.fold
-      ~init:Map.empty
-      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
-  in
-  instantiate annotation ~constraints:(Map.find constraints)
+  let upper_bound { constraints; _ } =
+    match constraints with
+    | Unconstrained ->
+        object_primitive
+    | Bound bound ->
+        bound
+    | Explicit explicits ->
+        union explicits
+    | LiteralIntegers ->
+        integer
 
-let mark_free_variables_as_escaped ?specific annotation =
-  let namespace = VariableNamespace.create_fresh () in
-  let constraints =
-    let variables =
-      match specific with
-      | Some variables ->
-          variables
-      | None ->
-          free_variables annotation
+  let is_escaped_and_free = function
+    | { state = Free { escaped }; _ } -> escaped
+    | _ -> false
+
+  let mark_all_variables_as_bound ?(simulated = false) annotation =
+    let state = if simulated then InSimulatedCall else InFunction in
+    let constraints annotation =
+      match annotation with
+      | Variable variable -> Some (Variable { variable with state })
+      | _ -> None
     in
-    let mark_as_escaped sofar variable =
-      let data =
-        namespace_variable { variable with state = Free { escaped = true }} ~namespace
-        |> (fun variable -> Variable variable)
+    instantiate annotation ~constraints
+
+
+  let namespace_all_free_variables annotation ~namespace:into_namespace =
+    let constraints annotation =
+      match annotation with
+      | Variable ({ state = Free _; _ } as variable) ->
+          Some (Variable (namespace variable ~namespace:into_namespace))
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+
+
+  let free_all_simulated_bound_variables annotation =
+    let constraints annotation =
+      match annotation with
+      | Variable ({ state = InSimulatedCall;  _ } as variable) ->
+          Some (Variable { variable with state = Free { escaped = false } })
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+
+
+  let all_free_variables annotation =
+    let is_free_variable = function
+      | Variable { state = Free _; _ } -> true
+      | _ -> false
+    in
+    let to_variable = function
+      | Variable variable -> variable
+      | _ -> failwith("collect got a non-variable")
+    in
+    collect annotation ~predicate:is_free_variable
+    |> List.map ~f:to_variable
+
+
+  let all_variables_are_resolved annotation =
+    List.is_empty (all_free_variables annotation)
+
+
+  let instantiate_all_free_variables ~replacement annotation =
+    let constraints =
+      all_free_variables annotation
+      |> List.map ~f:(fun variable -> Variable variable)
+      |> List.fold
+        ~init:Map.empty
+        ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
+    in
+    instantiate annotation ~constraints:(Map.find constraints)
+
+  let mark_all_free_variables_as_escaped ?specific annotation =
+    let fresh_namespace = Namespace.create_fresh () in
+    let constraints =
+      let variables =
+        match specific with
+        | Some variables ->
+            variables
+        | None ->
+            all_free_variables annotation
       in
-      Map.set sofar ~key:(Variable variable) ~data
-    in
-    List.fold variables ~init:Map.empty ~f:mark_as_escaped
-  in
-  instantiate annotation ~constraints:(Map.find constraints)
-
-
-let collapse_escaped_variable_unions annotation =
-  let module ConcreteTransform = Transform.Make(struct
-      type state = unit
-
-      let visit_children_before _ _ =
-        true
-
-      let visit_children_after =
-        false
-
-      let visit new_state annotation =
-        let transformed_annotation =
-          match annotation with
-          | Union parameters ->
-              List.filter parameters ~f:(Fn.non is_escaped_free_variable)
-              |> union
-          | _ ->
-              annotation
+      let mark_as_escaped sofar variable =
+        let data =
+          namespace { variable with state = Free { escaped = true }} ~namespace:fresh_namespace
+          |> (fun variable -> Variable variable)
         in
-        { Transform.transformed_annotation; new_state }
-    end)
-  in
-  snd (ConcreteTransform.visit () annotation)
+        Map.set sofar ~key:(Variable variable) ~data
+      in
+      List.fold variables ~init:Map.empty ~f:mark_as_escaped
+    in
+    instantiate annotation ~constraints:(Map.find constraints)
 
 
-let upper_bound { constraints; _ } =
-  match constraints with
-  | Unconstrained ->
-      object_primitive
-  | Bound bound ->
-      bound
-  | Explicit explicits ->
-      union explicits
-  | LiteralIntegers ->
-      integer
+  let collapse_all_escaped_variable_unions annotation =
+    let module ConcreteTransform = Transform.Make(struct
+        type state = unit
+
+        let visit_children_before _ _ =
+          true
+
+        let visit_children_after =
+          false
+
+        let visit new_state annotation =
+          let transformed_annotation =
+            match annotation with
+            | Union parameters ->
+                let not_escaped_free_variable = function
+                  | Variable variable -> not (is_escaped_and_free variable)
+                  | _ -> true
+                in
+                List.filter parameters ~f:not_escaped_free_variable
+                |> union
+            | _ ->
+                annotation
+          in
+          { Transform.transformed_annotation; new_state }
+      end)
+    in
+    snd (ConcreteTransform.visit () annotation)
 
 
-let contains_escaped_free_variable =
-  exists ~predicate:is_escaped_free_variable
+  let contains_escaped_free_variable =
+    let predicate = function
+      | Variable variable -> is_escaped_and_free variable
+      | _ -> false
+    in
+    exists ~predicate
 
-let convert_escaped_free_variables_to_anys annotation =
-  let constraints annotation =
-    Option.some_if (is_escaped_free_variable annotation) Any
-  in
-  instantiate annotation ~constraints
+  let convert_all_escaped_free_variables_to_anys annotation =
+    let constraints = function
+      | Variable variable when is_escaped_and_free variable -> Some Any
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+end
+
+
 
 
 let is_concrete annotation =
@@ -2405,7 +2421,7 @@ let is_concrete annotation =
     end)
   in
   fst (ConcreteTransform.visit true annotation) &&
-  not (contains_escaped_free_variable annotation)
+  not (Variable.contains_escaped_free_variable annotation)
 
 
 let rec dequalify map annotation =
@@ -2540,12 +2556,12 @@ module TypedDictionary = struct
         [
           { annotation = Optional annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; variable "_T"];
+            annotation = Union [annotation; Variable (Variable.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = variable "_T";
+                  annotation = Variable (Variable.create "_T");
                   default = false;
                 };
               ];
@@ -2583,12 +2599,12 @@ module TypedDictionary = struct
         [
           { annotation = annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; variable "_T"];
+            annotation = Union [annotation; Variable (Variable.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = variable "_T";
+                  annotation = Variable (Variable.create "_T");
                   default = false;
                 };
               ];

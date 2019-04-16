@@ -489,7 +489,7 @@ let select
                   | { Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in
                       let argument_annotation =
-                        if Type.is_resolved parameter_annotation then
+                        if Type.Variable.all_variables_are_resolved parameter_annotation then
                           Resolution.resolve_mutable_literals
                             resolution
                             ~expression:(Some expression)
@@ -519,7 +519,7 @@ let select
           _;
         } as signature_match) =
       let solutions =
-        let variables = Type.free_variables (Type.Callable callable) in
+        let variables = Type.Variable.all_free_variables (Type.Callable callable) in
         List.filter_map
           constraints_set
           ~f:(Resolution.partial_solve_constraints ~variables resolution)
@@ -625,7 +625,7 @@ let select
       let callable =
         let instantiate annotation =
           let solution =
-            let variables = Type.free_variables (Type.Callable callable) in
+            let variables = Type.Variable.all_free_variables (Type.Callable callable) in
             List.filter_map
               constraints_set
               ~f:(Resolution.partial_solve_constraints ~variables resolution)
@@ -634,11 +634,11 @@ let select
             |> Option.value ~default:Type.Map.empty
           in
           Type.instantiate annotation ~widen:false ~constraints:(Map.find solution)
-          |> Type.mark_free_variables_as_escaped
+          |> Type.Variable.mark_all_free_variables_as_escaped
           (* We need to do transformations of the form Union[T_escaped, int] => int in order to
              properly handle some typeshed stubs which only sometimes bind type variables and
              expect them to fall out in this way (see Mapping.get) *)
-          |> Type.collapse_escaped_variable_unions
+          |> Type.Variable.collapse_all_escaped_variable_unions
         in
         Type.Callable.map ~f:instantiate callable
         |> (function
