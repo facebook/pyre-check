@@ -560,7 +560,12 @@ let run
   if configuration.recursive_infer then
     recursive_infer_source [] 0
   else
-    let results = Preprocessing.defines source |> List.map ~f:check in
+    let results =
+      source
+      |> Preprocessing.convert
+      |> Preprocessing.defines
+      |> List.map ~f:check
+    in
 
     let errors =
       List.map results ~f:SingleSourceResult.errors

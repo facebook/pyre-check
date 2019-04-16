@@ -157,6 +157,8 @@ let run ~configuration:_ ~environment ~source =
     >>| State.errors
     |> Option.value ~default:[]
   in
-  Preprocessing.defines ~extract_into_toplevel:true source
+  source
+  |> Preprocessing.convert
+  |> Preprocessing.defines ~extract_into_toplevel:true
   |> List.map ~f:check
   |> List.concat

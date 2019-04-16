@@ -104,7 +104,8 @@ let parse_sources_job
         let handle = File.handle ~configuration file in
         Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
         let convert = if convert then Analysis.Preprocessing.convert else Fn.id in
-        Plugin.apply_to_ast (convert preprocessed)
+        Plugin.apply_to_ast preprocessed
+        |> convert
         |> Ast.SharedMemory.Sources.add handle;
         handle
       in

@@ -19,28 +19,29 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           Assign.value =
             {
               Node.value =
-                Access
-                  (SimpleAccess [
-                      Access.Identifier "typing";
-                      Access.Identifier "NewType";
-                      Access.Call {
-                        Node.value = [
-                          {
-                            Argument.value =
-                              {
-                                Node.value = String { StringLiteral.value = name; _ };
-                                _
-                              };
-                            _;
-                          };
-                          {
-                            Argument.value = ({ Node.value = Access _; _ } as base);
-                            _;
-                          } as base_argument;
-                        ];
-                        _;
-                      };
-                    ]);
+                Call {
+                  callee = {
+                    Node.value = Name (Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "NewType";
+                    });
+                    _;
+                  };
+                  arguments = [
+                    {
+                      Call.Argument.value =
+                        {
+                          Node.value = String { StringLiteral.value = name; _ };
+                          _;
+                        };
+                      _;
+                    };
+                    {
+                      Call.Argument.value = ({ Node.value = (Name _); _ } as base);
+                      _;
+                    } as base_argument;
+                  ];
+                };
               _;
             };
           _;
@@ -66,7 +67,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           in
           Class {
             Class.name;
-            bases = [Expression.convert_argument base_argument];
+            bases = [base_argument];
             body = [constructor];
             decorators = [];
             docstring = None;

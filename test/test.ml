@@ -1111,7 +1111,6 @@ let assert_errors
         parse ~handle ~qualifier source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
-        |> Preprocessing.convert
         |> Plugin.apply_to_ast
       in
       let source = parse ~qualifier ~handle ~source in

@@ -7,7 +7,6 @@ open Core
 
 open Ast
 open Expression
-open Pyre
 open Statement
 open Analysis
 
@@ -17,42 +16,54 @@ let transform_ast ({ Source.statements; _ } as source) =
     let extract_attributes expression =
       match expression with
       | {
-        Node.location;
-        value =
-          Access
-            ((SimpleAccess [
-                 Access.Identifier "typing";
-                 Access.Identifier "NamedTuple";
-                 Access.Call { Node.value = arguments; _ };
-               ])
-            | (SimpleAccess [
-                  Access.Identifier "collections";
-                  Access.Identifier "namedtuple";
-                  Access.Call { Node.value = arguments; _ };
-                ]));
-      } ->
+          Node.location;
+          value = Call {
+            callee = {
+              Node.value = Name (
+                Name.Attribute {
+                  base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  attribute = "NamedTuple";
+                });
+              _;
+            };
+            arguments;
+          };
+        }
+      | {
+          Node.location;
+          value = Call {
+            callee = {
+              Node.value = Name (
+                Name.Attribute {
+                  base = { Node.value = Name (Name.Identifier "collections"); _ };
+                  attribute = "namedtuple";
+                });
+              _;
+            };
+            arguments;
+          };
+        } ->
           let any_annotation =
-            Node.create
-              (Access (SimpleAccess (Access.create "typing.Any")))
-              ~location
+            Name (Expression.create_name ~location "typing.Any")
+            |> Node.create ~location
           in
           let attributes =
             match arguments with
             | [
-              _;
-              {
-                Argument.value = {
-                  value = String { StringLiteral.value = serialized; _ };
-                  _
-                };
                 _;
-              };
-            ] ->
+                {
+                  Call.Argument.value = {
+                    value = String { StringLiteral.value = serialized; _ };
+                    _;
+                  };
+                  _;
+                };
+              ] ->
                 String.split serialized ~on:' '
                 |> List.map ~f:(fun name -> name, any_annotation, None)
-            | [_; { Argument.value = { Node.value = List arguments; _ }; _ }]
-            | [_; { Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
-                let accessify ({ Node.value; _ } as expression) =
+            | [_; { Call.Argument.value = { Node.value = List arguments; _ }; _ }]
+            | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
+                let get_name ({ Node.value; _ } as expression) =
                   match value with
                   | String { StringLiteral.value = name; _ } ->
                       name, any_annotation, None
@@ -64,7 +75,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                   | _ ->
                       Expression.show expression, any_annotation, None
                 in
-                List.map arguments ~f:accessify
+                List.map arguments ~f:get_name
             | _ ->
                 []
           in
@@ -83,11 +94,11 @@ let transform_ast ({ Source.statements; _ } as source) =
       let annotation =
         List.init (List.length attributes) ~f:(fun _ -> Type.string)
         |> Type.tuple
-        |> Type.expression
+        |> Type.expression ~convert:false
       in
       Assign {
         Assign.target =
-          Reference.create ~prefix:parent "_fields" |> Reference.expression ~location;
+          Reference.create ~prefix:parent "_fields" |> Reference.new_expression ~location;
         annotation = Some annotation;
         value;
         parent = Some parent;
@@ -99,7 +110,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         let attribute (name, annotation, value) =
           let target =
             Reference.create ~prefix:parent name
-            |> Reference.expression ~location
+            |> Reference.new_expression ~location
           in
           Assign {
             Assign.target;
@@ -146,20 +157,20 @@ let transform_ast ({ Source.statements; _ } as source) =
     let tuple_base ~location =
       {
         Expression.Call.Argument.name = None;
-        value = Node.create ~location (Access (SimpleAccess (Access.create "typing.NamedTuple")));
+        value = {
+          Node.location;
+          value = Name (Expression.create_name ~location "typing.NamedTuple");
+        };
       }
     in
     let value =
       match value with
       | Assign {
-          Assign.target = {
-            Node.value = Access (SimpleAccess name);
-            _;
-          };
+          Assign.target = { Node.value = Name name; _ };
           value = expression;
           _;
-        } ->
-          let name = Reference.from_access (Access.delocalize name) in
+        } when Expression.is_simple_name name ->
+          let name = Reference.delocalize (Reference.from_name name) in
           begin
             match extract_attributes expression with
             | Some attributes
@@ -180,33 +191,45 @@ let transform_ast ({ Source.statements; _ } as source) =
       | Class ({ Class.name; bases; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
-                Expression.Call.Argument.value = { Node.value = Access (SimpleAccess name); _ };
+                Expression.Call.Argument.value = {
+                  Node.value = Name (
+                    Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "NamedTuple";
+                    }
+                  );
+                  _;
+                };
                 _;
               } ->
-                String.equal (Access.show name) "typing.NamedTuple"
+                true
             | _ ->
                 false
           in
           if List.exists ~f:is_named_tuple_primitive bases then
             let extract_assign = function
               | {
-                Node.value = Assign {
-                    Assign.target = { Node.value = Access (SimpleAccess target); _ };
+                  Node.value = Assign {
+                    Assign.target = { Node.value = Name target; _ };
                     value;
                     annotation;
                     _;
                   };
-                _;
-              } ->
-                  let annotation =
-                    Option.value
-                      annotation
-                      ~default:(Node.create
-                                  ~location
-                                  (Access (SimpleAccess (Access.create "typing.Any"))))
+                  _;
+                } ->
+                  let last =
+                    match target with
+                    | Name.Identifier identifier -> identifier
+                    | Name.Attribute { attribute; _ } -> attribute
                   in
-                  List.last target
-                  >>| (fun target -> Access.show [target], annotation, Some value)
+                  let annotation =
+                    let any =
+                      Name (Expression.create_name ~location "typing.Any")
+                      |> Node.create ~location
+                    in
+                    Option.value annotation ~default:any
+                  in
+                  Some (last, annotation, Some value)
               | _ ->
                   None
             in
