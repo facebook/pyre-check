@@ -91,10 +91,7 @@ let connect_definition
     if annotations_tracked && not primitive_cycle && not cycle_with_top then
       TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
   in
-  let primitive, _ =
-    Annotated.Class.annotation ~resolution annotated
-    |> Type.split
-  in
+  let primitive = Type.Primitive (Reference.show name) in
   connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
   begin
     match Annotated.Class.inferred_callable_type annotated ~resolution with
@@ -640,7 +637,7 @@ let register_values
             let parent =
               if Define.is_class_method define then
                 parent
-                >>| Resolution.parse_reference ~allow_untracked:true resolution
+                >>= fun reference -> Some (Type.Primitive (Reference.show reference))
                 >>| Type.meta
               else
                 None
@@ -695,10 +692,7 @@ let register_values
       let statement { Source.handle; _ } _ = function
         | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
-            let primitive, _ =
-              Resolution.parse_reference ~allow_untracked:true resolution name
-              |> Type.split
-            in
+            let primitive = Type.Primitive (Reference.show name) in
             let global =
               Annotation.create_immutable
                 ~global:true
