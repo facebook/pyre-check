@@ -660,8 +660,7 @@ module OrderImplementation = struct
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
           | Type.Variable left_variable, Type.Variable right_variable
-            when (not (Type.Variable.all_variables_are_resolved left)) &&
-                 (not (Type.Variable.all_variables_are_resolved right)) ->
+            when (Type.Variable.is_free left_variable) && (Type.Variable.is_free right_variable) ->
               (* Either works because constraining V1 to be less or equal to V2 implies
                  that V2 is greater than or equal to V1.  Therefore either constraint is sufficient,
                  and we should consider both.  This approach simplifies things downstream for
@@ -681,12 +680,10 @@ module OrderImplementation = struct
                 |> Option.to_list
               in
               right_greater_than_left @ left_less_than_right
-          | Type.Variable variable, bound
-            when not (Type.Variable.all_variables_are_resolved left) ->
+          | Type.Variable variable, bound when Type.Variable.is_free variable ->
               OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
               |> Option.to_list
-          | bound, Type.Variable variable
-            when not (Type.Variable.all_variables_are_resolved right) ->
+          | bound, Type.Variable variable when Type.Variable.is_free variable ->
               OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
               |> Option.to_list
           | Type.Callable _, Type.Parametric { name; _ } ->
