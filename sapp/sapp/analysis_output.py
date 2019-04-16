@@ -48,6 +48,12 @@ class AnalysisOutput(object):
         if not filename_spec and file_handle and hasattr(file_handle, "name"):
             self.filename_spec = file_handle.name
 
+    def __str__(self) -> str:
+        if self.directory:
+            return f"AnalysisOutput({repr(self.directory)})"
+
+        return f"AnalysisOutput({repr(self.filename_spec)})"
+
     @classmethod
     def from_str(cls, identifier: str) -> "AnalysisOutput":
         if os.path.isdir(identifier):

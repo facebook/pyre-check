@@ -22,6 +22,8 @@ from typing import (
 
 import click
 from IPython.core import page
+from prompt_toolkit import prompt
+from prompt_toolkit.contrib.completers import PathCompleter
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
@@ -31,6 +33,7 @@ from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import func
 from sqlalchemy.sql.expression import or_
 
+from .analysis_output import AnalysisOutput, AnalysisOutputError
 from .db import DB
 from .decorators import UserError, catch_keyboard_interrupt, catch_user_error
 from .models import (
@@ -90,6 +93,7 @@ help()            show this message
 help(COMMAND)     more info about a command
 state()           show the internal state of the tool for debugging
 
+analysis_output(DIR) sets the location of the analysis output
 runs()            list all completed static analysis runs
 run(ID)           select a specific run for browsing issues
 latest_run(KIND)  sets run to the latest of the specified kind
@@ -137,8 +141,10 @@ details()         show additional information about the current trace frame
             "frame": self.frame,
             "parents": self.parents,
             "details": self.details,
+            "analysis_output": self.analysis_output,
         }
         self.repository_directory = repository_directory or os.getcwd()
+        self.current_analysis_output: Optional[AnalysisOutput] = None
 
         self.current_run_id: int = -1
 
@@ -188,6 +194,7 @@ details()         show additional information about the current trace frame
 
     def state(self):
         print(f"              Database: {self.db.dbtype}:{self.db.dbname}")
+        print(f"       Analysis Output: {self.current_analysis_output}")
         print(f"  Repository directory: {self.repository_directory}")
         print(f"           Current run: {self.current_run_id}")
         print(f"Current issue instance: {self.current_issue_instance_id}")
@@ -230,6 +237,30 @@ details()         show additional information about the current trace frame
 
         self.current_run_id = int(selected_run.id)
         print(f"Set run to {run_id}.")
+
+    def prompt(self, *args, **kwargs) -> str:
+        try:
+            ret = prompt(*args, **kwargs)
+            if ret == "":
+                raise KeyboardInterrupt()
+            return ret
+        except EOFError:
+            raise KeyboardInterrupt()
+
+    @catch_keyboard_interrupt()
+    @catch_user_error()
+    def analysis_output(self, location: Optional[str] = None) -> None:
+        """Sets the location of the output from the static analysis tool.
+
+        Parameters:
+            location: str   Filesystem location for the results.
+        """
+        try:
+            if not location:
+                location = self.prompt("Analysis results: ", completer=PathCompleter())
+            self.current_analysis_output = AnalysisOutput.from_str(location)
+        except AnalysisOutputError as e:
+            raise UserError(f"Error loading results: {e}")
 
     @catch_user_error()
     def latest_run(self, run_kind: str) -> None:
