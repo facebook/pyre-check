@@ -184,16 +184,18 @@ details()         show additional information about the current trace frame
             self.sources_dict = self._all_leaves_by_kind(session, SharedTextKind.SOURCE)
             self.sinks_dict = self._all_leaves_by_kind(session, SharedTextKind.SINK)
 
+        print("=" * len(self.welcome_message))
+        print(self.welcome_message)
+        print("=" * len(self.welcome_message))
+
         if latest_run_id.resolved() is None:
             self.warning(
                 "No runs found. "
                 f"Try running '{os.path.basename(sys.argv[0])} analyze' first."
             )
+        else:
+            self.current_run_id = int(latest_run_id)
 
-        self.current_run_id = latest_run_id
-        print("=" * len(self.welcome_message))
-        print(self.welcome_message)
-        print("=" * len(self.welcome_message))
         return self.scope_vars
 
     def help(self, object=None):
@@ -365,15 +367,15 @@ details()         show additional information about the current trace frame
                 session, issue_instance_id, SharedTextKind.SINK
             )
 
-        self.current_issue_instance_id = selected_issue.id
+        self.current_issue_instance_id = int(selected_issue.id)
         self.current_frame_id = -1
         self.current_trace_frame_index = 1  # first one after the source
 
         print(f"Set issue to {issue_instance_id}.")
-        if selected_issue.run_id != self.current_run_id:
+        if int(selected_issue.run_id) != self.current_run_id:
             self.current_run_id = int(selected_issue.run_id)
             print(f"Set run to {self.current_run_id}.")
-            print()
+        print()
 
         self._generate_trace_from_issue()
         self.show()
@@ -596,10 +598,10 @@ details()         show additional information about the current trace frame
         self.current_issue_instance_id = -1
 
         print(f"Set trace frame to {frame_id}.")
-        if selected_frame.run_id != self.current_run_id:
+        if int(selected_frame.run_id) != self.current_run_id:
             self.current_run_id = int(selected_frame.run_id)
             print(f"Set run to {self.current_run_id}.")
-            print()
+        print()
 
         self._generate_trace_from_frame()
         self.show()
