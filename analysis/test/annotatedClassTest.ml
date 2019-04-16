@@ -790,6 +790,16 @@ let test_implements _ =
           pass
     |}
     DoesNotImplement;
+  assert_conforms
+    {|
+      class A:
+        foo: int = 7
+    |}
+    {|
+      class Protocol:
+        foo: int = ...
+    |}
+    no_parameters;
   ()
 
 

@@ -193,6 +193,28 @@ let test_check_protocol _ =
 
     |}
     [];
+  (* TODO(T41436690): end to end support for attribute protocols *)
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        foo: int
+
+      class A:
+        foo: int = 7
+
+      def foo(p: P) -> int:
+        return p.foo
+
+      def bar(a: A) -> None:
+        foo(a)
+
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` " ^
+      "but is never initialized.";
+      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
+      "but got `A`.";
+    ];
   ()
 
 

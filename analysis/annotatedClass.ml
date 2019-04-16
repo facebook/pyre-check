@@ -797,27 +797,24 @@ let attributes
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
 
-let callables_of_attributes =
-  let callables_of_attribute attribute =
+let attributes_to_names_and_types =
+  let attribute_to_name_and_type attribute =
+    let name = Attribute.name attribute in
     match Annotation.annotation (Attribute.annotation attribute) with
-    |Type.Callable { kind = Type.Record.Callable.Named _; implementation; overloads; _ } ->
-        let name = Attribute.name attribute in
-        List.map ~f:(fun overload -> (name, overload)) (implementation :: overloads)
-    | _ -> []
+    | Type.Callable { kind = Type.Record.Callable.Named _; implementation; overloads; _ } ->
+        List.map ~f:Type.Callable.create_from_implementation (implementation :: overloads)
+        |> List.map ~f:(fun annotation -> (name, annotation))
+    | annotation -> [(name, annotation)]
   in
-  List.concat_map ~f:callables_of_attribute
+  List.concat_map ~f:attribute_to_name_and_type
 
 let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
-  let overload_implements ~constraints (name, overload) (protocol_name, protocol_overload) =
+  let overload_implements ~constraints (name, annotation) (protocol_name, protocol_annotation) =
     if Identifier.equal name protocol_name then
-      let left =
-        Type.Callable.create_from_implementation overload
-        |> Type.mark_variables_as_bound ~simulated:true
-      in
       Resolution.solve_less_or_equal
         resolution
-        ~left
-        ~right:(Type.Callable.create_from_implementation protocol_overload)
+        ~left:(Type.mark_variables_as_bound annotation ~simulated:true)
+        ~right:protocol_annotation
         ~constraints
     else
       []
@@ -828,7 +825,7 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
     attributes ~resolution ~transitive:true protocol
     |> List.filter ~f:(fun { Node.value = {Attribute.parent; _}; _} ->
         not (Type.equal parent Type.object_primitive) && not (Type.equal parent Type.generic))
-    |> callables_of_attributes
+    |> attributes_to_names_and_types
   in
   let rec implements ~constraints instance_methods protocol_methods =
     match instance_methods, protocol_methods with
@@ -860,12 +857,14 @@ let map_of_name_to_annotation_implements ~resolution all_instance_methods ~proto
 
 
 let callable_implements ~resolution { Type.Callable.implementation; overloads; _ } ~protocol =
-  List.map (implementation :: overloads) ~f:(fun overload -> ("__call__", overload))
+  List.map
+    (implementation :: overloads)
+    ~f:(fun overload -> ("__call__", Type.Callable.create_from_implementation overload))
   |> map_of_name_to_annotation_implements ~resolution ~protocol
 
 
 let implements ~resolution definition ~protocol =
-  callables_of_attributes (attributes ~resolution definition)
+  attributes_to_names_and_types (attributes ~resolution definition)
   |> map_of_name_to_annotation_implements ~resolution ~protocol
 
 
