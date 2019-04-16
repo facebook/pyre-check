@@ -31,6 +31,7 @@ class Incremental(Reporting):
             LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
             arguments.terminal = False
+            arguments.store_type_check_resolution = False
             arguments.no_watchman = False
             exit_code = (
                 Start(arguments, self._configuration, self._analysis_directory)

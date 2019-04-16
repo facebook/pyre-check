@@ -313,6 +313,11 @@ def main() -> int:
         "--terminal", action="store_true", help="Run the server in the terminal."
     )
     start.add_argument(
+        "--store-type-check-resolution",
+        action="store_true",
+        help="Store extra information for `types_in_file` queries.",
+    )
+    start.add_argument(
         "--no-watchman",
         action="store_true",
         help="Do not spawn a watchman client in the background.",
@@ -330,6 +335,11 @@ def main() -> int:
     )
     restart.add_argument(
         "--terminal", action="store_true", help="Run the server in the terminal."
+    )
+    restart.add_argument(
+        "--store-type-check-resolution",
+        action="store_true",
+        help="Store extra information for types_in_file queries.",
     )
     restart.add_argument(
         "--no-watchman",

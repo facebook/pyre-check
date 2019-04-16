@@ -24,6 +24,7 @@ class Start(Reporting):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
         self._terminal = arguments.terminal  # type: bool
+        self._store_type_check_resolution = arguments.store_type_check_resolution
         # TODO(T41488848) respect no_watchman flag after OCaml daemon phased out
         self._no_watchman = True  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
@@ -125,6 +126,8 @@ class Start(Reporting):
             flags.append("-use-watchman")
         if self._terminal:
             flags.append("-terminal")
+        if self._store_type_check_resolution:
+            flags.append("-store-type-check-resolution")
         if self._save_initial_state_to and os.path.isdir(
             os.path.dirname(self._save_initial_state_to)
         ):
