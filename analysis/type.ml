@@ -781,82 +781,70 @@ let parametric_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
-let rec expression annotation =
-  let split name =
-    match name with
-    | "..." ->
-        [Access.Identifier "..."]
-    | name ->
-        String.split name ~on:'.'
-        |> List.map ~f:Access.create
-        |> List.concat
-  in
+let rec expression ?(convert = true) annotation =
+  let location = Location.Reference.any in
 
-  let get_item_call ?call_parameters parameters =
-    let parameter =
-      match parameters with
-      | _ when List.length parameters > 1 || Option.is_some call_parameters ->
-          let tuple =
-            let call_parameters =
-              call_parameters
-              >>| (fun call_parameters -> [call_parameters])
-              |> Option.value ~default:[]
-            in
-            List.map parameters ~f:expression
-            |> (fun elements -> Expression.Tuple (call_parameters @ elements))
-            |> Node.create_with_default_location
-          in
-          [{ Argument.name = None; value = tuple }]
-      | [parameter] ->
-          [{ Argument.name = None; value = expression parameter }]
-      | _ ->
-          []
+  let create_name name = Name (Expression.create_name ~location name) in
+
+  let get_item_call base arguments =
+    let arguments =
+      if List.length arguments > 1 then
+        Expression.Tuple arguments
+        |> Node.create_with_default_location
+        |> (fun tuple -> [{ Call.Argument.name = None; value = tuple }])
+      else
+        let create argument = { Call.Argument.name = None; value = argument } in
+        List.map ~f:create arguments
     in
-    [
-      Access.Identifier "__getitem__";
-      Access.Call (Node.create_with_default_location parameter);
-    ]
+    Call {
+      callee = {
+        Node.location;
+        value = create_name (base ^ ".__getitem__");
+      };
+      arguments;
+    }
   in
 
-  let rec access annotation =
+  let convert_annotation annotation =
     match annotation with
-    | Bottom -> Access.create "$bottom"
+    | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } ->
-        let convert { annotation; parameters } =
-          let call_parameters =
+        let convert_signature { annotation; parameters } =
+          let parameters =
             match parameters with
             | Defined parameters ->
-                let parameter parameter =
+                let convert_parameter parameter =
                   let call ?(default = false) name argument annotation =
-                    let annotation =
-                      annotation
-                      >>| (fun annotation ->
-                          [{
-                            Argument.name = None;
-                            value = expression annotation;
-                          }])
-                      |> Option.value ~default:[]
-                    in
                     let arguments =
+                      let annotation =
+                        annotation
+                        >>| (fun annotation ->
+                            [{
+                              Call.Argument.name = None;
+                              value = expression ~convert annotation;
+                            }])
+                        |> Option.value ~default:[]
+                      in
                       let default =
                         if default then
-                          [
-                            {
-                              Argument.name = None;
-                              value = Access.expression (Access.create "default");
-                            };
-                          ]
+                          [{
+                              Call.Argument.name = None;
+                              value = Node.create ~location (create_name "default");
+                          }]
                         else
                           []
                       in
                       [{
-                        Argument.name = None;
-                        value = Access.expression (Access.create argument);
+                        Call.Argument.name = None;
+                        value = Node.create ~location (create_name argument);
                       }]
                       @ annotation @ default
                     in
-                    Access.expression
-                      (Access.call ~arguments ~location:Location.Reference.any ~name ())
+                    Call {
+                      callee = Node.create ~location (Name (Name.Identifier name));
+                      arguments;
+                    }
+                    |> Node.create ~location
                   in
                   match parameter with
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
@@ -866,31 +854,77 @@ let rec expression annotation =
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       call "Variable" name (Some annotation)
                 in
-                List (List.map parameters ~f:parameter)
-                |> Node.create_with_default_location
+                List (List.map ~f:convert_parameter parameters)
+                |> Node.create ~location
             | Undefined ->
-                Node.create_with_default_location Ellipsis
+                Node.create ~location Ellipsis
           in
-          get_item_call ~call_parameters [annotation]
+          {
+            Call.Argument.name = None;
+            value =
+              Node.create
+                ~location
+                (Expression.Tuple [parameters; expression ~convert annotation])
+          }
+        in
+        let base_callable =
+          Call {
+            callee = {
+              Node.location;
+              value = create_name "typing.Callable.__getitem__"
+            };
+            arguments = [convert_signature implementation];
+          };
         in
         let overloads =
-          let overloads = List.concat_map overloads ~f:convert in
-          if List.is_empty overloads then
-            []
-          else
-            [
-              Access.Identifier "__getitem__";
-              Access.Call
-                (Node.create_with_default_location [
-                    {
-                      Argument.name = None;
-                      value = Node.create_with_default_location (Access (SimpleAccess overloads));
-                    }
-                  ]);
-            ]
+          let convert_overload sofar overload =
+            match sofar with
+            | None ->
+                Call {
+                  callee = {
+                      Node.location;
+                      value = Name (Name.Identifier "__getitem__");
+                    };
+                  arguments = [convert_signature overload];
+                }
+                |> Node.create ~location
+                |> Option.some
+            | Some expression ->
+                Call {
+                  callee = {
+                    Node.location;
+                    value = Name (Name.Attribute {
+                      base = expression;
+                      attribute = "__getitem__";
+                    });
+                  };
+                  arguments = [convert_signature overload];
+                }
+                |> Node.create ~location
+                |> Option.some
+          in
+          List.fold ~init:None ~f:convert_overload overloads
         in
-        (Access.create "typing.Callable") @ (convert implementation) @ overloads
-    | Any -> Access.create "typing.Any"
+        begin
+          match overloads with
+          | Some overloads ->
+              Call {
+                callee = {
+                  Node.location;
+                  value = Name (Name.Attribute {
+                    base = {
+                      Node.location;
+                      value = base_callable
+                    };
+                    attribute = "__getitem__"
+                  });
+                };
+                arguments = [{ Call.Argument.name = None; value = overloads }];
+              }
+          | None ->
+              base_callable
+        end
+    | Any -> create_name "typing.Any"
     | Literal literal ->
         let literal =
           match literal with
@@ -903,81 +937,66 @@ let rec expression annotation =
           | String literal ->
               Expression.String { value = literal; kind = StringLiteral.String }
         in
-        let argument = { Argument.name = None; value = Node.create_with_default_location literal} in
-        (Access.create "typing_extensions.Literal") @ [
-          Access.Identifier "__getitem__";
-          Access.Call (Node.create_with_default_location ([argument]));
-        ]
+        get_item_call "typing_extensions.Literal" [Node.create ~location literal]
     | Optional Bottom ->
-        split "None"
+        create_name "None"
     | Optional parameter ->
-        (Access.create "typing.Optional") @ (get_item_call [parameter])
+        get_item_call "typing.Optional" [expression ~convert parameter]
     | Parametric { name = "typing.Optional"; parameters = [Bottom] } ->
-        split "None"
+        create_name "None"
     | Parametric { name; parameters } ->
-        (split (reverse_substitute name)) @ (get_item_call parameters)
+        get_item_call (reverse_substitute name) (List.map ~f:(expression ~convert) parameters)
     | Primitive name ->
-        split name
-    | Top -> Access.create "$unknown"
+        create_name name
+    | Top -> create_name "$unknown"
     | Tuple (Bounded []) ->
-        let parameters =
-          Expression.Tuple []
-          |> Node.create_with_default_location
-          |> (fun tuple -> [{ Argument.name = None; value = tuple }])
-          |> Node.create_with_default_location
-        in
-        (Access.create "typing.Tuple") @ [
-          Access.Identifier "__getitem__";
-          Access.Call parameters;
-        ]
+        get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
     | Tuple elements ->
         let parameters =
           match elements with
           | Bounded parameters -> parameters
           | Unbounded parameter -> [parameter; Primitive "..."]
         in
-        (Access.create "typing.Tuple") @ (get_item_call parameters)
+        get_item_call "typing.Tuple" (List.map ~f:(expression ~convert) parameters)
     | TypedDictionary { name; fields; total } ->
         let argument =
-          let tuple =
-            let tail =
-              let field_to_tuple { name; annotation } =
-                Node.create_with_default_location (Expression.Tuple [
-                    Node.create_with_default_location (Expression.String {
-                        value = name;
-                        kind = StringLiteral.String;
-                      });
-                    expression annotation;
-                  ])
-              in
-              List.map fields ~f:field_to_tuple
+          let tail =
+            let field_to_tuple { name; annotation } =
+              Node.create_with_default_location (Expression.Tuple [
+                  Node.create_with_default_location (Expression.String {
+                      value = name;
+                      kind = StringLiteral.String;
+                    });
+                  expression ~convert annotation;
+                ])
             in
-            let totality =
-              (if total then Expression.True else Expression.False)
-              |> Node.create_with_default_location
-            in
-            Expression.String { value = name; kind = StringLiteral.String }
-            |> Node.create_with_default_location
-            |> (fun name -> Expression.Tuple(name :: totality :: tail))
+            List.map fields ~f:field_to_tuple
+          in
+          let totality =
+            (if total then Expression.True else Expression.False)
             |> Node.create_with_default_location
           in
-          { Argument.name = None; value = tuple; }
+          Expression.String { value = name; kind = StringLiteral.String }
+          |> Node.create_with_default_location
+          |> (fun name -> Expression.Tuple(name :: totality :: tail))
+          |> Node.create_with_default_location
         in
-        (Access.create "mypy_extensions.TypedDict") @ [
-          Access.Identifier "__getitem__";
-          Access.Call (Node.create_with_default_location ([argument]));
-        ]
+        get_item_call "mypy_extensions.TypedDict" [argument]
     | Union parameters ->
-        (Access.create "typing.Union") @ (get_item_call parameters)
-    | Variable { variable; _ } -> split variable
+        get_item_call "typing.Union" (List.map ~f:(expression ~convert) parameters)
+    | Variable { variable; _ } ->
+        create_name variable
   in
 
   let value =
     match annotation with
     | Primitive "..." -> Ellipsis
-    | _ -> Access (SimpleAccess (access annotation))
+    | _ -> convert_annotation annotation
   in
-  Node.create_with_default_location value
+  if convert then
+    Expression.convert_to_old_access (Node.create_with_default_location value)
+  else
+    Node.create_with_default_location value
 
 
 let access annotation =

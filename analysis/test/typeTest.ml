@@ -416,8 +416,15 @@ let test_expression _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (Type.expression annotation)
       (parse_single_expression expression)
+      (Type.expression annotation);
+
+    (* Test new AST expression conversion *)
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (parse_single_expression ~convert:false expression)
+      (Type.expression ~convert:false annotation)
   in
 
   assert_expression (Type.Primitive "foo") "foo";
@@ -458,10 +465,14 @@ let test_expression _ =
            Type.Callable.annotation = Type.string;
            parameters = Type.Callable.Undefined;
          };
+         {
+           Type.Callable.annotation = Type.integer;
+           parameters = Type.Callable.Undefined;
+         };
        ]
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__((..., int)).__getitem__(__getitem__((..., str)))";
+    "typing.Callable[(..., int)].__getitem__(__getitem__((..., str))[(..., int)])";
 
   assert_expression
     (Type.Callable.create

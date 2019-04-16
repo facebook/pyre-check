@@ -167,7 +167,7 @@ val undeclared: t
 val union: t list -> t
 val yield: t -> t
 
-val expression: t -> Expression.t
+val expression: ?convert:bool -> t -> Expression.t
 val access: t -> Access.t
 
 module Transform : sig

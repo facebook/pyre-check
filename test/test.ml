@@ -181,7 +181,7 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement ?(convert=true) ?(preprocess = false) source =
+let parse_single_statement ?(convert = true) ?(preprocess = false) source =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse source)
@@ -219,8 +219,8 @@ let parse_single_class source =
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression ?(preprocess = false) source =
-  match parse_single_statement ~preprocess source with
+let parse_single_expression ?(convert = true) ?(preprocess = false) source =
+  match parse_single_statement ~convert ~preprocess source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
