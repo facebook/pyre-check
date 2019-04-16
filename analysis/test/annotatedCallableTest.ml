@@ -199,7 +199,7 @@ let test_create _ =
     let callable =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
-      parse ~convert:true source
+      parse source
       |> Preprocessing.defines ~include_stubs:true
       |> List.rev
       |> List.map ~f:Node.value

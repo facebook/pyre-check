@@ -33,7 +33,6 @@ let assert_errors ?filter_directories ~root ~files errors =
       ~scheduler
       ~preprocessing_state:None
       ~files
-      ~convert:false
   in
   let ((module Handler: Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler: Analysis.Environment.Handler)

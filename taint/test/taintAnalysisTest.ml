@@ -37,7 +37,6 @@ let initialize ?(qualifier = "test.py") ?models source_content =
   let source =
     Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:qualifier source_content
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   let path =
     let path = Test.mock_path qualifier in
@@ -54,7 +53,6 @@ let initialize ?(qualifier = "test.py") ?models source_content =
     ~scheduler:(Scheduler.mock ())
     ~preprocessing_state:None
     ~files:[File.create ~content:source_content path]
-    ~convert:true
   |> ignore;
 
   let environment =

@@ -17,7 +17,6 @@ open Test
 let parse_source ?(qualifier=Reference.empty) ?handle source =
   parse ~qualifier ~debug:false source ?handle
   |> Preprocessing.preprocess
-  |> Preprocessing.convert
 
 
 let create_call_graph ?(update_environment_with = []) source_text =
@@ -216,7 +215,8 @@ let test_type_collection _ =
     Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
-      Preprocessing.defines source ~extract_into_toplevel:true
+      Preprocessing.convert source
+      |> Preprocessing.defines ~extract_into_toplevel:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 1 in

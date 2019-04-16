@@ -176,7 +176,6 @@ let parse_list named_sources =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:(List.map ~f:create_file named_sources)
-      ~convert:false
   in
   parsed
 

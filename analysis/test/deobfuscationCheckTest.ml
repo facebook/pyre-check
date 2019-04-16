@@ -16,7 +16,7 @@ let assert_deobfuscation source expected =
   let configuration = mock_configuration in
   let qualifier = !&"qualifier" in
   let actual =
-    let source = parse ~convert:true ~qualifier source in
+    let source = parse ~qualifier source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     DeobfuscationCheck.run ~configuration ~environment ~source
     |> function

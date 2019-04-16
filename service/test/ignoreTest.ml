@@ -49,7 +49,6 @@ let assert_errors
       ~scheduler
       ~preprocessing_state:None
       ~files:(create_files ~root input_source)
-      ~convert:false
   in
   Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
   let ((module Handler: Analysis.Environment.Handler) as environment) =

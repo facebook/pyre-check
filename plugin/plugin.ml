@@ -18,6 +18,5 @@ let apply_to_ast source =
 
 
 let apply_to_environment (module Handler: Handler) resolution source =
-  let source = Preprocessing.convert source in
   ClassDecorator.transform_dataclass (module Handler: Handler) resolution source;
   ClassDecorator.transform_attrs (module Handler: Handler) resolution source;

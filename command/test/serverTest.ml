@@ -1847,7 +1847,6 @@ let test_incremental_repopulate context =
     ~scheduler:(Scheduler.mock ())
     ~preprocessing_state:None
     ~files:[file]
-    ~convert:true
   |> ignore;
   Test.populate ~configuration environment_handler [parse source];
 

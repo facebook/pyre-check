@@ -1203,7 +1203,6 @@ let compute_dependencies
       ~scheduler
       ~preprocessing_state:None
       ~files
-      ~convert:false
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
@@ -1366,7 +1365,6 @@ let process_type_check_files
         ~scheduler
         ~preprocessing_state:None
         ~files:stubs
-        ~convert:false
     in
     let sources =
       let keep file =
@@ -1390,7 +1388,6 @@ let process_type_check_files
         ~scheduler
         ~preprocessing_state:None
         ~files:sources
-        ~convert:false
     in
     let unparsed =
       List.concat [

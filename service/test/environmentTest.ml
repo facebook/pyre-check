@@ -243,7 +243,6 @@ let test_populate context =
           |> Test.trim_extra_indentation)
         (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py");
     ]
-    ~convert:false
   |> ignore;
 
   Service.Environment.populate_shared_memory

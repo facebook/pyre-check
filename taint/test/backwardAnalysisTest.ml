@@ -31,7 +31,6 @@ let assert_taint ?(qualifier = "qualifier") source expected =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
-      ~convert:true
     |> ignore;
     match Ast.SharedMemory.Sources.get handle with
     | Some source -> source
@@ -47,6 +46,7 @@ let assert_taint ?(qualifier = "qualifier") source expected =
   TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source
+    |> Preprocessing.convert
     |> Preprocessing.defines ~include_stubs:true
     |> List.rev
   in

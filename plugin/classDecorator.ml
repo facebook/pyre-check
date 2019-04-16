@@ -170,7 +170,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
             ()
     end)
   in
-  Visit.visit () source
+  Visit.visit () (Preprocessing.convert source)
 
 
 let extract_options_from_decorator ~names ~default ~init ~repr ~eq annotated_class =

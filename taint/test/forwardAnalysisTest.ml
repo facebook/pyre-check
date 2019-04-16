@@ -31,7 +31,6 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
-      ~convert:true
     |> ignore;
     match Ast.SharedMemory.Sources.get handle with
     | Some source -> source
@@ -41,7 +40,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
   let environment =
     let models =
       models
-      >>| (fun model -> [Test.parse ~convert:true model])
+      >>| (fun model -> [Test.parse model])
       |> Option.value ~default:[]
     in
     let environment =
@@ -66,6 +65,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
   TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source
+    |> Preprocessing.convert
     |> Preprocessing.defines
     |> List.rev
   in
