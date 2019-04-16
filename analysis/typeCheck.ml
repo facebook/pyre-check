@@ -4006,7 +4006,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
-        ~generics:(fun ~resolution:_ _ -> [])
+        ~generics:(fun ~resolution:_ _ -> None)
         ()
     in
     {
@@ -4054,7 +4054,9 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     |> Option.value ~default:TypeOrder.DoesNotImplement
   in
 
-  let generics ~resolution class_definition =
+  let generics ~resolution class_type =
+    Resolution.class_definition resolution class_type
+    >>| fun class_definition ->
     AnnotatedClass.create class_definition
     |>  AnnotatedClass.generics ~resolution
   in

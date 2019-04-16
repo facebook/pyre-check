@@ -35,7 +35,7 @@ val create
   -> class_metadata: (Type.t -> class_metadata option)
   -> constructor: (resolution: t -> Type.primitive -> Type.t option)
   -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
-  -> generics: (resolution: t -> Class.t Node.t -> Type.t list)
+  -> generics: (resolution: t -> Type.t -> Type.t list option)
   -> ?parent: Reference.t
   -> unit
   -> t

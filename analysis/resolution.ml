@@ -42,7 +42,7 @@ type t = {
   class_metadata: Type.t -> class_metadata option;
   constructor: (resolution: t -> Type.primitive -> Type.t option);
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
-  generics: resolution: t -> Class.t Node.t -> Type.t list;
+  generics: resolution: t -> Type.t -> Type.t list option;
 
   parent: Reference.t option;
 }
@@ -345,8 +345,7 @@ let check_invalid_type_parameters resolution annotation =
             | "typing.Optional" ->
                 [Type.Variable (Type.Variable.create "T")]
             | _ ->
-                class_definition resolution (Type.Primitive name)
-                >>| generics resolution
+                generics resolution (Type.Primitive name)
                 |> Option.value ~default:[]
           in
           let invalid_type_parameters ~name ~given =
@@ -462,30 +461,29 @@ let rec resolve_literal resolution expression =
   match Node.value expression with
   | Access (SimpleAccess access) ->
       begin
-        let is_concrete_constructable class_name =
-          class_definition resolution class_name
-          >>| generics resolution
+        let is_concrete_constructable class_type =
+          generics resolution class_type
           >>| List.is_empty
           |> Option.value ~default:false
         in
         match Expression.Access.name_and_arguments ~call:access with
         | Some { Expression.Access.callee; _ } ->
-            let class_name =
+            let class_type =
               Expression.Access.create callee
               |> Expression.Access.expression
               |> parse_annotation resolution
             in
-            if is_concrete_constructable class_name then
-              class_name
+            if is_concrete_constructable class_type then
+              class_type
             else
               Type.Top
         | None ->
-            let class_name = parse_annotation resolution expression in
+            let class_type = parse_annotation resolution expression in
             (* None is a special type that doesn't have a constructor. *)
-            if Type.equal class_name Type.none then
+            if Type.is_none class_type then
               Type.none
-            else if is_concrete_constructable class_name then
-              Type.meta class_name
+            else if is_concrete_constructable class_type then
+              Type.meta class_type
             else
               Type.Top
       end
