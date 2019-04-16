@@ -93,6 +93,9 @@ def explore(ctx: Context):
     config.InteractiveShellApp.extensions = ctx.ipython_extensions
     config.InteractiveShellApp.profile = "sapp"
     config.InteractiveShellApp.display_banner = False
+
+    config.InteractiveShell.show_rewritten_input = False
+    config.InteractiveShell.autocall = 2
     IPython.start_ipython(argv=[], user_ns=scope_vars, config=config)
 
 
