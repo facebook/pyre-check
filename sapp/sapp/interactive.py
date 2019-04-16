@@ -116,6 +116,8 @@ details()         show additional information about the current trace frame
 
     LEAF_NAMES = {"source", "sink", "leaf"}
 
+    SELF_SCOPE_KEY = "_interactive"
+
     def __init__(self, database: DB, repository_directory: str = ""):
         self.db = database
         self.scope_vars: Dict[str, Union[Callable, TraceKind]] = {
@@ -142,6 +144,7 @@ details()         show additional information about the current trace frame
             "parents": self.parents,
             "details": self.details,
             "analysis_output": self.analysis_output,
+            self.SELF_SCOPE_KEY: self,
         }
         self.repository_directory = repository_directory or os.getcwd()
         self.current_analysis_output: Optional[AnalysisOutput] = None
