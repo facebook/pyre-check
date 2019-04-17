@@ -1127,7 +1127,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[..., int]"
        ~right:"typing.Callable[..., float]");
-  assert_false
+  assert_true
     (less_or_equal
        order
        ~left:"typing.Callable[[int], int]"
@@ -1142,7 +1142,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Variable(args, object), Keywords(kwargs, object)], int]"
        ~right:"typing.Callable[..., int]");
-  assert_false
+  assert_true
     (less_or_equal
        order
        ~left:"typing.Callable[[Variable(args, int), Keywords(kwargs, object)], int]"

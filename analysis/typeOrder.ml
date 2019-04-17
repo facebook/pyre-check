@@ -463,15 +463,6 @@ module OrderImplementation = struct
         order ~callable:{ Type.Callable.implementation; overloads; _ } ~called_as ~constraints =
       let open Callable in
       let solve implementation ~initial_constraints =
-        let parameters = function
-          | { parameters = Defined parameters; _ } ->
-              parameters
-          | { parameters = Undefined; _ } ->
-              [
-                Variable {name= "args"; annotation= Type.object_primitive; default= false};
-                Keywords {name= "kwargs"; annotation= Type.object_primitive; default= false};
-              ]
-        in
         try
           let rec solve_parameters left right constraints =
             match left, right with
@@ -541,7 +532,20 @@ module OrderImplementation = struct
             | _ ->
                 []
           in
-          solve_parameters (parameters implementation) (parameters called_as) initial_constraints
+          match implementation.parameters, called_as.parameters with
+          | Undefined, Undefined ->
+              [initial_constraints]
+          | Defined implementation, Defined called_as ->
+              solve_parameters implementation called_as initial_constraints
+          (* We exhibit unsound behavior when a concrete callable is passed into one expecting a
+             Callable[..., T] - Callable[..., T] admits any parameters, which is not true when a
+             callable that doesn't admit kwargs and varargs is passed in. We need this since there
+             is no good way of representing "leave the parameters alone and change the return type"
+             in the Python type system at the moment. *)
+          | Defined _, Undefined ->
+              [initial_constraints]
+          | Undefined, Defined _ ->
+              [initial_constraints]
         with _ ->
           []
       in
