@@ -11,12 +11,16 @@ from .. import build_rules
 from ...filesystem import Glob, Sources
 
 
-def _get_call(tree: ast.AST) -> ast.Call:
+def _get_expression(tree: ast.AST) -> ast.expr:
     assert isinstance(tree, ast.Module)
     assert len(tree.body) > 0
     expression = tree.body[0]
     assert isinstance(expression, ast.Expr)
-    call = expression.value
+    return expression.value
+
+
+def _get_call(tree: ast.AST) -> ast.Call:
+    call = _get_expression(tree)
     assert isinstance(call, ast.Call)
     return call
 
@@ -142,6 +146,23 @@ class BuildTargetTest(unittest.TestCase):
     ) -> None:
         self.assertListEqual(sources.files, files or [])
         self.assertListEqual(sources.globs, globs or [])
+
+    def test_get_string_list(self):
+        tree = ast.parse('["a", "b", "c"]')
+        expression = _get_expression(tree)
+        self.assertListEqual(build_rules._get_string_list(expression), ["a", "b", "c"])
+
+        tree = ast.parse('"a,b,c"')
+        expression = _get_expression(tree)
+        self.assertListEqual(build_rules._get_string_list(expression), ["a", "b", "c"])
+
+        tree = ast.parse('"a , b ,c"')
+        expression = _get_expression(tree)
+        self.assertListEqual(build_rules._get_string_list(expression), ["a", "b", "c"])
+
+        tree = ast.parse('"a"')
+        expression = _get_expression(tree)
+        self.assertListEqual(build_rules._get_string_list(expression), ["a"])
 
     def test_python_binary(self):
         tree = ast.parse(PYTHON_BINARY_TARGET_1)

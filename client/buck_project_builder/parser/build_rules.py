@@ -180,8 +180,23 @@ def _get_string_list(tree: Optional[ast.AST]) -> List[str]:
     if not tree:
         return []
 
-    list_of_exprs = _get_list(tree)
-    return [_get_string(expr) for expr in list_of_exprs]
+    # First, try to parse the tree as a list.
+    try:
+        list_of_exprs = _get_list(tree)
+        return [_get_string(expr) for expr in list_of_exprs]
+    except (AssertionError, ValueError):
+        pass
+
+    # If that fails, try to parse it as a comma-separated string.
+    try:
+        comma_separated_values = _get_string(tree)
+        return [value.strip() for value in comma_separated_values.split(",")]
+    except (AssertionError, ValueError):
+        pass
+
+    raise ValueError(
+        "Tree of type {} cannot be interpreted as a string list.".format(type(tree))
+    )
 
 
 def _get_keywords(tree: ast.AST) -> Dict[str, ast.expr]:
