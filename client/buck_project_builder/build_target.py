@@ -118,9 +118,11 @@ class ThriftLibrary(BuildTarget):
         build_file_directory: str,
         base_information: BuildTarget.BaseInformation,
         thrift_sources: Iterable[str],
+        include_json_converters: bool,
     ) -> None:
         super().__init__(buck_root, build_file_directory, base_information)
         self._thrift_sources = thrift_sources
+        self._include_json_converters = include_json_converters
 
     def rule_name(self) -> str:
         return "thrift_library"
@@ -135,6 +137,7 @@ class ThriftLibrary(BuildTarget):
                 self.buck_root,
                 thrift_sources_relative_to_buck_root,
                 temporary_directory,
+                include_json_converters=self._include_json_converters,
             )
 
             for output_file in find_python_paths(thrift_output_directory):

@@ -87,8 +87,18 @@ def parse_thrift_library(
     assert isinstance(thrift_sources_dict, ast.Dict)
     thrift_sources = [_get_string(key) for key in thrift_sources_dict.keys]
 
+    if "thrift_py_options" in keywords:
+        options = _get_string_list(keywords["thrift_py_options"])
+        include_json_converters = "json" in options
+    else:
+        include_json_converters = False
+
     return ThriftLibrary(
-        buck_root, build_file_directory, base_information, thrift_sources
+        buck_root,
+        build_file_directory,
+        base_information,
+        thrift_sources,
+        include_json_converters,
     )
 
 

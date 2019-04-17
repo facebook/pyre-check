@@ -190,10 +190,14 @@ class BuildTargetTest(unittest.TestCase):
                 "project",
                 base("thrift_library"),
                 ["foo/bar.thrift", "baz.thrift"],
+                True,
             )
             target.build("/out")
             build_thrift_stubs.assert_called_once_with(
-                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+                "/ROOT",
+                ["project/foo/bar.thrift", "project/baz.thrift"],
+                "/tmp_dir",
+                include_json_converters=True,
             )
             find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
             copy2.assert_has_calls(
@@ -225,10 +229,14 @@ class BuildTargetTest(unittest.TestCase):
                 "project",
                 base("thrift_library", base_module="base.module"),
                 ["foo/bar.thrift", "baz.thrift"],
+                True,
             )
             target.build("/out")
             build_thrift_stubs.assert_called_once_with(
-                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+                "/ROOT",
+                ["project/foo/bar.thrift", "project/baz.thrift"],
+                "/tmp_dir",
+                include_json_converters=True,
             )
             find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
             copy2.assert_called_once_with(
@@ -236,7 +244,7 @@ class BuildTargetTest(unittest.TestCase):
                 "/out/base/module/foo/bar.pyi",
             )
 
-        # Empty base_module should also work.
+        # Empty base_module and the include_json_converters flag should work.
         with patch.object(
             filesystem, "build_thrift_stubs", return_value="/tmp_dir/gen-py"
         ) as build_thrift_stubs, patch.object(
@@ -251,10 +259,14 @@ class BuildTargetTest(unittest.TestCase):
                 "project",
                 base("thrift_library", base_module=""),
                 ["foo/bar.thrift", "baz.thrift"],
+                False,
             )
             target.build("/out")
             build_thrift_stubs.assert_called_once_with(
-                "/ROOT", ["project/foo/bar.thrift", "project/baz.thrift"], "/tmp_dir"
+                "/ROOT",
+                ["project/foo/bar.thrift", "project/baz.thrift"],
+                "/tmp_dir",
+                include_json_converters=False,
             )
             find_python_paths.assert_called_once_with("/tmp_dir/gen-py")
             copy2.assert_called_once_with(

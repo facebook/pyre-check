@@ -313,7 +313,9 @@ class BuilderTest(unittest.TestCase):
         #        |
         #        b
         build_file = MagicMock()
-        thrift_target = ThriftLibrary("/ROOT", "project", base("b"), ["b.thrift"])
+        thrift_target = ThriftLibrary(
+            "/ROOT", "project", base("b"), ["b.thrift"], False
+        )
         build_file.targets = {
             "a": PythonBinary(
                 "/ROOT",
@@ -327,6 +329,7 @@ class BuilderTest(unittest.TestCase):
                 "project",
                 base("c", dependencies=["//project:b"]),
                 ["c.thrift"],
+                False,
             ),
         }
 

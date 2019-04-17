@@ -107,7 +107,8 @@ thrift_library(
     py_base_module = "foo.bar",
     deps = [
         ":thrift_target_1-py"
-    ]
+    ],
+    thrift_py_options = ["json", "other"]
 )
 """
 
@@ -260,6 +261,7 @@ class BuildTargetTest(unittest.TestCase):
             sorted(target._thrift_sources), sorted(["foo.thrift", "bar.thrift"])
         )
         self.assertIsNone(target.base_module)
+        self.assertFalse(target._include_json_converters)
 
         tree = ast.parse(THRIFT_LIBRARY_TARGET_2)
         call = _get_call(tree)
@@ -269,6 +271,7 @@ class BuildTargetTest(unittest.TestCase):
         self.assertListEqual(target.dependencies, ["//some/project:thrift_target_1-py"])
         self.assertListEqual(sorted(target._thrift_sources), sorted(["baz.thrift"]))
         self.assertEqual(target.base_module, "foo.bar")
+        self.assertTrue(target._include_json_converters)
 
     def test_python_wheel(self):
         tree = ast.parse(PYTHON_WHEEL_TARGET)

@@ -170,6 +170,7 @@ class ParserTest(unittest.TestCase):
             self.assertIsInstance(target, ThriftLibrary)
             self.assertEqual(target.target, "//my/thrift_module:foo")
             self.assertListEqual(target._thrift_sources, ["bar.thrift"])
+            self.assertFalse(target._include_json_converters)
 
         with patch("builtins.open", mock_open(read_data=TARGETS_FILE_4)) as mocked_open:
             result = parser.parse_file("my/wheel")
