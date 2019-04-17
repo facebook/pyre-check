@@ -116,7 +116,7 @@ frame(ID)         select a trace frame to explore
 parents()         show trace frames that call the current trace frame
 details()         show additional information about the current trace frame
 """
-    welcome_message = "Interactive issue exploration. Type 'commands()' for help."
+    welcome_message = "Interactive issue exploration. Type 'help()' for help."
 
     LEAF_NAMES = {"source", "sink", "leaf"}
 
