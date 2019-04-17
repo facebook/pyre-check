@@ -1347,6 +1347,16 @@ let expand_type_checking_imports source =
         match value with
         | If { If.test; body; _ } when is_type_checking test ->
             (), body
+        | If {
+            If.test =
+              {
+                Node.value = UnaryOperator { UnaryOperator.operator = Not; operand };
+                _;
+              };
+            orelse;
+            _;
+          } when is_type_checking operand ->
+            (), orelse
         | _ ->
             (), [statement]
     end)

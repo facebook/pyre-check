@@ -1410,6 +1410,30 @@ let test_expand_type_checking_imports _ =
     {|
       from whoops import TYPE_CHECKING
       pass
+    |};
+
+  (* Nested. *)
+  assert_expanded
+    {|
+      def foo():
+        if typing.TYPE_CHECKING:
+          pass
+    |}
+    {|
+      def foo():
+        pass
+    |};
+
+  (* Inverted. *)
+  assert_expanded
+    {|
+      if not typing.TYPE_CHECKING:
+        pass
+      else:
+        1
+    |}
+    {|
+      1
     |}
 
 
