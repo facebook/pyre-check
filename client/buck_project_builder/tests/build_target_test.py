@@ -179,6 +179,8 @@ class BuildTargetTest(unittest.TestCase):
             return_value=[
                 "/tmp_dir/gen-py/project/foo/bar.pyi",
                 "/tmp_dir/gen-py/project/foo/baz.pyi",
+                "/tmp_dir/gen-py/project/__init__.pyi",
+                "/tmp_dir/gen-py/project/foo/__init__.pyi",
             ],
         ) as find_python_paths, patch.object(
             shutil, "copy2"
@@ -206,6 +208,7 @@ class BuildTargetTest(unittest.TestCase):
                     ),
                 ]
             )
+            self.assertEqual(copy2.call_count, 2)
 
         # The base_module is also taken into account by Thrift.
         with patch.object(

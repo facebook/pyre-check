@@ -138,6 +138,9 @@ class ThriftLibrary(BuildTarget):
             )
 
             for output_file in find_python_paths(thrift_output_directory):
+                # Thrift generates __init__.pyi files which Pyre doesn't need.
+                if os.path.basename(output_file) == "__init__.pyi":
+                    continue
                 relative_path = os.path.relpath(output_file, thrift_output_directory)
                 destination_path = os.path.join(output_directory, relative_path)
                 os.makedirs(os.path.dirname(destination_path), exist_ok=True)
