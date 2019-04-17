@@ -161,7 +161,10 @@ class FilesystemTest(unittest.TestCase):
     def test_build_thrift_stubs(self):
         with patch.object(subprocess, "call") as subprocess_call:
             build_thrift_stubs(
-                "/root", ["project/foo/bar.thrift", "project/foo/baz.thrift"], "/out"
+                "/root",
+                ["project/foo/bar.thrift", "project/foo/baz.thrift"],
+                "/out",
+                include_json_converters=False,
             )
             subprocess_call.assert_has_calls(
                 [
@@ -186,6 +189,51 @@ class FilesystemTest(unittest.TestCase):
                             "thrift",
                             "--gen",
                             "mstch_pyi",
+                            "-I",
+                            ".",
+                            "--templates",
+                            "thrift/compiler/generate/templates",
+                            "-o",
+                            "/out",
+                            "project/foo/baz.thrift",
+                        ],
+                        stderr=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                ]
+            )
+
+        # If include_json_converters is True, the :json option should be specified.abs
+        with patch.object(subprocess, "call") as subprocess_call:
+            build_thrift_stubs(
+                "/root",
+                ["project/foo/bar.thrift", "project/foo/baz.thrift"],
+                "/out",
+                include_json_converters=True,
+            )
+            subprocess_call.assert_has_calls(
+                [
+                    call(
+                        [
+                            "thrift",
+                            "--gen",
+                            "mstch_pyi:json",
+                            "-I",
+                            ".",
+                            "--templates",
+                            "thrift/compiler/generate/templates",
+                            "-o",
+                            "/out",
+                            "project/foo/bar.thrift",
+                        ],
+                        stderr=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                    call(
+                        [
+                            "thrift",
+                            "--gen",
+                            "mstch_pyi:json",
                             "-I",
                             ".",
                             "--templates",

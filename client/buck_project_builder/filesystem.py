@@ -55,12 +55,15 @@ def link_paths(
 
 
 def build_thrift_stubs(
-    buck_root: str, thrift_sources: Iterable[str], output_directory: str
+    buck_root: str,
+    thrift_sources: Iterable[str],
+    output_directory: str,
+    include_json_converters: bool = False,
 ) -> str:
     command = [
         "thrift",
         "--gen",
-        "mstch_pyi",
+        "mstch_pyi{}".format(":json" if include_json_converters else ""),
         "-I",
         ".",
         "--templates",
