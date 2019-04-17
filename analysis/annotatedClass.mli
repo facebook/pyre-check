@@ -105,6 +105,7 @@ module Attribute : sig
     class_attribute: bool;
     async: bool;
     initialized: bool;
+    property: bool;
   }
   [@@deriving eq, show]
 

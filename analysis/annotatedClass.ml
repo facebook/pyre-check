@@ -336,6 +336,7 @@ module Attribute = struct
     class_attribute: bool;
     async: bool;
     initialized: bool;
+    property: bool;
   }
   [@@deriving eq, show]
 
@@ -587,6 +588,7 @@ module Attribute = struct
         class_attribute;
         async;
         initialized;
+        property;
       };
 
     }

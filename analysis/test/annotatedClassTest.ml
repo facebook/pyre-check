@@ -1098,6 +1098,7 @@ let test_class_attributes _ =
       "__new__";
       "__sizeof__";
     ];
+
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
     let instantiated, class_attributes =
@@ -1132,10 +1133,17 @@ let test_class_attributes _ =
         pass
       def Attributes.baz(self, x:str) -> str:
         pass
+      @property
+      def Attributes.property(self) -> str:
+        pass
     |}
     |> parse_single_class
   in
-  let create_expected_attribute ?(parent = Type.Primitive "Attributes") name callable =
+  let create_expected_attribute
+      ?(property = false)
+      ?(parent = Type.Primitive "Attributes")
+      name
+      callable =
     {
       Class.Attribute.name;
       parent;
@@ -1145,6 +1153,7 @@ let test_class_attributes _ =
       class_attribute = false;
       async = false;
       initialized = false;
+      property;
     }
   in
   assert_attribute
@@ -1171,7 +1180,12 @@ let test_class_attributes _ =
       create_expected_attribute
         ~parent:(Type.Primitive "Metaclass")
         "implicit"
-        "typing.Callable('Metaclass.implicit')[[], int]")
+        "typing.Callable('Metaclass.implicit')[[], int]");
+  assert_attribute
+    ~parent
+    ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
+    ~attribute_name:"property"
+    ~expected_attribute:(create_expected_attribute ~property:true "property" "str")
 
 
 let test_fallback_attribute _ =
