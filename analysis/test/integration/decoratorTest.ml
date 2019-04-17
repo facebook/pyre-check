@@ -62,6 +62,21 @@ let test_check_contextmanager _ =
     |}
     [];
 
+  (* Decorators are chained properly. *)
+  assert_type_errors
+    {|
+      @click.command
+      @contextlib.contextmanager
+      def f() -> typing.Generator[int, None, None]:
+        yield 1
+      def g() -> None:
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(args, unknown), \
+       Keywords(kwargs, unknown)], contextlib.GeneratorContextManager[int]]`.";
+    ];
+
   assert_type_errors
     {|
       class C:

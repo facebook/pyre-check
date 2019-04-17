@@ -33,7 +33,7 @@ let is_generator { Define.body; _ } =
 
 
 let return_annotation
-    ~define:({ Define.signature = { return_annotation; async; _ }; _ } as define)
+    ~define:({ Define.signature = { Define.return_annotation; async; _ }; _ } as define)
     ~resolution =
   let annotation =
     Option.value_map
@@ -55,74 +55,95 @@ let return_annotation
     annotation
 
 
-let apply_decorators ~define ~resolution =
-  let return_annotation = return_annotation ~define ~resolution in
-  if Define.has_decorator define "contextlib.contextmanager" then
-    let joined =
-      try
-        Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
-      with
-        TypeOrder.Untracked _ ->
-          (* Apply_decorators gets called when building the environment,
-             which is unsound and can raise. *)
-          Type.Any
+let apply_decorators
+    ~define:({ Define.signature = { Define.decorators; _ }; _ } as define)
+    ~resolution =
+  let apply_decorator define { Node.value = decorator; _ } =
+    let name decorator =
+      (* A decorator is either a call or a list of identifiers. *)
+      match Expression.Access.name_and_arguments ~call:decorator with
+      | Some { Expression.Access.callee; _ } ->
+          callee
+      | None ->
+          Expression.Access.show decorator
     in
-    if Type.is_iterator joined then
-      let signature =
-        {
-          define.signature with
-          return_annotation =
-            Type.parametric "contextlib.GeneratorContextManager" [Type.single_parameter joined]
-            |> Type.expression
-            |> Option.some
-        }
-      in
-      { define with signature }
-    else
-      define
-  else if
-    Set.exists Recognized.asyncio_contextmanager_decorators ~f:(Define.has_decorator define)
-  then
-    let joined =
-      try
-        Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
-      with
-        TypeOrder.Untracked _ ->
-          (* Apply_decorators gets called when building the environment,
-             which is unsound and can raise. *)
-          Type.Any
-    in
-    if Type.is_async_iterator joined then
-      let signature =
-        {
-          define.signature with
-          return_annotation =
-            Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
-            |> Type.expression
-            |> Option.some
-        }
-      in
-      { define with signature }
-    else
-      define
-  else if Define.has_decorator ~match_prefix:true define "click.command" ||
-          Define.has_decorator ~match_prefix:true define "click.group" ||
-          Define.has_decorator define "click.pass_context" ||
-          Define.has_decorator define "click.pass_obj" then
-    (* Suppress caller/callee parameter matching by altering the click entry
-       point to have a generic parameter list. *)
-    let signature =
-      {
-        define.signature with
-        parameters = [
-          Parameter.create ~name:"*args" ();
-          Parameter.create ~name:"**kwargs" ();
-        ]
-      }
-    in
-    { define with signature }
-  else
-    Decorators.apply ~define ~resolution
+    match decorator with
+    | Expression.Access (Expression.Access.SimpleAccess call) ->
+        begin
+          match name call with
+          | "contextlib.contextmanager" ->
+              let return_annotation = return_annotation ~define ~resolution in
+              let joined =
+                try
+                  Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
+                with
+                  TypeOrder.Untracked _ ->
+                    (* Apply_decorators gets called when building the environment,
+                       which is unsound and can raise. *)
+                    Type.Any
+              in
+              if Type.is_iterator joined then
+                let signature =
+                  {
+                    define.signature with
+                    return_annotation =
+                      Type.parametric
+                        "contextlib.GeneratorContextManager"
+                        [Type.single_parameter joined]
+                      |> Type.expression
+                      |> Option.some
+                  }
+                in
+                { define with signature }
+              else
+                define
+          | "click.command"
+          | "click.group"
+          | "click.pass_context"
+          | "click.pass_obj" ->
+              (* Suppress caller/callee parameter matching by altering the click entry
+                 point to have a generic parameter list. *)
+              let signature =
+                {
+                  define.signature with
+                  parameters = [
+                    Parameter.create ~name:"*args" ();
+                    Parameter.create ~name:"**kwargs" ();
+                  ]
+                }
+              in
+              { define with signature }
+          | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
+              let return_annotation = return_annotation ~define ~resolution in
+              let joined =
+                try
+                  Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
+                with
+                  TypeOrder.Untracked _ ->
+                    (* Apply_decorators gets called when building the environment,
+                       which is unsound and can raise. *)
+                    Type.Any
+              in
+              if Type.is_async_iterator joined then
+                let signature =
+                  {
+                    define.signature with
+                    return_annotation =
+                      Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
+                      |> Type.expression
+                      |> Option.some
+                  }
+                in
+                { define with signature }
+              else
+                define
+          | name ->
+              Decorators.apply ~define ~resolution ~name
+        end
+    | _ ->
+        define
+  in
+  List.fold decorators ~init:define ~f:apply_decorator
 
 
 let create ~parent ~resolution defines =

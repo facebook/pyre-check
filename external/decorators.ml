@@ -9,13 +9,17 @@ open Ast
 open Statement
 
 
-let apply ~define:({ Define.signature = { parameters; _ }; _ } as define) ~resolution:_ =
-  if Define.has_decorator ~match_prefix:true define "$strip_first_parameter" then
-    let parameters =
-      List.tl parameters
-      |> Option.value ~default:[]
-    in
-    let signature = { define.signature with parameters } in
-    { define with signature }
-  else
-    define
+let apply
+    ~define:({ Define.signature = { parameters; _ }; _ } as define)
+    ~resolution:_
+    ~name =
+  match name with
+  | "$strip_first_parameter" ->
+      let parameters =
+        List.tl parameters
+        |> Option.value ~default:parameters
+      in
+      let signature = { define.signature with parameters } in
+      { define with signature }
+  | _ ->
+      define
