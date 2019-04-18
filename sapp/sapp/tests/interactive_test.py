@@ -864,7 +864,7 @@ class InteractiveTest(TestCase):
 
     def testTraceCursorLocation(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
+        issue = self._generic_issue(callable="Issue callable")
         issue_instance = self._generic_issue_instance()
         shared_text = SharedText(id=1, contents="Issue message", kind="message")
         trace_frames = [
@@ -907,10 +907,16 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
+
+        self.assertIsNone(self.interactive.callable())
+
         self.interactive.issue(1)
+        self.assertEqual(self.interactive.callable(), "Issue callable")
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
+
         self.interactive.next_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
+        self.assertEqual(self.interactive.callable(), "leaf")
         self.interactive.next_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
         self.interactive.prev_cursor_location()

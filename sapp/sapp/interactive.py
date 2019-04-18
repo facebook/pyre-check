@@ -148,6 +148,7 @@ details()         show additional information about the current trace frame
             "parents": self.parents,
             "details": self.details,
             "analysis_output": self.analysis_output,
+            "callable": self.callable,
             self.SELF_SCOPE_KEY: self,
         }
         self.repository_directory = repository_directory or os.getcwd()
@@ -1429,6 +1430,14 @@ details()         show additional information about the current trace frame
             )
 
         page.display_page(self._create_trace_frame_output_string(trace_frame))
+
+    def callable(self) -> Optional[str]:
+        """Show the name of the current callable in the trace"""
+        if self.current_trace_frame_index != -1:
+            return self._get_callable_from_trace_tuple(
+                self.trace_tuples[self.current_trace_frame_index]
+            )[0]
+        return None
 
     def _verify_entrypoint_selected(self) -> None:
         assert self.current_issue_instance_id == -1 or self.current_frame_id == -1
