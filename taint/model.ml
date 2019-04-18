@@ -311,7 +311,42 @@ let create ~resolution ?(verify = true) ~configuration source =
             | Some _ -> Callable.create_method name
             | None -> Callable.create_function name
           in
-          Some (signature, call_target)
+          [signature, call_target]
+      | { Node.value = Class { Class.name; bases; _ }; _ } ->
+          let class_sink_base { Call.Argument.value; _ } =
+            if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
+              Some value
+            else
+              None
+          in
+          List.find_map bases ~f:class_sink_base
+          >>= (fun base ->
+              Resolution.class_definition resolution (Type.Primitive (Reference.show name))
+              >>| (fun { Node.value = { Class.body; _ }; _ } ->
+                  let sink_signature { Node.value; _ } =
+                    match value with
+                    | Define {
+                        Define.signature = { Define.name; parameters; _ } as signature;
+                        _;
+                      } ->
+                        let signature =
+                          let parameters =
+                            let sink_parameter parameter =
+                              let update_annotation parameter =
+                                { parameter with Parameter.annotation = Some base }
+                              in
+                              Node.map parameter ~f:update_annotation
+                            in
+                            List.map parameters ~f:sink_parameter
+                          in
+                          { signature with Define.parameters }
+                        in
+                        Some (signature, Callable.create_method name)
+                    | _ ->
+                        None
+                  in
+                  List.filter_map body ~f:sink_signature))
+          |> Option.value ~default:[]
       | {
         Node.value =
           Assign {
@@ -334,7 +369,7 @@ let create ~resolution ?(verify = true) ~configuration source =
               parent = None;
             }
           in
-          Some (signature, Callable.create_object name)
+          [signature, Callable.create_object name]
       | {
         Node.value =
           Assign {
@@ -357,16 +392,16 @@ let create ~resolution ?(verify = true) ~configuration source =
               parent = None;
             }
           in
-          Some (signature, Callable.create_object name)
+          [signature, Callable.create_object name]
       | _ ->
-          None
+          []
     in
     String.split ~on:'\n' source
     |> Parser.parse
     |> Source.create
     |> Preprocessing.convert
     |> Source.statements
-    |> List.filter_map ~f:filter_define_signature
+    |> List.concat_map ~f:filter_define_signature
   in
   let create_model
       ({ Define.name; parameters; return_annotation; _ }, call_target) =
