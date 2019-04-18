@@ -1327,15 +1327,14 @@ let test_protocols _ =
     ~printer:(String.concat ~sep:",")
     (Handler.protocols ())
     ([
-      "typing.Sized";
-      "typing.AsyncIterator";
       "typing.Hashable";
+      "typing.Iterable";
+      "typing.Sized";
       "typing.AsyncIterable";
       "typing.Iterator";
-      "typing._Collection";
-      "typing.Iterable";
-      "typing.AsyncContextManager";
+      "typing.AsyncIterator";
       "typing.Collection";
+      "typing.AsyncContextManager";
       "typing.Awaitable";
     ]);
   ()
