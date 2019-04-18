@@ -88,35 +88,40 @@ class ListFilterException(Exception):
 
 
 class Interactive:
-    # @lint-ignore FBPYTHON2
-    list_string = "list()"
     help_message = f"""
 Commands =======================================================================
 
-help()            show this message
-help(COMMAND)     more info about a command
-state()           show the internal state of the tool for debugging
+== Information commands ==
+help                 show this message
+help COMMAND         more info about a command
+state                show the internal state of the tool for debugging
 
-analysis_output(DIR) sets the location of the analysis output
-runs()            list all completed static analysis runs
-run(ID)           select a specific run for browsing issues
-latest_run(KIND)  sets run to the latest of the specified kind
-issues()          list all issues for the selected run
-issue(ID)         select a specific issue for browsing a trace
-show()            show info about selected issue or trace frame
-trace()           show a trace of the selected issue or trace frame
-prev()/p()        move backward within the trace
-next()/n()        move forward within the trace
-jump(NUM)         jump to a specific trace frame in a trace
-branch(INDEX)     select a trace branch
-{list_string}            show source code at the current trace frame
+== Display commands ==
+runs                 list all completed static analysis runs
+issues               list all issues for the selected run
+frames               show trace frames independently of an issue
+show                 show info about selected issue or trace frame
 
-frames()          show trace frames independently of an issue
-frame(ID)         select a trace frame to explore
-parents()         show trace frames that call the current trace frame
-details()         show additional information about the current trace frame
+== Selection commands ==
+analysis_output DIR  sets the location of the analysis output
+run ID               select a specific run for browsing issues
+latest_run KIND      sets run to the latest of the specified kind
+issue ID             select a specific issue for browsing a trace
+frame ID             select a trace frame to explore
+
+== Trace commands ==
+trace                show a trace of the selected issue or trace frame
+prev/p               move backward within the trace
+next/n               move forward within the trace
+jump NUM             jump to a specific trace frame in a trace
+branch INDEX         select a trace branch
+list                 show source code at the current trace frame
+
+== Debugging commands ==
+parents              show trace frames that call the current trace frame
+details              show additional information about the current trace frame
 """
-    welcome_message = "Interactive issue exploration. Type 'help()' for help."
+    welcome_message = "Interactive issue exploration. Type 'help' for help."
 
     LEAF_NAMES = {"source", "sink", "leaf"}
 
@@ -245,7 +250,7 @@ details()         show additional information about the current trace frame
         if selected_run is None:
             self.warning(
                 f"Run {run_id} doesn't exist or is not finished. "
-                "Type 'runs()' for available runs."
+                "Type 'runs' for available runs."
             )
             return
 
@@ -316,7 +321,7 @@ details()         show additional information about the current trace frame
             run_kind: str    the run kind to filter by
 
         Example:
-            latest_run("master") will set the current run to the latest
+            'latest_run "master"' will set the current run to the latest
             run whose kind field is "master"
         """
         if not run_kind or not isinstance(run_kind, str):
@@ -356,7 +361,7 @@ details()         show additional information about the current trace frame
             if selected_issue is None:
                 self.warning(
                     f"Issue {issue_instance_id} doesn't exist. "
-                    "Type 'issues()' for available issues."
+                    "Type 'issues' for available issues."
                 )
                 return
 
@@ -523,7 +528,7 @@ details()         show additional information about the current trace frame
                                                 (specify limit=None for all)
 
         Sample usage:
-            frames(callers="module.function", kind=postcondition)
+            frames callers="module.function", kind=postcondition
 
         String filters support LIKE wildcards (%, _) from SQL:
             % matches anything (like .* in regex)
@@ -547,8 +552,8 @@ details()         show additional information about the current trace frame
             if kind is not None:
                 if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION}:
                     raise UserError(
-                        "Try 'frames(kind=postcondition)'"
-                        " or 'frames(kind=precondition)'."
+                        "Try 'frames kind=postcondition'"
+                        " or 'frames kind=precondition'."
                     )
                 query = query.filter(TraceFrame.kind == kind)
 
@@ -578,7 +583,7 @@ details()         show additional information about the current trace frame
             if selected_frame is None:
                 self.warning(
                     f"Trace frame {frame_id} doesn't exist. "
-                    "Type 'frames()' for available trace frames."
+                    "Type 'frames' for available trace frames."
                 )
                 return
 
@@ -725,7 +730,7 @@ details()         show additional information about the current trace frame
         """Jump to a specific trace frame in a trace.
 
         Parameters:
-            selected_number: int    the trace frame number from trace() output
+            selected_number: int    the trace frame number from trace output
         """
         self._verify_entrypoint_selected()
         if selected_number < 1 or selected_number > len(self.trace_tuples):
@@ -776,7 +781,7 @@ details()         show additional information about the current trace frame
         - will automatically select a branch if called with an argument
 
         Parameters (optional):
-            selected_number: int    branch number from expand() output
+            selected_number: int    branch number from expand output
 
         Example output:
 
@@ -884,7 +889,7 @@ details()         show additional information about the current trace frame
             raise UserError("'limit' should be an int or None.")
         if kind not in {TraceKind.PRECONDITION, TraceKind.POSTCONDITION, None}:
             raise UserError(
-                "Try 'details(kind=postcondition)'" " or 'details(kind=precondition)'."
+                "Try 'details kind=postcondition'" " or 'details kind=precondition'."
             )
 
         current_trace_tuple = self.trace_tuples[self.current_trace_frame_index]
@@ -1444,8 +1449,7 @@ details()         show additional information about the current trace frame
 
         if self.current_issue_instance_id == -1 and self.current_frame_id == -1:
             raise UserError(
-                "Use 'issue_instance(ID)' or 'frame(ID)' to select an"
-                " entrypoint first."
+                "Use 'issue ID' or 'frame ID' to select an entrypoint first."
             )
 
     def _verify_multiple_branches(self) -> None:

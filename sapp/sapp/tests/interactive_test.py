@@ -769,7 +769,7 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("Use 'issue_instance(ID)' or 'frame(ID)'", stderr)
+        self.assertIn("Use 'issue ID' or 'frame ID'", stderr)
 
         self.interactive.issue(1)
         self.interactive.trace()
