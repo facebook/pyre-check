@@ -464,7 +464,7 @@ let test_has_method _ =
 
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
-    let is_protocol =
+    let is_protocol bases =
       {
         Statement.Class.name = !&"Derp";
         bases;
@@ -476,19 +476,23 @@ let test_is_protocol _ =
       |> Class.create
       |> Class.is_protocol
     in
-    assert_equal expected is_protocol
+    let old_access_bases =
+      List.map
+        ~f:(fun { Argument.name; value } ->
+            { Argument.name; value = Expression.convert_to_old_access value })
+        bases
+    in
+    assert_equal expected (is_protocol bases);
+    assert_equal expected (is_protocol old_access_bases);
   in
+  let parse = parse_single_expression ~convert:false in
 
   assert_is_protocol [] false;
-  assert_is_protocol [{ Argument.name = None; value = !"derp" }] false;
-  assert_is_protocol [{ Argument.name = None; value = !"typing.Protocol" }] true;
-  assert_is_protocol [{ Argument.name = None; value = !"typing_extensions.Protocol" }] true;
-  assert_is_protocol
-    [{ Argument.name = Some ~+"metaclass"; value = !"abc.ABCMeta" }]
-    false;
-  assert_is_protocol
-    [{ Argument.name = None; value = (parse_single_expression "typing.Protocol[T]") }]
-    true;
+  assert_is_protocol [{ Argument.name = None; value = parse "derp" }] false;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol" }] true;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing_extensions.Protocol" }] true;
+  assert_is_protocol [{ Argument.name = Some ~+"metaclass"; value = parse "abc.ABCMeta" }] false;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol[T]" }] true;
   ()
 
 let test_implements _ =

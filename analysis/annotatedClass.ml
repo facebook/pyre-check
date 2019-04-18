@@ -326,11 +326,34 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
 
 
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
-  let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+  let is_protocol { Call.Argument.name; value = { Node.value; _ } } =
     match name, value with
     | None, Access (SimpleAccess ((Identifier "typing") :: (Identifier "Protocol") :: _))
     | None,
       Access (SimpleAccess ((Identifier "typing_extensions") :: (Identifier "Protocol") :: _)) ->
+        true
+    | None,
+      Call {
+        callee = {
+          Node.value = Name (Name.Attribute {
+              base = {
+                Node.value = Name (Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier typing); _ };
+                    attribute = "Protocol";
+                  });
+                _;
+              };
+              attribute = "__getitem__";
+            });
+          _;
+        };
+        _;
+      }
+    | None,
+      Name (Name.Attribute {
+        base = { Node.value = Name (Name.Identifier typing); _ };
+        attribute = "Protocol";
+      }) when (String.equal typing "typing") || (String.equal typing "typing_extensions") ->
         true
     | _ ->
         false
