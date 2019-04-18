@@ -44,10 +44,11 @@ example of how to use the various commands.
 Start out by listing all known issues:
 ```text
 ==========================================================
-Interactive issue exploration. Type 'commands()' for help.
+Interactive issue exploration. Type 'help' for help.
 ==========================================================
 
-In [1]: issues()
+[ run 1 ]
+>>> issues
 Issue 1
     Code: 5001
  Message: Possible shell injection Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)
@@ -59,8 +60,10 @@ Found 1 issues with run_id 1.
 ```
 As expected, we have 1 issue. To select it:
 ```text
-In [2]: issue(1)
+[ run 1 ]
+>>> issue 1
 Set issue to 1.
+
 Issue 1
     Code: 5001
  Message: Possible shell injection Data from [UserSpecified] source(s) may reach [RemoteCodeExecution] sink(s)
@@ -71,122 +74,132 @@ Location: source.py:9|22|32
 ```
 View how the data flows from source to sink:
 ```text
-In [3]: trace()
+[ run 1 > issue 1 > source.convert ]
+>>> trace
      # ⎇  [callable]       [port]      [location]
-     1    leaf             source      source.py:8|22|38
+     1    leaf             source      source.py:8|17|22
  --> 2    source.convert   root        source.py:9|22|32
      3    source.get_image formal(url) source.py:9|22|32
      4    leaf             sink        source.py:5|21|28
 ```
 Move to the next callable:
 ```text
-In [4]: n()
+[ run 1 > issue 1 > source.convert ]
+>>> n
      # ⎇  [callable]       [port]      [location]
-     1    leaf             source      source.py:8|22|38
+     1    leaf             source      source.py:8|17|22
      2    source.convert   root        source.py:9|22|32
  --> 3    source.get_image formal(url) source.py:9|22|32
      4    leaf             sink        source.py:5|21|28
 ```
 Show the source code at that callable:
 ```text
-In [5]: list()
+[ run 1 > issue 1 > source.get_image ]
+>>> list
 In source.convert [source.py:9|22|32]
-     4       command = "wget -q https:{}".format(url)
-     5       return os.system(command)
+     4      command = "wget -q https:{}".format(url)
+     5      return os.system(command)
      6
-     7   def convert():
-     8       image_link = input("image link: ")
- --> 9       image = get_image(image_link)
+     7  def convert() -> None:
+     8      image_link = input("image link: ")
+ --> 9      image = get_image(image_link)
+                              ^^^^^^^^^^
 ```
 Move to the next callable and show source code:
 ```text
-In [6]: n()
+[ run 1 > issue 1 > source.get_image ]
+>>> n
      # ⎇  [callable]       [port]      [location]
-     1    leaf             source      source.py:8|22|38
+     1    leaf             source      source.py:8|17|22
      2    source.convert   root        source.py:9|22|32
      3    source.get_image formal(url) source.py:9|22|32
  --> 4    leaf             sink        source.py:5|21|28
 
-In [7]: list()
+[ run 1 > issue 1 > leaf ]
+>>> list
 In source.get_image [source.py:5|21|28]
-     1   import os
+     1  import os
      2
-     3   def get_image(url):
-     4       command = "wget -q https:{}".format(url)
- --> 5       return os.system(command)
+     3  def get_image(url: str) -> int:
+     4      command = "wget -q https:{}".format(url)
+ --> 5      return os.system(command)
+                             ^^^^^^^
      6
-     7   def convert():
-     8       image_link = input("image link: ")
-     9       image = get_image(image_link)
+     7  def convert() -> None:
+     8      image_link = input("image link: ")
+     9      image = get_image(image_link)
 ```
 Jump to the first callable and show source code:
 ```text
-In [8]: jump(1)
+[ run 1 > issue 1 > leaf ]
+>>> jump 1
      # ⎇  [callable]       [port]      [location]
- --> 1    leaf             source      source.py:8|22|38
+ --> 1    leaf             source      source.py:8|17|22
      2    source.convert   root        source.py:9|22|32
      3    source.get_image formal(url) source.py:9|22|32
      4    leaf             sink        source.py:5|21|28
 
-In [9]: list()
-In source.convert [source.py:8|22|38]
-     3   def get_image(url):
-     4       command = "wget -q https:{}".format(url)
-     5       return os.system(command)
+[ run 1 > issue 1 > leaf ]
+>>> list
+In source.convert [source.py:8|17|22]
+     3  def get_image(url: str) -> int:
+     4      command = "wget -q https:{}".format(url)
+     5      return os.system(command)
      6
-     7   def convert():
- --> 8       image_link = input("image link: ")
-     9       image = get_image(image_link)
-
-In [10]:
+     7  def convert() -> None:
+ --> 8      image_link = input("image link: ")
+                         ^^^^^
+     9      image = get_image(image_link)
 ```
 
 ## Commands
 
 ### Information commands
 
-`help()`: show the available commands
+`help`: show the available commands
 
-`help(COMMAND)`: show more info about a specific command
+`help COMMAND`: show more info about a specific command
 
-`state()`: show state and debugging information
+`state`: show state and debugging information
 
 ### Display commands
 
-`runs()`: list all completed static analysis runs
+`runs`: list all completed static analysis runs
 
-`issues()`: list all issues for the selected run
+`issues`: list all issues for the selected run
 
-`show()`: show info about selected issue
+`show`: show info about selected issue
+
+`frames`: show trace frames independently of an issue
 
 ### Selection commands
 
-`run(ID)`: select a specific run for browsing issues
+`analysis_output DIR`: sets the location of the analysis output
 
-`latest_run(KIND)`: select the latest run of the given kind
+`run ID`: select a specific run for browsing issues
 
-`issue(ID)`: select a specific issue for browsing a trace
+`latest_run KIND`: select the latest run of the given kind
+
+`issue ID`: select a specific issue for browsing a trace
+
+`frame ID`: select a trace frame
 
 ### Trace commands
 
-`trace()`: show a trace of the selected issue
+`trace`: show a trace of the selected issue
 
-`prev()`/`p()`: move backward within the trace
+`prev`/`p`: move backward within the trace
 
-`next()`/`n()`: move forward within the trace
+`next`/`n`: move forward within the trace
 
-`jump(NUM)`: jump within a trace
+`jump NUM`: jump within a trace
 
-`branch()`: show and select alternative trace branches
+`branch`: show and select alternative trace branches
 
-`list()`: show source code
+`list`: show source code
 
 ### Debugging commands
 
-`frames()`: show trace frames independently of an issue
+`parents`: show the callers of the current trace frame
 
-`frame(ID)`: select a trace frame
-
-`parents()`: show the callers of the current trace frame
-
-`details()`: additional details about the current trace frame
+`details`: additional details about the current trace frame
