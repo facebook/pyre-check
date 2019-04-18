@@ -10,8 +10,6 @@ open Pyre
 open Network
 open Server
 
-module Time = Core_kernel.Time_ns.Span
-
 
 type reason = string
 type exit_code = int
@@ -53,7 +51,7 @@ let communicate server_socket =
         ~read:[server_socket; Unix.stdin]
         ~write:[]
         ~except:[]
-        ~timeout:(`After (Time.of_sec 1.0))
+        ~timeout:`Immediately
         ()
       |> fun { Unix.Select_fds.read; _ } -> read
     in
