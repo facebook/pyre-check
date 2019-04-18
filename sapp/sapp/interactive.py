@@ -1006,23 +1006,29 @@ details()         show additional information about the current trace frame
         )
         location = trace_frame.callee_location
         center_line_number = location.line_no
-        line_number_width = len(str(center_line_number + context))
+        begin_lineno = max(center_line_number - context, 1)
+        end_lineno = min(center_line_number + context, len(file_lines))
+        lineno_width = len(str(end_lineno))
 
-        for i in range(
-            max(center_line_number - context, 1),
-            min(center_line_number + context, len(file_lines)) + 1,
-        ):
-            line = file_lines[i - 1]
+        lines_to_show = file_lines[begin_lineno - 1 : end_lineno]
+
+        # In both cases this removes trailing newlines on each line.
+        if sys.stdout.isatty():
+            lines_to_show = highlight(
+                "".join(lines_to_show),
+                # startinline is to skip the <? check for php lexer
+                get_lexer_for_filename(trace_frame.filename, startinline=True),
+                TerminalFormatter(),
+            ).split("\n")
+        else:
+            lines_to_show = [line.rstrip("\n") for line in lines_to_show]
+
+        for i in range(begin_lineno, end_lineno + 1):
+            line = lines_to_show[i - begin_lineno]
 
             prefix = " --> " if i == center_line_number else " " * 5
-            prefix += f"{i:<{line_number_width}} "
-            if sys.stdout.isatty():
-                line = highlight(
-                    line,
-                    get_lexer_for_filename(trace_frame.filename),
-                    TerminalFormatter(),
-                )
-            print(f"{prefix} {line}", end="")
+            prefix += f"{i:<{lineno_width}} "
+            print(f"{prefix} {line}")
             if i == center_line_number:
                 print(
                     " " * (len(prefix) + location.begin_column),
