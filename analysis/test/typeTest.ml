@@ -136,6 +136,11 @@ let test_create _ =
   assert_create
     "typing.TypeVar('_T', int, name=float)"
     (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
+  assert_create
+    "typing.TypeVar('_CallableT', bound='typing.Callable')"
+    (Type.variable
+      ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
+      "_CallableT");
 
   (* Check that type aliases are resolved. *)
   let assert_alias source resolved =
@@ -231,7 +236,7 @@ let test_create _ =
 
   (* Callables. *)
   let open Type.Callable in
-  assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Top ());
+  assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable.__getitem__((..., int))"

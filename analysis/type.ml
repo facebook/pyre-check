@@ -1735,6 +1735,12 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
             parse_callable ~modifiers ~signatures ()
         | Access
             (SimpleAccess
+               (((Access.Identifier "typing")
+               :: (Access.Identifier "Callable")
+               :: []) as access)) ->
+            parse_access access
+        | Access
+            (SimpleAccess
                ((Access.Identifier "typing") :: (Access.Identifier "Callable") :: signatures)) ->
             parse_callable ~signatures ()
 
@@ -2335,7 +2341,7 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
               >>| union
               |> Option.value ~default:Top
           | Call { callee = { Node.value = callee; _ }; _ }
-          | callee when is_typing_callable callee ->
+            when is_typing_callable callee ->
               parse_callable expression
           | Call {
               callee = {
