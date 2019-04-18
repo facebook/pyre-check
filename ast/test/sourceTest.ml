@@ -216,7 +216,7 @@ let test_expand_relative_import _ =
     let handle = File.Handle.create handle in
     let qualifier = Source.qualifier ~handle in
     let from =
-      match parse_single_statement ("from " ^ from ^ " import something") with
+      match parse_single_statement ~convert:true ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in

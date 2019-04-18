@@ -2504,7 +2504,7 @@ let dequalify
       value.Parameter.annotation
       >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
-      >>| Type.expression
+      >>| Type.expression ~convert:true
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
@@ -2513,7 +2513,7 @@ let dequalify
       return_annotation
       >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
-      >>| Type.expression
+      >>| Type.expression ~convert:true
     in
     { signature with parameters; return_annotation }
   in

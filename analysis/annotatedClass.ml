@@ -230,7 +230,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
         Expression.Call.Argument.name = None;
         value =
           Type.parametric "typing.Generic" variables
-          |> Type.expression;
+          |> Type.expression ~convert:true;
       }]
 
 
@@ -1036,7 +1036,7 @@ let rec fallback_attribute ~resolution ~name definition =
                    Node.location;
                    value = {
                      Statement.Attribute.name;
-                     annotation = Some (Type.expression return_annotation);
+                     annotation = Some (Type.expression ~convert:true return_annotation);
                      defines = None;
                      value = None;
                      async = false;

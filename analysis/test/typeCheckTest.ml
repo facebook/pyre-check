@@ -50,7 +50,7 @@ let create
   let signature =
     {
       define.signature with
-      return_annotation = expected_return >>| Type.expression;
+      return_annotation = expected_return >>| Type.expression ~convert:true;
     }
   in
   let define =
@@ -82,7 +82,7 @@ let test_initial _ =
     in
     let initial =
       let define =
-        match parse_single_statement define with
+        match parse_single_statement ~convert:true define with
         | { Node.value = Define define; _ } ->
             let signature = { define.signature with parent = parent >>| Reference.create } in
             { define with signature }
@@ -357,13 +357,13 @@ let test_redirect _ =
       |> (fun environment -> TypeCheck.resolution environment ())
       |> Resolution.with_parent ~parent
     in
-    let access = parse_single_access access in
+    let access = parse_single_access ~convert:true access in
     let access, resolution = AccessState.redirect ~resolution ~access in
     assert_equal
       ~printer:Expression.Access.show_general_access
       ~cmp:Expression.Access.equal_general_access
       access
-      (Access.SimpleAccess (parse_single_access expected_access));
+      (Access.SimpleAccess (parse_single_access ~convert:true expected_access));
     let assert_in_scope (expected_name, expected_type) =
       !&expected_name
       |> (fun reference -> Option.value_exn (Resolution.get_local ~reference resolution))
@@ -444,10 +444,13 @@ let test_resolve_exports _ =
       |> (fun environment -> TypeCheck.resolution environment ())
     in
     let access =
-      parse_single_access access
+      parse_single_access ~convert:true access
       |> (fun access -> AccessState.resolve_exports ~resolution ~access)
     in
-    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_single_access expected_access)
+    assert_equal
+      ~printer:Access.show
+      ~cmp:Access.equal access
+      (parse_single_access ~convert:true expected_access)
   in
   assert_resolve
     ~sources:[]
@@ -498,7 +501,7 @@ let test_forward_access _ =
       |> Resolution.with_parent ~parent
     in
     let access, resolution =
-      let access = parse_single_access access ~preprocess:true in
+      let access = parse_single_access ~convert:true access ~preprocess:true in
       match AccessState.redirect ~resolution ~access with
       | Access.SimpleAccess access, resolution ->
           access, resolution
@@ -675,7 +678,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "string";
-            actual_expression = parse_single_expression "\"string\"";
+            actual_expression = parse_single_expression ~convert:true "\"string\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1394,7 +1397,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "seven";
-            actual_expression = parse_single_expression "\"seven\"";
+            actual_expression = parse_single_expression ~convert:true "\"seven\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1551,7 +1554,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
-            actual_expression = parse_single_expression "\"missing\"";
+            actual_expression = parse_single_expression ~convert:true "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1578,7 +1581,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
-            actual_expression = parse_single_expression "s";
+            actual_expression = parse_single_expression ~convert:true "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1653,7 +1656,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "Blade Runner";
-            actual_expression = parse_single_expression "\"Blade Runner\"";
+            actual_expression = parse_single_expression ~convert:true "\"Blade Runner\"";
             expected = parse_annotation ~resolution:resolution_with_movie "int";
             name = (Some "$parameter$year");
             position = 1;
@@ -1755,7 +1758,7 @@ let test_forward_access _ =
         element =
           +{
             Annotated.Signature.actual = Type.literal_string "string";
-            actual_expression = parse_single_expression "\"string\"";
+            actual_expression = parse_single_expression ~convert:true "\"string\"";
             expected = Type.integer;
             name = None;
             position = 2;
@@ -1781,7 +1784,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
-            actual_expression = parse_single_expression "\"missing\"";
+            actual_expression = parse_single_expression ~convert:true "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1809,7 +1812,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
-            actual_expression = parse_single_expression "s";
+            actual_expression = parse_single_expression ~convert:true "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1953,7 +1956,7 @@ let assert_resolved sources access expected =
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =
-    parse_single_access access
+    parse_single_access ~convert:true access
     |> TypeCheck.State.forward_access
       ~resolution
       ~initial:Type.Top

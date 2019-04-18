@@ -1318,7 +1318,10 @@ module State = struct
         let updated_define =
           if Type.is_unknown annotation then
             let signature =
-              { define.signature with return_annotation = Some (Type.expression annotation) }
+              {
+                define.signature
+                with return_annotation = Some (Type.expression ~convert:true annotation)
+              }
             in
             { define with signature }
           else

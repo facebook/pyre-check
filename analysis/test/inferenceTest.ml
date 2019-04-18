@@ -43,7 +43,8 @@ let create
   let define =
     let signature =
       {
-        define.signature with return_annotation = Some (Type.expression expected_return)
+        define.signature
+        with return_annotation = Some (Type.expression ~convert:true expected_return)
       }
     in
     +{ define with signature }

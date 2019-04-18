@@ -804,7 +804,7 @@ let test_less_or_equal _ =
     connect order ~predecessor:Type.Bottom ~successor:!"FloatToStrCallable";
     connect
       order
-      ~parameters:[parse_callable "typing.Callable[[float], str]"]
+      ~parameters:[parse_callable ~convert:true "typing.Callable[[float], str]"]
       ~predecessor:!"FloatToStrCallable"
       ~successor:!"typing.Callable";
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
@@ -817,7 +817,7 @@ let test_less_or_equal _ =
         | _ ->
             None
       in
-      parse_callable ~aliases "typing.Callable[[_T], str]"
+      parse_callable ~convert:true ~aliases "typing.Callable[[_T], str]"
     in
     connect
       order
@@ -1032,8 +1032,8 @@ let test_less_or_equal _ =
     in
     less_or_equal
       order
-      ~left:(parse_callable ~aliases left)
-      ~right:(parse_callable ~aliases right)
+      ~left:(parse_callable ~convert:true ~aliases left)
+      ~right:(parse_callable ~convert:true ~aliases right)
       ?implements
   in
   assert_true
@@ -1878,7 +1878,7 @@ let test_join _ =
     connect order ~predecessor:Type.Bottom ~successor:!"CallableClass";
     connect
       order
-      ~parameters:[parse_callable "typing.Callable[[int], str]"]
+      ~parameters:[parse_callable ~convert:true "typing.Callable[[int], str]"]
       ~predecessor:!"CallableClass"
       ~successor:!"typing.Callable";
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
@@ -1890,7 +1890,7 @@ let test_join _ =
         | _ ->
             None
       in
-      parse_callable ~aliases "typing.Callable[[_T], str]"
+      parse_callable ~convert:true ~aliases "typing.Callable[[_T], str]"
     in
     connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
     connect
@@ -3558,20 +3558,20 @@ let test_is_consistent_with _ =
 
   assert_true
     (is_consistent_with
-       (parse_callable "typing.Callable[[typing.Any], int]")
-       (parse_callable "typing.Callable[[str], int]"));
+       (parse_callable ~convert:true "typing.Callable[[typing.Any], int]")
+       (parse_callable ~convert:true "typing.Callable[[str], int]"));
   assert_true
     (is_consistent_with
-       (parse_callable "typing.Callable[[int], typing.Any]")
-       (parse_callable "typing.Callable[[int], int]"));
+       (parse_callable ~convert:true "typing.Callable[[int], typing.Any]")
+       (parse_callable ~convert:true "typing.Callable[[int], int]"));
   assert_false
     (is_consistent_with
-       (parse_callable "typing.Callable[[int], typing.Any]")
-       (parse_callable "typing.Callable[[str], int]"));
+       (parse_callable ~convert:true "typing.Callable[[int], typing.Any]")
+       (parse_callable ~convert:true "typing.Callable[[str], int]"));
   assert_false
     (is_consistent_with
-       (parse_callable "typing.Callable[[typing.Any, typing.Any], typing.Any]")
-       (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
+       (parse_callable ~convert:true "typing.Callable[[typing.Any, typing.Any], typing.Any]")
+       (parse_callable ~convert:true "typing.Callable[[typing.Any], typing.Any]"))
 
 
 let () =

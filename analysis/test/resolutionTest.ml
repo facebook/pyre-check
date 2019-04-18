@@ -17,7 +17,9 @@ let test_set_local _ =
   let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
+      (expected
+       >>| parse_single_expression
+       >>| Type.create ~aliases:(fun _ -> None))
       (Resolution.get_local resolution ~reference:(!&name) >>| Annotation.annotation)
   in
 
@@ -46,7 +48,8 @@ let test_parse_annotation _ =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
+      (parse_single_expression expected
+       |> Type.create ~aliases:(fun _ -> None))
       (parse_single_expression expression
        |> Resolution.parse_annotation ~allow_untracked resolution)
   in
@@ -136,7 +139,7 @@ let test_resolve_literal _ =
   in
   let assert_resolve_literal source expected =
     let expression =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
@@ -202,7 +205,7 @@ let test_resolve_mutable_literals _ =
       |> Resolution.parse_annotation resolution
     in
     let expression =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in

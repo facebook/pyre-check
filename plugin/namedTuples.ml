@@ -94,7 +94,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       let annotation =
         List.init (List.length attributes) ~f:(fun _ -> Type.string)
         |> Type.tuple
-        |> Type.expression ~convert:false
+        |> Type.expression
       in
       Assign {
         Assign.target =

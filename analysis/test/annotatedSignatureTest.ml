@@ -98,7 +98,7 @@ let test_select _ =
     Type.Variable.Namespace.reset ();
     let signature =
       let arguments =
-        match parse_single_access (Format.asprintf "call%s" arguments) with
+        match parse_single_access ~convert:true (Format.asprintf "call%s" arguments) with
         | [Access.Identifier _; Access.Call { Node.value = arguments; _ }] -> arguments
         | _ -> failwith "Could not parse call"
       in
@@ -150,7 +150,7 @@ let test_select _ =
             reason = Some (UnexpectedKeyword name);
           }
       | `NotFoundMismatch (actual, actual_expression, expected, name, position) ->
-          let actual_expression = parse_single_expression actual_expression in
+          let actual_expression = parse_single_expression ~convert:true actual_expression in
           let reason =
             { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location
@@ -159,7 +159,7 @@ let test_select _ =
           NotFound { callable; reason }
       | `NotFoundMismatchWithClosest (closest, actual, actual_expression, expected, name, position)
         ->
-          let actual_expression = parse_single_expression actual_expression in
+          let actual_expression = parse_single_expression ~convert:true actual_expression in
           let reason =
             { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location

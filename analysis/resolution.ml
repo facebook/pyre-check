@@ -413,7 +413,7 @@ let parse_annotation
       >>| check_invalid_type_parameters resolution
       >>| snd
   in
-  let parsed = Type.create ~aliases expression in
+  let parsed = Type.create ~convert:true ~aliases expression in
   let constraints = function
     | Type.Primitive name ->
         let originates_from_empty_stub =

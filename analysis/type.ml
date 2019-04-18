@@ -781,7 +781,7 @@ let parametric_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
-let rec expression ?(convert = true) annotation =
+let rec expression ?(convert = false) annotation =
   let location = Location.Reference.any in
 
   let create_name name = Name (Expression.create_name ~location name) in
@@ -1000,7 +1000,7 @@ let rec expression ?(convert = true) annotation =
 
 
 let access annotation =
-  match expression annotation with
+  match expression ~convert:true annotation with
   | { Node.value = Access (SimpleAccess access); _ } -> access
   | _ -> failwith "Annotation expression is not an access"
 
@@ -2450,7 +2450,7 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
       result
 
 
-let create ?(convert = true) ~aliases =
+let create ?(convert = false) ~aliases =
   if convert then
     create_logic ~use_cache:true ~aliases
   else
@@ -2786,7 +2786,7 @@ let class_name annotation =
   let open Expression in
   split annotation
   |> fst
-  |> expression
+  |> expression ~convert:true
   |> Node.value
   |> function
   | Access (SimpleAccess access) ->

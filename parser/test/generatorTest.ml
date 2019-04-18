@@ -2668,7 +2668,7 @@ let test_call _ =
 
 let test_call_arguments_location _ =
   let source_code = "fun(1, second = 2)" in
-  let statement = parse_single_statement source_code in
+  let statement = parse_single_statement ~convert:true source_code in
   let arguments =
     let collect_arguments accumulator access =
       match access with
@@ -4193,7 +4193,7 @@ let test_import _ =
 
 let test_end_position _ =
   let source_code = "def a():\n    return None" in
-  let statement = parse_single_statement source_code in
+  let statement = parse_single_statement ~convert:true source_code in
   let location = statement.Node.location in
   let expected_location = {
     Location.path = String.hash "test.py";
@@ -4228,7 +4228,7 @@ let assert_statement_location
 
 let test_string_locations _ =
   let test_one source_code ~start ~stop =
-    let statement = parse_single_statement source_code in
+    let statement = parse_single_statement ~convert:true source_code in
     assert_statement_location ~statement ~start ~stop
   in
 
@@ -4240,7 +4240,7 @@ let test_string_locations _ =
 
 let test_multiline_strings_positions _ =
   let test_one source_code =
-    let statement = parse_last_statement source_code in
+    let statement = parse_last_statement ~convert:true source_code in
     assert_statement_location ~statement ~start:(5, 0) ~stop:(5, 4)
   in
 

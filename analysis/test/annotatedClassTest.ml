@@ -23,7 +23,7 @@ module Argument = Call.Argument
 
 let test_generics _ =
   let assert_generics source generics =
-    match parse_last_statement source with
+    match parse_last_statement ~convert:true source with
     | { Node.value = Statement.Class definition; _ } ->
         let resolution =
           populate source
@@ -280,12 +280,13 @@ let test_constructors _ =
       parse_single_expression instantiated
       |> Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
-    match parse_last_statement source with
+    match parse_last_statement ~convert:true source with
     | { Node.value = Statement.Class definition; _ } ->
         let callable =
           constructors
           >>| (fun constructors ->
-              Type.create ~aliases:(fun _ -> None) (parse_single_expression constructors))
+              Type.create ~convert:true ~aliases:(fun _ -> None)
+              (parse_single_expression ~convert:true constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -393,7 +394,7 @@ let test_constructors _ =
 
 let test_methods _ =
   let assert_methods source methods =
-    match parse_last_statement source with
+    match parse_last_statement ~convert:true source with
     | { Node.value = Statement.Class definition; _ } ->
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
@@ -424,7 +425,7 @@ let test_has_method _ =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()
     in
-    match parse_last_statement source with
+    match parse_last_statement ~convert:true source with
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
           Node.create_with_default_location definition
@@ -485,7 +486,7 @@ let test_is_protocol _ =
     assert_equal expected (is_protocol bases);
     assert_equal expected (is_protocol old_access_bases);
   in
-  let parse = parse_single_expression ~convert:false in
+  let parse = parse_single_expression in
 
   assert_is_protocol [] false;
   assert_is_protocol [{ Argument.name = None; value = parse "derp" }] false;
@@ -828,7 +829,7 @@ let test_callable_implements _ =
     in
     let environment = Environment.Builder.create () in
     let callable =
-      match parse_callable callable with
+      match parse_callable ~convert:true callable with
       | Type.Callable callable -> callable
       | _ -> failwith "Failed to parse callable."
     in
@@ -907,7 +908,7 @@ let test_callable_implements _ =
 let test_class_attributes _ =
   let setup source =
     let parent =
-      match parse_last_statement source with
+      match parse_last_statement ~convert:true source with
       | { Node.value = Class definition; _ } ->
           definition
       | _ ->
@@ -1025,7 +1026,8 @@ let test_class_attributes _ =
       ~resolution
       ~parent
       (create_attribute
-         ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
+         ~annotation:(Some (
+           Type.expression ~convert:true (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
   assert_true (Attribute.class_attribute attribute);
@@ -1158,7 +1160,7 @@ let test_class_attributes _ =
       def Attributes.property(self) -> str:
         pass
     |}
-    |> parse_single_class
+    |> parse_single_class ~convert:true
   in
   let create_expected_attribute
       ?(property = false)
@@ -1168,7 +1170,9 @@ let test_class_attributes _ =
     {
       Class.Attribute.name;
       parent;
-      annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
+      annotation = (
+        Annotation.create_immutable ~global:true (parse_callable ~convert:true callable)
+      );
       value = Node.create_with_default_location Ellipsis;
       defined = true;
       class_attribute = false;
@@ -1217,7 +1221,7 @@ let test_fallback_attribute _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
     let attribute =
-      parse_last_statement source
+      parse_last_statement ~convert:true source
       |> (function
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
@@ -1277,7 +1281,9 @@ let test_fallback_attribute _ =
         def Foo.__add__(self, other: Foo) -> int:
           pass
     |}
-    (Some (parse_callable "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]"));
+    (Some
+      (parse_callable ~convert:true "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]")
+    );
   assert_fallback_attribute
     ~name:"__iadd__"
     {|
@@ -1313,7 +1319,7 @@ let test_constraints _ =
       |> value
     in
     let constraints =
-      parse_last_statement source
+      parse_last_statement ~convert:true source
       |> (function
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
@@ -1594,7 +1600,7 @@ let test_inferred_generic_base _ =
      |}
     [{
       Argument.name = None;
-      value = Type.expression (Type.parametric "typing.Generic" [Type.variable "_T"]);
+      value = Type.expression ~convert:true (Type.parametric "typing.Generic" [Type.variable "_T"]);
     }];
   assert_inferred_generic
     ~target:"List"
@@ -1616,7 +1622,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression
+        Type.expression ~convert:true
           (Type.parametric "typing.Generic" [Type.variable "_T1"; Type.variable "_T2"]);
     }];
   assert_inferred_generic
@@ -1628,7 +1634,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression
+        Type.expression ~convert:true
           (Type.parametric "typing.Generic" [Type.variable "_T1"]);
     }];
 

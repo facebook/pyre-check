@@ -232,10 +232,11 @@ let test_process_type_query_request _ =
     (Protocol.TypeQuery.CoverageInFile (write_file coverage_check_file))
     {| {"response":{"types":[]}}|};
   assert_response
-    (Protocol.TypeQuery.Join (parse_single_access "int", parse_single_access "float"))
+    (Protocol.TypeQuery.Join
+      (parse_single_access ~convert:true "int", parse_single_access ~convert:true "float"))
     {|{"response":{"type":"float"}}|};
   assert_response
-    (Protocol.TypeQuery.NormalizeType (parse_single_access "yerp"))
+    (Protocol.TypeQuery.NormalizeType (parse_single_access ~convert:true "yerp"))
     {|{"error":"Type `yerp` was not found in the type order."}|}
 
 

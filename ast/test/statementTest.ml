@@ -144,7 +144,7 @@ let test_is_constructor _ =
 
 let test_dump _ =
   let assert_dump source expected =
-    assert_equal expected (parse_single_define source |> Define.dump)
+    assert_equal expected (parse_single_define ~convert:true source |> Define.dump)
   in
 
   assert_dump "def foo(): pass" false;
@@ -163,7 +163,7 @@ let test_dump _ =
 let test_constructor _ =
   let assert_constructor source ~exists =
     let definition =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -192,7 +192,7 @@ let test_constructor _ =
 let test_defines _ =
   let assert_define source ~method_name ~exists ~total =
     let definition =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -254,19 +254,19 @@ let test_defines _ =
 let test_is_unit_test _ =
   assert_true
     (Class.is_unit_test
-       (parse_single_class {|
+       (parse_single_class ~convert:true {|
           class unittest.TestCase(object):
             pass
         |}));
   assert_true
     (Class.is_unit_test
-       (parse_single_class {|
+       (parse_single_class ~convert:true {|
           class unittest.case.TestCase(object):
             pass
         |}));
   assert_false
     (Class.is_unit_test
-       (parse_single_class {|
+       (parse_single_class ~convert:true {|
           class a.TestCase(unittest.TestCase):
             pass
         |}))
@@ -323,7 +323,7 @@ let test_attributes _ =
       ~cmp:(List.equal ~equal:Attribute.equal)
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
-      (parse_single_define source
+      (parse_single_define ~convert:true source
        |> Define.implicit_attributes ~definition
        |> Identifier.SerializableMap.bindings
        |> List.map ~f:snd)
@@ -336,14 +336,14 @@ let test_attributes _ =
         self.attribute = value
         self.attribute: int = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
+    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
   assert_implicit_attributes
     {|
       def foo():
         self.attribute: int = value
         self.attribute = value
     |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
+    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
   assert_implicit_attributes
     {|
       def foo():
@@ -352,7 +352,7 @@ let test_attributes _ =
     |}
     [
       "attribute",
-      Some (Type.expression (Type.Union [Type.string; Type.integer])),
+      Some (Type.expression ~convert:true (Type.Union [Type.string; Type.integer])),
       Some !"value",
       true
     ];
@@ -365,11 +365,11 @@ let test_attributes _ =
     [
       "attribute",
       None,
-      Some (parse_single_expression "derp()"),
+      Some (parse_single_expression ~convert:true "derp()"),
       true;
       "other",
       None,
-      Some (parse_single_expression "derp()"),
+      Some (parse_single_expression ~convert:true "derp()"),
       true;
     ];
   assert_implicit_attributes
@@ -380,11 +380,11 @@ let test_attributes _ =
     [
       "attribute",
       None,
-      Some (parse_single_expression "derp"),
+      Some (parse_single_expression ~convert:true "derp"),
       true;
       "other",
       None,
-      Some (parse_single_expression "derp"),
+      Some (parse_single_expression ~convert:true "derp"),
       true;
     ];
 
@@ -400,7 +400,7 @@ let test_attributes _ =
       def foo(self, attribute: str):
         self.attribute = attribute
     |}
-    ["attribute", Some (Type.expression Type.string), Some !"attribute", true];
+    ["attribute", Some (Type.expression ~convert:true Type.string), Some !"attribute", true];
 
   assert_implicit_attributes
     {|
@@ -447,7 +447,7 @@ let test_attributes _ =
     def foo(renamed_self):
       renamed_self.attribute: int = value
   |}
-    ["attribute", Some (Type.expression Type.integer), Some !"value", true];
+    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
 
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
@@ -457,7 +457,7 @@ let test_attributes _ =
       create_attribute ~setter ~name ~annotation ~value ~property:true ()
     in
     let define =
-      let define = parse_single_define source in
+      let define = parse_single_define ~convert:true source in
       let signature = { define.signature with parent = Some (!&"Parent") } in
       { define with signature  }
     in
@@ -473,7 +473,7 @@ let test_attributes _ =
       @foo.setter
       def Parent.foo(self, value: int) -> None: pass
     |}
-    (Some ("foo", Some (Type.expression Type.integer), None, true));
+    (Some ("foo", Some (Type.expression ~convert:true Type.integer), None, true));
   assert_property_attribute
     {|
       @__property__
@@ -485,13 +485,13 @@ let test_attributes _ =
       @abc.abstractproperty
       def Parent.foo() -> int: pass
     |}
-    (Some ("foo", Some (Type.expression Type.integer), None, false));
+    (Some ("foo", Some (Type.expression ~convert:true Type.integer), None, false));
 
   (* Test class attributes. *)
   let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
     let annotation =
       annotation
-      >>| Type.expression
+      >>| Type.expression ~convert:true
     in
     let value =
       value
@@ -547,7 +547,7 @@ let test_attributes _ =
       ~cmp:(List.equal ~equal)
       ~printer
       expected
-      (parse_single_class source
+      (parse_single_class ~convert:true source
        |> Class.attributes ~in_test ~include_generated_attributes
        |> Identifier.SerializableMap.bindings
        |> List.map ~f:snd)
@@ -666,8 +666,8 @@ let test_attributes _ =
         Foo.a, Foo.b = 1, 2
      |}
     [
-      "a", None, Some (parse_single_expression "1"), false, 0;
-      "b", None, Some (parse_single_expression "2"), false, 0;
+      "a", None, Some (parse_single_expression ~convert:true "1"), false, 0;
+      "b", None, Some (parse_single_expression ~convert:true "2"), false, 0;
     ];
   assert_attributes
     {|
@@ -675,8 +675,8 @@ let test_attributes _ =
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, Some (parse_single_expression "list(range(2))[0]"), false, 0;
-      "b", None, Some (parse_single_expression "list(range(2))[1]"), false, 0;
+      "a", None, Some (parse_single_expression ~convert:true "list(range(2))[0]"), false, 0;
+      "b", None, Some (parse_single_expression ~convert:true "list(range(2))[1]"), false, 0;
     ];
 
   (* Implicit attributes in tests. *)
@@ -732,8 +732,10 @@ let test_update _ =
     assert_equal
       ~printer:Class.show
       ~cmp:Class.equal
-      (parse_single_class expected)
-      (Class.update (parse_single_class stub) ~definition:(parse_single_class definition))
+      (parse_single_class ~convert:true expected)
+      (Class.update
+        (parse_single_class ~convert:true stub)
+        ~definition:(parse_single_class ~convert:true definition))
   in
 
   assert_updated
@@ -787,7 +789,7 @@ let test_update _ =
 let test_preamble _ =
   let assert_preamble block preamble =
     let block =
-      match parse_single_statement block with
+      match parse_single_statement ~convert:true block with
       | { Node.value = With block; _ } -> block
       | _ -> failwith "Could not parse `with` statement."
     in
@@ -806,7 +808,7 @@ let test_preamble _ =
 
   let assert_preamble block preamble =
     let block =
-      match parse_single_statement block with
+      match parse_single_statement ~convert:true block with
       | { Node.value = For block; _ } -> block
       | _ -> failwith "Could not parse `for` statement."
     in
@@ -825,7 +827,7 @@ let test_preamble _ =
 
   let assert_preamble block preambles =
     let handlers =
-      match parse_single_statement block with
+      match parse_single_statement ~convert:true block with
       | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
       | _ -> failwith "Could not parse `try` statement."
     in
@@ -923,7 +925,7 @@ let test_terminates _ =
 
 let test_docstring _ =
   assert_equal
-    (parse_single_statement {|
+    (parse_single_statement ~convert:true {|
          def foo():
            """doc
               string

@@ -180,7 +180,7 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement ?(convert = true) ?(preprocess = false) source =
+let parse_single_statement ?(convert = false) ?(preprocess = false) source =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse source)
@@ -193,46 +193,40 @@ let parse_single_statement ?(convert = true) ?(preprocess = false) source =
   | _ -> failwith "Could not parse single statement"
 
 
-let parse_last_statement ?(convert = true) source =
+let parse_last_statement ?(convert = false) source =
   match parse ~convert source with
   | { Source.statements; _ } when List.length statements > 0 ->
       List.last_exn statements
   | _ -> failwith "Could not parse last statement"
 
 
-let parse_single_assign source =
-  match parse_single_statement source with
-  | { Node.value = Statement.Assign assign; _ } -> assign
-  | _ -> failwith "Could not parse single assign"
-
-
-let parse_single_define source =
-  match parse_single_statement source with
+let parse_single_define ?(convert = false) source =
+  match parse_single_statement ~convert source with
   | { Node.value = Statement.Define define; _ } -> define
   | _ -> failwith "Could not parse single define"
 
 
-let parse_single_class source =
-  match parse_single_statement source with
+let parse_single_class ?(convert = false) source =
+  match parse_single_statement ~convert source with
   | { Node.value = Statement.Class definition; _ } -> definition
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression ?(convert = true) ?(preprocess = false) source =
+let parse_single_expression ?(convert = false) ?(preprocess = false) source =
   match parse_single_statement ~convert ~preprocess source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
 
-let parse_single_access ?(preprocess = false) source =
-  match parse_single_expression ~preprocess source with
+let parse_single_access ?(convert = false) ?(preprocess = false) source =
+  match parse_single_expression ~convert ~preprocess source with
   | { Node.value = Expression.Access (Expression.Access.SimpleAccess access); _ } -> access
   | _ -> failwith "Could not parse single access"
 
 
-let parse_callable ?(aliases = fun _ -> None) callable =
-  parse_single_expression callable
-  |> Type.create ~aliases
+let parse_callable ?(convert = false) ?(aliases = fun _ -> None) callable =
+  parse_single_expression ~convert callable
+  |> Type.create ~convert ~aliases
 
 
 let diff ~print format (left, right) =

@@ -174,7 +174,8 @@ let test_for _ =
       node 6 Node.Join [5; 8] [1];
       node
         7
-        (Node.Block [parse_single_statement "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
+        (Node.Block
+          [parse_single_statement ~convert:true "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ]
 

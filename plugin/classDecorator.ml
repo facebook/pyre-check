@@ -81,7 +81,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                     else
                                       None
                                   in
-                                  let annotation = Type.expression annotation in
+                                  let annotation = Type.expression ~convert:true annotation in
                                   let rec override_existing_parameters unchecked_parameters =
                                     match unchecked_parameters with
                                     | [] ->
@@ -143,7 +143,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                         methods
                     in
                     let add_order_method methods name =
-                      let annotation = Type.expression Type.object_primitive in
+                      let annotation = Type.expression ~convert:true Type.object_primitive in
                       if
                         not (Annotated.Class.has_method annotated_class ~resolution ~name)
                       then

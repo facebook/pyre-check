@@ -418,10 +418,7 @@ let register_aliases (module Handler: Handler) sources =
             if in_class_body then target else Reference.combine qualifier target
           in
           let target_annotation =
-            Type.create
-              ~convert:false
-              ~aliases:Handler.aliases
-              (Reference.new_expression target)
+            Type.create ~aliases:Handler.aliases (Reference.new_expression target)
           in
           begin
             match Node.value value, annotation with
@@ -488,7 +485,7 @@ let register_aliases (module Handler: Handler) sources =
             | Call _, None
             | Name _, None ->
                 let value = Expression.delocalize value in
-                let value_annotation = Type.create ~convert:false ~aliases:Handler.aliases value in
+                let value_annotation = Type.create ~aliases:Handler.aliases value in
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then
@@ -540,10 +537,10 @@ let register_aliases (module Handler: Handler) sources =
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
-      Type.create ~convert:false ~aliases:Handler.aliases (Reference.new_expression target)
+      Type.create ~aliases:Handler.aliases (Reference.new_expression target)
     in
     let value_annotation =
-      match Type.create ~convert:false ~aliases:Handler.aliases value with
+      match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
           Type.Variable { variable with variable = Reference.show target }
       | annotation ->
@@ -565,7 +562,7 @@ let register_aliases (module Handler: Handler) sources =
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
                 let reference =
-                  match Node.value (Type.expression ~convert:false (Type.Primitive primitive)) with
+                  match Node.value (Type.expression (Type.Primitive primitive)) with
                   | Expression.Name name when Expression.is_simple_name name ->
                       Reference.from_name name
                   | _ ->
@@ -749,7 +746,7 @@ let register_values
                 | _ ->
                     annotation
               in
-              Type.create ~aliases:Handler.aliases annotation, true
+              Type.create ~convert:true ~aliases:Handler.aliases annotation, true
           | None ->
               let annotation =
                 try
@@ -1152,7 +1149,7 @@ module Builder = struct
       in
       let successors =
         let successor { Expression.Call.Argument.value; _ } =
-          Type.create value ~aliases:(fun _ -> None)
+          Type.create ~convert:true value ~aliases:(fun _ -> None)
           |> Type.split
           |> fst
           |> Type.primitive_name
@@ -1186,7 +1183,9 @@ module Builder = struct
         [
           {
             Expression.Call.Argument.name = None;
-            value = Type.parametric "typing.Generic" [Type.variable "typing._T"] |> Type.expression
+            value =
+              Type.parametric "typing.Generic" [Type.variable "typing._T"]
+              |> Type.expression ~convert:true
           };
         ],
         [];
@@ -1216,7 +1215,7 @@ module Builder = struct
             Expression.Call.Argument.name = None;
             value =
               (Type.parametric "typing.Mapping" [Type.string; Type.Any])
-              |> Type.expression
+              |> Type.expression ~convert:true
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:true;
@@ -1226,7 +1225,7 @@ module Builder = struct
             Expression.Call.Argument.name = None;
             value =
               (Type.Primitive "TypedDictionary")
-              |> Type.expression
+              |> Type.expression ~convert:true
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:false;

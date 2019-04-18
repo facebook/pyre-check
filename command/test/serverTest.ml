@@ -437,7 +437,7 @@ let test_query context =
     serialized
     |> (fun literal -> String (StringLiteral.create literal))
     |> Node.create_with_default_location
-    |> Type.create ~aliases:(fun _ -> None)
+    |> Type.create ~convert:true ~aliases:(fun _ -> None)
   in
   let create_location ~path start_line start_column stop_line stop_column =
     let start = { Location.line = start_line; column = start_column } in
@@ -1247,7 +1247,9 @@ let test_decode_serialized_ocaml_values context =
   in
   assert_decode
     ~key:(ClassDefinitions.serialize_key "int")
-    ~value:(Node.create_with_default_location (Test.parse_single_class "class C: pass"))
+    ~value:(
+      Node.create_with_default_location (Test.parse_single_class ~convert:true "class C: pass")
+    )
     ~response:{
       TypeQuery.serialized_key = ClassDefinitions.serialize_key "int";
       kind = "Class";
@@ -1323,7 +1325,7 @@ let test_decode_serialized_ocaml_values context =
     };
   assert_decode
     ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py"))
-    ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
+    ~value:(Source.create [Test.parse_single_statement ~convert:true "x = 1 + 2"])
     ~response:{
       TypeQuery.serialized_key =
         Ast.SharedMemory.Sources.Sources.serialize_key
@@ -1350,7 +1352,7 @@ let test_decode_serialized_ocaml_values context =
         ~qualifier:((!&"handle"))
         ~local_mode:Ast.Source.Default
         ~stub:false
-        [Test.parse_single_statement ~convert:false "x = 2"])
+        [Test.parse_single_statement "x = 2"])
     ~response:{
       TypeQuery.serialized_key =
         Ast.SharedMemory.Modules.Modules.serialize_key !&"handle";

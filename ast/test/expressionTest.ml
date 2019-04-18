@@ -251,7 +251,7 @@ let test_pp _ =
     "a.b[1].c";
 
   assert_pp_equal
-    (parse_single_expression "'string {}'.format(1)")
+    (parse_single_expression ~convert:true "'string {}'.format(1)")
     "\"string {}\".format(1)"
 
 
@@ -352,13 +352,13 @@ let test_delocalize _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression expected)
-      (parse_single_expression source |> Expression.delocalize);
+      (parse_single_expression ~convert:true expected)
+      (parse_single_expression ~convert:true source |> Expression.delocalize);
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression ~convert:false expected)
-      (parse_single_expression ~convert:false source |> Expression.delocalize)
+      (parse_single_expression expected)
+      (parse_single_expression source |> Expression.delocalize)
   in
 
   assert_delocalized "constant" "constant";
@@ -373,14 +373,14 @@ let test_delocalize _ =
 let test_comparison_operator_override _ =
   let assert_override source expected =
     let operator =
-      match parse_single_expression source with
+      match parse_single_expression ~convert:true source with
       | { Node.value = ComparisonOperator operator; _ } -> operator
       | _ -> failwith "Could not parse comparison operator."
     in
     assert_equal
       ~printer:(function | Some expression -> Expression.show expression | _ -> "None")
       ~cmp:(Option.equal Expression.equal)
-      (expected >>| parse_single_expression)
+      (expected >>| parse_single_expression ~convert:true)
       (ComparisonOperator.override operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");
@@ -394,7 +394,7 @@ let test_comparison_operator_override _ =
 let test_name_and_arguments _ =
   let assert_call ~call ?(expected_arguments = []) expected_name =
     let { Expression.Access.callee = name; arguments } =
-      match parse_single_expression call with
+      match parse_single_expression ~convert:true call with
       | { Node.value = Access (SimpleAccess call); _ } ->
           Option.value_exn (Expression.Access.name_and_arguments ~call)
       | _ -> failwith "Unable to parse access"
@@ -407,7 +407,7 @@ let test_name_and_arguments _ =
       arguments
   in
   let assert_not_call ~call =
-    match parse_single_expression call with
+    match parse_single_expression ~convert:true call with
     | { Node.value = Access (SimpleAccess call); _ } ->
         assert_equal (Expression.Access.name_and_arguments ~call) None
     | _ ->

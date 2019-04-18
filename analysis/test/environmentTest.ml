@@ -236,7 +236,7 @@ let test_register_aliases _ =
     in
     let assert_alias (alias, target) =
       let parse_annotation handler source =
-        parse_single_expression source
+        parse_single_expression ~convert:true source
         |> parse_annotation handler
       in
       assert_equal
@@ -516,7 +516,7 @@ let test_connect_definition _ =
   assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "C");
 
   let definition =
-    +(Test.parse_single_class {|
+    +(Test.parse_single_class ~convert:true {|
        class D(int, float):
          ...
      |})
@@ -659,7 +659,7 @@ let test_populate _ =
   assert_equal
     (parse_annotation
        environment
-       (+Access (SimpleAccess (parse_single_access "Optional[foo.foo]"))))
+       (+Access (SimpleAccess (parse_single_access ~convert:true "Optional[foo.foo]"))))
     (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
@@ -914,7 +914,8 @@ let test_populate _ =
     match Type.show annotation with
     | "typing.Callable" ->
         [
-          parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
+          parse_single_expression
+            "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
           |> Type.create ~aliases:(fun _ -> None)
         ]
     | _ ->
@@ -1632,7 +1633,7 @@ let test_propagate_nested_classes _ =
     in
 
     let assert_alias (alias, target) =
-      parse_single_expression alias
+      parse_single_expression ~convert:true alias
       |> parse_annotation handler
       |> Type.show
       |> assert_equal  ~printer:(fun string -> string) target

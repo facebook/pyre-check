@@ -19,14 +19,14 @@ let test_create _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~aliases (parse_single_expression source));
+      (Type.create ~convert:true ~aliases (parse_single_expression ~convert:true source));
 
     (* Test creation from new AST. *)
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~convert:false ~aliases (parse_single_expression ~convert:false source))
+      (Type.create ~aliases (parse_single_expression source))
   in
 
   assert_create "foo" (Type.Primitive "foo");
@@ -423,15 +423,15 @@ let test_expression _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression expression)
-      (Type.expression annotation);
+      (parse_single_expression ~convert:true expression)
+      (Type.expression ~convert:true annotation);
 
     (* Test new AST expression conversion *)
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression ~convert:false expression)
-      (Type.expression ~convert:false annotation)
+      (parse_single_expression expression)
+      (Type.expression annotation)
   in
 
   assert_expression (Type.Primitive "foo") "foo";
@@ -1226,28 +1226,26 @@ let test_parameter_name_compatibility _ =
 let test_lambda _ =
   assert_true
     (Type.equal
-       (parse_callable "typing.Callable[[Named(x, str)], int]")
+       (parse_callable ~convert:true "typing.Callable[[Named(x, str)], int]")
        (Type.lambda
           ~parameters:["x", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
+       (parse_callable ~convert:true "typing.Callable[[Keywords(kwargs, str)], int]")
        (Type.lambda
           ~parameters:["**kwargs", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable "typing.Callable[[Variable(args, str)], int]")
+       (parse_callable ~convert:true "typing.Callable[[Variable(args, str)], int]")
        (Type.lambda
           ~parameters:["*args", Type.string]
           ~return_annotation:Type.integer))
 
 
 let test_visit _ =
-  let create source =
-    Type.create ~aliases:(fun _ -> None) (parse_single_expression source)
-  in
+  let create source = Type.create ~aliases:(fun _ -> None) (parse_single_expression source) in
   let assert_types_equal annotation expected  =
     assert_equal
       ~printer:Type.show
