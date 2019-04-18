@@ -138,7 +138,20 @@ let test_expand_string_annotations _ =
       def foo(x: typing.Any):
         y = typing.cast(typing.List[Foo], x)
         z = typing.cast(typing.Dict[str, Foo], x)
-    |}
+    |};
+  assert_expand
+    "def foo(f: Literal['A']): ..."
+    "def foo(f: Literal['A']): ...";
+  assert_expand
+    "def foo(f: typing_extensions.Literal['A']): ..."
+    "def foo(f: typing_extensions.Literal['A']): ...";
+  assert_expand
+    "def foo(f: typing_extensions.Literal['A', 'B']): ..."
+    "def foo(f: typing_extensions.Literal['A', 'B']): ...";
+  assert_expand
+    "def foo(f: te.Literal['A', 'B']): ..."
+    "def foo(f: te.Literal['A', 'B']): ...";
+  ()
 
 
 let test_expand_format_string _ =
@@ -168,13 +181,14 @@ let test_expand_format_string _ =
     "f'foo{1+2}'"
     "foo{1+2}"
     [
-      +Access
-        (ExpressionAccess {
-            expression = +Integer 1;
-            access = [
-              Access.Identifier "__add__";
-              Access.Call (+[{ Argument.name = None; value = +Integer 2 }]);
-            ]});
+      +Call {
+        callee = +Name (
+          Name.Attribute {
+            base = +Integer 1;
+            attribute = "__add__";
+          });
+        arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+      }
     ];
 
   (* Ensure we fix up locations. *)
@@ -210,7 +224,9 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
+    let parse =
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle
+    in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
 
@@ -1394,6 +1410,30 @@ let test_expand_type_checking_imports _ =
     {|
       from whoops import TYPE_CHECKING
       pass
+    |};
+
+  (* Nested. *)
+  assert_expanded
+    {|
+      def foo():
+        if typing.TYPE_CHECKING:
+          pass
+    |}
+    {|
+      def foo():
+        pass
+    |};
+
+  (* Inverted. *)
+  assert_expanded
+    {|
+      if not typing.TYPE_CHECKING:
+        pass
+      else:
+        1
+    |}
+    {|
+      1
     |}
 
 
@@ -1514,7 +1554,7 @@ let test_expand_implicit_returns _ =
          [
            +Define {
              signature = {
-               name = Reference.create "foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                docstring = None;
@@ -1579,7 +1619,7 @@ let test_expand_implicit_returns _ =
     |}
     [
       +While {
-        While.test = !"derp";
+        While.test = +Name (Name.Identifier "derp");
         body = [+Pass];
         orelse = [];
       };
@@ -1614,7 +1654,7 @@ let test_defines _ =
   let create_define name =
     {
       Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [
           +{
             Parameter.name = "a";
@@ -1634,7 +1674,7 @@ let test_defines _ =
   let create_toplevel body =
     {
       Define.signature = {
-        name = Reference.create "$toplevel";
+        name = !&"$toplevel";
         parameters = [];
         decorators = [];
         docstring = None;
@@ -1654,7 +1694,7 @@ let test_defines _ =
   let inner =
     {
       Define.signature = {
-        name = Reference.create "foo";
+        name = !&"foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1674,7 +1714,7 @@ let test_defines _ =
   let define =
     {
       Define.signature = {
-        name = Reference.create "foo";
+        name = !&"foo";
         parameters = [
           +{
             Parameter.name = "a";
@@ -1700,7 +1740,7 @@ let test_defines _ =
   let define_bar = create_define "bar" in
   let parent =
     {
-      Statement.Class.name = Reference.create "Foo";
+      Statement.Class.name = !&"Foo";
       bases = [];
       body = [+Define define_foo; +Define define_bar];
       decorators = [];
@@ -1722,18 +1762,18 @@ let test_classes _ =
 
   let class_define =
     {
-      Class.name = Reference.create "foo";
+      Class.name = !&"foo";
       bases = [];
       body = [
         +Define {
           signature = {
-            name = Reference.create "bar";
+            name = !&"bar";
             parameters = [];
             decorators = [];
             docstring = None;
             return_annotation = None;
             async = false;
-            parent = Some (Reference.create "foo");
+            parent = Some (!&"foo");
           };
           body = [+Pass];
         };
@@ -1748,7 +1788,7 @@ let test_classes _ =
 
   let inner =
     {
-      Class.name = Reference.create "bar";
+      Class.name = !&"bar";
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -1757,7 +1797,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = Reference.create "foo";
+      Class.name = !&"foo";
       bases = [];
       body = [
         +Class inner;
@@ -1806,14 +1846,16 @@ let test_replace_mypy_extensions_stub _ =
 
 let test_expand_typed_dictionaries _ =
   let assert_expand ?(qualifier = Reference.empty) source expected =
+    let expected =
+      parse ~qualifier expected
+      |> Preprocessing.qualify
+    in
     let actual =
       parse ~qualifier source
       |> Preprocessing.qualify
       |> Preprocessing.expand_typed_dictionary_declarations
     in
-    assert_source_equal
-      (Preprocessing.qualify (parse ~qualifier expected))
-      actual
+    assert_source_equal expected actual
   in
   assert_expand
     {|
@@ -1864,7 +1906,7 @@ let test_expand_typed_dictionaries _ =
     ("Movie: " ^
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]")
-    ~qualifier:(Reference.create "foo.bar");
+    ~qualifier:(!&"foo.bar");
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):
@@ -1946,7 +1988,6 @@ let test_expand_typed_dictionaries _ =
      "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
      "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
   ()
-
 
 
 let test_try_preprocess _ =

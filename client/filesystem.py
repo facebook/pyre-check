@@ -21,6 +21,15 @@ from .exceptions import EnvironmentException
 LOG = logging.getLogger(__name__)
 
 
+class BuckBuilder:
+    def build(self, targets: Iterable[str]) -> Iterable[str]:
+        """
+            Build the given targets, and return a list of output directories
+            containing the target output.
+        """
+        raise NotImplementedError
+
+
 def translate_path(root: str, path: str) -> str:
     if os.path.isabs(path):
         return path
@@ -135,8 +144,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         extensions: Optional[List[str]] = None,
         search_path: Optional[List[str]] = None,
         isolate: bool = False,
-        build: bool = False,
-        prompt: bool = False,
+        buck_builder: Optional[BuckBuilder] = None,
     ):
         self._source_directories = set(source_directories)
         self._targets = set(targets)
@@ -146,8 +154,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
         self._extensions = set(extensions or []) | {"py", "pyi"}
         self._search_path = search_path or []
         self._isolate = isolate
-        self._build = build
-        self._prompt = prompt
+        self._buck_builder = buck_builder or buck.SimpleBuckBuilder()
 
         # Mapping from source files in the project root to symbolic links in the
         # analysis directory.
@@ -177,9 +184,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
     # Exposed for testing.
     def _resolve_source_directories(self):
         if self._targets:
-            new_source_directories = buck.generate_source_directories(
-                self._targets, build=self._build, prompt=self._prompt
-            )
+            new_source_directories = self._buck_builder.build(self._targets)
             original_directory = self._original_directory
             if original_directory is not None:
                 new_source_directories = translate_paths(
@@ -258,7 +263,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
                 ).items():
                     link = os.path.join(self.get_root(), relative_link)
                     try:
-                        _add_symbolic_link(link, path)
+                        add_symbolic_link(link, path)
                         self._symbolic_links[path] = link
                         tracked_files.append(link)
                     except OSError:
@@ -299,13 +304,13 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             self._merge_into_paths(source_directory, all_paths)
         for relative, original in all_paths.items():
             merged = os.path.join(root, relative)
-            _add_symbolic_link(merged, original)
+            add_symbolic_link(merged, original)
 
     # Exposed for testing.
     def _merge_into_paths(
         self, source_directory: str, all_paths: Dict[str, str]
     ) -> None:
-        paths = _find_python_paths(root=source_directory)
+        paths = find_python_paths(root=source_directory)
         for path in paths:
             relative = os.path.relpath(path, source_directory)
             if not path:
@@ -363,7 +368,7 @@ def find_paths_with_extensions(root: str, extensions: Iterable[str]) -> List[str
     return output.split("\n")
 
 
-def _find_python_paths(root: str) -> List[str]:
+def find_python_paths(root: str) -> List[str]:
     try:
         return find_paths_with_extensions(root, ["py", "pyi"])
     except subprocess.CalledProcessError:
@@ -421,7 +426,7 @@ def _delete_symbolic_link(link_path: str) -> None:
     os.unlink(link_path)
 
 
-def _add_symbolic_link(link_path: str, actual_path: str) -> None:
+def add_symbolic_link(link_path: str, actual_path: str) -> None:
     directory = os.path.dirname(link_path)
     try:
         os.makedirs(directory)
@@ -456,24 +461,52 @@ def acquire_lock(path: str, blocking: bool) -> Generator[Optional[int], None, No
 
 
 class Filesystem:
-    def list(self, root: str, pattern: str) -> List[str]:
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
+        """
+            Return the list of files that match any of the patterns within root.
+            If exclude is provided, files that match an exclude pattern are omitted.
+
+            Note: The `find` command does not understand globs properly.
+                e.g. 'a/*.py' will match 'a/b/c.py'
+            For this reason, avoid calling this method with glob patterns.
+        """
+
+        command = ["find", "."]
+        command += self._match_any(patterns)
+        if exclude:
+            command += ["-and", "!"]
+            command += self._match_any(exclude)
         return (
-            subprocess.run(
-                ["find", root, "-name", "*{}".format(pattern)], stdout=subprocess.PIPE
-            )
+            subprocess.run(command, stdout=subprocess.PIPE, cwd=root)
             .stdout.decode("utf-8")
             .split()
         )
 
+    def _match_any(self, patterns: List[str]) -> List[str]:
+        expression = []
+        for pattern in patterns:
+            if expression:
+                expression.append("-or")
+            expression.extend(["-path", "./{}".format(pattern)])
+        return ["(", *expression, ")"]
+
 
 class MercurialBackedFilesystem(Filesystem):
-    def list(self, root: str, pattern: str) -> List[str]:
+    def list(
+        self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
+    ) -> List[str]:
         try:
+            command = ["hg", "files"]
+            for pattern in patterns:
+                command += ["--include", pattern]
+            if exclude:
+                for pattern in exclude:
+                    command += ["--exclude", pattern]
             return (
                 subprocess.run(
-                    ["hg", "files", "--include", "**{}".format(pattern)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
+                    command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=root
                 )
                 .stdout.decode("utf-8")
                 .split()

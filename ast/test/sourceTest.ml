@@ -214,19 +214,16 @@ let test_qualifier _ =
 let test_expand_relative_import _ =
   let assert_export ~handle ~from ~expected =
     let handle = File.Handle.create handle in
-    let qualifier =
-      Source.qualifier ~handle
-      |> Reference.access
-    in
+    let qualifier = Source.qualifier ~handle in
     let from =
-      match parse_single_statement ("from " ^ from ^ " import something") with
+      match parse_single_statement ~convert:true ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in
     assert_equal
-      ~cmp:Access.equal
-      ~printer:Access.show
-      (parse_single_access expected)
+      ~cmp:Reference.equal
+      ~printer:Reference.show
+      (Reference.create expected)
       (Source.expand_relative_import ~qualifier ~handle ~from)
   in
 

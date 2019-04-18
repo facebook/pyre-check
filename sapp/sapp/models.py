@@ -54,7 +54,7 @@ MESSAGE_LENGTH = 4096
 SHARED_TEXT_LENGTH = 4096
 
 """Number of variables that can safely be set on a single DB call"""
-BATCH_SIZE = 900
+BATCH_SIZE = 450
 
 """Models used to represent DB entries
 

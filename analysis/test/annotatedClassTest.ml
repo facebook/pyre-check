@@ -8,6 +8,7 @@ open OUnit2
 
 open Ast
 open Analysis
+open Expression
 open Statement
 open Pyre
 
@@ -17,7 +18,7 @@ open AnnotatedTest
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
-module Argument = Expression.Argument
+module Argument = Call.Argument
 
 
 let test_generics _ =
@@ -108,7 +109,7 @@ let test_superclasses _ =
     |} in
   let (!) name =
     {
-      Statement.Class.name = Reference.create name;
+      Statement.Class.name = !&name;
       bases = [];
       body = [+Pass];
       decorators = [];
@@ -121,8 +122,8 @@ let test_superclasses _ =
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal_primitive)
       expected
       actual
   in
@@ -134,16 +135,14 @@ let test_superclasses _ =
       ~cmp:(List.equal ~equal) expected actual
   in
 
-  assert_successors !"Foo" [Type.object_primitive; Type.Any; Type.Top];
+  assert_successors !"Foo" ["object"];
   assert_successors
     !"SubRedundant"
     [
-      Type.Primitive "SubFooBar";
-      Type.Primitive "Foo";
-      Type.Primitive "Bar";
-      Type.object_primitive;
-      Type.Any;
-      Type.Top;
+      "SubFooBar";
+      "Foo";
+      "Bar";
+      "object";
     ];
   assert_superclasses !"Foo" [!"object"];
   assert_superclasses !"SubFoo" [!"Foo"; !"object"];
@@ -160,16 +159,32 @@ type constructor = {
 
 let test_get_decorator _ =
   let assert_get_decorator source decorator expected =
-    match parse_last_statement source with
-    | { Node.value = Statement.Class definition; _ } ->
-        let actual =
-          Node.create_with_default_location definition
-          |> Class.create
-          |> Class.get_decorator ~decorator
+    let assert_logic ~convert expected =
+      match parse_last_statement ~convert source with
+      | { Node.value = Statement.Class definition; _ } ->
+          let actual =
+            Node.create_with_default_location definition
+            |> Class.create
+            |> Class.get_decorator ~decorator
+          in
+          assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
+      | _ ->
+          assert_true (List.is_empty expected)
+    in
+    let old_access_expected =
+      let to_old ({ Class.arguments; _ } as decorator) =
+        let arguments =
+          arguments
+          >>| List.map
+            ~f:(fun { Argument.name; value } ->
+              { Argument.name; value = Expression.convert value })
         in
-        assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
-    | _ ->
-        assert_true (List.is_empty expected)
+        { decorator with Class.arguments }
+      in
+      List.map ~f:to_old expected
+    in
+    assert_logic ~convert:true old_access_expected;
+    assert_logic ~convert:false expected;
   in
   assert_get_decorator "class A: pass" "decorator" [];
   assert_get_decorator
@@ -179,7 +194,7 @@ let test_get_decorator _ =
         pass
     |}
     "decorator"
-    [{ access = "decorator"; arguments = None }];
+    [{ name = "decorator"; arguments = None }];
   assert_get_decorator
     {|
       @decorator.a.b
@@ -203,7 +218,7 @@ let test_get_decorator _ =
         pass
     |}
     "decorator.a.b"
-    [{ access = "decorator.a.b"; arguments = None }];
+    [{ name = "decorator.a.b"; arguments = None }];
   assert_get_decorator
     {|
       @decorator(a=b, c=d)
@@ -222,10 +237,10 @@ let test_get_decorator _ =
     "decorator"
     [
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
-            { Argument.name = Some ~+"c"; value = !"d"}
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
+            { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d")}
           ];
       };
     ];
@@ -239,16 +254,16 @@ let test_get_decorator _ =
     "decorator"
     [
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
           ];
       };
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
-            { Argument.name = Some ~+"c"; value = !"d"}
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
+            { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d")}
           ];
       };
     ]
@@ -270,7 +285,8 @@ let test_constructors _ =
         let callable =
           constructors
           >>| (fun constructors ->
-              Type.create ~aliases:(fun _ -> None) (parse_single_expression constructors))
+              Resolution.parse_annotation resolution
+              (parse_single_expression constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -380,15 +396,11 @@ let test_methods _ =
   let assert_methods source methods =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
-        let resolution =
-          populate source
-          |> fun environment -> TypeCheck.resolution environment ()
-        in
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
           Node.create_with_default_location definition
           |> Class.create
-          |> Class.methods ~resolution
+          |> Class.methods
           |> List.map ~f:(fun definition -> Method.define definition |> method_name)
         in
         assert_equal methods actuals
@@ -453,9 +465,9 @@ let test_has_method _ =
 
 let test_is_protocol _ =
   let assert_is_protocol bases expected =
-    let is_protocol =
+    let is_protocol bases =
       {
-        Statement.Class.name = Reference.create "Derp";
+        Statement.Class.name = !&"Derp";
         bases;
         body = [];
         decorators = [];
@@ -465,19 +477,23 @@ let test_is_protocol _ =
       |> Class.create
       |> Class.is_protocol
     in
-    assert_equal expected is_protocol
+    let old_access_bases =
+      List.map
+        ~f:(fun { Argument.name; value } ->
+            { Argument.name; value = Expression.convert value })
+        bases
+    in
+    assert_equal expected (is_protocol bases);
+    assert_equal expected (is_protocol old_access_bases);
   in
+  let parse = parse_single_expression in
 
   assert_is_protocol [] false;
-  assert_is_protocol [{ Argument.name = None; value = !"derp" }] false;
-  assert_is_protocol [{ Argument.name = None; value = !"typing.Protocol" }] true;
-  assert_is_protocol [{ Argument.name = None; value = !"typing_extensions.Protocol" }] true;
-  assert_is_protocol
-    [{ Argument.name = Some ~+"metaclass"; value = !"abc.ABCMeta" }]
-    false;
-  assert_is_protocol
-    [{ Argument.name = None; value = (parse_single_expression "typing.Protocol[T]") }]
-    true;
+  assert_is_protocol [{ Argument.name = None; value = parse "derp" }] false;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol" }] true;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing_extensions.Protocol" }] true;
+  assert_is_protocol [{ Argument.name = Some ~+"metaclass"; value = parse "abc.ABCMeta" }] false;
+  assert_is_protocol [{ Argument.name = None; value = parse "typing.Protocol[T]" }] true;
   ()
 
 let test_implements _ =
@@ -596,15 +612,19 @@ let test_implements _ =
         def len() -> int: pass
     |}
     DoesNotImplement;
+  (* Not sure whats meant to happen here... *)
   assert_conforms
     {|
       class List():
         def empty() -> bool: pass
         @typing.overload
-        def length(x: int) -> str: pass
-        def length() -> str: pass
         def length(x: int) -> int: pass
+        @typing.overload
         def length() -> int: pass
+        @typing.overload
+        def length(x: int) -> str: pass
+        @typing.overload
+        def length() -> str: pass
     |}
     {|
       class Sized(typing.Protocol):
@@ -618,8 +638,10 @@ let test_implements _ =
         def empty() -> bool: pass
         @typing.overload
         def length(x: int) -> str: pass
-        def length() -> str: pass
+        @typing.overload
         def length(x: int) -> int: pass
+        @typing.overload
+        def length() -> str: pass
     |}
     {|
       class Sized(typing.Protocol):
@@ -718,7 +740,8 @@ let test_implements _ =
     |}
     (Implements {
         parameters =
-          [Type.variable "T" ~constraints:(Type.Bound (Type.union [Type.integer; Type.string]))]
+          [Type.variable "T"
+             ~constraints:(Type.Variable.Bound (Type.union [Type.integer; Type.string]))]
       });
 
   assert_conforms
@@ -786,6 +809,16 @@ let test_implements _ =
           pass
     |}
     DoesNotImplement;
+  assert_conforms
+    {|
+      class A:
+        foo: int = 7
+    |}
+    {|
+      class Protocol:
+        foo: int = ...
+    |}
+    no_parameters;
   ()
 
 
@@ -814,7 +847,7 @@ let test_callable_implements _ =
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match  get_last_statement protocol with
+    match get_last_statement protocol with
     | { Node.value = Statement.Class protocol; _ } ->
         assert_equal
           ~printer:(function
@@ -875,7 +908,7 @@ let test_callable_implements _ =
 let test_class_attributes _ =
   let setup source =
     let parent =
-      match parse_last_statement source with
+      match parse_last_statement ~convert:true source with
       | { Node.value = Class definition; _ } ->
           definition
       | _ ->
@@ -969,7 +1002,7 @@ let test_class_attributes _ =
       Attribute.create
         ~resolution
         ~parent
-        (create_attribute "third" ~value:(+Expression.Integer 1));
+        (create_attribute "third" ~value:(+Integer 1));
     ];
 
 
@@ -993,7 +1026,8 @@ let test_class_attributes _ =
       ~resolution
       ~parent
       (create_attribute
-         ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
+         ~annotation:(Some (
+           Type.expression ~convert:true (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
   assert_true (Attribute.class_attribute attribute);
@@ -1087,6 +1121,7 @@ let test_class_attributes _ =
       "__new__";
       "__sizeof__";
     ];
+
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
     let instantiated, class_attributes =
@@ -1121,19 +1156,29 @@ let test_class_attributes _ =
         pass
       def Attributes.baz(self, x:str) -> str:
         pass
+      @property
+      def Attributes.property(self) -> str:
+        pass
     |}
-    |> parse_single_class
+    |> parse_single_class ~convert:true
   in
-  let create_expected_attribute ?(parent = Type.Primitive "Attributes") name callable =
+  let create_expected_attribute
+      ?(property = false)
+      ?(parent = Type.Primitive "Attributes")
+      name
+      callable =
     {
       Class.Attribute.name;
       parent;
-      annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
-      value = Node.create_with_default_location Expression.Ellipsis;
+      annotation = (
+        Annotation.create_immutable ~global:true (parse_callable callable)
+      );
+      value = Node.create_with_default_location Ellipsis;
       defined = true;
       class_attribute = false;
       async = false;
       initialized = false;
+      property;
     }
   in
   assert_attribute
@@ -1151,7 +1196,7 @@ let test_class_attributes _ =
     ~expected_attribute:(
       create_expected_attribute
         "baz"
-        "typing.Callable('Attributes.baz')[[Named(x, str)], str]");
+        "typing.Callable('Attributes.baz')[[Named(x, int)], int]");
   assert_attribute
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
@@ -1160,7 +1205,12 @@ let test_class_attributes _ =
       create_expected_attribute
         ~parent:(Type.Primitive "Metaclass")
         "implicit"
-        "typing.Callable('Metaclass.implicit')[[], int]")
+        "typing.Callable('Metaclass.implicit')[[], int]");
+  assert_attribute
+    ~parent
+    ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
+    ~attribute_name:"property"
+    ~expected_attribute:(create_expected_attribute ~property:true "property" "str")
 
 
 let test_fallback_attribute _ =
@@ -1171,7 +1221,7 @@ let test_fallback_attribute _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
     let attribute =
-      parse_last_statement source
+      parse_last_statement ~convert:true source
       |> (function
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
@@ -1267,7 +1317,7 @@ let test_constraints _ =
       |> value
     in
     let constraints =
-      parse_last_statement source
+      parse_last_statement ~convert:true source
       |> (function
           | { Node.location; value = Statement.Class definition; _ } ->
               Class.create (Node.create ~location definition)
@@ -1308,7 +1358,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_T]):
         pass
     |}
-    [];
+    [Type.variable "_T", Type.Bottom];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -1446,7 +1496,9 @@ let test_constraints _ =
     |}
     [Type.variable "_T", Type.integer];
 
-  let t_bound = Type.variable ~constraints:(Type.Bound (Type.Primitive "Bound")) "T_Bound" in
+  let t_bound =
+    Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "Bound")) "T_Bound"
+  in
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.Primitive "Bound"])
@@ -1485,7 +1537,7 @@ let test_constraints _ =
     |}
     [];
   let t_explicit =
-    Type.variable ~constraints:(Type.Explicit [Type.integer; Type.string]) "T_Explicit"
+    Type.variable ~constraints:(Type.Variable.Explicit [Type.integer; Type.string]) "T_Explicit"
   in
   assert_constraints
     ~target:"Foo"
@@ -1523,7 +1575,7 @@ let test_inferred_generic_base _ =
     in
     let resolution = Test.resolution ~sources:[source] () in
     assert_equal
-      ~cmp:(List.equal ~equal:Argument.equal)
+      ~cmp:(List.equal ~equal:(Argument.equal Expression.equal))
       expected
       (Annotated.Class.inferred_generic_base target ~resolution)
   in
@@ -1546,7 +1598,7 @@ let test_inferred_generic_base _ =
      |}
     [{
       Argument.name = None;
-      value = Type.expression (Type.parametric "typing.Generic" [Type.variable "_T"]);
+      value = Type.expression ~convert:true (Type.parametric "typing.Generic" [Type.variable "_T"]);
     }];
   assert_inferred_generic
     ~target:"List"
@@ -1568,7 +1620,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression
+        Type.expression ~convert:true
           (Type.parametric "typing.Generic" [Type.variable "_T1"; Type.variable "_T2"]);
     }];
   assert_inferred_generic
@@ -1580,7 +1632,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression
+        Type.expression ~convert:true
           (Type.parametric "typing.Generic" [Type.variable "_T1"]);
     }];
 
@@ -1638,7 +1690,75 @@ let test_metaclasses _ =
         pass
     |}
     ~target:"D"
-    "Meta"
+    "Meta";
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class C(metaclass=Meta):
+        pass
+      class Other(metaclass=MoreMeta):
+        pass
+      class D(C, Other):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta";
+
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class C(metaclass=Meta):
+        pass
+      class Other(metaclass=MoreMeta):
+        pass
+      class D(Other, C):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta";
+
+  (* If we don't have a "most derived metaclass", pick an arbitrary one. *)
+  assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class OtherMeta(Meta):
+        pass
+      class C(metaclass=MoreMeta):
+        pass
+      class Other(metaclass=OtherMeta):
+        pass
+      class D(Other, C):
+        pass
+    |}
+    ~target:"D"
+    "OtherMeta";
+
+   assert_metaclass
+    ~source:{|
+      class Meta:
+        pass
+      class MoreMeta(Meta):
+        pass
+      class OtherMeta(Meta):
+        pass
+      class C(metaclass=MoreMeta):
+        pass
+      class Other(metaclass=OtherMeta):
+        pass
+      class D(C, Other):
+        pass
+    |}
+    ~target:"D"
+    "MoreMeta"
 
 
 let test_overrides _ =

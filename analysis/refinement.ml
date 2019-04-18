@@ -3,6 +3,8 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
+open Core
+open Pyre
 open Annotation
 
 
@@ -11,6 +13,23 @@ let refine ~resolution { annotation; mutability } refined =
   | Mutable ->
       { annotation = refined; mutability }
   | Immutable { original; _ } ->
+      let annotation =
+        match refined with
+        | Type.Top ->
+            refined
+        | Type.Bottom ->
+            annotation
+        | refined ->
+            Resolution.solve_less_or_equal
+              resolution
+              ~constraints:TypeConstraints.empty
+              ~left:refined
+              ~right:original
+            |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+            |> List.hd
+            >>| (fun solution -> Type.instantiate refined ~constraints:(Type.Map.find solution))
+            |> Option.value ~default:annotation
+      in
       let refine =
         Type.equal refined Type.Top ||
         (not (Type.equal refined Type.Bottom) &&

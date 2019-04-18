@@ -22,7 +22,7 @@ module type FixpointState = sig
 
   val create:
     existing_model:TaintResult.call_model
-    -> (Root.t * Identifier.t * 'a option) list
+    -> (Root.t * Identifier.t * 'a Parameter.t) list
     -> t
 
 end
@@ -60,8 +60,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     let create ~existing_model parameters =
       (* Use primed sources to populate initial state of parameters *)
       let forward_primed_taint = existing_model.TaintResult.forward.source_taint in
-      let prime_parameter state (parameter_root, name, _) =
-        let prime = ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint in
+      let prime_parameter state (parameter_root, name, original) =
+        let location = original.Node.location in
+        let prime =
+          ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
+          |> ForwardState.Tree.apply_call location ~callees:[] ~port:parameter_root
+        in
         let root = AccessPath.Root.Variable name in
         let taint = ForwardState.assign ~root ~path:[] prime state.taint in
         { state with taint }
@@ -106,7 +110,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let add_first kind name set =
       let already_has_first = function
-        | SimpleFeatures.Breadcrumb (Breadcrumb.First { kind = has_kind; _ }) ->
+        | Features.Simple.Breadcrumb (Features.Breadcrumb.First { kind = has_kind; _ }) ->
             has_kind = kind
         | _ ->
             false
@@ -114,18 +118,18 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       if List.exists set ~f:already_has_first then
         set
       else
-        (SimpleFeatures.Breadcrumb (Breadcrumb.HasFirst kind)) ::
-        (SimpleFeatures.Breadcrumb (Breadcrumb.First { kind; name })) :: set
+        (Features.Simple.Breadcrumb (Features.Breadcrumb.HasFirst kind)) ::
+        (Features.Simple.Breadcrumb (Features.Breadcrumb.First { kind; name })) :: set
 
 
     let add_first_index index =
       match index with
       | AbstractTreeDomain.Label.Field name when is_numeric name ->
-          add_first Breadcrumb.FirstIndex "<numeric>"
+          add_first Features.Breadcrumb.FirstIndex "<numeric>"
       | AbstractTreeDomain.Label.Field name ->
-          add_first Breadcrumb.FirstIndex name
+          add_first Features.Breadcrumb.FirstIndex name
       | AbstractTreeDomain.Label.Any ->
-          add_first Breadcrumb.FirstIndex "<unknown>"
+          add_first Features.Breadcrumb.FirstIndex "<unknown>"
 
 
     let rec analyze_argument ~resolution state taint_accumulator { Argument.value = argument; _ } =
@@ -134,9 +138,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution call_location arguments state call_targets =
-      let add_obscure set =
-        SimpleFeatures.Breadcrumb Breadcrumb.Obscure :: set
-      in
       let apply_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         if not taint_model.is_obscure then
@@ -174,7 +175,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 let breadcrumbs =
                   let gather_breadcrumbs breadcrumbs feature =
                     match feature with
-                    | (SimpleFeatures.Breadcrumb _) as breadcrumb ->
+                    | (Features.Simple.Breadcrumb _) as breadcrumb ->
                         breadcrumb :: breadcrumbs
                     | _ ->
                         breadcrumbs
@@ -184,8 +185,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                     return_taint
                     ~f:gather_breadcrumbs
                     ~init:[
-                      SimpleFeatures.Breadcrumb Breadcrumb.Tito;
-                      SimpleFeatures.TitoPosition location;
+                      Features.Simple.Breadcrumb Features.Breadcrumb.Tito;
+                      Features.Simple.TitoPosition location;
                     ]
                 in
                 let add_features features =
@@ -198,7 +199,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   |> ForwardState.Tree.create_leaf
                 in
                 let return_paths =
-                  let gather_paths paths (ComplexFeatures.ReturnAccessPath extra_path) =
+                  let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
                     extra_path :: paths
                   in
                   BackwardTaint.fold
@@ -248,13 +249,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             arguments
             ~init:ForwardState.Tree.empty
             ~f:(analyze_argument ~resolution state)
-          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:add_obscure
+          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:Features.add_obscure
       in
       match call_targets with
       | [] ->
           (* If we don't have a call target: propagate argument taint. *)
           List.fold arguments ~init:ForwardState.Tree.empty ~f:(analyze_argument ~resolution state)
-          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:add_obscure
+          |> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:Features.add_obscure
       | call_targets ->
           List.map call_targets ~f:apply_call_target
           |> List.fold ~init:ForwardState.Tree.empty ~f:ForwardState.Tree.join
@@ -283,7 +284,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           begin
             let add_index_breadcrumb_if_necessary taint =
-              if method_name <> "get" then
+              if not (String.equal method_name "get") then
                 taint
               else
                 match arguments with
@@ -369,14 +370,23 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           let attribute_taint =
             let annotations =
               let successors =
-                Resolution.class_representation resolution annotation
+                Resolution.class_metadata resolution annotation
                 >>| (fun { Resolution.successors; _ } -> successors)
                 |> Option.value ~default:[]
+                |> List.map ~f:(fun name -> Type.Primitive name)
               in
-              annotation :: successors
+              let base_annotation =
+                (* Our model definitions are ambiguous. Models could either refer to a class
+                   variable or an instance variable. We explore both. *)
+                if Type.is_meta annotation then
+                  [Type.single_parameter annotation]
+                else
+                  []
+              in
+              annotation :: successors @ base_annotation
             in
             let attribute_taint sofar annotation =
-              Reference.create ~prefix:(Reference.from_access (Type.class_name annotation)) member
+              Reference.create ~prefix:(Type.class_name annotation) member
               |> global_model
               |> ForwardState.Tree.join sofar
             in
@@ -391,7 +401,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             |> ForwardState.Tree.read [field]
             |> ForwardState.Tree.transform
               ForwardTaint.simple_feature_set
-              ~f:(add_first Breadcrumb.FirstField member)
+              ~f:(add_first Features.Breadcrumb.FirstField member)
           in
           ForwardState.Tree.join inferred_taint attribute_taint
       | Index { expression; index; _ } ->
@@ -665,10 +675,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 end
 
 
-let extract_source_model _parameters exit_taint =
+let extract_source_model ~define ~resolution exit_taint =
+  let { Define.signature = { return_annotation; _ }; _ } = define in
   let simplify tree =
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape tree ~mold:essential
+    |> ForwardState.Tree.transform
+      ForwardTaint.simple_feature_set
+      ~f:(Features.add_type_breadcrumb ~resolution return_annotation)
   in
   let return_taint =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] exit_taint
@@ -679,8 +693,9 @@ let extract_source_model _parameters exit_taint =
 
 let run
     ~environment
-    ~define:({ Node.value = { Define.signature = { parameters; _ }; _ }; _ } as define)
+    ~define
     ~existing_model =
+  let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } = define in
   let module Context = struct
     let definition = define
     let environment = environment
@@ -710,10 +725,19 @@ let run
       Location.Reference.Table.fold candidates ~f:accumulate ~init:[]
 
     let return_sink =
+      let return_location =
+        match return_annotation with
+        | Some node -> node.Node.location
+        | None -> define.Node.location
+      in
       BackwardState.read
         ~root:AccessPath.Root.LocalResult
         ~path:[]
         existing_model.TaintResult.backward.sink_taint
+      |> BackwardState.Tree.apply_call
+        return_location
+        ~callees:[]
+        ~port:AccessPath.Root.LocalResult
   end
   in
   let module AnalysisInstance = AnalysisInstance(Context) in
@@ -732,8 +756,9 @@ let run
     Analyzer.forward ~cfg ~initial
     |> Analyzer.exit
   in
+  let resolution = TypeCheck.resolution environment () in
   let extract_model ({ FixpointState.taint; _ } as result) =
-    let source_taint = extract_source_model parameters taint in
+    let source_taint = extract_source_model ~define:define.value ~resolution taint in
     let () = Log.log ~section:`Taint "Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint; }
   in

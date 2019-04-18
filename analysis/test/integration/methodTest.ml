@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+open Test
 open OUnit2
 open IntegrationTest
 
@@ -183,7 +184,7 @@ let test_check_method_parameters _ =
 let test_check_abstract_methods _ =
   let update_environment_with =
     [{
-      Test.qualifier = Ast.Reference.create "abc";
+      Test.qualifier = !&"abc";
       handle = "abc.pyi";
       (* This is just a mock stub of abc and is not meant to be accurate or complete *)
       source =
@@ -756,7 +757,10 @@ let test_check_method_resolution _ =
       def foo() -> None:
         bar().baz()
     |}
-    ["Undefined name [18]: Global name `bar` is undefined."];
+    [
+      "Undefined name [18]: Global name `bar` is not defined, or there is at least one control \
+       flow path that doesn't define `bar`.";
+    ];
 
   assert_type_errors
     {|

@@ -27,6 +27,7 @@ def mock_arguments(
     build=False,
     source_directories=None,
     targets=None,
+    store_type_check_resolution=False,
 ) -> MagicMock:
     arguments = MagicMock()
     arguments.build = build
@@ -60,6 +61,7 @@ def mock_arguments(
     arguments.terminal = terminal
     arguments.verbose = False
     arguments.nonblocking = False
+    arguments.store_type_check_resolution = store_type_check_resolution
     return arguments
 
 

@@ -14,7 +14,7 @@ let to_json ~configuration handles =
       ~init:[]
       ~f:(fun sources path ->
           match Ast.SharedMemory.Sources.get path with
-          | Some source -> source::sources
+          | Some source -> (Analysis.Preprocessing.convert source)::sources
           | None -> sources)
   in
   let sources = get_sources handles in

@@ -31,7 +31,7 @@ module Root = struct
     let normalize_parameters
         position
         (seen_star, excluded, normalized)
-        { Node.value = { Parameter.name = prefixed_name; annotation; _ }; _ }
+        ({ Node.value = { Parameter.name = prefixed_name; _ }; _ } as original)
       =
       let prefixed_name_string = prefixed_name in
       if String.is_prefix ~prefix:"**" prefixed_name_string then
@@ -41,7 +41,7 @@ module Root = struct
         (
           true,
           excluded,
-          (StarStarParameter { excluded }, prefixed_variable_name, annotation) :: normalized
+          (StarStarParameter { excluded }, prefixed_variable_name, original) :: normalized
         )
       else if String.is_prefix ~prefix:"*" prefixed_name_string then
         let prefixed_variable_name =
@@ -50,21 +50,21 @@ module Root = struct
         (
           true,
           excluded,
-          (StarParameter { position }, prefixed_variable_name, annotation) :: normalized
+          (StarParameter { position }, prefixed_variable_name, original) :: normalized
         )
       else if seen_star then
         let normal_name = prefixed_name_string |> chop_parameter_prefix in
         (
           true,
           normal_name :: excluded,
-          (NamedParameter { name = normal_name }, prefixed_name, annotation) :: normalized
+          (NamedParameter { name = normal_name }, prefixed_name, original) :: normalized
         )
       else
         let normal_name = prefixed_name_string |> chop_parameter_prefix in
         (
           false,
           normal_name :: excluded,
-          (PositionalParameter { position; name = normal_name }, prefixed_name, annotation)
+          (PositionalParameter { position; name = normal_name }, prefixed_name, original)
           :: normalized
         )
     in
@@ -332,8 +332,10 @@ let split_root ~resolution = function
       failwith "empty access"
 
 
-let normalize_access ~resolution path =
-  let (root, rest) = split_root path ~resolution in
+let normalize_access ~resolution access =
+  (* TODO(T42218730): should we also handle redirects here? *)
+  let access = TypeCheck.AccessState.resolve_exports ~resolution ~access in
+  let (root, rest) = split_root access ~resolution in
   List.fold rest ~init:root ~f:normalize_access_list
 
 
@@ -396,6 +398,7 @@ let is_property_access ~resolution ~expression:{ Node.location; value = expressi
           Recognized.property_decorators
       in
       (Type.access annotation) @ [Identifier member]
+      |> Reference.from_access
       |> Resolution.function_definitions resolution
       >>| (function
           | [{ Node.value = define; _ }] -> is_property define

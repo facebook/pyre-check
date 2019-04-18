@@ -443,7 +443,7 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
         None
     | Some left, None ->
         prune_tree ancestors left
-    | None, Some right when widen_depth = None ->
+    | None, Some right when Option.is_none widen_depth ->
         prune_tree ancestors right
     | None, Some right ->
         join_trees ancestors ~widen_depth empty_tree right

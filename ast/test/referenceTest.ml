@@ -34,7 +34,7 @@ let test_expression _ =
     in
     let actual =
       Reference.create reference
-      |> Reference.expression
+      |> Reference.expression ~convert:true
     in
     assert_equal
       ~printer:Expression.show
@@ -45,30 +45,30 @@ let test_expression _ =
   assert_expression "a.b.c" (SimpleAccess [Identifier "a"; Identifier "b"; Identifier "c"])
 
 
-let test_new_expression _ =
+let test_name _ =
   let node = Node.create_with_default_location in
-  let assert_expression reference expression =
+  let assert_create_name_expression reference expression =
     let expected =
       Expression.Name expression
       |> node
     in
     let actual =
       Reference.create reference
-      |> Reference.new_expression
+      |> Reference.expression
     in
     assert_equal
       ~printer:Expression.show
       expected
       actual
   in
-  assert_expression "a" (Expression.Name.Identifier "a");
-  assert_expression
+  assert_create_name_expression "a" (Expression.Name.Identifier "a");
+  assert_create_name_expression
     "a.b"
     (Expression.Name.Attribute {
       base = Expression.Name (Expression.Name.Identifier "a") |> node;
       attribute = "b"
     });
-  assert_expression
+  assert_create_name_expression
     "a.b.c"
     (Expression.Name.Attribute {
       base = Expression.Name (
@@ -78,7 +78,35 @@ let test_new_expression _ =
         })
         |> node;
       attribute = "c"
+    });
+
+  let assert_create_from_name name expected =
+    assert_equal
+      ~printer:Reference.show
+      ~cmp:Reference.equal
+      (Reference.create expected)
+      (Reference.from_name name)
+  in
+  assert_create_from_name
+    (Expression.Name.Identifier "a")
+    "a";
+  assert_create_from_name
+    (Expression.Name.Attribute {
+      base = Expression.Name (Expression.Name.Identifier "a") |> node;
+      attribute = "b"
     })
+    "a.b";
+  assert_create_from_name
+    (Expression.Name.Attribute {
+      base = Expression.Name (
+        Expression.Name.Attribute {
+          base = Expression.Name (Expression.Name.Identifier "a") |> node;
+          attribute = "b";
+        })
+        |> node;
+      attribute = "c"
+    })
+    "a.b.c"
 
 
 let test_delocalize _ =
@@ -158,7 +186,7 @@ let () =
   "reference">:::[
     "create">::test_create;
     "expression">::test_expression;
-    "new_expression">::test_new_expression;
+    "name">::test_name;
     "delocalize">::test_delocalize;
     "prefix">::test_prefix;
   ]

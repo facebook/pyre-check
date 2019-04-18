@@ -32,7 +32,10 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Test.populate ~configuration (Environment.handler environment) [parse ~handle:"test.py" source];
+  Test.populate
+    ~configuration
+    (Environment.handler environment)
+    [parse ~handle:"test.py" source];
   let {
     Dependencies.class_keys;
     function_keys;
@@ -43,37 +46,40 @@ let test_index _ =
     let keyset = Hashtbl.find_exn table (File.Handle.create "test.py") in
     assert_true (Hash_set.mem keyset key)
   in
-  assert_table_contains_key class_keys (primitive "baz.baz");
-  assert_table_contains_key function_keys (Reference.create "foo");
+  assert_table_contains_key class_keys "baz.baz";
+  assert_table_contains_key function_keys (!&"foo");
   assert_table_contains_key alias_keys (primitive "_T")
 
 
 let add_dependent table handle dependent =
   let handle = File.Handle.create handle in
   let source = Source.qualifier ~handle in
-  let dependent = File.Handle.create dependent in
+  let dependent =
+    File.Handle.create dependent
+    |> fun handle -> Source.qualifier ~handle
+  in
   let update entry =
     match entry with
     | None ->
-        File.Handle.Set.singleton dependent
+        Reference.Set.singleton dependent
     | Some set ->
         Set.add set dependent
   in
   Hashtbl.update table source ~f:update
 
 
-let get_dependencies (module Handler: Environment.Handler) handle =
-  Handler.dependencies (Source.qualifier ~handle)
+let get_dependencies (module Handler: Environment.Handler) qualifier =
+  Handler.dependencies qualifier
 
 
-let assert_dependencies ~environment ~handles ~expected function_to_test =
+let assert_dependencies ~environment ~modules ~expected function_to_test =
   let get_dependencies = get_dependencies (Environment.handler environment) in
   let dependencies =
     function_to_test
       ~get_dependencies
-      ~handles:(List.map handles ~f:File.Handle.create)
+      ~modules:(List.map modules ~f:Reference.create)
     |> Set.to_list
-    |> List.map ~f:File.Handle.show
+    |> List.map ~f:Reference.show
     |> List.sort ~compare:String.compare
   in
   let expected = List.sort ~compare:String.compare expected in
@@ -87,24 +93,24 @@ let test_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  add_dependent table "b.py" "a.py";
-  add_dependent table "c.py" "a.py";
-  add_dependent table "c.py" "b.py";
-  add_dependent table "a.py" "test.py";
-  let assert_dependencies ~handles ~expected =
-    assert_dependencies ~environment ~handles ~expected Dependencies.of_list
+  add_dependent table "b" "a";
+  add_dependent table "c" "a";
+  add_dependent table "c" "b";
+  add_dependent table "a" "test";
+  let assert_dependencies ~modules ~expected =
+    assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
   assert_dependencies
-    ~handles:["b.py"; "c.py"]
-    ~expected:["a.py"];
+    ~modules:["b"; "c"]
+    ~expected:["a"];
   assert_dependencies
-    ~handles:["a.py"]
-    ~expected:["test.py"];
+    ~modules:["a"]
+    ~expected:["test"];
   assert_dependencies
-    ~handles:["c.py"]
-    ~expected:["a.py"; "b.py"];
+    ~modules:["c"]
+    ~expected:["a"; "b"];
   assert_dependencies
-    ~handles:["test.py"]
+    ~modules:["test"]
     ~expected:[]
 
 
@@ -115,16 +121,16 @@ let test_dependent_of_list_duplicates _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  add_dependent table "a.py" "b.py";
-  add_dependent table "a.py" "c.py";
-  add_dependent table "a.py" "b.py";
-  add_dependent table "a.py" "c.py";
-  let assert_dependencies ~handles ~expected =
-    assert_dependencies ~environment ~handles ~expected Dependencies.of_list
+  add_dependent table "a" "b";
+  add_dependent table "a" "c";
+  add_dependent table "a" "b";
+  add_dependent table "a" "c";
+  let assert_dependencies ~modules ~expected =
+    assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
   assert_dependencies
-    ~handles:["a.py"]
-    ~expected:["b.py"; "c.py"]
+    ~modules:["a"]
+    ~expected:["b"; "c"]
 
 
 let test_transitive_dependent_of_list _ =
@@ -134,21 +140,21 @@ let test_transitive_dependent_of_list _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  add_dependent table "b.py" "a.py";
-  add_dependent table "c.py" "a.py";
-  add_dependent table "c.py" "b.py";
-  add_dependent table "a.py" "test.py";
-  let assert_dependencies ~handles ~expected =
-    assert_dependencies ~environment ~handles ~expected Dependencies.transitive_of_list
+  add_dependent table "b" "a";
+  add_dependent table "c" "a";
+  add_dependent table "c" "b";
+  add_dependent table "a" "test";
+  let assert_dependencies ~modules ~expected =
+    assert_dependencies ~environment ~modules ~expected Dependencies.transitive_of_list
   in
   assert_dependencies
-    ~handles:["b.py"; "c.py"]
-    ~expected:["a.py"; "test.py"];
+    ~modules:["b"; "c"]
+    ~expected:["a"; "test"];
   assert_dependencies
-    ~handles:["c.py"]
-    ~expected:["a.py"; "b.py"; "test.py"];
+    ~modules:["c"]
+    ~expected:["a"; "b"; "test"];
   assert_dependencies
-    ~handles:["test.py"]
+    ~modules:["test"]
     ~expected:[]
 
 
@@ -159,18 +165,18 @@ let test_transitive_dependents _ =
     { environment.Environment.dependencies with Dependencies.dependents = table }
   in
   let environment = { environment with Environment.dependencies } in
-  add_dependent table "b.py" "a.py";
-  add_dependent table "c.py" "a.py";
-  add_dependent table "c.py" "b.py";
-  add_dependent table "a.py" "test.py";
+  add_dependent table "b" "a";
+  add_dependent table "c" "a";
+  add_dependent table "c" "b";
+  add_dependent table "a" "test";
   let assert_dependents ~handle ~expected =
     let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
       Dependencies.transitive_of_list
-        ~handles:[File.Handle.create handle]
+        ~modules:[Source.qualifier ~handle:(File.Handle.create handle)]
         ~get_dependencies
       |> Set.to_list
-      |> List.map ~f:File.Handle.show
+      |> List.map ~f:Reference.show
       |> List.sort ~compare:String.compare
     in
     let expected = List.sort ~compare:String.compare expected in
@@ -178,7 +184,7 @@ let test_transitive_dependents _ =
   in
   assert_dependents
     ~handle:"c.py"
-    ~expected:["a.py"; "b.py"; "test.py"]
+    ~expected:["a"; "b"; "test"]
 
 
 let test_normalize _ =
@@ -190,25 +196,25 @@ let test_normalize _ =
     let add_dependent (left, right) =
       Handler.DependencyHandler.add_dependent
         ~handle:(File.Handle.create (left ^ ".py"))
-        (Reference.create right)
+        (!&right)
     in
     List.iter edges ~f:add_dependent;
-    let all_handles =
+    let all_modules =
       edges
       |> List.concat_map ~f:(fun (left, right) -> [left; right])
       |> List.map ~f:(fun name -> File.Handle.create (name ^ ".py"))
     in
-    Handler.DependencyHandler.normalize all_handles;
+    Handler.DependencyHandler.normalize all_modules;
     let assert_dependents_equal (node, expected) =
       let expected =
-        List.map expected ~f:(fun name -> File.Handle.create name)
-        |> List.sort ~compare:File.Handle.compare
-        |> File.Handle.Set.Tree.of_list
+        List.map expected ~f:(fun name -> Reference.create name)
+        |> List.sort ~compare:Reference.compare
+        |> Reference.Set.Tree.of_list
       in
       let printer = function
         | None -> "None"
         | Some dependents ->
-            File.Handle.Set.Tree.sexp_of_t dependents
+            Reference.Set.Tree.sexp_of_t dependents
             |> Sexp.to_string
       in
       (* If the printer shows identical sets here but the equality fails, the underlying
@@ -216,13 +222,13 @@ let test_normalize _ =
       assert_equal
         ~printer
         (Some expected)
-        (Handler.DependencyHandler.dependents (Reference.create node))
+        (Handler.DependencyHandler.dependents (!&node))
     in
     List.iter expected ~f:assert_dependents_equal
   in
-  assert_normalized ~edges:["a", "b"] ["b", ["a.py"]];
-  assert_normalized ~edges:["a", "c"; "b", "c"] ["c", ["a.py"; "b.py"]];
-  assert_normalized ~edges:["b", "c"; "a", "c"] ["c", ["a.py"; "b.py"]];
+  assert_normalized ~edges:["a", "b"] ["b", ["a"]];
+  assert_normalized ~edges:["a", "c"; "b", "c"] ["c", ["a"; "b"]];
+  assert_normalized ~edges:["b", "c"; "a", "c"] ["c", ["a"; "b"]];
   assert_normalized
     ~edges:[
       "a", "h";
@@ -233,7 +239,7 @@ let test_normalize _ =
       "f", "h";
       "g", "h";
     ]
-    ["h", ["a.py"; "b.py"; "c.py"; "d.py"; "e.py"; "f.py"; "g.py"]];
+    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
   assert_normalized
     ~edges:[
       "g", "h";
@@ -244,7 +250,7 @@ let test_normalize _ =
       "b", "h";
       "a", "h";
     ]
-    ["h", ["a.py"; "b.py"; "c.py"; "d.py"; "e.py"; "f.py"; "g.py"]];
+    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
   assert_normalized
     ~edges:[
       "d", "h";
@@ -255,7 +261,7 @@ let test_normalize _ =
       "b", "h";
       "a", "h";
     ]
-    ["h", ["a.py"; "b.py"; "c.py"; "d.py"; "e.py"; "f.py"; "g.py"]]
+    ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]]
 
 
 let () =

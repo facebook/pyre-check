@@ -25,3 +25,7 @@ val wildcard_exports: t -> Reference.t list
 val aliased_export: t -> Reference.t -> Reference.t option
 
 val in_wildcard_exports: t -> Reference.t -> bool
+
+module Cache : sig
+  val clear: unit -> unit
+end

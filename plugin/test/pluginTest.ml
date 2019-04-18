@@ -8,7 +8,6 @@ open Core
 open Analysis
 open Ast
 open Statement
-open Expression
 
 open Test
 
@@ -18,7 +17,10 @@ let assert_environment_contains source expected =
   let (module Handler: Environment.Handler) =
     environment ~sources:[] ()
   in
-  let source = Preprocessing.preprocess (parse source) in
+  let source =
+    parse source
+    |> Preprocessing.preprocess
+  in
   Test.populate
     ~configuration:(Configuration.Analysis.create ())
     (module Handler)
@@ -27,30 +29,22 @@ let assert_environment_contains source expected =
   let expected =
     List.map
       expected
-      ~f:(fun definition -> (Preprocessing.preprocess (parse definition)))
+      ~f:(fun definition -> parse definition |> Preprocessing.preprocess |> Preprocessing.convert)
   in
-  let class_types =
+  let class_names =
     let get_name_if_class { Node.value; _ } =
       match value with
       | Class { Class.name; _ } ->
-          Some name
+          Some (Reference.show name)
       | _ ->
           None
-    in
-    let get_type name =
-      Reference.access name
-      |> Access.expression
-      |> Type.create ~aliases:Handler.aliases
     in
     List.map ~f:Source.statements expected
     |> List.filter_map ~f:List.hd
     |> List.filter_map ~f:get_name_if_class
-    |> List.map ~f:get_type
   in
   let assert_class_equal class_type expected =
-    let { Resolution.class_definition; _ } =
-      Option.value_exn (Handler.class_definition class_type)
-    in
+    let class_definition = Option.value_exn (Handler.class_definition class_type) in
     assert_source_equal
       expected
       (Source.create
@@ -58,4 +52,4 @@ let assert_environment_contains source expected =
          [+Class (Node.value class_definition)]
       )
   in
-  List.iter2_exn ~f:assert_class_equal class_types expected
+  List.iter2_exn ~f:assert_class_equal class_names expected

@@ -174,11 +174,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(codes=1000)
+        self.interactive.issues(codes="a string")
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'codes' should be a list", stderr)
+        self.assertIn("'codes' should be", stderr)
 
-        self.interactive.issues(codes=[1000])
+        self.interactive.issues(codes=1000)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
@@ -195,11 +195,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(callables="function3")
+        self.interactive.issues(callables=1234)
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'callables' should be a list", stderr)
+        self.assertIn("'callables' should be", stderr)
 
-        self.interactive.issues(callables=["%sub%"])
+        self.interactive.issues(callables="%sub%")
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -216,11 +216,11 @@ class InteractiveTest(TestCase):
         self._list_issues_filter_setup()
 
         self.interactive.setup()
-        self.interactive.issues(filenames="hello.py")
+        self.interactive.issues(filenames=1234)
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("'filenames' should be a list", stderr)
+        self.assertIn("'filenames' should be", stderr)
 
-        self.interactive.issues(filenames=["module/s%"])
+        self.interactive.issues(filenames="module/s%")
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -277,7 +277,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_run(1)
+        self.interactive.run(1)
         self.interactive.issues()
         output = self.stdout.getvalue().strip()
 
@@ -295,12 +295,39 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_run(2)
-        self.interactive.set_run(3)
+        self.interactive.run(2)
+        self.interactive.run(3)
         stderr = self.stderr.getvalue().strip()
 
         self.assertIn("Run 2 doesn't exist", stderr)
         self.assertIn("Run 3 doesn't exist", stderr)
+
+    def testSetLatestRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=3, date=datetime.now(), status=RunStatus.FINISHED, kind="a"),
+            Run(id=4, date=datetime.now(), status=RunStatus.FINISHED, kind="b"),
+            Run(id=5, date=datetime.now(), status=RunStatus.FINISHED, kind="b"),
+            Run(id=6, date=datetime.now(), status=RunStatus.FINISHED, kind="c"),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, runs)
+            session.commit()
+
+        self.interactive.latest_run("c")
+        self.assertEqual(self.interactive.current_run_id, 6)
+
+        self.interactive.latest_run("b")
+        self.assertEqual(self.interactive.current_run_id, 5)
+
+        self.interactive.latest_run("a")
+        self.assertEqual(self.interactive.current_run_id, 3)
+
+        self.interactive.latest_run("d")
+        self.assertEqual(self.interactive.current_run_id, 3)
+        self.assertIn("No runs with kind 'd'", self.stderr.getvalue())
 
     def testSetIssue(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -321,14 +348,14 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
 
-        self.interactive.set_issue_instance(2)
+        self.interactive.issue(2)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", stdout)
         self.assertIn("Issue 2", stdout)
         self.assertNotIn("Issue 3", stdout)
 
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.show()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", stdout)
@@ -342,10 +369,34 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         stderr = self.stderr.getvalue().strip()
 
         self.assertIn("Issue 1 doesn't exist", stderr)
+
+    def testSetIssueUpdatesRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        issue = self._generic_issue(id=1)
+        issue_instances = [
+            self._generic_issue_instance(id=1, run_id=1, issue_id=1),
+            self._generic_issue_instance(id=2, run_id=2, issue_id=1),
+        ]
+        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+
+        with self.db.make_session() as session:
+            session.add(issue)
+            session.add(shared_text)
+            self._add_to_session(session, runs)
+            self._add_to_session(session, issue_instances)
+            session.commit()
+
+        self.interactive.setup()
+        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.interactive.issue(1)
+        self.assertEqual(int(self.interactive.current_run_id), 1)
 
     def testGetSources(self):
         issue_instance = self._generic_issue_instance()
@@ -491,8 +542,8 @@ class InteractiveTest(TestCase):
 
         trace_frames[0].callee = "call3"
         trace_frames[0].callee_port = "param1"
-        trace_frames[1].callee = "call3"
-        trace_frames[1].callee_port = "param1"
+        trace_frames[1].caller = "call3"
+        trace_frames[1].caller_port = "param1"
 
         with self.db.make_session() as session:
             self._add_to_session(session, trace_frames)
@@ -506,7 +557,7 @@ class InteractiveTest(TestCase):
             next_frames = self.interactive._next_backward_trace_frames(
                 session, trace_frames[1]
             )
-            self.assertEqual(len(next_frames), 2)
+            self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[0].id))
 
     def testNavigateTraceFrames(self):
@@ -718,9 +769,9 @@ class InteractiveTest(TestCase):
         self.interactive.setup()
         self.interactive.trace()
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("Use 'set_issue_instance(ID)' or 'set_frame(ID)'", stderr)
+        self.assertIn("Use 'issue_instance(ID)' or 'frame(ID)'", stderr)
 
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
         self.assertIn("     1    leaf       source file.py:1|1|1", output)
@@ -744,7 +795,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_frame(1)
+        self.interactive.frame(1)
 
         self._clear_stdout()
         self.interactive.trace()
@@ -806,7 +857,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.trace()
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Missing trace frame: call2:param0", stdout)
@@ -856,7 +907,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
         self.interactive.next_cursor_location()
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
@@ -914,7 +965,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.assertEqual(self.interactive.current_trace_frame_index, 1)
 
         self.interactive.jump(1)
@@ -960,7 +1011,7 @@ class InteractiveTest(TestCase):
 
         self.interactive.setup()
         self.interactive.sources = {"source1"}
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self._clear_stdout()
         self.interactive.trace()
         self.assertEqual(
@@ -1044,7 +1095,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
 
         self.assertEqual(self.interactive.sources, {"source1"})
         self.assertEqual(self.interactive.sinks, {"sink1"})
@@ -1056,14 +1107,15 @@ class InteractiveTest(TestCase):
         self.assertIn("     3 +2 call2      param2 file.py:2|2|2", output)
         self.assertIn("     4 +2 leaf       sink   file.py:4|4|4", output)
 
-    def testExpand(self):
+    def testShowBranches(self):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         # Parent at root
         self.interactive.prev_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] leaf : source\n        [0 hops: source1]\n        [file.py:0|0|0]",
@@ -1078,7 +1130,8 @@ class InteractiveTest(TestCase):
         # Move to call2:param2
         self.interactive.next_cursor_location()
         self.interactive.next_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:2|2|2]",
@@ -1092,7 +1145,8 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         # Move to leaf:sink
         self.interactive.next_cursor_location()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
             "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:4|4|4]", output
@@ -1105,7 +1159,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         # Parent at root
         self.interactive.prev_cursor_location()
 
@@ -1129,7 +1183,7 @@ class InteractiveTest(TestCase):
         self._set_up_branched_trace()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
         self.interactive.prev_cursor_location()
 
         # We are testing for the source location, which differs between branches
@@ -1161,7 +1215,7 @@ class InteractiveTest(TestCase):
 
         self.interactive.branch(3)  # location 4|4|4 -> 5|5|5
         stderr = self.stderr.getvalue().strip()
-        self.assertIn("out of bounds", stderr)
+        self.assertIn("Branch number invalid", stderr)
 
     def testBranchPrefixLengthChanges(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -1238,7 +1292,7 @@ class InteractiveTest(TestCase):
             session.commit()
 
         self.interactive.setup()
-        self.interactive.set_issue_instance(1)
+        self.interactive.issue(1)
 
         self._clear_stdout()
         self.interactive.prev_cursor_location()
@@ -1268,7 +1322,8 @@ class InteractiveTest(TestCase):
         )
 
         self._clear_stdout()
-        self.interactive.expand()
+        with patch("click.prompt", return_value=0):
+            self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn("[*] prev_call : result", output)
         self.assertIn("        [1 hops: source1]", output)
@@ -1326,19 +1381,18 @@ class InteractiveTest(TestCase):
         except UserError:
             self.fail("Unexpected UserError")
 
-    def testVerifyListFilter(self):
+    def testAddListOrElementFilterErrors(self):
         with self.assertRaises(UserError):
-            self.interactive._verify_list_filter("not a list", "arg0")
+            self.interactive._add_list_or_element_filter_to_query(
+                "not a list", None, None, "arg0", int
+            )
 
         with self.assertRaises(UserError):
-            self.interactive._verify_list_filter([], "arg0")
+            self.interactive._add_list_or_element_filter_to_query(
+                [], None, None, "arg0", str
+            )
 
-        try:
-            self.interactive._verify_list_filter(["elem", "elem"], "arg0")
-        except UserError:
-            self.fail("Unexpected UserError")
-
-    def testAddListFilterToQuery(self):
+    def testAddListOrStringFilterToQuery(self):
         shared_texts = [
             SharedText(id=1, contents="prefix"),
             SharedText(id=2, contents="suffix"),
@@ -1352,20 +1406,20 @@ class InteractiveTest(TestCase):
 
             query = session.query(SharedText.contents)
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["prefix", "suffix"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["prefix", "suffix"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("suffix",)],
             )
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["%prefix%"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["%prefix%"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("prefix_suffix",)],
             )
             self.assertEqual(
-                self.interactive._add_list_filter_to_query(
-                    ["%fix%"], query, SharedText.contents
+                self.interactive._add_list_or_string_filter_to_query(
+                    ["%fix%"], query, SharedText.contents, "contents"
                 ).all(),
                 [("prefix",), ("suffix",), ("prefix_suffix",), ("fix",)],
             )
@@ -1406,7 +1460,7 @@ else:
                 trace_frame=TraceFrame(
                     filename="file.py",
                     callee="callee",
-                    callee_location=SourceLocation(2, 1, 1),
+                    callee_location=SourceLocation(2, 10, 25),
                 )
             )
         ]
@@ -1418,9 +1472,10 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "In callee [file.py:2|1|1]",
+                    "In callee [file.py:2|10|25]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
+                    "                  ^^^^^^^^^^^^^^^",
                     "     3  else:",
                     '     4      print("This was false")',
                     "",
@@ -1435,9 +1490,10 @@ else:
             self.assertEqual(
                 output.split("\n"),
                 [
-                    "In callee [file.py:2|1|1]",
+                    "In callee [file.py:2|10|25]",
                     "     1  if this_is_true:",
                     ' --> 2      print("This was true")',
+                    "                  ^^^^^^^^^^^^^^^",
                     "     3  else:",
                     "",
                 ],
@@ -1470,7 +1526,7 @@ else:
             TraceFrame(id=5, caller="caller2", caller_port="port3"),
         ]
 
-        buckets = self.interactive._group_trace_frames(trace_frames)
+        buckets = self.interactive._group_trace_frames(trace_frames, 5)
 
         self.assertEqual(3, len(buckets.keys()))
         self.assertIn(("caller1", "port1"), buckets.keys())
@@ -1604,6 +1660,27 @@ else:
             ],
         )
 
+    def testListFramesWithLimit(self):
+        self._set_up_branched_trace()
+        self.interactive.run(1)
+
+        self._clear_stdout()
+        self.interactive.frames(limit=3)
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call1:root ->",
+                "3        call2:param2",
+                "4        call2:param2",
+                "1        leaf:source",
+                "...",
+                "Showing 3/6 matching frames. To see more, call 'frames' with "
+                "the 'limit' argument.",
+                "",
+            ],
+        )
+
     def testSetFrame(self):
         trace_frames = self._basic_trace_frames()
         shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
@@ -1620,18 +1697,65 @@ else:
 
         self.interactive.setup()
 
-        self.interactive.set_frame(0)
+        self.interactive.frame(0)
         self.assertIn("Trace frame 0 doesn't exist.", self.stderr.getvalue())
 
         self._clear_stdout()
-        self.interactive.set_frame(1)
+        self.interactive.frame(1)
         self.assertIn("Trace frame 1", self.stdout.getvalue())
         self.assertNotIn("Trace frame 2", self.stdout.getvalue())
 
         self._clear_stdout()
-        self.interactive.set_frame(2)
+        self.interactive.frame(2)
         self.assertNotIn("Trace frame 1", self.stdout.getvalue())
         self.assertIn("Trace frame 2", self.stdout.getvalue())
+
+    def testSetFrameUpdatesRun(self):
+        runs = [
+            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
+            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
+        ]
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="call2",
+                callee_port="param0",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call2",
+                caller_port="param1",
+                callee="call3",
+                callee_port="param2",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
+        assocs = [
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
+        ]
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, runs)
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(shared_text)
+            session.commit()
+
+        self.interactive.setup()
+        self.assertEqual(int(self.interactive.current_run_id), 2)
+        self.interactive.frame(1)
+        self.assertEqual(int(self.interactive.current_run_id), 1)
 
     def testIsBeforeRoot(self):
         self.interactive.trace_tuples = [
@@ -1656,7 +1780,7 @@ else:
         self._set_up_branched_trace()
         self.interactive.setup()
 
-        self.interactive.set_frame(3)
+        self.interactive.frame(3)
         self.interactive.current_trace_frame_index = 1
 
         self._clear_stdout()
@@ -1680,7 +1804,7 @@ else:
         self._set_up_branched_trace()
         self.interactive.setup()
 
-        self.interactive.set_frame(3)
+        self.interactive.frame(3)
         self.interactive.current_trace_frame_index = 1
 
         self._clear_stdout()
@@ -1724,7 +1848,7 @@ else:
         self.assertEqual(self.interactive.current_trace_frame_index, 3)
         self.assertEqual(
             [
-                trace_tuple.trace_frame.callee
+                self.interactive._get_callable_from_trace_tuple(trace_tuple)[0]
                 for trace_tuple in self.interactive.trace_tuples
             ],
             ["A", "B", "F", "caller"],
@@ -1745,7 +1869,7 @@ else:
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
         self.assertEqual(
             [
-                trace_tuple.trace_frame.callee
+                self.interactive._get_callable_from_trace_tuple(trace_tuple)[0]
                 for trace_tuple in self.interactive.trace_tuples
             ],
             ["caller", "F", "D", "E"],
@@ -1774,17 +1898,30 @@ else:
             )
 
     def testDetails(self):
-        trace_frame = TraceFrame(
-            id=1,
-            kind=TraceKind.PRECONDITION,
-            caller="call1",
-            caller_port="root",
-            callee="call2",
-            callee_port="param0",
-            callee_location=SourceLocation(1, 1),
-            filename="file.py",
-            run_id=1,
-        )
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="root",
+                callee="call2",
+                callee_port="param0",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call2",
+                caller_port="param1",
+                callee="call3",
+                callee_port="param2",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
         issues = [
             self._generic_issue(id=1, callable="call2"),
             self._generic_issue(id=2, callable="call3"),
@@ -1795,22 +1932,44 @@ else:
             self._generic_issue_instance(id=2, issue_id=2),
             self._generic_issue_instance(id=3, issue_id=3),
         ]
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
 
         with self.db.make_session(expire_on_commit=False) as session:
-            session.add(trace_frame)
+            self._add_to_session(session, trace_frames)
             self._add_to_session(session, issues)
             self._add_to_session(session, issue_instances)
+            session.add(run)
             session.commit()
 
         self.interactive.setup()
-        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frame)]
+        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frames[0])]
         self.interactive.current_issue_instance_id = 1
         self.interactive.current_trace_frame_index = 0
 
         self._clear_stdout()
         self.interactive.details()
-        self.assertIn("Trace frame 1", self.stdout.getvalue())
-        self.assertIn("Issues in callable (call2): 2", self.stdout.getvalue())
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "Trace frame 1",
+                "     Caller: call1 : root",
+                "     Callee: call2 : param0",
+                "       Kind: TraceKind.precondition",
+                "      Sinks: ",
+                "   Location: file.py:1|1|1",
+                "",
+                "Issues in callable (call2): 2",
+                "",
+                "Postconditions with caller (call2):",
+                "No trace frames found.",
+                "",
+                "Preconditions with caller (call2):",
+                "[id] [caller:caller_port -> callee:callee_port]",
+                "---- call2:param1 ->",
+                "2        call3:param2",
+                "",
+            ],
+        )
 
     def mock_pager(self, output_string):
         self.pager_calls += 1

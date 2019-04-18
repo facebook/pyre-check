@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 
+open Test
 open OUnit2
 open IntegrationTest
 
@@ -60,6 +61,21 @@ let test_check_contextmanager _ =
           return number
     |}
     [];
+
+  (* Decorators are chained properly. *)
+  assert_type_errors
+    {|
+      @click.command
+      @contextlib.contextmanager
+      def f() -> typing.Generator[int, None, None]:
+        yield 1
+      def g() -> None:
+        reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(args, unknown), \
+       Keywords(kwargs, unknown)], contextlib.GeneratorContextManager[int]]`.";
+    ];
 
   assert_type_errors
     {|
@@ -145,7 +161,7 @@ let test_check_click_command _ =
   let assert_type_errors =
     let update_environment_with =
       [{
-        Test.qualifier = Ast.Reference.create "click";
+        Test.qualifier = !&"click";
         handle = "click.pyi";
         (* This is just a mock stub of click and is not meant to be accurate or complete *)
         source =
@@ -300,7 +316,10 @@ let test_decorators _ =
       def f(x: int) -> int:
         return x
     |}
-    ["Undefined name [18]: Global name `my_decorator` is undefined."];
+    [
+      "Undefined name [18]: Global name `my_decorator` is not defined, or there is at least one \
+       control flow path that doesn't define `my_decorator`.";
+    ];
 
   assert_type_errors
     {|

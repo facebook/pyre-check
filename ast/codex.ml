@@ -16,7 +16,7 @@ let modify_json key value json =
   let keys = keys json in
   let json_value other_key =
     other_key,
-    if other_key = key then
+    if String.equal other_key key then
       value
     else
       member other_key json

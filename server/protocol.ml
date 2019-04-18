@@ -36,8 +36,9 @@ module TypeQuery = struct
   [@@deriving eq, show, to_yojson]
 
   type request =
-    | Attributes of Access.t
+    | Attributes of Reference.t
     | ComputeHashesToKeys
+    | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
@@ -45,11 +46,11 @@ module TypeQuery = struct
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t
-    | Methods of Access.t
+    | Methods of Reference.t
     | NormalizeType of Access.t
-    | PathOfModule of Access.t
+    | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Signature of Access.t
+    | Signature of Reference.t
     | Superclasses of Access.t
     | Type of Expression.t
     | TypeAtPosition of {
@@ -59,6 +60,11 @@ module TypeQuery = struct
     | TypesInFile of File.t
   [@@deriving eq, show]
 
+  type coverage_level =
+    | Typed
+    | Partial
+    | Untyped
+  [@@deriving eq, show, to_yojson]
 
   type attribute = {
     name: string;
@@ -91,6 +97,12 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
+  type coverage_at_location = {
+    location: Location.Instantiated.t;
+    coverage: coverage_level;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type key_mapping = {
     hash: string;
     key: string;
@@ -113,6 +125,7 @@ module TypeQuery = struct
 
   type base_response =
     | Boolean of bool
+    | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | FoundAttributes of attribute list
     | FoundKeyMapping of key_mapping list
@@ -130,6 +143,8 @@ module TypeQuery = struct
   let base_response_to_yojson = function
     | Boolean boolean ->
         `Assoc ["boolean", `Bool boolean]
+    | CoverageAtLocations annotations ->
+        `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
     | Decoded { decoded; undecodable_keys } ->
         let to_json { serialized_key; kind; actual_key; actual_value } =
           let value =

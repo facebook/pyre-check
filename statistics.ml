@@ -152,6 +152,7 @@ let performance
     ?(flush = false)
     ?randomly_log_every
     ?always_log_time_threshold
+    ?(section = `Performance)
     ?(category = "perfpipe_pyre_performance")
     ~name
     ~timer
@@ -166,6 +167,9 @@ let performance
     | None ->
         randomly_log_every
   in
+  Log.log ~section "%s: %fs"
+    (String.capitalize name)
+    ((Int.to_float milliseconds) /. 1000.0);
   Profiling.log_event
     (Profiling.Event.create name ~event_type:(Duration milliseconds) ~tags:normals);
   sample
@@ -186,7 +190,14 @@ let coverage ?(flush = false) ?randomly_log_every ~path ~coverage  () =
   |> log ~flush ?randomly_log_every "perfpipe_pyre_coverage"
 
 
-let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals = []) () =
+let event
+    ?(flush = false)
+    ?randomly_log_every
+    ?(section = `Event)
+    ~name
+    ?(integers = [])
+    ?(normals = [])
+    () =
   let integer (name, value) = Format.asprintf "%s: %d" name value in
   let normal (name, value) = Format.asprintf "%s: %s" name value in
   Log.log
@@ -196,7 +207,7 @@ let event ?(flush = false) ?(section = `Event) ~name ?(integers = []) ?(normals 
     (List.map ~f:integer integers @ List.map ~f:normal normals
      |> String.concat ~sep:", ");
   sample ~integers:integers ~normals:(("name", name) :: normals) ()
-  |> log ~flush "perfpipe_pyre_events"
+  |> log ?randomly_log_every ~flush "perfpipe_pyre_events"
 
 
 let log_exception caught_exception ~fatal ~origin =

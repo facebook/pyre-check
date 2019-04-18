@@ -24,7 +24,7 @@ type t = {
 [@@deriving show, sexp]
 
 
-type breadcrumbs = Breadcrumb.t list
+type breadcrumbs = Features.Breadcrumb.t list
 [@@deriving show, sexp]
 
 
@@ -47,7 +47,7 @@ let raise_invalid_model message =
 let add_breadcrumbs breadcrumbs init =
   List.fold
     breadcrumbs
-    ~f:(fun set breadcrumb -> SimpleFeatures.Breadcrumb breadcrumb :: set)
+    ~f:(fun set breadcrumb -> Features.Simple.Breadcrumb breadcrumb :: set)
     ~init
 
 
@@ -149,7 +149,7 @@ let rec parse_annotations ~configuration annotation =
     let open Configuration in
     match expression.Node.value with
     | Access (SimpleAccess [Identifier breadcrumb]) ->
-        [Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
+        [Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions ->
         List.concat_map ~f:extract_breadcrumbs expressions
     | _ ->
@@ -259,7 +259,7 @@ let rec parse_annotations ~configuration annotation =
       |> raise_invalid_model
 
 
-let taint_parameter ~configuration model (root, _name, annotation) =
+let taint_parameter ~configuration model (root, _name, parameter) =
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs } ->
@@ -273,6 +273,7 @@ let taint_parameter ~configuration model (root, _name, annotation) =
     | Sanitize ->
         raise_invalid_model "Sanitize annotation must be in return position"
   in
+  let annotation = parameter.Node.value.Parameter.annotation in
   parse_annotations ~configuration annotation
   |> List.fold ~init:model ~f:add_to_model
 
@@ -297,21 +298,55 @@ let taint_return ~configuration model expression =
 
 
 let create ~resolution ?(verify = true) ~configuration source =
-  let defines =
-    let filter_define node =
-      match node with
-      | { Node.value = Define define; _ } ->
+  let signatures =
+    let filter_define_signature = function
+      | { Node.value = Define { signature = { name; _ } as signature; _ }; _ } ->
           let class_candidate =
-            Reference.prefix define.signature.name
+            Reference.prefix name
             >>| Resolution.parse_reference resolution
             >>= Resolution.class_definition resolution
           in
           let call_target =
             match class_candidate with
-            | Some _ -> Callable.create_method define.signature.name
-            | None -> Callable.create_function define.signature.name
+            | Some _ -> Callable.create_method name
+            | None -> Callable.create_function name
           in
-          Some (define, call_target)
+          [signature, call_target]
+      | { Node.value = Class { Class.name; bases; _ }; _ } ->
+          let class_sink_base { Call.Argument.value; _ } =
+            if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
+              Some value
+            else
+              None
+          in
+          List.find_map bases ~f:class_sink_base
+          >>= (fun base ->
+              Resolution.class_definition resolution (Type.Primitive (Reference.show name))
+              >>| (fun { Node.value = { Class.body; _ }; _ } ->
+                  let sink_signature { Node.value; _ } =
+                    match value with
+                    | Define {
+                        Define.signature = { Define.name; parameters; _ } as signature;
+                        _;
+                      } ->
+                        let signature =
+                          let parameters =
+                            let sink_parameter parameter =
+                              let update_annotation parameter =
+                                { parameter with Parameter.annotation = Some base }
+                              in
+                              Node.map parameter ~f:update_annotation
+                            in
+                            List.map parameters ~f:sink_parameter
+                          in
+                          { signature with Define.parameters }
+                        in
+                        Some (signature, Callable.create_method name)
+                    | _ ->
+                        None
+                  in
+                  List.filter_map body ~f:sink_signature))
+          |> Option.value ~default:[]
       | {
         Node.value =
           Assign {
@@ -323,25 +358,22 @@ let create ~resolution ?(verify = true) ~configuration source =
       }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
           let name = Reference.from_access target in
-          let define =
+          let signature =
             {
-              Define.signature = {
-                name;
-                parameters = [];
-                decorators = [];
-                docstring = None;
-                return_annotation = Some annotation;
-                async = false;
-                parent = None;
-              };
-              body = [];
+              Define.name;
+              parameters = [];
+              decorators = [];
+              docstring = None;
+              return_annotation = Some annotation;
+              async = false;
+              parent = None;
             }
           in
-          Some (define, Callable.create_object define.signature.name)
+          [signature, Callable.create_object name]
       | {
         Node.value =
           Assign {
-            Assign.target = { Node.value = Access (SimpleAccess target); _};
+            Assign.target = { Node.value = Access (SimpleAccess target); _ };
             annotation = Some annotation;
             _;
           };
@@ -349,35 +381,35 @@ let create ~resolution ?(verify = true) ~configuration source =
       }
         when Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
           let name = Reference.from_access target in
-          let define =
+          let signature =
             {
-              Define.signature = {
-                name;
-                parameters = [Parameter.create ~annotation ~name:"$global" ()];
-                decorators = [];
-                docstring = None;
-                return_annotation = None;
-                async = false;
-                parent = None;
-              };
-              body = [];
+              Define.name;
+              parameters = [Parameter.create ~annotation ~name:"$global" ()];
+              decorators = [];
+              docstring = None;
+              return_annotation = None;
+              async = false;
+              parent = None;
             }
           in
-          Some (define, Callable.create_object name)
+          [signature, Callable.create_object name]
       | _ ->
-          None
+          []
     in
     String.split ~on:'\n' source
     |> Parser.parse
-    |> List.filter_map ~f:filter_define
+    |> Source.create
+    |> Preprocessing.convert
+    |> Source.statements
+    |> List.concat_map ~f:filter_define_signature
   in
   let create_model
-      ({ Define.signature = { name; parameters; return_annotation; _ }; _ }, call_target) =
+      ({ Define.name; parameters; return_annotation; _ }, call_target) =
     try
       begin
         (* Make sure we know about what we model. *)
         let call_target = (call_target :> Callable.t) in
-        let annotation = Resolution.resolve resolution (Reference.expression name) in
+        let annotation = Resolution.resolve resolution (Reference.expression ~convert:true name) in
         if Type.equal annotation Type.Top then
           raise_invalid_model "Modeled entity is not part of the environment!";
 
@@ -414,7 +446,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       Format.asprintf "Invalid model for `%a`: %s" Reference.pp name message
       |> raise_invalid_model
   in
-  List.map defines ~f:create_model
+  List.map signatures ~f:create_model
 
 
 let subprocess_calls =
@@ -515,18 +547,17 @@ let get_global_model ~resolution ~expression =
       | Access (SimpleAccess access) ->
           (match AccessPath.normalize_access ~resolution access with
            | Global access ->
-               Some access
+               Some (Reference.from_access access)
            | Access { expression; member } ->
                AccessPath.as_access expression
                |> (fun access -> Expression.Access access)
                |> Node.create_with_default_location
                |> Resolution.resolve resolution
                |> Type.class_name
-               |> (fun class_name -> class_name @ [Access.Identifier member])
+               |> (fun class_name -> Reference.create ~prefix:class_name member)
                |> Option.some
            | _ ->
                None)
-          >>| Reference.from_access
           >>| Callable.create_object
       | _ ->
           None)

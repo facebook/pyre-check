@@ -61,8 +61,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
   let transform_non_leaves path taint =
     let f feature =
       match feature with
-      | ComplexFeatures.ReturnAccessPath prefix ->
-          ComplexFeatures.ReturnAccessPath (prefix @ path)
+      | Features.Complex.ReturnAccessPath prefix ->
+          Features.Complex.ReturnAccessPath (prefix @ path)
     in
     match path with
     | AbstractTreeDomain.Label.Any :: _ ->
@@ -119,9 +119,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and apply_call_targets ~resolution arguments state call_taint call_targets =
-      let add_obscure set =
-        SimpleFeatures.Breadcrumb Breadcrumb.Obscure :: set
-      in
       let analyze_call_target (call_target, _implicit) =
         let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
@@ -145,12 +142,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           in
           let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path; } =
             let add_tito_location features =
-              (SimpleFeatures.Breadcrumb Breadcrumb.Tito) ::
-              (SimpleFeatures.TitoPosition location) ::
+              (Features.Simple.Breadcrumb Features.Breadcrumb.Tito) ::
+              (Features.Simple.TitoPosition location) ::
               features
             in
             let translate_tito argument_taint {BackwardState.Tree.path=tito_path; tip=element; _} =
-              let gather_paths paths (ComplexFeatures.ReturnAccessPath extra_path) =
+              let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
                 extra_path :: paths
               in
               let extra_paths =
@@ -163,7 +160,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               let breadcrumbs =
                 let gather_breadcrumbs breadcrumbs feature =
                   match feature with
-                  | (SimpleFeatures.Breadcrumb _) as breadcrumb ->
+                  | (Features.Simple.Breadcrumb _) as breadcrumb ->
                       breadcrumb :: breadcrumbs
                   | _ ->
                       breadcrumbs
@@ -218,7 +215,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           (* obscure or no model *)
           let obscure_taint =
             collapsed_call_taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_obscure
+            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
             |> BackwardState.Tree.create_leaf
           in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
@@ -228,7 +225,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
           (* If we don't have a call target: propagate argument taint. *)
           let obscure_taint =
             BackwardState.Tree.collapse call_taint
-            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_obscure
+            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
             |> BackwardState.Tree.create_leaf
           in
           List.fold_right ~f:(analyze_argument ~resolution obscure_taint) arguments ~init:state
@@ -574,14 +571,19 @@ end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out
    parts and sink_taint. *)
-let extract_tito_and_sink_models parameters entry_taint =
+let extract_tito_and_sink_models define ~resolution entry_taint =
+  let { Define.signature = { parameters; _ }; _ } = define in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
-  let simplify tree =
+  let simplify annotation tree =
     let essential = BackwardState.Tree.essential tree in
     BackwardState.Tree.shape tree ~mold:essential
+    |> BackwardState.Tree.transform
+      BackwardTaint.simple_feature_set
+      ~f:(Features.add_type_breadcrumb ~resolution annotation)
   in
-  let split_and_simplify model (parameter, name, _annotation) =
+  let split_and_simplify model (parameter, name, original) =
+    let annotation = original.Node.value.Parameter.annotation in
     let partition =
       BackwardState.read ~root:(Root.Variable name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.leaf ~f:Fn.id
@@ -590,7 +592,7 @@ let extract_tito_and_sink_models parameters entry_taint =
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
-        |> simplify
+        |> simplify annotation
       in
       let number_of_paths =
         BackwardState.Tree.fold
@@ -610,7 +612,7 @@ let extract_tito_and_sink_models parameters entry_taint =
         | Sinks.LocalReturn ->
             accumulator
         | _ ->
-            simplify sink_tree
+            simplify annotation sink_tree
             |> BackwardState.Tree.join accumulator
       in
       Map.Poly.fold ~init:BackwardState.Tree.empty ~f:simplify_sink_taint partition
@@ -626,7 +628,7 @@ let extract_tito_and_sink_models parameters entry_taint =
 
 
 let run ~environment ~define ~existing_model:_ =
-  let ({ Node.value = { Define.signature = { name; parameters; _ }; _ }; _ } as define) =
+  let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeCheck.resolution environment () in
     Node.map
@@ -657,8 +659,9 @@ let run ~environment ~define ~existing_model:_ =
     | None ->
         Log.log ~section:`Taint "No final state found"
   in
+  let resolution = TypeCheck.resolution environment () in
   let extract_model FixpointState.{ taint; _ } =
-    let model = extract_tito_and_sink_models parameters taint in
+    let model = extract_tito_and_sink_models define.value ~resolution taint in
     let () =
       Log.log
         ~section:`Taint

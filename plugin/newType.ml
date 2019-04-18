@@ -10,6 +10,7 @@ open Expression
 open Statement
 
 
+
 let transform_ast ({ Source.statements; qualifier; _ } as source) =
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
@@ -18,32 +19,33 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
           Assign.value =
             {
               Node.value =
-                Access
-                  (SimpleAccess [
-                      Access.Identifier typing;
-                      Access.Identifier new_type;
-                      Access.Call {
-                        Node.value = [
-                          {
-                            Argument.value =
-                              {
-                                Node.value = String { StringLiteral.value = name; _ };
-                                _
-                              };
-                            _;
-                          };
-                          {
-                            Argument.value = ({ Node.value = Access _; _ } as base);
-                            _;
-                          } as base_argument;
-                        ];
-                        _;
-                      };
-                    ]);
+                Call {
+                  callee = {
+                    Node.value = Name (Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "NewType";
+                    });
+                    _;
+                  };
+                  arguments = [
+                    {
+                      Call.Argument.value =
+                        {
+                          Node.value = String { StringLiteral.value = name; _ };
+                          _;
+                        };
+                      _;
+                    };
+                    {
+                      Call.Argument.value = ({ Node.value = (Name _); _ } as base);
+                      _;
+                    } as base_argument;
+                  ];
+                };
               _;
             };
           _;
-        } when typing = "typing" && new_type = "NewType" ->
+        } ->
           let name = Reference.create ~prefix:qualifier name in
           let constructor =
             Define {

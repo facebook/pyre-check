@@ -302,6 +302,7 @@ module LookupCache = struct
       base_normals @ normals
     in
     Statistics.performance
+      ~section:`Event
       ~category:"perfpipe_pyre_ide_integration"
       ~name
       ~timer
@@ -432,9 +433,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             annotation;
           }
         in
-        parse_and_validate annotation
-        |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
+        parse_and_validate (Reference.access annotation)
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
         >>| List.map ~f:to_attribute
@@ -445,7 +446,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error (
               Format.sprintf
                 "No class definition found for %s"
-                (Expression.Access.show annotation)))
+                (Reference.show annotation)))
 
     | TypeQuery.ComputeHashesToKeys ->
         let open Service.EnvironmentSharedMemory in
@@ -457,10 +458,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let map =
             Map.set
               String.Map.empty
-              ~key:(OrderKeys.hash_of_key "Order")
-              ~data:(OrderKeys.serialize_key "Order")
+              ~key:(OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
+              ~data:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
           in
-          match OrderKeys.get "Order" with
+          match OrderKeys.get SharedMemory.SingletonKey.key with
           | Some indices ->
               let annotations = List.filter_map indices ~f:OrderAnnotations.get in
               extend_map
@@ -507,6 +508,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             |> List.concat
           in
           extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
+          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
         in
         (* Aliases. *)
         let map =
@@ -532,6 +534,22 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
         in
+        (* Resolution shared memory. *)
+        let map =
+          let keys = ResolutionSharedMemory.get_keys ~handles in
+          map
+          |> extend_map ~new_map:(ResolutionSharedMemory.compute_hashes_to_keys ~keys)
+          |> extend_map ~new_map:(ResolutionSharedMemory.Keys.compute_hashes_to_keys ~keys:handles)
+        in
+        (* Coverage. *)
+        let map =
+          extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:handles)
+        in
+        (* Protocols. *)
+        let map =
+          extend_map
+            map
+            ~new_map:(Protocols.compute_hashes_to_keys ~keys:[SharedMemory.SingletonKey.key]) in
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
@@ -543,6 +561,25 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             { TypeQuery.decoded; undecodable_keys }
             { TypeQuery.serialized_key; serialized_value } =
           let decode_value serialized_key value =
+            let decode index =
+              let annotation =
+                Handler.TypeOrderHandler.find
+                  (Handler.TypeOrderHandler.annotations ())
+                  index
+              in
+              match annotation with
+              | None ->
+                  Format.sprintf "Undecodable(%d)" index
+              | Some annotation ->
+                  Type.show annotation
+            in
+            let decode_target { TypeOrder.Target.target; parameters } =
+              Format.sprintf
+                "%s[%s]"
+                (decode target)
+                (List.map parameters ~f:Type.show
+                 |> String.concat ~sep:", ")
+            in
             let key, value = Base64.decode serialized_key, Base64.decode value in
             match key, value with
             | Ok key, Ok value ->
@@ -552,18 +589,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                   | Ok (ClassDefinitions.Decoded (key, value)) ->
                       let value =
                         match value with
-                        | Some {
-                            Resolution.class_definition = { Node.value = definition; _ };
-                            successors;
-                            is_test;
-                            methods;
-                            _;
-                          } ->
+                        | Some { Node.value = definition; _ } ->
                             `Assoc [
                               "class_definition", `String (Ast.Statement.Class.show definition);
-                              "successors", `String (List.to_string ~f:Type.show successors);
-                              "is_test", `Bool is_test;
-                              "methods", `String (List.to_string ~f:Type.show methods);
                             ]
                             |> Yojson.to_string
                             |> Option.some
@@ -573,6 +601,27 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = ClassValue.description;
+                        actual_key = key;
+                        actual_value = value;
+                      }
+                  | Ok (ClassMetadata.Decoded (key, value)) ->
+                      let value =
+                        match value with
+                        | Some { Resolution.successors; is_test } ->
+                            `Assoc [
+                              "successors",
+                              `String (List.to_string ~f:Type.show_primitive successors);
+                              "is_test",
+                              `Bool is_test;
+                            ]
+                            |> Yojson.to_string
+                            |> Option.some
+                        | None ->
+                            None
+                      in
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ClassMetadataValue.description;
                         actual_key = key;
                         actual_value = value;
                       }
@@ -591,7 +640,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_value =
                           value
                           >>| Node.value
-                          >>| Annotation.show;
+                          >>| Annotation.sexp_of_t
+                          >>| Sexp.to_string;
                       }
                   | Ok (Dependents.Decoded (key, value)) ->
                       Some {
@@ -600,17 +650,18 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = Reference.show key;
                         actual_value =
                           value
-                          >>| File.Handle.Set.Tree.to_list
-                          >>| List.to_string ~f:File.Handle.show;
+                          >>| Reference.Set.Tree.to_list
+                          >>| List.to_string ~f:Reference.show;
                       }
                   | Ok (Protocols.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
                         kind = ProtocolValue.description;
-                        actual_key = key;
+                        actual_key = Int.to_string key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Type.show;
+                          >>| Identifier.Set.Tree.to_list
+                          >>| List.to_string ~f:(Identifier.show);
                       }
                   | Ok (FunctionKeys.Decoded (key, value)) ->
                       Some {
@@ -628,7 +679,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Type.show;
+                          >>| List.to_string ~f:Fn.id;
                       }
                   | Ok (GlobalKeys.Decoded (key, value)) ->
                       Some {
@@ -679,28 +730,28 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       Some {
                         TypeQuery.serialized_key;
                         kind = EdgeValue.description;
-                        actual_key = Int.to_string key;
+                        actual_key = decode key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:TypeOrder.Target.show;
+                          >>| List.to_string ~f:decode_target;
                       }
                   | Ok (OrderBackedges.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
                         kind = BackedgeValue.description;
-                        actual_key = Int.to_string key;
+                        actual_key = decode key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:TypeOrder.Target.show;
+                          >>| List.to_string ~f:decode_target;
                       }
                   | Ok (OrderKeys.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
                         kind = OrderKeyValue.description;
-                        actual_key = key;
+                        actual_key = Int.to_string key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Int.to_string;
+                          >>| List.to_string ~f:decode
                       }
 
                   | Ok (Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value)) ->
@@ -760,9 +811,27 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         TypeQuery.serialized_key;
                         kind = Ast.SharedMemory.Handles.PathValue.description;
                         actual_key = Int.to_string key;
-                        actual_value = value
+                        actual_value = value;
                       }
 
+                  | Ok (Coverage.SharedMemory.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = Coverage.CoverageValue.description;
+                        actual_key = File.Handle.show key;
+                        actual_value =
+                          value
+                          >>| Coverage.show;
+                      }
+                  | Ok (ResolutionSharedMemory.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = ResolutionSharedMemory.TypeAnnotationsValue.description;
+                        actual_key = Reference.show key;
+                        actual_value =
+                          value
+                          >>| ResolutionSharedMemory.show_annotations;
+                      }
                   | Ok _ ->
                       None
 
@@ -789,12 +858,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.DumpDependencies file ->
         let () =
           try
-            let handle = File.handle ~configuration file in
+            let qualifier =
+              File.handle ~configuration file
+              |> fun handle -> Source.qualifier ~handle
+            in
             Path.create_relative
               ~root:(Configuration.Analysis.pyre_root configuration)
               ~relative:"dependencies.dot"
             |> File.create
-              ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~handle)
+              ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~qualifier)
             |> File.write
           with File.NonexistentHandle _ ->
             ()
@@ -864,11 +936,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let return_annotation = return_annotation ~resolution annotated_method in
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
-        parse_and_validate annotation
-        |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
+        parse_and_validate (Reference.access annotation)
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
-        >>| Annotated.Class.methods ~resolution
+        >>| Annotated.Class.methods
         >>| List.map ~f:to_method
         >>| (fun methods -> TypeQuery.Response (TypeQuery.FoundMethods methods))
         |> Option.value
@@ -876,14 +948,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error
               (Format.sprintf
                  "No class definition found for %s"
-                 (Expression.Access.show annotation)))
+                 (Reference.show annotation)))
 
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> (fun annotation -> TypeQuery.Response (TypeQuery.Type annotation))
 
     | TypeQuery.PathOfModule module_access ->
-        Handler.module_definition (Reference.from_access module_access)
+        Handler.module_definition module_access
         >>= Module.handle
         >>= File.Handle.to_path ~configuration
         >>| Path.absolute
@@ -893,7 +965,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error
               (Format.sprintf
                  "No path found for module `%s`"
-                 (Expression.Access.show module_access)))
+                 (Reference.show module_access)))
 
     | TypeQuery.SaveServerState path ->
         let path = Path.absolute path in
@@ -910,7 +982,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               Some annotation
         in
         begin
-          let function_name = Reference.from_access function_name in
           match Resolution.global resolution function_name with
           | Some { Node.value; _ } ->
               begin
@@ -958,11 +1029,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
 
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
-        |> Handler.class_definition
-        >>| (fun { Analysis.Resolution.class_definition; _ } -> class_definition)
+        |> Type.primitive_name
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
-        >>| List.map ~f:(Annotated.Class.annotation ~resolution)
+        >>| List.map ~f:Annotated.Class.annotation
         >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
         |> Option.value
           ~default:(
@@ -1015,13 +1086,37 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let default =
           TypeQuery.Error (
             Format.asprintf
-              "Not able to get lookups in %a"
+              "Not able to get lookups in `%a`"
               Path.pp (File.path file))
         in
         LookupCache.find_all_annotations ~state ~configuration ~file
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
         |> Option.value ~default
+
+    | TypeQuery.CoverageInFile file ->
+        let default =
+          TypeQuery.Error (
+            Format.asprintf
+              "Not able to get lookups in `%a`"
+              Path.pp (File.path file))
+        in
+        let map_to_coverage (location, annotation) =
+          let coverage =
+            if Type.is_partially_typed annotation then
+              TypeQuery.Partial
+            else if Type.is_untyped annotation then
+              TypeQuery.Untyped
+            else
+              TypeQuery.Typed
+          in
+          { location; TypeQuery.coverage }
+        in
+        LookupCache.find_all_annotations ~state ~configuration ~file
+        >>| List.map ~f:map_to_coverage
+        >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
+        |> Option.value ~default
+
   in
   let response =
     try
@@ -1059,9 +1154,16 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
 let compute_dependencies
     ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
     ~configuration
-    update_environment_with
-    check =
-  let old_signature_hashes, new_signature_hashes, old_exports =
+    files =
+  let timer = Timer.start () in
+  let handle file =
+    try
+      Some (File.handle file ~configuration)
+    with File.NonexistentHandle _ ->
+      None
+  in
+  let handles = List.filter_map files ~f:handle in
+  let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = File.Handle.Table.create () in
       let add_signature_hash file =
@@ -1076,27 +1178,11 @@ let compute_dependencies
         with (File.NonexistentHandle _) ->
           Log.log ~section:`Server "Unable to get handle for %a" File.pp file
       in
-      List.iter update_environment_with ~f:add_signature_hash;
+      List.iter files ~f:add_signature_hash;
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
 
-    (* Clear and re-populate ASTs in shared memory. *)
-    let handles = List.map update_environment_with ~f:(File.handle ~configuration) in
-
-    (* Exports are pruned as part of `Service.Parser.parse_sources`, so we need to preserve
-       them to analyze possible dependencies. *)
-    let old_exports =
-      let old_exports = Reference.Table.create () in
-      let store_exports qualifier =
-        Ast.SharedMemory.Modules.get_exports ~qualifier
-        >>| (fun exports -> Hashtbl.set old_exports ~key:qualifier ~data:exports)
-        |> ignore
-      in
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
-      |> List.iter ~f:store_exports;
-      old_exports
-    in
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
       List.filter
@@ -1109,84 +1195,56 @@ let compute_dependencies
     Ast.SharedMemory.Sources.remove ~handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
-      List.filter_map update_environment_with ~f:find_target
+      List.filter_map files ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Service.Parser.parse_sources
       ~configuration
       ~scheduler
       ~preprocessing_state:None
-      ~files:update_environment_with
+      ~files
     |> ignore;
-
     let new_signature_hashes = signature_hashes ~default:(-1) in
-    old_signature_hashes, new_signature_hashes, old_exports
+    old_signature_hashes, new_signature_hashes
   in
 
   let dependents =
-    let handle file = File.handle file ~configuration in
-    let handles = List.map update_environment_with ~f:handle in
-    let check = List.map check ~f:handle in
     Log.log
       ~section:`Server
       "Handling type check request for files %a"
       Sexp.pp [%message (handles: File.Handle.t list)];
-    let get_dependencies handle =
-      let signature_hash_changed =
-        (* If the hash is not found, then the handle was not part of
-           handles, hence its hash cannot have changed. *)
-        Hashtbl.find old_signature_hashes handle
-        >>= (fun old_hash ->
-            Hashtbl.find new_signature_hashes handle
-            >>| fun new_hash ->
-            old_hash <> new_hash)
-        |> Option.value ~default:false
-      in
-      let has_starred_import () =
-        let was_starred_import { Node.value; _ } =
-          (* Heuristic: if the list of exports for a module we import matches exactly
-             what that module exports, this was a starred import before preprocessing. *)
-          let open Statement in
-          match value with
-          | Import { Import.from = Some from; imports } ->
-              begin
-                let check_against_imports ~exports =
-                  let import_names =
-                    List.map imports ~f:(fun { Import.name; _ } -> Reference.from_access name )
-                  in
-                  List.equal ~equal:Reference.equal import_names exports
-                in
-
-                let from = Reference.from_access from in
-                match Ast.SharedMemory.Modules.get_exports ~qualifier:from with
-                | Some exports ->
-                    check_against_imports ~exports
-                | _ ->
-                    Hashtbl.find old_exports from
-                    >>| (fun exports -> check_against_imports ~exports)
-                    |> Option.value ~default:false
-              end
-          | _ ->
-              false
-        in
-
-        Ast.SharedMemory.Sources.get handle
-        >>| Source.statements
-        |> Option.value ~default:[]
-        |> List.exists ~f:was_starred_import
-      in
-      if signature_hash_changed or has_starred_import () then
-        let qualifier = Ast.Source.qualifier ~handle in
-        Handler.dependencies qualifier
-      else
-        None
+    let signature_hash_changed handle =
+      (* If the hash is not found, then the handle was not part of
+         handles, hence its hash cannot have changed. *)
+      Hashtbl.find old_signature_hashes handle
+      >>= (fun old_hash ->
+          Hashtbl.find new_signature_hashes handle
+          >>| fun new_hash -> old_hash <> new_hash)
+      |> Option.value ~default:false
     in
-    Dependencies.transitive_of_list
-      ~get_dependencies
-      ~handles
-    |> Fn.flip Set.diff (File.Handle.Set.of_list check)
+    let deferred_files =
+      let modules =
+        List.filter handles ~f:signature_hash_changed
+        |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+      in
+      Dependencies.transitive_of_list
+        ~get_dependencies:Handler.dependencies
+        ~modules
+      |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get
+      |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
+    in
+    Statistics.performance
+      ~name:"Computed dependencies"
+      ~timer
+      ~randomly_log_every:100
+      ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
+      ~integers:[
+        "number of dependencies", File.Handle.Set.length deferred_files;
+        "number of files", List.length handles;
+      ]
+      ();
+    deferred_files
   in
-
   Log.log
     ~section:`Server
     "Inferred affected files: %a"
@@ -1211,12 +1269,16 @@ let process_type_check_files
     ~should_analyze_dependencies =
 
   Annotated.Class.Attribute.Cache.clear ();
+  Module.Cache.clear ();
+  Resolution.Cache.clear ();
   let removed_handles, update_environment_with, check =
     let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with
       | exception ((File.NonexistentHandle _) as uncaught_exception) ->
           Statistics.log_exception uncaught_exception ~fatal:false ~origin:"server";
           updated, removed
+      | handle when (not (Path.file_exists (File.path file))) ->
+          updated, handle :: removed
       | handle ->
           begin
             match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
@@ -1253,28 +1315,11 @@ let process_type_check_files
   (* Compute requests we do not serve immediately. *)
   let deferred_state =
     if should_analyze_dependencies then
-      let timer = Timer.start () in
-      let result =
-        compute_dependencies
-          update_environment_with
-          check
-          ~state
-          ~configuration
-        |> fun files -> Deferred.add deferred_state ~files
-      in
-      begin
-        let handles =
-          List.map update_environment_with ~f:(File.handle ~configuration)
-          |> List.to_string ~f:File.Handle.show
-        in
-        Statistics.performance
-          ~randomly_log_every:1000
-          ~name:"Computed dependencies"
-          ~normals:["handles", handles]
-          ~timer
-          ();
-        result
-      end
+      compute_dependencies
+        update_environment_with
+        ~state
+        ~configuration
+      |> fun files -> Deferred.add deferred_state ~files
     else
       deferred_state
   in
@@ -1290,23 +1335,16 @@ let process_type_check_files
     in
     (* Watchman only notifies Pyre that a file has been updated, we have to detect
        removals manually and update our handle set. *)
-    let () =
-      List.filter update_environment_with ~f:(fun file -> not (Path.file_exists (File.path file)))
-      |> List.filter_map ~f:handle
-      |> (fun handles -> handles @ removed_handles)
-      |> fun handles -> Ast.SharedMemory.HandleKeys.remove ~handles;
-    in
-    let handles = List.filter_map update_environment_with ~f:handle in
-    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
+    Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
       List.filter_map update_environment_with ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
+    let handles = List.filter_map update_environment_with ~f:handle in
+    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
-    update_environment_with
-    |> List.iter ~f:(LookupCache.evict ~state ~configuration);
-    SharedMem.collect `aggressive;
+    List.iter update_environment_with ~f:(LookupCache.evict ~state ~configuration);
 
     let stubs, sources =
       let is_stub file =
@@ -1318,8 +1356,16 @@ let process_type_check_files
       List.partition_tf ~f:is_stub update_environment_with
     in
     Log.info "Parsing %d updated stubs..." (List.length stubs);
-    let { Service.Parser.parsed = stubs; _ } =
-      Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files:stubs
+    let {
+      Service.Parser.parsed = stubs;
+      syntax_error = stub_syntax_errors;
+      system_error = stub_system_errors;
+    } =
+      Service.Parser.parse_sources
+        ~configuration
+        ~scheduler
+        ~preprocessing_state:None
+        ~files:stubs
     in
     let sources =
       let keep file =
@@ -1333,13 +1379,30 @@ let process_type_check_files
       List.filter ~f:keep sources
     in
     Log.info "Parsing %d updated sources..." (List.length sources);
-    let { Service.Parser.parsed = sources; _ } =
+    let {
+      Service.Parser.parsed = sources;
+      syntax_error = source_syntax_errors;
+      system_error = source_system_errors;
+    } =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler
         ~preprocessing_state:None
         ~files:sources
     in
+    let unparsed =
+      List.concat [
+        stub_syntax_errors;
+        stub_system_errors;
+        source_syntax_errors;
+        source_system_errors;
+      ]
+    in
+    if not (List.is_empty unparsed) then
+      Log.warning
+        "Unable to parse `%s`."
+        (List.map unparsed ~f:File.Handle.show
+         |> String.concat ~sep:", ");
     stubs @ sources
   in
   Log.log
@@ -1376,10 +1439,8 @@ let process_type_check_files
   let new_source_handles = List.filter_map ~f:handle check in
 
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  List.filter_map ~f:Ast.SharedMemory.Sources.get new_source_handles
-  |> List.concat_map ~f:(Preprocessing.defines ~extract_into_toplevel:true)
-  |> List.map ~f:(fun { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } -> name)
-  |> ResolutionSharedMemory.remove;
+  ResolutionSharedMemory.remove new_source_handles;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list new_source_handles);
 
   let new_errors =
     Service.Check.analyze_sources

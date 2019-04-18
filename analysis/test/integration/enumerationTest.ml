@@ -22,6 +22,18 @@ let test_enumeration_methods _ =
     ];
   assert_type_errors
     {|
+      class C(enum.IntEnum):
+        A = 1
+      reveal_type(C.A)
+      reveal_type(C.__members__)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `C.A` is `C`.";
+      "Revealed type [-1]: Revealed type for `C.__members__` is \
+       `typing.Callable(enum.EnumMeta.__members__)[[], unknown]`.";
+    ];
+  assert_type_errors
+    {|
       class Foo(enum.IntEnum):
         A: int = 1
       class Bar:

@@ -63,7 +63,11 @@ let initialize sources =
     SharedMemory.Sources.remove ~handles;
     SharedMemory.Modules.remove
       ~qualifiers:(List.map handles ~f:(fun handle -> Source.qualifier ~handle));
-    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
+    Service.Parser.parse_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:None
+      ~files
     |> ignore;
     let add_module handle =
       match SharedMemory.Sources.get handle with
@@ -216,14 +220,23 @@ let test_process_type_query_request _ =
       |> Yojson.Safe.from_string
       |> Yojson.Safe.to_string
     in
-    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
+    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response in
+  let coverage_check_file =
+    "test.py",
+    {|
+        def foo(a: int) -> int:
+          return a
+      |};
   in
-
   assert_response
-    (Protocol.TypeQuery.Join (parse_single_access "int", parse_single_access "float"))
+    (Protocol.TypeQuery.CoverageInFile (write_file coverage_check_file))
+    {| {"response":{"types":[]}}|};
+  assert_response
+    (Protocol.TypeQuery.Join
+      (parse_single_access ~convert:true "int", parse_single_access ~convert:true "float"))
     {|{"response":{"type":"float"}}|};
   assert_response
-    (Protocol.TypeQuery.NormalizeType (parse_single_access "yerp"))
+    (Protocol.TypeQuery.NormalizeType (parse_single_access ~convert:true "yerp"))
     {|{"error":"Type `yerp` was not found in the type order."}|}
 
 
@@ -257,6 +270,7 @@ let test_process_display_type_errors_request _ =
   let assert_response ~paths ~errors ~expected_errors =
     let actual_errors =
       let state =
+
         let serialized_errors errors =
           let entry (path, errors) =
             let errors =
@@ -264,8 +278,8 @@ let test_process_display_type_errors_request _ =
                 let location = { Location.Instantiated.any with Location.path } in
                 {
                   Analysis.Error.location;
-                  kind = Analysis.Error.UndefinedName (Expression.Access.create undefined);
-                  define = +mock_define;
+                  kind = Analysis.Error.UndefinedName (Reference.create undefined);
+                  signature = +mock_signature;
                 }
               in
               List.map errors ~f:error
@@ -291,7 +305,9 @@ let test_process_display_type_errors_request _ =
       let expected_error (path, undefined_globals) =
         let undefined_global global =
           Format.asprintf
-            "Undefined name [18]: Global name `%s` is undefined."
+            "Undefined name [18]: Global name `%s` is not defined, or there is at least one \
+             control flow path that doesn't define `%s`."
+            global
             global
         in
         path,
@@ -465,7 +481,17 @@ let test_process_type_check_request context =
     ]
     ~check:["b.py", "from a import *"]
     ~expected_errors:["b.py", []]
-    ~expected_deferred_state:["c.py"]
+    ~expected_deferred_state:[]
+    ();
+  assert_response
+    ~sources:[
+      "a.py", "var = 42";
+      "b.py", "from a import *";
+      "c.py", "from b import *";
+    ]
+    ~check:["a.py", "var = ''"]
+    ~expected_errors:["a.py", []]
+    ~expected_deferred_state:["b.py"; "c.py"]
     ();
 
   (* Check nonexistent handles. *)
@@ -478,8 +504,15 @@ let test_process_type_check_request context =
   let { Request.response; _ } =
     Request.process_type_check_request ~state ~configuration ~files
   in
-  assert_equal (Some (Protocol.TypeCheckResponse [])) response
-
+  assert_equal (Some (Protocol.TypeCheckResponse [])) response;
+  (* Ensure we don't raise an exception when a untracked files is passed in. *)
+  Request.process_type_check_request
+    ~state
+    ~configuration
+    ~files:[
+      File.create (Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py");
+      ]
+  |> ignore
 
 let test_process_deferred_state context =
   let test_with_number_of_dependents dependents_number =
@@ -662,8 +695,7 @@ let test_process_get_definition_request context =
 
 
 let () =
-  "request">:::
-  [
+  "request">:::[
     "generate_lsp_response">::test_generate_lsp_response;
     "process_client_shutdown_request">::test_process_client_shutdown_request;
     "process_type_query_request">::test_process_type_query_request;

@@ -11,34 +11,37 @@ open Pyre
 
 type index = {
   function_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
-  class_keys: (Type.t Hash_set.t) File.Handle.Table.t;
+  class_keys: (Identifier.t Hash_set.t) File.Handle.Table.t;
   alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   global_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   dependent_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
+  protocol_keys: (Identifier.t Hash_set.t) File.Handle.Table.t;
 }
 
 
 type t = {
   index: index;
-  dependents: (File.Handle.Set.t) Reference.Table.t;
+  dependents: Reference.Set.t Reference.Table.t;
 }
 
 
 module type Handler = sig
   val add_function_key: handle: File.Handle.t -> Reference.t -> unit
-  val add_class_key: handle: File.Handle.t -> Type.t -> unit
+  val add_class_key: handle: File.Handle.t -> Identifier.t -> unit
   val add_alias_key: handle: File.Handle.t -> Type.t -> unit
   val add_global_key: handle: File.Handle.t -> Reference.t -> unit
   val add_dependent_key: handle: File.Handle.t -> Reference.t -> unit
+  val add_protocol_key: handle: File.Handle.t -> Identifier.t -> unit
 
   val add_dependent: handle: File.Handle.t -> Reference.t -> unit
-  val dependents: Reference.t -> File.Handle.Set.Tree.t option
+  val dependents: Reference.t -> Reference.Set.Tree.t option
 
   val get_function_keys: handle: File.Handle.t -> Reference.t list
-  val get_class_keys: handle: File.Handle.t -> Type.t list
+  val get_class_keys: handle: File.Handle.t -> Identifier.t list
   val get_alias_keys: handle: File.Handle.t -> Type.t list
   val get_global_keys: handle: File.Handle.t -> Reference.t list
   val get_dependent_keys: handle: File.Handle.t -> Reference.t list
+  val get_protocol_keys: handle: File.Handle.t -> Identifier.t list
 
   val clear_keys_batch: File.Handle.t list -> unit
 
@@ -47,7 +50,7 @@ end
 
 
 let handler {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; protocol_keys };
     dependents;
   } =
   (module struct
@@ -68,7 +71,7 @@ let handler {
           Hashtbl.set
             class_keys
             ~key:handle
-            ~data:(Type.Hash_set.of_list [class_type])
+            ~data:(Identifier.Hash_set.of_list [class_type])
       | Some hash_set ->
           Hash_set.add hash_set class_type
 
@@ -105,13 +108,23 @@ let handler {
       | Some hash_set ->
           Hash_set.add hash_set dependent
 
+    let add_protocol_key ~handle protocol =
+      match Hashtbl.find protocol_keys handle with
+      | None ->
+          Hashtbl.set
+            protocol_keys
+            ~key:handle
+            ~data:(Identifier.Hash_set.of_list [protocol])
+      | Some hash_set ->
+          Hash_set.add hash_set protocol
 
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
+      let qualifier = Source.qualifier ~handle in
       let update entry =
         match entry with
-        | None -> File.Handle.Set.singleton handle
-        | Some set -> Set.add set handle
+        | None -> Reference.Set.singleton qualifier
+        | Some set -> Set.add set qualifier
       in
       Hashtbl.update dependents dependent ~f:update
 
@@ -154,21 +167,28 @@ let handler {
       |> Option.value ~default:[]
 
 
+    let get_protocol_keys ~handle =
+      Hashtbl.find protocol_keys handle
+      >>| Hash_set.to_list
+      |> Option.value ~default:[]
+
+
     let clear_keys_batch handles =
       List.iter ~f:(Hashtbl.remove function_keys) handles;
       List.iter ~f:(Hashtbl.remove class_keys) handles;
       List.iter ~f:(Hashtbl.remove alias_keys) handles;
       List.iter ~f:(Hashtbl.remove global_keys) handles;
-      List.iter ~f:(Hashtbl.remove dependent_keys) handles
+      List.iter ~f:(Hashtbl.remove dependent_keys) handles;
+      List.iter ~f:(Hashtbl.remove protocol_keys) handles
 
 
     let normalize handles =
       let normalize qualifier =
         match Hashtbl.find dependents_table qualifier with
         | Some unnormalized ->
-            File.Handle.Set.to_list unnormalized
-            |> List.sort ~compare:File.Handle.compare
-            |> File.Handle.Set.of_list
+            Reference.Set.to_list unnormalized
+            |> List.sort ~compare:Reference.compare
+            |> Reference.Set.of_list
             |>  fun normalized -> Hashtbl.set dependents_table ~key:qualifier ~data:normalized
         | None ->
             ()
@@ -186,13 +206,14 @@ let create () =
     alias_keys = File.Handle.Table.create ();
     global_keys = File.Handle.Table.create ();
     dependent_keys = File.Handle.Table.create ();
+    protocol_keys = File.Handle.Table.create ();
   }
   in
   { index = index; dependents = Reference.Table.create () }
 
 
 let copy {
-    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys };
+    index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys; protocol_keys };
     dependents } =
   {
     index = {
@@ -201,49 +222,50 @@ let copy {
       alias_keys = Hashtbl.copy alias_keys;
       global_keys = Hashtbl.copy global_keys;
       dependent_keys = Hashtbl.copy dependent_keys;
+      protocol_keys = Hashtbl.copy protocol_keys;
     };
     dependents = Hashtbl.copy dependents;
   }
 
 
-let transitive_of_list ~get_dependencies ~handles =
+let transitive_of_list ~get_dependencies ~modules =
   let rec transitive ~visited ~frontier =
-    if File.Handle.Set.Tree.is_empty frontier then
+    if Reference.Set.Tree.is_empty frontier then
       visited
     else
-      let visited = File.Handle.Set.Tree.union visited frontier in
+      let visited = Reference.Set.Tree.union visited frontier in
       let frontier =
         let add_dependencies current node =
           match get_dependencies node with
-          | Some dependencies -> File.Handle.Set.Tree.union current dependencies
+          | Some dependencies -> Reference.Set.Tree.union current dependencies
           | None -> current
         in
-        File.Handle.Set.Tree.fold frontier ~init:File.Handle.Set.Tree.empty ~f:add_dependencies
-        |> fun new_frontier -> File.Handle.Set.Tree.diff new_frontier visited
+        Reference.Set.Tree.fold frontier ~init:Reference.Set.Tree.empty ~f:add_dependencies
+        |> fun new_frontier -> Reference.Set.Tree.diff new_frontier visited
       in
       transitive ~visited ~frontier
   in
-  let handles = File.Handle.Set.Tree.of_list handles in
-  transitive ~visited:File.Handle.Set.Tree.empty ~frontier:handles
-  |> (fun dependents -> File.Handle.Set.Tree.diff dependents handles)
-  |> File.Handle.Set.of_tree
+  let modules = Reference.Set.Tree.of_list modules in
+  transitive ~visited:Reference.Set.Tree.empty ~frontier:modules
+  |> (fun dependents -> Reference.Set.Tree.diff dependents modules)
+  |> Reference.Set.of_tree
 
 
-let of_list ~get_dependencies ~handles =
+let of_list ~get_dependencies ~modules =
   let fold_dependents dependents handle =
     get_dependencies handle
-    >>| File.Handle.Set.of_tree
+    >>| Reference.Set.of_tree
     >>| Set.union dependents
     |> Option.value ~default:dependents
   in
   List.fold
-    ~init:File.Handle.Set.empty
+    ~init:Reference.Set.empty
     ~f:fold_dependents
-    handles
-  |> (fun dependents -> Set.diff dependents (File.Handle.Set.of_list handles))
+    modules
+  |> (fun dependents -> Set.diff dependents (Reference.Set.of_list modules))
 
 
-let to_dot ~get_dependencies ~handle =
+let to_dot ~get_dependencies ~qualifier =
   let nodes, edges =
     let rec iterate ~worklist ~visited ~result:((nodes, edges) as result) =
       match Queue.dequeue worklist with
@@ -255,8 +277,6 @@ let to_dot ~get_dependencies ~handle =
 
               let dependencies =
                 get_dependencies reference
-                >>| Reference.Set.Tree.map
-                  ~f:(fun handle -> Ast.Source.qualifier ~handle)
                 |> Option.value ~default:Reference.Set.Tree.empty
               in
               let enqueue edges dependency =
@@ -275,7 +295,7 @@ let to_dot ~get_dependencies ~handle =
     in
 
     let worklist = Queue.create () in
-    Queue.enqueue worklist (Ast.Source.qualifier ~handle);
+    Queue.enqueue worklist qualifier;
     let nodes, edges = iterate ~worklist ~visited:Reference.Set.empty ~result:([], []) in
     List.rev nodes, List.rev edges
   in
@@ -288,7 +308,7 @@ let to_dot ~get_dependencies ~handle =
         "  %d[label=\"%s\"%s]\n"
         (Reference.hash reference)
         (Reference.show reference)
-        (if (Reference.equal reference (Ast.Source.qualifier ~handle))
+        (if (Reference.equal reference qualifier)
          then " color=\"red\"" else "")
     in
     Buffer.add_string buffer label

@@ -255,7 +255,10 @@ let environment ~local_root =
 
 let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty) source =
   let configuration = CommandTest.mock_analysis_configuration () in
-  let source = Preprocessing.preprocess (parse ~handle ~qualifier source) in
+  let source =
+    parse ~handle ~qualifier source
+    |> Preprocessing.preprocess
+  in
   let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
   Test.populate ~configuration environment [source];
@@ -298,8 +301,13 @@ let assert_response
     ~request
     expected_response =
   Ast.SharedMemory.HandleKeys.clear ();
+  Ast.SharedMemory.HandleKeys.add
+    ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create handle));
   Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-  let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
+  let parsed =
+    parse ~handle ?qualifier source
+    |> Preprocessing.preprocess
+  in
   Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
@@ -416,7 +424,7 @@ let test_query context =
     |> Path.create_absolute
   in
   let assert_type_query_response ?handle ?qualifier ~source ~query response =
-    let query = Commands.Query.parse_query ~configuration:(configuration ~local_root) query in
+    let query = Query.parse_query ~configuration:(configuration ~local_root) query in
     assert_response
       ?handle
       ?qualifier
@@ -429,7 +437,7 @@ let test_query context =
     serialized
     |> (fun literal -> String (StringLiteral.create literal))
     |> Node.create_with_default_location
-    |> Type.create ~aliases:(fun _ -> None)
+    |> Type.create ~convert:true ~aliases:(fun _ -> None)
   in
   let create_location ~path start_line start_column stop_line stop_column =
     let start = { Location.line = start_line; column = start_column } in
@@ -679,7 +687,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (3, 5, 3, 9, Type.bool);
+            (3, 5, 3, 9, Type.Literal (Boolean true));
             (4, 3, 4, 4, Type.literal_integer 1);
             (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
@@ -745,7 +753,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (2, 11, 2, 15, Type.bool);
+            (2, 11, 2, 15, Type.Literal (Boolean true));
             (2, 6, 2, 7, Type.bool);
             (3, 2, 3, 3, Type.literal_integer 1);
             (3, 6, 3, 7, Type.literal_integer 1);
@@ -849,7 +857,7 @@ let test_query context =
            {
              Protocol.TypeQuery.name = "foo";
              annotation = Type.Callable {
-                 Type.Callable.kind = Type.Callable.Named (!+"C.foo");
+                 Type.Callable.kind = Type.Callable.Named (!&"C.foo");
                  implementation = {
                    Type.Callable.annotation = Type.integer;
                    parameters = Type.Callable.Defined [];
@@ -1009,7 +1017,7 @@ let test_query context =
   |> File.write;
 
   assert_type_query_response
-    ~qualifier:(Reference.create "a")
+    ~qualifier:(!&"a")
     ~handle:"a.py"
     ~source:"pass"
     ~query:"path_of_module(a)"
@@ -1053,6 +1061,13 @@ let test_compute_hashes_to_keys context =
       (Handler.TypeOrderHandler.backedges ())
       ~key:16
       ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
+    ResolutionSharedMemory.Keys.remove_batch
+      (File.Handle.create "sample.py"
+       |> ResolutionSharedMemory.Keys.KeySet.singleton);
+    ResolutionSharedMemory.add
+      ~handle:(File.Handle.create "sample.py")
+      (Reference.create "name")
+      Int.Map.Tree.empty;
   in
   let tear_down_shared_memory () _ =
     let open Service.EnvironmentSharedMemory in
@@ -1061,7 +1076,8 @@ let test_compute_hashes_to_keys context =
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
     OrderIndices.remove_batch
       (OrderIndices.KeySet.of_list
-         [Type.Primitive "fifteen"; Type.Primitive "sixteen"])
+         [Type.Primitive "fifteen"; Type.Primitive "sixteen"]);
+    Ast.SharedMemory.HandleKeys.clear ();
   in
   OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
 
@@ -1077,6 +1093,9 @@ let test_compute_hashes_to_keys context =
     @
     [
       to_binding
+        (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
+        (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
+      to_binding
         (OrderIndices.hash_of_key (Type.Primitive "sixteen"))
         (OrderIndices.serialize_key (Type.Primitive "sixteen"));
       to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
@@ -1089,13 +1108,58 @@ let test_compute_hashes_to_keys context =
 
       to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
       to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
-      to_binding (OrderKeys.hash_of_key "Order") (OrderKeys.serialize_key "Order");
+      to_binding
+        (Ast.SharedMemory.SymlinksToPaths.hash_of_key ("sample.py"))
+        (Ast.SharedMemory.SymlinksToPaths.serialize_key ("sample.py"));
+      to_binding
+        (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
+        (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
+      to_binding
+        (Ast.SharedMemory.Sources.Sources.hash_of_key (File.Handle.create "sample.py"))
+        (Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (Ast.SharedMemory.Sources.QualifiersToHandles.hash_of_key (Reference.create "sample"))
+        (Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "sample"));
+      to_binding
+        (Ast.SharedMemory.Modules.hash_of_key (!&"sample"))
+        (Ast.SharedMemory.Modules.serialize_key (!&"sample"));
+      to_binding
+        (FunctionKeys.hash_of_key (File.Handle.create "sample.py"))
+        (FunctionKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (ClassKeys.hash_of_key (File.Handle.create "sample.py"))
+        (ClassKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (GlobalKeys.hash_of_key (File.Handle.create "sample.py"))
+        (GlobalKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (AliasKeys.hash_of_key (File.Handle.create "sample.py"))
+        (AliasKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (DependentKeys.hash_of_key (File.Handle.create "sample.py"))
+        (DependentKeys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "$toplevel"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "name"));
+      to_binding
+        (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create "sample.py"))
+        (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (Coverage.SharedMemory.hash_of_key (File.Handle.create "sample.py"))
+        (Coverage.SharedMemory.serialize_key (File.Handle.create "sample.py"));
+      to_binding
+        (Protocols.hash_of_key SharedMemory.SingletonKey.key)
+        (Protocols.serialize_key SharedMemory.SingletonKey.key);
     ]
     |> List.sort ~compare
   in
   assert_response
     ~local_root
     ~source:""
+    ~handle:"sample.py"
     ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
     (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping expected))))
 
@@ -1143,16 +1207,16 @@ let test_decode_serialized_ocaml_values context =
                     {
                       TypeQuery.serialized_key = OrderBackedges.serialize_key 15;
                       kind = "Backedges";
-                      actual_key = "15";
+                      actual_key = "Undecodable(15)";
                       actual_value =
-                        Some "(\"{ TypeOrder.Target.target = 16; parameters = [str] }\")";
+                        Some "(\"Undecodable(16)[str]\")";
                     };
                     {
                       TypeQuery.serialized_key = OrderEdges.serialize_key 16;
                       kind = "Edges";
-                      actual_key = "16";
+                      actual_key = "Undecodable(16)";
                       actual_value =
-                        Some "(\"{ TypeOrder.Target.target = 15; parameters = [int] }\")";
+                        Some "(\"Undecodable(15)[int]\")";
                     };
                   ];
                   undecodable_keys = ["Can't decode this"];
@@ -1161,6 +1225,12 @@ let test_decode_serialized_ocaml_values context =
     let value =
       Marshal.to_string value [Marshal.Closures]
       |> Base64.encode_exn
+    in
+    let response =
+      (Protocol.TypeQueryResponse
+         (TypeQuery.Response
+            (TypeQuery.Decoded
+               {TypeQuery.decoded = [response]; undecodable_keys = [] })))
     in
     assert_response
       ~local_root
@@ -1176,218 +1246,179 @@ let test_decode_serialized_ocaml_values context =
       (Some response)
   in
   assert_decode
-    ~key:(ClassDefinitions.serialize_key Type.integer)
+    ~key:(ClassDefinitions.serialize_key "int")
+    ~value:(
+      Node.create_with_default_location (Test.parse_single_class ~convert:true "class C: pass")
+    )
+    ~response:{
+      TypeQuery.serialized_key = ClassDefinitions.serialize_key "int";
+      kind = "Class";
+      actual_key = "int";
+      actual_value =
+        let json =
+          let class_definition =
+            "{ Statement.Record.Class.name = C; bases = []; body = \
+             [Statement.Pass];\n  decorators = []; docstring = None }"
+          in
+          Format.sprintf
+            {|{"class_definition": "%s"}|}
+            class_definition
+        in
+        Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
+    };
+  assert_decode
+    ~key:(ClassMetadata.serialize_key "int")
     ~value:{
-      Resolution.class_definition =
-        Node.create_with_default_location
-          (Test.parse_single_class "class C: pass");
-      successors = [];
-      explicit_attributes = Identifier.SerializableMap.empty;
-      implicit_attributes = Identifier.SerializableMap.empty;
+      Resolution.successors = ["str"];
       is_test = false;
-      methods = [];
     }
-    ~response:
-      (Protocol.TypeQueryResponse
-         (TypeQuery.Response
-            (TypeQuery.Decoded
-               {
-                 TypeQuery.decoded = [
-                   {
-                     TypeQuery.serialized_key = ClassDefinitions.serialize_key Type.integer;
-                     kind = "Class";
-                     actual_key = "int";
-                     actual_value =
-                       let json =
-                         let class_definition =
-                           "{ Statement.Record.Class.name = C; bases = []; body = \
-                            [Statement.Pass];\n  decorators = []; docstring = None }"
-                         in
-                         Format.sprintf
-                           {|
-                              {
-                                "class_definition": "%s",
-                                "successors": "()",
-                                "is_test": false,
-                                "methods": "()"
-                              }
-                            |}
-                           class_definition
-                       in
-                       Some (Yojson.Safe.to_string (Yojson.Safe.from_string json))
-                   };
-                 ];
-                 undecodable_keys = [];
-               })));
-
+    ~response:{
+      TypeQuery.serialized_key = ClassMetadata.serialize_key "int";
+      kind = "Class metadata";
+      actual_key = "int";
+      actual_value = Some {|{"successors":"(str)","is_test":false}|};
+    };
   assert_decode
     ~key:(Aliases.serialize_key (Type.Primitive "my_integer"))
     ~value:Type.integer
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Aliases.serialize_key (Type.Primitive "my_integer");
-                    kind = "Alias";
-                    actual_key = "my_integer";
-                    actual_value = Some "int";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+    ~response:{
+      TypeQuery.serialized_key =
+        Aliases.serialize_key (Type.Primitive "my_integer");
+      kind = "Alias";
+      actual_key = "my_integer";
+      actual_value = Some "int";
+    };
   assert_decode
-    ~key:(Globals.serialize_key (Reference.create "string_global"))
+    ~key:(Globals.serialize_key (!&"string_global"))
     ~value:(
       Annotation.create Type.string
       |> Node.create_with_default_location
     )
-    ~response:(
-      (Protocol.TypeQueryResponse
-         (TypeQuery.Response
-            (TypeQuery.Decoded
-               {
-                 TypeQuery.decoded = [
-                   {
-                     TypeQuery.serialized_key =
-                       Globals.serialize_key (Reference.create "string_global");
-                     kind = "Global";
-                     actual_key = "string_global";
-                     actual_value = Some "(str: m)";
-                   };
-                 ];
-                 undecodable_keys = [];
-               }))));
+    ~response:{
+      TypeQuery.serialized_key =
+        Globals.serialize_key (Reference.create "string_global");
+      kind = "Global";
+      actual_key = "string_global";
+      actual_value = Some "((annotation(Primitive str))(mutability Mutable))";
+    };
   assert_decode
-    ~key:(Dependents.serialize_key (Reference.create "module"))
+    ~key:(Dependents.serialize_key (!&"module"))
     ~value:(
-      ["dependentA.py"; "dependentB.py"]
-      |> List.map ~f:File.Handle.create
-      |> File.Handle.Set.Tree.of_list)
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Dependents.serialize_key (Reference.create "module");
-                    kind = "Dependent";
-                    actual_key = "module";
-                    actual_value = Some "(dependentA.py dependentB.py)";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+      [!&"dependentA"; !&"dependentB"]
+      |> Reference.Set.Tree.of_list)
+    ~response: {
+      TypeQuery.serialized_key =
+        Dependents.serialize_key (!&"module");
+      kind = "Dependent";
+      actual_key = "module";
+      actual_value = Some "(dependentA dependentB)";
+    };
   assert_decode
     ~key:(Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py")
     ~value: (Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
-                    kind = "SymlinkSource";
-                    actual_key = "symbolic_link.py";
-                    actual_value = Some "actual_filename.py";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+    ~response:{
+      TypeQuery.serialized_key =
+        Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py";
+      kind = "SymlinkSource";
+      actual_key = "symbolic_link.py";
+      actual_value = Some "actual_filename.py";
+    };
   assert_decode
     ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py"))
-    ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Ast.SharedMemory.Sources.Sources.serialize_key
-                        (File.Handle.create "handle.py");
-                    kind = "AST";
-                    actual_key = "handle.py";
-                    actual_value = Some "x = 1.__add__(2)\n";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+    ~value:(Source.create [Test.parse_single_statement ~convert:true "x = 1 + 2"])
+    ~response:{
+      TypeQuery.serialized_key =
+        Ast.SharedMemory.Sources.Sources.serialize_key
+          (File.Handle.create "handle.py");
+      kind = "AST";
+      actual_key = "handle.py";
+      actual_value = Some "x = 1.__add__(2)\n";
+    };
   assert_decode
-    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "handle"))
+    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (!&"handle"))
     ~value:(File.Handle.create "handle.py")
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
-                        (Reference.create "handle");
-                    kind = "File handle";
-                    actual_key = "handle";
-                    actual_value = Some "handle.py";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
+    ~response:{
+      TypeQuery.serialized_key =
+        Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key
+          (Reference.create "handle");
+      kind = "File handle";
+      actual_key = "handle";
+      actual_value = Some "handle.py";
+    };
   assert_decode
-    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle"))
+    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key (!&"handle"))
     ~value:(
       Ast.Module.create
-        ~qualifier:((Reference.create "handle"))
+        ~qualifier:((!&"handle"))
         ~local_mode:Ast.Source.Default
         ~stub:false
         [Test.parse_single_statement "x = 2"])
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key =
-                      Ast.SharedMemory.Modules.Modules.serialize_key (Reference.create "handle");
-                    kind = "Module";
-                    actual_key = "handle";
-                    actual_value =
-                      Some
-                        "((aliased_exports())(empty_stub false)(handle())\
-                         (wildcard_exports((x))))";
-                  };
-                ];
-                undecodable_keys = [];
-              })));
-
+    ~response:{
+      TypeQuery.serialized_key =
+        Ast.SharedMemory.Modules.Modules.serialize_key !&"handle";
+      kind = "Module";
+      actual_key = "handle";
+      actual_value =
+        Some
+          "((aliased_exports())(empty_stub false)(handle())\
+           (wildcard_exports((x))))";
+    };
   assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
     ~value:(File.Handle.create "five.py")
-    ~response:(
-      Protocol.TypeQueryResponse
-        (TypeQuery.Response
-           (TypeQuery.Decoded
-              {
-                TypeQuery.decoded = [
-                  {
-                    TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
-                    kind = "Path";
-                    actual_key = "5";
-                    actual_value = Some "five.py";
-                  };
-                ];
-                undecodable_keys = [];
-              })))
+    ~response:{
+      TypeQuery.serialized_key = Ast.SharedMemory.Handles.Paths.serialize_key 5;
+      kind = "Path";
+      actual_key = "5";
+      actual_value = Some "five.py";
+    };
+  assert_decode
+    ~key:(Coverage.SharedMemory.serialize_key (File.Handle.create "file.py"))
+    ~value:(Coverage.create ~full:5 ~partial:3 ())
+    ~response:{
+      TypeQuery.serialized_key =
+        Coverage.SharedMemory.serialize_key (File.Handle.create "file.py");
+      kind = "Coverage";
+      actual_key = "file.py";
+      actual_value =
+        Some
+          "{ Coverage.full = 5; partial = 3; untyped = 0; ignore = 0; crashes = 0 }";
+    };
+  assert_decode
+    ~key:(ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"))
+    ~value:(
+      Int.Map.Tree.singleton
+        0
+        {
+          ResolutionSharedMemory.precondition =
+            Reference.Map.Tree.of_alist_exn [
+              !&"x", Annotation.create Type.integer;
+            ];
+          postcondition =
+            Reference.Map.Tree.of_alist_exn [
+              !&"x", Annotation.create Type.string;
+              !&"y", Annotation.create Type.integer;
+            ];
+        })
+    ~response:{
+      TypeQuery.serialized_key =
+        ResolutionSharedMemory.serialize_key (Reference.create "$toplevel");
+      kind = "Node type resolution";
+      actual_key = "$toplevel";
+      actual_value = Some
+          "{0: { \"Precondition\": {\"x\": \"(int: m)\", }, \
+           \"Postcondition\": {\"x\": \"(str: m)\", \"y\": \"(int: m)\", }}";
+    };
+  assert_decode
+    ~key:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
+    ~value:[15; 16]
+    ~response:{
+      TypeQuery.serialized_key =
+        OrderKeys.serialize_key SharedMemory.SingletonKey.key;
+      kind = "Order keys";
+      actual_key = "0";
+      actual_value = Some "(\"Undecodable(15)\"\"Undecodable(16)\")";
+    }
 
 
 let test_connect context =
@@ -1454,8 +1485,8 @@ let test_incremental_typecheck context =
     |}
     |> trim_extra_indentation
   in
-  let assert_response ?state ~request response =
-    assert_response ~local_root ~handle:path ~source ?state ~request (Some response)
+  let assert_response ?(handle = handle) ?state ~request response =
+    assert_response ~local_root ~handle ~source ?state ~request (Some response)
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
@@ -1490,7 +1521,10 @@ let test_incremental_typecheck context =
     (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename path), []]);
   let () =
     let stub_file = file ~local_root ~content:"" stub_path in
-    assert_response ~request:(Request.TypeCheckRequest [stub_file]) (Protocol.TypeCheckResponse []);
+    assert_response
+      ~handle:(relativize stub_path)
+      ~request:(Request.TypeCheckRequest [stub_file])
+      (Protocol.TypeCheckResponse []);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
@@ -1623,8 +1657,8 @@ let test_incremental_dependencies context =
     in
     let sources =
       [
-        parse ~handle:"a.py" ~qualifier:(Reference.create "a") a_source;
-        parse ~handle:"b.py" ~qualifier:(Reference.create "b") b_source;
+        parse ~handle:"a.py" ~qualifier:(!&"a") a_source;
+        parse ~handle:"b.py" ~qualifier:(!&"b") b_source;
       ]
     in
     List.zip_exn handles sources
@@ -1826,7 +1860,7 @@ let test_incremental_repopulate context =
       errors
   in
   let get_annotation access_name =
-    match Resolution.function_definitions resolution (!+access_name) with
+    match Resolution.function_definitions resolution (!&access_name) with
     | Some [ { Node.value = { Statement.Define.signature = { return_annotation; _ }; _ }; _ } ] ->
         return_annotation
     | _ -> None

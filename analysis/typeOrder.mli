@@ -5,7 +5,6 @@
 
 open Core
 
-
 exception Cyclic
 exception Incomplete
 exception Untracked of Type.t
@@ -97,11 +96,9 @@ val is_instantiated: (module Handler) -> Type.t -> bool
 val method_resolution_order_linearize
   :  (module Handler)
   -> get_successors:(int -> Target.t list option)
-  -> Type.t
-  -> Type.t list
-val successors: (module Handler) -> Type.t -> Type.t list
-val predecessors: (module Handler) -> Type.t -> Type.t list
-val greatest: (module Handler) -> matches:(Type.t -> bool) -> Type.t list
+  -> Type.primitive
+  -> Type.primitive list
+val successors: (module Handler) -> Type.primitive -> Type.primitive list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 
@@ -118,10 +115,10 @@ type order = {
 
 val solve_less_or_equal
   :  order
-  -> constraints: Type.t Type.Map.t
+  -> constraints: TypeConstraints.t
   -> left: Type.t
   -> right: Type.t
-  -> Type.t Type.Map.t option
+  -> TypeConstraints.t list
 val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
 val is_compatible_with: order -> left: Type.t -> right: Type.t -> bool
 val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
@@ -137,6 +134,8 @@ val widen
   -> Type.t
 val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
 
+module OrderedConstraints: TypeConstraints.OrderedConstraintsType with type order = order
+
 
 val instantiate_successors_parameters
   :  order
@@ -145,6 +144,7 @@ val instantiate_successors_parameters
   -> Type.t List.t Option.t
 
 val is_consistent_with: order -> Type.t -> Type.t -> bool
+val consistent_solution_exists: order -> Type.t -> Type.t -> bool
 
 val deduplicate: (module Handler) -> annotations: Type.t list -> unit
 val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit

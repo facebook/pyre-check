@@ -19,7 +19,6 @@
   ppx_deriving
   ppx_deriving_yojson
   ppx_deriving_yojson.runtime
-  pyrelib.service
   pyrelib.ast
   pyrelib.analysis
   pyrelib.configuration
@@ -27,4 +26,5 @@
   pyrelib.memory
   pyrelib.network
   pyrelib.languageServer
+  pyrelib.service
   pyrelib.version))

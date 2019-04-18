@@ -110,7 +110,7 @@ module ExpressionVisitor = struct
       let store_access access =
         (* `filter` receives the prefix and current element, should return `Some entry` if one
            should be added for the current prefix+entry, `None` otherwise. *)
-        let collect_and_store ~access ~lookup_table ~filter =
+        let collect_and_store ~lookup_table ~filter =
           let _, entries =
             let fold_callback (prefix, entries_sofar) element =
               let access = prefix @ [element] in
@@ -149,10 +149,11 @@ module ExpressionVisitor = struct
               (* Resolve prefix to check if this is a method. *)
               resolve ~expression:(Access.expression prefix)
               >>| Type.class_name
+              >>| Reference.access
               >>| (fun resolved_prefix -> resolved_prefix @ [element])
               >>= find_definition
         in
-        collect_and_store ~access ~lookup_table:definitions_lookup ~filter:filter_definition;
+        collect_and_store ~lookup_table:definitions_lookup ~filter:filter_definition;
 
         (* Annotations. *)
         let filter_annotation ~prefix ~element =
@@ -163,7 +164,7 @@ module ExpressionVisitor = struct
                  ~location:expression_location
                  (Expression.Access (SimpleAccess access)))
         in
-        collect_and_store ~access ~lookup_table:annotations_lookup ~filter:filter_annotation
+        collect_and_store ~lookup_table:annotations_lookup ~filter:filter_annotation
       in
       match expression_value with
       | Expression.Access (SimpleAccess access) ->
@@ -234,6 +235,7 @@ module Visit = struct
 end
 
 let create_of_source environment source =
+  let source = Preprocessing.convert source in
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let walk_define ({
@@ -249,8 +251,8 @@ let create_of_source environment source =
       let pre_annotations, post_annotations =
         Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
         >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
-            Access.Map.of_tree precondition, Access.Map.of_tree postcondition)
-        |> Option.value ~default:(Access.Map.empty, Access.Map.empty)
+            Reference.Map.of_tree precondition, Reference.Map.of_tree postcondition)
+        |> Option.value ~default:(Reference.Map.empty, Reference.Map.empty)
       in
       let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
       let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
@@ -274,7 +276,8 @@ let create_of_source environment source =
     walk_statement Cfg.entry_index 0 define_signature;
   in
   (* TODO(T31738631): remove extract_into_toplevel *)
-  Preprocessing.defines ~include_nested:true ~extract_into_toplevel:true source
+  Preprocessing.convert source
+  |> Preprocessing.defines ~include_nested:true ~extract_into_toplevel:true
   |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 

@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 
-open Ast
 open Ast.Expression
 open Ast.Statement
 open Analysis.Cfg
@@ -19,7 +18,7 @@ let test_to_dot _ =
     let define =
       {
         Define.signature = {
-          name = Reference.create "foo";
+          name = !&"foo";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -105,7 +104,7 @@ let test_to_dot _ =
 let assert_cfg body expected =
   let define = {
     Define.signature = {
-      name = Reference.create "foo";
+      name = !&"foo";
       parameters = [];
       decorators = [];
       docstring = None;
@@ -175,7 +174,8 @@ let test_for _ =
       node 6 Node.Join [5; 8] [1];
       node
         7
-        (Node.Block [parse_single_statement "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
+        (Node.Block
+          [parse_single_statement ~convert:true "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ]
 

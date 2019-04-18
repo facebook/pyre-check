@@ -34,8 +34,9 @@ module TypeQuery: sig
   [@@deriving eq, show, to_yojson]
 
   type request =
-    | Attributes of Access.t
+    | Attributes of Reference.t
     | ComputeHashesToKeys
+    | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
@@ -43,11 +44,11 @@ module TypeQuery: sig
     | Join of Access.t * Access.t
     | LessOrEqual of Access.t * Access.t
     | Meet of Access.t * Access.t
-    | Methods of Access.t
+    | Methods of Reference.t
     | NormalizeType of Access.t
-    | PathOfModule of Access.t
+    | PathOfModule of Reference.t
     | SaveServerState of Path.t
-    | Signature of Access.t
+    | Signature of Reference.t
     | Superclasses of Access.t
     | Type of Expression.t
     | TypeAtPosition of {
@@ -55,6 +56,12 @@ module TypeQuery: sig
         position: Location.position;
       }
     | TypesInFile of File.t
+  [@@deriving eq, show]
+
+  type coverage_level =
+    | Typed
+    | Partial
+    | Untyped
   [@@deriving eq, show]
 
   type attribute = {
@@ -88,6 +95,12 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type coverage_at_location = {
+    location: Location.Instantiated.t;
+    coverage: coverage_level;
+  }
+  [@@deriving eq, show, to_yojson]
+
   type decoded_value = {
     serialized_key: string;
     kind: string;
@@ -110,6 +123,7 @@ module TypeQuery: sig
 
   type base_response =
     | Boolean of bool
+    | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | FoundAttributes of attribute list
     | FoundKeyMapping of key_mapping list

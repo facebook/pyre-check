@@ -16,6 +16,7 @@ type classdecorator_options = {
   init: bool;
   repr: bool;
   eq: bool;
+  order: bool;
 }
 
 let transform_environment ~options (module Handler: Handler) resolution source =
@@ -32,8 +33,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
               let annotated_class = Annotated.Class.create { Node.location; value = ast_class } in
               match options annotated_class with
               | None -> ()
-              | Some { init; repr; eq } ->
-                  let class_type = Annotated.Class.annotation ~resolution annotated_class in
+              | Some { init; repr; eq; order } ->
                   let generated_methods =
                     let create_method ~name ~parameters ~return_annotation =
                       {
@@ -81,7 +81,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                     else
                                       None
                                   in
-                                  let annotation = Type.expression annotation in
+                                  let annotation = Type.expression ~convert:true annotation in
                                   let rec override_existing_parameters unchecked_parameters =
                                     match unchecked_parameters with
                                     | [] ->
@@ -142,15 +142,29 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                       else
                         methods
                     in
-                    let methods =
-                      if eq && not (
-                          Annotated.Class.has_method annotated_class ~resolution ~name:"__eq__"
-                        ) then
+                    let add_order_method methods name =
+                      let annotation = Type.expression ~convert:true Type.object_primitive in
+                      if
+                        not (Annotated.Class.has_method annotated_class ~resolution ~name)
+                      then
                         create_method
-                          ~name:"__eq__"
-                          ~parameters:[Parameter.create ~name:"o" ()]
+                          ~name
+                          ~parameters:[Parameter.create ~name:"o" ~annotation ()]
                           ~return_annotation:"bool"
                         :: methods
+                      else
+                        methods
+                    in
+                    let methods =
+                      if eq then
+                        add_order_method methods "__eq__"
+                      else
+                        methods
+                    in
+                    let methods =
+                      if order then
+                        ["__lt__"; "__le__"; "__gt__"; "__ge__"]
+                        |> List.fold ~init:methods ~f:add_order_method
                       else
                         methods
                     in
@@ -161,7 +175,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                     |> Source.statements
                   in
                   Handler.set_class_definition
-                    ~primitive:class_type
+                    ~name:(Reference.show parent)
                     ~definition:{
                       Node.location;
                       value = { ast_class with Class.body = generated_methods };
@@ -171,10 +185,10 @@ let transform_environment ~options (module Handler: Handler) resolution source =
             ()
     end)
   in
-  Visit.visit () source
+  Visit.visit () (Preprocessing.convert source)
 
 
-let extract_options_from_decorator ~names ~default ~init ~repr ~eq annotated_class =
+let extract_options_from_decorator ~names ~default ~init ~repr ~eq ~order annotated_class =
   let get_decorators ~names annotated =
     let get_decorator decorator = Annotated.Class.get_decorator annotated ~decorator in
     names
@@ -190,18 +204,37 @@ let extract_options_from_decorator ~names ~default ~init ~repr ~eq annotated_cla
       in
       match argument with
       | {
-        Argument.name = Some { Node.value = argument_name; _ };
+        Expression.Call.Argument.name = Some { Node.value = argument_name; _ };
         value = { Node.value; _ };
       } ->
           let argument_name = Identifier.sanitized argument_name in
-          if String.equal argument_name init then
-            { default with init = recognize_value value ~default:default.init }
-          else if String.equal argument_name repr then
-            { default with repr = recognize_value value ~default:default.repr }
-          else if String.equal argument_name eq then
-            { default with eq = recognize_value value ~default:default.eq }
-          else
-            default
+          (* We need to check each keyword sequentially because different keywords may correspond
+             to the same string. *)
+          let default =
+            if String.equal argument_name init then
+              { default with init = recognize_value value ~default:default.init }
+            else
+              default
+          in
+          let default =
+            if String.equal argument_name repr then
+              { default with repr = recognize_value value ~default:default.repr }
+            else
+              default
+          in
+          let default =
+            if String.equal argument_name eq then
+              { default with eq = recognize_value value ~default:default.eq }
+            else
+              default
+          in
+          let default =
+            if String.equal argument_name order then
+              { default with order = recognize_value value ~default:default.order }
+            else
+              default
+          in
+          default
       | _ ->
           default
     in
@@ -216,13 +249,15 @@ let extract_options_from_decorator ~names ~default ~init ~repr ~eq annotated_cla
       Some default
 
 let transform_dataclass =
+  (* TODO (T43210531): Warn about inconsistent annotations *)
   let options =
     extract_options_from_decorator
       ~names:["dataclasses.dataclass"; "dataclass"]
-      ~default:{ init = true; repr = true; eq = true }
+      ~default:{ init = true; repr = true; eq = true; order = false }
       ~init:"init"
       ~repr:"repr"
       ~eq:"eq"
+      ~order:"order"
   in
   transform_environment ~options
 
@@ -231,9 +266,10 @@ let transform_attrs =
   let options =
     extract_options_from_decorator
       ~names:["attr.s"; "attr.attrs"]
-      ~default:{ init = true; repr = true; eq = true }
+      ~default:{ init = true; repr = true; eq = true; order = true }
       ~init:"init"
       ~repr:"repr"
       ~eq:"cmp"
+      ~order:"cmp"
   in
   transform_environment ~options

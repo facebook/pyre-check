@@ -10,6 +10,7 @@ open Pyre
 open PyreParser
 
 
+
 type 'success parse_result =
   | Success of 'success
   | SyntaxError of File.Handle.t
@@ -245,15 +246,21 @@ let find_stubs
       let typeshed_directories =
         let list_subdirectories typeshed_path =
           let root = Path.absolute typeshed_path in
-          if Core.Sys.is_directory root = `Yes then
+          let is_directory path =
+            match Core.Sys.is_directory path with
+            | `Yes -> true
+            | _ -> false
+          in
+          if is_directory root then
             match Core.Sys.ls_dir root with
             | entries ->
                 let select_directories sofar path =
-                  if Core.Sys.is_directory (root ^/ path) = `Yes &&
-                     path <> "tests" &&
+                  if is_directory (root ^/ path) &&
+                     not (String.equal path "tests") &&
                      not (String.is_prefix path ~prefix:".")
                   then
-                    (Path.create_relative ~root:typeshed_path ~relative:path) :: sofar
+                    (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))
+                    :: sofar
                   else
                     sofar
                 in
@@ -270,7 +277,8 @@ let find_stubs
         Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
       in
       let stubs root =
-        Log.info "Finding type stubs in `%a`..." Path.pp root;
+        let search_root = Path.SearchPath.to_path root in
+        Log.info "Finding type stubs in `%a`..." Path.pp search_root;
         let directory_filter path =
           let is_python_2_directory path =
             String.is_suffix ~suffix:"/2" path ||
@@ -292,15 +300,14 @@ let find_stubs
             File.create path
             |> File.handle ~configuration
             |> File.Handle.show
-            |> fun relative -> Path.create_relative ~root ~relative
+            |> fun relative -> Path.create_relative ~root:(Path.SearchPath.get_root root) ~relative
           in
           Path.equal reconstructed path
         in
-        Path.list ~file_filter ~directory_filter ~root ()
+        Path.list ~file_filter ~directory_filter ~root:(search_root) ()
         |> List.filter ~f:keep
       in
-      let search_path = List.map search_path ~f:Path.SearchPath.to_path in
-      List.map ~f:stubs (local_root :: (search_path @ typeshed_directories))
+      List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
     in
     let modules =
       let modules root =
@@ -424,7 +431,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       in
       match relative with
       | Some handle ->
-          handle = "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
+          String.equal handle "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
           not (Set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
       | _ ->
           true

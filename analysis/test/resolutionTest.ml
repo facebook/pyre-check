@@ -14,31 +14,33 @@ open Test
 
 
 let test_set_local _ =
-  let assert_local ~resolution ~access ~expected =
+  let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
-      (Resolution.get_local resolution ~access:(!+access) >>| Annotation.annotation)
+      (expected
+       >>| parse_single_expression
+       >>| Type.create ~aliases:(fun _ -> None))
+      (Resolution.get_local resolution ~reference:(!&name) >>| Annotation.annotation)
   in
 
   let resolution = Test.resolution ~sources:[] () in
-  assert_local ~resolution ~access:"local" ~expected:None;
+  assert_local ~resolution ~name:"local" ~expected:None;
 
   let resolution =
     Resolution.set_local
       resolution
-      ~access:(!+"local")
+      ~reference:(!&"local")
       ~annotation:(Annotation.create Type.integer)
   in
-  assert_local ~resolution ~access:"local" ~expected:(Some "int");
+  assert_local ~resolution ~name:"local" ~expected:(Some "int");
 
   let resolution =
     Resolution.set_local
       resolution
-      ~access:(!+"local")
+      ~reference:(!&"local")
       ~annotation:(Annotation.create Type.float)
   in
-  assert_local ~resolution ~access:"local" ~expected:(Some "float")
+  assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
 
 let test_parse_annotation _ =
@@ -46,7 +48,8 @@ let test_parse_annotation _ =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
+      (parse_single_expression expected
+       |> Type.create ~aliases:(fun _ -> None))
       (parse_single_expression expression
        |> Resolution.parse_annotation ~allow_untracked resolution)
   in
@@ -54,9 +57,9 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:([
-          parse ~qualifier:(Reference.create "empty") ~handle:"empty.pyi" "class Empty: ...";
+          parse ~qualifier:(!&"empty") ~handle:"empty.pyi" "class Empty: ...";
           parse
-            ~qualifier:(Reference.create "empty.stub")
+            ~qualifier:(!&"empty.stub")
             ~local_mode:Source.PlaceholderStub
             ~handle:"empty/stub.pyi"
             "";
@@ -105,7 +108,7 @@ let test_parse_reference _ =
   let assert_parse_reference reference expected =
     assert_equal
       ~printer:Type.show expected
-      (Resolution.parse_reference resolution (Reference.create reference))
+      (Resolution.parse_reference resolution (!&reference))
   in
   assert_parse_reference "undefined" Type.Top;
   assert_parse_reference "MyType" Type.integer;
@@ -136,7 +139,7 @@ let test_resolve_literal _ =
   in
   let assert_resolve_literal source expected =
     let expression =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
@@ -202,7 +205,7 @@ let test_resolve_mutable_literals _ =
       |> Resolution.parse_annotation resolution
     in
     let expression =
-      match parse_single_statement source with
+      match parse_single_statement ~convert:true source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
@@ -268,7 +271,7 @@ let test_resolve_mutable_literals _ =
 
 
 let test_function_definitions _ =
-  let assert_functions sources access expected =
+  let assert_functions sources function_name expected =
     let sources =
       let source (path, content) = path, trim_extra_indentation content in
       List.map sources ~f:source
@@ -292,7 +295,8 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~qualifier:(Reference.create (String.chop_suffix_exn path ~suffix:".py"))
+            ~convert:false
+            ~qualifier:(!&(String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content
           |> Preprocessing.qualify
@@ -302,7 +306,7 @@ let test_function_definitions _ =
       resolution ~sources ()
     in
     let functions =
-      Resolution.function_definitions resolution (!+access)
+      Resolution.function_definitions resolution (!&function_name)
       >>| List.map
         ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } -> Reference.show name)
       |> Option.value ~default:[]
@@ -357,6 +361,24 @@ let test_function_definitions _ =
   ()
 
 
+let test_resolution_shared_memory _ =
+  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
+  ResolutionSharedMemory.add
+    ~handle:(File.Handle.create "a.py")
+    (Reference.create "name")
+    Int.Map.Tree.empty;
+  ResolutionSharedMemory.add
+    ~handle:(File.Handle.create "a.py")
+    (Reference.create "other")
+    Int.Map.Tree.empty;
+  assert_equal
+    ~printer:(List.to_string ~f:Reference.show)
+    (ResolutionSharedMemory.get_keys ~handles:[File.Handle.create "a.py"])
+    [Reference.create "other"; Reference.create "name"];
+  ResolutionSharedMemory.Keys.LocalChanges.revert_all ();
+  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
+
+
 let () =
   "resolution">:::[
     "set_local">::test_set_local;
@@ -365,5 +387,6 @@ let () =
     "resolve_literal">::test_resolve_literal;
     "resolve_mutable_literals">::test_resolve_mutable_literals;
     "function_definitions">::test_function_definitions;
+    "resolve_shared_memory">::test_resolution_shared_memory;
   ]
   |> Test.run

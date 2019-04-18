@@ -97,7 +97,6 @@ module Name : sig
   [@@deriving compare, eq, sexp, show, hash]
 end
 
-
 module Call : sig
   module Argument : sig
     type 'expression t = {
@@ -109,11 +108,10 @@ module Call : sig
 
   type 'expression t = {
     callee: 'expression;
-    arguments: (('expression Argument.t) list) Node.t;
+    arguments: ('expression Argument.t) list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
-
 
 module Lambda : sig
   type 'expression t = {
@@ -254,11 +252,9 @@ module Access : sig
 
   val create: string -> t
   val create_from_identifiers: Identifier.t list -> t
-  val create_from_expression: expression_t -> general_access
 
   val combine: expression_t -> t -> general_access
   val expression: ?location: Location.t -> t -> expression_t
-  val new_expression: ?location: Location.t -> general_access -> expression_t
 
   val sanitized: t -> t
   val equal_sanitized: t -> t -> bool
@@ -301,12 +297,6 @@ module Access : sig
   val is_assert_function: t -> bool
 end
 
-val create_name_from_identifiers: (Identifier.t Node.t) list -> expression_t Name.t
-val create_name: location: Location.t -> string -> expression_t Name.t
-
-val delocalize: t -> t
-val delocalize_qualified: t -> t
-
 module ComparisonOperator : sig
   include module type of struct include Record.ComparisonOperator end
 
@@ -329,6 +319,20 @@ val negate: t -> t
 
 val normalize: t -> t
 
+val convert: t -> t
+
+val create_name_from_identifiers: (Identifier.t Node.t) list -> expression_t Name.t
+
+val create_name: location: Location.t -> string -> expression_t Name.t
+
+val is_simple_name: expression_t Name.t -> bool
+
+val delocalize: t -> t
+
+val delocalize_qualified: t -> t
+
+val exists_in_list : ?match_prefix:bool -> expression_list: t list -> string -> bool
+
 val pp : Format.formatter -> t -> unit
 
 val show : t -> string
@@ -336,8 +340,6 @@ val show : t -> string
 val show_sanitized: t -> string
 
 val pp_sanitized: Format.formatter -> t -> unit
-
-val exists_in_list : ?match_prefix:bool -> expression_list: t list -> string -> bool
 
 val pp_expression_list : Format.formatter -> t list -> unit
 

@@ -12,6 +12,49 @@ open PyreParser
 
 
 module Record = struct
+  module Variable = struct
+    module RecordNamespace = struct
+      type t =  int
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+    type state =
+      | Free of { escaped: bool }
+      | InFunction
+      | InSimulatedCall
+    [@@deriving compare, eq, sexp, show, hash]
+
+
+    type 'annotation constraints =
+      | Bound of 'annotation
+      | Explicit of 'annotation list
+      | Unconstrained
+      | LiteralIntegers
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type variance =
+      | Covariant
+      | Contravariant
+      | Invariant
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation record = {
+      variable: Identifier.t;
+      constraints: 'annotation constraints;
+      variance: variance;
+      state: state;
+      namespace: RecordNamespace.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+
+    let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
+      {
+        variable = name;
+        constraints;
+        variance;
+        state = Free { escaped = false };
+        namespace = 0;
+      }
+  end
   module Callable = struct
     module RecordParameter = struct
       type 'annotation named = {
@@ -38,7 +81,7 @@ module Record = struct
 
     type kind =
       | Anonymous
-      | Named of Access.t
+      | Named of Reference.t
 
 
     and 'annotation implicit_record = {
@@ -82,33 +125,20 @@ open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
 
-type literal =
-  | String of string
-  | Integer of int
+type primitive = Identifier.t
 [@@deriving compare, eq, sexp, show, hash]
 
-type variable_state =
-  | Free
-  | InFunction
-  | InSimulatedCall
+
+type literal =
+  | Boolean of bool
+  | Integer of int
+  | String of string
 [@@deriving compare, eq, sexp, show, hash]
 
 
 type tuple =
   | Bounded of t list
   | Unbounded of t
-
-
-and constraints =
-  | Bound of t
-  | Explicit of t list
-  | Unconstrained
-
-
-and variance =
-  | Covariant
-  | Contravariant
-  | Invariant
 
 
 and typed_dictionary_field = {
@@ -124,17 +154,12 @@ and t =
   | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
-  | Primitive of Identifier.t
+  | Primitive of primitive
   | Top
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of {
-      variable: Identifier.t;
-      constraints: constraints;
-      variance: variance;
-      state: variable_state;
-    }
+  | Variable of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -153,6 +178,13 @@ module Map = Map.Make(struct
     let sexp_of_t = sexp_of_t
     let t_of_sexp = t_of_sexp
   end)
+
+
+let default_to_bottom map keys =
+  let to_bottom solution key =
+    Map.update solution key ~f:(function | None -> Bottom | Some value -> value)
+  in
+  List.fold keys ~f:to_bottom ~init:map
 
 
 module Set = Set.Make(struct
@@ -208,7 +240,6 @@ module Cache = struct
     enabled := true
 end
 
-
 let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"
@@ -227,7 +258,7 @@ let rec pp format annotation =
       let kind =
         match kind with
         | Anonymous -> ""
-        | Named name -> Format.asprintf "(%a)" Access.pp name
+        | Named name -> Format.asprintf "(%a)" Reference.pp name
       in
       let signature_to_string { annotation; parameters } =
         let parameters =
@@ -278,6 +309,8 @@ let rec pp format annotation =
       Format.fprintf format "typing.Callable%s[%s]%s" kind implementation overloads
   | Any ->
       Format.fprintf format "typing.Any"
+  | Literal Boolean literal ->
+      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal Integer literal ->
       Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
@@ -286,9 +319,8 @@ let rec pp format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Parametric { name; parameters }
-    when (name = "typing.Optional" or name = "Optional") &&
-         parameters = [Bottom] ->
+  | Parametric { name; parameters = [Bottom] }
+    when (String.equal name "typing.Optional" or String.equal name "Optional")  ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let parameters =
@@ -326,7 +358,7 @@ let rec pp format annotation =
       in
       let totality = if total then "" else " (non-total)" in
       let name =
-        if name = "$anonymous" then
+        if String.equal name "$anonymous" then
           ""
         else
           Format.sprintf " `%s`" name
@@ -338,6 +370,15 @@ let rec pp format annotation =
         (List.map parameters ~f:show
          |> String.concat ~sep:", ")
   | Variable { variable; constraints; variance; _ } ->
+      let name =
+        match constraints with
+        | Bound _
+        | Explicit _
+        | Unconstrained ->
+            "Variable"
+        | LiteralIntegers ->
+            "IntegerVariable"
+      in
       let constraints =
         match constraints with
         | Bound bound ->
@@ -349,6 +390,8 @@ let rec pp format annotation =
               constraints
         | Unconstrained ->
             ""
+        | LiteralIntegers ->
+            ""
       in
       let variance =
         match variance with
@@ -358,7 +401,8 @@ let rec pp format annotation =
       in
       Format.fprintf
         format
-        "Variable[%s%s]%s"
+        "%s[%s%s]%s"
+        name
         (Identifier.sanitized variable)
         constraints
         variance
@@ -404,6 +448,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "Callable[%s]" (signature_to_string implementation)
   | Any ->
       Format.fprintf format "Any"
+  | Literal Boolean literal ->
+      Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
   | Literal Integer literal ->
       Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal String literal ->
@@ -412,9 +458,8 @@ let rec pp_concise format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Parametric { name; parameters }
-    when (name = "typing.Optional" or name = "Optional") &&
-         parameters = [Bottom] ->
+  | Parametric { name; parameters = [Bottom] }
+    when (String.equal name "typing.Optional" or String.equal name "Optional") ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let name = strip_qualification (reverse_substitute name) in
@@ -434,7 +479,7 @@ let rec pp_concise format annotation =
   | Tuple (Unbounded parameter) ->
       Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
   | TypedDictionary { name; fields; _ } ->
-      if name = "$anonymous" then
+      if String.equal name "$anonymous" then
         let fields =
           fields
           |> List.map
@@ -463,10 +508,6 @@ let rec serialize = function
 
 let parametric name parameters =
   Parametric { name; parameters }
-
-
-let variable ?(constraints = Unconstrained) ?(variance = Invariant) name =
-  Variable { variable = name; constraints; variance; state = Free }
 
 
 let awaitable parameter =
@@ -512,6 +553,10 @@ let enumeration =
 
 let float =
   Primitive "float"
+
+
+let number =
+  Primitive "numbers.Number"
 
 
 let generator ?(async=false) parameter =
@@ -707,6 +752,10 @@ let union parameters =
       normalize parameters
 
 
+let variable ?constraints ?variance name =
+  Variable (Record.Variable.create ?constraints ?variance name)
+
+
 let yield parameter =
   Parametric {
     name = "Yield";
@@ -732,82 +781,70 @@ let parametric_substitution_map =
   |> Identifier.Map.of_alist_exn
 
 
-let rec expression annotation =
-  let split name =
-    match name with
-    | "..." ->
-        [Access.Identifier "..."]
-    | name ->
-        String.split name ~on:'.'
-        |> List.map ~f:Access.create
-        |> List.concat
-  in
+let rec expression ?(convert = false) annotation =
+  let location = Location.Reference.any in
 
-  let get_item_call ?call_parameters parameters =
-    let parameter =
-      match parameters with
-      | _ when List.length parameters > 1 || Option.is_some call_parameters ->
-          let tuple =
-            let call_parameters =
-              call_parameters
-              >>| (fun call_parameters -> [call_parameters])
-              |> Option.value ~default:[]
-            in
-            List.map parameters ~f:expression
-            |> (fun elements -> Expression.Tuple (call_parameters @ elements))
-            |> Node.create_with_default_location
-          in
-          [{ Argument.name = None; value = tuple }]
-      | [parameter] ->
-          [{ Argument.name = None; value = expression parameter }]
-      | _ ->
-          []
+  let create_name name = Name (Expression.create_name ~location name) in
+
+  let get_item_call base arguments =
+    let arguments =
+      if List.length arguments > 1 then
+        Expression.Tuple arguments
+        |> Node.create_with_default_location
+        |> (fun tuple -> [{ Call.Argument.name = None; value = tuple }])
+      else
+        let create argument = { Call.Argument.name = None; value = argument } in
+        List.map ~f:create arguments
     in
-    [
-      Access.Identifier "__getitem__";
-      Access.Call (Node.create_with_default_location parameter);
-    ]
+    Call {
+      callee = {
+        Node.location;
+        value = create_name (base ^ ".__getitem__");
+      };
+      arguments;
+    }
   in
 
-  let rec access annotation =
+  let convert_annotation annotation =
     match annotation with
-    | Bottom -> Access.create "$bottom"
+    | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } ->
-        let convert { annotation; parameters } =
-          let call_parameters =
+        let convert_signature { annotation; parameters } =
+          let parameters =
             match parameters with
             | Defined parameters ->
-                let parameter parameter =
+                let convert_parameter parameter =
                   let call ?(default = false) name argument annotation =
-                    let annotation =
-                      annotation
-                      >>| (fun annotation ->
-                          [{
-                            Argument.name = None;
-                            value = expression annotation;
-                          }])
-                      |> Option.value ~default:[]
-                    in
                     let arguments =
+                      let annotation =
+                        annotation
+                        >>| (fun annotation ->
+                            [{
+                              Call.Argument.name = None;
+                              value = expression ~convert annotation;
+                            }])
+                        |> Option.value ~default:[]
+                      in
                       let default =
                         if default then
-                          [
-                            {
-                              Argument.name = None;
-                              value = Access.expression (Access.create "default");
-                            };
-                          ]
+                          [{
+                              Call.Argument.name = None;
+                              value = Node.create ~location (create_name "default");
+                          }]
                         else
                           []
                       in
                       [{
-                        Argument.name = None;
-                        value = Access.expression (Access.create argument);
+                        Call.Argument.name = None;
+                        value = Node.create ~location (create_name argument);
                       }]
                       @ annotation @ default
                     in
-                    Access.expression
-                      (Access.call ~arguments ~location:Location.Reference.any ~name ())
+                    Call {
+                      callee = Node.create ~location (Name (Name.Identifier name));
+                      arguments;
+                    }
+                    |> Node.create ~location
                   in
                   match parameter with
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
@@ -817,118 +854,153 @@ let rec expression annotation =
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       call "Variable" name (Some annotation)
                 in
-                List (List.map parameters ~f:parameter)
-                |> Node.create_with_default_location
+                List (List.map ~f:convert_parameter parameters)
+                |> Node.create ~location
             | Undefined ->
-                Node.create_with_default_location Ellipsis
+                Node.create ~location Ellipsis
           in
-          get_item_call ~call_parameters [annotation]
+          {
+            Call.Argument.name = None;
+            value =
+              Node.create
+                ~location
+                (Expression.Tuple [parameters; expression ~convert annotation])
+          }
+        in
+        let base_callable =
+          Call {
+            callee = {
+              Node.location;
+              value = create_name "typing.Callable.__getitem__"
+            };
+            arguments = [convert_signature implementation];
+          };
         in
         let overloads =
-          let overloads = List.concat_map overloads ~f:convert in
-          if List.is_empty overloads then
-            []
-          else
-            [
-              Access.Identifier "__getitem__";
-              Access.Call
-                (Node.create_with_default_location [
-                    {
-                      Argument.name = None;
-                      value = Node.create_with_default_location (Access (SimpleAccess overloads));
-                    }
-                  ]);
-            ]
+          let convert_overload sofar overload =
+            match sofar with
+            | None ->
+                Call {
+                  callee = {
+                      Node.location;
+                      value = Name (Name.Identifier "__getitem__");
+                    };
+                  arguments = [convert_signature overload];
+                }
+                |> Node.create ~location
+                |> Option.some
+            | Some expression ->
+                Call {
+                  callee = {
+                    Node.location;
+                    value = Name (Name.Attribute {
+                      base = expression;
+                      attribute = "__getitem__";
+                    });
+                  };
+                  arguments = [convert_signature overload];
+                }
+                |> Node.create ~location
+                |> Option.some
+          in
+          List.fold ~init:None ~f:convert_overload overloads
         in
-        (Access.create "typing.Callable") @ (convert implementation) @ overloads
-    | Any -> Access.create "typing.Any"
+        begin
+          match overloads with
+          | Some overloads ->
+              Call {
+                callee = {
+                  Node.location;
+                  value = Name (Name.Attribute {
+                    base = {
+                      Node.location;
+                      value = base_callable
+                    };
+                    attribute = "__getitem__"
+                  });
+                };
+                arguments = [{ Call.Argument.name = None; value = overloads }];
+              }
+          | None ->
+              base_callable
+        end
+    | Any -> create_name "typing.Any"
     | Literal literal ->
         let literal =
           match literal with
+          | Boolean true ->
+              Expression.True
+          | Boolean false ->
+              Expression.False
           | Integer literal ->
               Expression.Integer literal
           | String literal ->
               Expression.String { value = literal; kind = StringLiteral.String }
         in
-        let argument = { Argument.name = None; value = Node.create_with_default_location literal} in
-        (Access.create "typing_extensions.Literal") @ [
-          Access.Identifier "__getitem__";
-          Access.Call (Node.create_with_default_location ([argument]));
-        ]
+        get_item_call "typing_extensions.Literal" [Node.create ~location literal]
     | Optional Bottom ->
-        split "None"
+        create_name "None"
     | Optional parameter ->
-        (Access.create "typing.Optional") @ (get_item_call [parameter])
+        get_item_call "typing.Optional" [expression ~convert parameter]
     | Parametric { name = "typing.Optional"; parameters = [Bottom] } ->
-        split "None"
+        create_name "None"
     | Parametric { name; parameters } ->
-        (split (reverse_substitute name)) @ (get_item_call parameters)
+        get_item_call (reverse_substitute name) (List.map ~f:(expression ~convert) parameters)
     | Primitive name ->
-        split name
-    | Top -> Access.create "$unknown"
+        create_name name
+    | Top -> create_name "$unknown"
     | Tuple (Bounded []) ->
-        let parameters =
-          Expression.Tuple []
-          |> Node.create_with_default_location
-          |> (fun tuple -> [{ Argument.name = None; value = tuple }])
-          |> Node.create_with_default_location
-        in
-        (Access.create "typing.Tuple") @ [
-          Access.Identifier "__getitem__";
-          Access.Call parameters;
-        ]
+        get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
     | Tuple elements ->
         let parameters =
           match elements with
           | Bounded parameters -> parameters
           | Unbounded parameter -> [parameter; Primitive "..."]
         in
-        (Access.create "typing.Tuple") @ (get_item_call parameters)
+        get_item_call "typing.Tuple" (List.map ~f:(expression ~convert) parameters)
     | TypedDictionary { name; fields; total } ->
         let argument =
-          let tuple =
-            let tail =
-              let field_to_tuple { name; annotation } =
-                Node.create_with_default_location (Expression.Tuple [
-                    Node.create_with_default_location (Expression.String {
-                        value = name;
-                        kind = StringLiteral.String;
-                      });
-                    expression annotation;
-                  ])
-              in
-              List.map fields ~f:field_to_tuple
+          let tail =
+            let field_to_tuple { name; annotation } =
+              Node.create_with_default_location (Expression.Tuple [
+                  Node.create_with_default_location (Expression.String {
+                      value = name;
+                      kind = StringLiteral.String;
+                    });
+                  expression ~convert annotation;
+                ])
             in
-            let totality =
-              (if total then Expression.True else Expression.False)
-              |> Node.create_with_default_location
-            in
-            Expression.String { value = name; kind = StringLiteral.String }
-            |> Node.create_with_default_location
-            |> (fun name -> Expression.Tuple(name :: totality :: tail))
+            List.map fields ~f:field_to_tuple
+          in
+          let totality =
+            (if total then Expression.True else Expression.False)
             |> Node.create_with_default_location
           in
-          { Argument.name = None; value = tuple; }
+          Expression.String { value = name; kind = StringLiteral.String }
+          |> Node.create_with_default_location
+          |> (fun name -> Expression.Tuple(name :: totality :: tail))
+          |> Node.create_with_default_location
         in
-        (Access.create "mypy_extensions.TypedDict") @ [
-          Access.Identifier "__getitem__";
-          Access.Call (Node.create_with_default_location ([argument]));
-        ]
+        get_item_call "mypy_extensions.TypedDict" [argument]
     | Union parameters ->
-        (Access.create "typing.Union") @ (get_item_call parameters)
-    | Variable { variable; _ } -> split variable
+        get_item_call "typing.Union" (List.map ~f:(expression ~convert) parameters)
+    | Variable { variable; _ } ->
+        create_name variable
   in
 
   let value =
     match annotation with
     | Primitive "..." -> Ellipsis
-    | _ -> Access (SimpleAccess (access annotation))
+    | _ -> convert_annotation annotation
   in
-  Node.create_with_default_location value
+  if convert then
+    Expression.convert (Node.create_with_default_location value)
+  else
+    Node.create_with_default_location value
 
 
 let access annotation =
-  match expression annotation with
+  match expression ~convert:true annotation with
   | { Node.value = Access (SimpleAccess access); _ } -> access
   | _ -> failwith "Annotation expression is not an access"
 
@@ -1001,12 +1073,14 @@ module Transform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Bound bound ->
-                  Bound (visit_annotation bound ~state)
+              | Record.Variable.Bound bound ->
+                  Record.Variable.Bound (visit_annotation bound ~state)
               | Explicit constraints ->
                   Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained ->
                   Unconstrained
+              | LiteralIntegers ->
+                  LiteralIntegers
             in
             Variable { variable with constraints }
 
@@ -1335,7 +1409,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   in
                   let name = Access.show state in
                   let annotation =
-                    if name = "None" then
+                    if String.equal name "None" then
                       none
                     else
                       Primitive name
@@ -1354,7 +1428,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
             |  (Access.Identifier get_item)
                :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
                :: _
-              when Identifier.show get_item = "__getitem__" ->
+              when String.equal (Identifier.show get_item) "__getitem__" ->
                 begin
                   let parameters =
                     match Node.value argument with
@@ -1435,7 +1509,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 Argument.value = { Node.value = Expression.String { StringLiteral.value; _ }; _ };
                 _;
               } :: _) ->
-                Named (Access.create value)
+                Named (Reference.create value)
             | _ ->
                 Anonymous
           in
@@ -1602,7 +1676,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
               let bound =
                 let bound = function
                   | { Argument.value; Argument.name = Some { Node.value = bound; _ }; }
-                    when Identifier.sanitized bound = "bound" ->
+                    when String.equal (Identifier.sanitized bound) "bound" ->
                       create_logic ~use_cache ~aliases value
                       |> Option.some
                   | _ ->
@@ -1611,7 +1685,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 List.find_map ~f:bound arguments
               in
               if not (List.is_empty explicits) then
-                Explicit explicits
+                Record.Variable.Explicit explicits
               else if Option.is_some bound then
                 Bound (Option.value_exn bound)
               else
@@ -1622,20 +1696,35 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.sanitized name = "covariant" ->
-                    Some Covariant
+                } when String.equal (Identifier.sanitized name) "covariant" ->
+                    Some Record.Variable.Covariant
                 | {
                   Argument.name = Some { Node.value = name; _ };
                   Argument.value = { Node.value = True; _ };
-                } when Identifier.sanitized name = "contravariant" ->
+                } when String.equal (Identifier.sanitized name) "contravariant" ->
                     Some Contravariant
                 | _ ->
                     None
               in
               List.find_map arguments ~f:variance_definition
-              |> Option.value ~default:Invariant
+              |> Option.value ~default:Record.Variable.Invariant
             in
             variable value ~constraints ~variance
+
+        | Access
+            (SimpleAccess [
+                Access.Identifier "pyre_check";
+                Access.Identifier "extensions";
+                Access.Identifier "IntVar";
+                Access.Call ({
+                    Node.value = {
+                      Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                      _;
+                    } :: [];
+                    _;
+                  });
+              ]) ->
+            variable value ~constraints:LiteralIntegers
 
         | Access
             (SimpleAccess
@@ -1644,6 +1733,12 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 :: (Access.Call { Node.value = modifiers; _ })
                 :: signatures)) ->
             parse_callable ~modifiers ~signatures ()
+        | Access
+            (SimpleAccess
+               (((Access.Identifier "typing")
+               :: (Access.Identifier "Callable")
+               :: []) as access)) ->
+            parse_access access
         | Access
             (SimpleAccess
                ((Access.Identifier "typing") :: (Access.Identifier "Callable") :: signatures)) ->
@@ -1763,6 +1858,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   Parser.parse [value]
                   |> Source.create
                   |> Preprocessing.preprocess
+                  |> Preprocessing.convert
                   |> Source.statements
                 in
                 match parsed with
@@ -1787,8 +1883,584 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
       result
 
 
-let create ~aliases =
-  create_logic ~use_cache:true ~aliases
+let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _ } =
+  match Cache.find expression with
+  | Some result when use_cache ->
+      result
+  | _ ->
+      let result =
+        let result =
+          let create_logic = create_logic_new ~use_cache ~aliases in
+          let resolve_aliases annotation =
+            let module ResolveTransform = Transform.Make(struct
+                type state = Set.t
+
+                let visit_children_before _ _ =
+                  false
+
+                let visit_children_after =
+                  true
+
+                let rec visit visited annotation =
+                  let rec resolve visited annotation =
+                    if Set.mem visited annotation then
+                      visited, annotation
+                    else
+                      let visited = Set.add visited annotation in
+                      match aliases annotation, annotation with
+                      | Some aliased, _ ->
+                          (* We need to fully resolve aliases to aliases before we go on to resolve
+                             the aliases those may contain *)
+                          resolve visited aliased
+                      | None, Parametric { name; parameters } ->
+                          let visited, annotation = resolve visited (Primitive name) in
+                          visited,
+                          begin
+                            match annotation with
+                            | Primitive name ->
+                                parametric name parameters
+                            | Parametric { name; _ } ->
+                                (* Ignore parameters for now. *)
+                                parametric name parameters
+                            | Union elements ->
+                                let replace_parameters = function
+                                  | Parametric { name; _ } -> parametric name parameters
+                                  | annotation -> annotation
+                                in
+                                Union (List.map elements ~f:replace_parameters)
+                            | _ ->
+                                (* This should probably error or something *)
+                                parametric name parameters
+                          end
+                      | _ ->
+                          visited, annotation
+                  in
+                  let new_state, transformed_annotation = resolve visited annotation in
+                  { Transform.transformed_annotation; new_state }
+              end)
+            in
+            snd (ResolveTransform.visit Set.empty annotation)
+          in
+          let rec is_typing_callable = function
+            | Name (
+                Name.Attribute {
+                  base = { Node.value = Name (Name.Identifier "typing"); _ };
+                  attribute = "Callable";
+                }
+              ) ->
+                true
+            | Name (Name.Attribute { base; _ } ) ->
+                is_typing_callable (Node.value base)
+            | Call { callee; _ } ->
+                is_typing_callable (Node.value callee)
+            | _ ->
+                false
+          in
+          let parse_callable expression =
+            let modifiers, implementation_signature, overload_signatures =
+              let get_from_base base implementation_argument overloads_argument =
+                match Node.value base with
+                | Call {
+                    callee = {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base = { Node.value = Name (Name.Identifier "typing"); _ };
+                          attribute = "Callable";
+                        }
+                      );
+                      _;
+                    };
+                    arguments;
+                  } ->
+                    Some arguments, implementation_argument, overloads_argument
+                | Name (
+                    Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "Callable";
+                    }
+                  ) ->
+                    None, implementation_argument, overloads_argument
+                | _ ->
+                    (* Invalid base. *)
+                    None, None, None
+              in
+              match expression with
+              | Call {
+                  callee = {
+                    Node.value = Name (
+                      Name.Attribute {
+                        base = {
+                          Node.value = Call {
+                            callee = {
+                              Node.value = Name (
+                                Name.Attribute { base; attribute = "__getitem__" }
+                              );
+                              _;
+                            };
+                            arguments = [{ Call.Argument.value = argument; _ }];
+                          };
+                          _;
+                        };
+                        attribute = "__getitem__";
+                      });
+                    _;
+                  };
+                  arguments = [{ Call.Argument.value = overloads_argument; _ }];
+                } ->
+                  (* Overloads are provided *)
+                  get_from_base base (Some argument) (Some overloads_argument)
+              | Call {
+                  callee = {
+                    Node.value = Name (Name.Attribute { base; attribute = "__getitem__" });
+                    _;
+                  };
+                  arguments = [{ Call.Argument.value = argument; _ }];
+                } ->
+                  (* No overloads provided *)
+                  get_from_base base (Some argument) None
+              | _ ->
+                  None, None, None
+            in
+            let kind =
+              match modifiers with
+              | Some ({
+                  Call.Argument.value = {
+                    Node.value = Expression.String { StringLiteral.value; _ };
+                    _;
+                  };
+                  _;
+                } :: _) ->
+                  Named (Reference.create value)
+              | _ ->
+                  Anonymous
+            in
+            let undefined = { annotation = Top; parameters = Undefined } in
+            let get_signature = function
+              | Expression.Tuple [parameters; annotation] ->
+                  let parameters =
+                    let extract_parameter index parameter =
+                      match Node.value parameter with
+                      | Call {
+                          callee = { Node.value = Name (Name.Identifier name); _ };
+                          arguments;
+                        } ->
+                          begin
+                            let arguments =
+                              List.map
+                                arguments
+                                ~f:(fun { Call.Argument.value; _ } -> Node.value value)
+                            in
+                            match name, arguments with
+                            | "Named", Name (Name.Identifier name) :: annotation :: tail ->
+                                let default =
+                                  match tail with
+                                  | [Name (Name.Identifier "default")] -> true
+                                  | _ -> false
+                                in
+                                Parameter.Named {
+                                  Parameter.name;
+                                  annotation =
+                                    create_logic (Node.create_with_default_location annotation);
+                                  default;
+                                }
+                            | "Variable", Name (Name.Identifier name) :: tail ->
+                                let annotation =
+                                  match tail with
+                                  | annotation :: _ ->
+                                      create_logic (Node.create_with_default_location annotation);
+                                  | _ ->
+                                      Top
+                                in
+                                Parameter.Variable {
+                                  Parameter.name;
+                                  annotation;
+                                  default = false;
+                                }
+                            | "Keywords", Name (Name.Identifier name) :: tail ->
+                                let annotation =
+                                  match tail with
+                                  | annotation :: _ ->
+                                      create_logic (Node.create_with_default_location annotation);
+                                  | _ ->
+                                      Top
+                                in
+                                Parameter.Keywords {
+                                  Parameter.name;
+                                  annotation;
+                                  default = false;
+                                }
+                            | _ ->
+                                Parameter.Named {
+                                  Parameter.name = "$" ^ Int.to_string index;
+                                  annotation = Top;
+                                  default = false;
+                                }
+                          end
+                      | _ ->
+                          Parameter.Named {
+                            Parameter.name = "$" ^ Int.to_string index;
+                            annotation = create_logic parameter;
+                            default = false;
+                          }
+                    in
+                    match Node.value parameters with
+                    | List parameters ->
+                        Defined (List.mapi ~f:extract_parameter parameters)
+                    | _ ->
+                        Undefined
+                  in
+                  { annotation = create_logic annotation; parameters }
+              | _ ->
+                  undefined
+            in
+            let implementation =
+              match implementation_signature with
+              | Some signature -> get_signature (Node.value signature)
+              | None -> undefined
+            in
+            let overloads =
+              let rec parse_overloads = function
+                | List arguments ->
+                    [get_signature (Tuple arguments)]
+                | Call {
+                    callee = {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base;
+                          attribute = "__getitem__";
+                        });
+                      _;
+                    };
+                    arguments = [{ Call.Argument.value = argument; _ }]
+                  } ->
+                  get_signature (Node.value argument) :: parse_overloads (Node.value base)
+                | _ ->
+                    [undefined]
+              in
+              match overload_signatures with
+              | Some signatures -> List.rev (parse_overloads (Node.value signatures))
+              | None -> []
+            in
+            Callable { kind; implementation; overloads; implicit = None }
+          in
+          match expression with
+          | Call {
+              callee = {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier "typing") ; _ };
+                    attribute = "TypeVar";
+                  });
+                _;
+              };
+              arguments = {
+                  Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                  _;
+                } :: arguments;
+            } ->
+              let constraints =
+                let explicits =
+                  let explicit = function
+                    | { Call.Argument.name = None; value } -> Some (create_logic value)
+                    | _ -> None
+                  in
+                  List.filter_map ~f:explicit arguments
+                in
+                let bound =
+                  let bound = function
+                    | { Call.Argument.value; name = Some { Node.value = bound; _ }; }
+                      when String.equal (Identifier.sanitized bound) "bound" ->
+                        Some (create_logic value)
+                    | _ ->
+                        None
+                  in
+                  List.find_map ~f:bound arguments
+                in
+                if not (List.is_empty explicits) then
+                  Record.Variable.Explicit explicits
+                else if Option.is_some bound then
+                  Bound (Option.value_exn bound)
+                else
+                  Unconstrained
+              in
+              let variance =
+                let variance_definition = function
+                  | {
+                      Call.Argument.name = Some { Node.value = name; _ };
+                      value = { Node.value = True; _ };
+                    } when String.equal (Identifier.sanitized name) "covariant" ->
+                      Some Record.Variable.Covariant
+                  | {
+                      Call.Argument.name = Some { Node.value = name; _ };
+                      value = { Node.value = True; _ };
+                    } when String.equal (Identifier.sanitized name) "contravariant" ->
+                      Some Contravariant
+                  | _ ->
+                      None
+                in
+                List.find_map arguments ~f:variance_definition
+                |> Option.value ~default:Record.Variable.Invariant
+              in
+              variable value ~constraints ~variance
+          | Call {
+              callee = {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base = { Node.value = Name (Name.Identifier "pyre_check") ; _ };
+                          attribute = "extensions";
+                        }
+                      );
+                      _;
+                    };
+                    attribute = "IntVar";
+                  });
+                _;
+              };
+              arguments = [{
+                Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                _;
+              }];
+            } ->
+              variable value ~constraints:LiteralIntegers
+          | Call {
+              callee = {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base = { Node.value = Name (Name.Identifier "mypy_extensions") ; _ };
+                          attribute = "TypedDict";
+                        }
+                      );
+                      _;
+                    };
+                    attribute = "__getitem__";
+                  });
+                _;
+              };
+              arguments = [{
+                Call.Argument.name = None;
+                value = {
+                  Node.value = Expression.Tuple (
+                      {
+                        Node.value =
+                          Expression.String { value = typed_dictionary_name; _ };
+                        _;
+                      } ::
+                      {
+                        Node.value = true_or_false;
+                        _;
+                      } ::
+                      fields);
+                  _;
+                };
+              }];
+            } ->
+              let total =
+                match true_or_false with
+                | Expression.True -> Some true
+                | Expression.False -> Some false
+                | _ -> None
+              in
+              let parse_typed_dictionary total =
+                let fields =
+                  let tuple_to_field =
+                    function
+                    | {
+                      Node.value = Expression.Tuple [
+                          { Node.value = Expression.String { value = field_name; _ }; _ };
+                          field_annotation;
+                        ];
+                      _;
+                    } ->
+                        Some { name = field_name; annotation = create_logic field_annotation }
+                    | _ ->
+                        None
+                  in
+                  fields
+                  |> List.filter_map ~f:tuple_to_field
+                in
+                TypedDictionary {
+                  name = typed_dictionary_name;
+                  fields;
+                  total;
+                }
+              in
+              let undefined_primitive =
+                Primitive (Expression.show (Node.create_with_default_location expression))
+              in
+              total
+              >>| parse_typed_dictionary
+              |> Option.value ~default:undefined_primitive
+          | Call {
+              callee = {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base = { Node.value = Name (Name.Identifier "typing_extensions") ; _ };
+                          attribute = "Literal";
+                        }
+                      );
+                      _;
+                    };
+                    attribute = "__getitem__";
+                  });
+                _;
+              };
+              arguments;
+            } ->
+              let arguments =
+                match arguments with
+                | [{
+                    Call.Argument.name = None;
+                    value = { Node.value = Expression.Tuple arguments; _ };
+                  }] ->
+                    Some (List.map arguments ~f:Node.value)
+                | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] ->
+                    Some [argument]
+                | _ ->
+                    None
+              in
+              let parse = function
+                | Expression.Integer literal ->
+                    Some (literal_integer literal)
+                | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+                    Some (literal_string value)
+                | _ ->
+                    None
+              in
+              arguments
+              >>| List.map ~f:parse
+              >>= Option.all
+              >>| union
+              |> Option.value ~default:Top
+          | Call { callee = { Node.value = callee; _ }; _ }
+            when is_typing_callable callee ->
+              parse_callable expression
+          | Call {
+              callee = {
+                Node.value = Name (Name.Attribute { base; attribute = "__getitem__" });
+                _;
+              };
+              arguments = [{ Call.Argument.value = argument; _ }];
+            } ->
+              let parametric name =
+                let parameters =
+                  let parameters =
+                    match Node.value argument with
+                    | Expression.Tuple elements -> elements
+                    | _ -> [argument]
+                  in
+                  List.map parameters ~f:create_logic
+                in
+                Parametric { name; parameters }
+                |> resolve_aliases
+              in
+              begin
+                match create_logic base, Node.value base with
+                | Primitive name, _ ->
+                    parametric name
+                | _, Name _ ->
+                    parametric (Expression.show base)
+                | _ ->
+                    Top
+              end
+          | Name (Name.Identifier identifier) ->
+              let sanitized = Identifier.sanitized identifier in
+              if sanitized = "None" then
+                none
+              else
+                Primitive sanitized
+                |> resolve_aliases
+          | Name (Name.Attribute { base; attribute }) ->
+              let attribute = Identifier.sanitized attribute in
+              begin
+                match create_logic base with
+                | Primitive primitive ->
+                    Primitive (primitive ^ "." ^ attribute)
+                    |> resolve_aliases
+                | _ ->
+                    Primitive (Expression.show base ^ "." ^ attribute)
+              end
+          | Ellipsis ->
+              Primitive "..."
+          | String { StringLiteral.value; _ } ->
+              let expression =
+                try
+                  let parsed =
+                    Parser.parse [value]
+                    |> Source.create
+                    |> Preprocessing.preprocess
+                    |> Source.statements
+                  in
+                  match parsed with
+                  | [{ Node.value = Statement.Expression { Node.value; _ }; _ }] -> Some value
+                  | _ -> None
+                with _ ->
+                  None
+              in
+              expression
+              >>| Node.create_with_default_location
+              >>| create_logic
+              |> Option.value ~default:(Primitive value)
+          | _ ->
+              Top
+        in
+        (* Substitutions. *)
+        match result with
+        | Primitive name ->
+            begin
+              match Identifier.Map.find primitive_substitution_map name with
+              | Some substitute -> substitute
+              | None -> result
+            end
+        | Parametric { name; parameters } ->
+            begin
+              match Identifier.Map.find parametric_substitution_map name with
+              | Some name ->
+                  Parametric { name; parameters }
+              | None ->
+                  begin
+                    match name with
+                    | "typing.Optional" when List.length parameters = 1 ->
+                        optional (List.hd_exn parameters)
+                    | "tuple"
+                    | "typing.Tuple" ->
+                        let tuple: tuple =
+                          match parameters with
+                          | [parameter; Primitive "..."] ->
+                              Unbounded parameter
+                          | _ ->
+                              Bounded parameters
+                        in
+                        Tuple tuple
+                    | "typing.Union" ->
+                        union parameters
+                    | _ ->
+                        result
+                  end
+            end
+        | Union elements ->
+            union elements
+        | _ ->
+            result
+      in
+      if use_cache then
+        Cache.set ~key:expression ~data:result;
+      result
+
+
+let create ?(convert = false) ~aliases =
+  if convert then
+    create_logic ~use_cache:true ~aliases
+  else
+    create_logic_new ~use_cache:true ~aliases
 
 let create_without_aliases =
   create_logic ~use_cache:false ~aliases:(fun _ -> None)
@@ -1802,51 +2474,8 @@ let is_callable = function
   | _ -> false
 
 
-let is_concrete annotation =
-  let module ConcreteTransform = Transform.Make(struct
-      type state = bool
-
-      let visit_children_before _ = function
-        | Optional Bottom -> false
-        | Parametric { name; parameters }
-          when (name = "typing.Optional" or name = "Optional") &&
-               parameters = [Bottom] ->
-            false
-        | _ -> true
-
-      let visit_children_after =
-        false
-
-      let visit sofar annotation =
-        let new_state =
-          match annotation with
-          | Bottom
-          | Top
-          | Any ->
-              false
-          | _ ->
-              sofar
-        in
-        { Transform.transformed_annotation = annotation; new_state }
-    end)
-  in
-  fst (ConcreteTransform.visit true annotation)
-
-
-let is_contravariant annotation =
-  match annotation with
-  | Variable { variance = Contravariant; _ } -> true
-  | _ -> false
-
-
-let is_covariant annotation =
-  match annotation with
-  | Variable { variance = Covariant; _ } -> true
-  | _ -> false
-
-
 let is_dictionary ?(with_key = None) = function
-  | Parametric { name; parameters } when name = "dict" ->
+  | Parametric { name = "dict"; parameters } ->
       begin
         match with_key, parameters with
         | Some key, key_parameter :: [_] -> equal key key_parameter
@@ -1873,7 +2502,7 @@ let is_generator = function
 
 let is_generic = function
   | Parametric { name; _ } ->
-      name = "typing.Generic"
+      String.equal name "typing.Generic"
   | _ ->
       false
 
@@ -1900,7 +2529,7 @@ let is_async_iterator = function
 
 
 let is_meta = function
-  | Parametric { name; _ } -> name = "type"
+  | Parametric { name; _ } -> String.equal name "type"
   | _ -> false
 
 
@@ -1910,7 +2539,7 @@ let is_none = function
 
 
 let is_noreturn = function
-  | Primitive name -> name = "typing.NoReturn"
+  | Primitive name -> String.equal name "typing.NoReturn"
   | _ -> false
 
 
@@ -1920,7 +2549,7 @@ let is_optional = function
 
 
 let is_optional_primitive = function
-  | Primitive optional when optional = "typing.Optional" -> true
+  | Primitive "typing.Optional" -> true
   | _ -> false
 
 
@@ -1931,7 +2560,7 @@ let is_primitive = function
 
 let is_protocol = function
   | Parametric { name; _ } ->
-      name = "typing.Protocol"
+      String.equal name "typing.Protocol"
   | _ ->
       false
 
@@ -1998,6 +2627,11 @@ let collect annotation ~predicate =
     end)
   in
   fst (CollectorTransform.visit [] annotation)
+
+
+let primitive_name = function
+  | Primitive name -> Some name
+  | _ -> None
 
 
 let primitives annotation =
@@ -2126,6 +2760,7 @@ let weaken_literals annotation =
     function
     | Literal Integer _ -> Some integer
     | Literal String _ -> Some string
+    | Literal Boolean _ -> Some bool
     | _ -> None
   in
   instantiate ~constraints annotation
@@ -2154,15 +2789,21 @@ let split = function
 
 
 let class_name annotation =
+  let open Expression in
   split annotation
   |> fst
-  |> expression
+  |> expression ~convert:true
   |> Node.value
   |> function
-  | Expression.Access (SimpleAccess access) ->
-      access
+  | Access (SimpleAccess access) ->
+      let rec remove_calls stripped = function
+        | []
+        | Access.Identifier _ :: Access.Call _ :: _ -> List.rev stripped
+        | head :: tail -> remove_calls (head :: stripped) tail
+      in
+      Reference.from_access (remove_calls [] access)
   | _ ->
-      Access.create "typing.Any"
+      Reference.create "typing.Any"
 
 
 let class_variable annotation =
@@ -2181,65 +2822,226 @@ let assume_any = function
   | Top -> Any
   | annotation -> annotation
 
+module Variable = struct
+  module Namespace = struct
+    include Record.Variable.RecordNamespace
+    let fresh = ref 1
 
-let mark_variables_as_bound ?(simulated = false) annotation =
-  let state = if simulated then InSimulatedCall else InFunction in
-  let constraints annotation =
-    match annotation with
-    | Variable variable -> Some (Variable { variable with state })
-    | _ -> None
-  in
-  instantiate annotation ~constraints
+    let reset () =
+      fresh := 1
 
+    let create_fresh () =
+      let namespace = !fresh in
+      fresh := namespace + 1;
+      namespace
+  end
+  include Record.Variable
 
-let free_simulated_bound_variables annotation =
-  let constraints annotation =
-    match annotation with
-    | Variable ({ state = InSimulatedCall;  _ } as variable) ->
-        Some (Variable { variable with state = Free })
-    | _ -> None
-  in
-  instantiate annotation ~constraints
+  type t = type_t record
+  [@@deriving compare, eq, sexp, show, hash]
 
-
-let free_variables annotation =
-  let is_free_variable = function
-    | Variable { state = Free; _ } -> true
+  let is_contravariant = function
+    | { variance = Contravariant; _ } -> true
     | _ -> false
+
+  let is_covariant = function
+    | { variance = Covariant; _ } -> true
+    | _ -> false
+
+  let is_free = function
+    | { state = Free _; _ } -> true
+    | _ -> false
+
+  let namespace variable ~namespace =
+    { variable with namespace }
+
+  let upper_bound { constraints; _ } =
+    match constraints with
+    | Unconstrained ->
+        object_primitive
+    | Bound bound ->
+        bound
+    | Explicit explicits ->
+        union explicits
+    | LiteralIntegers ->
+        integer
+
+  let is_escaped_and_free = function
+    | { state = Free { escaped }; _ } -> escaped
+    | _ -> false
+
+  let mark_all_variables_as_bound ?(simulated = false) annotation =
+    let state = if simulated then InSimulatedCall else InFunction in
+    let constraints annotation =
+      match annotation with
+      | Variable variable -> Some (Variable { variable with state })
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+
+
+  let namespace_all_free_variables annotation ~namespace:into_namespace =
+    let constraints annotation =
+      match annotation with
+      | Variable ({ state = Free _; _ } as variable) ->
+          Some (Variable (namespace variable ~namespace:into_namespace))
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+
+
+  let free_all_simulated_bound_variables annotation =
+    let constraints annotation =
+      match annotation with
+      | Variable ({ state = InSimulatedCall;  _ } as variable) ->
+          Some (Variable { variable with state = Free { escaped = false } })
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+
+
+  let all_free_variables annotation =
+    let is_free_variable = function
+      | Variable { state = Free _; _ } -> true
+      | _ -> false
+    in
+    let to_variable = function
+      | Variable variable -> variable
+      | _ -> failwith("collect got a non-variable")
+    in
+    collect annotation ~predicate:is_free_variable
+    |> List.map ~f:to_variable
+
+
+  let all_variables_are_resolved annotation =
+    List.is_empty (all_free_variables annotation)
+
+
+  let instantiate_all_free_variables ~replacement annotation =
+    let constraints =
+      all_free_variables annotation
+      |> List.map ~f:(fun variable -> Variable variable)
+      |> List.fold
+        ~init:Map.empty
+        ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
+    in
+    instantiate annotation ~constraints:(Map.find constraints)
+
+  let mark_all_free_variables_as_escaped ?specific annotation =
+    let fresh_namespace = Namespace.create_fresh () in
+    let constraints =
+      let variables =
+        match specific with
+        | Some variables ->
+            variables
+        | None ->
+            all_free_variables annotation
+      in
+      let mark_as_escaped sofar variable =
+        let data =
+          namespace { variable with state = Free { escaped = true }} ~namespace:fresh_namespace
+          |> (fun variable -> Variable variable)
+        in
+        Map.set sofar ~key:(Variable variable) ~data
+      in
+      List.fold variables ~init:Map.empty ~f:mark_as_escaped
+    in
+    instantiate annotation ~constraints:(Map.find constraints)
+
+
+  let collapse_all_escaped_variable_unions annotation =
+    let module ConcreteTransform = Transform.Make(struct
+        type state = unit
+
+        let visit_children_before _ _ =
+          true
+
+        let visit_children_after =
+          false
+
+        let visit new_state annotation =
+          let transformed_annotation =
+            match annotation with
+            | Union parameters ->
+                let not_escaped_free_variable = function
+                  | Variable variable -> not (is_escaped_and_free variable)
+                  | _ -> true
+                in
+                List.filter parameters ~f:not_escaped_free_variable
+                |> union
+            | _ ->
+                annotation
+          in
+          { Transform.transformed_annotation; new_state }
+      end)
+    in
+    snd (ConcreteTransform.visit () annotation)
+
+
+  let contains_escaped_free_variable =
+    let predicate = function
+      | Variable variable -> is_escaped_and_free variable
+      | _ -> false
+    in
+    exists ~predicate
+
+  let convert_all_escaped_free_variables_to_anys annotation =
+    let constraints = function
+      | Variable variable when is_escaped_and_free variable -> Some Any
+      | _ -> None
+    in
+    instantiate annotation ~constraints
+end
+
+
+
+
+let is_concrete annotation =
+  let module ConcreteTransform = Transform.Make(struct
+      type state = bool
+
+      let visit_children_before _ = function
+        | Optional Bottom -> false
+        | Parametric { name = ("typing.Optional" | "Optional"); parameters = [Bottom] } ->
+            false
+        | _ -> true
+
+      let visit_children_after =
+        false
+
+      let visit sofar annotation =
+        let new_state =
+          match annotation with
+          | Bottom
+          | Top
+          | Any ->
+              false
+          | _ ->
+              sofar
+        in
+        { Transform.transformed_annotation = annotation; new_state }
+    end)
   in
-  collect annotation ~predicate:is_free_variable
-
-
-let is_resolved annotation =
-  List.is_empty (free_variables annotation)
-
-
-let instantiate_free_variables ~replacement annotation =
-  let constraints =
-    free_variables annotation
-    |> List.fold
-      ~init:Map.empty
-      ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
-  in
-  instantiate annotation ~constraints:(Map.find constraints)
+  fst (ConcreteTransform.visit true annotation) &&
+  not (Variable.contains_escaped_free_variable annotation)
 
 
 let rec dequalify map annotation =
   let dequalify_identifier identifier =
-    let rec fold accumulator access =
-      if Access.Map.mem map access then
-        (Access.Map.find_exn map access) @ accumulator
+    let rec fold accumulator reference =
+      if Reference.Map.mem map reference then
+        Reference.combine
+          (Reference.Map.find_exn map reference)
+          (Reference.create_from_list accumulator)
       else
-        match access with
-        | tail :: rest ->
-            fold (tail :: accumulator) rest
-        | [] -> accumulator
+        match Reference.prefix reference with
+        | Some prefix -> fold (Reference.last reference :: accumulator) prefix
+        | None -> Reference.create_from_list accumulator
     in
     identifier
-    |> Access.create
-    |> List.rev
+    |> Reference.create
     |> fold []
-    |> Access.show
+    |> Reference.show
   in
   let dequalify_string string = string |> dequalify_identifier in
   let module DequalifyTransform = Transform.Make(struct
@@ -2281,7 +3083,7 @@ module TypedDictionary = struct
   let fields_have_colliding_keys left_fields right_fields =
     let found_collision { name = needle_name; annotation = needle_annotation } =
       let same_name_different_annotation { name; annotation } =
-        name = needle_name && not (equal annotation needle_annotation)
+        String.equal name needle_name && not (equal annotation needle_annotation)
       in
       List.exists left_fields ~f:same_name_different_annotation
     in
@@ -2314,7 +3116,7 @@ module TypedDictionary = struct
 
   let constructor ~name ~fields ~total =
     {
-      Callable.kind = Named (Access.create "__init__");
+      Callable.kind = Named (Reference.create "__init__");
       implementation = {
         annotation = TypedDictionary { name; fields; total };
         parameters = field_named_parameters ~default:(not total) fields
@@ -2356,12 +3158,12 @@ module TypedDictionary = struct
         [
           { annotation = Optional annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; variable "_T"];
+            annotation = Union [annotation; Variable (Variable.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = variable "_T";
+                  annotation = Variable (Variable.create "_T");
                   default = false;
                 };
               ];
@@ -2399,12 +3201,12 @@ module TypedDictionary = struct
         [
           { annotation = annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; variable "_T"];
+            annotation = Union [annotation; Variable (Variable.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = variable "_T";
+                  annotation = Variable (Variable.create "_T");
                   default = false;
                 };
               ];
@@ -2428,14 +3230,14 @@ module TypedDictionary = struct
     let special_methods =
       if total then total_special_methods else non_total_special_methods @ total_special_methods
     in
-    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>| (fun { overloads; _ } -> overloads fields)
 
   let is_special_mismatch ~method_name ~position ~total =
     let special_methods =
       if total then total_special_methods else non_total_special_methods @ total_special_methods
     in
-    List.find special_methods ~f:(fun { name; _ } -> name = method_name)
+    List.find special_methods ~f:(fun { name; _ } -> String.equal name method_name)
     >>= (fun { special_index; _ } -> special_index)
     >>| ((=) position)
     |> Option.value ~default:false

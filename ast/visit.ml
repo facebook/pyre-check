@@ -26,6 +26,9 @@ end
 module Make (Visitor: Visitor) = struct
   let visit_argument { Argument.value; _ } ~visit_expression = visit_expression value
 
+  let visit_new_argument { Expression.Call.Argument.value; _ } ~visit_expression =
+    visit_expression value
+
   let visit_parameter
       { Node.value = { Parameter.value; annotation; _ }; _ }
       ~visit_expression =
@@ -134,7 +137,7 @@ module Make (Visitor: Visitor) = struct
           visit_expression test;
           Option.iter ~f:visit_expression message
       | Class { Class.bases; body; decorators; _ } ->
-          List.iter bases ~f:(visit_argument ~visit_expression);
+          List.iter bases ~f:(visit_new_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression;
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; body } ->

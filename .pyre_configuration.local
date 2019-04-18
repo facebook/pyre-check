@@ -7,5 +7,6 @@
   "push_blocking": true,
   "targets": [
     "//tools/pyre/..."
-  ]
+  ],
+  "version": "b00e5833b3785d42b4812371fb0579cc1f10004f"
 }

@@ -303,7 +303,10 @@ let test_check_function_parameters _ =
         pass
       x.attribute
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ];
 
   assert_type_errors
     {|
@@ -432,10 +435,7 @@ let test_check_function_parameters _ =
       def f(d: typing.Dict[int, int], x) -> None:
         d.update({ 1: x })
     |}
-    [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[typing.Tuple[int, int]]` " ^
-      "for 1st anonymous parameter to call `dict.update` but got `typing.Dict[int, typing.Any]`."
-    ];
+    [];
 
   assert_default_type_errors
     {|
@@ -448,6 +448,17 @@ let test_check_function_parameters _ =
     {|
       def foo() -> None:
         a = {"key": set()}
+        b = a.get("key", set())
+    |}
+    [
+      "Incomplete Type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for " ^
+      "`a` is incomplete, add an explicit annotation.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo() -> None:
+        a: typing.Dict[str, typing.Set[int]] = {"key": set()}
         b = a.get("key", set())
     |}
     [];
@@ -713,10 +724,7 @@ let test_check_function_overloads _ =
       def herp(x: Foo) -> int:
         return x.derp(True)
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Missing argument [20]: Call `Foo.derp` expects argument `y`.";
-    ];
+    ["Missing argument [20]: Call `Foo.derp` expects argument `y`."];
 
   assert_type_errors
     {|
@@ -875,6 +883,20 @@ let test_check_variable_arguments _ =
     [
       "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
       "Invalid argument [32]: Variable argument `b` has type `typing.Any` but must be an iterable.";
+    ];
+
+  assert_type_errors
+    {|
+      def foo(a: int, b: int) -> int:
+        return 1
+      def bar(b: typing.List[typing.Any]) -> int:
+        return foo ( *b )
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `b` must have a type that " ^
+      "does not contain `Any`.";
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `typing.Any`.";
     ];
 
   assert_strict_type_errors
@@ -1057,6 +1079,16 @@ let test_check_keyword_arguments _ =
       "Invalid argument [32]: Keyword argument `x` has type `int` " ^
       "but must be a mapping with string keys."
     ];
+  assert_type_errors
+    ~debug:false
+    {|
+      def foo(x: int, y: str) -> None:
+        pass
+
+      def bar(x: typing.Dict[typing.Any, typing.Any]) -> None:
+        test = foo( **x )
+    |}
+    [];
   assert_type_errors
     {|
       def foo(x: int, y: int) -> None:

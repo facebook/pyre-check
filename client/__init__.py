@@ -14,7 +14,7 @@ import traceback
 from argparse import Namespace
 from typing import Any, Dict, Optional
 
-from . import buck
+from . import buck, buck_project_builder
 from .exceptions import EnvironmentException
 from .filesystem import (  # noqa
     AnalysisDirectory,
@@ -37,6 +37,13 @@ def assert_readable_directory(directory: str) -> None:
         raise EnvironmentException("{} is not a valid directory.".format(directory))
     if not os.access(directory, os.R_OK):
         raise EnvironmentException("{} is not a readable directory.".format(directory))
+
+
+def assert_writable_directory(directory: str) -> None:
+    if not os.path.isdir(directory):
+        raise EnvironmentException("{} is not a valid directory.".format(directory))
+    if not os.access(directory, os.W_OK):
+        raise EnvironmentException("{} is not a writable directory.".format(directory))
 
 
 def readable_directory(directory: str) -> str:
@@ -152,6 +159,12 @@ def resolve_analysis_directory(
             local_configuration_root, arguments.current_directory
         )
 
+    use_buck_builder = arguments.use_buck_builder or configuration.use_buck_builder
+    ignore_unbuilt_dependencies = use_buck_builder and (
+        arguments.ignore_unbuilt_dependencies
+        or configuration.ignore_unbuilt_dependencies
+    )
+
     if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(
             source_directories.pop(),
@@ -163,17 +176,31 @@ def resolve_analysis_directory(
             commands.Check,
             commands.Restart,
         ]
+        buck_builder = buck.SimpleBuckBuilder(build=build, prompt=prompt)
+        if use_buck_builder:
+            buck_root = buck.find_buck_root(os.getcwd())
+            if not buck_root:
+                raise EnvironmentException(
+                    "No Buck configuration at `{}` or any of its ancestors.".format(
+                        os.getcwd()
+                    )
+                )
+            buck_builder = buck_project_builder.FastBuckBuilder(
+                buck_root, fail_on_unbuilt_target=not ignore_unbuilt_dependencies
+            )
+        else:
+            buck_builder = buck.SimpleBuckBuilder(build=build, prompt=prompt)
+
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,
             targets=targets,
+            buck_builder=buck_builder,
             original_directory=arguments.original_directory,
             filter_paths=filter_paths,
             local_configuration_root=local_configuration_root,
             extensions=configuration.extensions,
             search_path=configuration.search_path,
             isolate=isolate,
-            build=build,
-            prompt=prompt,
         )
     return analysis_directory
 

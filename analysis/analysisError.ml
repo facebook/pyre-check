@@ -12,12 +12,13 @@ open Statement
 
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
-  | Module of Access.t
+  | Module of Reference.t
 [@@deriving compare, eq, show, sexp, hash]
 
 
 type mismatch = {
   actual: Type.t;
+  actual_expressions: Expression.t list;
   expected: Type.t;
   due_to_invariance: bool;
 }
@@ -25,7 +26,7 @@ type mismatch = {
 
 
 type missing_annotation = {
-  name: Access.t;
+  name: Reference.t;
   annotation: Type.t option;
   given_annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
@@ -35,7 +36,7 @@ type missing_annotation = {
 
 
 type incompatible_type = {
-  name: Access.t;
+  name: Reference.t;
   mismatch: mismatch;
   declare_location: Location.Instantiated.t;
 }
@@ -79,6 +80,13 @@ type type_variance_origin =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type illegal_action_on_incomplete_type =
+  | Naming
+  | Calling
+  | AttributeAccess of Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -89,14 +97,19 @@ type kind =
   | IncompatibleParameterType of {
       name: Identifier.t option;
       position: int;
-      callee: Access.t option;
+      callee: Reference.t option;
       mismatch: mismatch;
     }
-  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool }
+  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompleteType of {
+      target: Access.general_access;
+      annotation: Type.t;
+      attempted_action: illegal_action_on_incomplete_type;
+    }
   | InconsistentOverride of {
       overridden_method: Identifier.t;
-      parent: Access.t;
+      parent: Reference.t;
       override: override;
     }
   | InvalidArgument of invalid_argument
@@ -109,25 +122,25 @@ type kind =
     }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
-  | MissingArgument of { callee: Access.t option; name: Identifier.t }
+  | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
-  | MutuallyRecursiveTypeVariables of Access.t option
+  | MutuallyRecursiveTypeVariables of Reference.t option
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Type.t }
-  | TooManyArguments of { callee: Access.t option; expected: int; provided: int }
+  | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
-  | TypedDictionaryAccessWithNonLiteral of string list
+  | TypedDictionaryAccessWithNonLiteral of Identifier.t list
   | TypedDictionaryKeyNotFound of { typed_dictionary_name: Identifier.t; missing_key: string }
   | UndefinedAttribute of { attribute: Identifier.t; origin: origin }
-  | UndefinedImport of Access.t
-  | UndefinedName of Access.t
+  | UndefinedImport of Reference.t
+  | UndefinedName of Reference.t
   | UndefinedType of Type.t
-  | UnexpectedKeyword of { name: Identifier.t; callee: Access.t option }
+  | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
@@ -135,7 +148,7 @@ type kind =
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | Deobfuscation of Source.t
-  | UnawaitedAwaitable of Access.t
+  | UnawaitedAwaitable of Reference.t
 [@@deriving compare, eq, show, sexp, hash]
 
 
@@ -183,6 +196,8 @@ let code = function
   | MutuallyRecursiveTypeVariables _ -> 36
   | InvalidTypeVariance _ -> 35
   | InvalidMethodSignature _ -> 36
+  | IncompleteType _ -> 37
+
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -201,6 +216,7 @@ let name = function
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
+  | IncompleteType _ -> "Incomplete Type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidType _ -> "Invalid type"
@@ -233,14 +249,14 @@ let name = function
 
 
 let weaken_literals kind =
-  let weaken_mismatch { actual; expected; due_to_invariance } =
+  let weaken_mismatch { actual; actual_expressions; expected; due_to_invariance } =
     let actual =
       if (Type.contains_literal expected) then
         actual
       else
         Type.weaken_literals actual
     in
-    { actual; expected; due_to_invariance }
+    { actual; actual_expressions; expected; due_to_invariance }
   in
   let weaken_missing_annotation = function
     | { given_annotation = Some given; _ } as missing when Type.contains_literal given ->
@@ -295,14 +311,14 @@ let weaken_literals kind =
       kind
 
 
-let messages ~concise ~define location kind =
+let messages ~concise ~signature location kind =
   let {
     Location.start = { Location.line = start_line; _ };
     Location.stop = { Location.line = stop_line; _ };
     _;
   } = location
   in
-  let { Node.value = { Define.signature = { name = define_name; _ }; _ }; _ } = define in
+  let { Node.value = { Define.name = define_name; _ }; location = define_location } = signature in
   let ordinal number =
     let suffix =
       if (number % 10 = 1) && (number % 100 <> 11) then "st"
@@ -317,17 +333,6 @@ let messages ~concise ~define location kind =
     "-with-subclassing for mutable container errors."
   in
   let pp_type = if concise then Type.pp_concise else Type.pp in
-  let pp_access format access =
-    let access =
-      if concise then
-        Access.last access
-        >>| (fun last -> [last])
-        |> Option.value ~default:access
-      else
-        access
-    in
-    Access.pp_sanitized format access
-  in
   let pp_reference format reference =
     if concise then
       Reference.last reference
@@ -361,6 +366,32 @@ let messages ~concise ~define location kind =
           "Target `%a` cannot be annotated."
           Expression.pp_sanitized expression
       ]
+  | IncompleteType { target; annotation; attempted_action } ->
+      let inferred =
+        match annotation with
+        | Type.Variable variable when Type.Variable.is_escaped_and_free variable -> ""
+        | _ ->  Format.asprintf "`%a` " pp_type annotation
+      in
+      let consequence =
+        match attempted_action with
+        | Naming ->
+            "add an explicit annotation."
+        | Calling ->
+            "cannot be called. " ^
+            "Separate the expression into an assignment and give it an explicit annotation"
+        | AttributeAccess attribute ->
+            Format.asprintf
+              "so attribute `%s` cannot be accessed. Separate the expression \
+               into an assignment and give it an explicit annotation."
+              attribute
+      in
+      [
+        Format.asprintf
+          "Type %sinferred for `%s` is incomplete, %s"
+          inferred
+          (Expression.show_sanitized (Node.create_with_default_location (Expression.Access target)))
+          consequence
+      ]
   | ImpossibleIsinstance _ when concise ->
       ["isinstance check will always fail."]
   | ImpossibleIsinstance { expression; mismatch = { actual; expected; _ } } ->
@@ -384,7 +415,7 @@ let messages ~concise ~define location kind =
       name;
       position;
       callee;
-      mismatch = { actual; expected; due_to_invariance };
+      mismatch = { actual; expected; due_to_invariance; _ };
     } ->
       let trace =
         if due_to_invariance then
@@ -403,7 +434,7 @@ let messages ~concise ~define location kind =
         in
         let callee =
           match callee with
-          | Some callee -> Format.asprintf "call `%a`" pp_access callee
+          | Some callee -> Format.asprintf "call `%a`" pp_reference callee
           | _ -> "anoynmous call"
         in
         if concise then
@@ -426,13 +457,14 @@ let messages ~concise ~define location kind =
           pp_type
           annotation;
       ]
-  | IncompatibleReturnType { mismatch = { actual; expected; due_to_invariance }; is_implicit } ->
+  | IncompatibleReturnType
+      { mismatch = { actual; expected; due_to_invariance; _ }; is_implicit; _ } ->
       let trace =
         Format.asprintf
           "Type `%a` expected on line %d, specified on line %d.%s"
           pp_type expected
           stop_line
-          define.Node.location.Location.start.Location.line
+          define_location.Location.start.Location.line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
       let message =
@@ -451,7 +483,7 @@ let messages ~concise ~define location kind =
       parent;
       incompatible_type = {
         name;
-        mismatch = { actual; expected; due_to_invariance };
+        mismatch = { actual; expected; due_to_invariance; _ };
         declare_location;
       };
     } ->
@@ -464,7 +496,7 @@ let messages ~concise ~define location kind =
         else
           Format.asprintf
             "Attribute `%a` declared in class `%a` has type `%a` but is used as type `%a`."
-            pp_access name
+            pp_reference name
             pp_type parent
             pp_type expected
             pp_type actual
@@ -475,14 +507,14 @@ let messages ~concise ~define location kind =
         else
           Format.asprintf
             "Attribute `%a` declared on line %d, incorrectly used on line %d."
-            pp_access name
+            pp_reference name
             declare_location.Location.start.Location.line
             start_line
       in
       [message; trace]
   | IncompatibleVariableType {
       name;
-      mismatch = { actual; expected; due_to_invariance };
+      mismatch = { actual; expected; due_to_invariance; _ };
       _;
     } ->
       let message =
@@ -491,20 +523,20 @@ let messages ~concise ~define location kind =
         else if concise then
           Format.asprintf
             "%a has type `%a`; used as `%a`."
-            pp_access name
+            pp_reference name
             pp_type expected
             pp_type actual
         else
           Format.asprintf
             "%a is declared to have type `%a` but is used as type `%a`."
-            pp_access name
+            pp_reference name
             pp_type expected
             pp_type actual
       in
       let trace =
         Format.asprintf
           "Redeclare `%a` on line %d if you wish to override the previously declared type.%s"
-          pp_access name
+          pp_reference name
           start_line
           (if due_to_invariance then " " ^ invariance_message else "")
       in
@@ -512,7 +544,7 @@ let messages ~concise ~define location kind =
   | InconsistentOverride { parent; override; _ } ->
       let detail =
         match override with
-        | WeakenedPostcondition { actual; expected; due_to_invariance } ->
+        | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
             if Type.equal actual Type.Top then
               Format.asprintf
                 "The overriding method is not annotated but should return a subtype of `%a`."
@@ -524,7 +556,7 @@ let messages ~concise ~define location kind =
                 "Returned type `%a` is not a subtype of the overridden return `%a`."
                 pp_type actual
                 pp_type expected
-        | StrengthenedPrecondition (Found { actual; expected; due_to_invariance }) ->
+        | StrengthenedPrecondition (Found { actual; expected; due_to_invariance; _ }) ->
             let extra_detail =
               if due_to_invariance then " " ^ invariance_message else ""
             in
@@ -542,7 +574,7 @@ let messages ~concise ~define location kind =
         Format.asprintf
           "`%a` overrides method defined in `%a` inconsistently.%s"
           pp_reference define_name
-          pp_access parent
+          pp_reference parent
           (if concise then "" else " " ^ detail)
       ]
   | InvalidArgument argument when concise ->
@@ -649,7 +681,7 @@ let messages ~concise ~define location kind =
       let callee =
         match callee with
         | Some name ->
-            Format.asprintf "Call `%a`" pp_access name
+            Format.asprintf "Call `%a`" pp_reference name
         | _ ->
             "Anonymous call"
       in
@@ -672,21 +704,21 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type other than `Any`."
-                      pp_access name
+                      pp_reference name
                       pp_type parent;
                   ]
               | Some given_annotation when Type.contains_any given_annotation ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type that does not contain `Any`."
-                      pp_access name
+                      pp_reference name
                       pp_type parent;
                   ]
               | _ ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has no type specified."
-                      pp_access name
+                      pp_reference name
                       pp_type parent;
                   ]
             end
@@ -699,7 +731,7 @@ let messages ~concise ~define location kind =
               in
               Format.asprintf
                 "Attribute `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
+                pp_reference name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -710,7 +742,7 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
-                      pp_access name
+                      pp_reference name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -720,7 +752,7 @@ let messages ~concise ~define location kind =
                     Format.asprintf
                       "Attribute `%a` of class `%a` is used as type `%a` \
                        and must have a type that does not contain `Any`."
-                      pp_access name
+                      pp_reference name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -729,7 +761,7 @@ let messages ~concise ~define location kind =
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but no type is specified."
-                      pp_access name
+                      pp_reference name
                       pp_type parent
                       pp_type annotation;
                     trace;
@@ -738,7 +770,7 @@ let messages ~concise ~define location kind =
         | { name; annotation = None; _ } ->
             [
               Format.asprintf "Attribute `%a` of class `%a` has no type specified."
-                pp_access name
+                pp_reference name
                 pp_type parent;
             ]
       end
@@ -767,11 +799,11 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
-                pp_access name
+                pp_reference name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
+                pp_reference name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -781,11 +813,11 @@ let messages ~concise ~define location kind =
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` a type must be specified \
                  that does not contain `Any`."
-                pp_access name
+                pp_reference name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
+                pp_reference name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -794,11 +826,11 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but no type is specified."
-                pp_access name
+                pp_reference name
                 pp_type annotation;
               Format.asprintf
                 "Global variable `%a` declared on line %d, type `%a` deduced from %s."
-                pp_access name
+                pp_reference name
                 start_line
                 pp_type annotation
                 evidence_string
@@ -811,20 +843,20 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Globally accessible variable `%a` must be specified as type other than `Any`."
-                pp_access name
+                pp_reference name
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
                 "Globally accessible variable `%a` must be specified as type that does not contain \
                  `Any`."
-                pp_access name
+                pp_reference name
             ]
         | _ ->
             [
               Format.asprintf
                 "Globally accessible variable `%a` has no type specified."
-                pp_access name
+                pp_reference name
             ]
       end
   | MissingParameterAnnotation { given_annotation; _ } when concise ->
@@ -842,7 +874,7 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but type `Any` is specified."
-                pp_access name
+                pp_reference name
                 pp_type annotation
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
@@ -850,14 +882,14 @@ let messages ~concise ~define location kind =
               Format.asprintf
                 "Parameter `%a` is used as type `%a` \
                  and must have a type that does not contain `Any`"
-                pp_access name
+                pp_reference name
                 pp_type annotation
             ]
         | _ ->
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but no type is specified."
-                pp_access name
+                pp_reference name
                 pp_type annotation
             ]
       end
@@ -868,19 +900,19 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Parameter `%a` must have a type other than `Any`."
-                pp_access name
+                pp_reference name
             ]
         | Some given_annotation when Type.contains_any given_annotation ->
             [
               Format.asprintf
                 "Parameter `%a` must have a type that does not contain `Any`."
-                pp_access name
+                pp_reference name
             ]
         | _ ->
             [
               Format.asprintf
                 "Parameter `%a` has no type specified."
-                pp_access name
+                pp_reference name
             ]
       end
   | MissingReturnAnnotation { given_annotation; _ } when concise ->
@@ -949,7 +981,7 @@ let messages ~concise ~define location kind =
       let callee =
         match callee with
         | Some callee ->
-            Format.asprintf "call `%a`" pp_access callee
+            Format.asprintf "call `%a`" pp_reference callee
         | _ ->
             "anoynmous call"
       in
@@ -970,14 +1002,14 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
-                pp_access name
+                pp_reference name
                 pp_type annotation
             ]
         | _ ->
             [
               Format.asprintf
                 "Expression `%a` is used as type `%a`; given explicit type cannot contain `Any`."
-                pp_access name
+                pp_reference name
                 pp_type annotation
             ]
       end
@@ -988,13 +1020,13 @@ let messages ~concise ~define location kind =
             [
               Format.asprintf
                 "Explicit annotation for `%a` cannot be `Any`."
-                pp_access name
+                pp_reference name
             ]
         | _ ->
             [
               Format.asprintf
                 "Explicit annotation for `%a` cannot contain `Any`."
-                pp_access name
+                pp_reference name
             ]
       end
   | RedundantCast _ when concise ->
@@ -1021,7 +1053,7 @@ let messages ~concise ~define location kind =
   | TooManyArguments { callee; expected; provided } ->
       let callee =
         match callee with
-        | Some name -> Format.asprintf "Call `%a`" pp_access name
+        | Some name -> Format.asprintf "Call `%a`" pp_reference name
         | _ -> "Anonymous call"
       in
       [
@@ -1052,7 +1084,7 @@ let messages ~concise ~define location kind =
           explanation
       ]
   | TypedDictionaryKeyNotFound { typed_dictionary_name; missing_key } ->
-      if typed_dictionary_name = "$anonymous" then
+      if String.equal typed_dictionary_name "$anonymous" then
         [ Format.asprintf "TypedDict has no key `%s`." missing_key ]
       else
         [
@@ -1081,8 +1113,8 @@ let messages ~concise ~define location kind =
       end
   | UnawaitedAwaitable name ->
       [
-        Format.asprintf "`%a` is never awaited." pp_access name;
-        Format.asprintf "`%a` is defined on line %d" pp_access name start_line;
+        Format.asprintf "`%a` is never awaited." pp_reference name;
+        Format.asprintf "`%a` is defined on line %d" pp_reference name start_line;
       ]
   | UndefinedAttribute { attribute; origin } ->
       let target =
@@ -1097,7 +1129,7 @@ let messages ~concise ~define location kind =
             in
             name
         | Module access ->
-            (Format.asprintf "Module `%a`" pp_access access)
+            (Format.asprintf "Module `%a`" pp_reference access)
       in
       let trace =
         match origin with
@@ -1111,15 +1143,23 @@ let messages ~concise ~define location kind =
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute]
       @ trace
+  | UndefinedName access when concise ->
+      [Format.asprintf "Global name `%a` is undefined." pp_reference access]
   | UndefinedName access ->
-      [Format.asprintf "Global name `%a` is undefined." pp_access access]
+      [
+        Format.asprintf
+          "Global name `%a` is not defined, or there is at least one control flow path that \
+           doesn't define `%a`."
+          pp_reference access
+          pp_reference access;
+      ]
   | UndefinedImport access when concise ->
-      [Format.asprintf "Could not find `%a`." pp_access access]
+      [Format.asprintf "Could not find `%a`." pp_reference access]
   | UndefinedImport access ->
       [
         Format.asprintf
           "Could not find a module corresponding to import `%a`."
-          pp_access access;
+          pp_reference access;
       ]
   | UndefinedType annotation ->
       [
@@ -1136,7 +1176,7 @@ let messages ~concise ~define location kind =
   | UnexpectedKeyword { name; callee } ->
       let callee =
         match callee with
-        | Some name -> Format.asprintf "call `%a`" pp_access name
+        | Some name -> Format.asprintf "call `%a`" pp_reference name
         | _ -> "anonymous call"
       in
       [
@@ -1185,17 +1225,15 @@ let messages ~concise ~define location kind =
 
 
 let inference_information
-    ~define:
+    ~signature:
     {
       Node.value = {
-        Define.signature = {
-          name;
-          parameters;
-          return_annotation;
-          decorators;
-          parent;
-          async;
-          _ };
+        Define.name;
+        parameters;
+        return_annotation;
+        decorators;
+        parent;
+        async;
         _
       };
       _
@@ -1203,7 +1241,7 @@ let inference_information
     kind =
   let print_annotation annotation =
     Format.asprintf "`%a`" Type.pp annotation
-    |> String.strip ~drop:((=) '`')
+    |> String.strip ~drop:(Char.equal '`')
   in
   let parameters =
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
@@ -1214,7 +1252,7 @@ let inference_information
             annotation = Some parameter_annotation;
             _;
           }
-          when Access.equal_sanitized (Access.create_from_identifiers [name]) parameter_name ->
+          when Reference.equal_sanitized (Reference.create name) parameter_name ->
             parameter_annotation
             |> print_annotation
             |> (fun string -> `String string)
@@ -1278,7 +1316,7 @@ let inference_information
       let attributes =
         [
           "parent", `String (Type.show parent);
-          "attribute_name", `String (Access.show_sanitized name);
+          "attribute_name", `String (Reference.show_sanitized name);
         ]
       in
       begin
@@ -1292,7 +1330,7 @@ let inference_information
       let attributes =
         [
           "parent", `Null;
-          "attribute_name", `String (Access.show_sanitized name);
+          "attribute_name", `String (Reference.show_sanitized name);
         ]
       in
       begin
@@ -1372,6 +1410,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidMethodSignature _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
+  | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
@@ -1397,35 +1436,56 @@ let due_to_analysis_limitations { kind; _ } =
 let due_to_builtin_import { kind; _ } =
   match kind with
   | UndefinedImport import ->
-      Access.show import = "builtins"
+      String.equal (Reference.show import) "builtins"
   | _ ->
       false
 
 
 let due_to_mismatch_with_any resolution { kind; _ } =
+  let is_consistent_with ~actual ~expected =
+    (Type.contains_any actual || Type.contains_any expected) &&
+    Resolution.consistent_solution_exists resolution actual expected
+  in
   match kind with
   | IncompatibleAwaitableType actual
-  | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
       Type.equal actual Type.Any
-  | ImpossibleIsinstance { mismatch = { actual; expected; _ }; _ }
-  | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; expected; _ }); _ }
-  | InconsistentOverride { override = WeakenedPostcondition { actual; expected; _ }; _ }
-  | IncompatibleParameterType { mismatch = { actual; expected; _ }; _ }
-  | IncompatibleReturnType { mismatch = { actual; expected; _ }; _ }
-  | IncompatibleAttributeType { incompatible_type = { mismatch = { actual; expected; _ }; _ }; _ }
-  | IncompatibleVariableType { mismatch = { actual; expected; _ }; _ }
-  | UninitializedAttribute { mismatch = { actual; expected; _ }; _ } ->
-      (Type.contains_any actual || Type.contains_any expected) &&
-      Resolution.is_consistent_with resolution actual expected
+  | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | InconsistentOverride
+      { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ }); _ }
+  | InconsistentOverride
+      { override = WeakenedPostcondition { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleParameterType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleReturnType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | IncompatibleAttributeType
+      { incompatible_type = { mismatch = { actual; actual_expressions; expected; _ }; _ }; _ }
+  | IncompatibleVariableType { mismatch = { actual; actual_expressions; expected; _ }; _ }
+  | UninitializedAttribute { mismatch = { actual; actual_expressions; expected; _ }; _ } ->
+      let consistent () =
+        let expressions =
+          match actual_expressions with
+          | [] -> [None]
+          | expressions -> List.map expressions ~f:Option.some
+        in
+        let check_consistent sofar expression =
+          sofar && Resolution.is_consistent_with resolution actual expected ~expression
+        in
+        List.fold expressions ~init:true ~f:check_consistent
+      in
+      (Type.contains_any actual || Type.contains_any expected) && consistent ()
+  | InvalidArgument (Keyword { annotation = actual; _ }) ->
+      is_consistent_with
+        ~actual
+        ~expected:(Type.parametric "typing.Mapping" [Type.string; Type.Top])
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | IncompleteType _
   | InvalidMethodSignature _
   | InvalidType _
   | InvalidTypeParameters _
@@ -1481,11 +1541,19 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left.mismatch right.mismatch
+    | IncompleteType
+        { target = left_target; annotation = left; attempted_action = left_attempted_action },
+      IncompleteType
+        { target = right_target; annotation = right; attempted_action = right_attempted_action }
+      when Access.equal_general_access left_target right_target &&
+           equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
+        Resolution.less_or_equal resolution ~left ~right
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
-           left.incompatible_type.name = right.incompatible_type.name ->
+           Reference.equal left.incompatible_type.name right.incompatible_type.name ->
         less_or_equal_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch
-    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+    | IncompatibleVariableType left, IncompatibleVariableType right
+      when Reference.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | InconsistentOverride left, InconsistentOverride right ->
         begin
@@ -1532,12 +1600,14 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
-        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+        Resolution.less_or_equal resolution ~left ~right &&
+        equal_type_variable_origin left_origin right_origin
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ->
-        Resolution.less_or_equal resolution ~left ~right && left_origin = right_origin
+        Resolution.less_or_equal resolution ~left ~right &&
+        equal_type_variance_origin left_origin right_origin
     | MissingArgument left, MissingArgument right ->
-        Option.equal Access.equal_sanitized left.callee right.callee &&
+        Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
     | ProhibitedAny left, ProhibitedAny right
     | MissingParameterAnnotation left, MissingParameterAnnotation right
@@ -1545,7 +1615,7 @@ let less_or_equal ~resolution left right =
     | MissingAttributeAnnotation { missing_annotation = left; _ },
       MissingAttributeAnnotation { missing_annotation = right; _ }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when (Access.equal_sanitized left.name right.name) ->
+      when (Reference.equal_sanitized left.name right.name) ->
         begin
           match left.annotation, right.annotation with
           | Some left, Some right ->
@@ -1563,13 +1633,14 @@ let less_or_equal ~resolution left right =
         Expression.equal left.expression right.expression &&
         Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | TooManyArguments left, TooManyArguments right ->
-        Option.equal Access.equal_sanitized left.callee right.callee &&
+        Option.equal Reference.equal_sanitized left.callee right.callee &&
         left.expected = right.expected &&
         left.provided = right.provided
-    | UninitializedAttribute left, UninitializedAttribute right when left.name = right.name ->
+    | UninitializedAttribute left, UninitializedAttribute right
+      when String.equal left.name right.name ->
         less_or_equal_mismatch left.mismatch right.mismatch
     | UnawaitedAwaitable left, UnawaitedAwaitable right ->
-        Access.equal_sanitized left right
+        Reference.equal_sanitized left right
     | UndefinedAttribute left, UndefinedAttribute right
       when Identifier.equal_sanitized left.attribute right.attribute ->
         begin
@@ -1577,19 +1648,19 @@ let less_or_equal ~resolution left right =
           | Class left, Class right when left.class_attribute = right.class_attribute ->
               Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
           | Module left, Module right ->
-              Access.equal_sanitized left right
+              Reference.equal_sanitized left right
           | _ ->
               false
         end
-    | UndefinedName left, UndefinedName right when Access.equal_sanitized left right ->
+    | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right ->
         true
     | UndefinedType left, UndefinedType right ->
         Type.equal left right
     | UnexpectedKeyword left, UnexpectedKeyword right ->
-        Option.equal Access.equal_sanitized left.callee right.callee &&
+        Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal left.name right.name
     | UndefinedImport left, UndefinedImport right ->
-        Access.equal_sanitized left right
+        Reference.equal_sanitized left right
     | UnusedIgnore left, UnusedIgnore right ->
         IntSet.is_subset (IntSet.of_list left) ~of_:(IntSet.of_list right)
     | Unpack { expected_count = left_count; unpack_problem = left_problem },
@@ -1614,6 +1685,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
@@ -1654,6 +1726,7 @@ let join ~resolution left right =
     {
       expected = Resolution.join resolution left.expected right.expected;
       actual = Resolution.join resolution left.actual right.actual;
+      actual_expressions = left.actual_expressions @ right.actual_expressions;
       due_to_invariance = left.due_to_invariance || right.due_to_invariance;
     }
   in
@@ -1685,6 +1758,17 @@ let join ~resolution left right =
         IllegalAnnotationTarget left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
         IncompatibleAwaitableType (Resolution.join resolution left right)
+    | IncompleteType
+        { target = left_target; annotation = left; attempted_action = left_attempted_action },
+      IncompleteType
+        { target = right_target; annotation = right; attempted_action = right_attempted_action }
+      when Access.equal_general_access left_target right_target &&
+           equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
+        IncompleteType {
+          target = left_target;
+          annotation = Resolution.join resolution left right;
+          attempted_action = left_attempted_action;
+        }
     | InvalidTypeParameters {
         annotation = left;
         expected_number_of_parameters = left_expected;
@@ -1702,16 +1786,16 @@ let join ~resolution left right =
           given_number_of_parameters = left_given;
         }
     | MissingArgument left, MissingArgument right
-      when Option.equal Access.equal_sanitized left.callee right.callee &&
+      when Option.equal Reference.equal_sanitized left.callee right.callee &&
            Identifier.equal_sanitized left.name right.name ->
         MissingArgument left
     | MissingParameterAnnotation left, MissingParameterAnnotation right
-      when Access.equal_sanitized left.name right.name ->
+      when Reference.equal_sanitized left.name right.name ->
         MissingParameterAnnotation (join_missing_annotation left right)
     | MissingReturnAnnotation left, MissingReturnAnnotation right ->
         MissingReturnAnnotation (join_missing_annotation left right)
     | MissingAttributeAnnotation left, MissingAttributeAnnotation right
-      when (Access.equal_sanitized left.missing_annotation.name right.missing_annotation.name) &&
+      when (Reference.equal_sanitized left.missing_annotation.name right.missing_annotation.name) &&
            Type.equal left.parent right.parent ->
         MissingAttributeAnnotation {
           parent = left.parent;
@@ -1721,7 +1805,7 @@ let join ~resolution left right =
               right.missing_annotation;
         }
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
-      when Access.equal_sanitized left.name right.name ->
+      when Reference.equal_sanitized left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
     | NotCallable left, NotCallable right ->
         NotCallable (Resolution.join resolution left right)
@@ -1738,7 +1822,7 @@ let join ~resolution left right =
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Identifier.equal_sanitized left.name right.name &&
            left.position = right.position &&
-           Option.equal Access.equal_sanitized left.callee right.callee ->
+           Option.equal Reference.equal_sanitized left.callee right.callee ->
         IncompatibleParameterType {
           left with mismatch = join_mismatch left.mismatch right.mismatch
         }
@@ -1748,10 +1832,11 @@ let join ~resolution left right =
         IncompatibleReturnType {
           mismatch = join_mismatch left.mismatch right.mismatch;
           is_implicit = left.is_implicit && right.is_implicit;
+          is_unimplemented = left.is_unimplemented && right.is_unimplemented
         }
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
-           left.incompatible_type.name = right.incompatible_type.name ->
+           Reference.equal left.incompatible_type.name right.incompatible_type.name ->
         IncompatibleAttributeType {
           parent = left.parent;
           incompatible_type = {
@@ -1762,7 +1847,8 @@ let join ~resolution left right =
                 right.incompatible_type.mismatch;
           };
         }
-    | IncompatibleVariableType left, IncompatibleVariableType right when left.name = right.name ->
+    | IncompatibleVariableType left, IncompatibleVariableType right
+      when Reference.equal left.name right.name ->
         IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
     | InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
       InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) ->
@@ -1808,21 +1894,21 @@ let join ~resolution left right =
         InvalidType left
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin }
-      when Type.equal left right && left_origin = right_origin ->
+      when Type.equal left right && equal_type_variable_origin left_origin right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin }
-      when Type.equal left right && left_origin = right_origin ->
+      when Type.equal left right && equal_type_variance_origin left_origin right_origin ->
         InvalidTypeVariance { annotation = left; origin = left_origin }
     | TooManyArguments left, TooManyArguments right
-      when Option.equal Access.equal_sanitized left.callee right.callee &&
+      when Option.equal Reference.equal_sanitized left.callee right.callee &&
            left.expected = right.expected &&
            left.provided = right.provided ->
         TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
-      when left.name = right.name && Type.equal left.parent right.parent ->
+      when String.equal left.name right.name && Type.equal left.parent right.parent ->
         UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when Access.equal_sanitized left right ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when Reference.equal_sanitized left right ->
         UnawaitedAwaitable left
     | UndefinedAttribute { origin = Class left; attribute = left_attribute },
       UndefinedAttribute { origin = Class right; attribute = right_attribute }
@@ -1833,25 +1919,25 @@ let join ~resolution left right =
     | UndefinedAttribute { origin = Module left; attribute = left_attribute },
       UndefinedAttribute { origin = Module right; attribute = right_attribute }
       when Identifier.equal_sanitized left_attribute right_attribute &&
-           Access.equal_sanitized left right ->
+           Reference.equal_sanitized left right ->
         UndefinedAttribute { origin = Module left; attribute = left_attribute  }
 
-    | UndefinedName left, UndefinedName right when Access.equal_sanitized left right ->
+    | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right ->
         UndefinedName left
     | UndefinedType left, UndefinedType right when Type.equal left right ->
         UndefinedType left
     | UnexpectedKeyword left, UnexpectedKeyword right
-      when Option.equal Access.equal_sanitized left.callee right.callee &&
+      when Option.equal Reference.equal_sanitized left.callee right.callee &&
            Identifier.equal left.name right.name ->
         UnexpectedKeyword left
-    | UndefinedImport left, UndefinedImport right when Access.equal_sanitized left right ->
+    | UndefinedImport left, UndefinedImport right when Reference.equal_sanitized left right ->
         UndefinedImport left
 
     (* Join UndefinedImport/Name pairs into an undefined import, as the missing name is due to us
        being unable to resolve the import. *)
-    | UndefinedImport left, UndefinedName right when Access.equal_sanitized left right ->
+    | UndefinedImport left, UndefinedName right when Reference.equal_sanitized left right ->
         UndefinedImport left
-    | UndefinedName left, UndefinedImport right when Access.equal_sanitized left right ->
+    | UndefinedName left, UndefinedImport right when Reference.equal_sanitized left right ->
         UndefinedImport right
 
     | UnusedIgnore left, UnusedIgnore right ->
@@ -1872,10 +1958,10 @@ let join ~resolution left right =
 
     | TypedDictionaryKeyNotFound left, TypedDictionaryKeyNotFound right
       when Identifier.equal left.typed_dictionary_name right.typed_dictionary_name &&
-           left.missing_key = right.missing_key ->
+           String.equal left.missing_key right.missing_key ->
         TypedDictionaryKeyNotFound left
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
-      when left = right ->
+      when List.equal ~equal:String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
     | Top, _
     | _, Top ->
@@ -1889,6 +1975,7 @@ let join ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
@@ -1926,7 +2013,13 @@ let join ~resolution left right =
           pp_kind right.kind;
         Top
   in
-  { location = left.location; kind; define = left.define }
+  let location =
+    if Location.Instantiated.compare left.location right.location <= 0 then
+      left.location
+    else
+      right.location
+  in
+  { location; kind; signature = left.signature }
 
 
 let meet ~resolution:_ left _ =
@@ -1939,38 +2032,43 @@ let widen ~resolution ~previous ~next ~iteration:_ =
 
 
 let join_at_define ~resolution errors =
-  let key = function
+  let error_map = String.Table.create ~size:(List.length errors) () in
+  let add_error errors error =
+    let add_error_to_map key =
+      let update_error = function
+        | None -> error
+        | Some existing_error ->
+            let joined_error = join ~resolution existing_error error in
+            if joined_error.kind <> Top then
+              joined_error
+            else
+              existing_error
+      in
+      String.Table.update error_map key ~f:update_error;
+      errors
+    in
+    match error with
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
-        Access.show_sanitized name
-    | error ->
-        show error
-  in
-  let add_error errors error =
-    let key = key error in
-    match Map.find errors key with
-    | Some existing_error ->
-        let joined_error = join ~resolution existing_error error in
-        if joined_error.kind <> Top then
-          Map.set ~key ~data:joined_error errors
-        else
-          errors
+        add_error_to_map (Reference.show_sanitized name)
     | _ ->
-        Map.set ~key ~data:error errors
+        error :: errors
   in
-  List.fold ~init:String.Map.empty ~f:add_error errors
-  |> Map.data
+  let unjoined_errors = List.fold ~init:[] ~f:add_error errors in
+  let joined_errors = String.Table.data error_map in
+  (* Preserve the order of the errors as much as possible *)
+  List.rev_append unjoined_errors joined_errors
 
 
 let join_at_source ~resolution errors =
   let key = function
     | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
-        Type.show parent ^ Access.show_sanitized name
+        Type.show parent ^ Reference.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
-        Access.show_sanitized name
+        Reference.show_sanitized name
     | { kind = UndefinedImport name; _ }
     | { kind = UndefinedName name; _ } ->
-        Format.asprintf "Unknown[%a]" Access.pp_sanitized name
+        Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
     | error ->
         show error
   in
@@ -1984,7 +2082,7 @@ let join_at_source ~resolution errors =
         Map.set ~key ~data:error errors
     | Some existing_error, _ ->
         let joined_error = join ~resolution existing_error error in
-        if joined_error.kind <> Top then
+        if not (equal_kind joined_error.kind Top) then
           Map.set ~key ~data:joined_error errors
         else
           errors
@@ -1993,6 +2091,12 @@ let join_at_source ~resolution errors =
   in
   List.fold ~init:String.Map.empty ~f:add_error errors
   |> Map.data
+
+
+let deduplicate errors =
+  let error_set = Hash_set.create ~size:(List.length errors) () in
+  List.iter errors ~f:(Core.Hash_set.add error_set);
+  Core.Hash_set.to_list error_set
 
 
 let filter ~configuration ~resolution errors =
@@ -2023,31 +2127,20 @@ let filter ~configuration ~resolution errors =
           in
           Type.exists actual ~predicate:is_subclass_of_mock
       | UnexpectedKeyword { callee = Some callee; _ } ->
-          String.is_prefix ~prefix:"unittest.mock" (Access.show callee)
+          String.is_prefix ~prefix:"unittest.mock" (Reference.show callee)
       | _ ->
           false
     in
     let is_unimplemented_return_error error =
       match error with
-      | { kind = IncompatibleReturnType _; define = { Node.value = { Define.body; _ }; _ }; _ } ->
-          let rec check_statements = function
-            | [{ Node.value = Statement.Pass; _ };
-               { Node.value = Statement.Return { Return.expression = None; _ }; _ }] ->
-                true
-            | {
-              Node.value = Statement.Expression { Node.value = Expression.String _; _ };
-              _;
-            } :: tail ->
-                check_statements tail
-            | _ ->
-                false
-          in
-          check_statements body
+      | { kind = IncompatibleReturnType { is_unimplemented; _ } ; _ } ->
+          is_unimplemented
       | _ ->
           false
     in
     let is_builtin_import_error = function
-      | { kind = UndefinedImport builtins; _ } when Access.show builtins = "builtins" ->
+      | { kind = UndefinedImport builtins; _ }
+        when String.equal (Reference.show builtins) "builtins" ->
           true
       | _ ->
           false
@@ -2151,12 +2244,9 @@ let filter ~configuration ~resolution errors =
       | TooManyArguments { callee = Some access; _ }
       | UnexpectedKeyword { callee = Some access; _ } ->
           begin
-            match Access.prefix access, Access.last access with
-            | [], _
-            | _, None ->
-                false
-            | _, Some name ->
-                List.mem ~equal:String.equal special_method_names (Access.show [name])
+            match Reference.prefix access, Reference.last access with
+            | None, _ -> false
+            | _, name -> List.mem ~equal:String.equal special_method_names name
           end
       | _ ->
           false
@@ -2183,11 +2273,16 @@ let suppress ~mode ~resolution error =
       match kind with
       | UndefinedImport _ ->
           due_to_builtin_import error
+      | IncompleteType _ ->
+          (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
+          true
       | _ ->
           due_to_mismatch_with_any resolution error
   in
 
-  let suppress_in_default ~resolution ({ kind; define = { Node.value = define; _ }; _ } as error) =
+  let suppress_in_default
+      ~resolution
+      ({ kind; signature = { Node.value = signature; _ }; _ } as error) =
     match kind with
     | InconsistentOverride { override = WeakenedPostcondition { actual = Type.Top; _ }; _ } ->
         false
@@ -2199,6 +2294,9 @@ let suppress ~mode ~resolution error =
     | InvalidTypeParameters { given_number_of_parameters; _ }
       when given_number_of_parameters = 0 ->
         true
+    | IncompleteType _ ->
+        (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
+        true
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
@@ -2209,14 +2307,14 @@ let suppress ~mode ~resolution error =
         true
     | UndefinedImport _ ->
         false
-    | UndefinedName name when Access.show name = "reveal_type" ->
+    | UndefinedName name when String.equal (Reference.show name) "reveal_type" ->
         true
     | RevealedType _ ->
         false
     | _ ->
         due_to_analysis_limitations error ||
         due_to_mismatch_with_any resolution error ||
-        (Define.is_untyped define && not (Define.is_toplevel define))
+        (Define.Signature.is_untyped signature && not (Define.Signature.is_toplevel signature))
   in
 
   let suppress_in_infer { kind; _ } =
@@ -2235,28 +2333,31 @@ let suppress ~mode ~resolution error =
   if Location.Instantiated.equal (Location.Instantiated.synthetic) (location error) then
     true
   else
-    match mode with
-    | Source.Infer ->
-        suppress_in_infer error
-    | Source.Strict ->
-        suppress_in_strict error
-    | Source.Declare ->
-        true
-    | Source.DefaultButDontCheck suppressed_codes
-      when List.exists suppressed_codes ~f:((=) (code error)) ->
-        true
-    | _ ->
-        suppress_in_default ~resolution error
-
+    try
+      match mode with
+      | Source.Infer ->
+          suppress_in_infer error
+      | Source.Strict ->
+          suppress_in_strict error
+      | Source.Declare ->
+          true
+      | Source.DefaultButDontCheck suppressed_codes
+        when List.exists suppressed_codes ~f:((=) (code error)) ->
+          true
+      | _ ->
+          suppress_in_default ~resolution error
+    with TypeOrder.Untracked annotation ->
+      Log.warning "`%s` not found in the type order." (Type.show annotation);
+      false
 
 let dequalify
     dequalify_map
     ~resolution
     ({
       kind;
-      define = {
+      signature = {
         Node.location;
-        value = ({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
+        value = ({ parameters; return_annotation; _ } as signature)
       }; _ } as error) =
   let dequalify = Type.dequalify dequalify_map in
   let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
@@ -2280,6 +2381,8 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | IncompleteType { target; annotation; attempted_action } ->
+        IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
     | InvalidArgument (Variable { expression; annotation }) ->
@@ -2396,12 +2499,12 @@ let dequalify
     | Unpack unpack ->
         Unpack unpack
   in
-  let define =
+  let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
       value.Parameter.annotation
       >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
-      >>| Type.expression
+      >>| Type.expression ~convert:true
       |> fun annotation ->
       { parameter with Node.value = { value with Parameter.annotation }}
     in
@@ -2410,15 +2513,14 @@ let dequalify
       return_annotation
       >>| Resolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
-      >>| Type.expression
+      >>| Type.expression ~convert:true
     in
-    let signature = { define.signature with parameters; return_annotation } in
-    { define with signature }
+    { signature with parameters; return_annotation }
   in
-  { error with kind; define = { Node.location; value = define} }
+  { error with kind; signature = { Node.location; value = signature} }
 
 
-let create_mismatch ~resolution ~actual ~expected ~covariant =
+let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant =
   let left, right =
     if covariant then
       actual, expected
@@ -2429,4 +2531,5 @@ let create_mismatch ~resolution ~actual ~expected ~covariant =
     expected;
     actual;
     due_to_invariance = Resolution.is_invariance_mismatch resolution ~left ~right;
+    actual_expressions = Option.to_list actual_expression;
   }

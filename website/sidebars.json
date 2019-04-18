@@ -11,6 +11,7 @@
       "lsp-integration",
       "watchman-integration",
       "querying-pyre",
+      "static-analysis",
       "static-analysis-post-processor"
     ]
   }

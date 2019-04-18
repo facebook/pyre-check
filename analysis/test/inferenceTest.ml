@@ -8,7 +8,6 @@ open OUnit2
 
 open Ast
 open Analysis
-open Statement
 open Inference
 
 open Test
@@ -34,17 +33,18 @@ let create
           in
           create annotation
         in
-        !+name, annotation
+        !&name, annotation
       in
       List.map annotations ~f:annotify
-      |> Access.Map.of_alist_exn
+      |> Reference.Map.of_alist_exn
     in
     Resolution.with_annotations (Test.resolution ()) ~annotations
   in
   let define =
     let signature =
       {
-        define.signature with return_annotation = Some (Type.expression expected_return)
+        define.signature
+        with return_annotation = Some (Type.expression ~convert:true expected_return)
       }
     in
     +{ define with signature }
@@ -60,7 +60,7 @@ let assert_backward precondition statement postcondition =
       ~pp_diff:(diff ~print:State.pp)
   in
   let parsed =
-    (parse statement)
+    (parse ~convert:true statement)
     |> function
     | { Source.statements = statements; _ } -> statements
   in
@@ -151,6 +151,7 @@ let test_backward _ =
 let fixpoint_parse source =
   parse source
   |> Preprocessing.preprocess
+  |> Preprocessing.convert
   |> Preprocessing.defines
   |> List.hd_exn
 
@@ -339,7 +340,9 @@ let assert_infer
   in
   let source =
     parse source
-    |> Preprocessing.preprocess in
+    |> Preprocessing.preprocess
+    |> Preprocessing.convert
+  in
   let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
   let environment = Test.environment () in
   Test.populate ~configuration environment [source];

@@ -18,7 +18,7 @@ module State = struct
   include TypeCheck.State
 
 
-  let return_access = Access.create "$return"
+  let return_reference = Reference.create "$return"
 
 
   let initial_forward
@@ -39,12 +39,12 @@ module State = struct
         | _ ->
             match annotation, value with
             | None, None ->
-                let access =
+                let reference =
                   name
                   |> String.filter ~f:(fun character -> character <> '*')
-                  |> fun name -> [Access.Identifier name]
+                  |> Reference.create
                 in
-                Map.set annotations ~key:access ~data:(Annotation.create Type.Bottom)
+                Map.set annotations ~key:reference ~data:(Annotation.create Type.Bottom)
             | _ ->
                 annotations
       in
@@ -65,7 +65,7 @@ module State = struct
       let resolution =
         Resolution.with_annotations
           resolution
-          ~annotations:(Access.Map.of_alist_exn [return_access, expected_return])
+          ~annotations:(Reference.Map.of_alist_exn [return_reference, expected_return])
       in
       create ~configuration ~resolution ~define ()
     in
@@ -73,7 +73,7 @@ module State = struct
       let add_annotation ~key ~data map =
         if Type.is_unknown data.Annotation.annotation ||
            Type.is_not_instantiated data.Annotation.annotation ||
-           Access.equal key return_access then
+           Reference.equal key return_reference then
           map
         else
           Map.set ~key ~data map
@@ -122,16 +122,15 @@ module State = struct
     let add_parameter_errors
         errors
         { Node.value = { Parameter.name; annotation; _ }; location } =
-      let access = [Access.Identifier name] in
       let add_missing_parameter_error ~given_annotation =
-        Resolution.get_local resolution ~access
+        let reference = Reference.create name in
+        Resolution.get_local resolution ~reference
         >>| (fun { Annotation.annotation; _ } ->
-            let name = Access.create_from_identifiers [name] in
             let error =
               Error.create
                 ~location
                 ~kind:(Error.MissingParameterAnnotation {
-                    name;
+                    name = reference;
                     annotation = Some annotation;
                     given_annotation;
                     evidence_locations = [];
@@ -165,6 +164,7 @@ module State = struct
       ?key:_
       ({ resolution; errors; _ } as state)
       ~statement =
+    Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
       | Type.Top, Type.Top -> None
@@ -188,7 +188,7 @@ module State = struct
                   >>| (fun refined ->
                       Resolution.set_local
                         resolution
-                        ~access:value
+                        ~reference:(Reference.from_access value)
                         ~annotation:(Annotation.create refined))
                   |> Option.value ~default:resolution
               | Tuple arguments ->
@@ -225,7 +225,7 @@ module State = struct
         let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
           match element with
           | TypeCheck.AccessState.Signature {
-              signature = Annotated.Signature.Found { callable; _ };
+              signature = Annotated.Signature.Found callable;
               arguments;
               _;
             }
@@ -280,7 +280,7 @@ module State = struct
                       >>| (fun refined ->
                           Resolution.set_local
                             resolution
-                            ~access:value_access
+                            ~reference:(Reference.from_access value_access)
                             ~annotation:(Annotation.create refined))
                       |> Option.value ~default:resolution
                   | _ ->
@@ -338,12 +338,12 @@ module State = struct
 
       | Return { Return.expression = Some { Node.value = Access (SimpleAccess access); _ }; _ } ->
           let return_annotation =
-            Option.value_exn (Resolution.get_local resolution ~access:return_access)
+            Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
             |> Annotation.annotation
           in
           Resolution.set_local
             resolution
-            ~access:access
+            ~reference:(Reference.from_access access)
             ~annotation:(Annotation.create return_annotation)
 
       | _ ->
@@ -495,8 +495,8 @@ let run
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
         let module Handler = (val environment : Environment.Handler) in
-        let add_missing_annotation_error ~access ~name ~location ~annotation =
-          match Handler.globals (Reference.from_access name) with
+        let add_missing_annotation_error ~reference ~name ~location ~annotation =
+          match Handler.globals name with
           | Some { Node.value; _ }
             when not (Type.is_unknown (Annotation.annotation value)) ->
               changed, globals_added_sofar
@@ -505,7 +505,7 @@ let run
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~handle ~reference:(Reference.from_access access) ~global;
+              Handler.register_global ~handle ~reference ~global;
               true, error :: globals_added_sofar
         in
         (* TODO(T31680236): use inferred annotations in global fixpoint. *)
@@ -518,7 +518,7 @@ let run
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:((Type.show parent |> Access.create) @ name)
+              ~reference:(Reference.combine (Type.show parent |> Reference.create) name)
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation
@@ -531,7 +531,7 @@ let run
             _;
           } as error) ->
             add_missing_annotation_error
-              ~access:name
+              ~reference:name
               ~name
               ~location:(Error.location error |> Location.reference)
               ~annotation
@@ -560,7 +560,12 @@ let run
   if configuration.recursive_infer then
     recursive_infer_source [] 0
   else
-    let results = Preprocessing.defines source |> List.map ~f:check in
+    let results =
+      source
+      |> Preprocessing.convert
+      |> Preprocessing.defines
+      |> List.map ~f:check
+    in
 
     let errors =
       List.map results ~f:SingleSourceResult.errors

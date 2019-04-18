@@ -10,11 +10,10 @@ open Pyre
 open Ast
 open Expression
 
-module Class = AnnotatedClass
-
 
 type mismatch = {
   actual: Type.t;
+  actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
   position: int;
@@ -40,14 +39,7 @@ type reason =
 [@@deriving eq, show, compare]
 
 
-type found = {
-  callable: Type.Callable.t;
-  constraints: Type.t Type.Map.t;
-}
-[@@deriving eq]
-
-
-let pp_found format { callable; _ } =
+let pp_found format callable =
   Format.fprintf format "%a" Type.Callable.pp callable
 
 
@@ -55,9 +47,9 @@ let show_found =
   Format.asprintf "%a" pp_found
 
 
-let equal_found (left: found) (right: found) =
+let equal_found left right =
   (* Ignore constraints. *)
-  Type.Callable.equal left.callable right.callable
+  Type.Callable.equal left right
 
 
 type closest = {
@@ -74,7 +66,7 @@ let equal_closest (left: closest) (right: closest) =
 
 
 type t =
-  | Found of found
+  | Found of Type.Callable.t
   | NotFound of closest
 [@@deriving eq, show]
 
@@ -101,7 +93,7 @@ type reasons = {
 type signature_match = {
   callable: Type.Callable.t;
   argument_mapping: (argument list) Type.Callable.Parameter.Map.t;
-  constraints: Type.t Type.Map.t;
+  constraints_set: TypeConstraints.t list;
   ranks: ranks;
   reasons: reasons;
 }
@@ -114,24 +106,11 @@ let select
   let open Type.Callable in
   let match_arity ({ parameters = all_parameters; _ } as implementation) =
     let all_arguments = arguments in
-    let initial_constraints =
-      let to_bottom constraints variable =
-        Map.set constraints ~key:variable ~data:Type.Bottom
-      in
-      Type.Callable {
-        Type.Callable.kind = Anonymous;
-        implementation;
-        overloads = [];
-        implicit = None;
-      }
-      |> Type.free_variables
-      |> List.fold ~f:to_bottom ~init:Type.Map.empty
-    in
     let base_signature_match =
       {
         callable = { callable with Type.Callable.implementation; overloads = [] };
         argument_mapping = Parameter.Map.empty;
-        constraints = initial_constraints;
+        constraints_set = [TypeConstraints.empty];
         ranks = {
           arity = 0;
           annotation = 0;
@@ -308,7 +287,7 @@ let select
         (Parameter.Variable _ as parameter) :: parameters_tail ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
-            if Identifier.sanitized (Parameter.name parameter) = "*" then
+            if String.equal (Identifier.sanitized (Parameter.name parameter)) "*" then
               let reasons =
                 arity_mismatch
                   reasons
@@ -398,9 +377,9 @@ let select
           let rec set_constraints_and_reasons
               ~resolution
               ~position
-              ~argument:{ Argument.name; value = { Node.location; _ } }
+              ~argument:{ Argument.name; value = ({ Node.location; _ } as actual_expression) }
               ~argument_annotation
-              ({ constraints; reasons = { annotation; _ }; _; } as signature_match) =
+              ({ constraints_set; reasons = { annotation; _ }; _; } as signature_match) =
             let reasons_with_mismatch =
               let mismatch =
                 let location =
@@ -410,6 +389,7 @@ let select
                 in
                 {
                   actual = argument_annotation;
+                  actual_expression;
                   expected = parameter_annotation;
                   name = Option.map name ~f:Node.value;
                   position;
@@ -419,16 +399,18 @@ let select
               in
               { reasons with annotation = mismatch :: annotation }
             in
-            Resolution.solve_less_or_equal
-              resolution
-              ~constraints
-              ~left:argument_annotation
-              ~right:parameter_annotation
-            >>| (fun updated_constraints ->
-                { signature_match with constraints = updated_constraints }
-              )
-            |> Option.value
-              ~default:{ signature_match with constraints; reasons = reasons_with_mismatch }
+            match
+              List.concat_map constraints_set ~f:(fun constraints ->
+                  Resolution.solve_less_or_equal
+                    resolution
+                    ~constraints
+                    ~left:argument_annotation
+                    ~right:parameter_annotation)
+            with
+            | [] ->
+                { signature_match with constraints_set; reasons = reasons_with_mismatch }
+            | updated_constraints_set ->
+                { signature_match with constraints_set = updated_constraints_set }
           in
           let rec check signature_match = function
             | [] ->
@@ -478,27 +460,36 @@ let select
                     _;
                   } ->
                       let annotation = Resolution.resolve resolution expression in
-                      let iterable =
-                        (* Unannotated parameters are assigned a type of Bottom for inference,
-                           in which case we should avoid joining with an iterable, as doing so
-                           would suppress errors. *)
-                        if Type.equal annotation Type.Bottom then
-                          Type.Top
-                        else
-                          Resolution.join resolution annotation (Type.iterable Type.Bottom)
-                      in
-                      if Type.is_iterable iterable then
-                        Type.single_parameter iterable
-                        |> set_constraints_and_reasons
-                      else
+                      let signature_with_error =
                         { expression; annotation }
                         |> Node.create ~location
                         |> (fun error -> InvalidVariableArgument error)
                         |> add_annotation_error signature_match
+                      in
+                      let iterable_constraints =
+                        if Type.equal annotation Type.Bottom then
+                          []
+                        else
+                          Resolution.solve_less_or_equal
+                            resolution
+                            ~constraints:TypeConstraints.empty
+                            ~left:annotation
+                            ~right:(Type.iterable (Type.variable "$_T"))
+                      in
+                      begin
+                        match iterable_constraints with
+                        | [] ->
+                            signature_with_error
+                        | iterable_constraint :: _ ->
+                            Resolution.solve_constraints resolution iterable_constraint
+                            >>= (fun solution -> Map.find solution (Type.variable "$_T"))
+                            >>| set_constraints_and_reasons
+                            |> Option.value ~default:signature_with_error
+                      end
                   | { Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in
                       let argument_annotation =
-                        if Type.is_resolved parameter_annotation then
+                        if Type.Variable.all_variables_are_resolved parameter_annotation then
                           Resolution.resolve_mutable_literals
                             resolution
                             ~expression:(Some expression)
@@ -520,35 +511,31 @@ let select
           List.rev arguments
           |> check signature_match
     in
-    let reduce_constraints
-        ({ constraints; reasons = ({ annotation; _ } as reasons); _ } as signature_match) =
-      let rec reduce_constraint_solution ?previous_free_count constraints =
-        let concrete, free = Type.Map.partition_tf constraints ~f:Type.is_resolved in
-        match Type.Map.length free, previous_free_count with
-        | 0, _ ->
-            Some constraints
-        | current_free_count, Some previous_free_count
-          when current_free_count >= previous_free_count ->
-            None
-        | current_free_count, _ ->
-            let take_either_preferring_left ~key:_ =
-              function | `Left value | `Right value | `Both (value, _) -> Some value
-            in
-            Type.Map.map free ~f:(Type.instantiate ~constraints:(Type.Map.find concrete))
-            |> Type.Map.merge concrete ~f:take_either_preferring_left
-            |> reduce_constraint_solution ~previous_free_count:current_free_count
+    let check_if_solution_exists
+        ({
+          constraints_set;
+          reasons = ({ annotation; _ } as reasons);
+          callable;
+          _;
+        } as signature_match) =
+      let solutions =
+        let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+        List.filter_map
+          constraints_set
+          ~f:(Resolution.partial_solve_constraints ~variables resolution)
       in
-      match reduce_constraint_solution constraints with
-      | Some constraints ->
-          { signature_match with constraints }
-      | None ->
-          {
-            signature_match with
-            reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation}
-          }
+      if not (List.is_empty solutions) then
+        signature_match
+      else
+        (* All other cases should have been able to been blamed on a specefic argument, this is the
+           only global failure. *)
+        {
+          signature_match with
+          reasons = { reasons with annotation = MutuallyRecursiveTypeVariables :: annotation }
+        }
     in
     let special_case_dictionary_constructor
-        ({ argument_mapping; callable; constraints; _ } as signature_match) =
+        ({ argument_mapping; callable; constraints_set; _ } as signature_match) =
       let open Type.Record.Callable in
       let has_matched_keyword_parameter parameters =
         List.find parameters ~f:(function RecordParameter.Keywords _ -> true | _ -> false)
@@ -565,24 +552,27 @@ let select
           annotation = Type.Parametric { parameters = [ key_type; _ ]; _ }
         };
         _;
-      } when Access.show name = "dict.__init__" && has_matched_keyword_parameter parameters ->
-          Resolution.solve_less_or_equal
-            resolution
-            ~constraints
-            ~left:Type.string
-            ~right:key_type
-          >>| (fun updated_constraints ->
-              { signature_match with constraints = updated_constraints }
-            )
-          (* TODO(T41074174): Error here, could come from instantiating a class that inherits from
-             dict[int, str] with the kwargs constructor *)
-          |> Option.value ~default:signature_match
+      } when String.equal (Reference.show name) "dict.__init__" &&
+             has_matched_keyword_parameter parameters ->
+          let updated_constraints =
+            List.concat_map constraints_set ~f:(fun constraints ->
+                Resolution.solve_less_or_equal
+                  resolution
+                  ~constraints
+                  ~left:Type.string
+                  ~right:key_type)
+          in
+          if List.is_empty updated_constraints then
+            (* TODO(T41074174): Error here *)
+            signature_match
+          else
+            { signature_match with constraints_set = updated_constraints }
       | _ ->
           signature_match
     in
     Map.fold ~init:signature_match ~f:update argument_mapping
-    |> reduce_constraints
     |> special_case_dictionary_constructor
+    |> check_if_solution_exists
   in
   let calculate_rank
       ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
@@ -631,18 +621,33 @@ let select
             get_best_rank ~best_matches ~best_rank ~getter tail
     in
     let determine_reason
-        { callable; constraints; reasons = { arity; annotation; _ }; _ } =
+        { callable; constraints_set; reasons = { arity; annotation; _ }; _ } =
       let callable =
-        Type.Callable.map
-          ~f:(Type.instantiate ~widen:false ~constraints:(Map.find constraints))
-          callable
+        let instantiate annotation =
+          let solution =
+            let variables = Type.Variable.all_free_variables (Type.Callable callable) in
+            List.filter_map
+              constraints_set
+              ~f:(Resolution.partial_solve_constraints ~variables resolution)
+            |> List.map ~f:snd
+            |> List.hd
+            |> Option.value ~default:Type.Map.empty
+          in
+          Type.instantiate annotation ~widen:false ~constraints:(Map.find solution)
+          |> Type.Variable.mark_all_free_variables_as_escaped
+          (* We need to do transformations of the form Union[T_escaped, int] => int in order to
+             properly handle some typeshed stubs which only sometimes bind type variables and
+             expect them to fall out in this way (see Mapping.get) *)
+          |> Type.Variable.collapse_all_escaped_variable_unions
+        in
+        Type.Callable.map ~f:instantiate callable
         |> (function
             | Some callable -> callable
             | _ -> failwith "Instantiate did not return a callable")
       in
       match List.rev arity, List.rev annotation with
       | [], [] ->
-          Found { callable; constraints }
+          Found callable
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function
@@ -691,36 +696,3 @@ let select
     match get_match overloads with
     | Found signature_match -> Found signature_match
     | NotFound _ -> get_match [implementation]
-
-
-let determine signature ~resolution ~annotation =
-  match annotation, signature with
-  | Type.Parametric { name; parameters } as annotation,
-    Found { constraints; _ } ->
-      Resolution.class_definition resolution annotation
-      >>| Class.create
-      >>| Class.generics ~resolution
-      >>= (fun generics ->
-          if List.length generics = List.length parameters then
-            let instantiated =
-              let uninstantiated =
-                let uninstantiated generic parameter =
-                  match parameter with
-                  | Type.Bottom -> generic
-                  | _ -> parameter
-                in
-                let parameters = List.map2_exn ~f:uninstantiated generics parameters in
-                Type.Parametric { name; parameters }
-              in
-              let constraints annotation =
-                Map.find constraints annotation
-                >>| Type.weaken_literals
-              in
-              Type.instantiate ~constraints  uninstantiated
-              |> Type.instantiate_free_variables ~replacement:Type.Bottom
-            in
-            Some instantiated
-          else
-            None)
-  | _ ->
-      None

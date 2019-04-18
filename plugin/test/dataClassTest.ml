@@ -22,7 +22,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -42,7 +42,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -65,7 +65,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -87,7 +87,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
            pass
       |}
     ];
@@ -109,7 +109,7 @@ let test_transform_environment _ =
            pass
          def __repr__(self) -> str:
            pass
-         def __eq__(self, o) -> bool:
+         def __eq__(self, o: object) -> bool:
            pass
       |}
     ];
@@ -129,7 +129,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -149,7 +149,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -171,7 +171,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -195,7 +195,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -217,7 +217,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -239,7 +239,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -263,7 +263,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -285,7 +285,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -305,7 +305,7 @@ let test_transform_environment _ =
             pass
           def __init__(self) -> None:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -332,6 +332,64 @@ let test_transform_environment _ =
 
   PluginTest.assert_environment_contains
     {|
+      @dataclass(order = True)
+      class Foo:
+        def foo(self) -> None:
+          pass
+    |}
+    [
+      {|
+        @dataclass(order = True)
+        class Foo:
+          def foo(self) -> None:
+            pass
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+          def __lt__(self, o: object) -> bool:
+            pass
+          def __le__(self, o: object) -> bool:
+            pass
+          def __gt__(self, o: object) -> bool:
+            pass
+          def __ge__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass(eq = False, order = True)
+      class Foo:
+        def foo(self) -> None:
+          pass
+    |}
+    [
+      {|
+        @dataclass(eq = False, order = True)
+        class Foo:
+          def foo(self) -> None:
+            pass
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __lt__(self, o: object) -> bool:
+            pass
+          def __le__(self, o: object) -> bool:
+            pass
+          def __gt__(self, o: object) -> bool:
+            pass
+          def __ge__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+
+  PluginTest.assert_environment_contains
+    {|
       @dataclass(frozen = True)
       class Foo:
         def foo(self) -> None:
@@ -347,7 +405,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |}
     ];
@@ -375,7 +433,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -388,7 +446,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -415,7 +473,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -428,7 +486,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -454,7 +512,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -466,7 +524,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -492,7 +550,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -504,7 +562,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -533,7 +591,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -550,7 +608,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -576,7 +634,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -587,7 +645,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
       {|
@@ -598,7 +656,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -624,7 +682,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ];
@@ -648,7 +706,7 @@ let test_transform_environment _ =
             pass
           def __repr__(self) -> str:
             pass
-          def __eq__(self, o) -> bool:
+          def __eq__(self, o: object) -> bool:
             pass
       |};
     ]

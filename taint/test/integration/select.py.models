@@ -11,8 +11,8 @@
             "root": {
               "filename": "select.py",
               "line": 13,
-              "start": 21,
-              "end": 23
+              "start": 8,
+              "end": 21
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
@@ -40,8 +40,8 @@
             "root": {
               "filename": "select.py",
               "line": 18,
-              "start": 21,
-              "end": 23
+              "start": 8,
+              "end": 21
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
@@ -69,8 +69,8 @@
             "root": {
               "filename": "select.py",
               "line": 23,
-              "start": 21,
-              "end": 23
+              "start": 8,
+              "end": 21
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
@@ -84,6 +84,169 @@
     ],
     "sinks": [],
     "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "select.return_is_RCE",
+    "sources": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+        ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 32,
+              "start": 18,
+              "end": 25
+            },
+            "tito": [ { "line": 33, "start": 11, "end": 26 } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}"
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "has": "first-index" },
+              { "has": "first-field" },
+              { "first-index": "payload" },
+              { "first-field": "GET" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 33,
+              "start": 11,
+              "end": 26
+            },
+            "tito": [ { "line": 33, "start": 11, "end": 26 } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}"
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "has": "first-index" },
+              { "has": "first-field" },
+              { "first-index": "payload" },
+              { "first-field": "GET" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "result",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "RemoteCodeExecution" } ] }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(request)[GET]",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 33, "start": 11, "end": 26 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "select.return_is_RCE",
+    "callable_line": 32,
+    "code": 5001,
+    "line": 33,
+    "start": 4,
+    "end": 26,
+    "filename": "select.py",
+    "message":
+      "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 32,
+              "start": 18,
+              "end": 25
+            },
+            "tito": [ { "line": 33, "start": 11, "end": 26 } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}"
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "has": "first-index" },
+              { "has": "first-field" },
+              { "first-index": "payload" },
+              { "first-field": "GET" }
+            ]
+          },
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 33,
+              "start": 11,
+              "end": 26
+            },
+            "tito": [ { "line": 33, "start": 11, "end": 26 } ],
+            "leaves": [
+              {
+                "kind": "UserControlled",
+                "name": "Obj{django.http.Request.GET}"
+              }
+            ],
+            "features": [
+              { "via": "tito" },
+              { "has": "first-index" },
+              { "has": "first-field" },
+              { "first-index": "payload" },
+              { "first-field": "GET" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "select.py",
+              "line": 32,
+              "start": 51,
+              "end": 55
+            },
+            "leaves": [ { "kind": "RemoteCodeExecution" } ]
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -134,7 +297,12 @@
         "name": "forward",
         "roots": [
           {
-            "decl": null,
+            "root": {
+              "filename": "select.py",
+              "line": 4,
+              "start": 21,
+              "end": 28
+            },
             "leaves": [ { "kind": "UserControlled" } ],
             "features": [
               { "has": "first-field" },
@@ -176,7 +344,7 @@
               "start": 9,
               "end": 24
             },
-            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "tito": [ { "line": 29, "start": 9, "end": 24 } ],
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -206,10 +374,10 @@
             "root": {
               "filename": "select.py",
               "line": 29,
-              "start": 24,
-              "end": 46
+              "start": 9,
+              "end": 24
             },
-            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "tito": [ { "line": 29, "start": 9, "end": 24 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -289,7 +457,12 @@
         "name": "forward",
         "roots": [
           {
-            "decl": null,
+            "root": {
+              "filename": "select.py",
+              "line": 8,
+              "start": 21,
+              "end": 28
+            },
             "leaves": [ { "kind": "UserControlled" } ],
             "features": [
               { "has": "first-index" },

@@ -16,6 +16,7 @@
   assignTest
   asyncTest
   attributeTest
+  callableTest
   coverageTest
   controlFlowTest
   dataClassTest

@@ -256,7 +256,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "a, b, c = 1, 2, 3"
       };
@@ -271,7 +271,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "a, (b, c) = 1, (2, 3)"
       };
@@ -286,7 +286,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ..."
       };
@@ -301,7 +301,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = {|
           class Foo:
@@ -319,7 +319,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = {|
           str_to_int_dictionary = {"a": 1}
@@ -336,7 +336,7 @@ let test_check_globals _ =
   assert_type_errors
     ~update_environment_with:[
       {
-        qualifier = Ast.Reference.create "export";
+        qualifier = !&"export";
         handle = "export.py";
         source = "x = 1"
       };
@@ -373,7 +373,11 @@ let test_check_globals _ =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Optional[str]` but no type is specified.";
+      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, " ^
+      "add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
+      "Incompatible return type [7]: Expected `typing.List[int]` but got " ^
+      "`typing.List[typing.Any]`.";
     ];
 
   assert_type_errors
@@ -388,7 +392,8 @@ let test_check_globals _ =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
-      "Undefined name [18]: Global name `MappBoo` is undefined.";
+      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least \
+       one control flow path that doesn't define `MappBoo`.";
     ];
 
   assert_type_errors

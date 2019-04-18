@@ -41,8 +41,7 @@ class AstVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         # pyre-fixme: ast.AST doesn't have attribute 'type'
-        # TODO(T41594507): Adapt this test now that literal types exist.ArithmeticError
-        if node.targets[0].type == "typing_extensions.Literal[4]":
+        if node.targets[0].type == "int":
             # TODO(T37004997): Type should be fully qualified
             self._create_error(node, "Assigning to expression of type `int`.")
         self.generic_visit(node)

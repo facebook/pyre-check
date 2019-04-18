@@ -592,18 +592,18 @@ let test_default _ =
 let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order ((module Handler: Handler) as order) annotation expected =
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
       expected
       (method_resolution_order_linearize
          order
          annotation
          ~get_successors:(Handler.find (Handler.edges ())))
   in
-  assert_method_resolution_order butterfly !"3" [!"3"; Type.Top];
-  assert_method_resolution_order butterfly !"0" [!"0"; !"3"; !"2"; Type.Top];
-  assert_method_resolution_order diamond_order !"D" [!"D"; !"C"; !"B"; !"A"; Type.Top];
+  assert_method_resolution_order butterfly "3" ["3"];
+  assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
+  assert_method_resolution_order diamond_order "D" ["D"; "C"; "B"; "A"];
   (* The subclass gets chosen first even if after the superclass when both are inherited. *)
-  assert_method_resolution_order triangle_order !"C" [!"C"; !"B"; !"A"; Type.Top]
+  assert_method_resolution_order triangle_order "C" ["C"; "B"; "A"]
 
 
 let test_successors _ =
@@ -611,107 +611,25 @@ let test_successors _ =
       0 - 2
         X
       1 - 3 *)
-  assert_equal (successors butterfly !"3") [Type.Top];
-  assert_equal (successors butterfly !"0") [!"3"; !"2"; Type.Top];
+  assert_equal (successors butterfly "3") [];
+  assert_equal (successors butterfly "0") ["3"; "2"];
 
   (*          0 - 3
               /   /   \
               BOTTOM - 1      TOP
               |  \       /
               4 -- 2 ---           *)
-  assert_equal (successors order !"3") [Type.Top];
-  assert_equal (successors order !"0") [!"3"; Type.Top];
+  assert_equal (successors order "3") [];
+  assert_equal (successors order "0") ["3"];
   assert_equal
-    (successors order !"bottom")
+    (successors order "bottom")
     [
-      !"4";
-      !"2";
-      !"1";
-      !"0";
-      !"3";
-      Type.Top;
-    ];
-
-  (*  BOTTOM - Iterator[_T] - Iterable[_T] - Generic[_T] - Object
-                    \                            /
-                      --------------------------                    *)
-  let order =
-    let order = Builder.create () |> TypeOrder.handler in
-    insert order Type.Bottom;
-    insert order Type.Any;
-    insert order Type.Top;
-    insert order !"typing.Iterator";
-    insert order !"typing.Iterable";
-    insert order !"typing.Generic";
-    connect order ~predecessor:Type.Bottom ~successor:!"typing.Iterable";
-    connect
-      order
-      ~predecessor:!"typing.Iterator"
-      ~successor:!"typing.Iterable"
-      ~parameters:[Type.variable "_T"];
-    connect
-      order
-      ~predecessor:!"typing.Iterator"
-      ~successor:!"typing.Generic"
-      ~parameters:[Type.variable "_T"];
-    connect
-      order
-      ~predecessor:!"typing.Iterable"
-      ~successor:!"typing.Generic"
-      ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"typing.Generic" ~successor:Type.Any;
-    order in
-
-  assert_equal
-    (successors
-       order
-       (Type.parametric "typing.Iterable" [Type.integer]))
-    [
-      Type.parametric "typing.Generic" [Type.integer];
-      Type.Any;
-    ];
-
-  assert_equal
-    (successors
-       order
-       (Type.parametric "typing.Iterator" [Type.integer]))
-    [
-      Type.parametric "typing.Iterable" [Type.integer];
-      Type.parametric "typing.Generic" [Type.integer];
-      Type.Any;
+      "4";
+      "2";
+      "1";
+      "0";
+      "3";
     ]
-
-
-let test_predecessors _ =
-  (* Butterfly:
-      0 - 2
-        X
-      1 - 3 *)
-  assert_equal (predecessors butterfly !"0") [Type.Bottom];
-  assert_equal (predecessors butterfly !"3") [!"1"; !"0"; Type.Bottom];
-
-  (*          0 - 3
-              /   /   \
-              BOTTOM - 1      TOP
-              |  \       /
-              4 -- 2 ---           *)
-  assert_equal (predecessors order !"0") [!"bottom"; Type.Bottom];
-  assert_equal (predecessors order !"3") [!"1"; !"0"; !"bottom"; Type.Bottom]
-
-
-let test_greatest _ =
-  let smaller_than value = function
-    | Type.Primitive name ->
-        begin
-          try
-            (Int.of_string name) < value
-          with _ ->
-            false
-        end
-    | _ -> false
-  in
-  assert_equal (greatest butterfly ~matches:(smaller_than 3)) [!"2"];
-  assert_equal (greatest butterfly ~matches:(smaller_than 2)) [!"0"; !"1"]
 
 
 let test_less_or_equal _ =
@@ -836,6 +754,7 @@ let test_less_or_equal _ =
     insert order Type.Bottom;
     insert order Type.Any;
     insert order Type.Top;
+    insert order Type.object_primitive;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
@@ -975,34 +894,36 @@ let test_less_or_equal _ =
     (less_or_equal
        order
        ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.integer]) "T"));
+       ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
        ~right:(Type.union [Type.float; Type.string]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
        ~right:(Type.union [Type.float; Type.string; !"A"]));
   assert_false
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T")
        ~right:(Type.union [Type.float]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
+       ~left:(Type.variable
+                ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                "T")
        ~right:(Type.union [Type.float; Type.string; !"A"]));
   assert_false
     (less_or_equal
        order
        ~left:Type.string
-       ~right:(Type.variable ~constraints:(Type.Bound (Type.string)) "T"));
+       ~right:(Type.variable ~constraints:(Type.Variable.Bound (Type.string)) "T"));
   let float_string_variable =
-    Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"
+    Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"
   in
   assert_true
     (less_or_equal
@@ -1012,67 +933,91 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound !"A") "T")
-       ~right:(Type.union [Type.variable ~constraints:(Type.Bound !"A") "T"; Type.string]));
+       ~left:(Type.variable ~constraints:(Type.Variable.Bound !"A") "T")
+       ~right:(Type.union [
+           Type.variable ~constraints:(Type.Variable.Bound !"A") "T";
+           Type.string;
+         ]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound !"A") "T")
-       ~right:(Type.optional (Type.variable ~constraints:(Type.Bound !"A") "T")));
+       ~left:(Type.variable ~constraints:(Type.Variable.Bound !"A") "T")
+       ~right:(Type.optional (Type.variable ~constraints:(Type.Variable.Bound !"A") "T")));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound (Type.optional !"A")) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Bound (Type.optional !"A")) "T")
        ~right:(Type.optional !"A"));
 
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound Type.integer) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
        ~right:(Type.union [Type.float; Type.string]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound Type.integer) "T")
-       ~right:(Type.union [Type.variable ~constraints:(Type.Bound Type.integer) "T"; Type.string]));
+       ~left:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T")
+       ~right:(Type.union [
+           Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T";
+           Type.string;
+         ]));
 
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Unconstrained) "T")
+       ~left:(Type.variable ~constraints:(Type.Variable.Unconstrained) "T")
        ~right:(Type.Top));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Unconstrained) "T")
-       ~right:(Type.union [Type.variable ~constraints:(Type.Unconstrained) "T"; Type.string]));
+       ~left:(Type.variable ~constraints:(Type.Variable.Unconstrained) "T")
+       ~right:(Type.union [
+           Type.variable ~constraints:(Type.Variable.Unconstrained) "T";
+           Type.string;
+         ]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.variable ~constraints:(Type.Bound (Type.union [Type.float; Type.string])) "T")
+       ~left:(Type.variable
+                ~constraints:(Type.Variable.Bound (Type.union [Type.float; Type.string]))
+                "T")
        ~right:(Type.union [Type.float; Type.string]));
 
   assert_false
     (less_or_equal
        order
        ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Bound Type.float) "T"));
+       ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"));
   assert_false
     (less_or_equal
        order
        ~left:Type.float
-       ~right:(Type.variable ~constraints:(Type.Bound Type.integer) "T"));
+       ~right:(Type.variable ~constraints:(Type.Variable.Bound Type.integer) "T"));
 
   assert_false
     (less_or_equal
        order
        ~left:(Type.union [Type.string; Type.integer])
-       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string; Type.integer]) "T"));
+       ~right:(Type.variable
+                 ~constraints:(Type.Variable.Explicit [Type.string; Type.integer])
+                 "T"));
   assert_false
     (less_or_equal
        order
        ~left:Type.integer
-       ~right:(Type.variable ~constraints:(Type.Explicit [Type.string]) "T"));
+       ~right:(Type.variable ~constraints:(Type.Variable.Explicit [Type.string]) "T"));
+
+  assert_false
+    (less_or_equal
+       order
+       ~left:Type.integer
+       ~right:(Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"));
+  assert_true
+    (less_or_equal
+       order
+       ~left:(Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T")
+       ~right:Type.integer);
 
   (* Behavioral subtyping of callables. *)
   let less_or_equal ?implements order ~left ~right =
@@ -1080,7 +1025,9 @@ let test_less_or_equal _ =
       | Type.Primitive "T_Unconstrained" ->
           Some (Type.variable "T_Unconstrained")
       | Type.Primitive "T_int_bool" ->
-          Some (Type.variable "T_int_bool" ~constraints:(Type.Explicit [Type.integer; Type.bool]))
+          Some (Type.variable
+                  "T_int_bool"
+                  ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
     less_or_equal
@@ -1180,7 +1127,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[..., int]"
        ~right:"typing.Callable[..., float]");
-  assert_false
+  assert_true
     (less_or_equal
        order
        ~left:"typing.Callable[[int], int]"
@@ -1195,7 +1142,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Variable(args, object), Keywords(kwargs, object)], int]"
        ~right:"typing.Callable[..., int]");
-  assert_false
+  assert_true
     (less_or_equal
        order
        ~left:"typing.Callable[[Variable(args, int), Keywords(kwargs, object)], int]"
@@ -1881,6 +1828,7 @@ let test_join _ =
     insert order Type.Bottom;
     insert order Type.Any;
     insert order Type.Top;
+    add_simple Type.object_primitive;
     add_simple (Type.variable "_1");
     add_simple (Type.variable "_2");
     add_simple (Type.variable "_T");
@@ -1897,7 +1845,7 @@ let test_join _ =
 
     connect order ~predecessor:Type.Bottom ~successor:Type.integer;
     connect order ~predecessor:Type.integer ~successor:Type.float;
-    connect order ~predecessor:Type.float ~successor:Type.Top;
+    connect order ~predecessor:Type.float ~successor:Type.object_primitive;
 
     connect order ~predecessor:Type.Bottom ~successor:!"A";
 
@@ -2132,16 +2080,28 @@ let test_join _ =
   (* Variables. *)
   assert_type_equal
     (join order Type.integer (Type.variable "T"))
-    (Type.union [Type.integer; Type.variable "T"]);
+    Type.object_primitive;
   assert_type_equal
-    (join order Type.integer (Type.variable ~constraints:(Type.Bound Type.string) "T"))
+    (join order Type.integer (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"))
     (Type.union [Type.string; Type.integer]);
   assert_type_equal
     (join
        order
        Type.string
-       (Type.variable ~constraints:(Type.Explicit [Type.float; Type.integer]) "T"))
+       (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
     (Type.union [Type.float; Type.integer; Type.string]);
+  assert_type_equal
+    (join
+       order
+       Type.string
+       (Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"))
+    (Type.union [Type.integer; Type.string]);
+  assert_type_equal
+    (join
+       order
+       (Type.literal_integer 7)
+       (Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"))
+    Type.integer;
 
   (* Variance. *)
   assert_type_equal
@@ -2430,13 +2390,13 @@ let test_meet _ =
     (meet
        default
        Type.integer
-       (Type.variable ~constraints:(Type.Bound Type.float) "T"))
+       (Type.variable ~constraints:(Type.Variable.Bound Type.float) "T"))
     (Type.Bottom);
   assert_type_equal
     (meet
        default
        Type.string
-       (Type.variable ~constraints:(Type.Explicit [Type.float; Type.string]) "T"))
+       (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.string]) "T"))
     Type.Bottom;
 
   (* Undeclared. *)
@@ -3100,7 +3060,8 @@ let test_solve_less_or_equal _ =
       ~right
       ?constraints
       ?(leave_unbound_in_left = [])
-      ?(leave_constraint_values_unbound = false)
+      ?(postprocess = Type.Variable.mark_all_variables_as_bound ~simulated:false)
+      ?(replace_escaped_variables_with_any = false)
       expected =
     let parse_annotation annotation =
       annotation
@@ -3112,227 +3073,298 @@ let test_solve_less_or_equal _ =
         match annotation with
         | Type.Variable { variable = variable_name; _ }
           when not (List.exists leave_unbound_in_left ~f:((=) variable_name)) ->
-            Some (Type.mark_variables_as_bound annotation)
+            Some (Type.Variable.mark_all_variables_as_bound annotation)
         | _ -> None
       in
       parse_annotation left
       |> Type.instantiate ~constraints
     in
     let right = parse_annotation right in
-    let parse_map map =
-      let mark =
-        if leave_constraint_values_unbound then
-          Fn.id
-        else
-          Type.mark_variables_as_bound ~simulated:false
+    let expected =
+      let parse_pairs =
+        List.map
+          ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> postprocess))
       in
-      map
-      >>| List.map
-        ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> mark))
-      >>| Type.Map.of_alist_exn
+      expected
+      |> List.map ~f:parse_pairs
+      |> List.map ~f:Type.Map.of_alist_exn
     in
-    let expected = parse_map expected in
     let constraints =
-      parse_map constraints
-      |> Option.value ~default:(Type.Map.empty)
+      let add_bounds sofar (key, (lower_bound, upper_bound)) =
+        let variable =
+          match parse_annotation key with
+          | Type.Variable variable -> variable
+          | _ -> failwith "not a variable"
+        in
+        let unwrap optional =
+          Option.value_exn ~message:"given pre-constraints are invalid" optional
+        in
+        let sofar =
+          lower_bound
+          >>| parse_annotation
+          >>| postprocess
+          >>| (fun bound ->
+              OrderedConstraints.add_lower_bound sofar ~order:handler ~variable ~bound |> unwrap)
+          |> Option.value ~default:sofar
+        in
+        upper_bound
+        >>| parse_annotation
+        >>| postprocess
+        >>| (fun bound ->
+            OrderedConstraints.add_upper_bound sofar ~order:handler ~variable ~bound |> unwrap)
+        |> Option.value ~default:sofar
+      in
+      constraints
+      >>| List.fold ~init:TypeConstraints.empty ~f:add_bounds
+      |> Option.value ~default:TypeConstraints.empty
     in
-    let optional_map_compare left right =
-      match left, right with
-      | Some left, Some right -> Type.Map.equal Type.equal left right
-      | None, None -> true
-      | _ , _ -> false
+    let list_of_maps_compare left right =
+      let and_map_equal sofar left right  = sofar && (Type.Map.equal Type.equal left right) in
+      match List.fold2 left right ~init:true ~f:and_map_equal with
+      | List.Or_unequal_lengths.Ok comparison -> comparison
+      | List.Or_unequal_lengths.Unequal_lengths -> false
     in
-    let optional_map_print map =
+    let list_of_map_print map =
       let show_line ~key ~data accumulator =
-        Format.sprintf "%s \n %s -> %s" accumulator (Type.show key) (Type.show data)
+        (Format.sprintf "%s -> %s" (Type.show key) (Type.show data)) :: accumulator
       in
       map
-      >>| Map.fold ~init:"" ~f:show_line
-      |> Option.value ~default:"None"
+      |> List.map ~f:(Map.fold ~init:[] ~f:show_line)
+      |> List.map ~f:(String.concat ~sep:", ")
+      |> List.map ~f:(Printf.sprintf "[%s]")
+      |> String.concat ~sep:";\n"
+      |> Printf.sprintf "{\n%s\n}"
+    in
+    let replace =
+      if replace_escaped_variables_with_any then
+        Type.Map.map ~f:Type.Variable.convert_all_escaped_free_variables_to_anys
+      else
+        Fn.id
     in
     assert_equal
-      ~cmp:optional_map_compare
-      ~printer:optional_map_print
+      ~cmp:list_of_maps_compare
+      ~printer:list_of_map_print
       expected
-      (TypeOrder.solve_less_or_equal handler ~constraints ~left ~right)
+      (solve_less_or_equal handler ~constraints ~left ~right
+       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler)
+       |> List.map ~f:replace)
   in
-  assert_solve ~left:"C" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "C"]);
-  assert_solve ~left:"D" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "D"]);
-  assert_solve ~left:"Q" ~right:"T_Unconstrained" (Some ["T_Unconstrained", "Q"]);
+  assert_solve ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
+  assert_solve ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
+  assert_solve ~left:"Q" ~right:"T_Unconstrained" [["T_Unconstrained", "Q"]];
 
-  assert_solve ~left:"C" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
-  assert_solve ~left:"D" ~right:"T_Bound_C" (Some ["T_Bound_C", "D"]);
-  assert_solve ~left:"Q" ~right:"T_Bound_C" (None);
-  assert_solve ~left:"C" ~right:"T_Bound_D" (None);
+  assert_solve ~left:"C" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
+  assert_solve ~left:"D" ~right:"T_Bound_C" [["T_Bound_C", "D"]];
+  assert_solve ~left:"Q" ~right:"T_Bound_C" [];
+  assert_solve ~left:"C" ~right:"T_Bound_D" [];
 
-  assert_solve ~left:"C" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
+  assert_solve ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
   (* An explicit type variable can only be bound to its constraints *)
-  assert_solve ~left:"D" ~right:"T_C_Q" (Some ["T_C_Q", "C"]);
-  assert_solve ~left:"C" ~right:"T_D_Q" (None);
-
-  assert_solve ~left:"$bottom" ~right:"T_Unconstrained" (Some []);
+  assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];
+  assert_solve ~left:"C" ~right:"T_D_Q" [];
 
 
   assert_solve
     ~left:"typing.Union[int, G_invariant[str], str]"
     ~right:"T_Unconstrained"
-    (Some ["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]);
-  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" (Some ["T_Bound_C", "C"]);
+    [["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]];
+  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
 
   assert_solve
-    ~constraints:["T_Unconstrained", "Q"]
+    ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_invariant[C]"
     ~right:"G_invariant[T_Unconstrained]"
-    None;
+    [];
   assert_solve
-    ~constraints:["T_Unconstrained", "Q"]
+    ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_covariant[C]"
     ~right:"G_covariant[T_Unconstrained]"
-    (Some ["T_Unconstrained", "typing.Union[Q, C]"]);
+    [["T_Unconstrained", "typing.Union[Q, C]"]];
 
   assert_solve
     ~left:"typing.Optional[C]"
     ~right:"typing.Optional[T_Unconstrained]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
   assert_solve
     ~left:"C"
     ~right:"typing.Optional[T_Unconstrained]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
 
   assert_solve
     ~left:"typing.Tuple[C, ...]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
   assert_solve
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    (Some ["T_Unconstrained", "D"]);
+    [["T_Unconstrained", "D"]];
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    (Some ["T_Unconstrained", "typing.Union[C, Q]"]);
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
 
   assert_solve
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
-    (Some ["T_Unconstrained", "C"]);
+    [["T_Unconstrained", "C"]];
 
   assert_solve
     ~left:"typing.Type[int]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    (Some ["T_Unconstrained", "int"]);
+    (* there are two int constructor overloads *)
+    [["T_Unconstrained", "int"]; ["T_Unconstrained", "int"]];
 
   assert_solve
     ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    (Some ["T", "typing.Union[C, Q, int]"]);
+    [];
+  assert_solve
+    ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
+    ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
+    [["T", "C"]];
 
   (* Bound => Bound *)
   assert_solve
     ~left:"T_Bound_D"
     ~right:"T_Bound_C"
-    (Some ["T_Bound_C", "T_Bound_D"]);
+    [["T_Bound_C", "T_Bound_D"]];
   assert_solve
     ~left:"T_Bound_C"
     ~right:"T_Bound_D"
-    None;
+    [];
   assert_solve
     ~left:"T_Bound_Union"
     ~right:"T_Bound_Union"
-    (Some ["T_Bound_Union", "T_Bound_Union"]);
+    [["T_Bound_Union", "T_Bound_Union"]];
 
   (* Bound => Explicit *)
   assert_solve
     ~left:"T_Bound_D"
     ~right:"T_C_Q"
-    (Some ["T_C_Q", "C"]);
+    [["T_C_Q", "C"]];
   assert_solve
     ~left:"T_Bound_C"
     ~right:"T_D_Q"
-    None;
+    [];
 
   (* Explicit => Bound *)
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_Bound_Union_C_Q"
-    (Some ["T_Bound_Union_C_Q", "T_D_Q"]);
+    [["T_Bound_Union_C_Q", "T_D_Q"]];
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_Bound_D"
-    None;
+    [];
 
   (* Explicit => Explicit *)
   assert_solve
     ~left:"T_C_Q"
     ~right:"T_C_Q_int"
-    (Some ["T_C_Q_int", "T_C_Q"]);
+    [["T_C_Q_int", "T_C_Q"]];
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
      T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_C_Q_int"
-    None;
+    [];
 
   assert_solve
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     ~right:"typing.Callable[[int], int]"
-    (Some []);
+    [[]];
   assert_solve
     ~left:"typing.Callable[[int], int]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some ["T_Unconstrained", "int"]);
+    [["T_Unconstrained", "int"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
+    ~replace_escaped_variables_with_any:true
     ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    (Some ["T_Unconstrained", "G_invariant[$bottom]"]);
+    [["T_Unconstrained", "G_invariant[typing.Any]"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some []);
-  (* This will be handled in signature selection *)
+    [[]];
   assert_solve
-    ~leave_constraint_values_unbound:true
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], G_invariant[T]]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    (Some ["T_Unconstrained", "G_invariant[T_Unconstrained]"]);
+    [];
   assert_solve
     ~leave_unbound_in_left:["T1"]
     ~left:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
     ~right:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
-    (Some ["T4", "T2"]);
+    [["T4", "T2"]];
   assert_solve
     ~left:"typing.Type[Constructable]"
     ~right:"typing.Callable[[T3], T4]"
-    (Some ["T3", "int"; "T4", "Constructable"]);
+    [["T3", "int"; "T4", "Constructable"]];
   assert_solve
     ~left:"typing.Callable[[typing.Union[int, str]], str]"
     ~right:"typing.Callable[[int], T4]"
-    (Some ["T4", "str"]);
-  (* This should solve to T3 => int, T4 => str, but can't because the simulated signature select
-     will fail because T3 isnt leq to int, so it has to fall back to pairwise solve, which breaks
-     because Union[int, str] isn't leq int.
-     Fundamentally the problem is that callable parameters need to be solved in both directions at
-     the same time, i.e. finding constraints such that x leq y where the variables you're trying
-     to constrain exist on both sides of the leq. *)
+    [["T4", "str"]];
   assert_solve
     ~left:"typing.Callable[[typing.Union[int, str], int], str]"
     ~right:"typing.Callable[[int, T3], T4]"
-    (None);
+    [["T3", "int"; "T4", "str"]];
 
   (* Callback protocols *)
   assert_solve
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
-    (Some ["T1", "int"]);
+    [["T1", "int"]];
+
+  (* Multiple options *)
+  assert_solve
+    ~left:"typing.List[int]"
+    ~right:"typing.Union[typing.List[T1], T1]"
+    [["T1", "int"]; ["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
+    ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
+    [["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
+    ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
+    [["T1", "typing.List[int]"]];
+  assert_solve
+    ~left:(
+      "typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]" ^
+      "[[[int], str][[str], int]]")
+    ~right:"typing.Callable[[T3], T4]"
+    [
+      ["T3", "int"; "T4", "str"];
+      ["T3", "str"; "T4", "int"];
+      ["T3", "typing.Union[int, str]"; "T4", "typing.Union[int, str]"];
+    ];
+
+  (* Free Variable <-> Free Variable constraints *)
+  assert_solve
+    ~postprocess:Fn.id
+    ~leave_unbound_in_left:["T1"]
+    ~left:"T1"
+    ~right:"T2"
+    [["T2", "T1"]; ["T1", "T2"]];
+  assert_solve
+    ~postprocess:Fn.id
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Callable[[T], T]"
+    ~right:"typing.Callable[[T1], T2]"
+    [["T2", "T1"]; ["T1", "T2"]];
+  assert_solve
+    ~leave_unbound_in_left:["T"]
+    ~left:"typing.Tuple[typing.Callable[[T], T], int]"
+    ~right:"typing.Tuple[typing.Callable[[T1], T2], T1]"
+    [["T2", "int"; "T1", "int"]];
   ()
 
 
@@ -3549,7 +3581,6 @@ let () =
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "deduplicate">::test_deduplicate;
     "default">::test_default;
-    "greatest">::test_greatest;
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
     "is_instantiated">::test_is_instantiated;
@@ -3560,7 +3591,6 @@ let () =
     "is_compatible_with">::test_is_compatible_with;
     "meet">::test_meet;
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
-    "predecessors">::test_predecessors;
     "remove_extra_edges">::test_remove_extra_edges;
     "successors">::test_successors;
     "to_dot">::test_to_dot;

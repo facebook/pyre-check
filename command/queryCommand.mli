@@ -5,10 +5,4 @@
 
 open Core
 
-open Server
-
-exception InvalidQuery of string
-
-val parse_query: configuration: Configuration.Analysis.t -> string -> Protocol.Request.t
-
 val command: Command.t

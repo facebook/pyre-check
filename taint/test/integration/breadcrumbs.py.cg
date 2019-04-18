@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+breadcrumbs.bool_parameter (fun) -> [__test_sink (fun)]
+breadcrumbs.bool_source (fun) -> [__test_source (fun)]
+breadcrumbs.float_parameter (fun) -> [__test_sink (fun)]
+breadcrumbs.float_source (fun) -> [__test_source (fun)]
+breadcrumbs.int_parameter (fun) -> [__test_sink (fun)]
+breadcrumbs.int_source (fun) -> [__test_source (fun)]

@@ -82,6 +82,7 @@ let parse_untrimmed
     ?(silent = false)
     ?(docstring = None)
     ?(ignore_lines = [])
+    ?(convert = false)
     source =
   let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
@@ -110,7 +111,10 @@ let parse_untrimmed
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
     in
-    source
+    if convert then
+      Preprocessing.convert source
+    else
+      source
   with
   | Pyre.ParserError _
   | Generator.Error ->
@@ -145,11 +149,12 @@ let parse
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
+    ?(convert = false)
     source =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring
+    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~convert
   in
   match local_mode with
   | Some local_mode ->
@@ -175,46 +180,46 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement ?(preprocess = false) source =
-  let preprocess = if preprocess then Preprocessing.preprocess else Fn.id in
-  match preprocess (parse source)  with
+let parse_single_statement ?(convert = false) ?(preprocess = false) source =
+  let source =
+    if preprocess then
+      Preprocessing.preprocess (parse source)
+      |> Preprocessing.convert
+    else
+      parse ~convert source
+  in
+  match source with
   | { Source.statements = [statement]; _ } -> statement
   | _ -> failwith "Could not parse single statement"
 
 
-let parse_last_statement source =
-  match parse source with
+let parse_last_statement ?(convert = false) source =
+  match parse ~convert source with
   | { Source.statements; _ } when List.length statements > 0 ->
       List.last_exn statements
   | _ -> failwith "Could not parse last statement"
 
 
-let parse_single_assign source =
-  match parse_single_statement source with
-  | { Node.value = Statement.Assign assign; _ } -> assign
-  | _ -> failwith "Could not parse single assign"
-
-
-let parse_single_define source =
-  match parse_single_statement source with
+let parse_single_define ?(convert = false) source =
+  match parse_single_statement ~convert source with
   | { Node.value = Statement.Define define; _ } -> define
   | _ -> failwith "Could not parse single define"
 
 
-let parse_single_class source =
-  match parse_single_statement source with
+let parse_single_class ?(convert = false) source =
+  match parse_single_statement ~convert source with
   | { Node.value = Statement.Class definition; _ } -> definition
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression ?(preprocess = false) source =
-  match parse_single_statement ~preprocess source with
+let parse_single_expression ?(convert = false) ?(preprocess = false) source =
+  match parse_single_statement ~convert ~preprocess source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
 
-let parse_single_access ?(preprocess = false) source =
-  match parse_single_expression ~preprocess source with
+let parse_single_access ?(convert = false) ?(preprocess = false) source =
+  match parse_single_expression ~convert ~preprocess source with
   | { Node.value = Expression.Access (Expression.Access.SimpleAccess access); _ } -> access
   | _ -> failwith "Could not parse single access"
 
@@ -268,11 +273,12 @@ let assert_type_equal =
 
 let add_defaults_to_environment ~configuration environment_handler =
   let source =
-    parse {|
-      class unittest.mock.Base: ...
-      class unittest.mock.Mock(unittest.mock.Base): ...
-      class unittest.mock.NonCallableMock: ...
-    |};
+    parse
+      {|
+        class unittest.mock.Base: ...
+        class unittest.mock.Mock(unittest.mock.Base): ...
+        class unittest.mock.NonCallableMock: ...
+      |};
   in
   Service.Environment.populate
     ~configuration
@@ -297,6 +303,10 @@ let (!!) name =
 
 let (!+) name =
   Access.create name
+
+
+let (!&) name =
+  Reference.create name
 
 
 (* Assertion helpers. *)
@@ -1031,16 +1041,19 @@ let environment
   environment
 
 
+let mock_signature = {
+  Define.name = Reference.create "$empty";
+  parameters = [];
+  decorators = [];
+  docstring = None;
+  return_annotation = None;
+  async = false;
+  parent = None;
+}
+
+
 let mock_define = {
-  Define.signature = {
-    name = Reference.create "$empty";
-    parameters = [];
-    decorators = [];
-    docstring = None;
-    return_annotation = None;
-    async = false;
-    parent = None;
-  };
+  Define.signature = mock_signature;
   body = [];
 }
 
@@ -1074,6 +1087,7 @@ let assert_errors
     source
     errors =
   Annotated.Class.Attribute.Cache.clear ();
+  Resolution.Cache.clear ();
   let descriptions =
     let check source =
       let parse ~qualifier ~handle ~source =

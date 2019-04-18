@@ -19,6 +19,7 @@ val performance
   :  ?flush: bool
   -> ?randomly_log_every: int
   -> ?always_log_time_threshold: float
+  -> ?section: Log.section
   -> ?category: string
   -> name: string
   -> timer: Timer.t
@@ -37,6 +38,7 @@ val coverage
 
 val event
   :  ?flush: bool
+  -> ?randomly_log_every: int
   -> ?section: Log.section
   -> name: string
   -> ?integers: (string * int) list

@@ -56,24 +56,32 @@ let populate
       all_annotations;
     Type.Cache.disable ();
     (* TODO(T30713406): Merge with class registration. *)
-    List.iter ~f:Handler.refine_class_definition all_annotations;
+    List.iter  all_annotations
+      ~f:(fun annotation ->
+          match Type.primitive_name annotation with
+          | Some name -> Handler.register_class_metadata name
+          | _ -> ());
     Type.Cache.enable ();
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
   Handler.transaction ~f:populate ();
+  let register_values sources =
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.push_stack ();
+    Environment.register_values (module Handler) resolution sources;
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.commit_all ();
+    EnvironmentSharedMemory.GlobalKeys.LocalChanges.pop_stack ()
+  in
   Scheduler.iter
     scheduler
     ~configuration
-    ~f:(fun sources ->
-        List.iter
-          sources
-          ~f:(Environment.register_values (module Handler) resolution))
+    ~f:(fun sources -> List.iter sources ~f:register_values)
     ~inputs:sources;
   Handler.transaction
     ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)
     ();
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-  Annotated.Class.Attribute.Cache.clear ()
+  Annotated.Class.Attribute.Cache.clear ();
+  Resolution.Cache.clear ()
 
 
 let build
@@ -127,12 +135,12 @@ let build
     end
 
 
-
 module SharedHandler: Analysis.Environment.Handler = struct
   let transaction ~f () =
     Ast.SharedMemory.Modules.begin_transaction ();
 
     Protocols.LocalChanges.push_stack ();
+    ProtocolKeys.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     ClassKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
@@ -140,6 +148,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.push_stack ();
     Dependents.LocalChanges.push_stack ();
     ClassDefinitions.LocalChanges.push_stack ();
+    ClassMetadata.LocalChanges.push_stack ();
     Globals.LocalChanges.push_stack ();
     Aliases.LocalChanges.push_stack ();
     OrderEdges.LocalChanges.push_stack ();
@@ -153,6 +162,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     Ast.SharedMemory.Modules.end_transaction ();
 
     Protocols.LocalChanges.commit_all ();
+    ProtocolKeys.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     ClassKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
@@ -160,6 +170,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.commit_all ();
     Dependents.LocalChanges.commit_all ();
     ClassDefinitions.LocalChanges.commit_all ();
+    ClassMetadata.LocalChanges.commit_all ();
     Globals.LocalChanges.commit_all ();
     Aliases.LocalChanges.commit_all ();
     OrderEdges.LocalChanges.commit_all ();
@@ -169,6 +180,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderIndices.LocalChanges.commit_all ();
 
     Protocols.LocalChanges.pop_stack ();
+    ProtocolKeys.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     ClassKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();
@@ -176,6 +188,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     DependentKeys.LocalChanges.pop_stack ();
     Dependents.LocalChanges.pop_stack ();
     ClassDefinitions.LocalChanges.pop_stack ();
+    ClassMetadata.LocalChanges.pop_stack ();
     Globals.LocalChanges.pop_stack ();
     Aliases.LocalChanges.pop_stack ();
     OrderEdges.LocalChanges.pop_stack ();
@@ -185,69 +198,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderIndices.LocalChanges.pop_stack ();
     result
 
-
-  let class_definition =
-    ClassDefinitions.get
-
-  let register_protocol protocol =
-    let protocols = Protocols.get "Protocols" |> Option.value ~default:[] in
-    Protocols.add "Protocols" (protocol :: protocols)
-
-
-  let protocols () =
-    Protocols.get "Protocols"
-    |> Option.value ~default:[]
-
-  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-    let string =
-      Annotation.create_immutable ~global:true Type.string
-      |> Node.create_with_default_location
-    in
-    let global_key = Reference.create ~prefix:qualifier in
-    Globals.write_through (global_key "__file__") string;
-    Globals.write_through (global_key "__name__") string;
-    let dictionary_annotation =
-      Type.dictionary ~key:Type.string ~value:Type.Any
-      |> Annotation.create_immutable ~global:true
-      |> Node.create_with_default_location
-    in
-    Globals.write_through (global_key "__dict__") dictionary_annotation;
-
-    let is_registered_empty_stub =
-      Ast.SharedMemory.Modules.get ~qualifier
-      >>| Module.empty_stub
-      |> Option.value ~default:false
-    in
-    if not is_registered_empty_stub then
-      begin
-        Ast.SharedMemory.Modules.add
-          ~qualifier
-          ~ast_module:
-            (Module.create
-               ~qualifier
-               ~local_mode
-               ?handle
-               ~stub
-               statements)
-      end
-
-  let is_module qualifier =
-    Ast.SharedMemory.Modules.exists ~qualifier
-
-  let module_definition qualifier =
-    Ast.SharedMemory.Modules.get ~qualifier
-
-  let in_class_definition_keys annotation =
-    ClassDefinitions.mem annotation
-
-  let aliases =
-    Aliases.get
-
-  let globals =
-    Globals.get
-
-  let dependencies =
-    Dependents.get
 
   module DependencyHandler = (struct
     let add_new_key ~get ~add ~handle ~key =
@@ -292,24 +242,35 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~get:DependentKeys.get
         ~add:DependentKeys.add
 
+    let add_protocol_key ~handle protocol =
+      add_new_key
+        ~handle
+        ~key:protocol
+        ~get:ProtocolKeys.get
+        ~add:ProtocolKeys.add
+
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
+      let qualifier = Source.qualifier ~handle in
       match Dependents.get dependent with
-      | None -> Dependents.add dependent (File.Handle.Set.Tree.singleton handle)
-      | Some dependencies -> Dependents.add dependent (File.Handle.Set.Tree.add dependencies handle)
+      | None -> Dependents.add dependent (Reference.Set.Tree.singleton qualifier)
+      | Some dependencies ->
+          Dependents.add dependent (Reference.Set.Tree.add dependencies qualifier)
 
     let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
     let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
     let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
     let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
     let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
+    let get_protocol_keys ~handle = ProtocolKeys.get handle |> Option.value ~default:[]
 
     let clear_keys_batch handles =
       FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list handles);
       ClassKeys.remove_batch (ClassKeys.KeySet.of_list handles);
       AliasKeys.remove_batch (AliasKeys.KeySet.of_list handles);
       GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list handles);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles);
+      ProtocolKeys.remove_batch (ProtocolKeys.KeySet.of_list handles)
 
     let dependents = Dependents.get
 
@@ -327,7 +288,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match ClassKeys.get handle with
           | Some keys ->
               ClassKeys.remove_batch (ClassKeys.KeySet.singleton handle);
-              ClassKeys.add handle (List.dedup_and_sort ~compare:Type.compare keys)
+              ClassKeys.add handle (List.dedup_and_sort ~compare:Identifier.compare keys)
           | None ->
               ()
         end;
@@ -361,9 +322,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
         match Dependents.get name with
         | Some unnormalized ->
             Dependents.remove_batch (Dependents.KeySet.singleton name);
-            File.Handle.Set.Tree.to_list unnormalized
-            |> List.sort ~compare:File.Handle.compare
-            |> File.Handle.Set.Tree.of_list
+            Reference.Set.Tree.to_list unnormalized
+            |> List.sort ~compare:Reference.compare
+            |> Reference.Set.Tree.of_list
             |> Dependents.add name
         | None ->
             ()
@@ -372,38 +333,98 @@ module SharedHandler: Analysis.Environment.Handler = struct
       |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize_dependents
   end: Dependencies.Handler)
-  module TypeOrderHandler = ServiceTypeOrder.Handler
-  let refine_class_definition annotation =
-    let open Statement in
-    let refine
-        { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
-      let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
-      let in_test =
-        let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
-          Class.is_unit_test definition
-        in
-        let successor_classes =
-          successors
-          |> List.filter_map ~f:ClassDefinitions.get
-        in
-        List.exists ~f:is_unit_test successor_classes
-      in
-      let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
-      let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-      ClassDefinitions.write_through
-        annotation
-        {
-          class_definition = { Node.location; value = class_definition };
-          is_test = in_test;
-          successors;
-          explicit_attributes;
-          implicit_attributes;
-          methods = [];
-        };
+
+
+  let class_definition =
+    ClassDefinitions.get
+
+  let class_metadata =
+    ClassMetadata.get
+
+  let register_protocol ~handle protocol =
+    DependencyHandler.add_protocol_key ~handle protocol;
+    match Protocols.get SharedMemory.SingletonKey.key with
+    | None ->
+        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.singleton protocol)
+    | Some protocols ->
+        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.add protocols protocol)
+
+  let protocols () =
+    Protocols.get SharedMemory.SingletonKey.key
+    |> Option.value ~default:Identifier.Set.Tree.empty
+    |> Identifier.Set.Tree.to_list
+
+  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
+    let string =
+      Annotation.create_immutable ~global:true Type.string
+      |> Node.create_with_default_location
     in
-    ClassDefinitions.get annotation
-    >>| refine
-    |> ignore
+    let global_key = Reference.create ~prefix:qualifier in
+    Globals.add (global_key "__file__") string;
+    Globals.add (global_key "__name__") string;
+    let dictionary_annotation =
+      Type.dictionary ~key:Type.string ~value:Type.Any
+      |> Annotation.create_immutable ~global:true
+      |> Node.create_with_default_location
+    in
+    Globals.add (global_key "__dict__") dictionary_annotation;
+
+    let is_registered_empty_stub =
+      Ast.SharedMemory.Modules.get ~qualifier
+      >>| Module.empty_stub
+      |> Option.value ~default:false
+    in
+    if not is_registered_empty_stub then
+      begin
+        Ast.SharedMemory.Modules.add
+          ~qualifier
+          ~ast_module:
+            (Module.create
+               ~qualifier
+               ~local_mode
+               ?handle
+               ~stub
+               statements)
+      end
+
+  let is_module qualifier =
+    Ast.SharedMemory.Modules.exists ~qualifier
+
+  let module_definition qualifier =
+    Ast.SharedMemory.Modules.get ~qualifier
+
+  let in_class_definition_keys annotation =
+    ClassDefinitions.mem annotation
+
+  let aliases =
+    Aliases.get
+
+  let globals =
+    Globals.get
+
+  let dependencies =
+    Dependents.get
+
+  module TypeOrderHandler = ServiceTypeOrder.Handler
+  let register_class_metadata class_name =
+    let open Statement in
+    let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+    let in_test =
+      let is_unit_test { Node.value = definition; _ } =
+        Class.is_unit_test definition
+      in
+      let successor_classes =
+        List.filter_map ~f:ClassDefinitions.get successors
+      in
+      List.exists ~f:is_unit_test successor_classes
+    in
+    ClassMetadata.add
+      class_name
+      {
+        Resolution.is_test = in_test;
+        successors;
+      }
+
 
   let register_dependency ~handle ~dependency =
     Log.log
@@ -416,34 +437,21 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let register_global ~handle ~reference ~global =
     DependencyHandler.add_global_key ~handle reference;
-    Globals.write_through reference global
+    Globals.add reference global
 
 
-  let set_class_definition ~primitive ~definition =
+  let set_class_definition ~name ~definition =
     let definition =
-      match ClassDefinitions.get primitive with
-      | Some ({
-          Resolution.class_definition = { Node.location; value = preexisting };
-          _;
-        } as representation) ->
+      match ClassDefinitions.get name with
+      | Some { Node.location; value = preexisting } ->
           {
-            representation with
-            Resolution.class_definition = {
-              Node.location;
-              value = Statement.Class.update preexisting ~definition:(Node.value definition);
-            };
-          }
+            Node.location;
+            value = Statement.Class.update preexisting ~definition:(Node.value definition);
+          };
       | _ ->
-          {
-            Resolution.class_definition = definition;
-            methods = [];
-            successors = [];
-            explicit_attributes = Identifier.SerializableMap.empty;
-            implicit_attributes = Identifier.SerializableMap.empty;
-            is_test = false;
-          }
+          definition
     in
-    ClassDefinitions.add primitive definition
+    ClassDefinitions.add name definition
 
   let register_alias ~handle ~key ~data =
     DependencyHandler.add_alias_key ~handle key;
@@ -451,14 +459,25 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let purge ?(debug = false) handles =
     let purge_dependents keys =
-      let remove_handle dependents =
-        File.Handle.Set.Tree.filter
-          ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-          dependents
+      let new_dependents = Reference.Table.create () in
+      let recompute_dependents key dependents =
+        let qualifiers =
+          handles
+          |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+          |> Reference.Set.Tree.of_list
+        in
+        Hashtbl.set
+          new_dependents
+          ~key
+          ~data:(
+          Reference.Set.Tree.diff
+            dependents
+            qualifiers
+        )
       in
-      List.iter
-        ~f:(fun key -> Dependents.get key >>| remove_handle >>| Dependents.add key |> ignore)
-        keys;
+      List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
+      Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
+      Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
       DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
     in
     List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
@@ -471,6 +490,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
     (* Remove the connection to the parent (if any) for all
        classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+    |> List.map ~f:(fun name -> Type.Primitive name)
     |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
@@ -485,6 +505,20 @@ module SharedHandler: Analysis.Environment.Handler = struct
     List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
     |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
+
+    let purge_protocols removed_protocols =
+      match Protocols.get Memory.SingletonKey.key with
+      | None ->
+          ()
+      | Some protocols ->
+          Protocols.remove_batch (Protocols.KeySet.singleton Memory.SingletonKey.key);
+          Protocols.add
+            Memory.SingletonKey.key
+            (Identifier.Set.Tree.diff protocols removed_protocols)
+    in
+    List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
+    |> Identifier.Set.Tree.of_list
+    |> purge_protocols;
 
     DependencyHandler.clear_keys_batch handles;
     List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
@@ -508,6 +542,7 @@ let populate_shared_memory
   let add_to_shared_memory
       {
         Environment.class_definitions;
+        class_metadata;
         protocols;
         modules;
         aliases;
@@ -520,6 +555,7 @@ let populate_shared_memory
             alias_keys;
             global_keys;
             dependent_keys;
+            protocol_keys;
           };
           dependents;
         };
@@ -533,21 +569,15 @@ let populate_shared_memory
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
       add_table OrderEdges.write_through edges;
-      let add_backedge key targets =
-        let targets = TypeOrder.Target.Set.of_list targets in
-        OrderBackedges.write_through key (Set.to_list targets)
-      in
-      add_table add_backedge backedges;
-
       add_table OrderBackedges.write_through backedges;
-
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
-      OrderKeys.write_through "Order" (Hashtbl.keys annotations);
+      OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations);
     in
     add_type_order order;
 
     add_table ClassDefinitions.write_through class_definitions;
+    add_table ClassMetadata.write_through class_metadata;
     add_table Aliases.add aliases;
     add_table Globals.write_through globals;
     add_table Dependents.write_through (Hashtbl.map ~f:Set.to_tree dependents);
@@ -556,8 +586,12 @@ let populate_shared_memory
     add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
+    add_table ProtocolKeys.write_through (Hashtbl.map ~f:Hash_set.to_list protocol_keys);
 
-    Protocols.write_through "Protocols" (Hash_set.to_list protocols);
+    protocols
+    |> Hash_set.to_list
+    |> Identifier.Set.Tree.of_list
+    |> Protocols.write_through SharedMemory.SingletonKey.key;
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;
@@ -584,13 +618,25 @@ let normalize_shared_memory () =
   (* Since we don't provide an API to the raw order keys in the type order handler,
      handle it inline here. *)
   begin
-    match OrderKeys.get "Order" with
+    match OrderKeys.get SharedMemory.SingletonKey.key with
     | None ->
         ()
     | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton "Order");
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
         List.sort ~compare:Int.compare keys
-        |> OrderKeys.add "Order";
+        |> OrderKeys.add SharedMemory.SingletonKey.key;
+  end;
+  begin
+    match Protocols.get SharedMemory.SingletonKey.key with
+    | None ->
+        ()
+    | Some protocols ->
+        Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
+        let protocols =
+          Identifier.Set.Tree.to_list protocols
+          |> Identifier.Set.Tree.of_list
+        in
+        Protocols.add SharedMemory.SingletonKey.key protocols
   end;
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in

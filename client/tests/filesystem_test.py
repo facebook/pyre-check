@@ -13,7 +13,13 @@ from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import buck, commands, filesystem, resolve_analysis_directory
+from .. import (
+    buck,
+    buck_project_builder,
+    commands,
+    filesystem,
+    resolve_analysis_directory,
+)
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     AnalysisDirectory,
@@ -21,11 +27,11 @@ from ..filesystem import (  # noqa
     MercurialBackedFilesystem,
     SharedAnalysisDirectory,
     __name__ as filesystem_name,
-    _add_symbolic_link,
     _compute_symbolic_link_mapping,
     _delete_symbolic_link,
-    _find_python_paths,
     acquire_lock,
+    add_symbolic_link,
+    find_python_paths,
     find_root,
     remove_if_exists,
 )
@@ -58,7 +64,7 @@ class FilesystemTest(unittest.TestCase):
         create_symlink("mypy/my.py", "mypy/another.pyi")
         create_symlink("scipyi/sci.pyi", "scipyi/another.py")
         actual_paths = sorted(
-            os.path.relpath(path, root) for path in _find_python_paths(root)
+            os.path.relpath(path, root) for path in find_python_paths(root)
         )
         self.assertEqual(
             actual_paths,
@@ -244,61 +250,131 @@ class FilesystemTest(unittest.TestCase):
         shared_analysis_directory.cleanup()
         rmtree.assert_called_with(shared_analysis_directory.get_root())
 
-    @patch.object(subprocess, "run")
-    def test_filesystem_list_bare(self, run):
+    def test_filesystem_list_bare(self):
         filesystem = Filesystem()
-        filesystem.list(".", ".pyre_configuration.local")
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "find",
+                            ".",
+                            "(",
+                            "-path",
+                            "./**/*.py",
+                            "-or",
+                            "-path",
+                            "./foo.cpp",
+                            ")",
+                            "-and",
+                            "!",
+                            "(",
+                            "-path",
+                            "./bar/*.py",
+                            ")",
+                        ],
+                        stdout=subprocess.PIPE,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
 
         def fail_command(arguments, **kwargs):
             return subprocess.CompletedProcess(
                 args=[], returncode=1, stdout="".encode("utf-8")
             )
 
-        run.side_effect = fail_command
-        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
-        run.assert_has_calls(
-            [
-                call(
-                    ["find", ".", "-name", "*.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                ),
-                call().stdout.decode("utf-8"),
-                call().stdout.decode().split(),
-                call(
-                    ["find", ".", "-name", "*.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                ),
-            ]
-        )
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["find", ".", "(", "-path", "./.pyre_configuration.local", ")"],
+                        stdout=subprocess.PIPE,
+                        cwd=".",
+                    )
+                ]
+            )
 
-    @patch.object(subprocess, "run")
-    def test_filesystem_list_mercurial(self, run):
+    def test_filesystem_list_mercurial(self):
         filesystem = MercurialBackedFilesystem()
-        filesystem.list(".", ".pyre_configuration.local")
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list(".", [".pyre_configuration.local"])
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
+
+        with patch.object(subprocess, "run") as run:
+            filesystem.list("/root", ["**/*.py", "foo.cpp"], exclude=["bar/*.py"])
+            run.assert_has_calls(
+                [
+                    call(
+                        [
+                            "hg",
+                            "files",
+                            "--include",
+                            "**/*.py",
+                            "--include",
+                            "foo.cpp",
+                            "--exclude",
+                            "bar/*.py",
+                        ],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd="/root",
+                    ),
+                    call().stdout.decode("utf-8"),
+                    call().stdout.decode().split(),
+                ]
+            )
 
         def fail_command(arguments, **kwargs):
             return subprocess.CompletedProcess(
                 args=[], returncode=1, stdout="".encode("utf-8")
             )
 
-        run.side_effect = fail_command
-        self.assertEqual([], filesystem.list(".", ".pyre_configuration.local"))
-        run.assert_has_calls(
-            [
-                call(
-                    ["hg", "files", "--include", "**.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                ),
-                call().stdout.decode("utf-8"),
-                call().stdout.decode().split(),
-                call(
-                    ["hg", "files", "--include", "**.pyre_configuration.local"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                ),
-            ]
-        )
+        with patch.object(subprocess, "run") as run:
+            run.side_effect = fail_command
+            self.assertEqual([], filesystem.list(".", [".pyre_configuration.local"]))
+            run.assert_has_calls(
+                [
+                    call(
+                        ["hg", "files", "--include", ".pyre_configuration.local"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
+                        cwd=".",
+                    )
+                ]
+            )
 
     @patch.object(filesystem, "_compute_symbolic_link_mapping")
     @patch("os.getcwd")
@@ -356,20 +432,42 @@ class FilesystemTest(unittest.TestCase):
         root = shared_analysis_directory.get_root()
         self.assertEqual(root, "/scratch/path/to/local")
 
+    @patch.object(tempfile, "mkdtemp", return_value="/tmp/pyre_tmp_xyz")
+    @patch.object(filesystem, "find_root", return_value="/buck_root")
     @patch("os.makedirs")
     @patch(filesystem_name + ".acquire_lock")
-    @patch.object(SharedAnalysisDirectory, "_clear")
-    @patch.object(SharedAnalysisDirectory, "_merge")
-    def test_prepare(self, merge, clear, acquire_lock, makedirs):
+    @patch.object(SharedAnalysisDirectory, "get_root", return_value="/analysis_root")
+    def test_prepare(self, get_root, acquire_lock, makedirs, find_root, mkdtemp):
         @contextmanager
         def acquire(*args, **kwargs):
             yield
 
-        shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
-        acquire_lock.side_effect = acquire
-        shared_analysis_directory.prepare()
-        merge.assert_has_calls([call()])
-        clear.assert_has_calls([call()])
+        with patch.object(SharedAnalysisDirectory, "_clear") as clear, patch.object(
+            SharedAnalysisDirectory, "_merge"
+        ) as merge:
+            shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
+            acquire_lock.side_effect = acquire
+            shared_analysis_directory.prepare()
+            merge.assert_has_calls([call()])
+            clear.assert_has_calls([call()])
+
+        with patch.object(
+            buck_project_builder.FastBuckBuilder,
+            "build",
+            return_value=["/tmp/pyre_tmp_xyz"],
+        ) as build, patch.object(
+            SharedAnalysisDirectory, "_clear"
+        ) as clear, patch.object(
+            SharedAnalysisDirectory, "_merge"
+        ) as merge:
+            buck_builder = buck_project_builder.FastBuckBuilder("/buck_root")
+            shared_analysis_directory = SharedAnalysisDirectory(
+                [], ["//target/..."], buck_builder=buck_builder
+            )
+            shared_analysis_directory.prepare()
+            build.assert_called_once_with({"//target/..."})
+            merge.assert_has_calls([call()])
+            clear.assert_has_calls([call()])
 
     @patch("os.path.realpath", side_effect=lambda path: "realpath({})".format(path))
     @patch("os.getcwd", return_value="/")
@@ -381,13 +479,22 @@ class FilesystemTest(unittest.TestCase):
         arguments.build = False
         arguments.command = commands.Check
         arguments.current_directory = "/root/local"
+        arguments.use_buck_builder = False
+        arguments.ignore_unbuilt_dependencies = False
         configuration = MagicMock()
         configuration.source_directories = []
         configuration.local_configuration_root = "/root/local"
+        configuration.use_buck_builder = False
+        configuration.ignore_unbuilt_dependencies = False
 
         with self.assertRaises(EnvironmentException):
+            buck_builder = buck.SimpleBuckBuilder(build=False)
             analysis_directory = SharedAnalysisDirectory(
-                [], [], original_directory="/root", filter_paths=[], build=False
+                [],
+                [],
+                original_directory="/root",
+                filter_paths=[],
+                buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()
 
@@ -398,13 +505,13 @@ class FilesystemTest(unittest.TestCase):
             arguments.source_directories = ["arguments_source_directory"]
             configuration.source_directories = ["configuration_source_directory"]
 
+            buck_builder = buck.SimpleBuckBuilder(build=False, prompt=True)
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
                 original_directory="/root",
                 filter_paths=[],
-                build=False,
-                prompt=True,
+                buck_builder=buck_builder,
             )
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
@@ -547,14 +654,14 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.symlink")
     @patch("os.makedirs")
     def test_add_symbolic_link(self, makedirs, symlink, unlink):
-        _add_symbolic_link("/a/link", "file.py")
+        add_symbolic_link("/a/link", "file.py")
         # standard use-cases
         makedirs.assert_called_once_with("/a")
         symlink.assert_called_once_with("file.py", "/a/link")
 
         symlink.reset_mock()
         makedirs.reset_mock()
-        _add_symbolic_link("/a/b/c/d/link", "file.py")
+        add_symbolic_link("/a/b/c/d/link", "file.py")
         makedirs.assert_called_once_with("/a/b/c/d")
         symlink.assert_called_once_with("file.py", "/a/b/c/d/link")
 
@@ -564,7 +671,7 @@ class FilesystemTest(unittest.TestCase):
         error = OSError()
         error.errno = errno.EEXIST
         symlink.side_effect = [error, None]
-        _add_symbolic_link("/a/b/link", "file.py")
+        add_symbolic_link("/a/b/link", "file.py")
         makedirs.assert_called_once_with("/a/b")
         symlink.assert_called_with("file.py", "/a/b/link")
         unlink.assert_called_once_with("/a/b/link")
@@ -574,7 +681,7 @@ class FilesystemTest(unittest.TestCase):
         makedirs.reset_mock()
         unlink.reset_mock()
         symlink.side_effect = OSError()
-        _add_symbolic_link("/a/link", "file.py")
+        add_symbolic_link("/a/link", "file.py")
         makedirs.assert_called_once_with("/a")
         symlink.assert_called_once_with("file.py", "/a/link")
         unlink.assert_not_called()
@@ -607,7 +714,7 @@ class FilesystemTest(unittest.TestCase):
             },
         )
 
-    @patch.object(filesystem, "_add_symbolic_link")
+    @patch.object(filesystem, "add_symbolic_link")
     @patch.object(filesystem, "_delete_symbolic_link")
     @patch.object(filesystem, "_compute_symbolic_link_mapping", return_value={})
     @patch.object(os.path, "isfile")

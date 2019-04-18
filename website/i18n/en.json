@@ -45,6 +45,10 @@
         "title": "Static Analysis Post Processor",
         "sidebar_label": "Static Analysis Processor"
       },
+      "static-analysis": {
+        "title": "Pyre Static Analysis",
+        "sidebar_label": "Pyre Static Analysis"
+      },
       "watchman-integration": {
         "title": "Watchman Integration",
         "sidebar_label": "Watchman Integration"

@@ -803,7 +803,8 @@ let test_check_missing_attribute _ =
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
       "but no type is specified.";
-      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
+       flow path that doesn't define `unknown`.";
     ];
   assert_type_errors
     {|
@@ -832,12 +833,22 @@ let test_check_missing_attribute _ =
     [];
   assert_type_errors
     {|
+      MyType = typing.Any
+      class Foo:
+        def __init__(self, a: MyType) -> None:
+          self.a = a
+          self.b: MyType = 1
+    |}
+    ["Prohibited any [33]: Explicit annotation for `MyType` cannot be `Any`."];
+  assert_type_errors
+    {|
       class Foo:
         a = unknown
     |}
     [
       "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
-      "Undefined name [18]: Global name `unknown` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown`.";
     ];
 
   assert_type_errors
@@ -859,11 +870,7 @@ let test_check_missing_attribute _ =
           def __init__(self, a: typing.Any) -> None:
             self.a = a
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other " ^
-      "than `Any`.";
-    ];
+    ["Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`."];
 
   assert_type_errors
     {|
@@ -949,7 +956,7 @@ let test_check_getattr _ =
   let assert_test_getattr source =
     let getattr_stub =
       {
-        qualifier = Ast.Reference.create "has_getattr";
+        qualifier = !&"has_getattr";
         handle = "has_getattr.pyi";
         source =
           {|
@@ -960,7 +967,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_str =
       {
-        qualifier = Ast.Reference.create "has_getattr_str";
+        qualifier = !&"has_getattr_str";
         handle = "has_getattr_str.pyi";
         source =
           {|
@@ -970,7 +977,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_untyped =
       {
-        qualifier = Ast.Reference.create "has_getattr_untyped";
+        qualifier = !&"has_getattr_untyped";
         handle = "has_getattr_untyped.pyi";
         source =
           {|
@@ -980,7 +987,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_invalid_arity =
       {
-        qualifier = Ast.Reference.create "has_getattr_invalid_arity";
+        qualifier = !&"has_getattr_invalid_arity";
         handle = "has_getattr_invalid_arity.pyi";
         source =
           {|
@@ -990,7 +997,7 @@ let test_check_getattr _ =
     in
     let getattr_stub_not_callable =
       {
-        qualifier = Ast.Reference.create "has_getattr_not_callable";
+        qualifier = !&"has_getattr_not_callable";
         handle = "has_getattr_not_callable.pyi";
         source =
           {|

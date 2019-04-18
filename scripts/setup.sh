@@ -177,9 +177,9 @@ make clean_hack_parallel
 
 # Build and install hack parallel.
 (cd hack_parallel \
-  && OCAMLPARAM=_,annot=1,bin-annot=1,g=1 make \
-  && make remove \
-  && make install) \
+  && OCAMLPARAM=_,annot=1,bin-annot=1,g=1 make --file Makefile.hack_parallel \
+  && make --file Makefile.hack_parallel remove \
+  && make --file Makefile.hack_parallel install) \
   && install_hack_parallel=1
 test "$install_hack_parallel" = 1 \
   || die 'Could not install hack_parallel'

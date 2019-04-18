@@ -31,6 +31,7 @@ stdout = io.StringIO(newline="")  # type: io.StringIO
 class Color:
     YELLOW = "\033[33m"  # type: str
     RED = "\033[31m"  # type: str
+    GREEN = "\033[32m"  # type: str
 
 
 class Format:

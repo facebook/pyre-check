@@ -29,7 +29,10 @@ let test_check_isinstance _ =
     {|
       isinstance(1, NonexistentClass)
     |}
-    ["Undefined name [18]: Global name `NonexistentClass` is undefined."];
+    [
+      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
+       one control flow path that doesn't define `NonexistentClass`.";
+    ];
 
   assert_type_errors
     {|
@@ -51,7 +54,8 @@ let test_check_isinstance _ =
         reveal_type(x)
     |}
     [
-      "Undefined name [18]: Global name `NonexistentClass` is undefined.";
+      "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
+       one control flow path that doesn't define `NonexistentClass`.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
       "Revealed type [-1]: Revealed type for `x` is `unknown`.";
     ];

@@ -14,7 +14,7 @@ open Test
 
 let test_normalize_access _ =
   let assert_normalized ?(modules = []) access expected =
-    let access = Test.parse_single_access access in
+    let access = Test.parse_single_access ~convert:true access in
     let resolution =
       let sources =
         if List.is_empty modules then

@@ -18,8 +18,8 @@ val record_and_merge_call_graph
 
 val record_overrides: DependencyGraph.overrides -> unit
 
-val record_path_of_definitions
-  : path: File.Handle.t
+val callables
+  :  resolution: Resolution.t
   -> source: Source.t
   -> (Callable.real_target * Define.t Node.t) list
 

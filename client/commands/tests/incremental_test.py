@@ -26,6 +26,9 @@ class IncrementalTest(unittest.TestCase):
         state.running = ["running"]
         state.dead = []
         commands_Command_state.return_value = state
+        start_exit_code = MagicMock()
+        start_exit_code.return_value = commands.ExitCode.SUCCESS
+        commands_Start().run().exit_code = start_exit_code
         file_monitor_instance = MagicMock()
         ProjectFilesMonitor.return_value = file_monitor_instance
         ProjectFilesMonitor.is_alive.return_value = False
@@ -244,6 +247,16 @@ class IncrementalTest(unittest.TestCase):
             ProjectFilesMonitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
             self.assertEqual(command._exit_code, commands.ExitCode.FOUND_ERRORS)
+
+        # If Start returns with an error, fail early
+        start_exit_code.return_value = commands.ExitCode.FAILURE
+        with patch.object(commands.Command, "_call_client") as call_client:
+            command = incremental.Incremental(
+                arguments, configuration, analysis_directory
+            )
+            command.run()
+            call_client.assert_not_called()
+            self.assertEqual(command._exit_code, commands.ExitCode.FAILURE)
 
     def test_read_stderr(self) -> None:
         with patch("subprocess.Popen") as popen:

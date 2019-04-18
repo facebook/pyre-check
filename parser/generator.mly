@@ -59,7 +59,11 @@
     | RightShift
     | Subtract
 
-  let binary_operator ~compound ~left:({ Node.location; _ } as left) ~operator ~right =
+  let binary_operator
+    ~compound
+    ~left:({ Node.location; _ } as left)
+    ~operator
+    ~right:({ Node.location = { Location.stop; _ }; _ } as right) =
     let name =
       let name =
         match operator with
@@ -79,9 +83,12 @@
       in
       Format.asprintf "__%s%s__" (if compound then "i" else "") name
     in
-    let arguments = [{ Argument.name = None; value = right }] in
-    Expression.Access.combine left (Access.call ~arguments ~location ~name ())
-    |> fun access -> { Node.location; value = Access access }
+    let callee =
+      Name (Name.Attribute { base = left; attribute = name })
+      |> Node.create ~location
+    in
+    Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
+    |> Node.create ~location:{ location with stop }
 
   let slice ~lower ~upper ~step ~colon =
     let location =
@@ -106,19 +113,24 @@
     let arguments =
       let argument argument =
         let none =
-          Access (SimpleAccess [Access.Identifier "None"])
+          Name (Name.Identifier "None")
           |> Node.create ~location
         in
         Option.value argument ~default:none
       in
       [
-        { Argument.name = None; value = argument lower };
-        { Argument.name = None; value = argument upper };
-        { Argument.name = None; value = argument step };
+        { Call.Argument.name = None; value = argument lower };
+        { Call.Argument.name = None; value = argument upper };
+        { Call.Argument.name = None; value = argument step };
       ]
     in
-    Access (SimpleAccess (Access.call ~arguments ~location ~name:"slice" ()))
+    let callee =
+      Name (Name.Identifier "slice")
+      |> Node.create ~location
+    in
+    Call { callee; arguments }
     |> Node.create ~location
+
 
   let create_ellipsis (start, stop) =
     let location = Location.create ~start ~stop in
@@ -133,31 +145,32 @@
       | [subscript] -> subscript
       | subscripts -> { Node.location; value = Tuple subscripts }
     in
-    { Argument.name = None; value }
+    { Call.Argument.name = None; value }
 
   let subscript_access subscript =
     let head, subscripts = subscript in
     let location = Node.location head in
-    let get_item =
-      let arguments = [subscript_argument ~subscripts ~location] in
-      Access.call ~arguments ~location ~name:"__getitem__" ()
+    let callee =
+      Name (Name.Attribute { base = head; attribute = "__getitem__" })
+      |> Node.create ~location
     in
-    Expression.Access.combine head get_item
-    |> fun access -> { Node.location; value = Access access }
+    Call { callee; arguments = [subscript_argument ~subscripts ~location] }
+    |> Node.create ~location
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
     let head, subscripts = subscript in
     let location =
       { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
-    let set_item =
-      let arguments =
-        [subscript_argument ~subscripts ~location; { name = None; value }]
-      in
-      Access.call ~arguments ~location ~name:"__setitem__" ()
+    let callee =
+      Name (Name.Attribute { base = head; attribute = "__setitem__" })
+      |> Node.create ~location
     in
-    Expression.Access.combine head set_item
-    |> (fun access -> { Node.location; value = Access access })
+    Call {
+      callee;
+      arguments = [subscript_argument ~subscripts ~location; { Call.Argument.name = None; value }];
+    }
+    |> Node.create ~location
     |> fun expression -> Expression expression
     |> Node.create ~location
 
@@ -291,6 +304,7 @@
 %left TILDE
 %left AT
 %left DOT
+%left LEFTANGLELEFTANGLE RIGHTANGLERIGHTANGLE
 
 %nonassoc LEFTPARENS
 
@@ -536,8 +550,12 @@ small_statement:
         let yield =
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
-              Expression.Access.combine yield (Access.call ~name:"__iter__" ~location ())
-              |> fun access -> { Node.location; value = Access access }
+              let callee =
+                Expression.Name (Expression.Name.Attribute { base = yield; attribute = "__iter__" })
+                |> Node.create ~location
+              in
+              Expression.Call { callee; arguments = [] }
+              |> Node.create ~location
           | _ ->
               yield
         in
@@ -882,10 +900,16 @@ simple_access:
         let (start, _) = List.hd_exn identifiers in
         let (stop, _) = List.last_exn identifiers in
         { start with Location.stop = stop.Location.stop } in
-      let identifiers =
-        List.map ~f:snd identifiers
-        |> List.map ~f:(fun identifier -> Access.Identifier identifier) in
-      location, identifiers
+      let rec create = function
+        | [] -> failwith "Identifiers must be nonempty list."
+        | identifier :: [] ->
+            Name (Name.Identifier (snd identifier))
+            |> Node.create ~location:(fst identifier)
+        | identifier :: prefix ->
+            Name (Name.Attribute { base = create prefix; attribute = (snd identifier) })
+            |> Node.create ~location(fst identifier)
+      in
+      location, create (List.rev identifiers)
     }
   ;
 
@@ -956,7 +980,7 @@ define_parameters:
   | expression = expression {
       let rec identifier expression =
         match expression with
-        | { Node.location; value = Access (SimpleAccess [Access.Identifier identifier]) } ->
+        | { Node.location; value = Name (Name.Identifier identifier) } ->
             (location, identifier)
         | { Node.location; value = Starred (Starred.Once expression) } ->
             location,
@@ -1037,7 +1061,7 @@ handler:
 
 from:
   | from = from_string {
-      Access.create from
+      Reference.create from
       |> Option.some
     }
   ;
@@ -1080,23 +1104,23 @@ import:
       let start, stop = position in
       Location.create ~start ~stop,
       {
-        Import.name = Access.create "*";
+        Import.name = Reference.create "*";
         alias = None;
       }
     }
-  | name = simple_access {
+  | name = reference {
       fst name,
       {
         Import.name = snd name;
         alias = None;
       }
     }
-  | name = simple_access;
+  | name = reference;
     AS; alias = identifier {
       {(fst name) with Location.stop = (fst alias).Location.stop},
       {
         Import.name = snd name;
-        alias = Some [Access.Identifier (snd alias)];
+        alias = Some (Reference.create (snd alias));
       }
     }
   ;
@@ -1134,7 +1158,7 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Access (SimpleAccess [Access.Identifier (snd identifier)]);
+        value = Name (Name.Identifier (snd identifier));
       }
     }
 
@@ -1170,14 +1194,11 @@ atom:
     }
 
   | name = expression;
-    start = LEFTPARENS;
+    LEFTPARENS;
     arguments = arguments;
-    stop = RIGHTPARENS {
-      let call_location = Location.create ~start ~stop in
-      Expression.Access.combine
-        name
-        [Access.Call (Node.create ~location:call_location arguments)]
-      |> fun access -> { Node.location = name.Node.location; value = Access access }
+    RIGHTPARENS {
+      Expression.Call { callee = name; arguments }
+      |> Node.create ~location:(name.Node.location)
     }
 
   | start = LEFTCURLY;
@@ -1335,13 +1356,14 @@ expression:
 
   | LEFTPARENS; test = test_list; RIGHTPARENS { test }
 
-  | access = expression; DOT; expression = expression {
-      match Node.value expression with
-      | Access (SimpleAccess tail) ->
-         let location = { access.Node.location with Location.stop = Node.stop expression } in
-         { Node.location; value = Access (Access.combine access tail) }
-      | _ ->
-         raise (ParserError "Invalid access")
+  | expression = expression; DOT; identifier = identifier {
+      let location =
+        { expression.Node.location with Location.stop = Location.Reference.stop (fst identifier) }
+      in
+      {
+        Node.location;
+        value = Name (Name.Attribute { base = expression; attribute = snd identifier })
+      }
     }
 
   | subscript = subscript { subscript_access subscript }
@@ -1551,18 +1573,18 @@ comparison:
 
 arguments:
   | arguments = separated_list(COMMA, argument) { arguments }
-  | test = test_with_generator { [{ Argument.name = None; value = test }] }
-  | test = generator; COMMA { [{ Argument.name = None; value = test }] }
+  | test = test_with_generator { [{ Call.Argument.name = None; value = test }] }
+  | test = generator; COMMA { [{ Call.Argument.name = None; value = test }] }
   ;
 
 argument:
   | identifier = identifier; EQUALS; value = test {
       {
-        Argument.name = Some { Node.location = fst identifier; value = snd identifier };
+        Call.Argument.name = Some { Node.location = fst identifier; value = snd identifier };
         value;
       }
     }
-  | value = test { { Argument.name = None; value } }
+  | value = test { { Call.Argument.name = None; value } }
   ;
 
 subscript_key:

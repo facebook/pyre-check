@@ -27,3 +27,7 @@ def first_index_unknown():
 
 def view_entry_get(request: django.http.Request):
     eval(request.GET.get("payload", "foo bar"))
+
+
+def return_is_RCE(request: django.http.Request) -> None:
+    return request.GET.get("payload", "foo bar")

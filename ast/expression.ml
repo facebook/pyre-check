@@ -180,7 +180,7 @@ module Call = struct
 
   type 'expression t = {
     callee: 'expression;
-    arguments: (('expression Argument.t) list) Node.t;
+    arguments: ('expression Argument.t) list;
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
@@ -405,47 +405,6 @@ module Access = struct
     List.map identifiers ~f:(fun identifier -> Identifier identifier)
 
 
-  let create_from_expression nested_access =
-    let rec flatten nested_access =
-      match Node.value nested_access with
-      | Name (Name.Identifier identifier) ->
-          None, [Identifier identifier]
-      | Name (
-          Name.Attribute {
-            base = { Node.value = Name (Name.Identifier base); _ };
-            attribute;
-          }
-        ) ->
-          None, [Identifier attribute; Identifier base]
-      | Name (Name.Attribute { base; attribute }) ->
-          let base_expression, access = flatten base in
-          base_expression, (Identifier attribute) :: access
-      | Call { callee = { Node.value = Name (Name.Identifier callee); _ }; arguments } ->
-          let arguments =
-            let convert { Call.Argument.name; value } =
-              { Argument.name; value }
-            in
-            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
-          in
-          None, [Call arguments; Identifier callee]
-      | Call { callee; arguments } ->
-          let base_expression, access = flatten callee in
-          let arguments =
-            let convert { Call.Argument.name; value } =
-              { Argument.name; value }
-            in
-            { arguments with Node.value = List.map ~f:convert (Node.value arguments) }
-          in
-          base_expression, (Call arguments) :: access
-      | _ ->
-          Some nested_access, []
-    in
-    let base_expression, flattened = flatten nested_access in
-    match base_expression with
-    | Some expression -> ExpressionAccess { expression; access = List.rev flattened }
-    | None -> SimpleAccess (List.rev flattened)
-
-
   let create name =
     let identifier_names name =
       if String.equal name "..." then
@@ -477,58 +436,6 @@ module Access = struct
   let expression ?(location = Location.Reference.any) access =
     Access (SimpleAccess access)
     |> Node.create ~location
-
-
-  let new_expression ?(location = Location.Reference.any) access =
-    let convert_arguments { Node.value = arguments; location } =
-      let convert { Argument.name; value } = { Call.Argument.name; value } in
-      List.map ~f:convert arguments
-      |> Node.create ~location
-    in
-    let rec create_nested_access expression access =
-      match expression, access with
-      | Some expression, Identifier identifier :: [] ->
-          Name (Name.Attribute {
-            base = expression;
-            attribute = identifier;
-          })
-          |> Node.create ~location
-      | Some expression, Call arguments :: [] ->
-          create_call_expression expression (convert_arguments arguments)
-          |> Node.create ~location
-      | None, Identifier identifier :: [] ->
-          Name (Name.Identifier identifier)
-          |> Node.create ~location
-      | None, Identifier identifier :: [Identifier base] ->
-          Name (Name.Attribute {
-            base = (Name (Name.Identifier base)) |> Node.create ~location;
-            attribute = identifier;
-          })
-          |> Node.create ~location
-      | None, Call arguments :: [Identifier base] ->
-          create_call_expression
-            ((Name (Name.Identifier base)) |> Node.create ~location)
-            (convert_arguments arguments)
-          |> Node.create ~location
-      | _, Identifier identifier :: access ->
-          Name (Name.Attribute {
-            base = create_nested_access expression access;
-            attribute = identifier;
-          })
-          |> Node.create ~location
-      | _, Call arguments :: access ->
-          create_call_expression
-            (create_nested_access expression access)
-            (convert_arguments arguments)
-          |> Node.create ~location
-      | _ ->
-          failwith "Invalid access chain."
-    in
-    match access with
-    | SimpleAccess access ->
-        create_nested_access None (List.rev access)
-    | ExpressionAccess { expression; access } ->
-        create_nested_access (Some expression) (List.rev access)
 
 
   let sanitized access =
@@ -726,84 +633,6 @@ module Access = struct
 end
 
 
-let create_name_from_identifiers identifiers =
-  let rec create = function
-    | [] ->
-        failwith "Access must have non-zero identifiers."
-    | [{ Node.location; value = identifier }] ->
-        Name (Name.Identifier identifier)
-        |> Node.create ~location
-    | { Node.location; value = identifier } :: rest ->
-        Name (
-          Name.Attribute {
-            base = create rest;
-            attribute = identifier;
-          })
-        |> Node.create ~location
-  in
-  match create (List.rev identifiers) with
-  | { Node.value = Name name; _ } -> name
-  | _ -> failwith "Impossible."
-
-
-let create_name ~location name =
-  let identifier_names name =
-    if String.equal name "..." then
-      [name]
-    else
-      String.split ~on:'.' name
-  in
-  identifier_names name
-  |> List.map ~f:(Node.create ~location)
-  |> create_name_from_identifiers
-
-
-let rec delocalize ({ Node.value; _ } as expression) =
-  let value =
-    let delocalize_element = function
-      | Access.Call ({ Node.value = arguments; _ } as call) ->
-          let delocalize_argument ({ Argument.value; _ } as argument) =
-            { argument with Argument.value = delocalize value }
-          in
-          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
-      | element ->
-          element
-    in
-    match value with
-    | Access (SimpleAccess access) ->
-        let access =
-          Access.delocalize access
-          |> List.map ~f:delocalize_element
-        in
-        Access (SimpleAccess access)
-    | Access (ExpressionAccess { expression; access }) ->
-        Access
-          (ExpressionAccess {
-              expression = delocalize expression;
-              access = List.map access ~f:delocalize_element;
-            })
-    | List elements ->
-        List (List.map elements ~f:delocalize)
-    | Tuple elements ->
-        Tuple (List.map elements ~f:delocalize)
-    | _ ->
-        value
-  in
-  { expression with Node.value }
-
-
-let delocalize_qualified ({ Node.value; _ } as expression) =
-  let value =
-    match value with
-    | Access (SimpleAccess access) ->
-        Access (SimpleAccess (Access.delocalize_qualified access))
-    | _ ->
-        value
-  in
-  { expression with Node.value }
-
-
-
 module ComparisonOperator = struct
   include Record.ComparisonOperator
 
@@ -953,6 +782,274 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
+let rec convert { Node.location; value } =
+  (* Can't use `Visit` module due to circularity :( *)
+  let rec split expression =
+    let convert_argument { Call.Argument.name; value } =
+      { Argument.name; value = convert value }
+    in
+    let convert_generator { Comprehension.target; iterator; conditions; async } =
+      {
+        Comprehension.target = convert target;
+        iterator = convert iterator;
+        conditions = List.map ~f:convert conditions;
+        async;
+      }
+    in
+    let convert_entry { Dictionary.key; value } =
+      { Dictionary.key = convert key; value = convert value }
+    in
+    let convert_parameter { Node.value = { Parameter.value; annotation; name }; location } =
+      let value =
+        {
+          Parameter.name;
+          value = value >>| convert;
+          annotation = annotation >>| convert;
+        }
+      in
+      { Node.location; value }
+    in
+    match expression with
+    | Name (Name.Identifier identifier) ->
+        None, [Access.Identifier identifier]
+    | Name (
+        Name.Attribute {
+          base = { Node.value = Name (Name.Identifier base); _ };
+          attribute;
+        }
+      ) ->
+        None, [Access.Identifier attribute; Access.Identifier base]
+    | Name (Name.Attribute { base; attribute }) ->
+        let base_expression, access = split (Node.value base) in
+        base_expression, (Access.Identifier attribute) :: access
+    | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
+        let arguments =
+          { Node.location; value = List.map ~f:convert_argument arguments }
+        in
+        None, [Call arguments; Access.Identifier callee]
+    | Call { callee; arguments } ->
+        let base_expression, access = split (Node.value callee) in
+        let arguments =
+          { Node.location = callee.Node.location; value = List.map ~f:convert_argument arguments }
+        in
+        base_expression, (Call arguments) :: access
+    | Await expression ->
+        Await (convert expression) |> Option.some, []
+    | BooleanOperator { BooleanOperator.left; right; operator } ->
+        BooleanOperator {
+          BooleanOperator.left = convert left;
+          right = convert right;
+          operator
+        } |> Option.some,
+        []
+    | ComparisonOperator { ComparisonOperator.left; right; operator } ->
+        ComparisonOperator {
+          ComparisonOperator.left = convert left;
+          right = convert right;
+          operator
+        } |> Option.some,
+        []
+    | Dictionary { Dictionary.entries; keywords } ->
+        Dictionary {
+          Dictionary.entries = List.map ~f:convert_entry entries;
+          keywords = List.map ~f:convert keywords;
+        } |> Option.some,
+        []
+    | DictionaryComprehension { Comprehension.element; generators } ->
+        DictionaryComprehension {
+          Comprehension.element = convert_entry element;
+          generators = List.map ~f:convert_generator generators
+        } |> Option.some,
+        []
+    | Generator { Comprehension.element; generators } ->
+        Generator {
+          Comprehension.element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Lambda { Lambda.parameters; body } ->
+        Lambda {
+          Lambda.parameters = List.map ~f:convert_parameter parameters;
+          body = convert body;
+        } |> Option.some,
+        []
+    | List elements ->
+        List (List.map ~f:convert elements) |> Option.some, []
+    | ListComprehension { Comprehension.element; generators } ->
+        ListComprehension {
+          Comprehension.element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Set elements ->
+        Set (List.map ~f:convert elements) |> Option.some, []
+    | SetComprehension { Comprehension.element; generators } ->
+        SetComprehension {
+          Comprehension.element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Option.some,
+        []
+    | Starred (Starred.Once expression) ->
+        Starred (Starred.Once (convert expression)) |> Option.some, []
+    | Starred (Starred.Twice expression) ->
+        Starred (Starred.Twice (convert expression)) |> Option.some, []
+    | String { StringLiteral.value; kind } ->
+        let kind =
+          match kind with
+          | StringLiteral.Format expressions ->
+              StringLiteral.Format (List.map expressions ~f:convert)
+          | _ ->
+              kind
+        in
+        String { StringLiteral.value; kind } |> Option.some, []
+    | Ternary { Ternary.target; test; alternative } ->
+        Ternary {
+          Ternary.target = convert target;
+          test = convert test;
+          alternative = convert alternative;
+        } |> Option.some,
+        []
+    | Tuple elements ->
+        Tuple (List.map ~f:convert elements) |> Option.some, []
+    | UnaryOperator { UnaryOperator.operand; operator } ->
+        UnaryOperator {
+          UnaryOperator.operand = convert operand;
+          operator;
+        } |> Option.some,
+        []
+    | Yield expression ->
+        Yield (expression >>| convert) |> Option.some, []
+    | _ ->
+        Some expression, []
+  in
+  let value =
+    match split value with
+    | Some expression, [] ->
+        expression
+    | Some expression, flattened ->
+        Access (
+          ExpressionAccess {
+            expression = Node.create ~location expression;
+            access = List.rev flattened
+          })
+    | None, flattened ->
+        Access (SimpleAccess (List.rev flattened))
+  in
+  { Node.location; value }
+
+
+let create_name_from_identifiers identifiers =
+  let rec create = function
+    | [] ->
+        failwith "Access must have non-zero identifiers."
+    | [{ Node.location; value = identifier }] ->
+        Name (Name.Identifier identifier)
+        |> Node.create ~location
+    | { Node.location; value = identifier } :: rest ->
+        Name (
+          Name.Attribute {
+            base = create rest;
+            attribute = identifier;
+          })
+        |> Node.create ~location
+  in
+  match create (List.rev identifiers) with
+  | { Node.value = Name name; _ } -> name
+  | _ -> failwith "Impossible."
+
+
+let create_name ~location name =
+  let identifier_names name =
+    if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  identifier_names name
+  |> List.map ~f:(Node.create ~location)
+  |> create_name_from_identifiers
+
+
+let is_simple_name name =
+  let rec is_simple = function
+    | Name (Name.Identifier _ ) -> true
+    | Name (Name.Attribute { base; _ }) -> is_simple (Node.value base)
+    | _ -> false
+  in
+  is_simple (Name name)
+
+
+let rec delocalize ({ Node.value; location } as expression) =
+  let value =
+    let delocalize_element = function
+      | Access.Call ({ Node.value = arguments; _ } as call) ->
+          let delocalize_argument ({ Argument.value; _ } as argument) =
+            { argument with Argument.value = delocalize value }
+          in
+          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
+      | element ->
+          element
+    in
+    match value with
+    | Access (SimpleAccess access) ->
+        let access =
+          Access.delocalize access
+          |> List.map ~f:delocalize_element
+        in
+        Access (SimpleAccess access)
+    | Access (ExpressionAccess { expression; access }) ->
+        Access
+          (ExpressionAccess {
+              expression = delocalize expression;
+              access = List.map access ~f:delocalize_element;
+            })
+    | Call { callee; arguments } ->
+        let delocalize_argument ({ Call.Argument.value; _ } as argument) =
+          { argument with Call.Argument.value = delocalize value }
+        in
+        Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
+        let sanitized = Identifier.sanitized identifier in
+        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
+        if Str.string_match local_qualifier_pattern identifier 0 then
+          let qualifier =
+            Str.matched_group 1 identifier
+            |> String.substr_replace_all ~pattern:"?" ~with_:"."
+            |> create_name ~location
+            |> fun name -> Name name
+            |> Node.create ~location
+          in
+          Name (Name.Attribute { base = qualifier; attribute = sanitized })
+        else
+          begin
+            Log.debug "Unable to extract qualifier from %s" identifier;
+            Name (Name.Identifier sanitized)
+          end
+    | Name (Name.Identifier identifier) ->
+        Name (Name.Identifier identifier)
+    | Name (Name.Attribute { base; attribute }) ->
+        Name (Name.Attribute { base = delocalize base; attribute })
+    | List elements ->
+        List (List.map elements ~f:delocalize)
+    | Tuple elements ->
+        Tuple (List.map elements ~f:delocalize)
+    | _ ->
+        value
+  in
+  { expression with Node.value }
+
+
+let delocalize_qualified ({ Node.value; _ } as expression) =
+  let value =
+    match value with
+    | Access (SimpleAccess access) ->
+        Access (SimpleAccess (Access.delocalize_qualified access))
+    | _ ->
+        value
+  in
+  { expression with Node.value }
+
+
 let exists_in_list ?(match_prefix=false) ~expression_list target_string =
   let rec matches expected actual =
     match expected, delocalize_qualified actual with
@@ -961,7 +1058,7 @@ let exists_in_list ?(match_prefix=false) ~expression_list target_string =
         Node.location;
         value = Access (SimpleAccess ((Access.Identifier identifier) :: identifiers));
       }
-      when identifier = expected ->
+      when String.equal identifier expected ->
         if List.is_empty expected_tail &&
            (match_prefix || List.is_empty identifiers)
         then
@@ -971,7 +1068,8 @@ let exists_in_list ?(match_prefix=false) ~expression_list target_string =
     | _ ->
         false
   in
-  List.exists ~f:(matches (String.split ~on:'.' target_string)) expression_list
+  List.map ~f:convert expression_list
+  |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 
 
 module PrettyPrinter = struct
@@ -1210,9 +1308,28 @@ module PrettyPrinter = struct
           BooleanOperator.pp_boolean_operator operator
           pp_expression_t right
 
-    | Call _ ->
-        (* TODO: T37313693 *)
-        ()
+    | Call { Call.callee; arguments } ->
+        begin
+          match Node.value callee with
+          | Name (Name.Attribute { base; attribute = "__getitem__" }) ->
+              Format.fprintf
+                formatter
+                "%a[%a]"
+                pp_expression_t base
+                pp_argument_list
+                  (List.map
+                    ~f:(fun { Call.Argument.name; value } -> { Argument.name; value })
+                    arguments)
+          | _ ->
+              Format.fprintf
+                formatter
+                "%a(%a)"
+                pp_expression_t callee
+                pp_argument_list
+                  (List.map
+                    ~f:(fun { Call.Argument.name; value } -> { Argument.name; value })
+                    arguments)
+        end
 
     | String { StringLiteral.value; kind } ->
         let bytes =
@@ -1276,9 +1393,15 @@ module PrettyPrinter = struct
     | ListComprehension list_comprehension ->
         Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
 
-    | Name _ ->
-        (* TODO: T37313693 *)
-        ()
+    | Name (Name.Identifier name) ->
+        Format.fprintf formatter "%s" name
+
+    | Name (Name.Attribute { base; attribute }) ->
+        Format.fprintf
+          formatter
+          "%a.%s"
+          pp_expression (Node.value base)
+          attribute
 
     | Set set ->
         Format.fprintf formatter "set(%a)" pp_expression_list set

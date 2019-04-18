@@ -9,6 +9,8 @@ import os
 from typing import List, Optional
 
 from .. import filesystem, monitor, project_files_monitor
+from ..buck_project_builder import BuilderException
+from ..buck_project_builder.parser import ParserException
 from .command import ExitCode
 from .reporting import Reporting
 
@@ -22,6 +24,7 @@ class Start(Reporting):
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
         self._terminal = arguments.terminal  # type: bool
+        self._store_type_check_resolution = arguments.store_type_check_resolution
         # TODO(T41488848) respect no_watchman flag after OCaml daemon phased out
         self._no_watchman = True  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
@@ -84,7 +87,15 @@ class Start(Reporting):
                         self._exit_code = ExitCode.FAILURE
                         return
 
-                    self._analysis_directory.prepare()
+                    try:
+                        self._analysis_directory.prepare()
+                    except (BuilderException, ParserException) as error:
+                        LOG.error(
+                            "Failure occurred while building Buck targets: %s", error
+                        )
+                        self._exit_code = ExitCode.FAILURE
+                        return
+
                     self._call_client(command=self.NAME).check()
 
                     try:  # TODO(T41488848) guard this block with a no_watchman check
@@ -115,6 +126,8 @@ class Start(Reporting):
             flags.append("-use-watchman")
         if self._terminal:
             flags.append("-terminal")
+        if self._store_type_check_resolution:
+            flags.append("-store-type-check-resolution")
         if self._save_initial_state_to and os.path.isdir(
             os.path.dirname(self._save_initial_state_to)
         ):

@@ -28,7 +28,7 @@ class BuckTest(unittest.TestCase):
             buck.presumed_target_root("prefix//path/directory:target"), "path/directory"
         )
 
-    @patch("{}.find_root".format(buck.__name__), return_value="/root")
+    @patch("{}.find_buck_root".format(buck.__name__), return_value="/root")
     def test_find_built_source_directories(self, find_root) -> None:
         trees = [
             "blah-vs_debugger#link-tree",
@@ -38,99 +38,69 @@ class BuckTest(unittest.TestCase):
         ]
         with patch.object(glob, "glob", return_value=trees) as glob_glob:
             self.assertEqual(
-                buck._find_built_source_directories(["target"]),
-                BuckOut(["blah-blah#link-tree"], []),
+                buck._find_built_source_directories([("//:target", "buck-out/target")]),
+                BuckOut({"blah-blah#link-tree"}, set()),
             )
-        with patch.object(glob, "glob") as glob_glob:
-            buck._find_built_source_directories(
+            glob_glob.assert_called_once_with("/root/buck-out/target#*link-tree")
+
+        with patch.object(glob, "glob", return_value=["new_tree"]) as glob_glob:
+            found_trees = buck._find_built_source_directories(
                 [
-                    "//path/targets:name",
-                    "//path/targets:namelibrary",
-                    "//path/...",
-                    "prefix//path/targets:name",
+                    ("//path/targets:another", "buck-out/targets/another"),
+                    ("//path/targets:name", "buck-out/targets/name"),
+                    (
+                        "//path/targets/subdir:namelibrary",
+                        "buck-out/targets/subdir/namelibrary",
+                    ),
                 ]
+            )
+            self.assertEqual(
+                found_trees, BuckOut({"new_tree", "new_tree", "new_tree"}, set())
             )
             glob_glob.assert_has_calls(
                 [
-                    call("/root/buck-out/gen/path/targets/name#*link-tree"),
-                    call("/root/buck-out/gen/path/targets/namelibrary#*link-tree"),
-                    call("/root/buck-out/gen/path/...#*link-tree"),
-                    call("/root/buck-out/gen/path/targets/name#*link-tree"),
+                    call("/root/buck-out/targets/another#*link-tree"),
+                    call("/root/buck-out/targets/name#*link-tree"),
+                    call("/root/buck-out/targets/subdir/namelibrary#*link-tree"),
                 ],
                 any_order=True,
             )
 
-        with patch.object(glob, "glob", return_value=["new_tree"]) as glob_glob:
-            found_trees = buck._find_built_source_directories(
-                OrderedDict(
-                    [
-                        ("//path/...", None),
-                        ("//path/targets:another", "buck-out/path/another"),
-                        ("//path/targets:name", None),
-                        ("//path/targets:namelibrary", None),
-                    ]
-                )
-            )
-            self.assertEqual(
-                found_trees,
-                BuckOut(["new_tree", "new_tree", "new_tree", "new_tree"], []),
-            )
-
         with patch.object(glob, "glob", return_value=[]) as glob_glob:
             found_trees = buck._find_built_source_directories(
                 [
-                    "//path/...",
-                    "//path/targets:another",
-                    "//path/targets:name",
-                    "//path/targets:namelibrary",
+                    ("//path/targets:another", "buck-out/targets/another"),
+                    ("//path/targets:name", "buck-out/targets/name"),
+                    (
+                        "//path/targets/subdir:namelibrary",
+                        "buck-out/targets/subdir/namelibrary",
+                    ),
                 ]
             )
             self.assertEqual(
                 found_trees,
                 BuckOut(
-                    [],
-                    [
-                        "//path/...",
+                    set(),
+                    {
                         "//path/targets:another",
                         "//path/targets:name",
-                        "//path/targets:namelibrary",
-                    ],
+                        "//path/targets/subdir:namelibrary",
+                    },
                 ),
             )
-            # Order doesn't matter.
-            found_trees = buck._find_built_source_directories(
+            glob_glob.assert_has_calls(
                 [
-                    "//path/targets:name",
-                    "//path/targets:namelibrary",
-                    "//path/targets:another",
-                    "//path/...",
-                ]
-            )
-            self.assertEqual(
-                found_trees,
-                BuckOut(
-                    [],
-                    [
-                        "//path/...",
-                        "//path/targets:another",
-                        "//path/targets:name",
-                        "//path/targets:namelibrary",
-                    ],
-                ),
-            )
-
-        with patch.object(glob, "glob", return_value=[]) as glob_glob:
-            found_trees = buck._find_built_source_directories(
-                ["//path/targets:name", "//path/..."]
-            )
-            self.assertEqual(
-                found_trees, BuckOut([], ["//path/...", "//path/targets:name"])
+                    call("/root/buck-out/targets/another#*link-tree"),
+                    call("/root/buck-out/targets/name#*link-tree"),
+                    call("/root/buck-out/targets/subdir/namelibrary#*link-tree"),
+                ],
+                any_order=True,
             )
 
     @patch("%s.open" % buck.__name__, new_callable=mock_open, read_data="")
     def test_normalize(self, mock_open) -> None:
         with patch.object(subprocess, "check_output") as buck_targets:
-            buck_targets.return_value = "a\nb".encode("utf-8")
+            buck_targets.return_value = "a b".encode("utf-8")
             buck._normalize(["target_path"])
             buck_targets.assert_has_calls(
                 [
@@ -176,7 +146,7 @@ class BuckTest(unittest.TestCase):
         self, mock_find_built_source_directories, mock_normalize, mock_input
     ) -> None:
         mock_find_built_source_directories.return_value = BuckOut(  # noqa
-            ["new_tree"], ["empty_target"]
+            {"new_tree"}, {"empty_target"}
         )
 
         with patch.object(buck, "_normalize") as mock_normalize:
@@ -190,11 +160,11 @@ class BuckTest(unittest.TestCase):
                 )
 
         mock_find_built_source_directories.return_value = BuckOut(
-            ["new_tree"], []
+            {"new_tree"}, set()
         )  # noqa
         with patch.object(buck, "_normalize") as mock_normalize:
             with patch.object(buck, "_build_targets") as mock_build:
-                mock_normalize.return_value = ["normalized"]
+                mock_normalize.return_value = [("normalized", "buck-out/normalized")]
                 buck.generate_source_directories(["target"], build=True, prompt=True)
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 

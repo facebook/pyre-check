@@ -52,8 +52,8 @@ let is_local identifier =
 
 
 let is_class ~resolution access =
-  Access.expression access
-  |> Resolution.parse_annotation resolution
+  Reference.from_access access
+  |> fun reference -> Type.Primitive (Reference.show reference)
   |> Resolution.class_definition resolution
   |> Option.is_some
 
@@ -62,8 +62,8 @@ let is_global ~resolution access =
   match access with
   | Access.Identifier head::_
     when not (is_local head)
-      && head <> "super"
-      && head <> "type" ->
+      && not (String.equal head "super")
+      && not (String.equal head "type") ->
       Reference.from_access access
       |> Resolution.global resolution
       |> Option.is_some
@@ -146,21 +146,18 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
     match callable_type, receiver_type with
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_global ~resolution access ->
-        [Callable.create_function (Reference.from_access name), implicit]
+        [Callable.create_function name, implicit]
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_super_call reverse_access ->
-        [Callable.create_method (Reference.from_access name), implicit]
+        [Callable.create_method name, implicit]
     | Type.Callable { implicit = None; kind = Named name; _ }, None
       when is_all_names access ->
-        [Callable.create_function (Reference.from_access name), None]
+        [Callable.create_function name, None]
     | Type.Callable { implicit; kind = Named name; _ }, _
       when is_all_names access ->
-        [Callable.create_method (Reference.from_access name), implicit]
+        [Callable.create_method name, implicit]
     | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
-        compute_indirect_targets
-          ~resolution
-          ~receiver_type:type_or_class
-          (Reference.from_access name)
+        compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, implicit)
     | access_type, _ when Type.is_meta access_type && is_global ~resolution access ->
         let access, _ = normalize_global ~resolution access in

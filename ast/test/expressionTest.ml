@@ -251,7 +251,7 @@ let test_pp _ =
     "a.b[1].c";
 
   assert_pp_equal
-    (parse_single_expression "'string {}'.format(1)")
+    (parse_single_expression ~convert:true "'string {}'.format(1)")
     "\"string {}\".format(1)"
 
 
@@ -352,6 +352,11 @@ let test_delocalize _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
+      (parse_single_expression ~convert:true expected)
+      (parse_single_expression ~convert:true source |> Expression.delocalize);
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
       (parse_single_expression expected)
       (parse_single_expression source |> Expression.delocalize)
   in
@@ -368,14 +373,14 @@ let test_delocalize _ =
 let test_comparison_operator_override _ =
   let assert_override source expected =
     let operator =
-      match parse_single_expression source with
+      match parse_single_expression ~convert:true source with
       | { Node.value = ComparisonOperator operator; _ } -> operator
       | _ -> failwith "Could not parse comparison operator."
     in
     assert_equal
       ~printer:(function | Some expression -> Expression.show expression | _ -> "None")
       ~cmp:(Option.equal Expression.equal)
-      (expected >>| parse_single_expression)
+      (expected >>| parse_single_expression ~convert:true)
       (ComparisonOperator.override operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");
@@ -389,7 +394,7 @@ let test_comparison_operator_override _ =
 let test_name_and_arguments _ =
   let assert_call ~call ?(expected_arguments = []) expected_name =
     let { Expression.Access.callee = name; arguments } =
-      match parse_single_expression call with
+      match parse_single_expression ~convert:true call with
       | { Node.value = Access (SimpleAccess call); _ } ->
           Option.value_exn (Expression.Access.name_and_arguments ~call)
       | _ -> failwith "Unable to parse access"
@@ -402,7 +407,7 @@ let test_name_and_arguments _ =
       arguments
   in
   let assert_not_call ~call =
-    match parse_single_expression call with
+    match parse_single_expression ~convert:true call with
     | { Node.value = Access (SimpleAccess call); _ } ->
         assert_equal (Expression.Access.name_and_arguments ~call) None
     | _ ->
@@ -500,9 +505,7 @@ let test_convert_accesses _ =
     let converted =
       new_access
       |> Node.create_with_default_location
-      |> Access.create_from_expression
-      |> (fun access -> Access access)
-      |> Node.create_with_default_location
+      |> convert
     in
     assert_equal
       ~printer:(Expression.show)
@@ -530,7 +533,7 @@ let test_convert_accesses _ =
   assert_convert_new_to_old
     (Call {
       callee = ~+(Name (Name.Identifier "a"));
-      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
+      arguments = [{ Call.Argument.name = None; value = !"x" }];
     })
     (Access (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]]));
   assert_convert_new_to_old
@@ -538,7 +541,7 @@ let test_convert_accesses _ =
       callee = ~+(Name (
         Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
       ));
-      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
+      arguments = [{ Call.Argument.name = None; value = !"x" }];
     })
     (Access
       (SimpleAccess [
@@ -546,60 +549,7 @@ let test_convert_accesses _ =
         Identifier "b";
         Call ~+[{ Argument.name = None; value = !"x" }];
       ])
-    );
-
-  let assert_convert_old_to_new old_access expected =
-    let converted =
-      old_access
-      |> Access.new_expression
-    in
-    assert_equal
-      ~printer:(Expression.show)
-      ~+expected
-      converted
-  in
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"])
-    (Name (Name.Identifier "a"));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Identifier "b"])
-    (Name (
-      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
-    ));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"])
-    (Name (Name.Attribute {
-      base = ~+(Name (
-        Name.Attribute {
-          base = ~+(Name (Name.Identifier "a"));
-          attribute = "b";
-      }));
-      attribute = "c";
-    }));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]])
-    (Call {
-      callee = ~+(Name (Name.Identifier "a"));
-      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
-    });
-  assert_convert_old_to_new
-    (SimpleAccess [
-      Identifier "a";
-      Identifier "b";
-      Call ~+[{ Argument.name = None; value = !"x" }];
-    ])
-    (Call {
-      callee = ~+(Name (
-        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
-      ));
-      arguments = ~+[{ Call.Argument.name = None; value = !"x" }];
-    });
-  assert_convert_old_to_new
-    (ExpressionAccess { expression = ~+(List []); access = [Identifier "a"; Identifier "b"]})
-    (Name (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a" }));
-      attribute = "b";
-    }))
+    )
 
 
 let test_create_name _ =

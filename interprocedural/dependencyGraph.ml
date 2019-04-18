@@ -68,7 +68,8 @@ let create_callgraph ~environment ~source =
     in
     Callable.RealMap.set dependencies ~key:caller_callable ~data:callees
   in
-  Preprocessing.defines source
+  Preprocessing.convert source
+  |> Preprocessing.defines
   |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 
 
@@ -242,7 +243,7 @@ let create_overrides ~environment ~source =
       Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
     in
     let annotated_class = Annotated.Class.create class_node in
-    let methods = Annotated.Class.methods ~resolution annotated_class in
+    let methods = Annotated.Class.methods annotated_class in
     List.filter_map methods ~f:(get_method_overrides annotated_class)
   in
   let record_overrides map (ancestor_method, overriding_type) =
@@ -255,7 +256,8 @@ let create_overrides ~environment ~source =
   let record_overrides_list map relations =
     List.fold relations ~init:map ~f:record_overrides
   in
-  Preprocessing.classes source
+  Preprocessing.convert source
+  |> Preprocessing.classes
   |> List.map ~f:class_method_overrides
   |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
 

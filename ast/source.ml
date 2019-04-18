@@ -5,7 +5,6 @@
 
 open Core
 
-open Expression
 open Pyre
 
 
@@ -299,7 +298,11 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
             (Reference.t option)]
             (name, parameters, decorators, return_annotation, async, parent)
       | Class { Class.name; bases; body; decorators; _ } ->
-          [%hash: Reference.t * (Argument.t list) * (int list) * (Expression.t list)]
+          [%hash:
+            Reference.t *
+            (Expression.t Expression.Call.Argument.t list) *
+            (int list) *
+            (Expression.t list)]
             (name, bases, (statement_hashes body), decorators)
       | If { If.test; body; orelse } ->
           [%hash: Expression.t * (int list) * (int list)]
@@ -393,17 +396,17 @@ let qualifier ~handle =
 
 
 let expand_relative_import ?handle ~qualifier ~from =
-  match Access.show from with
+  match Reference.show from with
   | "builtins" ->
-      []
+      Reference.empty
   | serialized ->
       (* Expand relative imports according to PEP 328 *)
       let dots = String.take_while ~f:(fun dot -> dot = '.') serialized in
       let postfix =
         match String.drop_prefix serialized (String.length dots) with
         (* Special case for single `.`, `..`, etc. in from clause. *)
-        | "" -> []
-        | nonempty -> Access.create nonempty
+        | "" -> Reference.empty
+        | nonempty -> Reference.create nonempty
       in
       let prefix =
         if not (String.is_empty dots) then
@@ -422,10 +425,11 @@ let expand_relative_import ?handle ~qualifier ~from =
             | None ->
                 0
           in
-          List.rev qualifier
+          List.rev (Reference.as_list qualifier)
           |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
           |> List.rev
+          |> Reference.create_from_list
         else
-          []
+          Reference.empty
       in
-      prefix @ postfix
+      Reference.combine prefix postfix

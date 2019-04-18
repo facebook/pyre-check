@@ -67,7 +67,10 @@ let environment () =
 
 let make_errors ?handle ?qualifier source =
   let configuration = Configuration.Analysis.create () in
-  let source = Preprocessing.preprocess (parse ?handle ?qualifier source) in
+  let source =
+    parse ?handle ?qualifier source
+    |> Preprocessing.preprocess
+  in
   let environment = Environment.handler (environment ()) in
   Service.Environment.populate
     environment

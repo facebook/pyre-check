@@ -13,18 +13,18 @@ module AccessState: sig
   (* Keep track of objects whose type might be determined later on or that might serve as implicit
      argument to a call. *)
   type target = {
-    access: Access.t;
+    reference: Reference.t;
     annotation: Type.t;
   }
 
   type found_origin =
     | Instance of Annotated.Attribute.t
-    | Module of Access.t
+    | Module of Reference.t
   [@@deriving show]
 
   type undefined_origin =
     | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
-    | Module of Access.t
+    | Module of Reference.t
     | TypeWithoutClass of Type.t
   [@@deriving show]
 
@@ -39,15 +39,20 @@ module AccessState: sig
         signature: AnnotatedSignature.t;
         callees: Type.Callable.t list;
         arguments: Argument.t list;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
       }
-    | Attribute of { attribute: Identifier.t; definition: definition }
+    | Attribute of {
+        attribute: Identifier.t;
+        definition: definition;
+        accesses_incomplete_type: (Access.general_access * Type.t) option;
+      }
     | NotCallable of Type.t
     | Value
   [@@deriving show]
 
-  val redirect: resolution: Resolution.t -> Access.t -> Access.general_access * Resolution.t
+  val redirect: resolution: Resolution.t -> access: Access.t -> Access.general_access * Resolution.t
 
-  val resolve_exports: resolution: Resolution.t -> Access.t -> Access.t
+  val resolve_exports: resolution: Resolution.t -> access: Access.t -> Access.t
 end
 
 
@@ -136,7 +141,7 @@ module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 val resolution
   :  (module Environment.Handler)
-  -> ?annotations: Annotation.t Expression.Access.Map.t
+  -> ?annotations: Annotation.t Reference.Map.t
   -> unit
   -> Resolution.t
 

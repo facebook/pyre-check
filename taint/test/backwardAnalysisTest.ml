@@ -46,6 +46,7 @@ let assert_taint ?(qualifier = "qualifier") source expected =
   TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source
+    |> Preprocessing.convert
     |> Preprocessing.defines ~include_stubs:true
     |> List.rev
   in

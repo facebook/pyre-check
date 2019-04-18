@@ -1,6 +1,6 @@
 click
 click-log
-ipython
+ipython==6.5.0
 munch
 pygments
 SQLAlchemy

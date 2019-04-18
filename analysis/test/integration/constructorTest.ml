@@ -188,8 +188,10 @@ let test_check_init _ =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` " ^
       "has type `int` but is used as type `unknown`.";
-      "Undefined name [18]: Global name `unknown` is undefined.";
-      "Undefined name [18]: Global name `unknown2` is undefined.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown`.";
+      "Undefined name [18]: Global name `unknown2` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown2`.";
     ];
 
   (* No need to initialize properties. *)

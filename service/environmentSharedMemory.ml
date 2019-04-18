@@ -56,13 +56,13 @@ module AliasKeyValue = struct
 end
 
 module ClassKeyValue = struct
-  type t = Type.t list
+  type t = Identifier.t list
   let prefix = Prefix.make ()
   let description = "Class keys"
 end
 
 module ProtocolValue = struct
-  type t = Type.t list
+  type t = Identifier.Set.Tree.t
   let prefix = Prefix.make ()
   let description = "Protocols"
 end
@@ -73,10 +73,22 @@ module DependentKeyValue = struct
   let description = "Dependent keys"
 end
 
+module ProtocolKeyValue = struct
+  type t = Identifier.t list
+  let prefix = Prefix.make ()
+  let description = "Protocol keys"
+end
+
 module ClassValue = struct
-  type t = Analysis.Resolution.class_representation
+  type t = Statement.Class.t Node.t
   let prefix = Prefix.make ()
   let description = "Class"
+end
+
+module ClassMetadataValue = struct
+  type t = Analysis.Resolution.class_metadata
+  let prefix = Prefix.make ()
+  let description = "Class metadata"
 end
 
 module AliasValue = struct
@@ -92,7 +104,7 @@ module GlobalValue = struct
 end
 
 module DependentValue = struct
-  type t = File.Handle.Set.Tree.t
+  type t = Reference.Set.Tree.t
   let prefix = Prefix.make ()
   let description = "Dependent"
 end
@@ -140,7 +152,9 @@ module ErrorsValue = struct
 end
 
 (** Shared memory maps *)
-module ClassDefinitions = Memory.WithCache (TypeKey) (ClassValue)
+module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
+
+module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
 
 module Aliases = Memory.NoCache (TypeKey) (AliasValue)
 
@@ -148,7 +162,7 @@ module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
-module Protocols = Memory.WithCache (StringKey) (ProtocolValue)
+module Protocols = Memory.WithCache (Memory.SingletonKey) (ProtocolValue)
 
 (** Keys *)
 module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)
@@ -161,6 +175,8 @@ module AliasKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (AliasKeyValue)
 
 module DependentKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (DependentKeyValue)
 
+module ProtocolKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (ProtocolKeyValue)
+
 (** Type order maps *)
 module OrderIndices = Memory.WithCache (TypeKey) (OrderIndexValue)
 
@@ -170,7 +186,7 @@ module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
 
 module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
 
-module OrderKeys = Memory.WithCache (StringKey) (OrderKeyValue)
+module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
 
 module StoredConfiguration = Memory.NoCache (StringKey) (ConfigurationValue)
 

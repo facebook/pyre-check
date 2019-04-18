@@ -30,5 +30,6 @@ module Resolution = Resolution
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeOrder = TypeOrder
+module TypeConstraints = TypeConstraints
 module Inference = Inference
 module ResolutionSharedMemory = ResolutionSharedMemory

@@ -16,7 +16,7 @@ from typing import Type  # noqa
 
 from . import (
     EnvironmentException,
-    assert_readable_directory,
+    assert_writable_directory,
     buck,
     commands,
     get_binary_version,
@@ -45,8 +45,8 @@ def main() -> int:
             raise EnvironmentException("%s is not an executable file" % file_path)
         return file_path
 
-    def writable_path(path: str) -> str:
-        assert_readable_directory(os.path.dirname(path))
+    def writable_directory(path: str) -> str:
+        assert_writable_directory(path)
         return path
 
     parser = argparse.ArgumentParser(
@@ -131,6 +131,16 @@ def main() -> int:
         action="store_true",
         help="Freshly build all the necessary artifacts.",
     )
+    buck_arguments.add_argument(
+        "--use-buck-builder",
+        action="store_true",
+        help="Use Pyre's experimental builder for Buck projects.",
+    )
+
+    # Let buck project builder succeed even with unbuilt dependencies.
+    buck_arguments.add_argument(
+        "--ignore-unbuilt-dependencies", action="store_true", help=argparse.SUPPRESS
+    )
 
     source_directories = parser.add_argument_group("source-directories")
     source_directories.add_argument(
@@ -210,11 +220,26 @@ def main() -> int:
 
     # Subcommands.
     parsed_commands = parser.add_subparsers(
-        metavar="{analyze, check, kill, incremental, initialize (init), "
-        "query, rage, restart, start, stop}"
+        metavar="{analyze, check, color, kill, incremental, initialize (init), "
+        "query, rage, restart, start, stop}",
+        help="""
+        The pyre command to run; defaults to `incremental`.
+        Run `pyre command --help` for documentation on a specific command.
+        """,
     )
 
-    incremental = parsed_commands.add_parser(commands.Incremental.NAME)
+    incremental_help = """
+    Connects to a running Pyre server and returns the current type errors for your
+    project. If no server exists for your projects, starts a new one. Running `pyre`
+    implicitly runs `pyre incremental`.
+
+    By default, incremental checks ensure that all dependencies of changed files are
+    analyzed before returning results. If you'd like to get partial type checking
+    results eagerly, you can run `pyre incremental --nonblocking`.
+    """
+    incremental = parsed_commands.add_parser(
+        commands.Incremental.NAME, epilog=incremental_help
+    )
     incremental.set_defaults(command=commands.Incremental)
     incremental.add_argument(
         "--nonblocking",
@@ -225,13 +250,29 @@ def main() -> int:
         ),
     )
 
-    rage = parsed_commands.add_parser(commands.Rage.NAME)
+    rage = parsed_commands.add_parser(
+        commands.Rage.NAME,
+        epilog="""
+        Collects troubleshooting diagnostics for Pyre, and writes this information to
+        the terminal.
+        """,
+    )
     rage.set_defaults(command=commands.Rage)
 
-    check = parsed_commands.add_parser(commands.Check.NAME)
+    check = parsed_commands.add_parser(
+        commands.Check.NAME,
+        epilog="""
+      Runs a one-time check of a project without initializing a type check server.
+    """,
+    )
     check.set_defaults(command=commands.Check)
 
+    color = parsed_commands.add_parser(commands.Color.NAME)
+    color.add_argument("path")
+    color.set_defaults(command=commands.Color)
+
     deobfuscate = parsed_commands.add_parser(commands.Deobfuscate.NAME)
+
     deobfuscate.set_defaults(command=commands.Deobfuscate)
 
     analyze = parsed_commands.add_parser(commands.Analyze.NAME)
@@ -245,12 +286,19 @@ def main() -> int:
     analyze.add_argument(
         "--save-results-to",
         default=None,
-        type=writable_path,
-        help="JSON file to write analysis results to.",
+        type=writable_directory,
+        help="Directory to write analysis results to.",
     )
     analyze.add_argument("--dump-call-graph", action="store_true")
 
-    persistent = parsed_commands.add_parser(commands.Persistent.NAME)
+    persistent = parsed_commands.add_parser(
+        commands.Persistent.NAME,
+        epilog="""
+        Entry point for IDE integration to Pyre. Communicates with a
+        Pyre server using the Language Server Protocol, accepts input from stdin and
+        writing diagnostics and responses from the Pyre server to stdout.
+        """,
+    )
     persistent.add_argument(
         "--no-watchman",
         action="store_true",
@@ -258,9 +306,16 @@ def main() -> int:
     )
     persistent.set_defaults(command=commands.Persistent, noninteractive=True)
 
-    start = parsed_commands.add_parser(commands.Start.NAME)
+    start = parsed_commands.add_parser(
+        commands.Start.NAME, epilog="Starts a pyre server as a daemon."
+    )
     start.add_argument(
         "--terminal", action="store_true", help="Run the server in the terminal."
+    )
+    start.add_argument(
+        "--store-type-check-resolution",
+        action="store_true",
+        help="Store extra information for `types_in_file` queries.",
     )
     start.add_argument(
         "--no-watchman",
@@ -269,12 +324,22 @@ def main() -> int:
     )
     start.set_defaults(command=commands.Start)
 
-    stop = parsed_commands.add_parser(commands.Stop.NAME)
+    stop = parsed_commands.add_parser(
+        commands.Stop.NAME, epilog="Signals the Pyre server to stop."
+    )
     stop.set_defaults(command=commands.Stop)
 
-    restart = parsed_commands.add_parser(commands.Restart.NAME)
+    restart = parsed_commands.add_parser(
+        commands.Restart.NAME,
+        epilog="Restarts a server. Equivalent to `pyre stop && pyre start`.",
+    )
     restart.add_argument(
         "--terminal", action="store_true", help="Run the server in the terminal."
+    )
+    restart.add_argument(
+        "--store-type-check-resolution",
+        action="store_true",
+        help="Store extra information for types_in_file queries.",
     )
     restart.add_argument(
         "--no-watchman",
@@ -297,26 +362,20 @@ def main() -> int:
     )
     initialize.set_defaults(command=commands.Initialize)
 
-    query = parsed_commands.add_parser(commands.Query.NAME)
-    query_message = """One of:
-    `attributes(type)`,
-    `dump_dependencies(path)`,
-    `dump_memory_to_sqlite`,
-    `join(left, right)`,
-    `less_or_equal(left, right)`,
-    `meet(left, right)`,
-    `methods(type)`,
-    `normalize_type(type)`,
-    `path_of_module(module)`,
-    `save_server_state(path)`,
-    `signature(name)`,
-    `superclasses(type)`,
-    `type(name)`,
-    `type_at_position(path, row, column)`,
-    `types_in_file(path)`
-    `type_check(path, ...)`.
+    query_message = """
+    `https://pyre-check.org/docs/querying-pyre.html` contains examples and documentation
+    for this command, which queries a running pyre server for type, function and
+    attribute information.
+
+    To get a full list of queries, you can run `pyre query help`.
     """
-    query.add_argument("query", help=query_message)
+    query = parsed_commands.add_parser(commands.Query.NAME, epilog=query_message)
+    query_argument_message = """
+    The query for the server, in the following format: "type(1+2)".
+
+     `pyre query help` will give a full list of available queries for the Pyre server.
+    """
+    query.add_argument("query", help=query_argument_message)
     query.set_defaults(command=commands.Query)
 
     arguments = parser.parse_args()

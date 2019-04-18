@@ -99,6 +99,7 @@ let ignore ~configuration scheduler handles errors =
           ~init:[]
           ~f:key_to_ignores
       in
+      let ignores = List.dedup_and_sort ~compare:Ignore.compare ignores in
       let filter_active_ignores sofar ignore =
         match Ignore.kind ignore with
         | Ignore.TypeIgnore -> sofar
@@ -139,9 +140,9 @@ let ignore ~configuration scheduler handles errors =
             (Ignore.location unused_ignore)
             ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
-        define = {
+        signature = {
           Node.location = Ignore.location unused_ignore;
-          value = Statement.Define.create_toplevel ~qualifier:None ~statements:[];
+          value = Statement.Define.Signature.create_toplevel ~qualifier:None;
         };
       }
     in

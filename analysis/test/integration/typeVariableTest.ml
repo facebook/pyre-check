@@ -85,6 +85,38 @@ let test_check_unbounded_variables _ =
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call " ^
       "`Foo.__init__` but got `float`.";
     ];
+  assert_type_errors
+    {|
+      from typing import overload, TypeVar, List, Callable, Tuple
+      @overload
+      def overloaded(x: int) -> str: ...
+      @overload
+      def overloaded(x: bool) -> float: ...
+      @overload
+      def overloaded(x: float) -> bool: ...
+      @overload
+      def overloaded(x: str) -> int: ...
+
+      T1 = typing.TypeVar("T1")
+      T2 = typing.TypeVar("T2")
+      def generic(x: Callable[[T1], T2], y: List[T1], z: List[T2]) -> Tuple[T1, T2]: ...
+
+      def foo() -> None:
+        reveal_type(generic(overloaded, [1], ["1"]))
+        reveal_type(generic(overloaded, [True], [1.0]))
+        reveal_type(generic(overloaded, [1.0], [False]))
+        reveal_type(generic(overloaded, ["1"], [7]))
+
+        generic(overloaded, [1], [7])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[bool, float]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[float, bool]`.";
+      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[str, int]`.";
+      "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd anonymous " ^
+      "parameter to call `generic` but got `List[int]`.";
+    ];
   ()
 
 
@@ -271,26 +303,205 @@ let test_check_variable_bindings _ =
   ()
 
 
-let test_bottom_unbound_variables _ =
+let test_unbound_variables _ =
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x = []
+    |}
+    [
+      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, " ^
+      "add an explicit annotation.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.List[int] = []
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Sequence[int] = []
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: int = []
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as " ^
+      "type `typing.List[Variable[_T]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Optional[typing.List[int]]
+        x = []
+        reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.List[int]`."];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[str, typing.List[int]] = { "A" : [] }
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[int, typing.List[int]] = { "A" : [] }
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type " ^
+      "`typing.Dict[int, typing.List[int]]` but is used as type " ^
+      "`typing.Dict[str, typing.List[Variable[_T]]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> typing.List[int]:
+        return []
+    |}
+    [];
+  assert_type_errors
+    {|
+      def bar(x: typing.List[int]) -> None:
+        pass
+      def foo() -> None:
+        bar([])
+    |}
+    [];
+  (* TODO(T42360946): Probably want a better error here *)
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def bar(x: typing.List[T]) -> T:
+        return x[0]
+      def foo() -> None:
+        x = bar([])
+    |}
+    ["Incomplete Type [37]: Type inferred for `x` is incomplete, add an explicit annotation."];
   assert_type_errors
     {|
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
       class G(typing.Generic[T_Explicit]):
         def __init__(self) -> None:
           pass
-        def eat(self, x: T_Explicit) -> None:
+      def bar() -> G[int]:
+        return G()
+    |}
+    [];
+  assert_type_errors
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
           pass
       def bar() -> G[int]:
         g = G()
         reveal_type(g)
-        g.eat(7)
+        return g
+    |}
+    [
+      "Incomplete Type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `g` is " ^
+      "incomplete, add an explicit annotation.";
+      "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
+      "Incompatible return type [7]: Expected `G[int]` but got `G[typing.Any]`.";
+    ];
+  assert_type_errors
+    ~debug:false
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
+          pass
+      def bar() -> G[int]:
+        g = G()
+        reveal_type(g)
+        return g
+    |}
+    ["Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`."];
+  assert_type_errors
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
+          pass
+      def bar() -> G[int]:
+        g: G[int] = G()
         reveal_type(g)
         return g
     |}
     [
-      "Revealed type [-1]: Revealed type for `g` is `G[]`.";
       "Revealed type [-1]: Revealed type for `g` is `G[int]`.";
-    ]
+    ];
+  assert_type_errors
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
+          pass
+      def bar() -> G[bool]:
+        g: G[bool] = G()
+        reveal_type(g)
+        return g
+    |}
+    [
+      "Incompatible variable type [9]: g is declared to have type `G[bool]` but is used " ^
+      "as type `G[Variable[T_Explicit <: [int, str]]]`.";
+      "Revealed type [-1]: Revealed type for `g` is `G[bool]`.";
+    ];
+  assert_type_errors
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
+          pass
+        def foo(self) -> int:
+          return 7
+      def bar() -> int:
+        return G().foo()
+    |}
+    [
+      "Incomplete Type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `G.(...)` " ^
+      "is incomplete, so attribute `foo` cannot be accessed. Separate the expression into an " ^
+      "assignment and give it an explicit annotation.";
+    ];
+  assert_type_errors
+    {|
+      def bar() -> None:
+        for x in []:
+          pass
+    |}
+    [
+      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[].` is incomplete, " ^
+      "so attribute `__iter__` cannot be accessed. Separate the expression into an assignment " ^
+      "and give it an explicit annotation.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[int, typing.Dict[int, str]] = collections.defaultdict(dict)
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> None:
+        x: typing.Dict[int, str] = collections.defaultdict(dict)
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` " ^
+      "but is used as type `typing.DefaultDict[Variable[collections._KT], " ^
+      "typing.Dict[Variable[_T], Variable[_S]]]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo() -> typing.Tuple[typing.List[int], typing.List[str]]:
+        return [], []
+    |}
+    [];
+  ()
 
 
 let test_distinguish _ =
@@ -409,24 +620,57 @@ let test_distinguish _ =
         return x
       T1 = typing.TypeVar("T1")
       T2 = typing.TypeVar("T2")
-      def bar(x: typing.Callable[[T1], T2], y: typing.Callable[[T2], T1]) -> None:
-        pass
+      def bar(x: typing.Callable[[T1], T2], y: typing.Callable[[T2], T1]) -> typing.Tuple[T1, T2]:
+         ...
       def baz() -> None:
-         bar(foo, foo)
+         x = bar(foo, foo)
     |}
     [
-      "Mutually recursive type variables [36]: Solving type variables for call `bar` " ^
-      "led to infinite recursion"
+      "Incomplete Type [37]: Type `typing.Tuple[Variable[T1], Variable[T1]]` inferred for `x" ^
+      "` is incomplete, add an explicit annotation.";
     ];
   assert_type_errors
     {|
-      def foo() -> None:
-        x = collections.defaultdict(dict)
+      T = typing.TypeVar("T")
+      def identity(x: T) -> T:
+        return x
+      def f() -> None:
+        reveal_type(map(identity, [1, 2, 3]))
+    |}
+    ["Revealed type [-1]: Revealed type for `map.(...)` is `typing.Iterator[int]`."];
+  ()
+
+
+let test_integer_variables _ =
+  assert_type_errors
+    {|
+      T = pyre_check.extensions.IntVar("T")
+      X = pyre_check.extensions.IntVar("X")
+      def baz(x: X) -> X:
+        return x
+      def bop(x: int) -> None:
+        pass
+      def foo(x: T) -> T:
+        y = x.__add__(5)
+        z = baz(x)
+        bop(x)
+        return z
+      def bar() -> None:
+        x = foo(1)
         reveal_type(x)
     |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
+  assert_type_errors
+    {|
+      X = pyre_check.extensions.IntVar("X")
+      def baz(x: X) -> X:
+        return x
+      def bar(y: int) -> None:
+        baz(y)
+    |}
     [
-      "Revealed type [-1]: Revealed type for `x` is " ^
-      "`typing.DefaultDict[undefined, typing.Dict[]]`."
+      "Incompatible parameter type [6]: Expected `IntegerVariable[X]` for 1st anonymous " ^
+      "parameter to call `baz` but got `int`.";
     ];
   ()
 
@@ -436,7 +680,8 @@ let () =
   "typeVariable">:::[
     "check_unbounded_variables">::test_check_unbounded_variables;
     "check_variable_bindings">::test_check_variable_bindings;
-    "bottom_unbound_variables">::test_bottom_unbound_variables;
+    "unbound_variables">::test_unbound_variables;
     "distinguish">::test_distinguish;
+    "integer_variables">::test_integer_variables;
   ]
   |> Test.run

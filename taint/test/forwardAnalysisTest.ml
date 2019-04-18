@@ -65,6 +65,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
   TypeCheck.run ~configuration ~environment ~source |> ignore;
   let defines =
     source
+    |> Preprocessing.convert
     |> Preprocessing.defines
     |> List.rev
   in
@@ -287,6 +288,30 @@ let test_class_model _ =
         ~returns:[Sources.Test]
         "qualifier.Foo.bar";
     ];
+
+  assert_taint
+    ~models:{|
+      qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
+    |}
+    {|
+      class Data:
+        ATTRIBUTE = 1
+      def as_instance_attribute(data: Data):
+        return data.ATTRIBUTE
+      def as_class_attribute():
+        return Data.ATTRIBUTE
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.as_instance_attribute";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.as_class_attribute";
+    ];
+
   assert_taint
     {|
       class Class:

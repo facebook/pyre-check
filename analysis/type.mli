@@ -10,6 +10,36 @@ open Expression
 
 
 module Record : sig
+  module Variable : sig
+    module RecordNamespace : sig
+      type t
+      [@@deriving compare, eq, sexp, show, hash]
+    end
+    type state
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation constraints =
+      | Bound of 'annotation
+      | Explicit of 'annotation list
+      | Unconstrained
+      | LiteralIntegers
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type variance =
+      | Covariant
+      | Contravariant
+      | Invariant
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type 'annotation record = {
+      variable: Identifier.t;
+      constraints: 'annotation constraints;
+      variance: variance;
+      state: state;
+      namespace: RecordNamespace.t;
+    }
+    [@@deriving compare, eq, sexp, show, hash]
+  end
   module Callable : sig
     module RecordParameter : sig
       type 'annotation named = {
@@ -27,7 +57,7 @@ module Record : sig
 
     type kind =
       | Anonymous
-      | Named of Access.t
+      | Named of Reference.t
 
     and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
@@ -53,25 +83,17 @@ module Record : sig
   end
 end
 
-type literal =
-  | String of string
-  | Integer of int
+type primitive = Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
 
-type variable_state
+type literal =
+  | Boolean of bool
+  | Integer of int
+  | String of string
 
 type tuple =
   | Bounded of t list
   | Unbounded of t
-
-and constraints =
-  | Bound of t
-  | Explicit of t list
-  | Unconstrained
-
-and variance =
-  | Covariant
-  | Contravariant
-  | Invariant
 
 and typed_dictionary_field = {
   name: string;
@@ -85,23 +107,19 @@ and t =
   | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
-  | Primitive of Identifier.t
+  | Primitive of primitive
   | Top
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of {
-      variable: Identifier.t;
-      constraints: constraints;
-      variance: variance;
-      state: variable_state;
-    }
+  | Variable of t Record.Variable.record
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
 [@@deriving compare, eq, sexp, show]
 
 module Map : Map.S with type Key.t = t
+val default_to_bottom: t Map.t -> t list -> t Map.t
 module Set: Set.S with type Elt.t = t
 include Hashable with type t := t
 
@@ -115,7 +133,6 @@ val show_concise: t -> string
 val serialize: t -> string
 
 val parametric: string -> t list -> t
-val variable: ?constraints: constraints -> ?variance: variance -> string -> t
 
 val awaitable: t -> t
 val coroutine: t list -> t
@@ -138,6 +155,7 @@ val list: t -> t
 val meta: t -> t
 val named_tuple: t
 val none: t
+val number: t
 val object_primitive: t
 val optional: t -> t
 val sequence: t -> t
@@ -149,7 +167,7 @@ val undeclared: t
 val union: t list -> t
 val yield: t -> t
 
-val expression: t -> Expression.t
+val expression: ?convert:bool -> t -> Expression.t
 val access: t -> Access.t
 
 module Transform : sig
@@ -211,7 +229,7 @@ module Callable : sig
   val with_return_annotation: t -> annotation: type_t -> t
 
   val create
-    :  ?name: Access.t
+    :  ?name: Reference.t
     -> ?overloads: (type_t overload) list
     -> ?parameters: type_t parameters
     -> ?implicit: implicit
@@ -223,16 +241,14 @@ module Callable : sig
 end
 
 val create
-  :  aliases:(t -> t option)
+  : ?convert: bool
+  -> aliases:(t -> t option)
   -> Expression.t
   -> t
 
 val contains_callable: t -> bool
 
 val is_callable: t -> bool
-val is_concrete: t -> bool
-val is_contravariant: t -> bool
-val is_covariant: t -> bool
 val is_dictionary: ?with_key: t option -> t -> bool
 val is_ellipsis: t -> bool
 val is_generator: t -> bool
@@ -259,6 +275,7 @@ val is_not_instantiated: t -> bool
 
 val contains_literal: t -> bool
 
+val primitive_name: t -> Identifier.t option
 val primitives: t -> t list
 val elements: t -> t list
 
@@ -275,21 +292,53 @@ val single_parameter: t -> t
 val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
 val weaken_literals: t -> t
 val split: t -> t * (t list)
-val class_name: t -> Access.t
+val class_name: t -> Reference.t
 
 val class_variable: t -> t
 val class_variable_value: t -> t option
 
 val assume_any: t -> t
-val mark_variables_as_bound: ?simulated: bool -> t -> t
-val free_variables: t -> t list
-val free_simulated_bound_variables: t -> t
-(* Does not contain free variables. *)
-val is_resolved: t -> bool
-val instantiate_free_variables: replacement:t -> t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
-val dequalify: Access.t Access.Map.t -> t -> t
+val dequalify: Reference.t Reference.Map.t -> t -> t
+
+module Variable : sig
+  module Namespace : sig
+    include module type of struct include Record.Variable.RecordNamespace end
+    val reset: unit -> unit
+    val create_fresh: unit -> t
+  end
+  include module type of struct include Record.Variable end
+  type t = type_t record
+  [@@deriving compare, eq, sexp, show, hash]
+  val create: ?constraints: type_t constraints -> ?variance: variance -> string -> t
+  val is_escaped_and_free: t -> bool
+  val is_contravariant: t -> bool
+  val is_covariant: t -> bool
+  val is_free: t -> bool
+  val namespace: t -> namespace: Namespace.t -> t
+  val upper_bound: t -> type_t
+  val is_escaped_and_free: t -> bool
+
+  val mark_all_variables_as_bound: ?simulated: bool -> type_t -> type_t
+  val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t
+  val free_all_simulated_bound_variables: type_t -> type_t
+  val all_free_variables: type_t -> t list
+  val all_variables_are_resolved: type_t -> bool
+  val instantiate_all_free_variables: replacement:type_t -> type_t -> type_t
+  val mark_all_free_variables_as_escaped: ?specific: t list -> type_t -> type_t
+  val collapse_all_escaped_variable_unions: type_t -> type_t
+  val contains_escaped_free_variable: type_t -> bool
+  val convert_all_escaped_free_variables_to_anys: type_t -> type_t
+end
+
+val variable
+  :  ?constraints: type_t Variable.constraints
+  -> ?variance: Variable.variance
+  -> string
+  -> t
+
+val is_concrete: t -> bool
 
 module TypedDictionary : sig
   val anonymous: total: bool -> typed_dictionary_field list -> t

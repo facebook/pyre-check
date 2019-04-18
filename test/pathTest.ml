@@ -258,6 +258,38 @@ let test_build_symlink_map context =
     [target, link]
 
 
+let test_search_for_path context =
+  let root =
+    OUnit2.bracket_tmpdir context
+    |> Path.create_absolute
+  in
+  let assert_path ~search_path ~path ~expected =
+    assert_equal (Some expected) (Path.search_for_path ~search_path ~path >>= Path.relative)
+  in
+  let search_path =
+    [
+      Path.SearchPath.Subdirectory { root; subdirectory = "a" };
+      Path.SearchPath.Subdirectory {
+        root = Path.create_relative ~root ~relative:"b";
+        subdirectory = "c";
+      };
+      Path.SearchPath.Subdirectory { root; subdirectory = "b" };
+    ]
+  in
+  assert_path
+    ~search_path
+    ~path:(Path.create_relative ~root ~relative:"a/file.py")
+    ~expected:"a/file.py";
+  assert_path
+    ~search_path
+    ~path:(Path.create_relative ~root ~relative:"b/c/file.py")
+    ~expected:"c/file.py";
+  assert_path
+    ~search_path
+    ~path:(Path.create_relative ~root ~relative:"b/other/file.py")
+    ~expected:"b/other/file.py"
+
+
 let () =
   "path">:::[
     "create">::test_create;
@@ -275,5 +307,6 @@ let () =
     "remove">::test_remove;
     "create_search_path">::test_create_search_path;
     "build_symlink_map">::test_build_symlink_map;
+    "search_for_path">::test_search_for_path;
   ]
   |> Test.run

@@ -4,7 +4,8 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Expression
+
+val convert: Source.t -> Source.t
 
 val expand_relative_imports: Source.t -> Source.t
 
@@ -44,7 +45,7 @@ val classes
   -> Statement.Class.t Node.t list
 
 (* Creates a map used for dequalification from imports in the source *)
-val dequalify_map: Source.t -> Access.t Access.Map.t
+val dequalify_map: Source.t -> Reference.t Reference.Map.t
 
 (* Most of the above. *)
 val preprocess: Source.t -> Source.t

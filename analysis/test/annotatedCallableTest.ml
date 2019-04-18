@@ -29,7 +29,7 @@ let test_return_annotation _ =
       in
       {
         Statement.Define.signature = {
-          name = Reference.create "derp";
+          name = !&"derp";
           parameters = [];
           decorators = [];
           docstring = None;
@@ -44,9 +44,9 @@ let test_return_annotation _ =
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
-  assert_return_annotation (Some (Type.expression Type.integer)) false Type.integer;
+  assert_return_annotation (Some (Type.expression ~convert:true Type.integer)) false Type.integer;
   assert_return_annotation
-    (Some (Type.expression Type.integer))
+    (Some (Type.expression ~convert:true Type.integer))
     true
     (Type.coroutine [Type.Any; Type.Any; Type.integer])
 
@@ -55,7 +55,7 @@ let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
     {
       Statement.Define.signature = {
-        name = Reference.create "define";
+        name = !&"define";
         parameters;
         decorators;
         docstring = None;

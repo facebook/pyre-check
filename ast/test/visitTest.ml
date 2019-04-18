@@ -127,7 +127,7 @@ let test_collect_accesses _ =
     {|
        s = ham.egg(cheese).bake
     |}
-    |> parse_single_statement
+    |> parse_single_statement ~convert:true
   in
   let instantiate location =
     let lookup_table = Int.Table.of_alist_exn [String.hash "test.py", "test.py"] in

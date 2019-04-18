@@ -12,8 +12,9 @@ open Statement
 
 
 type t = {
-  class_definitions: Resolution.class_representation Type.Table.t;
-  protocols: Type.Hash_set.t;
+  class_definitions: (Class.t Node.t) Identifier.Table.t;
+  class_metadata: Resolution.class_metadata Identifier.Table.t;
+  protocols: Identifier.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -28,15 +29,16 @@ module type Handler = sig
     -> reference: Reference.t
     -> global: Resolution.global
     -> unit
-  val set_class_definition: primitive: Type.t -> definition: Class.t Node.t -> unit
-  val refine_class_definition: Type.t -> unit
+  val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
+  val register_class_metadata: Identifier.t -> unit
   val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
-  val class_definition: Type.t -> Resolution.class_representation option
+  val class_definition: Identifier.t -> Class.t Node.t option
+  val class_metadata: Identifier.t -> Resolution.class_metadata option
 
-  val register_protocol: Type.t -> unit
-  val protocols: unit -> Type.t list
+  val register_protocol: handle: File.Handle.t -> Identifier.t -> unit
+  val protocols: unit -> Identifier.t list
 
   val register_module
     :  qualifier: Reference.t
@@ -49,10 +51,10 @@ module type Handler = sig
   val is_module: Reference.t -> bool
   val module_definition: Reference.t -> Module.t option
 
-  val in_class_definition_keys: Type.t -> bool
+  val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
-  val dependencies: Reference.t -> File.Handle.Set.Tree.t option
+  val dependencies: Reference.t -> Reference.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
 
@@ -89,10 +91,7 @@ let connect_definition
     if annotations_tracked && not primitive_cycle && not cycle_with_top then
       TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
   in
-  let primitive, _ =
-    Annotated.Class.annotation ~resolution annotated
-    |> Type.split
-  in
+  let primitive = Type.Primitive (Reference.show name) in
   connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
   begin
     match Annotated.Class.inferred_callable_type annotated ~resolution with
@@ -104,9 +103,10 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.object_primitive) || Reference.show name = "object" then
+  if not (Type.equal primitive Type.object_primitive) ||
+     String.equal (Reference.show name) "object" then
     (* Register normal annotations. *)
-    let register_supertype { Argument.value; _ } =
+    let register_supertype { Expression.Call.Argument.value; _ } =
       let value = Expression.delocalize value in
       match Node.value value with
       | Access (SimpleAccess name) ->
@@ -140,7 +140,7 @@ let connect_definition
     let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
     inferred_base @ bases
     (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-    |> List.filter ~f:(fun { Argument.name; _ } -> Option.is_none name)
+    |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
     |> List.iter ~f:register_supertype
   else
     ()
@@ -149,6 +149,7 @@ let connect_definition
 let handler
     {
       class_definitions;
+      class_metadata;
       protocols;
       modules;
       order;
@@ -177,60 +178,36 @@ let handler
       Hashtbl.set ~key:reference ~data:global globals
 
 
-    let set_class_definition ~primitive ~definition =
+    let set_class_definition ~name ~definition =
       let definition =
-        match Hashtbl.find class_definitions primitive with
-        | Some ({
-            class_definition = { Node.location; value = preexisting };
-            _;
-          } as class_representation) ->
+        match Hashtbl.find class_definitions name with
+        | Some { Node.location; value = preexisting } ->
             {
-              class_representation with
-              class_definition = {
-                Node.location;
-                value = Class.update preexisting ~definition:(Node.value definition);
-              };
-            }
+              Node.location;
+              value = Class.update preexisting ~definition:(Node.value definition);
+            };
         | _ ->
-            {
-              class_definition = definition;
-              methods = [];
-              successors = [];
-              explicit_attributes = Identifier.SerializableMap.empty;
-              implicit_attributes = Identifier.SerializableMap.empty;
-              is_test = false;
-            }
+            definition
       in
-      Hashtbl.set class_definitions ~key:primitive ~data:definition
+      Hashtbl.set class_definitions ~key:name ~data:definition
 
 
-    let refine_class_definition annotation =
-      let refine { Resolution.class_definition = { Node.location; value = class_definition }; _ } =
-        let successors = TypeOrder.successors (module TypeOrderHandler) annotation in
-        let in_test =
-          let is_unit_test { Resolution.class_definition = { Node.value = definition; _ }; _ } =
-            Class.is_unit_test definition
-          in
-          List.filter_map successors ~f:(Hashtbl.find class_definitions)
-          |> List.exists ~f:is_unit_test
+    let register_class_metadata class_name =
+      let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+      let in_test =
+        let is_unit_test { Node.value = definition; _ } =
+          Class.is_unit_test definition
         in
-        let explicit_attributes = Class.explicitly_assigned_attributes class_definition in
-        let implicit_attributes = Class.implicit_attributes ~in_test class_definition in
-        Hashtbl.set
-          class_definitions
-          ~key:annotation
-          ~data:{
-            class_definition = { Node.location; value = class_definition };
-            is_test = in_test;
-            successors;
-            explicit_attributes;
-            implicit_attributes;
-            methods = [];
-          }
+        List.filter_map successors ~f:(Hashtbl.find class_definitions)
+        |> List.exists ~f:is_unit_test
       in
-      Hashtbl.find class_definitions annotation
-      >>| refine
-      |> ignore
+      Hashtbl.set
+        class_metadata
+        ~key:class_name
+        ~data:{
+          is_test = in_test;
+          successors;
+        }
 
 
     let register_alias ~handle ~key ~data =
@@ -247,15 +224,13 @@ let handler
        *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
        * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
       let purge_dependents keys =
+        let qualifiers =
+          List.map handles ~f:(fun handle -> Source.qualifier ~handle)
+          |> Reference.Set.of_list
+        in
         let remove_paths entry =
-          match entry with
-          | Some set ->
-              Set.filter
-                ~f:(fun dependent -> not (List.mem handles dependent ~equal:File.Handle.equal))
-                set
-              |> Option.some
-          | None ->
-              None
+          entry
+          >>| fun entry -> Set.diff entry qualifiers
         in
         List.iter
           ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
@@ -269,6 +244,8 @@ let handler
       |> purge_table_given_keys globals;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
+      |> List.iter ~f:(Hash_set.remove protocols);
       DependencyHandler.clear_keys_batch handles;
       List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
@@ -281,7 +258,11 @@ let handler
     let class_definition =
       Hashtbl.find class_definitions
 
-    let register_protocol protocol =
+    let class_metadata =
+      Hashtbl.find class_metadata
+
+    let register_protocol ~handle protocol =
+      DependencyHandler.add_protocol_key ~handle protocol;
       Hash_set.add protocols protocol
 
     let protocols () =
@@ -394,19 +375,18 @@ let register_class_definitions (module Handler: Handler) source =
 
       let statement { Source.handle; _ } new_annotations = function
         | { Node.location; value = Class ({ Class.name; _ } as definition); } ->
-            let primitive, _ =
-              Reference.expression name
-              |> Type.create ~aliases:Handler.aliases
-              |> Type.split
-            in
-            Handler.DependencyHandler.add_class_key ~handle primitive;
+            let name = Reference.show name in
+            let primitive = Type.Primitive name in
+            Handler.DependencyHandler.add_class_key ~handle name;
             let annotated = Annotated.Class.create { Node.location; value = definition } in
 
             if Annotated.Class.is_protocol annotated then
-              Handler.register_protocol primitive;
+              begin
+                Handler.register_protocol ~handle name
+              end;
 
             Handler.set_class_definition
-              ~primitive
+              ~name
               ~definition:{ Node.location; value = definition };
             if not (TypeOrder.contains order primitive) then
               TypeOrder.insert order primitive;
@@ -415,7 +395,7 @@ let register_class_definitions (module Handler: Handler) source =
             new_annotations
     end)
   in
-  Visit.visit Type.Set.empty source
+  Visit.visit Type.Set.empty (Preprocessing.convert source)
 
 
 let register_aliases (module Handler: Handler) sources =
@@ -425,48 +405,65 @@ let register_aliases (module Handler: Handler) sources =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       match value with
       | Assign {
-          Assign.target = { Node.value = Access (SimpleAccess target); _ };
+          Assign.target = { Node.value = Name target; _ };
           annotation;
           value;
           _;
-        } ->
+        } when Expression.is_simple_name target ->
           let target =
-            let access = Access.delocalize_qualified target in
-            if in_class_body then
-              access
-            else
-              Reference.access qualifier @ access
+            let target =
+              Reference.from_name target
+              |> Reference.sanitize_qualified
+            in
+            if in_class_body then target else Reference.combine qualifier target
           in
           let target_annotation =
-            Type.create
-              ~aliases:Handler.aliases
-              (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
+            Type.create ~aliases:Handler.aliases (Reference.expression target)
           in
           begin
             match Node.value value, annotation with
             | _, Some {
                 Node.value =
-                  Access
-                    (SimpleAccess [
-                        Access.Identifier "typing";
-                        Access.Identifier "Type";
-                        Access.Identifier "__getitem__";
-                        Access.Call {
-                          Node.value = [{
-                              Argument.value = ({
-                                  Node.value = Access (SimpleAccess [
-                                      Access.Identifier "mypy_extensions";
-                                      Access.Identifier "TypedDict";
-                                      Access.Identifier "__getitem__";
-                                      Access.Call _;
-                                    ]);
-                                  _;
-                                } as annotation);
-                              _;
-                            }];
+                  Call {
+                    callee = {
+                      Node.value = Name (Name.Attribute {
+                        base = {
+                          Node.value = Name (Name.Attribute {
+                            base = { Node.value = Name (Name.Identifier "typing"); _ };
+                            attribute = "Type";
+                          });
                           _;
                         };
-                      ]);
+                        attribute = "__getitem__";
+                      });
+                      _;
+                    };
+                    arguments = [{
+                        Call.Argument.value = ({
+                          Node.value = Call {
+                            callee = {
+                              Node.value = Name (Name.Attribute {
+                                base = {
+                                  Node.value = Name (Name.Attribute {
+                                    base = {
+                                      Node.value = Name (Name.Identifier "mypy_extensions");
+                                      _;
+                                    };
+                                    attribute = "TypedDict";
+                                  });
+                                  _;
+                                };
+                                attribute = "__getitem__";
+                              });
+                              _;
+                            };
+                            _;
+                          };
+                          _;
+                        } as annotation);
+                        _;
+                    }];
+                  };
                 _;
               } ->
                 if not (Type.equal target_annotation Type.Top) then
@@ -475,18 +472,18 @@ let register_aliases (module Handler: Handler) sources =
                   aliases
             | _, Some ({
                 Node.value =
-                  Access
-                    (SimpleAccess[
-                        Access.Identifier "typing";
-                        Access.Identifier "Any";
-                      ]);
+                  Name (Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier "typing"); _ };
+                    attribute = "Any";
+                  });
                 _;
               } as annotation) ->
                 if not (Type.equal target_annotation Type.Top) then
                   (handle, target, annotation) :: aliases
                 else
                   aliases
-            | Access _, None ->
+            | Call _, None
+            | Name _, None ->
                 let value = Expression.delocalize value in
                 let value_annotation = Type.create ~aliases:Handler.aliases value in
                 if not (Type.equal target_annotation Type.Top ||
@@ -503,10 +500,8 @@ let register_aliases (module Handler: Handler) sources =
             body
             ~init:aliases
             ~f:(visit_statement ~qualifier:name ~in_class_body:true)
-      | Import {
-          Import.from = Some _;
-          imports = [{ Import.name = [Access.Identifier "*"]; _ }];
-        } ->
+      | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
+        when Reference.show name = "*" ->
           (* Don't register x.* as an alias when a user writes `from x import *`. *)
           aliases
       | Import {
@@ -514,25 +509,25 @@ let register_aliases (module Handler: Handler) sources =
           imports;
         } ->
           let from =
-            match Access.show from with
+            match Reference.show from with
             | "future.builtins"
-            | "builtins" -> []
+            | "builtins" -> Reference.empty
             | _ -> from
           in
           let import_to_alias { Import.name; alias } =
             let qualified_name =
               match alias with
-              | None -> Reference.access qualifier @ name
-              | Some alias -> Reference.access qualifier @ alias
+              | None -> Reference.combine qualifier name
+              | Some alias -> Reference.combine qualifier alias
             in
-            let original_name = from @ name in
-            match qualified_name, original_name with
-            | Identifier single_identifier :: [], (Identifier typing) :: [Identifier identifier]
-              when typing = "typing" && single_identifier = identifier ->
+            let original_name = Reference.combine from name in
+            match Reference.as_list qualified_name, Reference.as_list original_name with
+            | single_identifier :: [], typing :: [identifier]
+              when String.equal typing "typing" && String.equal single_identifier identifier ->
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [handle, qualified_name, Access.expression original_name]
+                [handle, qualified_name, Reference.expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
@@ -542,14 +537,12 @@ let register_aliases (module Handler: Handler) sources =
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
-      Type.create
-        (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
-        ~aliases:Handler.aliases
+      Type.create ~aliases:Handler.aliases (Reference.expression target)
     in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
-          Type.Variable { variable with variable = Access.show target }
+          Type.Variable { variable with variable = Reference.show target }
       | annotation ->
           annotation
     in
@@ -570,8 +563,8 @@ let register_aliases (module Handler: Handler) sources =
             | Primitive primitive ->
                 let reference =
                   match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Access (SimpleAccess name) ->
-                      Reference.from_access name
+                  | Expression.Name name when Expression.is_simple_name name ->
+                      Reference.from_name name
                   | _ ->
                       Reference.create "typing.Any"
                 in
@@ -612,7 +605,7 @@ let register_aliases (module Handler: Handler) sources =
           Log.debug
             "Unresolved alias %a:%a <- %a"
             File.Handle.pp handle
-            Access.pp target
+            Reference.pp target
             Expression.pp value
         in
         List.iter ~f:show_unresolved unresolved
@@ -625,7 +618,8 @@ let register_aliases (module Handler: Handler) sources =
 let register_values
     (module Handler: Handler)
     resolution
-    ({ Source.handle; qualifier; statements; _ } as source) =
+    ({ Source.handle; qualifier; _ } as source) =
+  let ({ Source.statements; _ }) as source = Preprocessing.convert source in
   let qualified_reference reference =
     let reference =
       let builtins = Reference.create "builtins" in
@@ -659,7 +653,7 @@ let register_values
             let parent =
               if Define.is_class_method define then
                 parent
-                >>| Resolution.parse_reference ~allow_untracked:true resolution
+                >>= fun reference -> Some (Type.Primitive (Reference.show reference))
                 >>| Type.meta
               else
                 None
@@ -714,10 +708,7 @@ let register_values
       let statement { Source.handle; _ } _ = function
         | { Node.location; value = Class { Class.name; _ } } ->
             (* Register meta annotation. *)
-            let primitive, _ =
-              Resolution.parse_reference ~allow_untracked:true resolution name
-              |> Type.split
-            in
+            let primitive = Type.Primitive (Reference.show name) in
             let global =
               Annotation.create_immutable
                 ~global:true
@@ -755,7 +746,7 @@ let register_values
                 | _ ->
                     annotation
               in
-              Type.create ~aliases:Handler.aliases annotation, true
+              Type.create ~convert:true ~aliases:Handler.aliases annotation, true
           | None ->
               let annotation =
                 try
@@ -827,7 +818,7 @@ let connect_type_order (module Handler: Handler) resolution source =
             ()
     end)
   in
-  Visit.visit () source
+  Visit.visit () (Preprocessing.convert source)
   |> ignore
 
 
@@ -847,8 +838,8 @@ let register_dependencies (module Handler: Handler) source =
                    Otherwise, add all dependencies. *)
                 | None ->
                     imports
-                    |> List.map ~f:(fun { Import.name; _ } -> Reference.from_access name)
-                | Some base_module -> [Reference.from_access base_module]
+                    |> List.map ~f:(fun { Import.name; _ } -> name)
+                | Some base_module -> [base_module]
               in
               let qualify_builtins import =
                 match Reference.single import with
@@ -857,9 +848,7 @@ let register_dependencies (module Handler: Handler) source =
               in
               List.map imports ~f:qualify_builtins
             in
-            List.iter
-              ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency)
-              imports
+            List.iter ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency) imports
         | _ ->
             ()
     end)
@@ -878,7 +867,7 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
         let classes_to_analyze =
           (* Get all implementing classes. *)
           let names =
-            Class.methods protocol_definition ~resolution
+            Class.methods protocol_definition
             |> List.map ~f:Class.Method.name
           in
           if List.is_empty names then
@@ -900,18 +889,22 @@ let infer_implementations (module Handler: Handler) resolution ~implementing_cla
             (
               not (Class.is_protocol definition) ||
               (
-                Class.name protocol_definition = Reference.create "typing.Sized" &&
+                Reference.equal
+                  (Class.name protocol_definition) (Reference.create "typing.Sized") &&
                 (
-                  Class.name definition = Reference.create "typing._Collection" ||
-                  Class.name definition = Reference.create "typing.Collection"
+                  Reference.equal
+                    (Class.name definition) (Reference.create "typing._Collection") ||
+                  Reference.equal
+                    (Class.name definition) (Reference.create "typing.Collection")
                 )
               )
             )
             definition
         in
-        let implements annotation =
-          Handler.class_definition annotation
-          >>| (fun { class_definition; _ } -> class_definition)
+        let implements (annotation: Type.t) =
+          annotation
+          |> Type.primitive_name
+          >>= Handler.class_definition
           >>| Class.create
           >>= validate
           >>| Class.implements ~resolution ~protocol:protocol_definition
@@ -952,9 +945,9 @@ let infer_protocol_edges
     (* Skip useless protocols for better performance. *)
     let skip_protocol protocol =
       match Handler.class_definition protocol with
-      | Some { class_definition = protocol_definition; _ } ->
+      | Some protocol_definition ->
           let protocol_definition = Annotated.Class.create protocol_definition in
-          List.is_empty (Annotated.Class.methods protocol_definition ~resolution)
+          List.is_empty (Annotated.Class.methods protocol_definition)
       | _ ->
           true
     in
@@ -966,10 +959,10 @@ let infer_protocol_edges
       let open Statement in
       let protocol_methods =
         let names_of_methods protocol =
-          Handler.class_definition protocol
-          >>| (fun { class_definition; _ } -> class_definition)
+          protocol
+          |> Handler.class_definition
           >>| Annotated.Class.create
-          >>| Annotated.Class.methods ~resolution
+          >>| Annotated.Class.methods
           >>| List.map ~f:Annotated.Class.Method.name
           |> Option.value ~default:[]
         in
@@ -980,12 +973,13 @@ let infer_protocol_edges
       let add_type_methods methods_to_implementing_classes index =
         let class_definition =
           Handler.TypeOrderHandler.find annotations index
+          >>= Type.primitive_name
           >>= Handler.class_definition
         in
         match class_definition with
         | None ->
             methods_to_implementing_classes
-        | Some { class_definition = { Node.value = { Class.name = class_name; body; _ }; _ }; _ } ->
+        | Some { Node.value = { Class.name = class_name; body; _ }; _ } ->
             (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
             let add_method methods_to_implementing_classes { Node.value = statement; _ } =
               match statement with
@@ -1010,6 +1004,7 @@ let infer_protocol_edges
     fun ~method_name -> Map.find methods_to_implementing_classes method_name
   in
   let add_protocol_edges edges protocol =
+    let protocol = Type.Primitive protocol in
     infer_implementations handler resolution ~implementing_classes ~protocol
     |> Set.union edges
   in
@@ -1025,9 +1020,12 @@ let infer_protocols
   let classes_to_infer =
     match classes_to_infer with
     | Some classes ->
-        List.filter_map
-          classes
-          ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
+        let f name =
+          Handler.TypeOrderHandler.find
+            (Handler.TypeOrderHandler.indices ())
+            (Type.Primitive name)
+        in
+        List.filter_map classes ~f
     | None ->
         Handler.TypeOrderHandler.keys ()
   in
@@ -1044,11 +1042,8 @@ let infer_protocols
 
 let propagate_nested_classes (module Handler: Handler) resolution annotation =
   let propagate
-      {
-        Resolution.class_definition = { Node.location; value = ({ name; _ } as definition) };
-        successors;
-        _;
-      }
+      { Node.location; value = { Statement.Class.name; _ } as definition }
+      successors
     =
     let handle =
       Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
@@ -1079,13 +1074,16 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
       |> List.map ~f:snd
     in
     successors
-    |> List.filter_map ~f:(Resolution.class_definition resolution)
+    |> List.filter_map ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
   in
-  Handler.class_definition annotation
-  >>| propagate
+  (annotation
+   |> Type.primitive_name
+   >>= fun name -> Handler.class_definition name
+   >>= fun definition -> Handler.class_metadata name
+   >>| (fun { Resolution.successors; _ } -> propagate definition successors))
   |> ignore
 
 
@@ -1096,8 +1094,9 @@ let built_in_annotations =
 
 module Builder = struct
   let create () =
-    let class_definitions = Type.Table.create () in
-    let protocols = Type.Hash_set.create () in
+    let class_definitions = Identifier.Table.create () in
+    let class_metadata = Identifier.Table.create () in
+    let protocols = Identifier.Hash_set.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
@@ -1149,19 +1148,24 @@ module Builder = struct
         }
       in
       let successors =
-        let successor { Argument.value; _ } = Type.create value ~aliases:(fun _ -> None) in
-        (List.map bases ~f:successor) @ [Type.object_primitive]
+        let successor { Expression.Call.Argument.value; _ } =
+          Type.create ~convert:true value ~aliases:(fun _ -> None)
+          |> Type.split
+          |> fst
+          |> Type.primitive_name
+        in
+        (List.filter_map bases ~f:successor) @ ["object"]
       in
       Hashtbl.set
-        ~key:(Type.Primitive name)
+        ~key:name
         ~data:{
-          Resolution.class_definition = Node.create_with_default_location definition;
-          methods = [];
-          successors;
-          explicit_attributes = Identifier.SerializableMap.empty;
-          implicit_attributes = Identifier.SerializableMap.empty;
+          Resolution.successors;
           is_test = false;
         }
+        class_metadata;
+      Hashtbl.set
+        ~key:name
+        ~data:(Node.create_with_default_location definition)
         class_definitions;
     in
     let t_self_expression =
@@ -1178,8 +1182,10 @@ module Builder = struct
         "typing.Type",
         [
           {
-            Argument.name = None;
-            value = Type.parametric "typing.Generic" [Type.variable "typing._T"] |> Type.expression
+            Expression.Call.Argument.name = None;
+            value =
+              Type.parametric "typing.Generic" [Type.variable "typing._T"]
+              |> Type.expression ~convert:true
           };
         ],
         [];
@@ -1206,20 +1212,20 @@ module Builder = struct
         "TypedDictionary",
         [
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value =
               (Type.parametric "typing.Mapping" [Type.string; Type.Any])
-              |> Type.expression
+              |> Type.expression ~convert:true
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:true;
         "NonTotalTypedDictionary",
         [
           {
-            Argument.name = None;
+            Expression.Call.Argument.name = None;
             value =
               (Type.Primitive "TypedDictionary")
-              |> Type.expression
+              |> Type.expression ~convert:true
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:false;
@@ -1251,6 +1257,7 @@ module Builder = struct
 
     {
       class_definitions;
+      class_metadata;
       protocols;
       modules;
       order;
@@ -1263,6 +1270,7 @@ module Builder = struct
   let copy
       {
         class_definitions;
+        class_metadata;
         protocols;
         modules;
         order;
@@ -1272,6 +1280,7 @@ module Builder = struct
       } =
     {
       class_definitions = Hashtbl.copy class_definitions;
+      class_metadata = Hashtbl.copy class_metadata;
       protocols = Hash_set.copy protocols;
       modules = Hashtbl.copy modules;
       order = TypeOrder.Builder.copy order;

@@ -420,3 +420,23 @@ class StartTest(unittest.TestCase):
                 "path1,path2",
             ],
         )
+        arguments = mock_arguments(store_type_check_resolution=True)
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-store-type-check-resolution",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )

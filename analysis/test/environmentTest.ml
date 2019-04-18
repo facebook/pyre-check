@@ -98,7 +98,8 @@ let test_register_class_definitions _ =
   let (module Handler: Environment.Handler) = Environment.handler (create_environment ()) in
   Environment.register_class_definitions
     (module Handler)
-    (parse {|
+    (parse
+       {|
        class C:
          ...
        class D(C):
@@ -114,14 +115,14 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) (!"B")) (Type.Primitive "B");
   assert_equal (parse_annotation (module Handler) (!"A")) (Type.Primitive "A");
   let order = (module Handler.TypeOrderHandler: TypeOrder.Handler) in
-  assert_equal (TypeOrder.successors order (Type.Primitive "C")) [];
-  assert_equal (TypeOrder.predecessors order (Type.Primitive "C")) [];
+  assert_equal (TypeOrder.successors order "C") [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
     Environment.register_class_definitions
       (module Handler)
-      (parse {|
+      (parse
+         {|
          class C:
            ...
        |})
@@ -143,7 +144,7 @@ let test_register_class_definitions _ =
     new_annotations
 
 
-let test_refine_class_definitions _ =
+let test_register_class_metadata _ =
   let (module Handler: Environment.Handler) =
     Environment.handler (create_environment ~include_helpers:false ())
   in
@@ -179,60 +180,26 @@ let test_refine_class_definitions _ =
     ~top:Type.Any
     all_annotations;
 
-  Handler.refine_class_definition (Type.Primitive "A");
-  Handler.refine_class_definition (Type.Primitive "B");
-  Handler.refine_class_definition (Type.Primitive "C");
-  Handler.refine_class_definition (Type.Primitive "D");
-  Handler.refine_class_definition (Type.Primitive "E");
-  let attribute_equal
-      (expected_name, expected_value)
-      { Node.value = { Statement.Attribute.name; value; _ }; _ } =
-    String.equal expected_name name &&
-    Option.equal Expression.equal expected_value value
-  in
-  let assert_attribute ~implicit class_name attribute_name expected =
-    let { Resolution.explicit_attributes; implicit_attributes; _ } =
-      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
-    in
-    let map =
-      if implicit then
-        implicit_attributes
-      else
-        explicit_attributes
-    in
-    let actual = Identifier.SerializableMap.find_opt attribute_name map in
-    match expected, actual with
-    | Some expected, Some actual ->
-        assert_true (attribute_equal expected actual)
-    | None, None ->
-        ()
-    | _ ->
-        assert_unreached ()
-  in
-  assert_attribute ~implicit:false "C" "x" None;
-  assert_attribute ~implicit:true "C" "x" (Some ("x", Some ~+(Expression.Integer 3)));
-  assert_attribute ~implicit:true "D" "y" (Some ("y", Some ~+(Expression.Integer 4)));
-  assert_attribute ~implicit:false "D" "z" (Some ("z", Some ~+(Expression.Integer 5)));
+  Handler.register_class_metadata "A";
+  Handler.register_class_metadata "B";
+  Handler.register_class_metadata "C";
+  Handler.register_class_metadata "D";
+  Handler.register_class_metadata "E";
 
   let assert_successors class_name expected =
     let { Resolution.successors; _ } =
-      Option.value_exn (Handler.class_definition (Type.Primitive class_name))
-    in
-    let expected =
-      List.map expected ~f:(fun annotation -> Type.Primitive annotation)
-      |> (fun expected -> expected @ [Type.Any; Type.Top])
+      Option.value_exn (Handler.class_metadata class_name)
     in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show next) ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ (Type.show_primitive next) ^ " "))
+      ~cmp:(List.equal ~equal:Type.equal_primitive)
       expected
       successors
   in
   assert_successors "C" [];
   assert_successors "D" ["C"];
   assert_successors "B" ["A"];
-  assert_successors "E" ["D"; "C"; "A"];
-  ()
+  assert_successors "E" ["D"; "C"; "A"]
 
 
 let test_register_aliases _ =
@@ -241,7 +208,11 @@ let test_register_aliases _ =
       let (module Handler: Environment.Handler) =
         Environment.handler (create_environment ())
       in
-      let sources = List.map sources ~f:Preprocessing.preprocess in
+      let sources =
+        List.map
+          sources
+          ~f:(fun source -> source |> Preprocessing.preprocess)
+      in
       let register
           ({
             Source.handle;
@@ -265,7 +236,7 @@ let test_register_aliases _ =
     in
     let assert_alias (alias, target) =
       let parse_annotation handler source =
-        parse_single_expression source
+        parse_single_expression ~convert:true source
         |> parse_annotation handler
       in
       assert_equal
@@ -298,7 +269,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "qualifier")
+        ~qualifier:(!&"qualifier")
         {|
           class C: ...
           class D(C): pass
@@ -318,7 +289,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "collections")
+        ~qualifier:(!&"collections")
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
@@ -333,7 +304,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "collections")
+        ~qualifier:(!&"collections")
         {|
           from builtins import int
           from builtins import dict as CDict
@@ -346,7 +317,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "collections")
+        ~qualifier:(!&"collections")
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
@@ -360,7 +331,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "asyncio.tasks")
+        ~qualifier:(!&"asyncio.tasks")
         {|
            from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
@@ -378,7 +349,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "a")
+        ~qualifier:(!&"a")
         {|
           import typing
           _T = typing.TypeVar("_T")
@@ -394,7 +365,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "qualifier")
+        ~qualifier:(!&"qualifier")
         {|
           class Class:
             T = typing.TypeVar('T')
@@ -410,12 +381,12 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "stubbed")
+        ~qualifier:(!&"stubbed")
         ~local_mode:Source.PlaceholderStub
         ~handle:"stubbed.pyi"
         "";
       parse
-        ~qualifier:(Reference.create "qualifier")
+        ~qualifier:(!&"qualifier")
         {|
           class str: ...
           T = stubbed.Something
@@ -427,7 +398,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "t")
+        ~qualifier:(!&"t")
         {|
           import x
           X = typing.Dict[int, int]
@@ -435,7 +406,7 @@ let test_register_aliases _ =
           C = typing.Callable[[T], int]
         |};
       parse
-        ~qualifier:(Reference.create "x")
+        ~qualifier:(!&"x")
         {|
           import t
           X = typing.Dict[int, int]
@@ -450,12 +421,12 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "t")
+        ~qualifier:(!&"t")
         {|
           from typing import Dict
         |};
       parse
-        ~qualifier:(Reference.create "x")
+        ~qualifier:(!&"x")
         {|
           from t import *
         |};
@@ -466,7 +437,7 @@ let test_register_aliases _ =
   assert_resolved
     [
       parse
-        ~qualifier:(Reference.create "x")
+        ~qualifier:(!&"x")
         {|
           C = typing.Callable[[gurbage], gurbage]
         |};
@@ -534,7 +505,7 @@ let test_connect_definition _ =
   in
   let class_definition =
     +{
-      Class.name = Reference.create "C";
+      Class.name = !&"C";
       bases = [];
       body = [];
       decorators = [];
@@ -545,7 +516,7 @@ let test_connect_definition _ =
   assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "C");
 
   let definition =
-    +(Test.parse_single_class {|
+    +(Test.parse_single_class ~convert:true {|
        class D(int, float):
          ...
      |})
@@ -562,7 +533,7 @@ let test_register_globals _ =
 
   let assert_global reference expected =
     let actual =
-      Reference.create reference
+      !&reference
       |> Handler.globals
       >>| Node.value
       >>| Annotation.annotation
@@ -576,7 +547,7 @@ let test_register_globals _ =
 
   let source =
     parse
-      ~qualifier:(Reference.create "qualifier")
+      ~qualifier:(!&"qualifier")
       {|
         with_join = 1 or 'asdf'
         with_resolve = with_join
@@ -614,7 +585,7 @@ let test_register_globals _ =
   let source =
     parse
       ~handle:"test.py"
-      ~qualifier:(Reference.create "test")
+      ~qualifier:(!&"test")
       {|
         class Class: ...
         alias = Class
@@ -635,7 +606,8 @@ let test_connect_type_order _ =
   in
   let resolution = TypeCheck.resolution (module Handler) () in
   let source =
-    parse {|
+    parse
+      {|
        class C:
          ...
        class D(C):
@@ -658,21 +630,19 @@ let test_connect_type_order _ =
   Environment.connect_type_order (module Handler) resolution source;
   let assert_successors annotation successors =
     assert_equal
-      ~printer:(List.to_string ~f:Type.show)
+      ~printer:(List.to_string ~f:Type.show_primitive)
       successors
       (TypeOrder.successors order annotation)
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
-  assert_successors (Type.Primitive "C") [];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"];
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
 
   TypeOrder.connect_annotations_to_top order ~top:Type.Any all_annotations;
 
-  assert_successors (Type.Primitive "C") [Type.Any; Type.Top];
-  assert_successors (Type.Primitive "D") [Type.Primitive "C"; Type.Any; Type.Top];
-  assert_successors
-    (Type.Primitive "CallMe")
-    [Type.Primitive "typing.Callable"; Type.object_primitive; Type.Any; Type.Top]
+  assert_successors "C" [];
+  assert_successors "D" ["C"];
+  assert_successors "CallMe" ["typing.Callable"; "object"]
 
 
 let test_populate _ =
@@ -687,9 +657,7 @@ let test_populate _ =
     (parse_annotation environment !"foo.foo")
     (Type.Primitive "foo.foo");
   assert_equal
-    (parse_annotation
-       environment
-       (+Access (SimpleAccess (parse_single_access "Optional[foo.foo]"))))
+    (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
     (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
@@ -699,8 +667,8 @@ let test_populate _ =
     (Type.parametric "collections.defaultdict" [Type.Any; Type.Any]);
 
   (* Check custom class definitions. *)
-  assert_is_some (Handler.class_definition (Type.Primitive "None"));
-  assert_is_some (Handler.class_definition (Type.Primitive "typing.Optional"));
+  assert_is_some (Handler.class_definition "None");
+  assert_is_some (Handler.class_definition "typing.Optional");
 
   (* Check type aliases. *)
   let environment =
@@ -785,7 +753,7 @@ let test_populate _ =
       ~cmp:(Option.equal (Node.equal Annotation.equal))
       ~printer:(function | Some global -> Resolution.show_global global | None -> "None")
       (Some (Node.create_with_default_location expected))
-      (global environment (Reference.create actual))
+      (global environment (!&actual))
   in
 
   let assert_global =
@@ -800,7 +768,7 @@ let test_populate _ =
       G: Foo = ...
       H: alias = ...
     |}
-    |> populate_preprocess ~handle:"test.py" ~qualifier:(Reference.create "test")
+    |> populate_preprocess ~handle:"test.py" ~qualifier:(!&"test")
     |> assert_global_with_environment
   in
 
@@ -847,7 +815,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"function")
+          ~name:(!&"function")
           ~parameters:(Type.Callable.Defined [])
           ~annotation:Type.Top
           ()));
@@ -868,7 +836,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"Class.__init__")
+          ~name:(!&"Class.__init__")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
@@ -894,7 +862,7 @@ let test_populate _ =
     (Annotation.create_immutable
        ~global:true
        (Type.Callable.create
-          ~name:(!+"Class.property")
+          ~name:(!&"Class.property")
           ~parameters:(Type.Callable.Defined [
               Type.Callable.Parameter.Named {
                 Type.Callable.Parameter.name = "self";
@@ -944,7 +912,8 @@ let test_populate _ =
     match Type.show annotation with
     | "typing.Callable" ->
         [
-          parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
+          parse_single_expression
+            "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
           |> Type.create ~aliases:(fun _ -> None)
         ]
     | _ ->
@@ -1285,36 +1254,11 @@ let test_supertypes_type_order _ =
   let module Handler = (val environment) in
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal
-    [Type.object_primitive; Type.Any; Type.Top]
-    (TypeOrder.successors order (Type.Primitive "foo"));
+    ["object"]
+    (TypeOrder.successors order "foo");
   assert_equal
-    [Type.Primitive "foo"; Type.object_primitive; Type.Any; Type.Top]
-    (TypeOrder.successors order (Type.Primitive "bar"));
-
-  let environment =
-    populate {|
-      _T = typing.TypeVar('_T')
-      class typing.Iterable(typing.Generic[_T]): pass
-      class typing.Iterator(typing.Generic[_T], typing.Iterable[_T]): pass
-    |} in
-  let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  assert_equal
-    ~printer:(List.to_string ~f:Type.show)
-    [
-      Type.Parametric {
-        name = "typing.Protocol";
-        parameters = [Type.integer];
-      };
-      Type.Parametric {
-        name = "typing.Generic";
-        parameters = [Type.integer];
-      };
-      Type.object_primitive;
-      Type.Any;
-      Type.Top;
-    ]
-    (TypeOrder.successors order (Type.parametric "typing.Iterable" [Type.integer]))
+    ["foo"; "object"]
+    (TypeOrder.successors order "bar")
 
 
 let test_class_definition _ =
@@ -1342,7 +1286,7 @@ let test_class_definition _ =
     |> value
     |> Node.value
   in
-  assert_equal any.Class.name (Reference.create "object")
+  assert_equal any.Class.name (!&"object")
 
 
 let test_protocols _ =
@@ -1364,17 +1308,23 @@ let test_protocols _ =
     |} in
   let module Handler = (val environment) in
 
+  let cmp left right =
+    let left = List.sort ~compare:Identifier.compare left in
+    let right = List.sort ~compare:Identifier.compare right in
+    List.equal ~equal:Identifier.equal left right
+  in
+
   assert_equal
-    ~cmp:(List.equal ~equal:Type.equal)
-    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
+    ~cmp
+    ~printer:(String.concat ~sep:",")
     (Handler.protocols ())
-    ([Type.Primitive "B"; Type.Primitive "E"]);
+    (["B"; "E"]);
 
   let environment = populate "" in
   let module Handler = (val environment) in
   assert_equal
-    ~cmp:(List.equal ~equal:Type.equal)
-    ~printer:(fun protocols -> List.map protocols ~f:Type.show |> String.concat ~sep:",")
+    ~cmp
+    ~printer:(String.concat ~sep:",")
     (Handler.protocols ())
     ([
       "typing.Sized";
@@ -1387,31 +1337,30 @@ let test_protocols _ =
       "typing.AsyncContextManager";
       "typing.Collection";
       "typing.Awaitable";
-    ]
-      |> List.map ~f:(fun primitive -> Type.Primitive primitive));
+    ]);
   ()
 
 
 let test_modules _ =
   let environment =
     populate_with_sources [
-      Source.create ~qualifier:(Reference.create "wingus") [];
-      Source.create ~qualifier:(Reference.create "dingus") [];
-      Source.create ~qualifier:(Reference.create "os.path") [];
+      Source.create ~qualifier:(!&"wingus") [];
+      Source.create ~qualifier:(!&"dingus") [];
+      Source.create ~qualifier:(!&"os.path") [];
     ]
   in
   let module Handler = (val environment) in
 
-  assert_is_some (Handler.module_definition (Reference.create "wingus"));
-  assert_is_some (Handler.module_definition (Reference.create "dingus"));
-  assert_is_none (Handler.module_definition (Reference.create "zap"));
+  assert_is_some (Handler.module_definition (!&"wingus"));
+  assert_is_some (Handler.module_definition (!&"dingus"));
+  assert_is_none (Handler.module_definition (!&"zap"));
 
-  assert_is_some (Handler.module_definition (Reference.create "os"));
-  assert_is_some (Handler.module_definition (Reference.create "os.path"));
+  assert_is_some (Handler.module_definition (!&"os"));
+  assert_is_some (Handler.module_definition (!&"os.path"));
 
-  assert_true (Handler.is_module (Reference.create "wingus"));
-  assert_true (Handler.is_module (Reference.create "dingus"));
-  assert_false (Handler.is_module (Reference.create "zap"));
+  assert_true (Handler.is_module (!&"wingus"));
+  assert_true (Handler.is_module (!&"dingus"));
+  assert_false (Handler.is_module (!&"zap"));
   ()
 
 
@@ -1433,30 +1382,29 @@ let test_import_dependencies context =
     let environment =
       populate_with_sources
         [
-          parse ~handle:"test.py" ~qualifier:(Reference.create "test") source;
-          parse ~handle:"a.py" ~qualifier:(Reference.create "a") "";
-          parse ~handle:"subdirectory/b.py" ~qualifier:(Reference.create "subdirectory.b") "";
+          parse ~handle:"test.py" ~qualifier:(!&"test") source;
+          parse ~handle:"a.py" ~qualifier:(!&"a") "";
+          parse ~handle:"subdirectory/b.py" ~qualifier:(!&"subdirectory.b") "";
           parse ~handle:"builtins.pyi" ~qualifier:Reference.empty "";
         ]
     in
-    let dependencies handle =
-      let handle = File.Handle.create handle in
-      Environment.dependencies environment (Source.qualifier ~handle)
-      >>| String.Set.Tree.map ~f:File.Handle.show
+    let dependencies qualifier =
+      Environment.dependencies environment (!&qualifier)
+      >>| String.Set.Tree.map ~f:Reference.show
       >>| String.Set.Tree.to_list
     in
     assert_equal
-      (dependencies "subdirectory/b.py")
-      (Some ["test.py"]);
+      (dependencies "subdirectory.b")
+      (Some ["test"]);
     assert_equal
-      (dependencies "a.py")
-      (Some ["test.py"]);
+      (dependencies "a")
+      (Some ["test"]);
     assert_equal
-      (dependencies "builtins.pyi")
-      (Some ["test.py"]);
+      (dependencies "")
+      (Some ["test"]);
     assert_equal
-      (dependencies "sys.py")
-      (Some ["test.py"])
+      (dependencies "sys")
+      (Some ["test"])
   in
   with_bracket_chdir context (bracket_tmpdir context) create_files_and_test
 
@@ -1471,18 +1419,17 @@ let test_register_dependencies _ =
   Environment.register_dependencies
     (module Handler)
     (parse ~handle:"test.py" source);
-  let dependencies handle =
-    let handle = File.Handle.create handle in
-    Environment.dependencies (module Handler) (Source.qualifier ~handle)
-    >>| String.Set.Tree.map ~f:File.Handle.show
+  let dependencies qualifier =
+    Environment.dependencies (module Handler) (!&qualifier)
+    >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
   assert_equal
-    (dependencies "subdirectory/b.py")
-    (Some ["test.py"]);
+    (dependencies "subdirectory.b")
+    (Some ["test"]);
   assert_equal
-    (dependencies "a.py")
-    (Some ["test.py"])
+    (dependencies "a")
+    (Some ["test"])
 
 
 let test_purge _ =
@@ -1490,6 +1437,7 @@ let test_purge _ =
   let ((module Handler: Environment.Handler) as handler) = Environment.handler environment in
   let source = {|
       import a
+      class P(typing.Protocol): pass
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       x = 5
@@ -1500,22 +1448,26 @@ let test_purge _ =
     ~configuration
     handler
     [parse ~handle:"test.py" source];
-  assert_is_some (Handler.class_definition (Type.Primitive "baz.baz"));
+  assert_is_some (Handler.class_definition "baz.baz");
   assert_is_some (Handler.aliases (Type.Primitive "_T"));
   let dependencies handle =
     let handle = File.Handle.create handle in
     Handler.dependencies (Source.qualifier ~handle)
-    >>| String.Set.Tree.map ~f:File.Handle.show
+    >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
   assert_equal
     (dependencies "a.py")
-    (Some ["test.py"]);
+    (Some ["test"]);
+  assert_equal
+    (Handler.protocols ())
+    ["P"];
 
   Handler.purge [File.Handle.create "test.py"];
 
-  assert_is_none (Handler.class_definition (Type.Primitive "baz.baz"));
+  assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
+  assert_equal (Handler.protocols ()) [];
   assert_equal
     (dependencies "a.py")
     (Some [])
@@ -1667,7 +1619,11 @@ let test_propagate_nested_classes _ =
   let test_propagate sources aliases =
     Type.Cache.disable ();
     Type.Cache.enable ();
-    let sources = List.map sources ~f:Preprocessing.preprocess in
+    let sources =
+      List.map
+        sources
+        ~f:(fun source -> source |> Preprocessing.preprocess)
+    in
     let handler =
       populate_with_sources
         ~environment:(create_environment ~include_helpers:false ())
@@ -1675,7 +1631,7 @@ let test_propagate_nested_classes _ =
     in
 
     let assert_alias (alias, target) =
-      parse_single_expression alias
+      parse_single_expression ~convert:true alias
       |> parse_annotation handler
       |> Type.show
       |> assert_equal  ~printer:(fun string -> string) target
@@ -1725,14 +1681,14 @@ let test_propagate_nested_classes _ =
   test_propagate
     [
       parse
-        ~qualifier:(Reference.create "qual")
+        ~qualifier:(!&"qual")
         {|
           class B:
             class N:
               pass
         |};
       parse
-        ~qualifier:(Reference.create "importer")
+        ~qualifier:(!&"importer")
         {|
           from qual import B
           class C(B):
@@ -1773,7 +1729,7 @@ let () =
     "populate">::test_populate;
     "protocols">::test_protocols;
     "purge">::test_purge;
-    "refine_class_definitions">::test_refine_class_definitions;
+    "register_class_metadata">::test_register_class_metadata;
     "register_aliases">::test_register_aliases;
     "register_class_definitions">::test_register_class_definitions;
     "register_dependencies">::test_register_dependencies;

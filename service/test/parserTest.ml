@@ -129,6 +129,7 @@ let test_find_stubs context =
   write_file local_root "nested/excluded.pyi";
 
   write_file (virtual_root ^| "package") "virtual.py";
+  write_file (virtual_root ^| "package") "virtual.pyi";
   write_file (virtual_root ^| "external") "other.py";
 
   let configuration =
@@ -144,7 +145,7 @@ let test_find_stubs context =
   in
   assert_stubs
     configuration
-    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.py"; "stub.pyi"; "ttypes.pyi"];
+    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.pyi"; "stub.pyi"; "ttypes.pyi"];
 
   let configuration = { configuration with Configuration.Analysis.search_path = [] } in
   assert_stubs configuration ["a.pyi"; "subdirectory/stub.pyi"; "ttypes.pyi"]

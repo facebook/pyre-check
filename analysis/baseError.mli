@@ -17,12 +17,12 @@ module type Kind = sig
   val name: t -> string
   val messages:
     concise: bool
-    -> define: Define.t Node.t
+    -> signature: Define.signature Node.t
     -> Location.Instantiated.t
     -> t
     -> string list
   val inference_information:
-    define: Define.t Node.t
+    signature: Define.signature Node.t
     -> t
     -> Yojson.Safe.json
 end
@@ -33,13 +33,13 @@ module type Error = sig
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    define: Statement.Define.t Node.t;
+    signature: Define.signature Node.t;
   }
   [@@deriving compare, eq, show, sexp, hash]
 
   include Hashable with type t := t
 
-  val create: location: Location.t -> kind: kind -> define: Statement.Define.t Node.t -> t
+  val create: location: Location.t -> kind: kind -> define: Define.t Node.t -> t
 
   val kind: t -> kind
   val path: t -> string

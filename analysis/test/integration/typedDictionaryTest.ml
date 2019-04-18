@@ -12,7 +12,7 @@ let test_check_typed_dictionaries _ =
   let assert_test_typed_dictionary source =
     let typing_stub =
       {
-        qualifier = Ast.Reference.create "typing";
+        qualifier = !&"typing";
         handle = "typing.pyi";
         source =
           {|
@@ -24,7 +24,7 @@ let test_check_typed_dictionaries _ =
     in
     let mypy_extensions_stub =
       {
-        qualifier = Ast.Reference.create "mypy_extensions";
+        qualifier = !&"mypy_extensions";
         handle = "mypy_extensions.pyi";
         source =
           "def TypedDict(typename: str, fields: typing.Dict[str, typing.Type[_T]], \
@@ -33,7 +33,7 @@ let test_check_typed_dictionaries _ =
     in
     let typed_dictionary_for_import =
       {
-        qualifier = Ast.Reference.create "foo.bar.baz";
+        qualifier = !&"foo.bar.baz";
         handle = "foo/bar/baz.py";
         source =
           {|
@@ -469,7 +469,8 @@ let test_check_typed_dictionaries _ =
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
       "Revealed type [-1]: Revealed type for `v` is `typing.Optional[str]`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[True], str]`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
     ];
 
@@ -562,7 +563,8 @@ let test_check_typed_dictionaries _ =
     |}
     [
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[False], str]`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`.";
     ];
 
@@ -614,7 +616,8 @@ let test_check_typed_dictionaries _ =
         reveal_type(v)
     |}
     [
-      "Revealed type [-1]: Revealed type for `v` is `typing.Union[bool, str]`.";
+      "Revealed type [-1]: Revealed type for `v` is " ^
+      "`typing.Union[typing_extensions.Literal[False], str]`.";
       "Revealed type [-1]: Revealed type for `v` is `int`.";
       "Revealed type [-1]: Revealed type for `v` is `str`.";
     ];

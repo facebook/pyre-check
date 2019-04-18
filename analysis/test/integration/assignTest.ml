@@ -54,7 +54,10 @@ let test_check_assign _ =
         y = x
         z = y
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -63,14 +66,20 @@ let test_check_assign _ =
         y = x
         z = y
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo() -> None:
         y = [x]
         z = y
     |}
-    ["Undefined name [18]: Global name `x` is undefined."];
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -79,8 +88,10 @@ let test_check_assign _ =
         y = [x]
         z = y
     |}
-    ["Undefined name [18]: Global name `x` is undefined."]
-
+    [
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+       flow path that doesn't define `x`.";
+    ]
 
 
 let () =

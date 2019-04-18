@@ -21,9 +21,9 @@ val combine: t -> t -> t
 
 val from_access: Expression.Access.t -> t
 val access: t -> Expression.Access.t
+val from_name: Expression.t Expression.Name.t -> t
 val name: t -> Expression.t Expression.Name.t
-val expression: ?location: Location.t -> t -> Expression.t
-val new_expression: ?location: Location.t -> t -> Expression.t
+val expression: ?convert:bool -> ?location: Location.t -> t -> Expression.t
 
 val delocalize: t -> t
 val sanitized: t -> t
@@ -34,6 +34,9 @@ val show_sanitized: t -> string
 
 val single: t -> Identifier.t option
 val length: t -> int
+val reverse: t -> t
+val is_empty: t -> bool
+
 val is_prefix: prefix: t -> t -> bool
 val is_suffix: suffix: t -> t -> bool
 val is_strict_prefix: prefix: t -> t -> bool

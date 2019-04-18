@@ -105,6 +105,14 @@ module Reference = struct
     }
 
 
+  let start { start; _ } =
+    start
+
+
+  let stop { stop; _ } =
+    stop
+
+
   let any =
     { path = -1; start = any_position; stop = any_position }
 

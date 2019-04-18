@@ -19,7 +19,7 @@ let modules_equal left right =
 let assert_python_module_equal expected source =
   let configuration = Configuration.Analysis.create () in
   let actual =
-    Codex.source_to_codex_representation ~configuration (parse source)
+    Codex.source_to_codex_representation ~configuration (parse ~convert:true source)
   in
   assert_equal
     ~cmp:modules_equal
@@ -203,7 +203,7 @@ let test_source context =
    * to contain the source. *)
   let codex_representation =
     source
-    |> parse_untrimmed
+    |> parse_untrimmed ~convert:true
     |> Codex.source_to_codex_representation
       ~configuration:(
         Configuration.Analysis.create ~local_root:(Pyre.Path.create_absolute directory) ())

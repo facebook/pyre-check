@@ -40,17 +40,17 @@ let create
           in
           create annotation
         in
-        !+name, annotation
+        !&name, annotation
       in
       List.map annotations ~f:annotify
-      |> Access.Map.of_alist_exn
+      |> Reference.Map.of_alist_exn
     in
     Resolution.with_annotations resolution ~annotations
   in
   let signature =
     {
       define.signature with
-      return_annotation = expected_return >>| Type.expression;
+      return_annotation = expected_return >>| Type.expression ~convert:true;
     }
   in
   let define =
@@ -66,6 +66,13 @@ let assert_state_equal =
     ~pp_diff:(diff ~print:State.pp)
 
 
+let list_orderless_equal left right =
+  List.equal
+    ~equal:String.equal
+    (List.dedup_and_sort ~compare:String.compare left)
+    (List.dedup_and_sort ~compare:String.compare right)
+
+
 let test_initial _ =
   let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
     let resolution =
@@ -75,7 +82,7 @@ let test_initial _ =
     in
     let initial =
       let define =
-        match parse_single_statement define with
+        match parse_single_statement ~convert:true define with
         | { Node.value = Define define; _ } ->
             let signature = { define.signature with parent = parent >>| Reference.create } in
             { define with signature }
@@ -88,7 +95,8 @@ let test_initial _ =
           | None -> []
           | Some annotation ->
               let annotation = Resolution.parse_annotation resolution annotation in
-              Type.free_variables annotation
+              Type.Variable.all_free_variables annotation
+              |> List.map ~f:(fun variable -> Type.Variable variable)
         in
         List.concat_map define.signature.parameters ~f:extract_variables
         |> List.dedup_and_sort ~compare:Type.compare
@@ -171,8 +179,8 @@ let test_initial _ =
     ~environment:"T = typing.TypeVar('T')"
     "def foo(x: T): ..."
     (create
-       ~immutables:["x", (false, Type.mark_variables_as_bound (Type.variable "T"))]
-       ["x", Type.mark_variables_as_bound (Type.variable "T")])
+       ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
+       ["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")])
 
 
 let test_less_or_equal _ =
@@ -249,7 +257,9 @@ let test_widen _ =
 
 let test_check_annotation _ =
   let assert_check_annotation source expression descriptions =
-    let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) () in
+    let resolution =
+      Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) ()
+    in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
     let errors = List.map ~f:(Error.description ~show_error_traces:false) (Set.to_list errors) in
@@ -305,7 +315,7 @@ let test_check_annotation _ =
 
 
 type definer =
-  | Module of Access.t
+  | Module of Reference.t
   | Type of Type.t
 [@@deriving compare, eq, show]
 
@@ -347,16 +357,16 @@ let test_redirect _ =
       |> (fun environment -> TypeCheck.resolution environment ())
       |> Resolution.with_parent ~parent
     in
-    let access = parse_single_access access in
-    let access, resolution = AccessState.redirect ~resolution access in
+    let access = parse_single_access ~convert:true access in
+    let access, resolution = AccessState.redirect ~resolution ~access in
     assert_equal
       ~printer:Expression.Access.show_general_access
       ~cmp:Expression.Access.equal_general_access
       access
-      (Access.SimpleAccess (parse_single_access expected_access));
+      (Access.SimpleAccess (parse_single_access ~convert:true expected_access));
     let assert_in_scope (expected_name, expected_type) =
-      !+expected_name
-      |> (fun access -> Option.value_exn (Resolution.get_local ~access resolution))
+      !&expected_name
+      |> (fun reference -> Option.value_exn (Resolution.get_local ~reference resolution))
       |> Annotation.annotation
       |> assert_equal ~printer:Type.show expected_type
     in
@@ -364,7 +374,7 @@ let test_redirect _ =
   in
   assert_redirect ~source:"a = 1" "a" ("a", []);
   assert_redirect
-    ~parent:(Reference.create "Subclass")
+    ~parent:(!&"Subclass")
     ~source:
       {|
         class Superclass: pass
@@ -373,7 +383,7 @@ let test_redirect _ =
     "super()"
     ("$super", ["$super", Type.Primitive "Superclass"]);
   assert_redirect
-    ~parent:(Reference.create "Superclass")
+    ~parent:(!&"Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -383,7 +393,7 @@ let test_redirect _ =
     ("$super.foo()", ["$super", Type.object_primitive]);
 
   assert_redirect
-    ~parent:(Reference.create "Superclass")
+    ~parent:(!&"Superclass")
     ~source:
       {|
         class Superclass: pass
@@ -423,7 +433,7 @@ let test_resolve_exports _ =
       let sources =
         let to_source (qualifier, source) =
           parse
-            ~qualifier:(Reference.create qualifier)
+            ~qualifier:(!&qualifier)
             ~handle:(qualifier ^ ".pyi")
             source
           |> Preprocessing.preprocess
@@ -434,10 +444,13 @@ let test_resolve_exports _ =
       |> (fun environment -> TypeCheck.resolution environment ())
     in
     let access =
-      parse_single_access access
-      |> AccessState.resolve_exports ~resolution
+      parse_single_access ~convert:true access
+      |> (fun access -> AccessState.resolve_exports ~resolution ~access)
     in
-    assert_equal ~printer:Access.show ~cmp:Access.equal access (parse_single_access expected_access)
+    assert_equal
+      ~printer:Access.show
+      ~cmp:Access.equal access
+      (parse_single_access ~convert:true expected_access)
   in
   assert_resolve
     ~sources:[]
@@ -488,8 +501,8 @@ let test_forward_access _ =
       |> Resolution.with_parent ~parent
     in
     let access, resolution =
-      let access = parse_single_access access ~preprocess:true in
-      match AccessState.redirect ~resolution access with
+      let access = parse_single_access ~convert:true access ~preprocess:true in
+      match AccessState.redirect ~resolution ~access with
       | Access.SimpleAccess access, resolution ->
           access, resolution
       | _ ->
@@ -501,11 +514,12 @@ let test_forward_access _ =
           let stripped element: stripped =
             let open TypeCheck.AccessState in
             match element with
-            | Attribute { definition = Undefined (Module []); _ } ->
+            | Attribute { definition = Undefined (Module reference); _ }
+              when Reference.is_empty reference ->
                 Unknown
-            | Attribute { attribute; definition = Defined _ } ->
+            | Attribute { attribute; definition = Defined _; _ } ->
                 Attribute attribute
-            | Attribute { attribute; definition = Undefined origin } ->
+            | Attribute { attribute; definition = Undefined origin; _ } ->
                 let missing_definer =
                   match origin with
                   | Instance { instantiated_target; _ } ->
@@ -517,14 +531,14 @@ let test_forward_access _ =
                 in
                 MissingAttribute { name = attribute; missing_definer }
             | Signature {
-                signature = Annotated.Signature.Found { callable; _ };
+                signature = Annotated.Signature.Found callable;
                 callees;
                 _;
               } ->
                 let callees =
                   let show_callee { Type.Callable.kind; _ } =
                     match kind with
-                    | Type.Callable.Named name -> Access.show name
+                    | Type.Callable.Named name -> Reference.show name
                     | _ -> "Anonymous"
                   in
                   List.map callees ~f:show_callee
@@ -664,6 +678,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "string";
+            actual_expression = parse_single_expression ~convert:true "\"string\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -918,7 +933,9 @@ let test_forward_access _ =
           MissingAttribute {
             name = "undefined";
             missing_definer =
-              Type (Type.variable ~constraints:(Type.Bound (Type.Primitive "Class")) "TV_Bound");
+              Type (Type.variable
+                      ~constraints:(Type.Variable.Bound (Type.Primitive "Class"))
+                      "TV_Bound");
           };
       };
     ];
@@ -1023,7 +1040,10 @@ let test_forward_access _ =
             missing_definer =
               Type
                 (Type.variable
-                   ~constraints:(Type.Explicit [Type.Primitive "Class"; Type.Primitive "Other"])
+                   ~constraints:(Type.Variable.Explicit [
+                       Type.Primitive "Class";
+                       Type.Primitive "Other";
+                     ])
                    "TV_Explicit");
           };
       };
@@ -1047,7 +1067,7 @@ let test_forward_access _ =
         annotation =
           Type.Union [
             Type.Callable {
-              kind = Named (!+"Class.method");
+              kind = Named (!&"Class.method");
               implementation = {
                 annotation= Type.integer;
                 parameters= Defined [];
@@ -1059,7 +1079,7 @@ let test_forward_access _ =
                 };
             };
             Type.Callable {
-              kind = Named (!+"Other.method");
+              kind = Named (!&"Other.method");
               implementation = {
                 annotation= Type.string;
                 parameters= Defined [];
@@ -1135,7 +1155,7 @@ let test_forward_access _ =
           attribute: int = 1
           def method(self) -> int: ...
       |}
-    ~parent:(Reference.create "Class")
+    ~parent:(!&"Class")
     "super().__init__()"
     [
       { annotation = Type.Primitive "Super"; element = Value };
@@ -1229,7 +1249,7 @@ let test_forward_access _ =
     |}
   in
   let resolution_with_generics =
-    to_resolution [parse source_with_generics |>  Preprocessing.preprocess]
+    to_resolution [parse source_with_generics |> Preprocessing.preprocess]
   in
   assert_fold
     ~source:source_with_generics
@@ -1252,7 +1272,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "os")
+        ~qualifier:(!&"os")
         {|
           sep: str = '/'
         |};
@@ -1264,7 +1284,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1277,7 +1297,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1292,7 +1312,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "empty.stub")
+        ~qualifier:(!&"empty.stub")
         ~local_mode:Source.PlaceholderStub
         ~handle:"empty/stub.pyi"
         ""
@@ -1306,7 +1326,7 @@ let test_forward_access _ =
   assert_fold
     ~additional_sources:[
       parse
-        ~qualifier:(Reference.create "has_getattr")
+        ~qualifier:(!&"has_getattr")
         "def __getattr__(name: str) -> typing.Any: ..."
       |> Preprocessing.preprocess
     ]
@@ -1326,7 +1346,10 @@ let test_forward_access _ =
       { annotation = Type.Primitive "Class"; element = Value };
       { annotation = Type.integer; element = Attribute "attribute" };
       {
-        annotation = parse_annotation ~resolution "typing.Callable('int.__add__')[[Named(other, int)], int]";
+        annotation =
+          parse_annotation
+            ~resolution
+            "typing.Callable('int.__add__')[[Named(other, int)], int]";
         element = Attribute "__add__";
       };
       {
@@ -1374,6 +1397,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "seven";
+            actual_expression = parse_single_expression ~convert:true "\"seven\"";
             expected = Type.integer;
             name = None;
             position = 1;
@@ -1397,9 +1421,11 @@ let test_forward_access _ =
     [
       { annotation = Type.meta (Type.Primitive "Class"); element = Value };
       {
-        annotation = Type.parametric "Class" [Type.bool];
+        annotation = Type.parametric "Class" [Type.Literal (Boolean true)];
         element = SignatureFound {
-            callable = "typing.Callable(Class.__init__)[[Named(x, bool)], Class[bool]]";
+            callable = "typing.Callable(Class.__init__)" ^
+                       "[[Named(x, typing_extensions.Literal[True])], " ^
+                       "Class[typing_extensions.Literal[True]]]";
             callees = ["Class.__init__"];
           };
       };
@@ -1436,7 +1462,7 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"TypedDictionary.__getitem__");
+        kind = Named (!&"TypedDictionary.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1469,7 +1495,7 @@ let test_forward_access _ =
     to_resolution
       [
         parse "Movie = mypy_extensions.TypedDict('Movie', {'year': int, 'title': str})"
-        |>  Preprocessing.preprocess
+        |> Preprocessing.preprocess
       ]
   in
   assert_fold
@@ -1528,6 +1554,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
+            actual_expression = parse_single_expression ~convert:true "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1554,6 +1581,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
+            actual_expression = parse_single_expression ~convert:true "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1628,6 +1656,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "Blade Runner";
+            actual_expression = parse_single_expression ~convert:true "\"Blade Runner\"";
             expected = parse_annotation ~resolution:resolution_with_movie "int";
             name = (Some "$parameter$year");
             position = 1;
@@ -1662,7 +1691,7 @@ let test_forward_access _ =
   let set_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"TypedDictionary.__setitem__");
+        kind = Named (!&"TypedDictionary.__setitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           {
@@ -1729,6 +1758,7 @@ let test_forward_access _ =
         element =
           +{
             Annotated.Signature.actual = Type.literal_string "string";
+            actual_expression = parse_single_expression ~convert:true "\"string\"";
             expected = Type.integer;
             name = None;
             position = 2;
@@ -1754,6 +1784,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.literal_string "missing";
+            actual_expression = parse_single_expression ~convert:true "\"missing\"";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1781,6 +1812,7 @@ let test_forward_access _ =
         element =
           {
             Annotated.Signature.actual = Type.string;
+            actual_expression = parse_single_expression ~convert:true "s";
             expected = Type.literal_string "year";
             name = None;
             position = 1;
@@ -1802,19 +1834,19 @@ let test_forward_access _ =
   let get_item = {
     annotation =
       Type.Callable {
-        kind = Named (!+"tuple.__getitem__");
+        kind = Named (!&"tuple.__getitem__");
         implementation = { annotation = Type.Top; parameters = Undefined };
         overloads = [
           overload ~return_annotation:Type.integer ~name:"x" (Type.literal_integer 0);
           overload ~return_annotation:Type.string ~name:"x" (Type.literal_integer 1);
           overload
-            ~return_annotation:(Type.Tuple (Unbounded (Type.union [Type.integer; Type.string])))
-            ~name:"x"
-            (Type.Primitive "slice");
-          overload
             ~return_annotation:(Type.union [Type.integer; Type.string])
             ~name:"x"
             (Type.integer);
+          overload
+            ~return_annotation:(Type.Tuple (Unbounded (Type.union [Type.integer; Type.string])))
+            ~name:"x"
+            (Type.Primitive "slice");
         ];
         implicit = None;
       };
@@ -1924,7 +1956,7 @@ let assert_resolved sources access expected =
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =
-    parse_single_access access
+    parse_single_access ~convert:true access
     |> TypeCheck.State.forward_access
       ~resolution
       ~initial:Type.Top
@@ -1994,32 +2026,32 @@ let test_module_exports _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Reference.create "loop.b")
+          ~qualifier:(!&"loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Reference.create "loop.a")
+          ~qualifier:(!&"loop.a")
           {|
             from loop.b import b
           |};
         parse
-          ~qualifier:(Reference.create "loop")
+          ~qualifier:(!&"loop")
           {|
             from loop.a import b
           |};
         parse
-          ~qualifier:(Reference.create "no_loop.b")
+          ~qualifier:(!&"no_loop.b")
           {|
             b: int = 1
           |};
         parse
-          ~qualifier:(Reference.create "no_loop.a")
+          ~qualifier:(!&"no_loop.a")
           {|
             from no_loop.b import b as c
           |};
         parse
-          ~qualifier:(Reference.create "no_loop")
+          ~qualifier:(!&"no_loop")
           {|
             from no_loop.a import c
           |};
@@ -2034,7 +2066,7 @@ let test_object_callables _ =
     assert_resolved
       [
         parse
-          ~qualifier:(Reference.create "module")
+          ~qualifier:(!&"module")
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')
@@ -2095,6 +2127,7 @@ let test_forward_expression _ =
     let expression =
       parse expression
       |> Preprocessing.expand_format_string
+      |> Preprocessing.convert
       |> function
       | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
           expression
@@ -2108,26 +2141,29 @@ let test_forward_expression _ =
         ~state:(create precondition)
         ~expression
     in
-    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
-    assert_state_equal (create postcondition) forwarded;
     let errors =
       match errors with
       | `Specific errors ->
           errors
       | `Undefined count ->
           let rec errors sofar count =
-            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            let error =
+              "Undefined name [18]: Global name `undefined` is not defined, or there is \
+               at least one control flow path that doesn't define `undefined`."
+            in
             match count with
             | 0 -> sofar
             | count -> errors (error :: sofar) (count - 1)
           in
           errors [] count
     in
+    assert_state_equal (create postcondition) forwarded;
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
+      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
+    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
   in
 
   (* Access. *)
@@ -2137,21 +2173,6 @@ let test_forward_expression _ =
     "x"
     Type.integer;
   assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
-    "x.add_key(1)"
-    Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.integer]
-    "x.add_value(1)"
-    Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.string]
-    "x.add_both(1, 'string')"
-    Type.none;
-  assert_forward
     ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
     ~errors:(`Specific [
@@ -2160,19 +2181,14 @@ let test_forward_expression _ =
       ])
     "x.add_key('string')"
     Type.none;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.Bottom ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.Top ~value:Type.Bottom]
-    ~errors:(`Undefined 1)
-    "x.add_key(undefined)"
-    Type.none;
 
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
   assert_forward
     ~errors:(`Specific [
         "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
-        "Undefined name [18]: Global name `undefined` is undefined.";
+        "Undefined name [18]: Global name `undefined` is not defined, or there is at least one \
+         control flow path that doesn't define `undefined`.";
       ])
     "await undefined"
     Type.Top;
@@ -2266,14 +2282,21 @@ let test_forward_expression _ =
   assert_forward "..." Type.ellipsis;
 
   (* False literal. *)
-  assert_forward "False" Type.bool;
+  assert_forward "False" (Type.Literal (Type.Boolean false));
 
   (* Float literal. *)
   assert_forward "1.0" Type.float;
 
   (* Generators. *)
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
-  assert_forward "(element for element in [])" (Type.generator Type.Bottom);
+  assert_forward
+    ~errors:(`Specific [
+        "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[].` is " ^
+        "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into " ^
+        "an assignment and give it an explicit annotation.";
+      ])
+    "(element for element in [])"
+    (Type.generator Type.Any);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
     (Type.generator (Type.tuple [Type.integer; Type.string]));
@@ -2316,7 +2339,12 @@ let test_forward_expression _ =
     (callable ~parameters:[] ~annotation:Type.Top);
 
   (* Lists. *)
-  assert_forward "[]" (Type.list Type.Bottom);
+  Type.Variable.Namespace.reset ();
+  let empty_list =
+    Type.list (Type.variable "_T" |> Type.Variable.mark_all_free_variables_as_escaped)
+  in
+  Type.Variable.Namespace.reset ();
+  assert_forward "[]" empty_list;
   assert_forward "[1]" (Type.list Type.integer);
   assert_forward "[1, 'string']" (Type.list (Type.union [Type.integer; Type.string]));
   assert_forward ~errors:(`Undefined 1) "[undefined]" (Type.list Type.Top);
@@ -2341,7 +2369,10 @@ let test_forward_expression _ =
   assert_forward
     ~precondition:["x", Type.undeclared]
     ~postcondition:["x", Type.undeclared]
-    ~errors:(`Specific ["Undefined name [18]: Global name `x` is undefined."])
+    ~errors:(`Specific [
+        "Undefined name [18]: Global name `x` is not defined, or there is at least \
+         one control flow path that doesn't define `x`.";
+      ])
     "[x]"
     (Type.list Type.undeclared);
 
@@ -2393,7 +2424,7 @@ let test_forward_expression _ =
     Type.integer;
 
   (* True literal. *)
-  assert_forward "True" Type.bool;
+  assert_forward "True" (Type.Literal (Boolean true));
 
   (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.literal_integer 1]);
@@ -2427,7 +2458,7 @@ let test_forward_statement _ =
       postcondition =
     let forwarded =
       let parsed =
-        parse statement
+        parse ~convert:true statement
         |> function
         | { Source.statements = statement::rest; _ } -> statement::rest
         | _ -> failwith "unable to parse test"
@@ -2443,7 +2474,10 @@ let test_forward_statement _ =
           errors
       | `Undefined count ->
           let rec errors sofar count =
-            let error = "Undefined name [18]: Global name `undefined` is undefined." in
+            let error =
+              "Undefined name [18]: Global name `undefined` is not defined, or there is \
+               at least one control flow path that doesn't define `undefined`."
+            in
             match count with
             | 0 -> sofar
             | count -> errors (error :: sofar) (count - 1)
@@ -2454,7 +2488,7 @@ let test_forward_statement _ =
       (create ~bottom ~immutables:postcondition_immutables postcondition)
       forwarded;
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
       (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
       errors
@@ -2475,28 +2509,40 @@ let test_forward_statement _ =
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = y"
     ["x", Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = y"
     ["x", Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.undeclared]
     "x = [y]"
     ["x", Type.list Type.Any; "y", Type.undeclared];
 
   assert_forward
     ~errors:
-      (`Specific ["Undefined name [18]: Global name `y` is undefined."])
+      (`Specific [
+          "Undefined name [18]: Global name `y` is not defined, or there is at least one \
+           control flow path that doesn't define `y`.";
+        ])
     ["y", Type.Union [Type.integer; Type.undeclared]]
     "x = [y]"
     ["x", Type.list Type.integer; "y", Type.Union [Type.integer; Type.undeclared]];
@@ -2650,7 +2696,8 @@ let test_forward_statement _ =
     ~errors:(`Specific [
         "Incompatible variable type [9]: y is declared to have type `int` " ^
         "but is used as type `unknown`.";
-        "Undefined name [18]: Global name `x` is undefined.";
+        "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
+         flow path that doesn't define `x`.";
       ])
     ~postcondition_immutables:["y", (false, Type.integer)]
     []
@@ -2742,10 +2789,6 @@ let test_forward_statement _ =
     ["x", Type.list Type.Top; "y", Type.integer]
     "assert y in x"
     ["x", Type.list Type.Top; "y", Type.integer];
-  assert_forward
-    []
-    "assert None in []"
-    [];
   assert_forward
     []
     "assert None in [1]"
@@ -2917,7 +2960,7 @@ let test_forward _ =
       postcondition =
     let forwarded =
       let parsed =
-        parse statement
+        parse ~convert:true statement
         |> function
         | { Source.statements = statement::rest; _ } -> statement::rest
         | _ -> failwith "unable to parse test"

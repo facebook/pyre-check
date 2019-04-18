@@ -97,6 +97,20 @@ let access =
   List.map ~f:(fun identifier -> Access.Identifier identifier)
 
 
+let from_name name =
+  let rec get_reversed_identifiers = function
+    | Name.Identifier identifier ->
+        [identifier]
+    | Name.Attribute { base = { Node.value = Name base; _ }; attribute } ->
+        attribute :: (get_reversed_identifiers base)
+    | _ ->
+        failwith "Cannot convert expression with non-identifiers to reference."
+  in
+  get_reversed_identifiers name
+  |> List.rev
+  |> create_from_list
+
+
 let name reference =
   let rec create = function
     | [] ->
@@ -106,9 +120,9 @@ let name reference =
         |> Node.create_with_default_location
     | identifier :: rest ->
         Name (Name.Attribute {
-          base = create rest;
-          attribute = identifier;
-        })
+            base = create rest;
+            attribute = identifier;
+          })
         |> Node.create_with_default_location
   in
   match create (List.rev reference) with
@@ -116,15 +130,14 @@ let name reference =
   | _ -> failwith "Impossible."
 
 
-let expression ?(location = Location.Reference.any) reference =
-  access reference
-  |> Access.expression ~location
-
-
-let new_expression ?(location = Location.Reference.any) reference =
-  name reference
-  |> (fun name -> Name name)
-  |> Node.create ~location
+let expression ?(convert = false) ?(location = Location.Reference.any) reference =
+  if convert then
+    access reference
+    |> Access.expression ~location
+  else
+    name reference
+    |> (fun name -> Name name)
+    |> Node.create ~location
 
 
 let delocalize reference =
@@ -182,12 +195,20 @@ let length =
   List.length
 
 
+let reverse =
+  List.rev
+
+
+let is_empty =
+  List.is_empty
+
+
 let rec is_prefix ~prefix reference =
   match prefix, reference with
   | [], _ -> true
-  | prefix_head :: prefix, _ when prefix_head = "" ->
+  | "" :: prefix, _ ->
       is_prefix ~prefix reference
-  | prefix_head :: prefix, head :: reference when prefix_head = head ->
+  | prefix_head :: prefix, head :: reference when String.equal prefix_head head ->
       is_prefix ~prefix reference
   | _ ->
       false
@@ -201,9 +222,9 @@ let rec is_strict_prefix ~prefix reference =
   match prefix, reference with
   | [], _ :: _ ->
       true
-  | prefix_head :: prefix, _ when prefix_head = "" ->
+  | "" :: prefix, _ ->
       is_strict_prefix ~prefix reference
-  | prefix_head :: prefix, head :: reference when prefix_head = head ->
+  | prefix_head :: prefix, head :: reference when String.equal prefix_head head ->
       is_strict_prefix ~prefix reference
   | _ ->
       false

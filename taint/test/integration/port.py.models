@@ -20,8 +20,8 @@
               "position": {
                 "filename": "port.py",
                 "line": 15,
-                "start": 20,
-                "end": 22
+                "start": 8,
+                "end": 20
               },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
@@ -76,8 +76,8 @@
               "position": {
                 "filename": "port.py",
                 "line": 33,
-                "start": 43,
-                "end": 45
+                "start": 31,
+                "end": 43
               },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
@@ -132,8 +132,8 @@
               "position": {
                 "filename": "port.py",
                 "line": 28,
-                "start": 27,
-                "end": 29
+                "start": 15,
+                "end": 27
               },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
@@ -188,8 +188,8 @@
               "position": {
                 "filename": "port.py",
                 "line": 50,
-                "start": 52,
-                "end": 54
+                "start": 40,
+                "end": 52
               },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
@@ -244,8 +244,8 @@
               "position": {
                 "filename": "port.py",
                 "line": 45,
-                "start": 39,
-                "end": 41
+                "start": 27,
+                "end": 39
               },
               "resolves_to": [ "port.source_field" ],
               "port": "result[a]",
@@ -291,8 +291,8 @@
             "root": {
               "filename": "port.py",
               "line": 56,
-              "start": 28,
-              "end": 30
+              "start": 15,
+              "end": 28
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -417,8 +417,8 @@
             "root": {
               "filename": "port.py",
               "line": 6,
-              "start": 28,
-              "end": 30
+              "start": 15,
+              "end": 28
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]

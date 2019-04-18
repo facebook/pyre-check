@@ -8,12 +8,14 @@ from typing import Optional
 import click
 import click_log
 import IPython
-from click import Choice, Parameter, Path, argument, group, option
+from click import Parameter, Path, argument, option
+from traitlets.config import Config
 
 from .analysis_output import AnalysisOutput
 from .context import Context, pass_context
 from .database_saver import DatabaseSaver
 from .db import DB
+from .extensions import prompt_extension
 from .filesystem import find_root
 from .interactive import Interactive
 from .model_generator import ModelGenerator
@@ -88,7 +90,16 @@ def default_database(ctx: click.Context, _param: Parameter, value: Optional[str]
 @pass_context
 def explore(ctx: Context):
     scope_vars = Interactive(ctx.database, ctx.repository).setup()
-    IPython.start_ipython(argv=[], user_ns=scope_vars)
+    config = Config()
+    config.InteractiveShellApp.extensions = [
+        prompt_extension.__name__
+    ] + ctx.ipython_extensions
+    config.InteractiveShellApp.profile = "sapp"
+    config.InteractiveShellApp.display_banner = False
+
+    config.InteractiveShell.show_rewritten_input = False
+    config.InteractiveShell.autocall = 2
+    IPython.start_ipython(argv=[], user_ns=scope_vars, config=config)
 
 
 @click.command(help="parse static analysis output and save to disk")

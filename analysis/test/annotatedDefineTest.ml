@@ -22,7 +22,7 @@ let test_parent_definition _ =
   let parent_class_definition environment name parent =
     {
       Statement.Define.signature = {
-        name = Reference.create name;
+        name = !&name;
         parameters = [];
         decorators = [];
         docstring = None;
@@ -49,7 +49,7 @@ let test_parent_definition _ =
     ~cmp:Reference.equal
     ~printer:Reference.show
     (Class.name parent)
-    (Reference.create "foo");
+    (!&"foo");
 
   let environment =
     populate {|
@@ -72,7 +72,7 @@ let test_parent_definition _ =
   in
   let base_type =
     match (List.hd (Class.bases parent)) with
-    | Some {Argument.value; _ } ->
+    | Some { Expression.Call.Argument.value; _ } ->
         TypeCheck.resolution environment ()
         |> (fun resolution -> Resolution.parse_annotation resolution value)
     | _ -> Type.Top
@@ -81,7 +81,7 @@ let test_parent_definition _ =
     ~cmp:Reference.equal
     ~printer:Reference.show
     (Class.name parent)
-    (Reference.create "foo");
+    (!&"foo");
   assert_equal base_type (Type.Primitive "superfoo")
 
 

@@ -43,9 +43,9 @@ module NoCache (Key: KeyType) (Value: Value.Type): sig
 
   include SharedMemory.NoCache with
     type t = Value.t
-    and type key = Key.t
-    and module KeySet = Set.Make (Key)
-    and module KeyMap = MyMap.Make (Key)
+                                and type key = Key.t
+                                and module KeySet = Set.Make (Key)
+                                and module KeyMap = MyMap.Make (Key)
 end
 
 
@@ -58,9 +58,9 @@ module WithCache (Key: KeyType) (Value: Value.Type): sig
 
   include SharedMemory.WithCache with
     type t = Value.t
-    and type key = Key.t
-    and module KeySet = Set.Make (Key)
-    and module KeyMap = MyMap.Make (Key)
+                                  and type key = Key.t
+                                  and module KeySet = Set.Make (Key)
+                                  and module KeyMap = MyMap.Make (Key)
 end
 
 val get_heap_handle: Configuration.Analysis.t -> SharedMemory.handle
@@ -73,3 +73,14 @@ val save_shared_memory: path: string -> unit
 val load_shared_memory: path: string -> unit
 
 val unsafe_little_endian_representation: key: Digest.t -> Int64.t
+
+module SingletonKey: sig
+  type t
+  val to_string: t -> string
+  val compare: t -> t -> int
+
+  type out = int
+  val from_string: string -> int
+
+  val key: t
+end
