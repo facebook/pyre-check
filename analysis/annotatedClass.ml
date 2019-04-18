@@ -649,7 +649,7 @@ module Attribute = struct
       class_attributes: bool;
       include_generated_attributes: bool;
       name: Reference.t;
-      instantiated: Type.t option;
+      instantiated: Type.t;
     }
     [@@deriving compare, sexp, hash]
 
@@ -684,6 +684,7 @@ let attributes
     ?(instantiated = None)
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution =
+  let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
     {
       Attribute.Cache.transitive;
@@ -697,7 +698,6 @@ let attributes
   | Some result ->
       result
   | None ->
-      let instantiated = Option.value instantiated ~default:(annotation definition) in
       let definition_attributes
           ~in_test
           ~instantiated
@@ -885,7 +885,7 @@ let attribute
     ~resolution
     ~name
     ~instantiated =
-  let undefined =
+  let undefined () =
     Attribute.create
       ~resolution
       ~parent:definition
@@ -906,29 +906,37 @@ let attribute
         }
       }
   in
-  attributes
-    ~instantiated:(Some instantiated)
-    ~transitive
-    ~class_attributes
-    ~include_generated_attributes:true
-    ~resolution
-    definition
-  |> List.find
-    ~f:(fun attribute -> String.equal name (Attribute.name attribute))
-  |> Option.value ~default:undefined
-  |> (fun attribute ->
-      Attribute.parent attribute
-      |> Resolution.class_definition resolution
-      >>| (fun target ->
-          let constraints =
-            constraints
-              ~target
-              ~instantiated
-              ~resolution
-              definition
-          in
-          Attribute.instantiate ~constraints attribute)
-      |> Option.value ~default:undefined)
+  let attribute =
+    attributes
+      ~instantiated:(Some instantiated)
+      ~transitive
+      ~class_attributes
+      ~include_generated_attributes:true
+      ~resolution
+      definition
+    |> List.find
+      ~f:(fun attribute -> String.equal name (Attribute.name attribute))
+  in
+  match attribute with
+  | None -> undefined ()
+  | Some attribute ->
+      let attribute =
+        Attribute.parent attribute
+        |> Resolution.class_definition resolution
+        >>| (fun target ->
+            let constraints =
+              constraints
+                ~target
+                ~instantiated
+                ~resolution
+                definition
+            in
+            Attribute.instantiate ~constraints attribute)
+      in
+      match attribute with
+      | None -> undefined ()
+      | Some attribute ->
+          attribute
 
 
 let rec fallback_attribute ~resolution ~name definition =
