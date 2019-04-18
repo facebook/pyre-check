@@ -12,34 +12,34 @@ let test_check_protocol _ =
       class P(typing.Protocol):
         def foo(self) -> int: ...
 
-      class A:
+      class Alpha:
         def foo(self) -> int:
           return 9
 
       def foo(p: P) -> int:
         return p.foo()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
     [];
   assert_type_errors
     {|
-      class B: pass
-      class C(B): pass
+      class Beta: pass
+      class Chi(Beta): pass
 
       class P(typing.Protocol):
-        def foo(self) -> B: ...
+        def foo(self) -> Beta: ...
 
-      class A:
-        def foo(self) -> C:
-          return C()
+      class Alpha:
+        def foo(self) -> Chi:
+          return Chi()
 
-      def foo(p: P) -> B:
+      def foo(p: P) -> Beta:
         return p.foo()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
@@ -181,14 +181,14 @@ let test_check_protocol _ =
     ["Revealed type [-1]: Revealed type for `foo.(...)` is `int`."];
   assert_type_errors
     {|
-      class A:
+      class Alpha:
         def __hash__(self) -> int:
           return 9
 
       def foo(p: typing.Hashable) -> int:
         return p.__hash__()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
@@ -225,14 +225,14 @@ let test_check_generic_protocols _ =
       class P(typing.Protocol[T]):
         def foo() -> T: ...
 
-      class A():
+      class Alpha():
         def foo(self) -> int:
           return 7
 
       def foo(p: P[int]) -> int:
         return p.foo()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
@@ -243,20 +243,20 @@ let test_check_generic_protocols _ =
       class P(typing.Protocol[T]):
         def foo() -> T: ...
 
-      class A():
+      class Alpha():
         def foo(self) -> int:
           return 7
 
       def foo(p: P[str]) -> str:
         return p.foo()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `P[str]` for 1st anonymous parameter to call `foo` but got `A`.";
+      "Expected `P[str]` for 1st anonymous parameter to call `foo` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -264,7 +264,7 @@ let test_check_generic_protocols _ =
       class P(typing.Protocol[T]):
         def foo() -> T: ...
 
-      class A():
+      class Alpha():
         def foo(self) -> int:
           return 7
 
@@ -272,7 +272,7 @@ let test_check_generic_protocols _ =
       def foo(p: P[T2]) -> T2:
         return p.foo()
 
-      def bar(a: A) -> int:
+      def bar(a: Alpha) -> int:
         v = foo(a)
         reveal_type(v)
         return v
@@ -285,7 +285,7 @@ let test_check_generic_protocols _ =
       class P(typing.Protocol[T]):
         def foo() -> T: ...
 
-      class A():
+      class Alpha():
         def foo(self) -> bool:
           return True
 
@@ -293,13 +293,13 @@ let test_check_generic_protocols _ =
       def foo(p: P[T2]) -> T2:
         return p.foo()
 
-      def bar(a: A) -> None:
+      def bar(a: Alpha) -> None:
         foo(a)
 
     |}
     [
       "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st " ^
-      "anonymous parameter to call `foo` but got `A`.";
+      "anonymous parameter to call `foo` but got `Alpha`.";
     ];
   ()
 
@@ -316,7 +316,7 @@ let test_check_generic_implementors _ =
         def foo() -> typing.Union[int, str]: ...
 
       T = typing.TypeVar("T", bound=typing.Union[int, str])
-      class A(typing.Generic[T]):
+      class Alpha(typing.Generic[T]):
         x: T
         def __init__(self, x: T) -> None:
           self.x = x
@@ -326,7 +326,7 @@ let test_check_generic_implementors _ =
       def foo(p: P) -> typing.Union[int, str]:
         return p.foo()
 
-      def bar(a: A[int]) -> None:
+      def bar(a: Alpha[int]) -> None:
         foo(a)
 
     |}
@@ -338,7 +338,7 @@ let test_check_generic_implementors _ =
       def foo() -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
-    class A(typing.Generic[T]):
+    class Alpha(typing.Generic[T]):
       x: T
       def __init__(self, x: T) -> None:
         self.x = x
@@ -348,7 +348,7 @@ let test_check_generic_implementors _ =
     def foo(p: P[int]) -> int:
       return p.foo()
 
-    def bar(a: A[int]) -> None:
+    def bar(a: Alpha[int]) -> None:
       foo(a)
 
     |}
@@ -360,7 +360,7 @@ let test_check_generic_implementors _ =
       def foo() -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
-    class A(typing.Generic[T]):
+    class Alpha(typing.Generic[T]):
       x: T
       def __init__(self, x: T) -> None:
         self.x = x
@@ -370,13 +370,13 @@ let test_check_generic_implementors _ =
     def foo(p: P[bool]) -> bool:
       return p.foo()
 
-    def bar(a: A[int]) -> None:
+    def bar(a: Alpha[int]) -> None:
       foo(a)
 
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `P[bool]` for 1st anonymous parameter to call `foo` but got `A[int]`."
+      "Expected `P[bool]` for 1st anonymous parameter to call `foo` but got `Alpha[int]`."
     ];
   assert_type_errors
     {|
@@ -385,7 +385,7 @@ let test_check_generic_implementors _ =
       def foo() -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
-    class A(typing.Generic[T]):
+    class Alpha(typing.Generic[T]):
       x: T
       def __init__(self, x: T) -> None:
         self.x = x
@@ -396,7 +396,7 @@ let test_check_generic_implementors _ =
     def foo(p: P[T3]) -> T3:
       return p.foo()
 
-    def bar(a: A[int]) -> int:
+    def bar(a: Alpha[int]) -> int:
       return foo(a)
 
     |}
@@ -409,7 +409,7 @@ let test_check_generic_implementors _ =
         def foo() -> int: ...
 
       T = typing.TypeVar("T")
-      class A(typing.Generic[T]):
+      class Alpha(typing.Generic[T]):
         x: T
         def __init__(self, x: T) -> None:
           self.x = x
@@ -419,13 +419,13 @@ let test_check_generic_implementors _ =
       def foo(p: P) -> int:
         return p.foo()
 
-      def bar(a: A[int]) -> None:
+      def bar(a: Alpha[int]) -> None:
         foo(a)
 
     |}
     [
       "Incompatible parameter type [6]: " ^
-      "Expected `P` for 1st anonymous parameter to call `foo` but got `A[int]`."
+      "Expected `P` for 1st anonymous parameter to call `foo` but got `Alpha[int]`."
     ];
   ()
 
