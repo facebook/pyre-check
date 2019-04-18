@@ -53,9 +53,12 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
         begin
           match Expression.Access.name_and_arguments ~call:access with
           | Some { callee = name; arguments } when String.equal name target ->
+              let convert_argument { Argument.name; value } =
+                { Call.Argument.name; value }
+              in
               Some {
                 name;
-                arguments = Some (List.map ~f:Expression.convert_argument arguments)
+                arguments = Some (List.map ~f:convert_argument arguments)
               }
           | None when String.equal (Access.show access) target ->
               Some { name = Access.show access; arguments = None }

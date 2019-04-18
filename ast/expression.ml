@@ -633,123 +633,6 @@ module Access = struct
 end
 
 
-let create_name_from_identifiers identifiers =
-  let rec create = function
-    | [] ->
-        failwith "Access must have non-zero identifiers."
-    | [{ Node.location; value = identifier }] ->
-        Name (Name.Identifier identifier)
-        |> Node.create ~location
-    | { Node.location; value = identifier } :: rest ->
-        Name (
-          Name.Attribute {
-            base = create rest;
-            attribute = identifier;
-          })
-        |> Node.create ~location
-  in
-  match create (List.rev identifiers) with
-  | { Node.value = Name name; _ } -> name
-  | _ -> failwith "Impossible."
-
-
-let create_name ~location name =
-  let identifier_names name =
-    if String.equal name "..." then
-      [name]
-    else
-      String.split ~on:'.' name
-  in
-  identifier_names name
-  |> List.map ~f:(Node.create ~location)
-  |> create_name_from_identifiers
-
-
-let is_simple_name name =
-  let rec is_simple = function
-    | Name (Name.Identifier _ ) -> true
-    | Name (Name.Attribute { base; _ }) -> is_simple (Node.value base)
-    | _ -> false
-  in
-  is_simple (Name name)
-
-
-let convert_argument { Argument.name; value } =
-  { Call.Argument.name; value }
-
-
-let rec delocalize ({ Node.value; location } as expression) =
-  let value =
-    let delocalize_element = function
-      | Access.Call ({ Node.value = arguments; _ } as call) ->
-          let delocalize_argument ({ Argument.value; _ } as argument) =
-            { argument with Argument.value = delocalize value }
-          in
-          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
-      | element ->
-          element
-    in
-    match value with
-    | Access (SimpleAccess access) ->
-        let access =
-          Access.delocalize access
-          |> List.map ~f:delocalize_element
-        in
-        Access (SimpleAccess access)
-    | Access (ExpressionAccess { expression; access }) ->
-        Access
-          (ExpressionAccess {
-              expression = delocalize expression;
-              access = List.map access ~f:delocalize_element;
-            })
-    | Call { callee; arguments } ->
-        let delocalize_argument ({ Call.Argument.value; _ } as argument) =
-          { argument with Call.Argument.value = delocalize value }
-        in
-        Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
-    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
-        let sanitized = Identifier.sanitized identifier in
-        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
-        if Str.string_match local_qualifier_pattern identifier 0 then
-          let qualifier =
-            Str.matched_group 1 identifier
-            |> String.substr_replace_all ~pattern:"?" ~with_:"."
-            |> create_name ~location
-            |> fun name -> Name name
-            |> Node.create ~location
-          in
-          Name (Name.Attribute { base = qualifier; attribute = sanitized })
-        else
-          begin
-            Log.debug "Unable to extract qualifier from %s" identifier;
-            Name (Name.Identifier sanitized)
-          end
-    | Name (Name.Identifier identifier) ->
-        Name (Name.Identifier identifier)
-    | Name (Name.Attribute { base; attribute }) ->
-        Name (Name.Attribute { base = delocalize base; attribute })
-    | List elements ->
-        List (List.map elements ~f:delocalize)
-    | Tuple elements ->
-        Tuple (List.map elements ~f:delocalize)
-    | _ ->
-        value
-  in
-  { expression with Node.value }
-
-
-let delocalize_qualified ({ Node.value; _ } as expression) =
-  let value =
-    match value with
-    | Access (SimpleAccess access) ->
-        Access (SimpleAccess (Access.delocalize_qualified access))
-    | _ ->
-        value
-  in
-  { expression with Node.value }
-
-
-
 module ComparisonOperator = struct
   include Record.ComparisonOperator
 
@@ -1053,6 +936,118 @@ let rec convert_to_old_access { Node.location; value } =
         Access (SimpleAccess (List.rev flattened))
   in
   { Node.location; value }
+
+
+let create_name_from_identifiers identifiers =
+  let rec create = function
+    | [] ->
+        failwith "Access must have non-zero identifiers."
+    | [{ Node.location; value = identifier }] ->
+        Name (Name.Identifier identifier)
+        |> Node.create ~location
+    | { Node.location; value = identifier } :: rest ->
+        Name (
+          Name.Attribute {
+            base = create rest;
+            attribute = identifier;
+          })
+        |> Node.create ~location
+  in
+  match create (List.rev identifiers) with
+  | { Node.value = Name name; _ } -> name
+  | _ -> failwith "Impossible."
+
+
+let create_name ~location name =
+  let identifier_names name =
+    if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  identifier_names name
+  |> List.map ~f:(Node.create ~location)
+  |> create_name_from_identifiers
+
+
+let is_simple_name name =
+  let rec is_simple = function
+    | Name (Name.Identifier _ ) -> true
+    | Name (Name.Attribute { base; _ }) -> is_simple (Node.value base)
+    | _ -> false
+  in
+  is_simple (Name name)
+
+
+let rec delocalize ({ Node.value; location } as expression) =
+  let value =
+    let delocalize_element = function
+      | Access.Call ({ Node.value = arguments; _ } as call) ->
+          let delocalize_argument ({ Argument.value; _ } as argument) =
+            { argument with Argument.value = delocalize value }
+          in
+          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
+      | element ->
+          element
+    in
+    match value with
+    | Access (SimpleAccess access) ->
+        let access =
+          Access.delocalize access
+          |> List.map ~f:delocalize_element
+        in
+        Access (SimpleAccess access)
+    | Access (ExpressionAccess { expression; access }) ->
+        Access
+          (ExpressionAccess {
+              expression = delocalize expression;
+              access = List.map access ~f:delocalize_element;
+            })
+    | Call { callee; arguments } ->
+        let delocalize_argument ({ Call.Argument.value; _ } as argument) =
+          { argument with Call.Argument.value = delocalize value }
+        in
+        Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
+        let sanitized = Identifier.sanitized identifier in
+        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
+        if Str.string_match local_qualifier_pattern identifier 0 then
+          let qualifier =
+            Str.matched_group 1 identifier
+            |> String.substr_replace_all ~pattern:"?" ~with_:"."
+            |> create_name ~location
+            |> fun name -> Name name
+            |> Node.create ~location
+          in
+          Name (Name.Attribute { base = qualifier; attribute = sanitized })
+        else
+          begin
+            Log.debug "Unable to extract qualifier from %s" identifier;
+            Name (Name.Identifier sanitized)
+          end
+    | Name (Name.Identifier identifier) ->
+        Name (Name.Identifier identifier)
+    | Name (Name.Attribute { base; attribute }) ->
+        Name (Name.Attribute { base = delocalize base; attribute })
+    | List elements ->
+        List (List.map elements ~f:delocalize)
+    | Tuple elements ->
+        Tuple (List.map elements ~f:delocalize)
+    | _ ->
+        value
+  in
+  { expression with Node.value }
+
+
+let delocalize_qualified ({ Node.value; _ } as expression) =
+  let value =
+    match value with
+    | Access (SimpleAccess access) ->
+        Access (SimpleAccess (Access.delocalize_qualified access))
+    | _ ->
+        value
+  in
+  { expression with Node.value }
 
 
 let exists_in_list ?(match_prefix=false) ~expression_list target_string =
