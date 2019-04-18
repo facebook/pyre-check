@@ -1348,6 +1348,130 @@ let extract_docstring statements =
       None
 
 
+let rec convert statement =
+  let location = Node.location statement in
+  match Node.value statement with
+  | Assign { Assign.target; annotation; value; parent } ->
+      Assign {
+        Assign.target = Expression.convert target;
+        annotation = annotation >>| Expression.convert;
+        value = Expression.convert value;
+        parent;
+      } |> Node.create ~location
+  | Assert { Assert.test; message; origin } ->
+      Assert {
+        Assert.test = Expression.convert test;
+        message = message >>| Expression.convert;
+        origin;
+      } |> Node.create ~location
+  | Class { Class.name; bases; body; decorators; docstring; } ->
+      let convert_argument ({ Expression.Call.Argument.value; _ } as argument) =
+        { argument with Expression.Call.Argument.value = Expression.convert value }
+      in
+      Class {
+        Class.name = name;
+        bases = List.map ~f:convert_argument bases;
+        body = List.map ~f:convert body;
+        decorators = List.map ~f:Expression.convert decorators;
+        docstring;
+      } |> Node.create ~location
+  | Define {
+      signature = {
+        name;
+        parameters;
+        decorators;
+        return_annotation;
+        async;
+        parent;
+        docstring;
+      };
+      body
+    } ->
+      let convert_parameter { Node.location; value = { Parameter.name; value; annotation } } =
+        {
+          Parameter.name;
+          value = value >>| Expression.convert;
+          annotation = annotation >>| Expression.convert;
+        } |> Node.create ~location
+      in
+      Define {
+        signature = {
+          name;
+          parameters = List.map ~f:convert_parameter parameters;
+          decorators = List.map ~f:Expression.convert decorators;
+          return_annotation = return_annotation >>| Expression.convert;
+          async;
+          parent;
+          docstring;
+        };
+        body = List.map ~f:convert body;
+      } |> Node.create ~location
+  | Delete expression ->
+      Delete (Expression.convert expression)
+      |> Node.create ~location
+  | Expression expression ->
+      Expression (Expression.convert expression)
+      |> Node.create ~location
+  | For { For.target; iterator; body; orelse; async } ->
+      For {
+        For.target = Expression.convert target;
+        iterator = Expression.convert iterator;
+        body = List.map ~f:convert body;
+        orelse = List.map ~f:convert orelse;
+        async;
+      } |> Node.create ~location
+  | If { If.test; body; orelse } ->
+      If {
+        If.test = Expression.convert test;
+        body = List.map ~f:convert body;
+        orelse = List.map ~f:convert orelse;
+      } |> Node.create ~location
+  | Raise expression ->
+      Raise (expression >>| Expression.convert)
+      |> Node.create ~location
+  | Return ({ Return.expression; _ } as return) ->
+      Return {
+        return with Return.expression = expression >>| Expression.convert
+      } |> Node.create ~location
+  | Try { Try.body; handlers; orelse; finally } ->
+      let convert_handler { Try.kind; name; handler_body } =
+        {
+          Try.kind = kind >>| Expression.convert;
+          name;
+          handler_body = List.map ~f:convert handler_body;
+        }
+      in
+      Try {
+        Try.body = List.map ~f:convert body;
+        handlers = List.map ~f:convert_handler handlers;
+        orelse = List.map ~f:convert orelse;
+        finally = List.map ~f:convert finally;
+      } |> Node.create ~location
+  | With { With.items; body; async } ->
+      let transform_item (item, alias) =
+        Expression.convert item, alias >>| Expression.convert
+      in
+      With {
+        With.items = List.map ~f:transform_item items;
+        body = List.map ~f:convert body;
+        async;
+      } |> Node.create ~location
+  | While { While.test; body; orelse } ->
+      While {
+        While.test = Expression.convert test;
+        body = List.map ~f:convert body;
+        orelse = List.map ~f:convert orelse;
+      } |> Node.create ~location
+  | Yield expression ->
+      Yield (Expression.convert expression)
+      |> Node.create ~location
+  | YieldFrom expression ->
+      YieldFrom (Expression.convert expression)
+      |> Node.create ~location
+  | Break | Continue | Global _ | Import _ | Nonlocal _ | Pass ->
+      statement
+
+
 module PrettyPrinter = struct
   let pp_decorators formatter =
     function
