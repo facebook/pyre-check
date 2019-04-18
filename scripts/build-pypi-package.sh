@@ -18,8 +18,9 @@ URL='https://pyre-check.org/'
 DOWNLOAD_URL='https://github.com/facebook/pyre-check'
 # https://www.python.org/dev/peps/pep-0008/#package-and-module-names
 MODULE_NAME="pyre_check"
+
 SAPP_MODULE_NAME="sapp"
-RUNTIME_DEPENDENCIES="'typeshed'"
+RUNTIME_DEPENDENCIES="'typeshed', 'pywatchman'"
 
 # helpers
 die() {
@@ -28,6 +29,7 @@ die() {
 }
 error_trap () {
   die "Command '${BASH_COMMAND}' failed at ${BASH_SOURCE[0]}:${BASH_LINENO[0]}"
+  
 }
 
 trap error_trap ERR
@@ -51,7 +53,7 @@ while [[ $# -gt 0 ]]; do
       if [[ -n "$1" && -d "$1" ]]; then
         echo "Selected typeshed location for bundling: ${1}"
         BUNDLE_TYPESHED="${1}"
-        RUNTIME_DEPENDENCIES=""
+        RUNTIME_DEPENDENCIES="'pywatchman'"
 
         # Attempt a basic validation of the provided directory.
         if [[ ! -d "${BUNDLE_TYPESHED}/stdlib" ]]; then
