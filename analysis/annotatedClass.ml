@@ -540,15 +540,12 @@ module Attribute = struct
       else
         annotation
     in
-    let target = Access ( SimpleAccess(Access.create attribute_name)) in
 
     (* Special cases *)
     let annotation =
-      let open Expression in
-      let open Record.Access in
-      match instantiated, target, annotation with
+      match instantiated, attribute_name, annotation with
       | Some (Type.TypedDictionary { fields; total; _ }),
-        Access (SimpleAccess [Identifier method_name]),
+        method_name,
         { annotation = Type.Callable callable; _ } ->
           Type.TypedDictionary.special_overloads ~fields ~method_name ~total
           >>| (fun overloads ->
@@ -563,7 +560,7 @@ module Attribute = struct
               })
           |> Option.value ~default:annotation
       | Some (Type.Tuple (Bounded members)),
-        Access (SimpleAccess [Identifier "__getitem__"]),
+        "__getitem__",
         { annotation = Type.Callable ({ overloads; _ } as callable); _ } ->
           let overload index member =
             {
@@ -576,7 +573,7 @@ module Attribute = struct
           let overloads =  (List.mapi ~f:overload members) @ overloads in
           { annotation with annotation = Type.Callable { callable with overloads } }
       | Some (Type.Primitive name),
-        Access (SimpleAccess [Identifier "__getitem__"]),
+        "__getitem__",
         { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
         when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
           let implementation =

@@ -521,8 +521,8 @@ let test_implements _ =
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match get_last_statement (Preprocessing.convert definition),
-          get_last_statement (Preprocessing.convert protocol) with
+    match get_last_statement definition,
+          get_last_statement protocol with
     | { Node.value = Statement.Class definition; _ },
       { Node.value = Statement.Class protocol; _ } ->
         assert_equal
@@ -846,7 +846,7 @@ let test_callable_implements _ =
     in
     let resolution = TypeCheck.resolution handler () in
     Annotated.Class.Attribute.Cache.clear ();
-    match get_last_statement (Preprocessing.convert protocol) with
+    match get_last_statement protocol with
     | { Node.value = Statement.Class protocol; _ } ->
         assert_equal
           ~printer:(function
@@ -1301,7 +1301,7 @@ let test_constraints _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
     let target =
-      let { Source.statements; _ } = parse ~convert:true source in
+      let { Source.statements; _ } = parse source in
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
           when Reference.show name = target ->
@@ -1557,7 +1557,7 @@ let test_constraints _ =
 
 let test_inferred_generic_base _ =
   let assert_inferred_generic ~target source expected =
-    let ({ Source.statements; _ } as source) = parse ~convert:true source in
+    let ({ Source.statements; _ } as source) = parse source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
@@ -1638,7 +1638,7 @@ let test_inferred_generic_base _ =
 
 let test_metaclasses _ =
   let assert_metaclass ~source ~target metaclass =
-    let ({ Source.statements; _ } as source) = parse ~convert:true source in
+    let ({ Source.statements; _ } as source) = parse source in
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ Statement.Class.name; _ } as definition) }
