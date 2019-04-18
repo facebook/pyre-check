@@ -35,6 +35,7 @@ class PersistentTest(unittest.TestCase):
                 command._flags(),
                 ["-log-identifier", '"."', "-expected-binary-version", "hash"],
             )
+            self.assertEqual(arguments.store_type_check_resolution, False)
             command.run()
             call_client.assert_has_calls(
                 [

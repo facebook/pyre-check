@@ -23,6 +23,7 @@ class Persistent(Command):
     def _run(self) -> None:
         arguments = self._arguments
         arguments.terminal = False
+        arguments.store_type_check_resolution = False
         Start(arguments, self._configuration, self._analysis_directory).run()
 
         self._call_client(command=self.NAME, capture_output=False).check()
