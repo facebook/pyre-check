@@ -979,11 +979,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                  suppress_synthetics then
                 Name (
                    Name.Attribute {
-                     base = Reference.new_expression qualifier;
+                     base = Reference.expression qualifier;
                      attribute = identifier
                   })
               else
-                Node.value (Reference.new_expression name)
+                Node.value (Reference.expression name)
           | _ ->
               Name (Name.Identifier identifier)
         end

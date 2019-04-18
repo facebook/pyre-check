@@ -678,7 +678,7 @@ module Define = struct
       >>= (fun parent ->
           Attribute.name
             ~parent:(Reference.access parent)
-            (Reference.expression ~location name))
+            (Reference.expression ~convert:true ~location name))
       >>| fun name ->
       Attribute.create
         ~location
@@ -929,7 +929,7 @@ module Class = struct
         match value with
         | Define ({ Define.signature = { name = target; _ }; _ } as define) ->
             Attribute.name
-              (Reference.expression ~location target)
+              (Reference.expression ~convert:true ~location target)
               ~parent:(Reference.access name)
             >>| (fun name ->
                 let attribute =
@@ -962,7 +962,7 @@ module Class = struct
             let annotation =
               let meta_annotation =
                 let argument =
-                  { Argument.name = None; value = Reference.expression name }
+                  { Argument.name = None; value = Reference.expression ~convert:true name }
                 in
                 Node.create
                   ~location

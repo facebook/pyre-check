@@ -1639,7 +1639,7 @@ module State = struct
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
              | Type.Callable { Type.Callable.implementation; _ } ->
                  let original_implementation =
-                   Reference.expression name
+                   Reference.expression ~convert:true name
                    |> Resolution.resolve resolution
                    |> function
                    | Type.Callable { Type.Callable.implementation = original_implementation; _ } ->

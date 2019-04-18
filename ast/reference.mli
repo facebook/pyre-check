@@ -23,8 +23,7 @@ val from_access: Expression.Access.t -> t
 val access: t -> Expression.Access.t
 val from_name: Expression.t Expression.Name.t -> t
 val name: t -> Expression.t Expression.Name.t
-val expression: ?location: Location.t -> t -> Expression.t
-val new_expression: ?location: Location.t -> t -> Expression.t
+val expression: ?convert:bool -> ?location: Location.t -> t -> Expression.t
 
 val delocalize: t -> t
 val sanitized: t -> t

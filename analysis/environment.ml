@@ -418,7 +418,7 @@ let register_aliases (module Handler: Handler) sources =
             if in_class_body then target else Reference.combine qualifier target
           in
           let target_annotation =
-            Type.create ~aliases:Handler.aliases (Reference.new_expression target)
+            Type.create ~aliases:Handler.aliases (Reference.expression target)
           in
           begin
             match Node.value value, annotation with
@@ -527,7 +527,7 @@ let register_aliases (module Handler: Handler) sources =
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [handle, qualified_name, Reference.new_expression original_name]
+                [handle, qualified_name, Reference.expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
@@ -537,7 +537,7 @@ let register_aliases (module Handler: Handler) sources =
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
-      Type.create ~aliases:Handler.aliases (Reference.new_expression target)
+      Type.create ~aliases:Handler.aliases (Reference.expression target)
     in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with

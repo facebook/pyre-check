@@ -130,15 +130,14 @@ let name reference =
   | _ -> failwith "Impossible."
 
 
-let expression ?(location = Location.Reference.any) reference =
-  access reference
-  |> Access.expression ~location
-
-
-let new_expression ?(location = Location.Reference.any) reference =
-  name reference
-  |> (fun name -> Name name)
-  |> Node.create ~location
+let expression ?(convert = false) ?(location = Location.Reference.any) reference =
+  if convert then
+    access reference
+    |> Access.expression ~location
+  else
+    name reference
+    |> (fun name -> Name name)
+    |> Node.create ~location
 
 
 let delocalize reference =

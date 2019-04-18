@@ -409,7 +409,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       begin
         (* Make sure we know about what we model. *)
         let call_target = (call_target :> Callable.t) in
-        let annotation = Resolution.resolve resolution (Reference.expression name) in
+        let annotation = Resolution.resolve resolution (Reference.expression ~convert:true name) in
         if Type.equal annotation Type.Top then
           raise_invalid_model "Modeled entity is not part of the environment!";
 

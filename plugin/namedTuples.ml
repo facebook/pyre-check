@@ -98,7 +98,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       in
       Assign {
         Assign.target =
-          Reference.create ~prefix:parent "_fields" |> Reference.new_expression ~location;
+          Reference.create ~prefix:parent "_fields" |> Reference.expression ~location;
         annotation = Some annotation;
         value;
         parent = Some parent;
@@ -110,7 +110,7 @@ let transform_ast ({ Source.statements; _ } as source) =
         let attribute (name, annotation, value) =
           let target =
             Reference.create ~prefix:parent name
-            |> Reference.new_expression ~location
+            |> Reference.expression ~location
           in
           Assign {
             Assign.target;

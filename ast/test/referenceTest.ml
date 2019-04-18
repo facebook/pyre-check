@@ -34,7 +34,7 @@ let test_expression _ =
     in
     let actual =
       Reference.create reference
-      |> Reference.expression
+      |> Reference.expression ~convert:true
     in
     assert_equal
       ~printer:Expression.show
@@ -54,7 +54,7 @@ let test_name _ =
     in
     let actual =
       Reference.create reference
-      |> Reference.new_expression
+      |> Reference.expression
     in
     assert_equal
       ~printer:Expression.show
