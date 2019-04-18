@@ -405,74 +405,94 @@ let register_aliases (module Handler: Handler) sources =
     let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
       match value with
       | Assign {
-          Assign.target = { Node.value = Access (SimpleAccess target); _ };
+          Assign.target = { Node.value = Name target; _ };
           annotation;
           value;
           _;
-        } ->
+        } when Expression.is_simple_name target ->
           let target =
-            let access = Access.delocalize_qualified target in
-            if in_class_body then
-              access
-            else
-              Reference.access qualifier @ access
+            let target =
+              Reference.from_name target
+              |> Reference.sanitize_qualified
+            in
+            if in_class_body then target else Reference.combine qualifier target
           in
           let target_annotation =
             Type.create
+              ~convert:false
               ~aliases:Handler.aliases
-              (Node.create (Access (SimpleAccess target)) ~location:(Node.location value))
+              (Reference.new_expression target)
           in
           begin
             match Node.value value, annotation with
             | _, Some {
                 Node.value =
-                  Access
-                    (SimpleAccess [
-                        Access.Identifier "typing";
-                        Access.Identifier "Type";
-                        Access.Identifier "__getitem__";
-                        Access.Call {
-                          Node.value = [{
-                              Argument.value = ({
-                                  Node.value = Access (SimpleAccess [
-                                      Access.Identifier "mypy_extensions";
-                                      Access.Identifier "TypedDict";
-                                      Access.Identifier "__getitem__";
-                                      Access.Call _;
-                                    ]);
-                                  _;
-                                } as annotation);
-                              _;
-                            }];
+                  Call {
+                    callee = {
+                      Node.value = Name (Name.Attribute {
+                        base = {
+                          Node.value = Name (Name.Attribute {
+                            base = { Node.value = Name (Name.Identifier "typing"); _ };
+                            attribute = "Type";
+                          });
                           _;
                         };
-                      ]);
+                        attribute = "__getitem__";
+                      });
+                      _;
+                    };
+                    arguments = [{
+                        Call.Argument.value = ({
+                          Node.value = Call {
+                            callee = {
+                              Node.value = Name (Name.Attribute {
+                                base = {
+                                  Node.value = Name (Name.Attribute {
+                                    base = {
+                                      Node.value = Name (Name.Identifier "mypy_extensions");
+                                      _;
+                                    };
+                                    attribute = "TypedDict";
+                                  });
+                                  _;
+                                };
+                                attribute = "__getitem__";
+                              });
+                              _;
+                            };
+                            _;
+                          };
+                          _;
+                        } as annotation);
+                        _;
+                    }];
+                  };
                 _;
               } ->
                 if not (Type.equal target_annotation Type.Top) then
-                  (handle, Reference.from_access target, annotation) :: aliases
+                  (handle, target, annotation) :: aliases
                 else
                   aliases
             | _, Some ({
                 Node.value =
-                  Access
-                    (SimpleAccess[
-                        Access.Identifier "typing";
-                        Access.Identifier "Any";
-                      ]);
+                  Name (Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier "typing"); _ };
+                    attribute = "Any";
+                  });
                 _;
               } as annotation) ->
                 if not (Type.equal target_annotation Type.Top) then
-                  (handle, Reference.from_access target, annotation) :: aliases
+                  (handle, target, annotation) :: aliases
                 else
                   aliases
-            | Access _, None ->
+            | Call _, None
+            | Name _, None ->
                 let value = Expression.delocalize value in
-                let value_annotation = Type.create ~aliases:Handler.aliases value in
+                let value_annotation = Type.create ~convert:false ~aliases:Handler.aliases value in
                 if not (Type.equal target_annotation Type.Top ||
                         Type.equal value_annotation Type.Top ||
                         Type.equal value_annotation target_annotation) then
-                  (handle, Reference.from_access target, value) :: aliases
+                  (handle, target, value) :: aliases
                 else
                   aliases
             | _ ->
@@ -510,7 +530,7 @@ let register_aliases (module Handler: Handler) sources =
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [handle, qualified_name, Reference.expression original_name]
+                [handle, qualified_name, Reference.new_expression original_name]
           in
           List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
       | _ ->
@@ -520,12 +540,10 @@ let register_aliases (module Handler: Handler) sources =
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
-      Type.create
-        (Reference.expression ~location:(Node.location value) target)
-        ~aliases:Handler.aliases
+      Type.create ~convert:false ~aliases:Handler.aliases (Reference.new_expression target)
     in
     let value_annotation =
-      match Type.create ~aliases:Handler.aliases value with
+      match Type.create ~convert:false ~aliases:Handler.aliases value with
       | Type.Variable variable ->
           Type.Variable { variable with variable = Reference.show target }
       | annotation ->
@@ -547,9 +565,9 @@ let register_aliases (module Handler: Handler) sources =
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
                 let reference =
-                  match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Access (SimpleAccess name) ->
-                      Reference.from_access name
+                  match Node.value (Type.expression ~convert:false (Type.Primitive primitive)) with
+                  | Expression.Name name when Expression.is_simple_name name ->
+                      Reference.from_name name
                   | _ ->
                       Reference.create "typing.Any"
                 in
@@ -595,7 +613,7 @@ let register_aliases (module Handler: Handler) sources =
         in
         List.iter ~f:show_unresolved unresolved
   in
-  List.concat_map ~f:collect_aliases (List.map ~f:Preprocessing.convert sources)
+  List.concat_map ~f:collect_aliases sources
   |> resolve_aliases;
   Type.Cache.enable ()
 
