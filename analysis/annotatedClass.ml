@@ -354,9 +354,9 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
       }
     | None,
       Name (Name.Attribute {
-        base = { Node.value = Name (Name.Identifier typing); _ };
-        attribute = "Protocol";
-      }) when (String.equal typing "typing") || (String.equal typing "typing_extensions") ->
+          base = { Node.value = Name (Name.Identifier typing); _ };
+          attribute = "Protocol";
+        }) when (String.equal typing "typing") || (String.equal typing "typing_extensions") ->
         true
     | _ ->
         false
@@ -716,9 +716,10 @@ let attributes
     ?(transitive = false)
     ?(class_attributes = false)
     ?(include_generated_attributes = true)
-    ?(instantiated = None)
+    ?instantiated
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution =
+  let original_instantiated = instantiated in
   let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
     {
@@ -818,6 +819,23 @@ let attributes
           []
       in
       let result =
+        let instantiate attribute =
+          match original_instantiated with
+          | Some instantiated ->
+              Attribute.parent attribute
+              |> Resolution.class_definition resolution
+              >>| (fun target ->
+                  let constraints =
+                    constraints
+                      ~target
+                      ~instantiated
+                      ~resolution
+                      definition
+                  in
+                  Attribute.instantiate ~constraints attribute)
+          | None ->
+              Some attribute
+        in
         List.fold
           ~f:(definition_attributes
                 ~in_test
@@ -826,6 +844,7 @@ let attributes
           ~init:accumulator
           meta_definitions
         |> List.rev
+        |> List.filter_map ~f:instantiate
       in
       Hashtbl.set ~key ~data:result Attribute.Cache.cache;
       result
@@ -920,30 +939,9 @@ let attribute
     ~resolution
     ~name
     ~instantiated =
-  let undefined () =
-    Attribute.create
-      ~resolution
-      ~parent:definition
-      ~defined:false
-      ~default_class_attribute:class_attributes
-      {
-        Node.location;
-        value = {
-          Statement.Attribute.name;
-          annotation = None;
-          defines = None;
-          value = None;
-          async = false;
-          setter = false;
-          property = false;
-          primitive = true;
-          toplevel = true;
-        }
-      }
-  in
   let attribute =
     attributes
-      ~instantiated:(Some instantiated)
+      ~instantiated
       ~transitive
       ~class_attributes
       ~include_generated_attributes:true
@@ -953,25 +951,28 @@ let attribute
       ~f:(fun attribute -> String.equal name (Attribute.name attribute))
   in
   match attribute with
-  | None -> undefined ()
   | Some attribute ->
-      let attribute =
-        Attribute.parent attribute
-        |> Resolution.class_definition resolution
-        >>| (fun target ->
-            let constraints =
-              constraints
-                ~target
-                ~instantiated
-                ~resolution
-                definition
-            in
-            Attribute.instantiate ~constraints attribute)
-      in
-      match attribute with
-      | None -> undefined ()
-      | Some attribute ->
-          attribute
+      attribute
+  | None ->
+      Attribute.create
+        ~resolution
+        ~parent:definition
+        ~defined:false
+        ~default_class_attribute:class_attributes
+        {
+          Node.location;
+          value = {
+            Statement.Attribute.name;
+            annotation = None;
+            defines = None;
+            value = None;
+            async = false;
+            setter = false;
+            property = false;
+            primitive = true;
+            toplevel = true;
+          }
+        }
 
 
 let rec fallback_attribute ~resolution ~name definition =

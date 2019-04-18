@@ -144,7 +144,7 @@ val attributes
   :  ?transitive: bool
   -> ?class_attributes: bool
   -> ?include_generated_attributes: bool
-  -> ?instantiated: Type.t option
+  -> ?instantiated: Type.t
   -> t
   -> resolution: Resolution.t
   -> Attribute.t list
