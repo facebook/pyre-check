@@ -193,8 +193,8 @@ let parse_single_statement ?(convert = true) ?(preprocess = false) source =
   | _ -> failwith "Could not parse single statement"
 
 
-let parse_last_statement source =
-  match parse ~convert:true source with
+let parse_last_statement ?(convert = true) source =
+  match parse ~convert source with
   | { Source.statements; _ } when List.length statements > 0 ->
       List.last_exn statements
   | _ -> failwith "Could not parse last statement"

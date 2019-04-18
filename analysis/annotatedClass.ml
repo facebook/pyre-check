@@ -18,7 +18,7 @@ type t = Class.t Node.t
 
 
 type decorator = {
-  access: string;
+  name: string;
   arguments: (Expression.t Expression.Call.Argument.t list) option
 }
 [@@deriving compare, eq, sexp, show, hash]
@@ -54,14 +54,26 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
           match Expression.Access.name_and_arguments ~call:access with
           | Some { callee = name; arguments } when String.equal name target ->
               Some {
-                access = name;
+                name;
                 arguments = Some (List.map ~f:Expression.convert_argument arguments)
               }
           | None when String.equal (Access.show access) target ->
-              Some { access = Access.show access; arguments = None }
+              Some { name = Access.show access; arguments = None }
           | _ ->
               None
         end
+    | { Node.value = Call { callee; arguments }; _ }
+      when String.equal target (Expression.show callee) ->
+        Some {
+          name = Expression.show callee;
+          arguments = Some arguments
+        }
+    | { Node.value = Name _; _ }
+      when String.equal target (Expression.show decorator) ->
+        Some {
+          name = Expression.show decorator;
+          arguments = None;
+        }
     | _ ->
         None
   in

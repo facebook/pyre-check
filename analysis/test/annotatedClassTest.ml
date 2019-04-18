@@ -8,6 +8,7 @@ open OUnit2
 
 open Ast
 open Analysis
+open Expression
 open Statement
 open Pyre
 
@@ -17,7 +18,7 @@ open AnnotatedTest
 module Class = Annotated.Class
 module Attribute = Annotated.Attribute
 module Method = Annotated.Method
-module Argument = Expression.Call.Argument
+module Argument = Call.Argument
 
 
 let test_generics _ =
@@ -158,16 +159,32 @@ type constructor = {
 
 let test_get_decorator _ =
   let assert_get_decorator source decorator expected =
-    match parse_last_statement source with
-    | { Node.value = Statement.Class definition; _ } ->
-        let actual =
-          Node.create_with_default_location definition
-          |> Class.create
-          |> Class.get_decorator ~decorator
+    let assert_logic ~convert expected =
+      match parse_last_statement ~convert source with
+      | { Node.value = Statement.Class definition; _ } ->
+          let actual =
+            Node.create_with_default_location definition
+            |> Class.create
+            |> Class.get_decorator ~decorator
+          in
+          assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
+      | _ ->
+          assert_true (List.is_empty expected)
+    in
+    let old_access_expected =
+      let to_old ({ Class.arguments; _ } as decorator) =
+        let arguments =
+          arguments
+          >>| List.map
+            ~f:(fun { Argument.name; value } ->
+              { Argument.name; value = Expression.convert_to_old_access value })
         in
-        assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
-    | _ ->
-        assert_true (List.is_empty expected)
+        { decorator with Class.arguments }
+      in
+      List.map ~f:to_old expected
+    in
+    assert_logic ~convert:true old_access_expected;
+    assert_logic ~convert:false expected;
   in
   assert_get_decorator "class A: pass" "decorator" [];
   assert_get_decorator
@@ -177,7 +194,7 @@ let test_get_decorator _ =
         pass
     |}
     "decorator"
-    [{ access = "decorator"; arguments = None }];
+    [{ name = "decorator"; arguments = None }];
   assert_get_decorator
     {|
       @decorator.a.b
@@ -201,7 +218,7 @@ let test_get_decorator _ =
         pass
     |}
     "decorator.a.b"
-    [{ access = "decorator.a.b"; arguments = None }];
+    [{ name = "decorator.a.b"; arguments = None }];
   assert_get_decorator
     {|
       @decorator(a=b, c=d)
@@ -220,10 +237,10 @@ let test_get_decorator _ =
     "decorator"
     [
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
-            { Argument.name = Some ~+"c"; value = !"d"}
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
+            { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d")}
           ];
       };
     ];
@@ -237,16 +254,16 @@ let test_get_decorator _ =
     "decorator"
     [
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
           ];
       };
       {
-        access = "decorator";
+        name = "decorator";
         arguments = Some [
-            { Argument.name = Some ~+"a"; value = !"b"};
-            { Argument.name = Some ~+"c"; value = !"d"}
+            { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b")};
+            { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d")}
           ];
       };
     ]
@@ -980,7 +997,7 @@ let test_class_attributes _ =
       Attribute.create
         ~resolution
         ~parent
-        (create_attribute "third" ~value:(+Expression.Integer 1));
+        (create_attribute "third" ~value:(+Integer 1));
     ];
 
 
@@ -1148,7 +1165,7 @@ let test_class_attributes _ =
       Class.Attribute.name;
       parent;
       annotation = (Annotation.create_immutable ~global:true (parse_callable callable));
-      value = Node.create_with_default_location Expression.Ellipsis;
+      value = Node.create_with_default_location Ellipsis;
       defined = true;
       class_attribute = false;
       async = false;

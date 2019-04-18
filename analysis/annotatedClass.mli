@@ -13,7 +13,7 @@ type t
 [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
-  access: string;
+  name: string;
   arguments: (Expression.t Expression.Call.Argument.t list) option
 }
 [@@deriving compare, eq, sexp, show, hash]
