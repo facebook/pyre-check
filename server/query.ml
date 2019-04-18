@@ -104,7 +104,7 @@ let parse_query
     }] ->
       let arguments =
         let convert_argument { Call.Argument.name; value } =
-          { Argument.name; value = convert_to_old_access value }
+          { Argument.name; value = convert value }
         in
         List.map ~f:convert_argument arguments
       in

@@ -505,7 +505,7 @@ let test_convert_accesses _ =
     let converted =
       new_access
       |> Node.create_with_default_location
-      |> convert_to_old_access
+      |> convert
     in
     assert_equal
       ~printer:(Expression.show)

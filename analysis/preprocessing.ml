@@ -23,7 +23,7 @@ let convert source =
       let transform_expression_children _ _ = false
 
       let expression _ expression =
-        Expression.convert_to_old_access expression
+        Expression.convert expression
     end)
   in
   Transform.transform () source

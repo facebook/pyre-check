@@ -403,7 +403,7 @@ let parse_annotation
     expression =
   let expression =
     Expression.delocalize expression
-    |> Expression.convert_to_old_access
+    |> Expression.convert
   in
   let aliases annotation =
     if allow_invalid_type_parameters then

@@ -177,7 +177,7 @@ let test_get_decorator _ =
           arguments
           >>| List.map
             ~f:(fun { Argument.name; value } ->
-              { Argument.name; value = Expression.convert_to_old_access value })
+              { Argument.name; value = Expression.convert value })
         in
         { decorator with Class.arguments }
       in
@@ -480,7 +480,7 @@ let test_is_protocol _ =
     let old_access_bases =
       List.map
         ~f:(fun { Argument.name; value } ->
-            { Argument.name; value = Expression.convert_to_old_access value })
+            { Argument.name; value = Expression.convert value })
         bases
     in
     assert_equal expected (is_protocol bases);

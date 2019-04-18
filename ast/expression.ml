@@ -782,29 +782,29 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
-let rec convert_to_old_access { Node.location; value } =
+let rec convert { Node.location; value } =
   (* Can't use `Visit` module due to circularity :( *)
-  let rec convert expression =
+  let rec split expression =
     let convert_argument { Call.Argument.name; value } =
-      { Argument.name; value = convert_to_old_access value }
+      { Argument.name; value = convert value }
     in
     let convert_generator { Comprehension.target; iterator; conditions; async } =
       {
-        Comprehension.target = convert_to_old_access target;
-        iterator = convert_to_old_access iterator;
-        conditions = List.map ~f:convert_to_old_access conditions;
+        Comprehension.target = convert target;
+        iterator = convert iterator;
+        conditions = List.map ~f:convert conditions;
         async;
       }
     in
     let convert_entry { Dictionary.key; value } =
-      { Dictionary.key = convert_to_old_access key; value = convert_to_old_access value }
+      { Dictionary.key = convert key; value = convert value }
     in
     let convert_parameter { Node.value = { Parameter.value; annotation; name }; location } =
       let value =
         {
           Parameter.name;
-          value = value >>| convert_to_old_access;
-          annotation = annotation >>| convert_to_old_access;
+          value = value >>| convert;
+          annotation = annotation >>| convert;
         }
       in
       { Node.location; value }
@@ -820,7 +820,7 @@ let rec convert_to_old_access { Node.location; value } =
       ) ->
         None, [Access.Identifier attribute; Access.Identifier base]
     | Name (Name.Attribute { base; attribute }) ->
-        let base_expression, access = convert (Node.value base) in
+        let base_expression, access = split (Node.value base) in
         base_expression, (Access.Identifier attribute) :: access
     | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
         let arguments =
@@ -828,31 +828,31 @@ let rec convert_to_old_access { Node.location; value } =
         in
         None, [Call arguments; Access.Identifier callee]
     | Call { callee; arguments } ->
-        let base_expression, access = convert (Node.value callee) in
+        let base_expression, access = split (Node.value callee) in
         let arguments =
           { Node.location = callee.Node.location; value = List.map ~f:convert_argument arguments }
         in
         base_expression, (Call arguments) :: access
     | Await expression ->
-        Await (convert_to_old_access expression) |> Option.some, []
+        Await (convert expression) |> Option.some, []
     | BooleanOperator { BooleanOperator.left; right; operator } ->
         BooleanOperator {
-          BooleanOperator.left = convert_to_old_access left;
-          right = convert_to_old_access right;
+          BooleanOperator.left = convert left;
+          right = convert right;
           operator
         } |> Option.some,
         []
     | ComparisonOperator { ComparisonOperator.left; right; operator } ->
         ComparisonOperator {
-          ComparisonOperator.left = convert_to_old_access left;
-          right = convert_to_old_access right;
+          ComparisonOperator.left = convert left;
+          right = convert right;
           operator
         } |> Option.some,
         []
     | Dictionary { Dictionary.entries; keywords } ->
         Dictionary {
           Dictionary.entries = List.map ~f:convert_entry entries;
-          keywords = List.map ~f:convert_to_old_access keywords;
+          keywords = List.map ~f:convert keywords;
         } |> Option.some,
         []
     | DictionaryComprehension { Comprehension.element; generators } ->
@@ -863,67 +863,67 @@ let rec convert_to_old_access { Node.location; value } =
         []
     | Generator { Comprehension.element; generators } ->
         Generator {
-          Comprehension.element = convert_to_old_access element;
+          Comprehension.element = convert element;
           generators = List.map ~f:convert_generator generators;
         } |> Option.some,
         []
     | Lambda { Lambda.parameters; body } ->
         Lambda {
           Lambda.parameters = List.map ~f:convert_parameter parameters;
-          body = convert_to_old_access body;
+          body = convert body;
         } |> Option.some,
         []
     | List elements ->
-        List (List.map ~f:convert_to_old_access elements) |> Option.some, []
+        List (List.map ~f:convert elements) |> Option.some, []
     | ListComprehension { Comprehension.element; generators } ->
         ListComprehension {
-          Comprehension.element = convert_to_old_access element;
+          Comprehension.element = convert element;
           generators = List.map ~f:convert_generator generators;
         } |> Option.some,
         []
     | Set elements ->
-        Set (List.map ~f:convert_to_old_access elements) |> Option.some, []
+        Set (List.map ~f:convert elements) |> Option.some, []
     | SetComprehension { Comprehension.element; generators } ->
         SetComprehension {
-          Comprehension.element = convert_to_old_access element;
+          Comprehension.element = convert element;
           generators = List.map ~f:convert_generator generators;
         } |> Option.some,
         []
     | Starred (Starred.Once expression) ->
-        Starred (Starred.Once (convert_to_old_access expression)) |> Option.some, []
+        Starred (Starred.Once (convert expression)) |> Option.some, []
     | Starred (Starred.Twice expression) ->
-        Starred (Starred.Twice (convert_to_old_access expression)) |> Option.some, []
+        Starred (Starred.Twice (convert expression)) |> Option.some, []
     | String { StringLiteral.value; kind } ->
         let kind =
           match kind with
           | StringLiteral.Format expressions ->
-              StringLiteral.Format (List.map expressions ~f:convert_to_old_access)
+              StringLiteral.Format (List.map expressions ~f:convert)
           | _ ->
               kind
         in
         String { StringLiteral.value; kind } |> Option.some, []
     | Ternary { Ternary.target; test; alternative } ->
         Ternary {
-          Ternary.target = convert_to_old_access target;
-          test = convert_to_old_access test;
-          alternative = convert_to_old_access alternative;
+          Ternary.target = convert target;
+          test = convert test;
+          alternative = convert alternative;
         } |> Option.some,
         []
     | Tuple elements ->
-        Tuple (List.map ~f:convert_to_old_access elements) |> Option.some, []
+        Tuple (List.map ~f:convert elements) |> Option.some, []
     | UnaryOperator { UnaryOperator.operand; operator } ->
         UnaryOperator {
-          UnaryOperator.operand = convert_to_old_access operand;
+          UnaryOperator.operand = convert operand;
           operator;
         } |> Option.some,
         []
     | Yield expression ->
-        Yield (expression >>| convert_to_old_access) |> Option.some, []
+        Yield (expression >>| convert) |> Option.some, []
     | _ ->
         Some expression, []
   in
   let value =
-    match convert value with
+    match split value with
     | Some expression, [] ->
         expression
     | Some expression, flattened ->
@@ -1068,7 +1068,7 @@ let exists_in_list ?(match_prefix=false) ~expression_list target_string =
     | _ ->
         false
   in
-  List.map ~f:convert_to_old_access expression_list
+  List.map ~f:convert expression_list
   |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 
 

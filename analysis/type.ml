@@ -994,7 +994,7 @@ let rec expression ?(convert = false) annotation =
     | _ -> convert_annotation annotation
   in
   if convert then
-    Expression.convert_to_old_access (Node.create_with_default_location value)
+    Expression.convert (Node.create_with_default_location value)
   else
     Node.create_with_default_location value
 
