@@ -657,9 +657,7 @@ let test_populate _ =
     (parse_annotation environment !"foo.foo")
     (Type.Primitive "foo.foo");
   assert_equal
-    (parse_annotation
-       environment
-       (+Access (SimpleAccess (parse_single_access ~convert:true "Optional[foo.foo]"))))
+    (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
     (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 

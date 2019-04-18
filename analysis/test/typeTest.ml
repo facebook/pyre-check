@@ -1226,19 +1226,19 @@ let test_parameter_name_compatibility _ =
 let test_lambda _ =
   assert_true
     (Type.equal
-       (parse_callable ~convert:true "typing.Callable[[Named(x, str)], int]")
+       (parse_callable "typing.Callable[[Named(x, str)], int]")
        (Type.lambda
           ~parameters:["x", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable ~convert:true "typing.Callable[[Keywords(kwargs, str)], int]")
+       (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
        (Type.lambda
           ~parameters:["**kwargs", Type.string]
           ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable ~convert:true "typing.Callable[[Variable(args, str)], int]")
+       (parse_callable "typing.Callable[[Variable(args, str)], int]")
        (Type.lambda
           ~parameters:["*args", Type.string]
           ~return_annotation:Type.integer))

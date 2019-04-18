@@ -176,7 +176,7 @@ let test_create _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
 
-    let expected = parse_callable ~convert:true expected in
+    let expected = parse_callable expected in
     let check_implicit { Type.Callable.implicit = actual; _ } =
       match expected_implicit with
       (* Verify implicit if we're checking for it explicitly, ignore otherwise

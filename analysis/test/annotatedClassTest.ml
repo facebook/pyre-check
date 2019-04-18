@@ -23,7 +23,7 @@ module Argument = Call.Argument
 
 let test_generics _ =
   let assert_generics source generics =
-    match parse_last_statement ~convert:true source with
+    match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let resolution =
           populate source
@@ -280,13 +280,13 @@ let test_constructors _ =
       parse_single_expression instantiated
       |> Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
-    match parse_last_statement ~convert:true source with
+    match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let callable =
           constructors
           >>| (fun constructors ->
-              Type.create ~convert:true ~aliases:(fun _ -> None)
-              (parse_single_expression ~convert:true constructors))
+              Resolution.parse_annotation resolution
+              (parse_single_expression constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -394,7 +394,7 @@ let test_constructors _ =
 
 let test_methods _ =
   let assert_methods source methods =
-    match parse_last_statement ~convert:true source with
+    match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let actuals =
           let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
@@ -425,7 +425,7 @@ let test_has_method _ =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()
     in
-    match parse_last_statement ~convert:true source with
+    match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
           Node.create_with_default_location definition
@@ -829,7 +829,7 @@ let test_callable_implements _ =
     in
     let environment = Environment.Builder.create () in
     let callable =
-      match parse_callable ~convert:true callable with
+      match parse_callable callable with
       | Type.Callable callable -> callable
       | _ -> failwith "Failed to parse callable."
     in
@@ -1171,7 +1171,7 @@ let test_class_attributes _ =
       Class.Attribute.name;
       parent;
       annotation = (
-        Annotation.create_immutable ~global:true (parse_callable ~convert:true callable)
+        Annotation.create_immutable ~global:true (parse_callable callable)
       );
       value = Node.create_with_default_location Ellipsis;
       defined = true;
@@ -1281,9 +1281,7 @@ let test_fallback_attribute _ =
         def Foo.__add__(self, other: Foo) -> int:
           pass
     |}
-    (Some
-      (parse_callable ~convert:true "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]")
-    );
+    (Some (parse_callable "typing.Callable('Foo.__add__')[[Named(other, Foo)], int]"));
   assert_fallback_attribute
     ~name:"__iadd__"
     {|
