@@ -128,9 +128,9 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             List.map subtypes ~f:create_override_target
 
 
-let resolve_target ~resolution ?receiver_type access ~reverse_access =
+let resolve_target ~resolution ?receiver_type access =
   let is_super_call = function
-    | Access.Identifier _ :: Access.Call _ :: Access.Identifier name :: _ ->
+    | Access.Identifier name :: Access.Call _ :: _ ->
         name = "super"
     | _ ->
         false
@@ -148,7 +148,7 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
       when is_global ~resolution access ->
         [Callable.create_function name, implicit]
     | Type.Callable { implicit; kind = Named name; _ }, _
-      when is_super_call reverse_access ->
+      when is_super_call access ->
         [Callable.create_method name, implicit]
     | Type.Callable { implicit = None; kind = Named name; _ }, None
       when is_all_names access ->
@@ -174,14 +174,11 @@ let resolve_target ~resolution ?receiver_type access ~reverse_access =
 
 let get_indirect_targets ~resolution ~receiver ~method_name =
   let receiver_type = Resolution.resolve resolution (Access.expression receiver) in
-  let reverse_access = (Access.Identifier method_name) :: List.rev receiver in
-  let access = List.rev reverse_access in
-  resolve_target ~resolution ~receiver_type access ~reverse_access
+  resolve_target ~resolution ~receiver_type (receiver @ [Access.Identifier method_name])
 
 
 let get_targets ~resolution ~global =
-  let reverse_access = List.rev global in
-  resolve_target ~resolution global ~reverse_access
+  resolve_target ~resolution global
 
 
 let resolve_call_targets ~resolution access =
@@ -198,7 +195,7 @@ let resolve_call_targets ~resolution access =
         let receiver_type = get_receiver_type ~reverse_prefix in
         let targets =
           List.rev_append
-            (resolve_target ~resolution ?receiver_type access ~reverse_access:reverse_prefix)
+            (resolve_target ~resolution ?receiver_type access)
             targets
         in
         accumulate_targets targets (head :: reverse_prefix) tail
