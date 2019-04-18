@@ -678,7 +678,7 @@ let convert_argument { Argument.name; value } =
   { Call.Argument.name; value }
 
 
-let rec delocalize ({ Node.value; _ } as expression) =
+let rec delocalize ({ Node.value; location } as expression) =
   let value =
     let delocalize_element = function
       | Access.Call ({ Node.value = arguments; _ } as call) ->
@@ -702,6 +702,32 @@ let rec delocalize ({ Node.value; _ } as expression) =
               expression = delocalize expression;
               access = List.map access ~f:delocalize_element;
             })
+    | Call { callee; arguments } ->
+        let delocalize_argument ({ Call.Argument.value; _ } as argument) =
+          { argument with Call.Argument.value = delocalize value }
+        in
+        Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+    | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_" ->
+        let sanitized = Identifier.sanitized identifier in
+        let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$" in
+        if Str.string_match local_qualifier_pattern identifier 0 then
+          let qualifier =
+            Str.matched_group 1 identifier
+            |> String.substr_replace_all ~pattern:"?" ~with_:"."
+            |> create_name ~location
+            |> fun name -> Name name
+            |> Node.create ~location
+          in
+          Name (Name.Attribute { base = qualifier; attribute = sanitized })
+        else
+          begin
+            Log.debug "Unable to extract qualifier from %s" identifier;
+            Name (Name.Identifier sanitized)
+          end
+    | Name (Name.Identifier identifier) ->
+        Name (Name.Identifier identifier)
+    | Name (Name.Attribute { base; attribute }) ->
+        Name (Name.Attribute { base = delocalize base; attribute })
     | List elements ->
         List (List.map elements ~f:delocalize)
     | Tuple elements ->

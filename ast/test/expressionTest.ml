@@ -353,7 +353,12 @@ let test_delocalize _ =
       ~printer:Expression.show
       ~cmp:Expression.equal
       (parse_single_expression expected)
-      (parse_single_expression source |> Expression.delocalize)
+      (parse_single_expression source |> Expression.delocalize);
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (parse_single_expression ~convert:false expected)
+      (parse_single_expression ~convert:false source |> Expression.delocalize)
   in
 
   assert_delocalized "constant" "constant";
