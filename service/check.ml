@@ -34,6 +34,7 @@ let analyze_sources
     ~handles =
   let open Analysis in
   Annotated.Class.Attribute.Cache.clear ();
+  Resolution.Cache.clear ();
   let timer = Timer.start () in
   let handles =
     let filter_by_directories handle =
@@ -76,6 +77,7 @@ let analyze_sources
       let map _ handles =
         Annotated.Class.Attribute.Cache.clear ();
         Module.Cache.clear ();
+        Resolution.Cache.clear ();
         let analyze_source { errors; number_files } handle =
           match SharedMemory.Sources.get handle with
           | Some source ->

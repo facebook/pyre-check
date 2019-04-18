@@ -1270,6 +1270,7 @@ let process_type_check_files
 
   Annotated.Class.Attribute.Cache.clear ();
   Module.Cache.clear ();
+  Resolution.Cache.clear ();
   let removed_handles, update_environment_with, check =
     let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with

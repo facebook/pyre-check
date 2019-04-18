@@ -28,6 +28,21 @@ type type_parameters_mismatch = {
 }
 
 
+module Cache = struct
+  module Generics = struct
+    type t = (Type.t list option) Type.Table.t
+
+    let cache =
+      Type.Table.create ()
+
+    let clear () = Hashtbl.clear cache
+  end
+
+  let clear () =
+    Generics.clear ()
+end
+
+
 type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Set.t;
@@ -186,8 +201,8 @@ let implements ({ implements; _ } as resolution) =
   implements ~resolution
 
 
-let generics ({ generics; _ } as resolution) =
-  generics ~resolution
+let generics ({ generics; _ } as resolution) key =
+  Hashtbl.find_or_add Cache.Generics.cache key ~default:(fun _ -> generics ~resolution key)
 
 
 module FunctionDefinitionsCache = struct

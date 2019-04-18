@@ -832,13 +832,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         @overload
         def cast(tp: str, obj: Any) -> Any: ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
       ~qualifier:Reference.empty
       ~handle:"builtins.pyi"
       builtins
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
@@ -847,7 +847,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           GET: typing.Dict[str, typing.Any] = ...
           POST: typing.Dict[str, typing.Any] = ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
@@ -861,7 +861,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         environ: typing.Dict[str, str] = ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
@@ -871,7 +871,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def check_call(command, shell): ...
         def check_output(command, shell): ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
@@ -882,7 +882,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         class ABC(metaclass=ABCMeta): ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
@@ -905,7 +905,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           class IntFlag(int, Flag):  # type: ignore
             pass
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "threading")
       ~handle:"threading.pyi"
@@ -913,7 +913,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Thread:
           pass
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
@@ -922,7 +922,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def __getitem__(self, typeargs: Any) -> Any: ...
         Literal: _SpecialForm = ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
@@ -1004,7 +1004,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def copy(self: _DefaultDictT) -> _DefaultDictT:
                 ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
@@ -1016,14 +1016,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def asynccontextmanager(func: Any) -> Any:
             ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
     parse
       ~qualifier:(Reference.create "taint")
       ~handle:"taint.pyi"
       {|
         __global_sink: Any = ...
       |}
-      |> Preprocessing.qualify;
+    |> Preprocessing.qualify;
   ]
 
 
@@ -1093,6 +1093,7 @@ let assert_errors
     source
     errors =
   Annotated.Class.Attribute.Cache.clear ();
+  Resolution.Cache.clear ();
   let descriptions =
     let check source =
       let parse ~qualifier ~handle ~source =

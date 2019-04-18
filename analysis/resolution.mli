@@ -120,3 +120,7 @@ val partial_solve_constraints
   -> TypeConstraints.t
   -> variables: Type.Variable.t list
   -> (TypeConstraints.t * TypeConstraints.solution) option
+
+module Cache : sig
+  val clear: unit -> unit
+end
