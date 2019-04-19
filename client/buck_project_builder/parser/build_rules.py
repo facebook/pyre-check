@@ -177,8 +177,15 @@ def parse_python_wheel(
         dependencies = _get_dependencies(
             build_file_directory, python_wheel_keywords.get("deps")
         )
+        external_dependencies = _get_external_dependencies(
+            python_wheel_keywords.get("external_deps")
+        )
+
         wheel_versions_mapping[version] = PythonWheel.VersionedWheel(
-            version=version, url_mapping=url_mapping, dependencies=dependencies
+            version=version,
+            url_mapping=url_mapping,
+            dependencies=dependencies,
+            external_dependencies=external_dependencies,
         )
 
     return PythonWheel(

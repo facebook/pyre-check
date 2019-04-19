@@ -359,6 +359,7 @@ class BuilderTest(unittest.TestCase):
                 version="version",
                 url="url",
                 dependencies=["//project1:b"],
+                external_dependencies=[("foo", "foo-py")],
             ),
         ):
             build_file_2.targets = {

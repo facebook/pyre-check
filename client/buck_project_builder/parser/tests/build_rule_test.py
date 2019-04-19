@@ -125,6 +125,7 @@ python_wheel(
     },
     version = "1.0",
     deps = ["//some:target"],
+    external_deps = [("foo", None, "foo-lib")]
 )
 
 python_wheel(
@@ -352,6 +353,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project/wheel:wheel")
         self.assertEqual(target.name, "wheel")
         self.assertListEqual(target.dependencies, ["//some:target"])
+        self.assertListEqual(target.external_dependencies, [("foo", "foo-lib")])
         self.assertEqual(target._platform, "py3-platform007")
         self.assertEqual(target._version, "1.0")
         self.assertEqual(target._url, "platform007_1.0_url")

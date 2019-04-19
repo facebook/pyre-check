@@ -80,6 +80,7 @@ python_wheel(
     },
     version = "1.0",
     deps = ["//some:target"],
+    external_deps = ["foo"],
 )
 
 python_wheel(
@@ -89,6 +90,7 @@ python_wheel(
     },
     version = "2.0",
     deps = ["//other:target"],
+    external_deps = ["bar"],
 )
 
 python_wheel_default(
@@ -203,6 +205,7 @@ class ParserTest(unittest.TestCase):
             self.assertListEqual(target.sources.files, [])
             self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, ["//some:target"])
+            self.assertListEqual(target.external_dependencies, [("foo", "foo-py")])
 
             # Even though the entire file must be scanned for a python_wheel,
             # other targets should still be parsed.
@@ -212,3 +215,4 @@ class ParserTest(unittest.TestCase):
             self.assertListEqual(target.sources.files, ["a.py", "b.py"])
             self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, [])
+            self.assertListEqual(target.external_dependencies, [])

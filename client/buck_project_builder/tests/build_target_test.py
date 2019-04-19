@@ -282,6 +282,7 @@ class BuildTargetTest(unittest.TestCase):
                     "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_1.0_url",
                 },
                 dependencies=[],
+                external_dependencies=[],
             ),
             "2.0": PythonWheel.VersionedWheel(
                 version="2.0",
@@ -290,6 +291,7 @@ class BuildTargetTest(unittest.TestCase):
                     "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_2.0_url",
                 },
                 dependencies=[],
+                external_dependencies=[],
             ),
         }
 
