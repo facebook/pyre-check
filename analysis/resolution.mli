@@ -31,11 +31,11 @@ val create
   -> aliases: (Type.t -> Type.t option)
   -> global: (Reference.t -> global option)
   -> module_definition: (Reference.t -> Module.t option)
-  -> class_definition: (Type.t -> (Class.t Node.t) option)
-  -> class_metadata: (Type.t -> class_metadata option)
+  -> class_definition: (Type.primitive -> (Class.t Node.t) option)
+  -> class_metadata: (Type.primitive -> class_metadata option)
   -> constructor: (resolution: t -> Type.primitive -> Type.t option)
   -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
-  -> generics: (resolution: t -> Type.t -> Type.t list option)
+  -> generics: (resolution: t -> Class.t Node.t -> Type.t list)
   -> ?parent: Reference.t
   -> unit
   -> t

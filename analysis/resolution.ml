@@ -30,10 +30,10 @@ type type_parameters_mismatch = {
 
 module Cache = struct
   module Generics = struct
-    type t = (Type.t list option) Type.Table.t
+    type t = (Type.t list option) Identifier.Table.t
 
     let cache =
-      Type.Table.create ()
+      Identifier.Table.create ()
 
     let clear () = Hashtbl.clear cache
   end
@@ -53,11 +53,11 @@ type t = {
 
   global: Reference.t -> global option;
   module_definition: Reference.t -> Module.t option;
-  class_definition: Type.t -> (Class.t Node.t) option;
-  class_metadata: Type.t -> class_metadata option;
+  class_definition: Type.primitive -> (Class.t Node.t) option;
+  class_metadata: Type.primitive -> class_metadata option;
   constructor: (resolution: t -> Type.primitive -> Type.t option);
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
-  generics: resolution: t -> Type.t -> Type.t list option;
+  generics: resolution: t -> Class.t Node.t -> Type.t list;
 
   parent: Reference.t option;
 }
@@ -185,12 +185,19 @@ let module_definition { module_definition; _ } =
   module_definition
 
 
-let class_definition { class_definition; _ } =
-  class_definition
+let primitive_name annotation =
+  let primitive, _ = Type.split annotation in
+  Type.primitive_name primitive
 
 
-let class_metadata { class_metadata; _ } =
-  class_metadata
+let class_definition { class_definition; _ } annotation =
+  primitive_name annotation
+  >>= class_definition
+
+
+let class_metadata { class_metadata; _ } annotation =
+  primitive_name annotation
+  >>= class_metadata
 
 
 let constructor ({ constructor; _ } as resolution) =
@@ -201,8 +208,12 @@ let implements ({ implements; _ } as resolution) =
   implements ~resolution
 
 
-let generics ({ generics; _ } as resolution) key =
-  Hashtbl.find_or_add Cache.Generics.cache key ~default:(fun _ -> generics ~resolution key)
+let generics ({ generics; class_definition; _ } as resolution) annotation =
+  primitive_name annotation
+  >>= fun key ->
+  Hashtbl.find_or_add Cache.Generics.cache key ~default:(fun _ ->
+      class_definition key >>| generics ~resolution
+    )
 
 
 module FunctionDefinitionsCache = struct

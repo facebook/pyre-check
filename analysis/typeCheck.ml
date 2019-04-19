@@ -3981,20 +3981,6 @@ type result = {
 let resolution (module Handler: Environment.Handler) ?(annotations = Reference.Map.empty) () =
   let aliases = Handler.aliases in
 
-  let class_metadata annotation =
-    let primitive, _ = Type.split annotation in
-    primitive
-    |> Type.primitive_name
-    >>= Handler.class_metadata
-  in
-
-  let class_definition annotation =
-    let primitive, _ = Type.split annotation in
-    primitive
-    |> Type.primitive_name
-    >>= Handler.class_definition
-  in
-
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let state_without_resolution =
     let empty_resolution =
@@ -4009,7 +3995,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
-        ~generics:(fun ~resolution:_ _ -> None)
+        ~generics:(fun ~resolution:_ _ -> [])
         ()
     in
     {
@@ -4032,7 +4018,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
 
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
-    Resolution.class_definition resolution instantiated
+    Handler.class_definition class_name
     >>| AnnotatedClass.create
     >>| AnnotatedClass.constructor ~instantiated ~resolution
   in
@@ -4044,22 +4030,20 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         | Type.Callable callable ->
             AnnotatedClass.callable_implements ~resolution callable ~protocol
         | _ ->
-            class_definition annotation
+            Resolution.class_definition resolution annotation
             >>| AnnotatedClass.create
             >>| AnnotatedClass.implements ~resolution ~protocol
             |> Option.value ~default:TypeOrder.DoesNotImplement
       else
         TypeOrder.DoesNotImplement
     in
-    class_definition protocol
+    Resolution.class_definition resolution protocol
     >>| AnnotatedClass.create
     >>| implements
     |> Option.value ~default:TypeOrder.DoesNotImplement
   in
 
-  let generics ~resolution class_type =
-    Resolution.class_definition resolution class_type
-    >>| fun class_definition ->
+  let generics ~resolution class_definition =
     AnnotatedClass.create class_definition
     |>  AnnotatedClass.generics ~resolution
   in
@@ -4071,8 +4055,8 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     ~aliases
     ~global:Handler.globals
     ~module_definition:Handler.module_definition
-    ~class_definition
-    ~class_metadata
+    ~class_definition:Handler.class_definition
+    ~class_metadata:Handler.class_metadata
     ~constructor
     ~implements
     ~generics
