@@ -160,7 +160,7 @@ python_wheel_default(
 """
 
 
-class BuildTargetTest(unittest.TestCase):
+class BuildRuleTest(unittest.TestCase):
     def assert_sources_equal(
         self,
         sources: Sources,
