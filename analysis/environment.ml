@@ -255,8 +255,17 @@ let handler
         TypeOrder.check_integrity (TypeOrder.handler order)
 
 
-    let class_definition =
-      Hashtbl.find class_definitions
+    let class_definition annotation =
+      match Hashtbl.find class_definitions annotation with
+      | Some { Node.location; value } ->
+          { Node.location; value = Statement.Class value }
+          |> Statement.convert
+          |> (function
+              | { Node.location; value = Statement.Class value } -> { Node.location; value }
+              | _ -> failwith "Impossible.")
+          |> Option.some
+      | None ->
+          None
 
     let class_metadata =
       Hashtbl.find class_metadata
@@ -1146,7 +1155,7 @@ module Builder = struct
       in
       let successors =
         let successor { Expression.Call.Argument.value; _ } =
-          Type.create ~convert:true value ~aliases:(fun _ -> None)
+          Type.create value ~aliases:(fun _ -> None)
           |> Type.split
           |> fst
           |> Type.primitive_name
@@ -1166,7 +1175,7 @@ module Builder = struct
         class_definitions;
     in
     let t_self_expression =
-      Access (SimpleAccess ([Identifier "TSelf"]))
+      Name (Name.Identifier "TSelf")
       |> Node.create_with_default_location
     in
     List.iter
@@ -1182,7 +1191,7 @@ module Builder = struct
             Expression.Call.Argument.name = None;
             value =
               Type.parametric "typing.Generic" [Type.variable "typing._T"]
-              |> Type.expression ~convert:true
+              |> Type.expression
           };
         ],
         [];
@@ -1212,7 +1221,7 @@ module Builder = struct
             Expression.Call.Argument.name = None;
             value =
               (Type.parametric "typing.Mapping" [Type.string; Type.Any])
-              |> Type.expression ~convert:true
+              |> Type.expression
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:true;
@@ -1222,7 +1231,7 @@ module Builder = struct
             Expression.Call.Argument.name = None;
             value =
               (Type.Primitive "TypedDictionary")
-              |> Type.expression ~convert:true
+              |> Type.expression
           };
         ],
         Type.TypedDictionary.defines ~t_self_expression ~total:false;
