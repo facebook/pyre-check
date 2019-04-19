@@ -126,6 +126,7 @@ module State : sig
           -> lead: Access.t
           -> 'a)
     -> ?expression: Expression.t
+    -> ?should_resolve_exports: bool
     -> Expression.t Access.access sexp_list
     -> 'a
   val last_element: resolution: Resolution.t -> Access.t -> AccessState.element

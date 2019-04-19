@@ -737,7 +737,7 @@ module State = struct
   (* Fold over an access path. Callbacks will be passed the current `accumulator`, the current
      `annotations`, the `resolved` type of the expression so far, as well as the kind of `element`
      we're currently folding over. *)
-  let forward_access ~resolution ~initial ~f ?expression access =
+  let forward_access ~resolution ~initial ~f ?expression ?(should_resolve_exports = true) access =
     let open AccessState in
     let rec fold ~state ~lead ~tail =
       let { accumulator; resolved; target; resolution; _ } = state in
@@ -1125,6 +1125,7 @@ module State = struct
                       ~definition:(Undefined (TypeWithoutClass type_without_class))
                       ~resolved:(Annotation.create Type.Top)
                 end
+
             | None, Access.Identifier name ->
                 (* Module or global variable. *)
                 begin
@@ -1226,7 +1227,12 @@ module State = struct
       | _ ->
           accumulator
     in
-    let access = resolve_exports ~resolution ~access in
+    let access =
+      if should_resolve_exports then
+        resolve_exports ~resolution ~access
+      else
+        access
+    in
     let resolved =
       expression
       >>| Resolution.resolve resolution
@@ -3790,7 +3796,12 @@ module State = struct
             | _ ->
                 errors
           in
-          forward_access ~f:add_import_error ~resolution ~initial:[] (Reference.access import)
+          forward_access
+            ~f:add_import_error
+            ~resolution
+            ~initial:[]
+            ~should_resolve_exports:false
+            (Reference.access import)
         in
         List.concat_map ~f:to_import_error imports
         |> List.fold ~init:state ~f:(fun state error -> emit_raw_error ~state error)
