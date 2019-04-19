@@ -355,7 +355,10 @@ class BuilderTest(unittest.TestCase):
             PythonWheel,
             "_infer_platform_information",
             return_value=PythonWheel.PlatformInformation(
-                "platform", "version", "url", ["//project1:b"]
+                platform="platform",
+                version="version",
+                url="url",
+                dependencies=["//project1:b"],
             ),
         ):
             build_file_2.targets = {

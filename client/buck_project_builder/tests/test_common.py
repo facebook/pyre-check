@@ -16,5 +16,9 @@ def base(
     base_module: Optional[str] = None,
 ) -> BuildTarget.BaseInformation:
     return BuildTarget.BaseInformation(
-        {}, name, dependencies or [], sources or Sources(), base_module
+        keywords={},
+        name=name,
+        dependencies=dependencies or [],
+        sources=sources or Sources(),
+        base_module=base_module,
     )

@@ -31,7 +31,11 @@ def parse_base_information(
         _get_string(keywords["base_module"]) if "base_module" in keywords else None
     )
     return BuildTarget.BaseInformation(
-        keywords, name, dependencies, sources, base_module
+        keywords=keywords,
+        name=name,
+        dependencies=dependencies,
+        sources=sources,
+        base_module=base_module,
     )
 
 
@@ -80,7 +84,11 @@ def parse_thrift_library(
         else None
     )
     base_information = BuildTarget.BaseInformation(
-        keywords, name, dependencies, Sources(), base_module
+        keywords=keywords,
+        name=name,
+        dependencies=dependencies,
+        sources=Sources(),
+        base_module=base_module,
     )
 
     thrift_sources_dict = keywords["thrift_srcs"]
@@ -108,7 +116,9 @@ def parse_python_wheel(
     # Python wheels defined at a/b/c get a target name of //a/b/c:c.
     name = os.path.basename(build_file_directory)
 
-    base_information = BuildTarget.BaseInformation({}, name, [], Sources(), None)
+    base_information = BuildTarget.BaseInformation(
+        keywords={}, name=name, dependencies=[], sources=Sources(), base_module=None
+    )
 
     python_wheel_default_calls = []
     python_wheel_calls = []

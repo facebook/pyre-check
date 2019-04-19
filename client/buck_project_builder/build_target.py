@@ -213,10 +213,10 @@ class PythonWheel(BuildTarget):
                 wheel_version = platforms_to_wheel_version[python_platform]
                 versioned_wheel = wheel_versions_mapping[wheel_version]
                 return PythonWheel.PlatformInformation(
-                    python_platform,
-                    wheel_version,
-                    versioned_wheel.url_mapping[python_platform],
-                    versioned_wheel.dependencies,
+                    platform=python_platform,
+                    version=wheel_version,
+                    url=versioned_wheel.url_mapping[python_platform],
+                    dependencies=versioned_wheel.dependencies,
                 )
             except KeyError:
                 continue
