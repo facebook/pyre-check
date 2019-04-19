@@ -1080,13 +1080,12 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
     __tablename__ = "trace_frames"
 
     __table_args__ = (
-        Index("ix_traceframe_caller", "caller"),
-        Index("ix_traceframe_caller_and_port", "caller", "caller_port"),
+        Index("ix_traceframe_run_caller_port", "run_id", "caller_id", "caller_port"),
     )
 
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
 
-    kind = Column(Enum(TraceKind), nullable=False, index=True)
+    kind = Column(Enum(TraceKind), nullable=False, index=False)
 
     caller: str = Column(
         String(length=INNODB_MAX_INDEX_LENGTH),
@@ -1130,7 +1129,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     filename_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
-    run_id = Column("run_id", BIGDBIDType, nullable=False, index=True)
+    run_id = Column("run_id", BIGDBIDType, nullable=False, index=False)
 
     type_interval_lower = Column(
         Integer, nullable=True, doc="Class interval lower-bound (inclusive)"
