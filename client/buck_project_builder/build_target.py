@@ -151,6 +151,13 @@ class ThriftLibrary(BuildTarget):
 
 
 class PythonWheel(BuildTarget):
+    VersionedWheel = NamedTuple(
+        "VersionedWheel",
+        [
+            ("version", str),
+            ("url_mapping", Mapping[str, str]),  # From platform to wheel url.
+        ],
+    )
     PlatformInformation = NamedTuple(
         "PlatformInformation", [("platform", str), ("version", str), ("url", str)]
     )
@@ -161,14 +168,14 @@ class PythonWheel(BuildTarget):
         build_file_directory: str,
         base_information: BuildTarget.BaseInformation,
         platforms_to_wheel_version: Mapping[str, str],
-        wheel_versions_to_url_mapping: Mapping[str, Mapping[str, str]],
+        wheel_versions_mapping: Mapping[str, VersionedWheel],
     ) -> None:
         super(PythonWheel, self).__init__(
             buck_root, build_file_directory, base_information
         )
 
         platform_information = PythonWheel._infer_platform_information(
-            platforms_to_wheel_version, wheel_versions_to_url_mapping
+            platforms_to_wheel_version, wheel_versions_mapping
         )
         if not platform_information:
             raise ValueError(
@@ -184,7 +191,7 @@ class PythonWheel(BuildTarget):
     @staticmethod
     def _infer_platform_information(
         platforms_to_wheel_version: Mapping[str, str],
-        wheel_versions_to_url_mapping: Mapping[str, Mapping[str, str]],
+        wheel_versions_mapping: Mapping[str, VersionedWheel],
     ) -> Optional[PlatformInformation]:
         # TODO(T38892701): This inference could be done more intelligently:
         #   - handling platform overrides (these are directory-specific)
@@ -195,9 +202,11 @@ class PythonWheel(BuildTarget):
             try:
                 python_platform = "py{}-{}".format(python_version, platform)
                 wheel_version = platforms_to_wheel_version[python_platform]
-                url = wheel_versions_to_url_mapping[wheel_version][python_platform]
+                versioned_wheel = wheel_versions_mapping[wheel_version]
                 return PythonWheel.PlatformInformation(
-                    python_platform, wheel_version, url
+                    python_platform,
+                    wheel_version,
+                    versioned_wheel.url_mapping[python_platform],
                 )
             except KeyError:
                 continue

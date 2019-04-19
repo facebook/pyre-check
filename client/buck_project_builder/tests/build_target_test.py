@@ -274,22 +274,29 @@ class BuildTargetTest(unittest.TestCase):
             )
 
     def test_build_python_wheel(self):
-        version_url_mapping = {
-            "1.0": {
-                "py3-platform007": "py3-platform007_1.0_url",
-                "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_1.0_url",
-            },
-            "2.0": {
-                "py3-platform007": "py3-platform007_2.0_url",
-                "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_2.0_url",
-            },
+        version_mapping = {
+            "1.0": PythonWheel.VersionedWheel(
+                version="1.0",
+                url_mapping={
+                    "py3-platform007": "py3-platform007_1.0_url",
+                    "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_1.0_url",
+                },
+            ),
+            "2.0": PythonWheel.VersionedWheel(
+                version="2.0",
+                url_mapping={
+                    "py3-platform007": "py3-platform007_2.0_url",
+                    "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_2.0_url",
+                },
+            ),
         }
+
         target = PythonWheel(
             "/ROOT",
             "project",
             base("wheel"),
             {"py3-platform007": "1.0", "py3-gcc-5-glibc-2.23": "2.0"},
-            version_url_mapping,
+            version_mapping,
         )
         with patch.object(
             filesystem, "download_and_extract_zip_file"
@@ -304,7 +311,7 @@ class BuildTargetTest(unittest.TestCase):
             "project",
             base("wheel"),
             {"py3-platform007": "2.0", "py3-gcc-5-glibc-2.23": "2.0"},
-            version_url_mapping,
+            version_mapping,
         )
         with patch.object(
             filesystem, "download_and_extract_zip_file"
@@ -319,7 +326,7 @@ class BuildTargetTest(unittest.TestCase):
             "project",
             base("wheel"),
             {"py3-gcc-5-glibc-2.23": "2.0"},
-            version_url_mapping,
+            version_mapping,
         )
         with patch.object(
             filesystem, "download_and_extract_zip_file"
@@ -337,5 +344,5 @@ class BuildTargetTest(unittest.TestCase):
             "project",
             base("wheel"),
             {"py2-platform007": "2.0"},
-            version_url_mapping,
+            version_mapping,
         )

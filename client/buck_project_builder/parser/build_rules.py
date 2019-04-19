@@ -145,7 +145,7 @@ def parse_python_wheel(
     platforms_to_wheel_version = dict(zip(keys, values))
 
     # Parse each python_wheel expression
-    wheel_versions_to_url_mapping = {}
+    wheel_versions_mapping = {}
     for python_wheel_call in python_wheel_calls:
         python_wheel_keywords = _get_keywords(python_wheel_call)
         assert (
@@ -158,14 +158,16 @@ def parse_python_wheel(
         keys = [_get_string(key) for key in platform_urls.keys]
         values = [_get_string(value) for value in platform_urls.values]
         url_mapping = dict(zip(keys, values))
-        wheel_versions_to_url_mapping[version] = url_mapping
+        wheel_versions_mapping[version] = PythonWheel.VersionedWheel(
+            version=version, url_mapping=url_mapping
+        )
 
     return PythonWheel(
         buck_root,
         build_file_directory,
         base_information,
         platforms_to_wheel_version,
-        wheel_versions_to_url_mapping,
+        wheel_versions_mapping,
     )
 
 
