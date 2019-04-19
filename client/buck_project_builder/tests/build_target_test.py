@@ -329,12 +329,13 @@ class BuildTargetTest(unittest.TestCase):
                 "py3-gcc-5-glibc-2.23_2.0_url", "/out"
             )
 
-        # Raises if no platform could be found.
-        target = PythonWheel(
+        # Raise on construction if no platform could be found.
+        self.assertRaises(
+            ValueError,
+            PythonWheel,
             "/ROOT",
             "project",
             base("wheel"),
             {"py2-platform007": "2.0"},
             version_url_mapping,
         )
-        self.assertRaises(ValueError, target.build, "/out")

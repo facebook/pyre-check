@@ -151,6 +151,10 @@ class ThriftLibrary(BuildTarget):
 
 
 class PythonWheel(BuildTarget):
+    PlatformInformation = NamedTuple(
+        "PlatformInformation", [("platform", str), ("version", str), ("url", str)]
+    )
+
     def __init__(
         self,
         buck_root: str,
@@ -162,13 +166,26 @@ class PythonWheel(BuildTarget):
         super(PythonWheel, self).__init__(
             buck_root, build_file_directory, base_information
         )
-        self._platforms_to_wheel_version = platforms_to_wheel_version
-        self._wheel_versions_to_url_mapping = wheel_versions_to_url_mapping
+
+        platform_information = PythonWheel._infer_platform_information(
+            platforms_to_wheel_version, wheel_versions_to_url_mapping
+        )
+        if not platform_information:
+            raise ValueError(
+                "No suitable wheel could be found for {}".format(self.target)
+            )
+        self._platform = platform_information.platform  # type: str
+        self._version = platform_information.version  # type: str
+        self._url = platform_information.url  # type: str
 
     def rule_name(self) -> str:
         return "python_wheel"
 
-    def _find_best_match(self) -> str:
+    @staticmethod
+    def _infer_platform_information(
+        platforms_to_wheel_version: Mapping[str, str],
+        wheel_versions_to_url_mapping: Mapping[str, Mapping[str, str]],
+    ) -> Optional[PlatformInformation]:
         # TODO(T38892701): This inference could be done more intelligently:
         #   - handling platform overrides (these are directory-specific)
         #   - handling different python platforms
@@ -177,14 +194,13 @@ class PythonWheel(BuildTarget):
         for platform in platforms:
             try:
                 python_platform = "py{}-{}".format(python_version, platform)
-                wheel_version = self._platforms_to_wheel_version[python_platform]
-                return self._wheel_versions_to_url_mapping[wheel_version][
-                    python_platform
-                ]
+                wheel_version = platforms_to_wheel_version[python_platform]
+                url = wheel_versions_to_url_mapping[wheel_version][python_platform]
+                return PythonWheel.PlatformInformation(
+                    python_platform, wheel_version, url
+                )
             except KeyError:
                 continue
-        raise ValueError("No suitable wheel could be found for {}".format(self.target))
 
     def build(self, output_directory: str) -> None:
-        wheel_url = self._find_best_match()
-        filesystem.download_and_extract_zip_file(wheel_url, output_directory)
+        filesystem.download_and_extract_zip_file(self._url, output_directory)

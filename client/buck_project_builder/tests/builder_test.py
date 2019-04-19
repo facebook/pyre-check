@@ -350,9 +350,14 @@ class BuilderTest(unittest.TestCase):
             )
         }
         build_file_2 = MagicMock()
-        build_file_2.targets = {
-            "wheel": PythonWheel("/ROOT", "project2/wheel", base("wheel"), {}, {})
-        }
+        with patch.object(
+            PythonWheel,
+            "_infer_platform_information",
+            return_value=PythonWheel.PlatformInformation("platform", "version", "url"),
+        ):
+            build_file_2.targets = {
+                "wheel": PythonWheel("/ROOT", "project2/wheel", base("wheel"), {}, {})
+            }
         build_file_mapping = {"project1": build_file_1, "project2/wheel": build_file_2}
         with patch.object(
             parser.Parser, "parse_file", side_effect=build_file_mapping.get

@@ -112,27 +112,49 @@ thrift_library(
 )
 """
 
-PYTHON_WHEEL_TARGET = """
+PYTHON_WHEEL_TARGET_1 = """
 python_wheel(
     platform_urls = {
-        "platform_1": "platform_1_1.0_url",
-        "platform_2": "platform_2_1.0_url",
+        "py3-platform007": "platform007_1.0_url",
+        "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
     },
     version = "1.0",
 )
 
 python_wheel(
     platform_urls = {
-        "platform_1": "platform_1_2.0_url",
-        "platform_2": "platform_2_2.0_url",
+        "py3-platform007": "platform007_2.0_url",
+        "py3-gcc-5-glibc-2.23": "gcc_2.0_url",
     },
     version = "2.0",
 )
 
 python_wheel_default(
     platform_versions = {
-        "platform_1": "1.0",
-        "platform_2": "2.0",
+        "py3-platform007": "1.0",
+        "py3-gcc-5-glibc-2.23": "2.0",
+    },
+)
+"""
+
+PYTHON_WHEEL_TARGET_2 = """
+python_wheel(
+    platform_urls = {
+        "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
+    },
+    version = "1.0",
+)
+
+python_wheel(
+    platform_urls = {
+        "py3-gcc-5-glibc-2.23": "gcc_2.0_url",
+    },
+    version = "2.0",
+)
+
+python_wheel_default(
+    platform_versions = {
+        "py3-gcc-5-glibc-2.23": "2.0",
     },
 )
 """
@@ -274,27 +296,24 @@ class BuildTargetTest(unittest.TestCase):
         self.assertTrue(target._include_json_converters)
 
     def test_python_wheel(self):
-        tree = ast.parse(PYTHON_WHEEL_TARGET)
+        tree = ast.parse(PYTHON_WHEEL_TARGET_1)
         assert isinstance(tree, ast.Module)
         target = build_rules.parse_python_wheel(
             tree.body, "/ROOT", "some/project/wheel"
         )
         self.assertEqual(target.target, "//some/project/wheel:wheel")
         self.assertEqual(target.name, "wheel")
-        self.assertDictEqual(
-            target._platforms_to_wheel_version,
-            {"platform_1": "1.0", "platform_2": "2.0"},
+        self.assertEqual(target._platform, "py3-platform007")
+        self.assertEqual(target._version, "1.0")
+        self.assertEqual(target._url, "platform007_1.0_url")
+
+        tree = ast.parse(PYTHON_WHEEL_TARGET_2)
+        assert isinstance(tree, ast.Module)
+        target = build_rules.parse_python_wheel(
+            tree.body, "/ROOT", "some/project/wheel"
         )
-        self.assertDictEqual(
-            target._wheel_versions_to_url_mapping,
-            {
-                "1.0": {
-                    "platform_1": "platform_1_1.0_url",
-                    "platform_2": "platform_2_1.0_url",
-                },
-                "2.0": {
-                    "platform_1": "platform_1_2.0_url",
-                    "platform_2": "platform_2_2.0_url",
-                },
-            },
-        )
+        self.assertEqual(target.target, "//some/project/wheel:wheel")
+        self.assertEqual(target.name, "wheel")
+        self.assertEqual(target._platform, "py3-gcc-5-glibc-2.23")
+        self.assertEqual(target._version, "2.0")
+        self.assertEqual(target._url, "gcc_2.0_url")

@@ -73,24 +73,24 @@ thrift_library(
 TARGETS_FILE_4 = """
 python_wheel(
     platform_urls = {
-        "platform_1": "platform_1_1.0_url",
-        "platform_2": "platform_2_1.0_url",
+        "py3-platform007": "platform007_1.0_url",
+        "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
     },
     version = "1.0",
 )
 
 python_wheel(
     platform_urls = {
-        "platform_1": "platform_1_2.0_url",
-        "platform_2": "platform_2_2.0_url",
+        "py3-platform007": "platform007_2.0_url",
+        "py3-gcc-5-glibc-2.23": "gcc_2.0_url",
     },
     version = "2.0",
 )
 
 python_wheel_default(
     platform_versions = {
-        "platform_1": "1.0",
-        "platform_2": "2.0",
+        "py3-platform007": "1.0",
+        "py3-gcc-5-glibc-2.23": "2.0",
     },
 )
 
