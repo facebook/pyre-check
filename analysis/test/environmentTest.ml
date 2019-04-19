@@ -236,7 +236,7 @@ let test_register_aliases _ =
     in
     let assert_alias (alias, target) =
       let parse_annotation handler source =
-        parse_single_expression ~convert:true source
+        parse_single_expression source
         |> parse_annotation handler
       in
       assert_equal
@@ -1630,7 +1630,7 @@ let test_propagate_nested_classes _ =
     in
 
     let assert_alias (alias, target) =
-      parse_single_expression ~convert:true alias
+      parse_single_expression alias
       |> parse_annotation handler
       |> Type.show
       |> assert_equal  ~printer:(fun string -> string) target

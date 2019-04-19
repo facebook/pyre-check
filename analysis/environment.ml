@@ -618,8 +618,7 @@ let register_aliases (module Handler: Handler) sources =
 let register_values
     (module Handler: Handler)
     resolution
-    ({ Source.handle; qualifier; _ } as source) =
-  let ({ Source.statements; _ }) as source = Preprocessing.convert source in
+    ({ Source.handle; statements; qualifier; _ } as source) =
   let qualified_reference reference =
     let reference =
       let builtins = Reference.create "builtins" in
@@ -632,7 +631,7 @@ let register_values
   in
 
   let module CollectCallables = Visit.MakeStatementVisitor(struct
-      type t = ((Type.Callable.t Node.t) list) Access.Map.t
+      type t = ((Type.Callable.t Node.t) list) Reference.Map.t
 
       let visit_children _ =
         true
@@ -665,7 +664,7 @@ let register_values
             | None -> Some [callable]
             | Some existing -> Some (existing @ [callable])
           in
-          Map.change callables (Reference.access name) ~f:(change callable)
+          Map.change callables name ~f:(change callable)
         in
         match statement with
         | {
@@ -693,10 +692,10 @@ let register_values
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
     >>| (fun global ->
-        Handler.register_global ~handle ~reference:(Reference.from_access key) ~global)
+        Handler.register_global ~handle ~reference:key ~global)
     |> ignore
   in
-  CollectCallables.visit Access.Map.empty source
+  CollectCallables.visit Reference.Map.empty source
   |> Map.iteri ~f:(register_callables handle);
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor(struct
@@ -736,17 +735,15 @@ let register_values
     | { Node.value = Assign { Assign.target; annotation; value; _ }; _ } ->
         let annotation, explicit =
           match annotation with
-          | Some ({ Node.location; value } as annotation) ->
+          | Some ({ Node.value; _ } as annotation) ->
               let annotation =
                 match value with
-                | Access (SimpleAccess access) ->
-                    (* Local names don't make sense when used globally. *)
-                    Access.delocalize access
-                    |> Access.expression ~location
+                | Name name when Expression.is_simple_name name ->
+                    Expression.delocalize annotation
                 | _ ->
                     annotation
               in
-              Type.create ~convert:true ~aliases:Handler.aliases annotation, true
+              Type.create ~aliases:Handler.aliases annotation, true
           | None ->
               let annotation =
                 try
@@ -780,8 +777,8 @@ let register_values
                 ()
           in
           match target.Node.value, annotation with
-          | Access (SimpleAccess access), _ ->
-              register ~location:target.Node.location (Reference.from_access access) annotation
+          | Name name, _ when Expression.is_simple_name name ->
+              register ~location:target.Node.location (Reference.from_name name) annotation
           | Tuple elements, Type.Tuple (Type.Bounded parameters)
             when List.length elements = List.length parameters ->
               List.map2_exn

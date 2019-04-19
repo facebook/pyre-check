@@ -488,6 +488,7 @@ let is_invariance_mismatch resolution ~left ~right =
    literals and annotations found in the resolution map, without resolving expressions. *)
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
+  let expression = Expression.convert expression in
   match Node.value expression with
   | Access (SimpleAccess access) ->
       begin
