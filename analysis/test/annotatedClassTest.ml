@@ -177,7 +177,7 @@ let test_get_decorator _ =
           arguments
           >>| List.map
             ~f:(fun { Argument.name; value } ->
-              { Argument.name; value = Expression.convert value })
+                { Argument.name; value = Expression.convert value })
         in
         { decorator with Class.arguments }
       in
@@ -286,7 +286,7 @@ let test_constructors _ =
           constructors
           >>| (fun constructors ->
               Resolution.parse_annotation resolution
-              (parse_single_expression constructors))
+                (parse_single_expression constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -994,12 +994,12 @@ let test_class_attributes _ =
   assert_attributes
     parent
     [
-      Attribute.create ~resolution ~parent (create_attribute "__init__");
-      Attribute.create ~resolution ~parent (create_attribute "class_attribute");
-      Attribute.create ~resolution ~parent (create_attribute "first");
-      Attribute.create ~resolution ~parent (create_attribute "implicit");
-      Attribute.create ~resolution ~parent (create_attribute "second");
-      Attribute.create
+      Class.create_attribute ~resolution ~parent (create_attribute "__init__");
+      Class.create_attribute ~resolution ~parent (create_attribute "class_attribute");
+      Class.create_attribute ~resolution ~parent (create_attribute "first");
+      Class.create_attribute ~resolution ~parent (create_attribute "implicit");
+      Class.create_attribute ~resolution ~parent (create_attribute "second");
+      Class.create_attribute
         ~resolution
         ~parent
         (create_attribute "third" ~value:(+Integer 1));
@@ -1008,7 +1008,7 @@ let test_class_attributes _ =
 
   (* Test `Attribute`. *)
   let attribute =
-    Attribute.create
+    Class.create_attribute
       ~resolution
       ~parent
       (create_attribute ~annotation:(Some !"int") "first")
@@ -1022,12 +1022,12 @@ let test_class_attributes _ =
   assert_false (Attribute.class_attribute attribute);
 
   let attribute =
-    Attribute.create
+    Class.create_attribute
       ~resolution
       ~parent
       (create_attribute
          ~annotation:(Some (
-           Type.expression ~convert:true (Type.parametric "typing.ClassVar" [Type.integer])))
+             Type.expression ~convert:true (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
   assert_true (Attribute.class_attribute attribute);
@@ -1742,7 +1742,7 @@ let test_metaclasses _ =
     ~target:"D"
     "OtherMeta";
 
-   assert_metaclass
+  assert_metaclass
     ~source:{|
       class Meta:
         pass

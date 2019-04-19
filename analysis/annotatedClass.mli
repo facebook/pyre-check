@@ -7,6 +7,7 @@ open Core
 
 open Ast
 open Statement
+module Attribute = AnnotatedAttribute
 
 
 type t
@@ -19,9 +20,6 @@ type decorator = {
 [@@deriving compare, eq, sexp, show, hash]
 
 val name_equal: t -> t -> bool
-
-type class_t = t
-[@@deriving compare, eq, sexp, show, hash]
 
 val create: Class.t Node.t -> t
 
@@ -95,50 +93,16 @@ val callable_implements
   -> TypeOrder.implements_result
 val implements: resolution: Resolution.t -> t -> protocol: t -> TypeOrder.implements_result
 
-module Attribute : sig
-  type attribute = {
-    name: Identifier.t;
-    parent: Type.t;
-    annotation: Annotation.t;
-    value: Expression.t;
-    defined: bool;
-    class_attribute: bool;
-    async: bool;
-    initialized: bool;
-    property: bool;
-  }
-  [@@deriving eq, show]
 
-  type t = attribute Node.t
-  [@@deriving eq, show]
-
-  val create
-    :  resolution: Resolution.t
-    -> parent: class_t
-    -> ?instantiated: Type.t
-    -> ?defined: bool
-    -> ?inherited: bool
-    -> ?default_class_attribute: bool
-    -> Statement.Attribute.t
-    -> t
-
-  val name: t -> Identifier.t
-  val async: t -> bool
-
-  val annotation: t -> Annotation.t
-  val parent: t -> Type.t
-  val value: t -> Expression.t
-  val initialized: t -> bool
-  val location: t -> Location.t
-  val defined: t -> bool
-  val class_attribute: t -> bool
-
-  val instantiate: t -> constraints: Type.t Type.Map.t -> t
-
-  module Cache: sig
-    val clear: unit -> unit
-  end
-end
+val create_attribute
+  :  resolution: Resolution.t
+  -> parent: t
+  -> ?instantiated: Type.t
+  -> ?defined: bool
+  -> ?inherited: bool
+  -> ?default_class_attribute: bool
+  -> Statement.Attribute.t
+  -> Attribute.t
 
 val attributes
   :  ?transitive: bool
@@ -164,7 +128,7 @@ val attribute
   -> resolution: Resolution.t
   -> name: Identifier.t
   -> instantiated: Type.t
-  -> Attribute.t
+  -> AnnotatedAttribute.t
 
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute: resolution: Resolution.t -> name: Identifier.t -> t -> Attribute.t option

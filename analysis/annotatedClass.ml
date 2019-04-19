@@ -11,6 +11,7 @@ open Pyre
 open Statement
 
 module Callable = AnnotatedCallable
+module Attribute = AnnotatedAttribute
 
 
 type t = Class.t Node.t
@@ -28,10 +29,6 @@ let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
   Reference.equal left right
-
-
-type class_t = t
-[@@deriving compare, eq, sexp, show, hash]
 
 
 let create definition =
@@ -364,352 +361,253 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
   List.exists ~f:is_protocol bases
 
 
-module Attribute = struct
-  type attribute = {
-    name: Identifier.t;
-    parent: Type.t;
-    annotation: Annotation.t;
-    value: Expression.t;
-    defined: bool;
-    class_attribute: bool;
-    async: bool;
-    initialized: bool;
-    property: bool;
-  }
-  [@@deriving eq, show]
-
-  type t = attribute Node.t
-  [@@deriving eq, show]
-
-
-  let create
-      ~resolution
-      ~parent
-      ?instantiated
-      ?(defined = true)
-      ?(inherited = false)
-      ?(default_class_attribute = false)
-      {
-        Node.location;
-        value = {
-          Attribute.name = attribute_name;
-          annotation = attribute_annotation;
-          defines;
-          value;
-          async;
-          setter;
-          property;
-          primitive;
-          toplevel;
-        };
-      } =
-    let class_annotation = annotation parent in
-    let initialized =
-      match value with
-      | Some { Node.value = Ellipsis; _ }
-      | None ->
-          false
-      | _ ->
-          true
-    in
-
-    (* Account for class attributes. *)
-    let annotation, class_attribute =
-      (attribute_annotation
-       >>| Resolution.parse_annotation resolution
-       >>| (fun annotation ->
-           match Type.class_variable_value annotation with
-           | Some annotation -> Some annotation, true
-           | _ -> Some annotation, false))
-      |> Option.value ~default:(None, default_class_attribute)
-    in
-
-    (* Handle enumeration attributes. *)
-    let annotation, value, class_attribute =
-      let superclasses =
-        superclasses ~resolution parent
-        |> List.map ~f:(fun definition -> name definition |> Reference.show)
-        |> String.Set.of_list
-      in
-      if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
-         not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
-         not inherited &&
-         primitive then
-        Some class_annotation, None, true  (* Enums override values. *)
-      else
-        annotation, value, class_attribute
-    in
-
-    (* Handle Callables *)
-    let annotation =
-      let instantiated =
-        match instantiated with
-        | Some instantiated ->
-            instantiated
-        | None ->
-            class_annotation
-      in
-      match defines with
-      | Some ((define :: _) as defines) ->
-          let parent =
-            if Define.is_static_method define then
-              None
-            else if Define.is_class_method define then
-              Some (Type.meta instantiated)
-            else if class_attribute then
-              (* Keep first argument around when calling instance methods from class attributes. *)
-              None
-            else
-              Some instantiated
-          in
-          List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
-          |> Callable.create ~resolution ~parent
-          |> (fun callable -> Some (Type.Callable callable))
-      | _ ->
-          annotation
-    in
-
-    let annotation =
-      match annotation, value with
-      | Some annotation, Some value ->
-          Annotation.create_immutable
-            ~global:true
-            ~original:(Some annotation)
-            (if setter then
-               (Resolution.parse_annotation resolution value)
-             else
-               annotation)
-      | Some annotation, None ->
-          Annotation.create_immutable ~global:true annotation
-      | None, Some value ->
-          let literal_value_annotation =
-            if setter then
-              Resolution.parse_annotation resolution value
-            else
-              Resolution.resolve_literal resolution value
-          in
-          let is_dataclass_attribute =
-            let get_dataclass_decorator annotated =
-              get_decorator annotated ~decorator:"dataclasses.dataclass"
-              @ get_decorator annotated ~decorator:"dataclass"
-            in
-            not (List.is_empty (get_dataclass_decorator parent))
-          in
-          if not (Type.is_partially_typed literal_value_annotation) &&
-             not is_dataclass_attribute &&
-             toplevel
-          then
-            (* Treat literal attributes as having been explicitly annotated. *)
-            Annotation.create_immutable
-              ~global:true
-              literal_value_annotation
-          else
-            Annotation.create_immutable
-              ~global:true
-              ~original:(Some Type.Top)
-              (Resolution.parse_annotation resolution value)
-      | _ ->
-          Annotation.create Type.Top
-    in
-
-    (* Special case properties with type variables. *)
-    let annotation =
-      let free_variables =
-        let variables =
-          Annotation.annotation annotation
-          |> Type.Variable.all_free_variables
-          |> List.map ~f:(fun variable -> Type.Variable variable)
-          |> Type.Set.of_list
-        in
-        let generics =
-          generics parent ~resolution
-          |> Type.Set.of_list
-        in
-        Set.diff variables generics
-        |> Set.to_list
-      in
-      if property && not (List.is_empty free_variables) then
-        let constraints =
-          let instantiated = Option.value instantiated ~default:class_annotation in
-          List.fold
-            free_variables
-            ~init:Type.Map.empty
-            ~f:(fun map variable -> Map.set map ~key:variable ~data:instantiated)
-          |> Map.find
-        in
-        Annotation.annotation annotation
-        |> Type.instantiate ~constraints
-        |> Annotation.create_immutable ~global:true ~original:(Some Type.Top)
-      else
-        annotation
-    in
-
-    (* Special cases *)
-    let annotation =
-      match instantiated, attribute_name, annotation with
-      | Some (Type.TypedDictionary { fields; total; _ }),
-        method_name,
-        { annotation = Type.Callable callable; _ } ->
-          Type.TypedDictionary.special_overloads ~fields ~method_name ~total
-          >>| (fun overloads ->
-              {
-                annotation with
-                annotation =
-                  Type.Callable {
-                    callable with
-                    implementation = { annotation = Type.Top; parameters = Undefined };
-                    overloads;
-                  };
-              })
-          |> Option.value ~default:annotation
-      | Some (Type.Tuple (Bounded members)),
-        "__getitem__",
-        { annotation = Type.Callable ({ overloads; _ } as callable); _ } ->
-          let overload index member =
-            {
-              Type.Callable.annotation = member;
-              parameters = Defined [
-                  Named { name = "x"; annotation = Type.literal_integer index; default = false };
-                ];
-            }
-          in
-          let overloads =  (List.mapi ~f:overload members) @ overloads in
-          { annotation with annotation = Type.Callable { callable with overloads } }
-      | Some (Type.Primitive name),
-        "__getitem__",
-        { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
-        when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
-          let implementation =
-            let generics =
-              Resolution.class_definition resolution (Type.Primitive name)
-              >>| create
-              >>| generics ~resolution
-              |> Option.value ~default:[]
-            in
-            let parameters =
-              let parameter generic =
-                Type.Callable.Parameter.Named {
-                  name = "$";
-                  annotation = Type.meta generic;
-                  default = false;
-                }
-              in
-              List.map generics ~f:parameter
-            in
-            {
-              Type.Callable.annotation =
-                Type.meta (Type.Parametric { name; parameters = generics });
-              parameters = Defined parameters;
-            }
-          in
-          {
-            annotation with
-            annotation = Type.Callable { callable with implementation; overloads = [] }
-          }
-      | _ ->
-          annotation
-    in
-
-    let value = Option.value value ~default:(Node.create Ellipsis ~location) in
-
+let create_attribute
+    ~resolution
+    ~parent
+    ?instantiated
+    ?(defined = true)
+    ?(inherited = false)
+    ?(default_class_attribute = false)
     {
       Node.location;
       value = {
-        name = attribute_name;
-        parent = class_annotation;
-        annotation;
+        Statement.Attribute.name = attribute_name;
+        annotation = attribute_annotation;
+        defines;
         value;
-        defined;
-        class_attribute;
         async;
-        initialized;
+        setter;
         property;
+        primitive;
+        toplevel;
       };
+    } =
+  let class_annotation = annotation parent in
+  let initialized =
+    match value with
+    | Some { Node.value = Ellipsis; _ }
+    | None ->
+        false
+    | _ ->
+        true
+  in
 
-    }
+  (* Account for class attributes. *)
+  let annotation, class_attribute =
+    (attribute_annotation
+     >>| Resolution.parse_annotation resolution
+     >>| (fun annotation ->
+         match Type.class_variable_value annotation with
+         | Some annotation -> Some annotation, true
+         | _ -> Some annotation, false))
+    |> Option.value ~default:(None, default_class_attribute)
+  in
 
+  (* Handle enumeration attributes. *)
+  let annotation, value, class_attribute =
+    let superclasses =
+      superclasses ~resolution parent
+      |> List.map ~f:(fun definition -> name definition |> Reference.show)
+      |> String.Set.of_list
+    in
+    if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
+       not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
+       not inherited &&
+       primitive then
+      Some class_annotation, None, true  (* Enums override values. *)
+    else
+      annotation, value, class_attribute
+  in
 
-  let name { Node.value = { name; _ }; _ } =
-    name
+  (* Handle Callables *)
+  let annotation =
+    let instantiated =
+      match instantiated with
+      | Some instantiated ->
+          instantiated
+      | None ->
+          class_annotation
+    in
+    match defines with
+    | Some ((define :: _) as defines) ->
+        let parent =
+          if Define.is_static_method define then
+            None
+          else if Define.is_class_method define then
+            Some (Type.meta instantiated)
+          else if class_attribute then
+            (* Keep first argument around when calling instance methods from class attributes. *)
+            None
+          else
+            Some instantiated
+        in
+        List.map defines ~f:(fun define -> Callable.apply_decorators ~define ~resolution)
+        |> Callable.create ~resolution ~parent
+        |> (fun callable -> Some (Type.Callable callable))
+    | _ ->
+        annotation
+  in
 
+  let annotation =
+    match annotation, value with
+    | Some annotation, Some value ->
+        Annotation.create_immutable
+          ~global:true
+          ~original:(Some annotation)
+          (if setter then
+             (Resolution.parse_annotation resolution value)
+           else
+             annotation)
+    | Some annotation, None ->
+        Annotation.create_immutable ~global:true annotation
+    | None, Some value ->
+        let literal_value_annotation =
+          if setter then
+            Resolution.parse_annotation resolution value
+          else
+            Resolution.resolve_literal resolution value
+        in
+        let is_dataclass_attribute =
+          let get_dataclass_decorator annotated =
+            get_decorator annotated ~decorator:"dataclasses.dataclass"
+            @ get_decorator annotated ~decorator:"dataclass"
+          in
+          not (List.is_empty (get_dataclass_decorator parent))
+        in
+        if not (Type.is_partially_typed literal_value_annotation) &&
+           not is_dataclass_attribute &&
+           toplevel
+        then
+          (* Treat literal attributes as having been explicitly annotated. *)
+          Annotation.create_immutable
+            ~global:true
+            literal_value_annotation
+        else
+          Annotation.create_immutable
+            ~global:true
+            ~original:(Some Type.Top)
+            (Resolution.parse_annotation resolution value)
+    | _ ->
+        Annotation.create Type.Top
+  in
 
-  let annotation { Node.value = { annotation; async; _ }; _ } =
-    if async then
+  (* Special case properties with type variables. *)
+  let annotation =
+    let free_variables =
+      let variables =
+        Annotation.annotation annotation
+        |> Type.Variable.all_free_variables
+        |> List.map ~f:(fun variable -> Type.Variable variable)
+        |> Type.Set.of_list
+      in
+      let generics =
+        generics parent ~resolution
+        |> Type.Set.of_list
+      in
+      Set.diff variables generics
+      |> Set.to_list
+    in
+    if property && not (List.is_empty free_variables) then
+      let constraints =
+        let instantiated = Option.value instantiated ~default:class_annotation in
+        List.fold
+          free_variables
+          ~init:Type.Map.empty
+          ~f:(fun map variable -> Map.set map ~key:variable ~data:instantiated)
+        |> Map.find
+      in
       Annotation.annotation annotation
-      |> Type.awaitable
-      |> Annotation.create
+      |> Type.instantiate ~constraints
+      |> Annotation.create_immutable ~global:true ~original:(Some Type.Top)
     else
       annotation
+  in
+
+  (* Special cases *)
+  let annotation =
+    match instantiated, attribute_name, annotation with
+    | Some (Type.TypedDictionary { fields; total; _ }),
+      method_name,
+      { annotation = Type.Callable callable; _ } ->
+        Type.TypedDictionary.special_overloads ~fields ~method_name ~total
+        >>| (fun overloads ->
+            {
+              annotation with
+              annotation =
+                Type.Callable {
+                  callable with
+                  implementation = { annotation = Type.Top; parameters = Undefined };
+                  overloads;
+                };
+            })
+        |> Option.value ~default:annotation
+    | Some (Type.Tuple (Bounded members)),
+      "__getitem__",
+      { annotation = Type.Callable ({ overloads; _ } as callable); _ } ->
+        let overload index member =
+          {
+            Type.Callable.annotation = member;
+            parameters = Defined [
+                Named { name = "x"; annotation = Type.literal_integer index; default = false };
+              ];
+          }
+        in
+        let overloads =  (List.mapi ~f:overload members) @ overloads in
+        { annotation with annotation = Type.Callable { callable with overloads } }
+    | Some (Type.Primitive name),
+      "__getitem__",
+      { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
+      when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
+        let implementation =
+          let generics =
+            Resolution.class_definition resolution (Type.Primitive name)
+            >>| create
+            >>| generics ~resolution
+            |> Option.value ~default:[]
+          in
+          let parameters =
+            let parameter generic =
+              Type.Callable.Parameter.Named {
+                name = "$";
+                annotation = Type.meta generic;
+                default = false;
+              }
+            in
+            List.map generics ~f:parameter
+          in
+          {
+            Type.Callable.annotation =
+              Type.meta (Type.Parametric { name; parameters = generics });
+            parameters = Defined parameters;
+          }
+        in
+        {
+          annotation with
+          annotation = Type.Callable { callable with implementation; overloads = [] }
+        }
+    | _ ->
+        annotation
+  in
+
+  let value = Option.value value ~default:(Node.create Ellipsis ~location) in
+
+  {
+    Node.location;
+    value = {
+      Attribute.name = attribute_name;
+      parent = class_annotation;
+      annotation;
+      value;
+      defined;
+      class_attribute;
+      async;
+      initialized;
+      property;
+    };
+
+  }
 
 
-  let parent { Node.value = { parent; _ }; _ } =
-    parent
-
-
-  let value { Node.value = { value; _ }; _ } =
-    value
-
-
-  let initialized { Node.value = { initialized; _ }; _ } =
-    initialized
-
-
-  let location { Node.location; _ } =
-    location
-
-
-  let defined { Node.value = { defined; _ }; _ } =
-    defined
-
-
-  let class_attribute { Node.value = { class_attribute; _ }; _ } =
-    class_attribute
-
-
-  let async { Node.value = { async; _ }; _ } =
-    async
-
-
-  let instantiate
-      ({ Node.value = ({ annotation; _ } as attribute); _ } as attribute_node)
-      ~constraints =
-    {
-      attribute_node with
-      Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
-    }
-
-  module Cache = struct
-    type t = {
-      transitive: bool;
-      class_attributes: bool;
-      include_generated_attributes: bool;
-      name: Reference.t;
-      instantiated: Type.t;
-    }
-    [@@deriving compare, sexp, hash]
-
-
-    include Hashable.Make(struct
-        type nonrec t = t
-        let compare = compare
-        let hash = Hashtbl.hash
-        let hash_fold_t = hash_fold_t
-        let sexp_of_t = sexp_of_t
-        let t_of_sexp = t_of_sexp
-      end)
-
-
-    let cache: attribute Node.t list Table.t =
-      Table.create ~size:1023 ()
-
-
-    let clear () =
-      Table.clear cache
-  end
-
-
-
-end
 
 
 let attributes
@@ -742,7 +640,7 @@ let attributes
           ({ Node.value = ({ Class.name = parent_name; _ } as definition); _ } as parent) =
         let collect_attributes attributes attribute =
           let attribute_node =
-            Attribute.create
+            create_attribute
               attribute
               ~resolution
               ~parent
@@ -954,7 +852,7 @@ let attribute
   | Some attribute ->
       attribute
   | None ->
-      Attribute.create
+      create_attribute
         ~resolution
         ~parent:definition
         ~defined:false
@@ -1030,7 +928,7 @@ let rec fallback_attribute ~resolution ~name definition =
             let return_annotation = Type.Callable.Overload.return_annotation implementation in
             let location = Attribute.location fallback in
             Some
-              (Attribute.create
+              (create_attribute
                  ~resolution
                  ~parent:definition
                  {
