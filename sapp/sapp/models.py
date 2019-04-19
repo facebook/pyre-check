@@ -1038,6 +1038,9 @@ class TraceFrameLeafAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
     leaf_id = Column("message_id", BIGDBIDType, nullable=False, primary_key=True)
 
+    # The minimum trace length unfortunately can be off and actually lead to
+    # loops. This is a known problem and any code generating traces should
+    # additionally have cycle detection.
     trace_length = Column(
         Integer, doc="minimum trace length to the given leaf", nullable=True
     )

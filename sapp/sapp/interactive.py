@@ -636,8 +636,8 @@ details              show additional information about the current trace frame
             ]
 
         with self.db.make_session() as session:
-            parent_trace_frames = self._next_trace_frames(
-                session, current_trace_tuple.trace_frame, backwards=True
+            parent_trace_frames = self._next_backward_trace_frames(
+                session, current_trace_tuple.trace_frame, set()
             )
 
         if len(parent_trace_frames) == 0:
@@ -930,7 +930,7 @@ details              show additional information about the current trace frame
             )
 
         parent_trace_frame = self.trace_tuples[parent_index].trace_frame
-        return self._next_forward_trace_frames(session, parent_trace_frame)
+        return self._next_forward_trace_frames(session, parent_trace_frame, set())
 
     def _is_before_root(self) -> bool:
         trace_tuple = self.trace_tuples[self.current_trace_frame_index]
@@ -1186,9 +1186,12 @@ details              show additional information about the current trace frame
             return []
 
         trace_frames = [(initial_trace_frames[index], len(initial_trace_frames))]
+        visited_ids: Set[int] = {int(initial_trace_frames[index].id)}
         while not self._is_leaf(trace_frames[-1][0]):
             trace_frame, branches = trace_frames[-1]
-            next_nodes = self._next_forward_trace_frames(session, trace_frame)
+            next_nodes = self._next_forward_trace_frames(
+                session, trace_frame, visited_ids
+            )
 
             if len(next_nodes) == 0:
                 # Denote a missing frame by setting caller to None
@@ -1204,6 +1207,7 @@ details              show additional information about the current trace frame
                 )
                 return trace_frames
 
+            visited_ids.add(int(next_nodes[0].id))
             trace_frames.append((next_nodes[0], len(next_nodes)))
         return trace_frames
 
@@ -1211,17 +1215,25 @@ details              show additional information about the current trace frame
         return trace_frame.callee_port in self.LEAF_NAMES
 
     def _next_forward_trace_frames(
-        self, session: Session, trace_frame: TraceFrame
+        self, session: Session, trace_frame: TraceFrame, visited_ids: Set[int]
     ) -> List[TraceFrame]:
-        return self._next_trace_frames(session, trace_frame, backwards=False)
+        return self._next_trace_frames(
+            session, trace_frame, visited_ids, backwards=False
+        )
 
     def _next_backward_trace_frames(
-        self, session: Session, trace_frame: TraceFrame
+        self, session: Session, trace_frame: TraceFrame, visited_ids: Set[int]
     ) -> List[TraceFrame]:
-        return self._next_trace_frames(session, trace_frame, backwards=True)
+        return self._next_trace_frames(
+            session, trace_frame, visited_ids, backwards=True
+        )
 
     def _next_trace_frames(
-        self, session: Session, trace_frame: TraceFrame, backwards: bool = False
+        self,
+        session: Session,
+        trace_frame: TraceFrame,
+        visited_ids: Set[int],
+        backwards: bool = False,
     ) -> List[TraceFrame]:
         """Finds all trace frames that the given trace_frame flows to.
 
@@ -1256,7 +1268,7 @@ details              show additional information about the current trace frame
 
         filtered_results = []
         for frame in results:
-            if filter_leaves.intersection(
+            if int(frame.id) not in visited_ids and filter_leaves.intersection(
                 set(
                     self._get_leaves_trace_frame(
                         session,

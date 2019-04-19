@@ -493,7 +493,7 @@ class InteractiveTest(TestCase):
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_forward_trace_frames(
-                session, trace_frames[0]
+                session, trace_frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[1].id))
@@ -526,7 +526,7 @@ class InteractiveTest(TestCase):
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_forward_trace_frames(
-                session, trace_frames_run2[0]
+                session, trace_frames_run2[0], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames_run2[1].id))
@@ -555,7 +555,7 @@ class InteractiveTest(TestCase):
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_backward_trace_frames(
-                session, trace_frames[1]
+                session, trace_frames[1], set()
             )
             self.assertEqual(len(next_frames), 1)
             self.assertEqual(int(next_frames[0].id), int(trace_frames[0].id))
@@ -578,6 +578,82 @@ class InteractiveTest(TestCase):
             self.assertEqual(len(result), 2)
             self.assertEqual(int(result[0][0].id), 1)
             self.assertEqual(int(result[1][0].id), 2)
+
+    def testNavigateTraceFramesDetectsCycle(self):
+        """This test checks that we don't get stuck in a cycle. Without cycle
+        detection code, this test will go from 1->2->1->2->... . With cycle
+        detection code it goes 1->2->3->4.
+        """
+        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        trace_frames = [
+            TraceFrame(
+                id=1,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="param1",
+                callee="call2",
+                callee_port="param2",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=2,
+                kind=TraceKind.PRECONDITION,
+                caller="call2",
+                caller_port="param2",
+                callee="call1",
+                callee_port="param1",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=3,
+                kind=TraceKind.PRECONDITION,
+                caller="call1",
+                caller_port="param1",
+                callee="call3",
+                callee_port="param3",
+                callee_location=SourceLocation(1, 1),
+                filename="file.py",
+                run_id=1,
+            ),
+            TraceFrame(
+                id=4,
+                kind=TraceKind.PRECONDITION,
+                caller="call3",
+                caller_port="param3",
+                callee="leaf",
+                callee_port="sink",
+                callee_location=SourceLocation(1, 2),
+                filename="file.py",
+                run_id=1,
+            ),
+        ]
+        assocs = [
+            # This trace_length 0 is part of a bug.
+            # See models.py:TraceFrameLeafAssoc.trace_length
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=1, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=1, trace_length=0),
+        ]
+        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
+
+        with self.db.make_session() as session:
+            self._add_to_session(session, trace_frames)
+            self._add_to_session(session, assocs)
+            session.add(run)
+            session.add(sink)
+            session.commit()
+
+            self.interactive.setup()
+            self.interactive.sinks = {"sink1"}
+            frames = self.interactive._navigate_trace_frames(session, [trace_frames[0]])
+            self.assertEqual(
+                [int(frame.id) for frame, _branches in frames], [1, 2, 3, 4]
+            )
 
     def testCreateTraceTuples(self):
         # reverse order
