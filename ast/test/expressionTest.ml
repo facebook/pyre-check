@@ -581,6 +581,28 @@ let test_create_name _ =
     })
 
 
+let test_name_to_identifiers _ =
+  let assert_name_to_identifiers name identifiers =
+    assert_equal
+      ~cmp:(Option.equal (List.equal ~equal:String.equal))
+      identifiers
+      (Expression.name_to_identifiers name)
+  in
+  assert_name_to_identifiers (Name.Identifier "a") (Some ["a"]);
+  assert_name_to_identifiers
+    (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
+      attribute = "c";
+    })
+    (Some ["a"; "b"; "c"]);
+  assert_name_to_identifiers
+    (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(Integer 1); attribute = "b"}));
+      attribute = "c";
+    })
+    None
+
+
 let () =
   "expression">:::[
     "negate">::test_negate;
@@ -595,5 +617,6 @@ let () =
     "exists_in_list">::test_exists_in_list;
     "convert_accesses">::test_convert_accesses;
     "create_name">::test_create_name;
+    "name_to_identifiers">::test_name_to_identifiers;
   ]
   |> Test.run

@@ -970,13 +970,21 @@ let create_name ~location name =
   |> create_name_from_identifiers
 
 
-let is_simple_name name =
-  let rec is_simple = function
-    | Name (Name.Identifier _ ) -> true
-    | Name (Name.Attribute { base; _ }) -> is_simple (Node.value base)
-    | _ -> false
+let name_to_identifiers name =
+  let rec collect sofar name =
+    match sofar, name with
+    | Some sofar, Name (Name.Identifier identifier) ->
+        Some (identifier :: sofar)
+    | Some sofar, Name (Name.Attribute { base; attribute }) ->
+        collect (Some (attribute :: sofar)) (Node.value base)
+    | _ ->
+        None
   in
-  is_simple (Name name)
+  collect (Some []) (Name name)
+
+
+let is_simple_name name =
+  Option.is_some (name_to_identifiers name)
 
 
 let rec delocalize ({ Node.value; location } as expression) =
