@@ -67,79 +67,85 @@ let apply_decorators
       | None ->
           Expression.Access.show decorator
     in
+    let resolve_decorators = function
+      | "contextlib.contextmanager" ->
+          let return_annotation = return_annotation ~define ~resolution in
+          let joined =
+            try
+              Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
+            with
+              TypeOrder.Untracked _ ->
+                (* Apply_decorators gets called when building the environment,
+                   which is unsound and can raise. *)
+                Type.Any
+          in
+          if Type.is_iterator joined then
+            let signature =
+              {
+                define.signature with
+                return_annotation =
+                  Type.parametric
+                    "contextlib.GeneratorContextManager"
+                    [Type.single_parameter joined]
+                  |> Type.expression
+                  |> Option.some
+              }
+            in
+            { define with signature }
+          else
+            define
+      | "click.command"
+      | "click.group"
+      | "click.pass_context"
+      | "click.pass_obj" ->
+          (* Suppress caller/callee parameter matching by altering the click entry
+             point to have a generic parameter list. *)
+          let signature =
+            {
+              define.signature with
+              parameters = [
+                Parameter.create ~name:"*args" ();
+                Parameter.create ~name:"**kwargs" ();
+              ]
+            }
+          in
+          { define with signature }
+      | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
+          let return_annotation = return_annotation ~define ~resolution in
+          let joined =
+            try
+              Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
+            with
+              TypeOrder.Untracked _ ->
+                (* Apply_decorators gets called when building the environment,
+                   which is unsound and can raise. *)
+                Type.Any
+          in
+          if Type.is_async_iterator joined then
+            let signature =
+              {
+                define.signature with
+                return_annotation =
+                  Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
+                  |> Type.expression
+                  |> Option.some
+              }
+            in
+            { define with signature }
+          else
+            define
+      | name ->
+          Decorators.apply ~define ~resolution ~name
+    in
     match decorator with
     | Expression.Access (Expression.Access.SimpleAccess call) ->
-        begin
-          match name call with
-          | "contextlib.contextmanager" ->
-              let return_annotation = return_annotation ~define ~resolution in
-              let joined =
-                try
-                  Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
-                with
-                  TypeOrder.Untracked _ ->
-                    (* Apply_decorators gets called when building the environment,
-                       which is unsound and can raise. *)
-                    Type.Any
-              in
-              if Type.is_iterator joined then
-                let signature =
-                  {
-                    define.signature with
-                    return_annotation =
-                      Type.parametric
-                        "contextlib.GeneratorContextManager"
-                        [Type.single_parameter joined]
-                      |> Type.expression
-                      |> Option.some
-                  }
-                in
-                { define with signature }
-              else
-                define
-          | "click.command"
-          | "click.group"
-          | "click.pass_context"
-          | "click.pass_obj" ->
-              (* Suppress caller/callee parameter matching by altering the click entry
-                 point to have a generic parameter list. *)
-              let signature =
-                {
-                  define.signature with
-                  parameters = [
-                    Parameter.create ~name:"*args" ();
-                    Parameter.create ~name:"**kwargs" ();
-                  ]
-                }
-              in
-              { define with signature }
-          | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
-              let return_annotation = return_annotation ~define ~resolution in
-              let joined =
-                try
-                  Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
-                with
-                  TypeOrder.Untracked _ ->
-                    (* Apply_decorators gets called when building the environment,
-                       which is unsound and can raise. *)
-                    Type.Any
-              in
-              if Type.is_async_iterator joined then
-                let signature =
-                  {
-                    define.signature with
-                    return_annotation =
-                      Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
-                      |> Type.expression
-                      |> Option.some
-                  }
-                in
-                { define with signature }
-              else
-                define
-          | name ->
-              Decorators.apply ~define ~resolution ~name
-        end
+        resolve_decorators (name call)
+    | Expression.Call { callee = { Node.value = Expression.Name name; _ }; _ }
+    | Expression.Name name ->
+        Expression.name_to_identifiers name
+        >>| String.concat ~sep:"."
+        >>| resolve_decorators
+        |> Option.value ~default:define
     | _ ->
         define
   in

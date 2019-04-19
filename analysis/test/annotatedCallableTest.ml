@@ -53,6 +53,7 @@ let test_return_annotation _ =
 
 let test_apply_decorators _ =
   let create_define ~decorators ~parameters ~return_annotation =
+    let decorators = List.map ~f:parse_single_expression decorators in
     {
       Statement.Define.signature = {
         name = !&"define";
@@ -91,20 +92,36 @@ let test_apply_decorators _ =
       ~cmp:Type.equal
       ~printer:Type.show
       expected_return_annotation
-      applied_return_annotation
+      applied_return_annotation;
+
+    (* Test decorators with old AST. *)
+    let applied_return_annotation =
+      let convert ({ Define.signature = ({ Define.decorators; _ } as signature); _ } as define) =
+        let decorators = List.map ~f:Expression.convert decorators in
+        { define with signature = { signature with decorators } }
+      in
+      convert define
+      |> (fun define -> Callable.apply_decorators ~define ~resolution)
+      |> (fun define -> Callable.return_annotation ~define ~resolution)
+    in
+    assert_equal
+      ~cmp:Type.equal
+      ~printer:Type.show
+      expected_return_annotation
+      applied_return_annotation;
   in
   assert_apply_contextlib_decorators
     (create_define ~decorators:[] ~parameters:[] ~return_annotation:(Some !"str"))
     Type.string;
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[!"contextlib.contextmanager"]
+       ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
     (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[!"contextlib.contextmanager"]
+       ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
@@ -126,31 +143,23 @@ let test_apply_decorators _ =
       expected_count
       actual_count
   in
-  let make_click_decorator name =
-    let access =
-      Access.combine
-        !"click"
-        (Access.call ~location:Location.Reference.any ~name ())
-    in
-    +Access access
-  in
   create_define
     ~decorators:[]
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:1;
   create_define
-    ~decorators:[make_click_decorator "neither_command_nor_group"]
+    ~decorators:[ "click.neither_command_nor_group()"]
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:1;
   create_define
-    ~decorators:[make_click_decorator "command"]
+    ~decorators:["click.command()"]
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:2;
   create_define
-    ~decorators:[make_click_decorator "group"]
+    ~decorators:["click.group()"]
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:2;
@@ -158,7 +167,7 @@ let test_apply_decorators _ =
   (* Custom decorators. *)
   let resolution = resolution () in
   create_define
-    ~decorators:[!"$strip_first_parameter"]
+    ~decorators:["$strip_first_parameter"]
     ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
     ~return_annotation:None
   |> (fun define -> Callable.apply_decorators ~define ~resolution)
