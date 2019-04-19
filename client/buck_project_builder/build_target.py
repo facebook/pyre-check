@@ -9,7 +9,16 @@ import ast
 import os
 import shutil
 import tempfile
-from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, Type  # noqa
+from typing import (  # noqa
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+)
 
 from . import filesystem
 from ..filesystem import find_python_paths
@@ -25,6 +34,7 @@ class BuildTarget:
             ("dependencies", List[str]),
             ("sources", filesystem.Sources),
             ("base_module", Optional[str]),
+            ("external_dependencies", List[Tuple[str, str]]),
         ],
     )
 
@@ -40,6 +50,9 @@ class BuildTarget:
         self.dependencies = base_information.dependencies  # type: List[str]
         self.sources = base_information.sources  # type: filesystem.Sources
         self.base_module = base_information.base_module  # type: Optional[str]
+        self.external_dependencies = (
+            base_information.external_dependencies
+        )  # type: List[Tuple[str, str]]
 
     def __str__(self) -> str:
         return "{}(name={})".format(self.rule_name(), self.name)
@@ -193,6 +206,7 @@ class PythonWheel(BuildTarget):
         self._url = platform_information.url  # type: str
 
         self.dependencies.extend(platform_information.dependencies)
+        # TODO(T38892701): add platform-specific external dependencies
 
     def rule_name(self) -> str:
         return "python_wheel"

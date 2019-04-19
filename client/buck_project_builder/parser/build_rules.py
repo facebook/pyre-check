@@ -6,7 +6,7 @@
 # pyre-strict
 import ast
 import os
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 from ..build_target import (
     BuildTarget,
@@ -30,12 +30,14 @@ def parse_base_information(
     base_module = (
         _get_string(keywords["base_module"]) if "base_module" in keywords else None
     )
+    external_dependencies = _get_external_dependencies(keywords.get("external_deps"))
     return BuildTarget.BaseInformation(
         keywords=keywords,
         name=name,
         dependencies=dependencies,
         sources=sources,
         base_module=base_module,
+        external_dependencies=external_dependencies,
     )
 
 
@@ -83,12 +85,15 @@ def parse_thrift_library(
         if "py_base_module" in keywords
         else None
     )
+    external_dependencies = _get_external_dependencies(keywords.get("external_deps"))
+
     base_information = BuildTarget.BaseInformation(
         keywords=keywords,
         name=name,
         dependencies=dependencies,
         sources=Sources(),
         base_module=base_module,
+        external_dependencies=external_dependencies,
     )
 
     thrift_sources_dict = keywords["thrift_srcs"]
@@ -117,7 +122,12 @@ def parse_python_wheel(
     name = os.path.basename(build_file_directory)
 
     base_information = BuildTarget.BaseInformation(
-        keywords={}, name=name, dependencies=[], sources=Sources(), base_module=None
+        keywords={},
+        name=name,
+        dependencies=[],
+        sources=Sources(),
+        base_module=None,
+        external_dependencies=[],
     )
 
     python_wheel_default_calls = []
@@ -242,6 +252,40 @@ def _get_dependencies(
     return [
         _absolutize_target(dependency, build_file_directory)
         for dependency in _get_string_list(dependencies)
+    ]
+
+
+def _get_external_dependency(tree: ast.AST) -> Tuple[str, str]:
+    def default_library(base: str) -> str:
+        # If no 'library' field specified, assume the base name with a -py suffix.
+        return "{}-py".format(base)
+
+    # First, try to parse single strings.
+    try:
+        base = _get_string(tree)
+        return (base, default_library(base))
+    except ValueError:
+        pass
+
+    # If the dependency is not a string, it should be a tuple.
+    assert isinstance(tree, ast.Tuple)
+    base = _get_string(tree.elts[0])
+    if len(tree.elts) > 2:
+        library = _get_string(tree.elts[2])
+    else:
+        library = default_library(base)
+    return (base, library)
+
+
+def _get_external_dependencies(
+    external_dependencies: Optional[ast.AST]
+) -> List[Tuple[str, str]]:
+    if not external_dependencies:
+        return []
+
+    return [
+        _get_external_dependency(element)
+        for element in _get_list(external_dependencies)
     ]
 
 

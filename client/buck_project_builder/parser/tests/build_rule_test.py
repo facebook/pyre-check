@@ -29,7 +29,8 @@ PYTHON_BINARY_TARGET_1 = """
 python_binary(
     name = "binary_target_1",
     main_module = "some.project.main",
-    deps = [":another_target", "//some/other" + ":target"]
+    deps = [":another_target", "//some/other" + ":target"],
+    external_deps = ["foo"]
 )
 """
 
@@ -52,6 +53,7 @@ python_library(
     name = "library_target_1",
     srcs = ["a.py", "b.py"],
     deps = [":other_target"],
+    external_deps = ["foo", "bar"],
 )
 """
 
@@ -107,6 +109,9 @@ thrift_library(
     py_base_module = "foo.bar",
     deps = [
         ":thrift_target_1-py"
+    ],
+    external_deps = [
+        ("foo", None, "foo-lib")
     ],
     thrift_py_options = ["json", "other"]
 )
@@ -190,6 +195,35 @@ class BuildRuleTest(unittest.TestCase):
         expression = _get_expression(tree)
         self.assertListEqual(build_rules._get_string_list(expression), ["a"])
 
+    def test_get_external_dependencies(self):
+        tree = ast.parse('["foo", "bar"]')
+        expression = _get_expression(tree)
+        self.assertListEqual(
+            build_rules._get_external_dependencies(expression),
+            [("foo", "foo-py"), ("bar", "bar-py")],
+        )
+
+        tree = ast.parse('[("foo", None, "foo-lib"), ("bar", None, "lib")]')
+        expression = _get_expression(tree)
+        self.assertListEqual(
+            build_rules._get_external_dependencies(expression),
+            [("foo", "foo-lib"), ("bar", "lib")],
+        )
+
+        tree = ast.parse('[("foo", None), ("bar",)]')
+        expression = _get_expression(tree)
+        self.assertListEqual(
+            build_rules._get_external_dependencies(expression),
+            [("foo", "foo-py"), ("bar", "bar-py")],
+        )
+
+        tree = ast.parse('["foo", ("bar", ">=2.7", "bar-lib")]')
+        expression = _get_expression(tree)
+        self.assertListEqual(
+            build_rules._get_external_dependencies(expression),
+            [("foo", "foo-py"), ("bar", "bar-lib")],
+        )
+
     def test_python_binary(self):
         tree = ast.parse(PYTHON_BINARY_TARGET_1)
         call = _get_call(tree)
@@ -200,6 +234,7 @@ class BuildRuleTest(unittest.TestCase):
             target.dependencies,
             ["//some/project:another_target", "//some/other:target"],
         )
+        self.assertListEqual(target.external_dependencies, [("foo", "foo-py")])
         self.assert_sources_equal(target.sources, files=[], globs=[])
         self.assertIsNone(target.base_module)
 
@@ -209,6 +244,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:binary_target_2")
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
         self.assert_sources_equal(target.sources, files=["a.py"])
         self.assertIsNone(target.base_module)
 
@@ -227,6 +263,9 @@ class BuildRuleTest(unittest.TestCase):
         self.assertIsNone(target.base_module)
         self.assert_sources_equal(target.sources, files=["a.py", "b.py"])
         self.assertListEqual(target.dependencies, ["//some/project:other_target"])
+        self.assertListEqual(
+            target.external_dependencies, [("foo", "foo-py"), ("bar", "bar-py")]
+        )
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_2)
         call = _get_call(tree)
@@ -239,6 +278,7 @@ class BuildRuleTest(unittest.TestCase):
             globs=[Glob(["folder/*.py", "other/**/*.py"], ["other/exclude/**.py"])],
         )
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_3)
         call = _get_call(tree)
@@ -252,6 +292,7 @@ class BuildRuleTest(unittest.TestCase):
             globs=[Glob(["folder/*.py", "other/**/*.py"], [])],
         )
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
 
     def test_python_unittest(self):
         tree = ast.parse(PYTHON_UNIT_TEST_TARGET)
@@ -261,6 +302,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.name, "test_target")
         self.assert_sources_equal(target.sources, globs=[Glob(["tests/*.py"], [])])
         self.assertListEqual(target.dependencies, ["//some/project:library_target_1"])
+        self.assertListEqual(target.external_dependencies, [])
         self.assertIsNone(target.base_module)
 
     def test_non_python_target(self):
@@ -272,6 +314,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:non_python_target")
         self.assertEqual(target.name, "non_python_target")
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
         self.assert_sources_equal(target.sources, files=[], globs=[])
         self.assertIsNone(target.base_module)
 
@@ -282,6 +325,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:thrift_target_1")
         self.assertEqual(target.name, "thrift_target_1")
         self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
         self.assertListEqual(
             sorted(target._thrift_sources), sorted(["foo.thrift", "bar.thrift"])
         )
@@ -294,6 +338,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:thrift_target_2")
         self.assertEqual(target.name, "thrift_target_2")
         self.assertListEqual(target.dependencies, ["//some/project:thrift_target_1-py"])
+        self.assertListEqual(target.external_dependencies, [("foo", "foo-lib")])
         self.assertListEqual(sorted(target._thrift_sources), sorted(["baz.thrift"]))
         self.assertEqual(target.base_module, "foo.bar")
         self.assertTrue(target._include_json_converters)
