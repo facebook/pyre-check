@@ -18,7 +18,7 @@ from ...build_target import (
 from ...filesystem import Glob
 
 
-TARGETS_FILE_1 = """
+TARGETS_FILE_BASIC = """
 load("@fbcode_macros//build_defs:python_binary.bzl", "python_binary")
 load("@fbcode_macros//build_defs:python_library.bzl", "python_library")
 load("@fbcode_macros//build_defs:python_unittest.bzl", "python_unittest")
@@ -55,13 +55,13 @@ cpp_python_extension(
 )
 """
 
-TARGETS_FILE_2 = """
+TARGETS_FILE_ERROR = """
 python_binary(
     name = 1234,
 )
 """
 
-TARGETS_FILE_3 = """
+TARGETS_FILE_THRIFT = """
 thrift_library(
     name = "foo",
     thrift_srcs = {
@@ -70,7 +70,7 @@ thrift_library(
 )
 """
 
-TARGETS_FILE_4 = """
+TARGETS_FILE_WHEEL = """
 python_wheel(
     platform_urls = {
         "py3-platform007": "platform007_1.0_url",
@@ -102,10 +102,12 @@ python_library(
 
 
 class ParserTest(unittest.TestCase):
-    def test_parse_file(self):
+    def test_parse_file_basic(self):
         parser = Parser("/buck_root")
 
-        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_1)) as mocked_open:
+        with patch(
+            "builtins.open", mock_open(read_data=TARGETS_FILE_BASIC)
+        ) as mocked_open:
             result = parser.parse_file("my/module")
             mocked_open.assert_called_once_with("/buck_root/my/module/TARGETS", "r")
             mocked_open.reset_mock()
@@ -149,13 +151,21 @@ class ParserTest(unittest.TestCase):
             parser.parse_file("my/module")
             mocked_open.assert_not_called()
 
-        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_2)) as mocked_open:
+    def test_parse_file_error(self):
+        parser = Parser("/buck_root")
+        with patch(
+            "builtins.open", mock_open(read_data=TARGETS_FILE_ERROR)
+        ) as mocked_open:
             self.assertRaises(ParserException, parser.parse_file, "my/other_module")
             mocked_open.assert_called_once_with(
                 "/buck_root/my/other_module/TARGETS", "r"
             )
 
-        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_3)) as mocked_open:
+    def test_parse_file_thrift(self):
+        parser = Parser("/buck_root")
+        with patch(
+            "builtins.open", mock_open(read_data=TARGETS_FILE_THRIFT)
+        ) as mocked_open:
             result = parser.parse_file("my/thrift_module")
             mocked_open.assert_called_once_with(
                 "/buck_root/my/thrift_module/TARGETS", "r"
@@ -172,7 +182,11 @@ class ParserTest(unittest.TestCase):
             self.assertListEqual(target._thrift_sources, ["bar.thrift"])
             self.assertFalse(target._include_json_converters)
 
-        with patch("builtins.open", mock_open(read_data=TARGETS_FILE_4)) as mocked_open:
+    def test_parse_file_wheel(self):
+        parser = Parser("/buck_root")
+        with patch(
+            "builtins.open", mock_open(read_data=TARGETS_FILE_WHEEL)
+        ) as mocked_open:
             result = parser.parse_file("my/wheel")
             mocked_open.assert_called_once_with("/buck_root/my/wheel/TARGETS", "r")
 
