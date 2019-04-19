@@ -1256,6 +1256,16 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[..., $bottom][[[int], int][[float], float]]"
        ~right:"typing.Callable[[int], int]");
+  assert_true
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
+       ~right:"typing.Callable[[object], object][[[int], str]]");
+  assert_false
+    (less_or_equal
+       order
+       ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
+       ~right:"typing.Callable[[object], object][[[str], str]]");
 
   (* TypedDictionaries *)
   assert_true
@@ -3316,6 +3326,11 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[typing.Union[int, str], int], str]"
     ~right:"typing.Callable[[int, T3], T4]"
     [["T3", "int"; "T4", "str"]];
+  assert_solve
+    ~leave_unbound_in_left:["T3"]
+    ~left:"typing.Callable[[T3], T3]"
+    ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], T1][[str], T2]] "
+    [["T2", "str"; "T1", "int"]];
 
   (* Callback protocols *)
   assert_solve

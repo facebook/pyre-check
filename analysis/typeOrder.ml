@@ -763,15 +763,21 @@ module OrderImplementation = struct
                 rights
                 ~f:(fun right -> solve_less_or_equal_throws order ~constraints ~left ~right)
           | Type.Callable callable,
-            Type.Callable { implementation = called_as; _ }
+            Type.Callable { implementation; overloads; _ }
             ->
-              simulate_signature_select order ~callable ~called_as ~constraints
-              |> List.concat_map ~f:(fun (left, constraints) ->
-                  solve_less_or_equal_throws
-                    order
-                    ~constraints
-                    ~left
-                    ~right:called_as.annotation)
+              let fold_overload sofar called_as =
+                let call_as_overload constraints =
+                  simulate_signature_select order ~callable ~called_as ~constraints
+                  |> List.concat_map ~f:(fun (left, constraints) ->
+                      solve_less_or_equal_throws
+                        order
+                        ~constraints
+                        ~left
+                        ~right:called_as.annotation)
+                in
+                List.concat_map sofar ~f:call_as_overload
+              in
+              List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
           | _, Type.Callable _  when Type.is_meta left ->
               Type.single_parameter left
               |> constructor
@@ -1025,10 +1031,13 @@ module OrderImplementation = struct
         when Reference.equal left right ->
           true
       | Type.Callable callable,
-        Type.Callable { Callable.implementation = called_as; _ } ->
-          simulate_signature_select order ~callable ~called_as ~constraints:TypeConstraints.empty
-          |> List.map ~f:(fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
-          |> List.exists ~f:Fn.id
+        Type.Callable { Callable.implementation; overloads; _ } ->
+          let validate_overload called_as =
+            simulate_signature_select order ~callable ~called_as ~constraints:TypeConstraints.empty
+            |> List.exists
+              ~f:(fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
+          in
+          List.for_all (implementation :: overloads) ~f:validate_overload
       | _, Type.Callable _  when Type.is_meta left ->
           Type.single_parameter left
           |> constructor
