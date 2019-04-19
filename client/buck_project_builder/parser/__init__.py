@@ -72,8 +72,10 @@ class Parser(object):
 
         targets = {}
         for expression in expressions:
+            if not isinstance(expression, ast.Expr):
+                # Ignore trees which aren't expressions (e.g. assignment statements).
+                continue
             try:
-                assert isinstance(expression, ast.Expr)
                 call = expression.value
                 assert isinstance(call, ast.Call)
                 named = call.func

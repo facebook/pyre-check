@@ -23,6 +23,8 @@ load("@fbcode_macros//build_defs:python_binary.bzl", "python_binary")
 load("@fbcode_macros//build_defs:python_library.bzl", "python_library")
 load("@fbcode_macros//build_defs:python_unittest.bzl", "python_unittest")
 
+variable=42
+
 python_binary(
     name = "binary_target",
     main_module = "my.module.main",
