@@ -347,13 +347,16 @@ class BuilderTest(unittest.TestCase):
         build_file_1.targets = {
             "a": PythonBinary(
                 "/ROOT", "project1", base("a", ["//project2/wheel:wheel"])
-            )
+            ),
+            "b": PythonLibrary("/ROOT", "project1", base("b")),
         }
         build_file_2 = MagicMock()
         with patch.object(
             PythonWheel,
             "_infer_platform_information",
-            return_value=PythonWheel.PlatformInformation("platform", "version", "url"),
+            return_value=PythonWheel.PlatformInformation(
+                "platform", "version", "url", ["//project1:b"]
+            ),
         ):
             build_file_2.targets = {
                 "wheel": PythonWheel("/ROOT", "project2/wheel", base("wheel"), {}, {})
@@ -366,11 +369,16 @@ class BuilderTest(unittest.TestCase):
 
             targets = builder.compute_targets_to_build(["//project1:a"])
             self.assert_targets_equal(
-                targets, ["//project1:a", "//project2/wheel:wheel"]
+                targets, ["//project1:a", "//project2/wheel:wheel", "//project1:b"]
             )
 
             targets = builder.compute_targets_to_build(["//project2/wheel:wheel"])
-            self.assert_targets_equal(targets, ["//project2/wheel:wheel"])
+            self.assert_targets_equal(
+                targets, ["//project2/wheel:wheel", "//project1:b"]
+            )
+
+            targets = builder.compute_targets_to_build(["//project1:b"])
+            self.assert_targets_equal(targets, ["//project1:b"])
 
     def test_compute_reverse_dependencies(self):
         # Dependency graph:

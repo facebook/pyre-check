@@ -156,10 +156,17 @@ class PythonWheel(BuildTarget):
         [
             ("version", str),
             ("url_mapping", Mapping[str, str]),  # From platform to wheel url.
+            ("dependencies", Iterable[str]),
         ],
     )
     PlatformInformation = NamedTuple(
-        "PlatformInformation", [("platform", str), ("version", str), ("url", str)]
+        "PlatformInformation",
+        [
+            ("platform", str),
+            ("version", str),
+            ("url", str),
+            ("dependencies", Iterable[str]),
+        ],
     )
 
     def __init__(
@@ -185,6 +192,8 @@ class PythonWheel(BuildTarget):
         self._version = platform_information.version  # type: str
         self._url = platform_information.url  # type: str
 
+        self.dependencies.extend(platform_information.dependencies)
+
     def rule_name(self) -> str:
         return "python_wheel"
 
@@ -207,6 +216,7 @@ class PythonWheel(BuildTarget):
                     python_platform,
                     wheel_version,
                     versioned_wheel.url_mapping[python_platform],
+                    versioned_wheel.dependencies,
                 )
             except KeyError:
                 continue

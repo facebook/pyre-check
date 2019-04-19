@@ -108,12 +108,6 @@ def parse_python_wheel(
     # Python wheels defined at a/b/c get a target name of //a/b/c:c.
     name = os.path.basename(build_file_directory)
 
-    # TODO(T38892701): Support dependencies on wheels.
-    # There are some occurrences in the codebase where wheels specify dependencies,
-    # but it is not always the case that each version has the same dependencies.
-    # We currently compute all dependencies at the beginning of a build, but these
-    # dependencies are platform-specific, so we need to incorporate an additional
-    # stage to determine platform-specific dependencies into the build process.
     base_information = BuildTarget.BaseInformation({}, name, [], Sources(), None)
 
     python_wheel_default_calls = []
@@ -153,13 +147,18 @@ def parse_python_wheel(
             and "platform_urls" in python_wheel_keywords
         )
         version = _get_string(python_wheel_keywords["version"])
+
         platform_urls = python_wheel_keywords["platform_urls"]
         assert isinstance(platform_urls, ast.Dict)
         keys = [_get_string(key) for key in platform_urls.keys]
         values = [_get_string(value) for value in platform_urls.values]
         url_mapping = dict(zip(keys, values))
+
+        dependencies = _get_dependencies(
+            build_file_directory, python_wheel_keywords.get("deps")
+        )
         wheel_versions_mapping[version] = PythonWheel.VersionedWheel(
-            version=version, url_mapping=url_mapping
+            version=version, url_mapping=url_mapping, dependencies=dependencies
         )
 
     return PythonWheel(

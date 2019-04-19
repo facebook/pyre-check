@@ -77,6 +77,7 @@ python_wheel(
         "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
     },
     version = "1.0",
+    deps = ["//some:target"],
 )
 
 python_wheel(
@@ -85,6 +86,7 @@ python_wheel(
         "py3-gcc-5-glibc-2.23": "gcc_2.0_url",
     },
     version = "2.0",
+    deps = ["//other:target"],
 )
 
 python_wheel_default(
@@ -198,7 +200,7 @@ class ParserTest(unittest.TestCase):
             self.assertEqual(target.target, "//my/wheel:wheel")
             self.assertListEqual(target.sources.files, [])
             self.assertListEqual(target.sources.globs, [])
-            self.assertListEqual(target.dependencies, [])
+            self.assertListEqual(target.dependencies, ["//some:target"])
 
             # Even though the entire file must be scanned for a python_wheel,
             # other targets should still be parsed.

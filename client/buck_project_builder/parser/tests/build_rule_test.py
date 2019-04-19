@@ -119,6 +119,7 @@ python_wheel(
         "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
     },
     version = "1.0",
+    deps = ["//some:target"],
 )
 
 python_wheel(
@@ -127,6 +128,7 @@ python_wheel(
         "py3-gcc-5-glibc-2.23": "gcc_2.0_url",
     },
     version = "2.0",
+    deps = ["//other:target"],
 )
 
 python_wheel_default(
@@ -143,6 +145,7 @@ python_wheel(
         "py3-gcc-5-glibc-2.23": "gcc_1.0_url",
     },
     version = "1.0",
+    deps = ["//other:target"],
 )
 
 python_wheel(
@@ -303,6 +306,7 @@ class BuildRuleTest(unittest.TestCase):
         )
         self.assertEqual(target.target, "//some/project/wheel:wheel")
         self.assertEqual(target.name, "wheel")
+        self.assertListEqual(target.dependencies, ["//some:target"])
         self.assertEqual(target._platform, "py3-platform007")
         self.assertEqual(target._version, "1.0")
         self.assertEqual(target._url, "platform007_1.0_url")
@@ -314,6 +318,7 @@ class BuildRuleTest(unittest.TestCase):
         )
         self.assertEqual(target.target, "//some/project/wheel:wheel")
         self.assertEqual(target.name, "wheel")
+        self.assertListEqual(target.dependencies, [])
         self.assertEqual(target._platform, "py3-gcc-5-glibc-2.23")
         self.assertEqual(target._version, "2.0")
         self.assertEqual(target._url, "gcc_2.0_url")
