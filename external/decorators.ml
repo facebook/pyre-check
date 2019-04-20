@@ -5,21 +5,22 @@
 
 open Core
 
-open Ast
-open Statement
-
 
 let apply
-    ~define:({ Define.signature = { parameters; _ }; _ } as define)
+    ~overload:{ Type.Callable.annotation; parameters }
     ~resolution:_
     ~name =
   match name with
   | "$strip_first_parameter" ->
       let parameters =
-        List.tl parameters
-        |> Option.value ~default:parameters
+        match parameters with
+        | Type.Callable.Defined parameters ->
+            List.tl parameters
+            |> Option.value ~default:parameters
+            |> fun parameters -> Type.Callable.Defined parameters
+        | Type.Callable.Undefined ->
+            Type.Callable.Undefined
       in
-      let signature = { define.signature with parameters } in
-      { define with signature }
+      { Type.Callable.annotation; parameters }
   | _ ->
-      define
+      { Type.Callable.annotation; parameters }

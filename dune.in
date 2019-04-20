@@ -50,7 +50,8 @@
  (public_name pyrelib.decorators)
  (libraries
   core
-  pyrelib.ast))
+  pyrelib.ast
+  pyrelib.type))
 
 
 (library

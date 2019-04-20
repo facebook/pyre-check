@@ -154,7 +154,7 @@ let create ~parent ~name overloads =
 let apply_decorators
     ~define:({ Define.signature = { Define.decorators; _ }; _ } as define)
     ~resolution =
-  let apply_decorator define { Node.value = decorator; _ } =
+  let apply_decorator ({ Type.Callable.annotation; _ } as overload) { Node.value = decorator; _ } =
     let name decorator =
       (* A decorator is either a call or a list of identifiers. *)
       match Expression.Access.name_and_arguments ~call:decorator with
@@ -166,10 +166,9 @@ let apply_decorators
     let resolve_decorators name =
       match name with
       | "contextlib.contextmanager" ->
-          let return_annotation = return_annotation ~define ~resolution in
           let joined =
             try
-              Resolution.join resolution return_annotation (Type.iterator Type.Bottom)
+              Resolution.join resolution annotation (Type.iterator Type.Bottom)
             with
               TypeOrder.Untracked _ ->
                 (* Apply_decorators gets called when building the environment,
@@ -177,41 +176,40 @@ let apply_decorators
                 Type.Any
           in
           if Type.is_iterator joined then
-            let signature =
-              {
-                define.signature with
-                return_annotation =
-                  Type.parametric
-                    "contextlib.GeneratorContextManager"
-                    [Type.single_parameter joined]
-                  |> Type.expression
-                  |> Option.some
-              }
-            in
-            { define with signature }
+            {
+              overload with
+              Type.Callable.annotation =
+                Type.parametric
+                  "contextlib.GeneratorContextManager"
+                  [Type.single_parameter joined]
+            }
           else
-            define
+            overload
       | "click.command"
       | "click.group"
       | "click.pass_context"
       | "click.pass_obj" ->
           (* Suppress caller/callee parameter matching by altering the click entry
              point to have a generic parameter list. *)
-          let signature =
-            {
-              define.signature with
-              parameters = [
-                Parameter.create ~annotation:(Type.expression Type.Any) ~name:"*args" ();
-                Parameter.create ~annotation:(Type.expression Type.Any) ~name:"**kwargs" ();
-              ]
-            }
+          let parameters =
+            Type.Callable.Defined [
+              Type.Callable.Parameter.Variable {
+                name = "args";
+                annotation = Type.Any;
+                default = false;
+              };
+              Type.Callable.Parameter.Keywords {
+                name = "kwargs";
+                annotation = Type.Any;
+                default = false;
+              };
+            ]
           in
-          { define with signature }
+          { overload with Type.Callable.parameters }
       | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
-          let return_annotation = return_annotation ~define ~resolution in
           let joined =
             try
-              Resolution.join resolution return_annotation (Type.async_iterator Type.Bottom)
+              Resolution.join resolution annotation (Type.async_iterator Type.Bottom)
             with
               TypeOrder.Untracked _ ->
                 (* Apply_decorators gets called when building the environment,
@@ -219,20 +217,17 @@ let apply_decorators
                 Type.Any
           in
           if Type.is_async_iterator joined then
-            let signature =
               {
-                define.signature with
-                return_annotation =
-                  Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
-                  |> Type.expression
-                  |> Option.some
+                overload with
+                Type.Callable.annotation =
+                  Type.parametric
+                    "typing.AsyncContextManager"
+                    [Type.single_parameter joined];
               }
-            in
-            { define with signature }
           else
-            define
+            overload
       | name ->
-          Decorators.apply ~define ~resolution ~name
+          Decorators.apply ~overload ~resolution ~name
     in
     match decorator with
     | Expression.Access (Expression.Access.SimpleAccess call) ->
@@ -242,9 +237,11 @@ let apply_decorators
         Expression.name_to_identifiers name
         >>| String.concat ~sep:"."
         >>| resolve_decorators
-        |> Option.value ~default:define
+        |> Option.value ~default:overload
     | _ ->
-        define
+        overload
   in
-  let define = List.fold decorators ~init:define ~f:apply_decorator in
-  create_overload ~define ~resolution
+  List.fold
+    decorators
+    ~init:(create_overload ~define ~resolution)
+    ~f:apply_decorator
