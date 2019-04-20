@@ -401,6 +401,24 @@ let test_check_user_decorators _ =
       "Revealed type [-1]: Revealed type for `C.f` is `typing.Callable(C.f)[[C, int], None]`.";
       "Revealed type [-1]: Revealed type for `D.f` is `typing.Callable(D.f)[[Named(self, unknown), \
        Named(y, int)], None]`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      def synchronize(
+        coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
+      ) -> typing.Callable[..., T]: ...
+
+      @synchronize
+      async def am_i_async(x: int) -> str:
+        return str(x)
+
+      reveal_type(am_i_async)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `am_i_async` is \
+       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
     ]
 
 
