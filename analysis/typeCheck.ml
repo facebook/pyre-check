@@ -1682,13 +1682,38 @@ module State = struct
                    else
                      errors
                  in
+
                  (* Check weakening of precondition. *)
+                 let overriding_parameters =
+                   Method.create ~define ~parent:(Annotated.Class.annotation definition)
+                   |> Method.parameter_annotations ~resolution
+                 in
+                 let parameters =
+                   let name_anonymous_parameter index = function
+                     | Type.Callable.Parameter.Named ({
+                         Type.Callable.Parameter.name;
+                         _;
+                       } as parameter) ->
+                     if String.is_prefix ~prefix:"$" (Identifier.sanitized name) then
+                       match List.nth overriding_parameters index with
+                       | Some (name, _) ->
+                           Type.Callable.Parameter.Named { parameter with name }
+                       | _ ->
+                           Type.Callable.Parameter.Named parameter
+                     else
+                       Type.Callable.Parameter.Named parameter
+                     | parameter ->
+                         parameter
+                   in
+                   Type.Callable.Overload.parameters implementation
+                   |> Option.value ~default:[]
+                   |> List.mapi ~f:name_anonymous_parameter
+                 in
                  let overriding_parameters =
                    let remove_unused_parameter_denotation ~key ~data map =
                      String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
                    in
-                   Method.create ~define ~parent:(Annotated.Class.annotation definition)
-                   |> Method.parameter_annotations ~resolution
+                   overriding_parameters
                    |> Identifier.Map.of_alist_exn
                    |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
                  in
@@ -1778,8 +1803,7 @@ module State = struct
                          in
                          Set.add errors error
                  in
-                 Type.Callable.Overload.parameters implementation
-                 |> Option.value ~default:[]
+                 parameters
                  |> List.fold ~init:errors ~f:check_parameter
              | _ ->
                  errors)

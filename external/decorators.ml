@@ -24,3 +24,7 @@ let apply
       { Type.Callable.annotation; parameters }
   | _ ->
       { Type.Callable.annotation; parameters }
+
+
+let special_decorators =
+  String.Set.singleton "$strip_first_parameter"

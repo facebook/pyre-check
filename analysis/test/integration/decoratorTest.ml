@@ -345,11 +345,71 @@ let test_decorators _ =
     ]
 
 
+let test_check_user_decorators _ =
+  assert_type_errors
+    {|
+      def decorate(f: typing.Callable[[int], str]) -> typing.Callable[[str], int]:
+        ...
+      @decorate
+      def f(x: int) -> str:
+        return str(x)
+      reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`.";
+    ];
+  (* We currently ignore decorating decorators. *)
+  assert_type_errors
+    {|
+      meta_type = typing.Callable[[typing.Callable[[int], int]], typing.Callable[[str], str]]
+      def meta_decorate(f: typing.Any) -> meta_type:
+        ...
+      @meta_decorate
+      def decorate(f: typing.Callable[[int], str]) -> typing.Callable[[str], int]:
+        ...
+
+      @decorate
+      def f(x: int) -> str:
+        return str(x)
+      reveal_type(f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`.";
+    ];
+
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+
+      # lets AstLintRule ignore these no_op implementations
+      def decorate(f: typing.Callable[['C', T], None]) -> typing.Callable[['C', T], None]:
+        ...
+
+      class C:
+        @decorate
+        def f(self, x: int) -> None: # registered type is typing.Callable[[C, int], None]
+          pass
+
+      class D(C):
+        # Since the type system disallows calling f with `x=1`, this is ok.
+        def f(self, y: int) -> None:
+          pass
+      reveal_type(C.f)
+      reveal_type(D.f)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `C.f` is `typing.Callable(C.f)[[C, int], None]`.";
+      "Revealed type [-1]: Revealed type for `D.f` is `typing.Callable(D.f)[[Named(self, unknown), \
+       Named(y, int)], None]`.";
+    ]
+
+
 let () =
   "decorator">:::[
     "check_contextmanager">::test_check_contextmanager;
     "check_asynccontextmanager">::test_check_asynccontextmanager;
     "check_click_command">::test_check_click_command;
+    "check_user_decorators">::test_check_user_decorators;
     "decorators">::test_decorators;
   ]
   |> Test.run

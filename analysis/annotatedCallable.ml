@@ -154,7 +154,9 @@ let create ~parent ~name overloads =
 let apply_decorators
     ~define:({ Define.signature = { Define.decorators; _ }; _ } as define)
     ~resolution =
-  let apply_decorator ({ Type.Callable.annotation; _ } as overload) { Node.value = decorator; _ } =
+  let apply_decorator
+      ({ Type.Callable.annotation; parameters } as overload)
+      { Node.value = decorator; _ } =
     let name decorator =
       (* A decorator is either a call or a list of identifiers. *)
       match Expression.Access.name_and_arguments ~call:decorator with
@@ -217,17 +219,79 @@ let apply_decorators
                 Type.Any
           in
           if Type.is_async_iterator joined then
-              {
-                overload with
-                Type.Callable.annotation =
-                  Type.parametric
-                    "typing.AsyncContextManager"
-                    [Type.single_parameter joined];
-              }
+            {
+              overload with
+              Type.Callable.annotation =
+                Type.parametric
+                  "typing.AsyncContextManager"
+                  [Type.single_parameter joined];
+            }
           else
             overload
-      | name ->
+      | name when Set.mem Decorators.special_decorators name ->
           Decorators.apply ~overload ~resolution ~name
+      | name ->
+          begin
+            match Resolution.undecorated_signature resolution (Reference.create name) with
+            | Some {
+                Type.Callable.annotation = return_annotation;
+                parameters =
+                  Type.Callable.Defined
+                    [
+                      Type.Callable.Parameter.Named {
+                        Type.Callable.Parameter.annotation = parameter_annotation;
+                        _;
+                      };
+                    ];
+              } ->
+                let decorated_annotation =
+                  Resolution.solve_less_or_equal
+                    resolution
+                    ~constraints:TypeConstraints.empty
+                    ~left:(Type.Callable.create ~parameters ~annotation ())
+                    ~right:parameter_annotation
+                  |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+                  |> List.hd
+                  |> function
+                  | Some constraints ->
+                      Type.instantiate return_annotation ~constraints:(Map.find constraints)
+                  | None ->
+                      (* If we failed, just default to the old annotation. *)
+                      annotation
+                in
+                begin
+                  match decorated_annotation with
+                  (* Note that @property decorators can't properly be handled in this fashion.
+                     The problem stems from the need to use `apply_decorators` to individual
+                     overloaded defines - if an overloaded define could become Not An Overload,
+                     it's not clear what we should do. Defer the problem by now by only
+                     inferring a limited set of decorators. *)
+                  | Type.Callable {
+                      Type.Callable.implementation = {
+                        Type.Callable.parameters = decorated_parameters;
+                        annotation = decorated_annotation;
+                      };
+                      _;
+                    } ->
+                      begin
+                        (* Typeshed currently exhibits the common behavior of decorating with
+                           `Callable[..., T] -> Modified[T]` when the parameters are meant to be
+                           left alone. Support this by hard coding :( *)
+                        match decorated_parameters with
+                        | Undefined ->
+                            { overload with Type.Callable.annotation = decorated_annotation }
+                        | Defined _ ->
+                            {
+                              Type.Callable.annotation = decorated_annotation;
+                              parameters = decorated_parameters;
+                            }
+                      end
+                  | _ ->
+                      overload
+                end
+            | _ ->
+                overload
+          end
     in
     match decorator with
     | Expression.Access (Expression.Access.SimpleAccess call) ->
@@ -241,7 +305,6 @@ let apply_decorators
     | _ ->
         overload
   in
-  List.fold
-    decorators
-    ~init:(create_overload ~define ~resolution)
-    ~f:apply_decorator
+  decorators
+  |> List.rev
+  |> List.fold ~init:(create_overload ~define ~resolution) ~f:apply_decorator
