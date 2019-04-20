@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Statement
 module Attribute = AnnotatedAttribute
@@ -45,11 +43,8 @@ module Method : sig
   val parameter_annotations
     :  t
     -> resolution: Resolution.t
-    -> Type.t Identifier.Map.t
-  val parameter_annotations_positional
-    :  t
-    -> resolution: Resolution.t
-    -> Type.t Int.Map.t
+    -> (Identifier.t * Type.t) list
+
   val return_annotation: t -> resolution: Resolution.t -> Type.t
 
 end

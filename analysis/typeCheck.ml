@@ -1689,6 +1689,7 @@ module State = struct
                    in
                    Method.create ~define ~parent:(Annotated.Class.annotation definition)
                    |> Method.parameter_annotations ~resolution
+                   |> Identifier.Map.of_alist_exn
                    |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
                  in
                  let check_parameter errors overridden_parameter =

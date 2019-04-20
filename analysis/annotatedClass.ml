@@ -132,22 +132,6 @@ module Method = struct
       name, annotation
     in
     List.map parameters ~f:element
-    |> Identifier.Map.of_alist_exn
-
-
-  let parameter_annotations_positional
-      { define = { Define.signature = { parameters; _ }; _ }; _ }
-      ~resolution =
-    let element index { Node.value = { Parameter.annotation; _ }; _ } =
-      let annotation =
-        (annotation
-         >>| fun annotation -> Resolution.parse_annotation resolution annotation)
-        |> Option.value ~default:Type.Top
-      in
-      index, annotation
-    in
-    List.mapi ~f:element parameters
-    |> Int.Map.of_alist_exn
 
 
   let return_annotation

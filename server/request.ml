@@ -935,7 +935,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.Methods annotation ->
         let to_method annotated_method =
           let open Annotated.Class.Method in
-          let annotations = parameter_annotations_positional ~resolution annotated_method in
+          let annotations =
+            parameter_annotations ~resolution annotated_method
+            |> List.mapi ~f:(fun index (_, annotation) -> index, annotation)
+            |> Int.Map.of_alist_exn
+          in
           let parameters =
             Map.keys annotations
             |> List.sort ~compare:Int.compare
