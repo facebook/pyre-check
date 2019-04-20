@@ -45,3 +45,48 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
       Resolution.class_definition resolution parent_type
       >>| Class.create
   | _ -> None
+
+
+let decorate
+    ({
+      Define.signature = {
+        Define.decorators;
+        parameters = original_parameters;
+        _;
+      } as signature;
+      _;
+    } as define)
+    ~resolution =
+  match decorators with
+  | [] ->
+      define
+  | _ ->
+      let { Type.Callable.parameters; annotation } =
+        Callable.apply_decorators ~define ~resolution
+      in
+      let parameters =
+        match parameters with
+        | Defined parameters ->
+            let convert parameter =
+              match parameter with
+              | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                  Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
+              | Type.Callable.Parameter.Variable { name; annotation; _ } ->
+                  Ast.Parameter.create
+                    ~annotation:(Type.expression annotation)
+                    ~name:("*" ^ name)
+                    ()
+              | Type.Callable.Parameter.Keywords { name; annotation; _ } ->
+                  Ast.Parameter.create
+                    ~annotation:(Type.expression annotation)
+                    ~name:("**" ^ name)
+                    ()
+            in
+            List.map parameters ~f:convert
+        | Undefined ->
+            original_parameters
+      in
+      let return_annotation =
+        Some (Type.expression annotation)
+      in
+      { define with Define.signature = { signature with Define.parameters; return_annotation } }

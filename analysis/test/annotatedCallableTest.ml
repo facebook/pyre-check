@@ -44,9 +44,9 @@ let test_return_annotation _ =
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
-  assert_return_annotation (Some (Type.expression ~convert:true Type.integer)) false Type.integer;
+  assert_return_annotation (Some (Type.expression Type.integer)) false Type.integer;
   assert_return_annotation
-    (Some (Type.expression ~convert:true Type.integer))
+    (Some (Type.expression Type.integer))
     true
     (Type.coroutine [Type.Any; Type.Any; Type.integer])
 
@@ -86,7 +86,7 @@ let test_apply_decorators _ =
     in
     let applied_return_annotation =
       Callable.apply_decorators ~define ~resolution
-      |> (fun define -> Callable.return_annotation ~define ~resolution)
+      |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
       ~cmp:Type.equal
@@ -102,7 +102,7 @@ let test_apply_decorators _ =
       in
       convert define
       |> (fun define -> Callable.apply_decorators ~define ~resolution)
-      |> (fun define -> Callable.return_annotation ~define ~resolution)
+      |> (fun { Type.Callable.annotation; _ } -> annotation)
     in
     assert_equal
       ~cmp:Type.equal
@@ -135,7 +135,12 @@ let test_apply_decorators _ =
         |> fun environment -> TypeCheck.resolution environment ()
       in
       Callable.apply_decorators ~define ~resolution
-      |> fun { Statement.Define.signature = { parameters; _ }; _ } -> List.length parameters
+      |> fun { Type.Callable.parameters; _ } ->
+      match parameters with
+      | Undefined ->
+          0
+      | Defined parameters ->
+          List.length parameters
     in
     assert_equal
       ~cmp:Int.equal
@@ -171,11 +176,45 @@ let test_apply_decorators _ =
     ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
     ~return_annotation:None
   |> (fun define -> Callable.apply_decorators ~define ~resolution)
-  |> (fun { Define.signature = { parameters; _ }; _ } ->
+  |> (fun { Type.Callable.parameters; _ } ->
       assert_equal
-        ~cmp:(List.equal ~equal:(Parameter.equal Expression.equal))
-        [Parameter.create ~name:"other" ()]
+        ~printer:(Type.Callable.show_parameters Type.pp)
+        ~cmp:(Type.Callable.equal_parameters Type.equal)
+        (Type.Callable.Defined [
+            Type.Callable.Parameter.Named {
+              name = "other";
+              annotation = Type.Top;
+              default = false;
+            };
+          ])
         parameters)
+
+
+let test_create_overload _ =
+  let assert_overload source expected =
+    let resolution = resolution () in
+    assert_equal
+      ~cmp:(Type.Callable.equal_overload Type.equal)
+      expected
+      (source
+       |> Test.parse_single_define
+       |> fun define -> Callable.create_overload ~define ~resolution)
+  in
+  assert_overload
+    {|
+      def foo(x: int) -> None:
+        pass
+    |}
+    {
+      Type.Callable.annotation = Type.none;
+      parameters = Type.Callable.Defined [
+          Type.Callable.Parameter.Named {
+            name = "x";
+            default = false;
+            annotation = Type.integer;
+          };
+        ];
+    }
 
 
 let test_create _ =
@@ -208,15 +247,26 @@ let test_create _ =
     let callable =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
-      parse source
-      |> Preprocessing.defines ~include_stubs:true
-      |> List.rev
+      let defines =
+        parse ~convert:true source
+        |> Preprocessing.defines ~include_stubs:true
+        |> List.rev
+      in
+      let { Define.signature = { Define.name; _ }; _ } =
+        List.hd_exn defines
+        |> Node.value
+      in
+      let to_overload define =
+        Define.is_overloaded_method define, Callable.create_overload ~resolution ~define
+      in
+      defines
       |> List.map ~f:Node.value
       |> List.map ~f:(fun define ->
           let signature = { define.Define.signature with parent } in
           { define with signature }
         )
-      |> Callable.create ~parent:parent_annotation ~resolution
+      |> (fun defines -> List.map defines ~f:to_overload)
+      |> Callable.create ~parent:parent_annotation ~name:(Reference.show name)
       |> (fun callable -> check_implicit callable; callable)
       |> fun callable -> Type.Callable { callable with Type.Callable.implicit }
     in
@@ -303,6 +353,7 @@ let () =
   "define">:::[
     "return_annotation">::test_return_annotation;
     "apply_decorators">::test_apply_decorators;
+    "create_ovelroad">::test_create_overload;
     "create">::test_create;
   ]
   |> Test.run;

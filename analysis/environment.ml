@@ -647,28 +647,12 @@ let register_values
 
       let statement { Source.handle; _ } callables statement =
         let collect_callable
-            ~parent
-            ~location
+            ~name
             callables
-            ({ Define.signature = { name; _ }; _ } as define) =
+            callable =
 
           Handler.DependencyHandler.add_function_key ~handle name;
-
           (* Register callable global. *)
-          let callable =
-            (* Only omit `self` for class methods in the environment. When accessed globally,
-               Instance methods require the calling class to be passed in. *)
-            let parent =
-              if Define.is_class_method define then
-                parent
-                >>= fun reference -> Some (Type.Primitive (Reference.show reference))
-                >>| Type.meta
-              else
-                None
-            in
-            Annotated.Callable.create ~parent [define] ~resolution
-            |> Node.create ~location
-          in
           let change callable = function
             | None -> Some [callable]
             | Some existing -> Some (existing @ [callable])
@@ -678,10 +662,21 @@ let register_values
         match statement with
         | {
           Node.location;
-          value = Define ({ Statement.Define.signature = { parent; _ }; _ } as define)
+          value = Define ({ Statement.Define.signature = { name; parent; _ }; _ } as define)
         } ->
+            let parent =
+              if Define.is_class_method define then
+                parent
+                >>= fun reference -> Some (Type.Primitive (Reference.show reference))
+                >>| Type.meta
+              else
+                None
+            in
             Annotated.Callable.apply_decorators ~resolution ~define
-            |> collect_callable ~parent ~location callables
+            |> (fun overload -> [Define.is_overloaded_method define, overload])
+            |> Annotated.Callable.create ~parent ~name:(Reference.show name)
+            |> Node.create ~location
+            |> collect_callable ~name callables
 
         | _ ->
             callables

@@ -25,3 +25,5 @@ val parameter_annotations
   -> Type.t Int.Map.t
 
 val parent_definition: t -> resolution: Resolution.t -> Class.t option
+
+val decorate: t -> resolution: Resolution.t -> t

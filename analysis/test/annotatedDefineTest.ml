@@ -85,8 +85,51 @@ let test_parent_definition _ =
   assert_equal base_type (Type.Primitive "superfoo")
 
 
+let test_decorate _ =
+  let open Statement.Define in
+  let resolution = TypeCheck.resolution (Test.environment ()) () in
+  let assert_decorated source ~expected =
+    let take_define = function
+      | [{ Node.value = Statement.Define define; _ }] ->
+          define
+      | _ ->
+          failwith "Expected a define"
+    in
+    let define =
+      Test.parse source
+      |> Preprocessing.convert
+      |> Source.statements
+      |> take_define
+      |> Annotated.Define.create
+      |> Annotated.Define.decorate ~resolution
+      |> Annotated.Define.define
+    in
+    let expected = Test.parse_single_define expected in
+    assert_equal
+      ~printer:(List.to_string ~f:(Parameter.show Expression.pp))
+      ~cmp:(List.equal ~equal:(Parameter.equal Expression.equal))
+      define.signature.parameters
+      expected.signature.parameters;
+    assert_equal
+      ~printer:(fun x -> x >>| Expression.show |> Option.value ~default:"No anno")
+      ~cmp:(Option.equal Expression.equal)
+      define.signature.return_annotation
+      expected.signature.return_annotation
+  in
+  assert_decorated
+    {|
+      @click.command()
+      def foo(x: int) -> None:
+        ...
+    |}
+    ~expected:{|
+      def foo(*args: typing.Any, **kwargs: typing.Any) -> None:
+        ...
+    |}
+
 let () =
   "define">:::[
     "parent_definition">::test_parent_definition;
+    "decorate">::test_decorate;
   ]
   |> Test.run;

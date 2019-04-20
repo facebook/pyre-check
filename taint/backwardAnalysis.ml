@@ -631,9 +631,12 @@ let run ~environment ~define ~existing_model:_ =
   let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeCheck.resolution environment () in
-    Node.map
-      define
-      ~f:(fun define -> Annotated.Callable.apply_decorators ~define ~resolution)
+    let decorate define =
+      Annotated.Define.create define
+      |> Annotated.Define.decorate ~resolution
+      |> Annotated.Define.define
+    in
+    Node.map define ~f:decorate
   in
 
   let module AnalysisInstance =
