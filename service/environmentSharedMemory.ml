@@ -151,6 +151,12 @@ module ErrorsValue = struct
   let description = "All errors"
 end
 
+module UndecoratedFunctionValue = struct
+  type t = Type.t Type.Callable.overload
+  let prefix = Prefix.make ()
+  let description = "Undecorated functions"
+end
+
 (** Shared memory maps *)
 module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 
@@ -163,6 +169,11 @@ module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
 module Protocols = Memory.WithCache (Memory.SingletonKey) (ProtocolValue)
+
+module UndecoratedFunctions =
+  Memory.WithCache
+    (Ast.SharedMemory.ReferenceKey)
+    (UndecoratedFunctionValue)
 
 (** Keys *)
 module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)

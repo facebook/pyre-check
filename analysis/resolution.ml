@@ -52,6 +52,7 @@ type t = {
   aliases: Type.t -> Type.t option;
 
   global: Reference.t -> global option;
+  undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   module_definition: Reference.t -> Module.t option;
   class_definition: Type.primitive -> (Class.t Node.t) option;
   class_metadata: Type.primitive -> class_metadata option;
@@ -75,6 +76,7 @@ let create
     ~constructor
     ~implements
     ~generics
+    ~undecorated_signature
     ?parent
     () =
   {
@@ -90,6 +92,7 @@ let create
     constructor;
     implements;
     generics;
+    undecorated_signature;
     parent;
   }
 
@@ -270,6 +273,10 @@ let function_definitions resolution reference =
       in
       FunctionDefinitionsCache.set reference result;
       result
+
+
+let undecorated_signature { undecorated_signature; _ }  =
+  undecorated_signature
 
 
 let full_order ({ order; _ } as resolution) =

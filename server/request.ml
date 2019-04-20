@@ -518,13 +518,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
         in
-        (* Globals. *)
+        (* Globals and undecorated functions. *)
         let map =
           let keys =
             List.filter_map handles ~f:GlobalKeys.get
             |> List.concat
           in
           extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
+          |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
         in
         (* Dependents. *)
         let map =
@@ -643,6 +644,15 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                           >>| Annotation.sexp_of_t
                           >>| Sexp.to_string;
                       }
+                  | Ok (UndecoratedFunctions.Decoded (key, value)) ->
+                      Some {
+                        TypeQuery.serialized_key;
+                        kind = UndecoratedFunctionValue.description;
+                        actual_key = Reference.show key;
+                        actual_value =
+                          value
+                          >>| Type.Callable.show_overload Type.pp;
+                     }
                   | Ok (Dependents.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;

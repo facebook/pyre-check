@@ -17,6 +17,7 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
+  undecorated_functions: Type.t Type.Callable.overload Reference.Table.t;
 }
 
 (** The handler module is an interface for performing lookups on the type
@@ -29,6 +30,10 @@ module type Handler = sig
     :  handle: File.Handle.t
     -> reference: Reference.t
     -> global: Resolution.global
+    -> unit
+  val register_undecorated_function
+    :  reference: Reference.t
+    -> annotation: Type.t Type.Callable.overload
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Identifier.t -> unit
@@ -55,6 +60,7 @@ module type Handler = sig
   val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
+  val undecorated_signature: Reference.t -> Type.t Type.Callable.overload option
   val dependencies: Reference.t -> Reference.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
@@ -94,6 +100,8 @@ val register_aliases
   :  (module Handler)
   -> Source.t list
   -> unit
+
+val register_undecorated_functions: (module Handler) -> Resolution.t -> Source.t -> unit
 
 val register_values: (module Handler) -> Resolution.t -> Source.t -> unit
 

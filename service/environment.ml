@@ -65,6 +65,18 @@ let populate
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
   Handler.transaction ~f:populate ();
+  let register_undecorated_functions sources =
+    let register source =
+      Preprocessing.convert source
+      |> Environment.register_undecorated_functions (module Handler) resolution
+    in
+    List.iter sources ~f:register
+  in
+  Scheduler.iter
+    scheduler
+    ~configuration
+    ~f:register_undecorated_functions
+    ~inputs:sources;
   let register_values sources =
     EnvironmentSharedMemory.GlobalKeys.LocalChanges.push_stack ();
     Environment.register_values (module Handler) resolution sources;
@@ -387,6 +399,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
                statements)
       end
 
+  let register_undecorated_function ~reference ~annotation =
+    UndecoratedFunctions.add reference annotation
+
   let is_module qualifier =
     Ast.SharedMemory.Modules.exists ~qualifier
 
@@ -404,6 +419,9 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let dependencies =
     Dependents.get
+
+  let undecorated_signature =
+    UndecoratedFunctions.get
 
   module TypeOrderHandler = ServiceTypeOrder.Handler
   let register_class_metadata class_name =
@@ -499,8 +517,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
     List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
     |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
 
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
-    |> fun keys -> Globals.remove_batch (Globals.KeySet.of_list keys);
+    let global_keys =
+      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
+      |> Globals.KeySet.of_list
+    in
+    Globals.remove_batch global_keys;
+    UndecoratedFunctions.remove_batch global_keys;
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
     |> List.dedup_and_sort ~compare:Reference.compare
@@ -559,6 +581,7 @@ let populate_shared_memory
           };
           dependents;
         };
+        undecorated_functions;
       } =
     Log.info "Adding environment information to shared memory...";
     (* Writing through the caches because we are doing a
@@ -580,6 +603,7 @@ let populate_shared_memory
     add_table ClassMetadata.write_through class_metadata;
     add_table Aliases.add aliases;
     add_table Globals.write_through globals;
+    add_table UndecoratedFunctions.write_through undecorated_functions;
     add_table Dependents.write_through (Hashtbl.map ~f:Set.to_tree dependents);
     add_table FunctionKeys.write_through (Hashtbl.map ~f:Hash_set.to_list function_keys);
     add_table ClassKeys.write_through (Hashtbl.map ~f:Hash_set.to_list class_keys);

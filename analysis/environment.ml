@@ -20,6 +20,7 @@ type t = {
   aliases: Type.t Type.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
+  undecorated_functions: (Type.t Type.Callable.overload) Reference.Table.t;
 }
 
 module type Handler = sig
@@ -28,6 +29,10 @@ module type Handler = sig
     :  handle: File.Handle.t
     -> reference: Reference.t
     -> global: Resolution.global
+    -> unit
+  val register_undecorated_function
+    :  reference: Reference.t
+    -> annotation: Type.t Type.Callable.overload
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Identifier.t -> unit
@@ -54,6 +59,7 @@ module type Handler = sig
   val in_class_definition_keys: Identifier.t -> bool
   val aliases: Type.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
+  val undecorated_signature: Reference.t -> Type.t Type.Callable.overload option
   val dependencies: Reference.t -> Reference.Set.Tree.t option
 
   val local_mode: File.Handle.t -> Source.mode option
@@ -156,6 +162,7 @@ let handler
       aliases;
       globals;
       dependencies;
+      undecorated_functions;
     } =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
 
@@ -176,6 +183,10 @@ let handler
     let register_global ~handle ~reference ~global =
       DependencyHandler.add_global_key ~handle reference;
       Hashtbl.set ~key:reference ~data:global globals
+
+
+    let register_undecorated_function ~reference ~annotation =
+      Hashtbl.set undecorated_functions ~key:reference ~data:annotation
 
 
     let set_class_definition ~name ~definition =
@@ -240,8 +251,11 @@ let handler
       |> purge_table_given_keys class_definitions;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
       |> purge_table_given_keys aliases;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
-      |> purge_table_given_keys globals;
+      let global_keys =
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
+      in
+      purge_table_given_keys globals global_keys;
+      purge_table_given_keys undecorated_functions global_keys;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
@@ -326,6 +340,9 @@ let handler
 
     let globals =
       Hashtbl.find globals
+
+    let undecorated_signature =
+      Hashtbl.find undecorated_functions
 
     let dependencies =
       DependencyHandler.dependents
@@ -622,6 +639,36 @@ let register_aliases (module Handler: Handler) sources =
   List.concat_map ~f:collect_aliases sources
   |> resolve_aliases;
   Type.Cache.enable ()
+
+
+let register_undecorated_functions
+    (module Handler: Handler)
+    resolution
+    source =
+  let module Visit = Visit.MakeStatementVisitor(struct
+      type t = unit
+
+      let visit_children _ =
+        true
+
+      let statement _ _ statement =
+        match statement with
+        | {
+          Node.value =
+            Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define);
+          _;
+          } ->
+            if Define.is_overloaded_method define then
+              ()
+            else
+              Handler.register_undecorated_function
+                ~reference:name
+                ~annotation:(Annotated.Callable.create_overload ~resolution ~define)
+        | _ ->
+            ()
+    end)
+  in
+  Visit.visit () source
 
 
 let register_values
@@ -1103,6 +1150,7 @@ module Builder = struct
     let aliases = Type.Table.create () in
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
+    let undecorated_functions = Reference.Table.create () in
 
     (* Register dummy module for `builtins` and `future.builtins`. *)
     let builtins = Reference.create "builtins" in
@@ -1265,6 +1313,7 @@ module Builder = struct
       aliases;
       globals;
       dependencies;
+      undecorated_functions;
     }
 
 
@@ -1278,6 +1327,7 @@ module Builder = struct
         aliases;
         globals;
         dependencies;
+        undecorated_functions;
       } =
     {
       class_definitions = Hashtbl.copy class_definitions;
@@ -1288,6 +1338,7 @@ module Builder = struct
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;
       dependencies = Dependencies.copy dependencies;
+      undecorated_functions = Hashtbl.copy undecorated_functions;
     }
 
 

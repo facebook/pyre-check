@@ -36,6 +36,7 @@ val create
   -> constructor: (resolution: t -> Type.primitive -> Type.t option)
   -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
   -> generics: (resolution: t -> Class.t Node.t -> Type.t list)
+  -> undecorated_signature: (Reference.t -> Type.t Type.Callable.overload option)
   -> ?parent: Reference.t
   -> unit
   -> t
@@ -77,6 +78,7 @@ module FunctionDefinitionsCache : sig
 end
 
 val function_definitions: t -> Reference.t -> ((Define.t Node.t) list) option
+val undecorated_signature: t -> Reference.t -> Type.t Type.Callable.overload option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
 val is_compatible_with: t -> left: Type.t -> right: Type.t -> bool

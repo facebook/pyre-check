@@ -237,7 +237,8 @@ let test_populate context =
           {|
             class D: pass
             class C(D): pass
-            def foo(): pass
+            T = typing.TypeVar("T")
+            def foo(x: T) -> T: pass
             def bar(): pass
           |}
           |> Test.trim_extra_indentation)
@@ -252,7 +253,19 @@ let test_populate context =
     ~sources:[File.Handle.create "a.py"];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show) (GlobalKeys.find_unsafe (File.Handle.create "a.py"))
-    (List.map ~f:Reference.create ["a.C"; "a.D"; "a.foo"; "a.bar"]);
+    (List.map ~f:Reference.create ["a.T"; "a.C"; "a.D"; "a.foo"; "a.bar"]);
+  assert_equal
+    (UndecoratedFunctions.get (Reference.create "a.foo"))
+    (Some {
+        Type.Callable.annotation = Type.variable "a.T";
+        parameters = Type.Callable.Defined [
+            Type.Callable.Parameter.Named {
+              name = "$parameter$x";
+              annotation = Type.variable "a.T";
+              default = false;
+            };
+          ]
+      });
   let assert_successors name expected_successors =
     let { Resolution.successors; _ } = ClassMetadata.find_unsafe name in
     assert_equal

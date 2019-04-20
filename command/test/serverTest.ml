@@ -1418,6 +1418,19 @@ let test_decode_serialized_ocaml_values context =
       kind = "Order keys";
       actual_key = "0";
       actual_value = Some "(\"Undecodable(15)\"\"Undecodable(16)\")";
+    };
+  assert_decode
+    ~key:(UndecoratedFunctions.serialize_key (Reference.create "f"))
+    ~value:{ Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined }
+    ~response:{
+      TypeQuery.serialized_key =
+        UndecoratedFunctions.serialize_key (Reference.create "f");
+      kind = "Undecorated functions";
+      actual_key = "f";
+      actual_value =
+        Some
+          "{ Type.Record.Callable.annotation = int;\n  \
+           parameters = Type.Record.Callable.Undefined }";
     }
 
 

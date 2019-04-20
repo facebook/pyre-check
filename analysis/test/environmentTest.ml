@@ -924,7 +924,27 @@ let test_populate _ =
     ~environment
     "CallMe"
     ~superclasses:[Type.Primitive "typing.Callable"];
-  ()
+  ();
+
+  let (module Handler: Environment.Handler) =
+    populate {|
+      def foo(x: int) -> str: ...
+    |}
+  in
+  assert_equal
+    (Handler.undecorated_signature (Reference.create "foo"))
+    (Some {
+        Type.Callable.annotation = Type.string;
+        parameters =
+          Type.Callable.Defined
+            [
+              Type.Callable.Parameter.Named {
+                annotation = Type.integer;
+                name = "x";
+                default = false;
+              };
+            ];
+      })
 
 
 let test_infer_protocols_edges _ =

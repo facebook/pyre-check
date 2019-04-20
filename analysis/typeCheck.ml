@@ -4007,6 +4007,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~constructor:(fun ~resolution:_ _ -> None)
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ~generics:(fun ~resolution:_ _ -> [])
+        ~undecorated_signature:(fun _ -> None)
         ()
     in
     {
@@ -4070,6 +4071,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     ~class_metadata:Handler.class_metadata
     ~constructor
     ~implements
+    ~undecorated_signature:Handler.undecorated_signature
     ~generics
     ()
 
