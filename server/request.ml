@@ -652,7 +652,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_value =
                           value
                           >>| Type.Callable.show_overload Type.pp;
-                     }
+                      }
                   | Ok (Dependents.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
@@ -1322,6 +1322,10 @@ let process_type_check_files
     update_environment_with,
     check
   in
+  if not (List.is_empty removed_handles) then
+    List.map removed_handles ~f:File.Handle.show
+    |> String.concat ~sep:", "
+    |> Log.info "Removing type information for `%s`";
 
   let (module Handler: Environment.Handler) = environment in
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
@@ -1464,7 +1468,7 @@ let process_type_check_files
       ~handles:new_source_handles
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) new_source_handles;
+  List.iter ~f:(Hashtbl.remove errors) (removed_handles @ new_source_handles);
   (* Associate the new errors with new files *)
   List.iter
     new_errors
