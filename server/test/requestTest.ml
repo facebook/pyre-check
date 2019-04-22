@@ -493,6 +493,17 @@ let test_process_type_check_request context =
     ~expected_errors:["a.py", []]
     ~expected_deferred_state:["b.py"; "c.py"]
     ();
+  assert_response
+    ~sources:[]
+    ~check:[
+      "a.py", "def foo() -> int: return ''";
+      "a.pyi", "def foo() -> int: ...";
+    ]
+    (* No errors due to getting shadowed by the stub. *)
+    ~expected_errors:["a.py", []]
+    ~expected_deferred_state:[]
+    ();
+
 
   (* Check nonexistent handles. *)
   let configuration, state = initialize [] in

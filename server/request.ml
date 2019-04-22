@@ -1386,15 +1386,25 @@ let process_type_check_files
         ~files:stubs
     in
     let sources =
-      let keep file =
-        (handle file
-         >>= fun handle -> Some (Source.qualifier ~handle)
-         >>= Handler.module_definition
-         >>= Module.handle
-         >>| (fun existing_handle -> File.Handle.equal handle existing_handle))
-        |> Option.value ~default:true
+      let stub_qualifiers =
+        List.map stubs ~f:(fun handle -> Source.qualifier ~handle)
+        |> Reference.Hash_set.of_list
       in
-      List.filter ~f:keep sources
+      let keep file =
+        match handle file with
+        | None ->
+            false
+        | Some handle ->
+            let qualifier = Source.qualifier ~handle in
+            if Hash_set.mem stub_qualifiers qualifier then
+              false
+            else
+              Handler.module_definition qualifier
+              >>= Module.handle
+              >>| (fun existing_handle -> File.Handle.equal handle existing_handle)
+              |> Option.value ~default:true
+      in
+      List.filter sources ~f:keep
     in
     Log.info "Parsing %d updated sources..." (List.length sources);
     let {
