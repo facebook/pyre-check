@@ -32,4 +32,4 @@ val scope: t -> scope option
 val is_global: t -> bool
 val is_immutable: t -> bool
 
-val instantiate: t -> constraints: Type.t Type.Map.t -> t
+val instantiate: t -> constraints: (Type.t -> Type.t option) -> t

@@ -87,7 +87,7 @@ let is_immutable { mutability; _ } =
 
 
 let instantiate { annotation; mutability } ~constraints =
-  let instantiate = Type.instantiate ~constraints:(Map.find constraints) in
+  let instantiate = Type.instantiate ~constraints in
   let mutability =
     match mutability with
     | Mutable -> Mutable

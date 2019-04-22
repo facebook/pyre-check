@@ -34,7 +34,7 @@ val location: t -> Location.t
 val defined: t -> bool
 val class_attribute: t -> bool
 
-val instantiate: t -> constraints: Type.t Type.Map.t -> t
+val instantiate: t -> constraints: (Type.t -> Type.t option) -> t
 
 module Cache: sig
   type t = {

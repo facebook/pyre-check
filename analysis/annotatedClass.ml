@@ -737,7 +737,7 @@ let attributes
                       ~resolution
                       definition
                   in
-                  Attribute.instantiate ~constraints attribute)
+                  Attribute.instantiate ~constraints:(Type.Map.find constraints) attribute)
           | None ->
               Some attribute
         in
@@ -1089,7 +1089,10 @@ let overrides definition ~resolution ~name =
     if Attribute.defined potential_override then
       annotation definition
       |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
-      |> (fun constraints -> Attribute.instantiate ~constraints potential_override)
+      |> (fun constraints ->
+          Attribute.instantiate
+            ~constraints:(Type.Map.find constraints)
+            potential_override)
       |> Option.some
     else
       None
