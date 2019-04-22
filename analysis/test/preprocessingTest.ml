@@ -561,6 +561,28 @@ let test_qualify _ =
         qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
     |};
 
+  (* Qualify parameters *)
+  assert_qualify
+    {|
+      class A: pass
+      def foo(x: 'A'): ...
+    |}
+    {|
+      class qualifier.A(): pass
+      def qualifier.foo($parameter$x: 'qualifier.A'): ...
+    |};
+  assert_qualify
+    {|
+      from typing_extensions import Literal
+      class A: pass
+      def foo(x: Literal['A']): ...
+    |}
+    {|
+      from typing_extensions import Literal
+      class qualifier.A(): pass
+      def qualifier.foo($parameter$x: typing_extensions.Literal['A']): ...
+    |};
+
   (* Qualify functions. *)
   assert_qualify
     {|

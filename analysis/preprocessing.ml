@@ -184,12 +184,12 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
       let expression _ expression =
         let transform_arguments = function
           | [
-              ({
-                Call.Argument.name = None;
-                value = ({ Node.value = String _; _ } as value)
-              } as type_argument);
-              value_argument;
-            ] ->
+            ({
+              Call.Argument.name = None;
+              value = ({ Node.value = String _; _ } as value)
+            } as type_argument);
+            value_argument;
+          ] ->
               let annotation = transform_string_annotation_expression handle value in
               [{ type_argument with value = annotation }; value_argument]
           | arguments -> arguments
@@ -503,16 +503,16 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | {
-              Node.value =
-                Call {
-                  callee = {
-                    Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ });
-                    _;
-                  };
+            Node.value =
+              Call {
+                callee = {
+                  Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ });
                   _;
                 };
-              _;
-            } ->
+                _;
+              };
+            _;
+          } ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ ->
               qualify_expression ~qualify_strings:false value ~scope
@@ -948,9 +948,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     scope, qualify_expression ~qualify_strings:false ~scope target
 
   and qualify_reference
-    ?(suppress_synthetics = false)
-    ~scope:{ aliases; use_forward_references; _ }
-    reference =
+      ?(suppress_synthetics = false)
+      ~scope:{ aliases; use_forward_references; _ }
+      reference =
     match Reference.as_list reference with
     | [] ->
         Reference.empty
@@ -967,9 +967,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             reference
 
   and qualify_name
-    ?(suppress_synthetics = false)
-    ~qualify_strings
-    ~scope:({ aliases; use_forward_references; _ } as scope) = function
+      ?(suppress_synthetics = false)
+      ~qualify_strings
+      ~scope:({ aliases; use_forward_references; _ } as scope) = function
     | Name (Name.Identifier identifier) ->
         begin
           match Map.find aliases (Reference.create identifier) with
@@ -978,9 +978,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               if Reference.show name |> String.is_prefix ~prefix:"$" &&
                  suppress_synthetics then
                 Name (
-                   Name.Attribute {
-                     base = Reference.expression qualifier;
-                     attribute = identifier
+                  Name.Attribute {
+                    base = Reference.expression qualifier;
+                    attribute = identifier
                   })
               else
                 Node.value (Reference.expression name)
@@ -1052,6 +1052,25 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   }
                 ) ->
                   true
+              | Name (
+                  Name.Attribute {
+                    base =
+                      {
+                        Node.value = Name (
+                            Name.Attribute
+                              {
+                                base = {
+                                  Node.value = Name (Name.Identifier "typing_extensions");
+                                  _ };
+                                attribute = "Literal";
+                              }
+                          );
+                        _
+                      };
+                    attribute = "__getitem__";
+                  }
+                ) ->
+                  false
               | _ ->
                   qualify_strings
             in
@@ -1568,14 +1587,14 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
       Assign {
         target = node (Name (Name.Identifier "TypedDict"));
         annotation = Some (
-          node (
-            Name (
-              Name.Attribute {
-                base = { Node.value = Name (Name.Identifier "typing"); location };
-                attribute = "_SpecialForm"
-              })
-          )
-        );
+            node (
+              Name (
+                Name.Attribute {
+                  base = { Node.value = Name (Name.Identifier "typing"); location };
+                  attribute = "_SpecialForm"
+                })
+            )
+          );
         value = node Ellipsis;
         parent = None;
       } |> node
@@ -1616,21 +1635,21 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             callee = {
               Node.location;
               value = Name (
-                Name.Attribute {
-                  base = {
-                    Node.location;
-                    value = Name (
-                      Name.Attribute {
-                        base = {
-                          Node.location;
-                          value = Name (Name.Identifier "mypy_extensions");
-                        };
-                        attribute = "TypedDict";
-                      }
-                    );
-                  };
-                  attribute = "__getitem__";
-                });
+                  Name.Attribute {
+                    base = {
+                      Node.location;
+                      value = Name (
+                          Name.Attribute {
+                            base = {
+                              Node.location;
+                              value = Name (Name.Identifier "mypy_extensions");
+                            };
+                            attribute = "TypedDict";
+                          }
+                        );
+                    };
+                    attribute = "__getitem__";
+                  });
             };
             arguments;
           }
@@ -1641,21 +1660,21 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
             callee = {
               Node.location;
               value = Name (
-                Name.Attribute {
-                  base = {
-                    Node.location;
-                    value = Name (
-                      Name.Attribute {
-                        base = {
-                          Node.location;
-                          value = Name (Name.Identifier "typing");
-                        };
-                        attribute = "Type";
-                      }
-                    );
-                  };
-                  attribute = "__getitem__";
-                });
+                  Name.Attribute {
+                    base = {
+                      Node.location;
+                      value = Name (
+                          Name.Attribute {
+                            base = {
+                              Node.location;
+                              value = Name (Name.Identifier "typing");
+                            };
+                            attribute = "Type";
+                          }
+                        );
+                    };
+                    attribute = "__getitem__";
+                  });
             };
             arguments = [{ Call.Argument.name = None; value = name }];
           }
@@ -1750,15 +1769,15 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
           let fields =
             let extract = function
               | {
-                  Node.value =
-                    Assign {
-                      target = { Node.value = Name name; _ };
-                      annotation = Some annotation;
-                      value = { Node.value = Ellipsis; _ };
-                      parent = _;
-                    };
-                  _;
-                } ->
+                Node.value =
+                  Assign {
+                    target = { Node.value = Name name; _ };
+                    annotation = Some annotation;
+                    value = { Node.value = Ellipsis; _ };
+                    parent = _;
+                  };
+                _;
+              } ->
                   Reference.drop_prefix ~prefix:class_name (Reference.from_name name)
                   |> Reference.single
                   >>| (fun name -> string_literal name, annotation)
