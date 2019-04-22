@@ -1295,7 +1295,49 @@ let test_fallback_attribute _ =
       class Foo:
         def Foo.__getattr__(self, attribute) -> int: ...
     |}
-    (Some Type.integer)
+    (Some Type.integer);
+  assert_fallback_attribute
+    ~name:"foo"
+    {|
+      from typing import overload
+      import typing_extensions
+      class Foo:
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        @overload
+        def Foo.__getattr__(self, attribute: str) -> None: ...
+    |}
+    (Some Type.integer);
+  assert_fallback_attribute
+    ~name:"bar"
+    {|
+      from typing import overload
+      import typing_extensions
+      class Foo:
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        @overload
+        def Foo.__getattr__(self, attribute: str) -> None: ...
+    |}
+    (Some Type.string);
+  assert_fallback_attribute
+    ~name:"baz"
+    {|
+      from typing import overload
+      import typing_extensions
+      class Foo:
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        @overload
+        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        @overload
+        def Foo.__getattr__(self, attribute: str) -> None: ...
+    |}
+    (Some Type.none)
 
 
 let test_constraints _ =

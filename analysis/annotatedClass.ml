@@ -880,7 +880,8 @@ let attribute
         }
 
 
-let rec fallback_attribute ~resolution ~name definition =
+let rec fallback_attribute ~resolution ~name
+    ({ Node.value = { Class.name = class_name; _ }; _ } as definition) =
   let compound_backup =
     let name =
       match name with
@@ -931,9 +932,31 @@ let rec fallback_attribute ~resolution ~name definition =
       in
       begin
         match annotation with
-        | Type.Callable { Type.Callable.implementation; _ } ->
-            let return_annotation = Type.Callable.Overload.return_annotation implementation in
+        | Type.Callable ({ implementation; _ } as callable) ->
             let location = Attribute.location fallback in
+            let arguments =
+              let self_argument =
+                {
+                  Argument.name = None;
+                  value = Reference.expression ~convert:true ~location class_name
+                }
+              in
+              let name_argument =
+                {
+                  Argument.name = None;
+                  value = { Node.location; value = Expression.String (StringLiteral.create name) }
+                }
+              in
+              [self_argument; name_argument]
+            in
+            let implementation =
+              match AnnotatedSignature.select ~resolution ~arguments ~callable with
+              | AnnotatedSignature.Found { Type.Callable.implementation; _ } ->
+                  implementation
+              | AnnotatedSignature.NotFound _ ->
+                  implementation
+            in
+            let return_annotation = Type.Callable.Overload.return_annotation implementation in
             Some
               (create_attribute
                  ~resolution
