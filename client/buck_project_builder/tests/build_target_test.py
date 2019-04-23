@@ -203,6 +203,26 @@ class BuildTargetTest(unittest.TestCase):
                 "/out/x/y/z/src/a.py", "/ROOT/project/foo/bar/a.py"
             )
 
+        # Version subdirectory should be respected.
+        target = PythonLibrary(
+            "/ROOT",
+            "project",
+            base(
+                "library",
+                sources=Sources(files={"foo/bar/a.py": "a.py", "foo/bar/b.py": "b.py"}),
+                version_subdirectory="subdir",
+            ),
+        )
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            target.build("/out")
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/out/project/a.py", "/ROOT/project/subdir/foo/bar/a.py"),
+                    call("/out/project/b.py", "/ROOT/project/subdir/foo/bar/b.py"),
+                ],
+                any_order=True,
+            )
+
     @patch.object(filesystem, "get_filesystem")
     def test_build_python_unittest(self, get_filesystem):
         filesystem_list = get_filesystem.return_value.list

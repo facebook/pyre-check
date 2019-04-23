@@ -35,6 +35,7 @@ class BuildTarget:
             ("sources", filesystem.Sources),
             ("base_module", Optional[str]),
             ("external_dependencies", List[Tuple[str, str]]),
+            ("version_subdirectory", Optional[str]),
         ],
     )
 
@@ -53,6 +54,9 @@ class BuildTarget:
         self.external_dependencies = (
             base_information.external_dependencies
         )  # type: List[Tuple[str, str]]
+        self.version_subdirectory = (
+            base_information.version_subdirectory
+        )  # type: Optional[str]
 
     def __str__(self) -> str:
         return "{}(name={})".format(self.rule_name(), self.name)
@@ -79,6 +83,9 @@ class BuildTarget:
 
     def build(self, output_directory: str) -> None:
         source_directory = os.path.join(self.buck_root, self.build_file_directory)
+        if self.version_subdirectory:
+            source_directory = os.path.join(source_directory, self.version_subdirectory)
+
         if self.base_module is not None:
             base_path = os.path.join(*self.base_module.split("."))
         else:

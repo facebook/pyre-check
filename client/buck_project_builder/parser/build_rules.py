@@ -38,6 +38,7 @@ def parse_base_information(
         sources=sources,
         base_module=base_module,
         external_dependencies=external_dependencies,
+        version_subdirectory=None,
     )
 
 
@@ -94,6 +95,7 @@ def parse_thrift_library(
         sources=Sources(),
         base_module=base_module,
         external_dependencies=external_dependencies,
+        version_subdirectory=None,
     )
 
     thrift_sources_dict = keywords["thrift_srcs"]
@@ -128,6 +130,7 @@ def parse_python_wheel(
         sources=Sources(),
         base_module=None,
         external_dependencies=[],
+        version_subdirectory=None,
     )
 
     python_wheel_default_calls = []
