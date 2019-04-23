@@ -56,6 +56,10 @@ cpp_python_extension(
     name = "cpp_python_target",
     deps = [":other_target"],
 )
+
+cpp_library_external(
+    name = "cpp_library_target"
+)
 """
 
 TARGETS_FILE_ERROR = """
@@ -120,7 +124,7 @@ class ParserTest(unittest.TestCase):
             mocked_open.reset_mock()
 
             self.assertEqual(result.path, "my/module")
-            self.assertEqual(len(result.targets), 5)
+            self.assertEqual(len(result.targets), 6)
 
             target = result.targets["binary_target"]
             self.assertIsInstance(target, PythonBinary)
@@ -154,6 +158,11 @@ class ParserTest(unittest.TestCase):
             target = result.targets["cpp_python_target"]
             self.assertIsInstance(target, NonPythonTarget)
             self.assertEqual(target.target, "//my/module:cpp_python_target")
+            self.assertEqual(target.dependencies, [])
+
+            target = result.targets["cpp_library_target"]
+            self.assertIsInstance(target, NonPythonTarget)
+            self.assertEqual(target.target, "//my/module:cpp_library_target")
             self.assertEqual(target.dependencies, [])
 
             # The parser should cache files it has already parsed.

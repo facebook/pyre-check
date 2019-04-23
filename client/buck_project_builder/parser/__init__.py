@@ -21,6 +21,9 @@ SUPPORTED_RULES = {
         "cpp_python_extension"
     ),
     "bundled_util": build_rules.non_python_target_parser("bundled_util"),
+    "cpp_library_external": build_rules.non_python_target_parser(
+        "cpp_library_external"
+    ),
 }  # type: Mapping[str, Callable[[ast.Call, str, str], BuildTarget]]
 
 BuildFile = NamedTuple(
