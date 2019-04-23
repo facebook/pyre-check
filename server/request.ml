@@ -1343,8 +1343,10 @@ let process_type_check_files
   in
 
   (* Repopulate the environment. *)
+  Log.info "Repopulating the environment.";
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
+    let timer = Timer.start () in
     let handle file =
       try
         Some (File.handle ~configuration file)
@@ -1363,6 +1365,13 @@ let process_type_check_files
     Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
     List.iter update_environment_with ~f:(LookupCache.evict ~state ~configuration);
+    Statistics.performance
+      ~name:"purged old environment"
+      ~timer
+      ~integers:[
+        "number of files", (List.length (handles @ removed_handles))
+      ]
+      ();
 
     let stubs, sources =
       let is_stub file =
