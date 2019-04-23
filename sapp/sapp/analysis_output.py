@@ -20,6 +20,7 @@ class Metadata(NamedTuple):
 
     analysis_tool_version: Optional[str] = None
     commit_hash: Optional[str] = None
+    job_instance: Optional[int] = None
 
 
 class AnalysisOutputError(Exception):
@@ -87,6 +88,7 @@ class AnalysisOutput(object):
                 analysis_tool_version=metadata["version"],
                 commit_hash=metadata.get("commit"),
                 root=metadata["root"],
+                job_instance=metadata.get("job_instance"),
             ),
         )
 
