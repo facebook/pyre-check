@@ -1288,8 +1288,8 @@ let process_type_check_files
   let removed_handles, update_environment_with, check =
     let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with
-      | exception ((File.NonexistentHandle _) as uncaught_exception) ->
-          Statistics.log_exception uncaught_exception ~fatal:false ~origin:"server";
+      | exception (File.NonexistentHandle _) ->
+          Log.warning "`%s` not found in search path." (Path.absolute (File.path file));
           updated, removed
       | handle when (not (Path.file_exists (File.path file))) ->
           updated, handle :: removed
