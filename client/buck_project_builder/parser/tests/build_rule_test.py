@@ -82,6 +82,20 @@ python_library(
         "folder/a.py": "a.py",
         "folder/b.py": "b.py",
     },
+    version_subdirs = [
+        (
+            {"//third-party-buck/platform007/build/python:__project__": "3.6"},
+            "subdir_for_36",
+        ),
+        (
+            {"//third-party-buck/platform007/build/python:__project__": "3.7"},
+            "subdir_for_37",
+        ),
+        (
+            {"//third-party-buck/platform007/build/python:__project__": "2.7"},
+            "subdir_for_27",
+        ),
+    ],
 )
 """
 
@@ -238,6 +252,52 @@ class BuildRuleTest(unittest.TestCase):
             [("foo", "foo-py"), ("bar", "bar-lib")],
         )
 
+    @patch.object(platform, "get_platform", return_value="platform007")
+    def test_get_version_subdirectory(self, get_platform):
+        tree = ast.parse(
+            """[
+            (
+                {
+                    "//third-party-buck/platform007/build/python:__project__": "3.6",
+                    "//third-party-buck/platform007/build/other:__project__": "3.4",
+                },
+                "subdir_for_36"
+            ),
+            (
+                {
+                    "//third-party-buck/platform007/build/python:__project__": "3.7",
+                    "//third-party-buck/platform007/build/other:__project__": "3.8",
+                },
+                "subdir_for_37"
+            ),
+            (
+                {
+                    "//third-party-buck/platform007/build/python:__project__": "2.7",
+                    "//third-party-buck/platform007/build/other:__project__": "3.1",
+                },
+                "subdir_for_27"
+            )
+        ]"""
+        )
+        expression = _get_expression(tree)
+        with patch.object(platform, "get_python_version", return_value=(3, 6)):
+            self.assertEqual(
+                build_rules._get_version_subdirectory(expression), "subdir_for_36"
+            )
+
+        with patch.object(platform, "get_python_version", return_value=(3, 7)):
+            self.assertEqual(
+                build_rules._get_version_subdirectory(expression), "subdir_for_37"
+            )
+
+        with patch.object(platform, "get_python_version", return_value=(2, 7)):
+            self.assertEqual(
+                build_rules._get_version_subdirectory(expression), "subdir_for_27"
+            )
+
+        with patch.object(platform, "get_python_version", return_value=(3, 8)):
+            self.assertIsNone(build_rules._get_version_subdirectory(expression))
+
     def test_python_binary(self):
         tree = ast.parse(PYTHON_BINARY_TARGET_1)
         call = _get_call(tree)
@@ -282,6 +342,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertListEqual(
             target.external_dependencies, [("foo", "foo-py"), ("bar", "bar-py")]
         )
+        self.assertIsNone(target.version_subdirectory)
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_2)
         call = _get_call(tree)
@@ -295,6 +356,7 @@ class BuildRuleTest(unittest.TestCase):
         )
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
+        self.assertIsNone(target.version_subdirectory)
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_3)
         call = _get_call(tree)
@@ -309,10 +371,12 @@ class BuildRuleTest(unittest.TestCase):
         )
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
+        self.assertIsNone(target.version_subdirectory)
 
         tree = ast.parse(PYTHON_LIBRARY_TARGET_4)
         call = _get_call(tree)
-        target = build_rules.parse_python_library(call, "/ROOT", "some/project")
+        with patch.object(platform, "get_python_version", return_value=(3, 6)):
+            target = build_rules.parse_python_library(call, "/ROOT", "some/project")
         self.assertEqual(target.target, "//some/project:library_target_4")
         self.assertEqual(target.name, "library_target_4")
         self.assertIsNone(target.base_module)
@@ -321,6 +385,7 @@ class BuildRuleTest(unittest.TestCase):
         )
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
+        self.assertEqual(target.version_subdirectory, "subdir_for_36")
 
     def test_python_unittest(self):
         tree = ast.parse(PYTHON_UNIT_TEST_TARGET)

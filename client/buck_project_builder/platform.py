@@ -17,3 +17,13 @@ def get_platform() -> str:
 def get_python_version() -> Tuple[int, int]:
     # TODO(T38892701): Infer the Python version more intelligently.
     return (3, 0)
+
+
+def parse_python_version(version_string: str) -> Tuple[int, int]:
+    if "." in version_string:
+        split = version_string.split(".")
+        # Sometimes the version string contains a string prefix, e.g. "cinder.3.6".
+        major, minor = split[-2:]
+    else:
+        major, minor = version_string, 0
+    return (int(major), int(minor))

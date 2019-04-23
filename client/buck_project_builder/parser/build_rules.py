@@ -8,6 +8,7 @@ import ast
 import os
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
+from .. import platform
 from ..build_target import (
     BuildTarget,
     NonPythonTarget,
@@ -31,6 +32,8 @@ def parse_base_information(
         _get_string(keywords["base_module"]) if "base_module" in keywords else None
     )
     external_dependencies = _get_external_dependencies(keywords.get("external_deps"))
+    version_subdirectory = _get_version_subdirectory(keywords.get("version_subdirs"))
+
     return BuildTarget.BaseInformation(
         keywords=keywords,
         name=name,
@@ -38,7 +41,7 @@ def parse_base_information(
         sources=sources,
         base_module=base_module,
         external_dependencies=external_dependencies,
-        version_subdirectory=None,
+        version_subdirectory=version_subdirectory,
     )
 
 
@@ -339,3 +342,30 @@ def _get_sources(sources: Optional[ast.AST]) -> Sources:
         )
 
     return _get_sources(sources)
+
+
+def _get_version_subdirectory(
+    version_subdirectories: Optional[ast.AST]
+) -> Optional[str]:
+    if not version_subdirectories:
+        return None
+
+    desired_python_version = platform.get_python_version()
+
+    assert isinstance(version_subdirectories, ast.List)
+    for element in version_subdirectories.elts:
+        # Each entry in the list is a 2-tuple.
+        assert isinstance(element, ast.Tuple) and len(element.elts) == 2
+        # The first element is a dictionary with a key mapping to a python
+        # version string; the second element is a subdirectory string.
+        dictionary = _get_string_mapping(element.elts[0])
+        key = "//third-party-buck/{}/build/python:__project__".format(
+            platform.get_platform()
+        )
+        python_version_string = dictionary[key]
+        python_version = platform.parse_python_version(python_version_string)
+        if (
+            python_version[0] == desired_python_version[0]  # Major versions match.
+            and python_version >= desired_python_version
+        ):
+            return _get_string(element.elts[1])
