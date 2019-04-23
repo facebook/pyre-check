@@ -20,7 +20,7 @@ from typing import (  # noqa
     Type,
 )
 
-from . import filesystem
+from . import filesystem, platform
 from ..filesystem import add_symbolic_link, find_python_paths
 
 
@@ -198,12 +198,21 @@ class PythonWheel(BuildTarget):
             buck_root, build_file_directory, base_information
         )
 
-        platform_information = PythonWheel._infer_platform_information(
-            platforms_to_wheel_version, wheel_versions_mapping
+        build_platform = platform.get_platform()
+        python_major_version, _ = platform.get_python_version()
+
+        platform_information = PythonWheel._get_platform_information(
+            platforms_to_wheel_version,
+            wheel_versions_mapping,
+            build_platform,
+            python_major_version,
         )
         if not platform_information:
             raise ValueError(
-                "No suitable wheel could be found for {}".format(self.target)
+                "No suitable wheel could be found "
+                "for {} on Python {}, platform {}.".format(
+                    self.target, python_major_version, build_platform
+                )
             )
         self._platform = platform_information.platform  # type: str
         self._version = platform_information.version  # type: str
@@ -216,29 +225,25 @@ class PythonWheel(BuildTarget):
         return "python_wheel"
 
     @staticmethod
-    def _infer_platform_information(
+    def _get_platform_information(
         platforms_to_wheel_version: Mapping[str, str],
         wheel_versions_mapping: Mapping[str, VersionedWheel],
+        build_platform: str,
+        python_major_version: int,
     ) -> Optional[PlatformInformation]:
-        # TODO(T38892701): This inference could be done more intelligently:
-        #   - handling platform overrides (these are directory-specific)
-        #   - handling different python platforms
-        platforms = ["platform007", "gcc-5-glibc-2.23"]
-        python_version = 3
-        for platform in platforms:
-            try:
-                python_platform = "py{}-{}".format(python_version, platform)
-                wheel_version = platforms_to_wheel_version[python_platform]
-                versioned_wheel = wheel_versions_mapping[wheel_version]
-                return PythonWheel.PlatformInformation(
-                    platform=python_platform,
-                    version=wheel_version,
-                    url=versioned_wheel.url_mapping[python_platform],
-                    dependencies=versioned_wheel.dependencies,
-                    external_dependencies=versioned_wheel.external_dependencies,
-                )
-            except KeyError:
-                continue
+        try:
+            python_platform = "py{}-{}".format(python_major_version, build_platform)
+            wheel_version = platforms_to_wheel_version[python_platform]
+            versioned_wheel = wheel_versions_mapping[wheel_version]
+            return PythonWheel.PlatformInformation(
+                platform=python_platform,
+                version=wheel_version,
+                url=versioned_wheel.url_mapping[python_platform],
+                dependencies=versioned_wheel.dependencies,
+                external_dependencies=versioned_wheel.external_dependencies,
+            )
+        except KeyError:
+            pass
 
     def build(self, output_directory: str) -> None:
         filesystem.download_and_extract_zip_file(self._url, output_directory)

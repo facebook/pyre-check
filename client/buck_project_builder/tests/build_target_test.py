@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import call, patch
 
-from .. import build_target, filesystem
+from .. import build_target, filesystem, platform
 from ..build_target import (
     PythonBinary,
     PythonLibrary,
@@ -353,6 +353,7 @@ class BuildTargetTest(unittest.TestCase):
                 url_mapping={
                     "py3-platform007": "py3-platform007_2.0_url",
                     "py3-gcc-5-glibc-2.23": "py3-gcc-5-glibc-2.23_2.0_url",
+                    "py2-platform007": "py2-platform007_2.0_url",
                 },
                 dependencies=[],
                 external_dependencies=[],
@@ -389,19 +390,38 @@ class BuildTargetTest(unittest.TestCase):
                 "py3-platform007_2.0_url", "/out"
             )
 
-        target = PythonWheel(
-            "/ROOT",
-            "project",
-            base("wheel"),
-            {"py3-gcc-5-glibc-2.23": "2.0"},
-            version_mapping,
-        )
         with patch.object(
+            platform, "get_platform", return_value="gcc-5-glibc-2.23"
+        ), patch.object(
             filesystem, "download_and_extract_zip_file"
         ) as download_and_extract_zip_file:
+            target = PythonWheel(
+                "/ROOT",
+                "project",
+                base("wheel"),
+                {"py3-gcc-5-glibc-2.23": "2.0"},
+                version_mapping,
+            )
             target.build("/out")
             download_and_extract_zip_file.assert_called_with(
                 "py3-gcc-5-glibc-2.23_2.0_url", "/out"
+            )
+
+        with patch.object(
+            platform, "get_python_version", return_value=(2, 7)
+        ), patch.object(
+            filesystem, "download_and_extract_zip_file"
+        ) as download_and_extract_zip_file:
+            target = PythonWheel(
+                "/ROOT",
+                "project",
+                base("wheel"),
+                {"py2-platform007": "2.0"},
+                version_mapping,
+            )
+            target.build("/out")
+            download_and_extract_zip_file.assert_called_with(
+                "py2-platform007_2.0_url", "/out"
             )
 
         # Raise on construction if no platform could be found.

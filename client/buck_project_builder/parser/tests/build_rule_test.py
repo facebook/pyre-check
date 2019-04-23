@@ -6,8 +6,10 @@
 import ast
 import unittest
 from typing import List, Mapping, Optional
+from unittest.mock import patch
 
 from .. import build_rules
+from ... import platform
 from ...filesystem import Glob, Sources
 from ...tests.test_common import identity_mapping
 
@@ -385,9 +387,10 @@ class BuildRuleTest(unittest.TestCase):
 
         tree = ast.parse(PYTHON_WHEEL_TARGET_2)
         assert isinstance(tree, ast.Module)
-        target = build_rules.parse_python_wheel(
-            tree.body, "/ROOT", "some/project/wheel"
-        )
+        with patch.object(platform, "get_platform", return_value="gcc-5-glibc-2.23"):
+            target = build_rules.parse_python_wheel(
+                tree.body, "/ROOT", "some/project/wheel"
+            )
         self.assertEqual(target.target, "//some/project/wheel:wheel")
         self.assertEqual(target.name, "wheel")
         self.assertListEqual(target.dependencies, [])

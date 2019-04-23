@@ -353,7 +353,7 @@ class BuilderTest(unittest.TestCase):
         build_file_2 = MagicMock()
         with patch.object(
             PythonWheel,
-            "_infer_platform_information",
+            "_get_platform_information",
             return_value=PythonWheel.PlatformInformation(
                 platform="platform",
                 version="version",
