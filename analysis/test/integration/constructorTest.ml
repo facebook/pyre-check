@@ -449,6 +449,44 @@ let test_check_constructors _ =
       "but got `int`.";
     ];
 
+  (* Check abstract methods *)
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class Foo(metaclass=ABCMeta):
+        @abstractmethod
+        def bar(self) -> None:
+          pass
+      def foo() -> None:
+        Foo()
+      |}
+    [ "Undefined attribute [16]: Module `abc` has no attribute `abstractmethod`.";
+      "Uninitializable class [38]: Abstract method(s) `bar` in class `Foo` are never initialized."
+    ];
+
+  assert_type_errors
+    {|
+      from abc import abstractmethod
+      class Foo():
+        @abstractmethod
+        def bar(self) -> None:
+          pass
+      def foo() -> None:
+        Foo()
+      |}
+    [ "Undefined attribute [16]: Module `abc` has no attribute `abstractmethod`.";];
+
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class Foo(metaclass=ABCMeta):
+        def bar(self) -> None:
+          pass
+      def foo() -> None:
+        Foo()
+      |}
+    [];
+
   (* Explicit call. *)
   assert_type_errors
     {|

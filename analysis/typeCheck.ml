@@ -851,6 +851,32 @@ module State = struct
               | Annotated.Signature.NotFound _, Some _ ->
                   backup ()
                   |> Option.value ~default:signature
+              | Annotated.Signature.Found
+                  ({ kind = Type.Callable.Named (access); implementation; _ } as callable), _
+                when String.equal "__init__" (Reference.last access) ->
+                  let open Annotated in
+                  let definition =
+                    Resolution.class_definition
+                      resolution
+                      implementation.annotation
+                    >>| Class.create
+                  in
+                  let abstract_methods =
+                    definition
+                    >>| Class.abstract_methods ~resolution
+                    |> Option.value ~default:[]
+                  in
+                  if List.is_empty abstract_methods then
+                    signature
+                  else
+                    Signature.NotFound {
+                      callable;
+                      reason = Some (UninitializableClass {
+                          method_names = List.map abstract_methods ~f:Class.Method.name;
+                          class_name =
+                            definition >>| Class.name |> Option.value ~default:(Reference.create "")
+                        })
+                    }
               | _ ->
                   signature
             in
@@ -1694,14 +1720,14 @@ module State = struct
                          Type.Callable.Parameter.name;
                          _;
                        } as parameter) ->
-                     if String.is_prefix ~prefix:"$" (Identifier.sanitized name) then
-                       match List.nth overriding_parameters index with
-                       | Some (name, _) ->
-                           Type.Callable.Parameter.Named { parameter with name }
-                       | _ ->
+                         if String.is_prefix ~prefix:"$" (Identifier.sanitized name) then
+                           match List.nth overriding_parameters index with
+                           | Some (name, _) ->
+                               Type.Callable.Parameter.Named { parameter with name }
+                           | _ ->
+                               Type.Callable.Parameter.Named parameter
+                         else
                            Type.Callable.Parameter.Named parameter
-                     else
-                       Type.Callable.Parameter.Named parameter
                      | parameter ->
                          parameter
                    in
@@ -2089,6 +2115,11 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.UnexpectedKeyword { callee; name })
+                      ~define
+                | UninitializableClass { class_name; method_names } ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.UninitializableClass { class_name; method_names })
                       ~define
               in
               Some error

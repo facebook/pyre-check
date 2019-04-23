@@ -142,6 +142,7 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
+  | UninitializableClass of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
@@ -197,6 +198,7 @@ let code = function
   | InvalidTypeVariance _ -> 35
   | InvalidMethodSignature _ -> 36
   | IncompleteType _ -> 37
+  | UninitializableClass _ -> 38
 
 
   (* Additional errors. *)
@@ -244,6 +246,7 @@ let name = function
   | UndefinedType _ -> "Undefined type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
+  | UninitializableClass _ -> "Uninitializable class"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
 
@@ -1205,6 +1208,13 @@ let messages ~concise ~signature location kind =
            start_line
            pp_type actual)
       ]
+  | UninitializableClass { class_name; method_names } ->
+      [
+        Format.asprintf
+          "Abstract method(s) `%a` in class `%a` are never initialized."
+          pp_identifier (String.concat ~sep:", " method_names)
+          pp_reference class_name;
+      ]
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
@@ -1429,6 +1439,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
+  | UninitializableClass _
   | UnusedIgnore _ ->
       false
 
@@ -1510,6 +1521,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
+  | UninitializableClass _
   | Unpack _
   | UnusedIgnore _ ->
       false
@@ -1675,6 +1687,8 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
+    | UninitializableClass left, UninitializableClass right ->
+        Reference.equal_sanitized left.class_name right.class_name
     | _, Top -> true
     | AnalysisFailure _, _
     | Deobfuscation _, _
@@ -1715,6 +1729,7 @@ let less_or_equal ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
+    | UninitializableClass _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
         false
@@ -2004,6 +2019,7 @@ let join ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
+    | UninitializableClass _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
         Log.debug
@@ -2465,6 +2481,10 @@ let dequalify
         UninitializedAttribute {
           inconsistent_usage with
           mismatch = dequalify_mismatch mismatch;
+        }
+    | UninitializableClass { class_name; method_names } ->
+        UninitializableClass {
+          class_name; method_names;
         }
     | UnawaitedAwaitable left ->
         UnawaitedAwaitable left

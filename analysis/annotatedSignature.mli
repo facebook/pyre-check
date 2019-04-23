@@ -30,6 +30,7 @@ type reason =
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
+  | UninitializableClass of { class_name: Reference.t; method_names: Identifier.t list }
 [@@deriving eq, show, compare]
 
 type closest = {

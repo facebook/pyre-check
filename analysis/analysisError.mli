@@ -129,6 +129,7 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
+  | UninitializableClass of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 

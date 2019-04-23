@@ -419,6 +419,50 @@ let test_methods _ =
     ["foo"; "bar"; "baz"]
 
 
+let test_abstract_methods _ =
+  let assert_methods source methods =
+    let resolution =
+      populate source
+      |> fun environment -> TypeCheck.resolution environment ()
+    in
+    match parse_last_statement source with
+    | { Node.value = Statement.Class definition; _ } ->
+        let actuals =
+          let method_name { Define.signature = { name; _ }; _ } = Reference.last name in
+          Node.create_with_default_location definition
+          |> Class.create
+          |> Class.abstract_methods ~resolution
+          |> List.map ~f:(fun definition -> Method.define definition |> method_name)
+        in
+        assert_equal methods actuals
+    | _ ->
+        assert_unreached ()
+  in
+  assert_methods "class A: pass" [];
+  assert_methods
+    {|
+      from abc import ABCMeta, abstractmethod
+      class A(metaclass=ABCMeta):
+        @abstractmethod
+        def A.foo(): pass
+        def A.bar(): pass
+        1 + 1
+        def A.baz(): ...
+    |}
+    ["foo"];
+  assert_methods
+    {|
+      from abc import abstractmethod
+      class A():
+        @abstractmethod
+        def A.foo(): pass
+        def A.bar(): pass
+        1 + 1
+        def A.baz(): ...
+    |}
+    []
+
+
 let test_has_method _ =
   let get_actual source target_method =
     let resolution =
@@ -1854,6 +1898,7 @@ let () =
     "is_protocol">::test_is_protocol;
     "metaclasses">::test_metaclasses;
     "methods">::test_methods;
+    "abstract_methods">::test_abstract_methods;
     "overrides">::test_overrides;
     "superclasses">::test_superclasses;
   ]
