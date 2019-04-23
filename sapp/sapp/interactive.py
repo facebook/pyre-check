@@ -81,6 +81,8 @@ class TraceFrameQueryResult(NamedTuple):
     caller_port: str
     callee: str
     callee_port: str
+    caller_id: Optional[DBID] = None
+    callee_id: Optional[DBID] = None
     callee_location: Optional[SourceLocation] = None
     kind: Optional[TraceKind] = None
     filename: Optional[str] = None
@@ -722,8 +724,10 @@ details              show additional information about the current trace frame
             trace_frame = (
                 session.query(
                     TraceFrame.id,
+                    TraceFrame.caller_id,
                     CallerText.contents.label("caller"),
                     TraceFrame.caller_port,
+                    TraceFrame.callee_id,
                     CalleeText.contents.label("callee"),
                     TraceFrame.callee_port,
                     TraceFrame.callee_location,
@@ -1218,8 +1222,10 @@ details              show additional information about the current trace frame
         return (
             session.query(
                 TraceFrame.id,
+                TraceFrame.caller_id,
                 CallerText.contents.label("caller"),
                 TraceFrame.caller_port,
+                TraceFrame.callee_id,
                 CalleeText.contents.label("callee"),
                 TraceFrame.callee_port,
                 TraceFrame.callee_location,
@@ -1319,8 +1325,10 @@ details              show additional information about the current trace frame
         query = (
             session.query(
                 TraceFrame.id,
+                TraceFrame.caller_id,
                 CallerText.contents.label("caller"),
                 TraceFrame.caller_port,
+                TraceFrame.callee_id,
                 CalleeText.contents.label("callee"),
                 TraceFrame.callee_port,
                 TraceFrame.callee_location,
@@ -1334,15 +1342,15 @@ details              show additional information about the current trace frame
             .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
             .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
             .filter(
-                CallerText.contents != CalleeText.contents
+                TraceFrame.caller_id != TraceFrame.callee_id
             )  # skip recursive calls for now
         )
         if backwards:
-            query = query.filter(CalleeText.contents == trace_frame.caller).filter(
+            query = query.filter(TraceFrame.callee_id == trace_frame.caller_id).filter(
                 TraceFrame.callee_port == trace_frame.caller_port
             )
         else:
-            query = query.filter(CallerText.contents == trace_frame.callee).filter(
+            query = query.filter(TraceFrame.caller_id == trace_frame.callee_id).filter(
                 TraceFrame.caller_port == trace_frame.callee_port
             )
 
