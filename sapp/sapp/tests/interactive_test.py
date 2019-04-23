@@ -7,7 +7,7 @@ from io import StringIO
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
-from ..db import DB
+from ..db import DB, DBType
 from ..decorators import UserError
 from ..interactive import Interactive, IssueQueryResult, TraceTuple
 from ..models import (
@@ -24,17 +24,18 @@ from ..models import (
     TraceFrameLeafAssoc,
     TraceKind,
 )
+from .fake_object_generator import FakeObjectGenerator
 
 
 class InteractiveTest(TestCase):
     def setUp(self) -> None:
-        self.db = DB("memory")
+        self.db = DB(DBType.MEMORY)
         self.interactive = Interactive(self.db, "")
-        self.interactive.db = self.db  # we need the tool to refer to the same db
         self.stdout = StringIO()
         self.stderr = StringIO()
         sys.stdout = self.stdout  # redirect output
         sys.stderr = self.stderr  # redirect output
+        self.fakes = FakeObjectGenerator()
 
     def tearDown(self) -> None:
         sys.stdout = sys.__stdout__  # reset redirect
@@ -51,27 +52,6 @@ class InteractiveTest(TestCase):
 
         for row in data:
             session.add(row)
-
-    def _generic_issue(self, id: int = 1, callable: str = "call1") -> Issue:
-        return Issue(
-            id=id,
-            handle=str(id),
-            first_seen=datetime.now(),
-            code=1000 + id - 1,
-            callable=callable,
-        )
-
-    def _generic_issue_instance(
-        self, id: int = 1, run_id: int = 1, issue_id: int = 1, filename: str = "file.py"
-    ) -> IssueInstance:
-        return IssueInstance(
-            id=id,
-            run_id=run_id,
-            message_id=1,
-            filename=filename,
-            location=SourceLocation(1, 2, 3),
-            issue_id=issue_id,
-        )
 
     def testState(self):
         self.interactive.current_run_id = 1
@@ -91,21 +71,15 @@ class InteractiveTest(TestCase):
         self.assertIn("Sinks filter: {2}", output)
 
     def testListIssuesBasic(self):
-        issues = [
-            self._generic_issue(id=1, callable="module.function1"),
-            self._generic_issue(id=2, callable="module.function2"),
-        ]
-
-        message = SharedText(id=1, contents="message1")
-        run = Run(id=1, date=datetime.now())
-
-        issue_instance = self._generic_issue_instance()
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance(
+            message="message1", filename="file.py", callable="module.function1"
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, issues)
-            session.add(message)
             session.add(run)
-            session.add(issue_instance)
             session.commit()
 
         self.interactive.setup()
@@ -113,31 +87,24 @@ class InteractiveTest(TestCase):
         output = self.stdout.getvalue().strip()
 
         self.assertIn("Issue 1", output)
-        self.assertIn("Code: 1000", output)
+        self.assertIn("Code: 6016", output)
         self.assertIn("Message: message1", output)
         self.assertIn("Callable: module.function1", output)
-        self.assertIn("Location: file.py:1|2|3", output)
-        self.assertNotIn("module.function2", output)
+        self.assertIn("Location: file.py:6|7|8", output)
 
     def testListIssuesFromLatestRun(self):
-        issue = self._generic_issue()
+        self.fakes.issue()
+        run1 = self.fakes.run()
+        self.fakes.instance()  # part of run1
+        self.fakes.save_all(self.db)  # early flush to resolve DBID's
 
-        message = SharedText(id=1, contents="message1")
-        runs = [
-            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
-            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
-        ]
-
-        issue_instances = [
-            self._generic_issue_instance(id=1, run_id=1),
-            self._generic_issue_instance(id=2, run_id=2),
-        ]
+        run2 = self.fakes.run()
+        self.fakes.instance()  # part of run2
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            session.add(issue)
-            session.add(message)
-            self._add_to_session(session, runs)
-            self._add_to_session(session, issue_instances)
+            session.add(run1)
+            session.add(run2)
             session.commit()
 
         self.interactive.setup()
@@ -148,26 +115,34 @@ class InteractiveTest(TestCase):
         self.assertIn("Issue 2", output)
 
     def _list_issues_filter_setup(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issues = [
-            self._generic_issue(id=1, callable="module.sub.function1"),
-            self._generic_issue(id=2, callable="module.sub.function2"),
-            self._generic_issue(id=3, callable="module.function3"),
-        ]
-        issue_instances = [
-            self._generic_issue_instance(id=1, issue_id=1, filename="module/sub.py"),
-            self._generic_issue_instance(id=2, issue_id=2, filename="module/sub.py"),
-            self._generic_issue_instance(
-                id=3, issue_id=3, filename="module/__init__.py"
-            ),
-        ]
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+
+        issue1 = self.fakes.issue()
+        self.fakes.instance(
+            issue_id=issue1.id,
+            callable="module.sub.function1",
+            filename="module/sub.py",
+        )
+        self.fakes.save_all(self.db)
+
+        issue2 = self.fakes.issue()
+        self.fakes.instance(
+            issue_id=issue2.id,
+            callable="module.sub.function2",
+            filename="module/sub.py",
+        )
+        self.fakes.save_all(self.db)
+
+        issue3 = self.fakes.issue()
+        self.fakes.instance(
+            issue_id=issue3.id,
+            callable="module.function3",
+            filename="module/__init__.py",
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(shared_text)
-            self._add_to_session(session, issues)
-            self._add_to_session(session, issue_instances)
             session.commit()
 
     def testListIssuesFilterCodes(self):
@@ -178,14 +153,14 @@ class InteractiveTest(TestCase):
         stderr = self.stderr.getvalue().strip()
         self.assertIn("'codes' should be", stderr)
 
-        self.interactive.issues(codes=1000)
+        self.interactive.issues(codes=6016)
         output = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", output)
         self.assertNotIn("Issue 2", output)
         self.assertNotIn("Issue 3", output)
 
         self._clear_stdout()
-        self.interactive.issues(codes=[1001, 1002])
+        self.interactive.issues(codes=[6017, 6018])
         output = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", output)
         self.assertIn("Issue 2", output)
@@ -258,22 +233,18 @@ class InteractiveTest(TestCase):
         self.assertIn("Run 3", output)
 
     def testSetRun(self):
-        runs = [
-            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
-            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
-        ]
-        issue = self._generic_issue()
-        issue_instances = [
-            self._generic_issue_instance(id=1, run_id=1),
-            self._generic_issue_instance(id=2, run_id=2),
-        ]
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        self.fakes.issue()
+        run1 = self.fakes.run()
+        self.fakes.instance(message="Issue message")
+        self.fakes.save_all(self.db)
+
+        run2 = self.fakes.run()
+        self.fakes.instance(message="Issue message")
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, runs)
-            self._add_to_session(session, issue_instances)
-            session.add(issue)
-            session.add(shared_text)
+            session.add(run1)
+            session.add(run2)
             session.commit()
 
         self.interactive.setup()
@@ -330,39 +301,34 @@ class InteractiveTest(TestCase):
         self.assertIn("No runs with kind 'd'", self.stderr.getvalue())
 
     def testSetIssue(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instances = [
-            self._generic_issue_instance(id=1, run_id=1),
-            self._generic_issue_instance(id=2, run_id=2),
-            self._generic_issue_instance(id=3, run_id=3),
-        ]
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance(message="Issue message")
+        self.fakes.instance(message="Issue message")
+        self.fakes.instance(message="Issue message")
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(shared_text)
-            self._add_to_session(session, issue_instances)
             session.commit()
 
         self.interactive.setup()
 
         self.interactive.issue(2)
-        self.interactive.show()
+        self.assertEqual(self.interactive.current_issue_instance_id, 2)
         stdout = self.stdout.getvalue().strip()
         self.assertNotIn("Issue 1", stdout)
         self.assertIn("Issue 2", stdout)
         self.assertNotIn("Issue 3", stdout)
 
         self.interactive.issue(1)
-        self.interactive.show()
+        self.assertEqual(self.interactive.current_issue_instance_id, 1)
         stdout = self.stdout.getvalue().strip()
         self.assertIn("Issue 1", stdout)
         self.assertNotIn("Issue 3", stdout)
 
     def testSetIssueNonExistent(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        run = self.fakes.run()
 
         with self.db.make_session() as session:
             session.add(run)
@@ -375,22 +341,18 @@ class InteractiveTest(TestCase):
         self.assertIn("Issue 1 doesn't exist", stderr)
 
     def testSetIssueUpdatesRun(self):
-        runs = [
-            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
-            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
-        ]
-        issue = self._generic_issue(id=1)
-        issue_instances = [
-            self._generic_issue_instance(id=1, run_id=1, issue_id=1),
-            self._generic_issue_instance(id=2, run_id=2, issue_id=1),
-        ]
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        self.fakes.issue()
+        run1 = self.fakes.run()
+        self.fakes.instance()
+        self.fakes.save_all(self.db)
+
+        run2 = self.fakes.run()
+        self.fakes.instance()
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            session.add(issue)
-            session.add(shared_text)
-            self._add_to_session(session, runs)
-            self._add_to_session(session, issue_instances)
+            session.add(run1)
+            session.add(run2)
             session.commit()
 
         self.interactive.setup()
@@ -399,26 +361,27 @@ class InteractiveTest(TestCase):
         self.assertEqual(int(self.interactive.current_run_id), 1)
 
     def testGetSources(self):
-        issue_instance = self._generic_issue_instance()
-        sources = [
-            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
-            SharedText(id=2, contents="source2", kind=SharedTextKind.SOURCE),
-            SharedText(id=3, contents="source3", kind=SharedTextKind.SOURCE),
-        ]
+        self.fakes.instance()
+        source1 = self.fakes.source("source1")
+        source2 = self.fakes.source("source2")
+        self.fakes.source("source3")
+        self.fakes.save_all(self.db)
         assocs = [
-            IssueInstanceSharedTextAssoc(shared_text_id=1, issue_instance_id=1),
-            IssueInstanceSharedTextAssoc(shared_text_id=2, issue_instance_id=1),
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=source1.id, issue_instance_id=1
+            ),
+            IssueInstanceSharedTextAssoc(
+                shared_text_id=source2.id, issue_instance_id=1
+            ),
         ]
 
         with self.db.make_session() as session:
-            session.add(issue_instance)
-            self._add_to_session(session, sources)
             self._add_to_session(session, assocs)
             session.commit()
 
             self.interactive.setup()
             sources = self.interactive._get_leaves_issue_instance(
-                session, int(issue_instance.id), SharedTextKind.SOURCE
+                session, 1, SharedTextKind.SOURCE
             )
 
         self.assertEqual(len(sources), 2)
@@ -426,26 +389,23 @@ class InteractiveTest(TestCase):
         self.assertIn("source2", sources)
 
     def testGetSinks(self):
-        return
-        issue_instance = self._generic_issue_instance()
-        sinks = [
-            SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK),
-            SharedText(id=2, contents="sink2", kind=SharedTextKind.SINK),
-            SharedText(id=3, contents="sink3", kind=SharedTextKind.SINK),
-        ]
+        self.fakes.instance()
+        sink1 = self.fakes.sink("sink1")
+        sink2 = self.fakes.sink("sink2")
+        self.fakes.sink("sink3")
+        self.fakes.save_all(self.db)
         assocs = [
-            IssueInstanceSharedTextAssoc(shared_text_id=1, issue_instance_id=1),
-            IssueInstanceSharedTextAssoc(shared_text_id=2, issue_instance_id=1),
+            IssueInstanceSharedTextAssoc(shared_text_id=sink1.id, issue_instance_id=1),
+            IssueInstanceSharedTextAssoc(shared_text_id=sink2.id, issue_instance_id=1),
         ]
 
         with self.db.make_session() as session:
-            session.add(issue_instance)
-            self._add_to_session(session, sinks)
             self._add_to_session(session, assocs)
             session.commit()
 
+            self.interactive.setup()
             sinks = self.interactive._get_leaves_issue_instance(
-                session, issue_instance, SharedTextKind.SINK
+                session, 1, SharedTextKind.SINK
             )
 
         self.assertEqual(len(sinks), 2)
@@ -798,10 +758,11 @@ class InteractiveTest(TestCase):
         )
 
     def testTraceFromIssue(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source()
+        self.fakes.save_all(self.db)
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -829,15 +790,12 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
         ]
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -850,9 +808,11 @@ class InteractiveTest(TestCase):
         self.interactive.issue(1)
         self.interactive.trace()
         output = self.stdout.getvalue().strip()
-        self.assertIn("     1    leaf       source file.py:1|1|1", output)
-        self.assertIn(" --> 2    call1      root   file.py:1|2|3", output)
-        self.assertIn("     3    leaf       sink   file.py:1|1|2", output)
+        self.assertIn("     1    leaf          source file.py:1|1|1", output)
+        self.assertIn(
+            " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8", output
+        )
+        self.assertIn("     3    leaf          sink   file.py:1|1|2", output)
 
     def testTraceFromFrame(self):
         run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
@@ -888,10 +848,11 @@ class InteractiveTest(TestCase):
         )
 
     def testTraceMissingFrames(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source()
+        self.fakes.save_all(self.db)
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -919,15 +880,12 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
         ]
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -939,10 +897,11 @@ class InteractiveTest(TestCase):
         self.assertIn("Missing trace frame: call2:param0", stdout)
 
     def testTraceCursorLocation(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue(callable="Issue callable")
-        issue_instance = self._generic_issue_instance()
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance(callable="Issue callable")
+        source = self.fakes.source()
+        self.fakes.save_all(self.db)
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -970,14 +929,11 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
         ]
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -1003,10 +959,11 @@ class InteractiveTest(TestCase):
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
 
     def testJumpToLocation(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
-        shared_text = SharedText(id=1, contents="Issue message", kind="message")
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source()
+        self.fakes.save_all(self.db)
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -1034,14 +991,11 @@ class InteractiveTest(TestCase):
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
             IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
         ]
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            session.add(shared_text)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -1063,9 +1017,11 @@ class InteractiveTest(TestCase):
         self.assertEqual(self.interactive.current_trace_frame_index, 2)
 
     def testTraceNoSinks(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source("source1")
+        self.fakes.save_all(self.db)
         trace_frame = TraceFrame(
             id=1,
             kind=TraceKind.POSTCONDITION,
@@ -1077,17 +1033,13 @@ class InteractiveTest(TestCase):
             filename="file.py",
             run_id=1,
         )
-        source = SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE)
         assocs = [
             IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
         ]
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
             session.add(trace_frame)
-            session.add(source)
             self._add_to_session(session, assocs)
             session.commit()
 
@@ -1099,25 +1051,24 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     # ⎇  [callable] [port] [location]",
-                "     1    leaf       source file.py:1|1|1",
-                " --> 2    call1      root   file.py:1|2|3",
+                "     # ⎇  [callable]    [port] [location]",
+                "     1    leaf          source file.py:1|1|1",
+                " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8",
                 "",
             ],
         )
 
     def _set_up_branched_trace(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
-        messages = [
-            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
-            SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
-        ]
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source("source1")
+        sink = self.fakes.sink("sink1")
+        self.fakes.save_all(self.db)
         trace_frames = []
         assocs = [
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=1),
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=2),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=source.id),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=sink.id),
         ]
         for i in range(6):
             trace_frames.append(
@@ -1135,7 +1086,9 @@ class InteractiveTest(TestCase):
                 trace_frames[i].callee = "leaf"
                 trace_frames[i].callee_port = "source"
                 assocs.append(
-                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=1, trace_length=0)
+                    TraceFrameLeafAssoc(
+                        trace_frame_id=i + 1, leaf_id=source.id, trace_length=0
+                    )
                 )
                 assocs.append(
                     IssueInstanceTraceFrameAssoc(
@@ -1147,7 +1100,9 @@ class InteractiveTest(TestCase):
                 trace_frames[i].callee = "call2"
                 trace_frames[i].callee_port = "param2"
                 assocs.append(
-                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=2, trace_length=1)
+                    TraceFrameLeafAssoc(
+                        trace_frame_id=i + 1, leaf_id=sink.id, trace_length=1
+                    )
                 )
                 assocs.append(
                     IssueInstanceTraceFrameAssoc(
@@ -1161,14 +1116,13 @@ class InteractiveTest(TestCase):
                 trace_frames[i].callee = "leaf"
                 trace_frames[i].callee_port = "sink"
                 assocs.append(
-                    TraceFrameLeafAssoc(trace_frame_id=i + 1, leaf_id=2, trace_length=0)
+                    TraceFrameLeafAssoc(
+                        trace_frame_id=i + 1, leaf_id=sink.id, trace_length=0
+                    )
                 )
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            self._add_to_session(session, messages)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -1182,12 +1136,19 @@ class InteractiveTest(TestCase):
         self.assertEqual(self.interactive.sources, {"source1"})
         self.assertEqual(self.interactive.sinks, {"sink1"})
 
+        self._clear_stdout()
         self.interactive.trace()
-        output = self.stdout.getvalue().strip()
-        self.assertIn("     1 +2 leaf       source file.py:0|0|0", output)
-        self.assertIn(" --> 2    call1      root   file.py:1|2|3", output)
-        self.assertIn("     3 +2 call2      param2 file.py:2|2|2", output)
-        self.assertIn("     4 +2 leaf       sink   file.py:4|4|4", output)
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     # ⎇  [callable]    [port] [location]",
+                "     1 +2 leaf          source file.py:0|0|0",
+                " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8",
+                "     3 +2 call2         param2 file.py:2|2|2",
+                "     4 +2 leaf          sink   file.py:4|4|4",
+                "",
+            ],
+        )
 
     def testShowBranches(self):
         self._set_up_branched_trace()
@@ -1272,12 +1233,12 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         self.interactive.branch(2)  # location 0|0|0 -> 1|1|1
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 1 +2 leaf       source file.py:1|1|1", output)
+        self.assertIn(" --> 1 +2 leaf          source file.py:1|1|1", output)
 
         self._clear_stdout()
         self.interactive.branch(1)  # location 1|1|1 -> 0|0|0
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 1 +2 leaf       source file.py:0|0|0", output)
+        self.assertIn(" --> 1 +2 leaf          source file.py:0|0|0", output)
 
         self.interactive.next_cursor_location()
         self.interactive.next_cursor_location()
@@ -1285,28 +1246,27 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         self.interactive.branch(2)  # location 2|2|2 -> 3|3|3
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 3 +2 call2      param2 file.py:3|3|3", output)
+        self.assertIn(" --> 3 +2 call2         param2 file.py:3|3|3", output)
 
         self.interactive.next_cursor_location()
 
         self._clear_stdout()
         self.interactive.branch(2)  # location 4|4|4 -> 5|5|5
         output = self.stdout.getvalue().strip()
-        self.assertIn("     3 +2 call2      param2 file.py:3|3|3", output)
-        self.assertIn(" --> 4 +2 leaf       sink   file.py:5|5|5", output)
+        self.assertIn("     3 +2 call2         param2 file.py:3|3|3", output)
+        self.assertIn(" --> 4 +2 leaf          sink   file.py:5|5|5", output)
 
         self.interactive.branch(3)  # location 4|4|4 -> 5|5|5
         stderr = self.stderr.getvalue().strip()
         self.assertIn("Branch number invalid", stderr)
 
     def testBranchPrefixLengthChanges(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
-        messages = [
-            SharedText(id=1, contents="source1", kind=SharedTextKind.SOURCE),
-            SharedText(id=2, contents="sink1", kind=SharedTextKind.SINK),
-        ]
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        source = self.fakes.source("source1")
+        sink = self.fakes.sink("sink1")
+        self.fakes.save_all(self.db)
         trace_frames = [
             TraceFrame(
                 id=1,
@@ -1354,21 +1314,18 @@ class InteractiveTest(TestCase):
             ),
         ]
         assocs = [
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=1),
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=2),
-            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=1),
-            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=2),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=source.id),
+            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=sink.id),
+            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=source.id),
+            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=sink.id),
             IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=4),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=1, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=2, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id, trace_length=1),
+            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=source.id, trace_length=0),
+            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=sink.id, trace_length=0),
         ]
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
-            self._add_to_session(session, messages)
             self._add_to_session(session, trace_frames)
             self._add_to_session(session, assocs)
             session.commit()
@@ -1381,10 +1338,10 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     # ⎇  [callable] [port] [location]",
-                " --> 1 +2 leaf       source file.py:1|1|1",
-                "     2    call1      root   file.py:1|2|3",
-                "     3    leaf       sink   file.py:1|2|2",
+                "     # ⎇  [callable]    [port] [location]",
+                " --> 1 +2 leaf          source file.py:1|1|1",
+                "     2    Foo.barMethod root   /r/some/filename.py:6|7|8",
+                "     3    leaf          sink   file.py:1|2|2",
                 "",
             ],
         )
@@ -1394,11 +1351,11 @@ class InteractiveTest(TestCase):
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "     # ⎇  [callable] [port] [location]",
-                "     1    leaf       source file.py:1|1|1",
-                " --> 2 +2 prev_call  result file.py:1|1|1",
-                "     3    call1      root   file.py:1|2|3",
-                "     4    leaf       sink   file.py:1|2|2",
+                "     # ⎇  [callable]    [port] [location]",
+                "     1    leaf          source file.py:1|1|1",
+                " --> 2 +2 prev_call     result file.py:1|1|1",
+                "     3    Foo.barMethod root   /r/some/filename.py:6|7|8",
+                "     4    leaf          sink   file.py:1|2|2",
                 "",
             ],
         )
@@ -1513,7 +1470,7 @@ class InteractiveTest(TestCase):
             location=SourceLocation(1, 2, 3),
             code=1000,
             callable="module.function1",
-            contents="leaf",
+            message="root",
         )
         sources = []
         sinks = ["sink1", "sink2"]
@@ -2004,22 +1961,15 @@ else:
                 run_id=1,
             ),
         ]
-        issues = [
-            self._generic_issue(id=1, callable="call2"),
-            self._generic_issue(id=2, callable="call3"),
-            self._generic_issue(id=3, callable="call2"),
-        ]
-        issue_instances = [
-            self._generic_issue_instance(id=1, issue_id=1),
-            self._generic_issue_instance(id=2, issue_id=2),
-            self._generic_issue_instance(id=3, issue_id=3),
-        ]
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
+        run = self.fakes.run()
+        issues = [self.fakes.issue(), self.fakes.issue(), self.fakes.issue()]
+        self.fakes.instance(issue_id=issues[0].id, callable="call2"),
+        self.fakes.instance(issue_id=issues[1].id, callable="call3"),
+        self.fakes.instance(issue_id=issues[2].id, callable="call2"),
+        self.fakes.save_all(self.db)
 
         with self.db.make_session(expire_on_commit=False) as session:
             self._add_to_session(session, trace_frames)
-            self._add_to_session(session, issues)
-            self._add_to_session(session, issue_instances)
             session.add(run)
             session.commit()
 
@@ -2057,14 +2007,13 @@ else:
         self.pager_calls += 1
 
     def testPager(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        issue = self._generic_issue()
-        issue_instance = self._generic_issue_instance()
+        run = self.fakes.run()
+        self.fakes.issue()
+        self.fakes.instance()
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
             session.add(run)
-            session.add(issue)
-            session.add(issue_instance)
             session.commit()
 
         # Default is no pager in tests

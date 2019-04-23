@@ -31,7 +31,7 @@ from prompt_toolkit.history import FileHistory, History
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import get_lexer_for_filename
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql import func
@@ -59,6 +59,10 @@ from .models import (
 
 T = TypeVar("T")
 
+FilenameText = aliased(SharedText)
+CallableText = aliased(SharedText)
+MessageText = aliased(SharedText)
+
 
 class IssueQueryResult(NamedTuple):
     id: DBID
@@ -66,7 +70,7 @@ class IssueQueryResult(NamedTuple):
     location: SourceLocation
     code: int
     callable: str
-    contents: str
+    message: str
 
 
 class TraceTuple(NamedTuple):
@@ -432,14 +436,19 @@ details              show additional information about the current trace frame
         pager = self._resolve_pager(use_pager)
 
         with self.db.make_session() as session:
-            query = session.query(
-                IssueInstance.id,
-                IssueInstance.filename,
-                IssueInstance.location,
-                Issue.code,
-                Issue.callable,
-                SharedText.contents,
-            ).filter(IssueInstance.run_id == self.current_run_id)
+            query = (
+                session.query(
+                    IssueInstance.id,
+                    FilenameText.contents.label("filename"),
+                    IssueInstance.location,
+                    Issue.code,
+                    CallableText.contents.label("callable"),
+                    MessageText.contents.label("message"),
+                )
+                .filter(IssueInstance.run_id == self.current_run_id)
+                .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
+                .join(CallableText, CallableText.id == IssueInstance.callable_id)
+            )
 
             if codes is not None:
                 query = self._add_list_or_int_filter_to_query(
@@ -448,16 +457,16 @@ details              show additional information about the current trace frame
 
             if callables is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callables, query, Issue.callable, "callables"
+                    callables, query, CallableText.contents, "callables"
                 )
 
             if filenames is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    filenames, query, IssueInstance.filename, "filenames"
+                    filenames, query, FilenameText.contents, "filenames"
                 )
 
             issues = query.join(Issue, IssueInstance.issue_id == Issue.id).join(
-                SharedText, SharedText.id == IssueInstance.message_id
+                MessageText, MessageText.id == IssueInstance.message_id
             )
 
             sources_list = [
@@ -1290,7 +1299,7 @@ details              show additional information about the current trace frame
             [
                 f"Issue {issue.id}",
                 f"    Code: {issue.code}",
-                f" Message: {issue.contents}",
+                f" Message: {issue.message}",
                 f"Callable: {issue.callable}",
                 f" Sources: {sources_output if sources_output else 'No sources'}",
                 f"   Sinks: {sinks_output if sinks_output else 'No sinks'}",
@@ -1381,15 +1390,17 @@ details              show additional information about the current trace frame
         return (
             session.query(
                 IssueInstance.id,
-                IssueInstance.filename,
+                FilenameText.contents.label("filename"),
                 IssueInstance.location,
                 Issue.code,
-                Issue.callable,
-                SharedText.contents,
+                CallableText.contents.label("callable"),
+                MessageText.contents.label("message"),
             )
             .filter(IssueInstance.id == self.current_issue_instance_id)
             .join(Issue, IssueInstance.issue_id == Issue.id)
-            .join(SharedText, SharedText.id == IssueInstance.message_id)
+            .join(FilenameText, FilenameText.id == IssueInstance.filename_id)
+            .join(CallableText, CallableText.id == IssueInstance.callable_id)
+            .join(MessageText, MessageText.id == IssueInstance.message_id)
             .first()
         )
 
@@ -1483,8 +1494,8 @@ details              show additional information about the current trace frame
         with self.db.make_session() as session:
             return (
                 session.query(func.count(IssueInstance.id))
-                .join(Issue, Issue.id == IssueInstance.issue_id)
-                .filter(Issue.callable == callable)
+                .join(CallableText, CallableText.id == IssueInstance.callable_id)
+                .filter(CallableText.contents == callable)
                 .scalar()
             )
 
