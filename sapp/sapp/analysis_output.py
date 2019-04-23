@@ -14,11 +14,12 @@ METADATA_GLOB = "*_metadata.json"
 
 
 class Metadata(NamedTuple):
-    analysis_tool_version: Optional[str]
-    commit_hash: Optional[str]
     # analysis_root and SCM root should be separate, but right now we don't make
     # the distinction.
     root: str
+
+    analysis_tool_version: Optional[str] = None
+    commit_hash: Optional[str] = None
 
 
 class AnalysisOutputError(Exception):
