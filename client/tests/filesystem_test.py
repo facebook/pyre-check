@@ -41,6 +41,9 @@ class FilesystemTest(unittest.TestCase):
     def test_find_python_paths(self) -> None:
         root = tempfile.mkdtemp()
 
+        # When there are no paths, returns empty list.
+        self.assertListEqual(find_python_paths(root), [])
+
         def create_file(name: str) -> None:
             with open(os.path.join(root, name), "w+"):
                 pass

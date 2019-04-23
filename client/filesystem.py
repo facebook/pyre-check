@@ -365,7 +365,7 @@ def find_paths_with_extensions(root: str, extensions: Iterable[str]) -> List[str
         .decode("utf-8")
         .strip()
     )
-    return output.split("\n")
+    return output.split("\n") if output else []
 
 
 def find_python_paths(root: str) -> List[str]:
