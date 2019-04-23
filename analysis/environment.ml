@@ -453,42 +453,42 @@ let register_aliases (module Handler: Handler) sources =
                   Call {
                     callee = {
                       Node.value = Name (Name.Attribute {
-                        base = {
-                          Node.value = Name (Name.Attribute {
-                            base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "Type";
-                          });
-                          _;
-                        };
-                        attribute = "__getitem__";
-                      });
+                          base = {
+                            Node.value = Name (Name.Attribute {
+                                base = { Node.value = Name (Name.Identifier "typing"); _ };
+                                attribute = "Type";
+                              });
+                            _;
+                          };
+                          attribute = "__getitem__";
+                        });
                       _;
                     };
                     arguments = [{
                         Call.Argument.value = ({
-                          Node.value = Call {
-                            callee = {
-                              Node.value = Name (Name.Attribute {
-                                base = {
+                            Node.value = Call {
+                                callee = {
                                   Node.value = Name (Name.Attribute {
-                                    base = {
-                                      Node.value = Name (Name.Identifier "mypy_extensions");
-                                      _;
-                                    };
-                                    attribute = "TypedDict";
-                                  });
+                                      base = {
+                                        Node.value = Name (Name.Attribute {
+                                            base = {
+                                              Node.value = Name (Name.Identifier "mypy_extensions");
+                                              _;
+                                            };
+                                            attribute = "TypedDict";
+                                          });
+                                        _;
+                                      };
+                                      attribute = "__getitem__";
+                                    });
                                   _;
                                 };
-                                attribute = "__getitem__";
-                              });
-                              _;
-                            };
+                                _;
+                              };
                             _;
-                          };
-                          _;
-                        } as annotation);
+                          } as annotation);
                         _;
-                    }];
+                      }];
                   };
                 _;
               } ->
@@ -499,9 +499,9 @@ let register_aliases (module Handler: Handler) sources =
             | _, Some ({
                 Node.value =
                   Name (Name.Attribute {
-                    base = { Node.value = Name (Name.Identifier "typing"); _ };
-                    attribute = "Any";
-                  });
+                      base = { Node.value = Name (Name.Identifier "typing"); _ };
+                      attribute = "Any";
+                    });
                 _;
               } as annotation) ->
                 if not (Type.equal target_annotation Type.Top) then
@@ -587,13 +587,7 @@ let register_aliases (module Handler: Handler) sources =
             match annotation with
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
-                let reference =
-                  match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Name name when Expression.is_simple_name name ->
-                      Reference.from_name name
-                  | _ ->
-                      Reference.create "typing.Any"
-                in
+                let reference = Reference.create primitive in
                 let module_definition = Handler.module_definition in
                 if Module.from_empty_stub ~reference ~module_definition then
                   sofar, Type.Any
@@ -657,7 +651,7 @@ let register_undecorated_functions
           Node.value =
             Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define);
           _;
-          } ->
+        } ->
             if Define.is_overloaded_method define then
               ()
             else
