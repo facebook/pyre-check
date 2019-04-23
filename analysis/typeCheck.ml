@@ -38,17 +38,20 @@ module AccessState = struct
     | Undefined of undefined_origin
   [@@deriving show]
 
+  type accesses_incomplete_type = { target: Access.general_access; annotation: Type.t }
+  [@@deriving show]
+
   type element =
     | Signature of {
         signature: AnnotatedSignature.t;
         callees: Type.Callable.t list;
         arguments: Argument.t list;
-        accesses_incomplete_type: (Access.general_access * Type.t) option;
+        accesses_incomplete_type: accesses_incomplete_type option;
       }
     | Attribute of {
         attribute: Identifier.t;
         definition: definition;
-        accesses_incomplete_type: (Access.general_access * Type.t) option;
+        accesses_incomplete_type: accesses_incomplete_type option;
       }
     | NotCallable of Type.t
     | Value
@@ -750,7 +753,7 @@ module State = struct
               >>| (fun expression -> Access.ExpressionAccess { expression; access = lead })
               |> Option.value ~default:(Access.SimpleAccess lead)
             in
-            Some (full_lead, annotation)
+            Some { target = full_lead; annotation }
         | _ ->
             None
       in
@@ -2124,7 +2127,7 @@ module State = struct
               in
               Some error
 
-          | AccessState.Signature { accesses_incomplete_type = Some (target, annotation); _ } ->
+          | AccessState.Signature { accesses_incomplete_type = Some { target;  annotation }; _ } ->
               let kind =
                 Error.IncompleteType { target; annotation; attempted_action = Error.Calling }
               in
@@ -2166,7 +2169,7 @@ module State = struct
                       }
                 in
                 Some (Error.create ~location ~kind ~define)
-          | Attribute { accesses_incomplete_type = Some (target, annotation); attribute; _ } ->
+          | Attribute { accesses_incomplete_type = Some { target; annotation }; attribute; _ } ->
               let kind =
                 Error.IncompleteType {
                   target;

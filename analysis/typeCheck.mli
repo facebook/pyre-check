@@ -33,18 +33,20 @@ module AccessState: sig
     | Undefined of undefined_origin
   [@@deriving show]
 
+  type accesses_incomplete_type = { target: Access.general_access; annotation: Type.t }
+  [@@deriving show]
 
   type element =
     | Signature of {
         signature: AnnotatedSignature.t;
         callees: Type.Callable.t list;
         arguments: Argument.t list;
-        accesses_incomplete_type: (Access.general_access * Type.t) option;
+        accesses_incomplete_type: accesses_incomplete_type option;
       }
     | Attribute of {
         attribute: Identifier.t;
         definition: definition;
-        accesses_incomplete_type: (Access.general_access * Type.t) option;
+        accesses_incomplete_type: accesses_incomplete_type option;
       }
     | NotCallable of Type.t
     | Value
