@@ -578,8 +578,7 @@ let messages ~concise ~signature location kind =
           "`%a` overrides method defined in `%a` inconsistently.%s"
           pp_reference define_name
           pp_reference parent
-          (if concise then "" else " " ^ detail)
-      ]
+          (if concise then "" else " " ^ detail)]
   | InvalidArgument argument when concise ->
       begin
         match argument with
@@ -677,7 +676,10 @@ let messages ~concise ~signature location kind =
         | Parameter -> "The type variable `%a` is covariant and cannot be a parameter type."
         | Return -> "The type variable `%a` is contravariant and cannot be a return type."
       in
-      [Format.asprintf format pp_type annotation]
+      [
+        Format.asprintf format pp_type annotation;
+        "See `https://pyre-check.org/docs/error-types.html#35-invalid-type-variance` for details.";
+      ]
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
