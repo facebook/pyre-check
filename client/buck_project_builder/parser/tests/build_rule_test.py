@@ -5,10 +5,11 @@
 
 import ast
 import unittest
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from .. import build_rules
 from ...filesystem import Glob, Sources
+from ...tests.test_common import identity_mapping
 
 
 def _get_expression(tree: ast.AST) -> ast.expr:
@@ -69,6 +70,16 @@ PYTHON_LIBRARY_TARGET_3 = """
 python_library(
     name = "library_target_3",
     srcs = ["a.py", "b.py"] + glob(["folder/*.py", "other/**/*.py"]),
+)
+"""
+
+PYTHON_LIBRARY_TARGET_4 = """
+python_library(
+    name = "library_target_4",
+    srcs = {
+        "folder/a.py": "a.py",
+        "folder/b.py": "b.py",
+    },
 )
 """
 
@@ -173,10 +184,10 @@ class BuildRuleTest(unittest.TestCase):
     def assert_sources_equal(
         self,
         sources: Sources,
-        files: Optional[List[str]] = None,
+        files: Optional[Mapping[str, str]] = None,
         globs: Optional[List[Glob]] = None,
     ) -> None:
-        self.assertListEqual(sources.files, files or [])
+        self.assertDictEqual(dict(sources.files), files or {})
         self.assertListEqual(sources.globs, globs or [])
 
     def test_get_string_list(self):
@@ -236,7 +247,7 @@ class BuildRuleTest(unittest.TestCase):
             ["//some/project:another_target", "//some/other:target"],
         )
         self.assertListEqual(target.external_dependencies, [("foo", "foo-py")])
-        self.assert_sources_equal(target.sources, files=[], globs=[])
+        self.assert_sources_equal(target.sources, files={}, globs=[])
         self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_2)
@@ -246,7 +257,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.name, "binary_target_2")
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
-        self.assert_sources_equal(target.sources, files=["a.py"])
+        self.assert_sources_equal(target.sources, files=identity_mapping(["a.py"]))
         self.assertIsNone(target.base_module)
 
         tree = ast.parse(PYTHON_BINARY_TARGET_3)
@@ -262,7 +273,9 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.target, "//some/project:library_target_1")
         self.assertEqual(target.name, "library_target_1")
         self.assertIsNone(target.base_module)
-        self.assert_sources_equal(target.sources, files=["a.py", "b.py"])
+        self.assert_sources_equal(
+            target.sources, files=identity_mapping(["a.py", "b.py"])
+        )
         self.assertListEqual(target.dependencies, ["//some/project:other_target"])
         self.assertListEqual(
             target.external_dependencies, [("foo", "foo-py"), ("bar", "bar-py")]
@@ -289,8 +302,20 @@ class BuildRuleTest(unittest.TestCase):
         self.assertIsNone(target.base_module)
         self.assert_sources_equal(
             target.sources,
-            files=["a.py", "b.py"],
+            files=identity_mapping(["a.py", "b.py"]),
             globs=[Glob(["folder/*.py", "other/**/*.py"], [])],
+        )
+        self.assertListEqual(target.dependencies, [])
+        self.assertListEqual(target.external_dependencies, [])
+
+        tree = ast.parse(PYTHON_LIBRARY_TARGET_4)
+        call = _get_call(tree)
+        target = build_rules.parse_python_library(call, "/ROOT", "some/project")
+        self.assertEqual(target.target, "//some/project:library_target_4")
+        self.assertEqual(target.name, "library_target_4")
+        self.assertIsNone(target.base_module)
+        self.assert_sources_equal(
+            target.sources, files={"folder/a.py": "a.py", "folder/b.py": "b.py"}
         )
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
@@ -316,7 +341,7 @@ class BuildRuleTest(unittest.TestCase):
         self.assertEqual(target.name, "non_python_target")
         self.assertListEqual(target.dependencies, [])
         self.assertListEqual(target.external_dependencies, [])
-        self.assert_sources_equal(target.sources, files=[], globs=[])
+        self.assert_sources_equal(target.sources, files={}, globs=[])
         self.assertIsNone(target.base_module)
 
     def test_thrift_library(self):

@@ -11,9 +11,9 @@ import subprocess
 import urllib.parse
 import urllib.request
 import zipfile
-from typing import Iterable, List, NamedTuple, Optional
+from typing import Iterable, List, Mapping, NamedTuple, Optional
 
-from ..filesystem import add_symbolic_link, get_filesystem
+from ..filesystem import get_filesystem
 
 
 Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
@@ -21,37 +21,41 @@ Glob = NamedTuple("Glob", [("patterns", List[str]), ("exclude", List[str])])
 
 class Sources:
     def __init__(
-        self, files: Optional[List[str]] = None, globs: Optional[List[Glob]] = None
+        self,
+        files: Optional[Mapping[str, str]] = None,
+        globs: Optional[List[Glob]] = None,
     ) -> None:
-        self.files = files or []  # type: List[str]
+        # Files are given as a mapping from source location to output location.
+        self.files = files or {}  # type: Mapping[str, str]
         self.globs = globs or []  # type: List[Glob]
 
 
-def resolve_sources(directory: str, sources: Sources) -> Iterable[str]:
+def resolve_source_mapping(
+    source_directory: str, output_directory: str, sources: Sources
+) -> Mapping[str, str]:
     """
-        Returns an iterable of absolute paths to the files specified by the sources
-        object. Files are not guaranteed to exist.
+        Returns a mapping from absolute source path to absolute output path as specified
+        by the sources object. Files are not guaranteed to exist.
     """
+    result = {
+        os.path.join(source_directory, source_file): os.path.join(
+            output_directory, output_file
+        )
+        for source_file, output_file in sources.files.items()
+    }
+
     filesystem = get_filesystem()
-    result = {os.path.join(directory, file) for file in sources.files}
     for glob in sources.globs:
-        matches = filesystem.list(directory, glob.patterns, exclude=glob.exclude)
-        result.update([os.path.join(directory, match) for match in matches])
+        matches = filesystem.list(source_directory, glob.patterns, exclude=glob.exclude)
+        result.update(
+            {
+                os.path.join(source_directory, match): os.path.join(
+                    output_directory, match
+                )
+                for match in matches
+            }
+        )
     return result
-
-
-def link_paths(
-    paths: Iterable[str], source_directory: str, output_directory: str
-) -> None:
-    """
-        For each path in the source directory, creates a symbolic link in the output
-        directory to the original path at the appropriate location (based on its
-        position relative to the source directory).
-    """
-    for path in paths:
-        relative_path = os.path.relpath(path, source_directory)
-        link_path = os.path.join(output_directory, relative_path)
-        add_symbolic_link(link_path, path)
 
 
 def build_thrift_stubs(

@@ -21,7 +21,7 @@ from typing import (  # noqa
 )
 
 from . import filesystem
-from ..filesystem import find_python_paths
+from ..filesystem import add_symbolic_link, find_python_paths
 
 
 class BuildTarget:
@@ -79,14 +79,16 @@ class BuildTarget:
 
     def build(self, output_directory: str) -> None:
         source_directory = os.path.join(self.buck_root, self.build_file_directory)
-        sources = filesystem.resolve_sources(source_directory, self.sources)
         if self.base_module is not None:
             base_path = os.path.join(*self.base_module.split("."))
         else:
             base_path = self.build_file_directory
-        filesystem.link_paths(
-            sources, source_directory, os.path.join(output_directory, base_path)
+        output_directory = os.path.join(output_directory, base_path)
+        source_mapping = filesystem.resolve_source_mapping(
+            source_directory, output_directory, self.sources
         )
+        for source_path, output_path in source_mapping.items():
+            add_symbolic_link(output_path, source_path)
 
 
 class NonPythonTarget(BuildTarget):

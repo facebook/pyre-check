@@ -16,6 +16,7 @@ from ...build_target import (
     ThriftLibrary,
 )
 from ...filesystem import Glob
+from ...tests.test_common import identity_mapping
 
 
 TARGETS_FILE_BASIC = """
@@ -137,14 +138,16 @@ class ParserTest(unittest.TestCase):
             target = result.targets["library_target"]
             self.assertIsInstance(target, PythonLibrary)
             self.assertEqual(target.target, "//my/module:library_target")
-            self.assertListEqual(target.sources.files, ["a.py", "b.py"])
+            self.assertDictEqual(
+                target.sources.files, identity_mapping(["a.py", "b.py"])
+            )
             self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, [])
 
             target = result.targets["test_target"]
             self.assertIsInstance(target, PythonUnitTest)
             self.assertEqual(target.target, "//my/module:test_target")
-            self.assertListEqual(target.sources.files, [])
+            self.assertDictEqual(target.sources.files, {})
             self.assertListEqual(target.sources.globs, [Glob(["tests/*.py"], [])])
             self.assertListEqual(target.dependencies, [])
 
@@ -202,7 +205,7 @@ class ParserTest(unittest.TestCase):
             target = result.targets["wheel"]
             self.assertIsInstance(target, PythonWheel)
             self.assertEqual(target.target, "//my/wheel:wheel")
-            self.assertListEqual(target.sources.files, [])
+            self.assertDictEqual(target.sources.files, {})
             self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, ["//some:target"])
             self.assertListEqual(target.external_dependencies, [("foo", "foo-py")])
@@ -212,7 +215,9 @@ class ParserTest(unittest.TestCase):
             target = result.targets["library_target"]
             self.assertIsInstance(target, PythonLibrary)
             self.assertEqual(target.target, "//my/wheel:library_target")
-            self.assertListEqual(target.sources.files, ["a.py", "b.py"])
+            self.assertDictEqual(
+                target.sources.files, identity_mapping(["a.py", "b.py"])
+            )
             self.assertListEqual(target.sources.globs, [])
             self.assertListEqual(target.dependencies, [])
             self.assertListEqual(target.external_dependencies, [])

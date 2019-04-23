@@ -18,7 +18,7 @@ from ..build_target import (
     ThriftLibrary,
 )
 from ..filesystem import Glob, Sources
-from .test_common import base
+from .test_common import base, identity_mapping
 
 
 class BuildTargetTest(unittest.TestCase):
@@ -57,44 +57,50 @@ class BuildTargetTest(unittest.TestCase):
             3,
         )
 
-    def test_build_python_binary(self):
+    @patch.object(filesystem, "get_filesystem")
+    def test_build_python_binary(self, get_filesystem):
+        filesystem_list = get_filesystem.return_value.list
         target = PythonBinary(
             "/ROOT",
             "project",
             base(
                 "binary",
-                sources=Sources(files=["a.py"], globs=[Glob(["foo/*.py"], [])]),
+                sources=Sources(
+                    files=identity_mapping(["a.py"]), globs=[Glob(["foo/*.py"], [])]
+                ),
             ),
         )
 
-        with patch.object(
-            filesystem,
-            "resolve_sources",
-            return_value=["/ROOT/project/a.py", "/ROOT/project/foo/b.py"],
-        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            filesystem_list.return_value = ["foo/b.py"]
             target.build("/out")
+            filesystem_list.assert_called_once_with(
+                "/ROOT/project", ["foo/*.py"], exclude=[]
+            )
             add_symbolic_link.assert_has_calls(
                 [
                     call("/out/project/a.py", "/ROOT/project/a.py"),
                     call("/out/project/foo/b.py", "/ROOT/project/foo/b.py"),
-                ]
+                ],
+                any_order=True,
             )
 
-    def test_build_python_library(self):
+    @patch.object(filesystem, "get_filesystem")
+    def test_build_python_library(self, get_filesystem):
+        filesystem_list = get_filesystem.return_value.list
         target = PythonLibrary(
-            "/ROOT", "project", base("library", sources=Sources(files=["a.py", "b.py"]))
+            "/ROOT",
+            "project",
+            base("library", sources=Sources(files=identity_mapping(["a.py", "b.py"]))),
         )
-        with patch.object(
-            filesystem,
-            "resolve_sources",
-            return_value=["/ROOT/project/a.py", "/ROOT/project/b.py"],
-        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
             target.build("/out")
             add_symbolic_link.assert_has_calls(
                 [
                     call("/out/project/a.py", "/ROOT/project/a.py"),
                     call("/out/project/b.py", "/ROOT/project/b.py"),
-                ]
+                ],
+                any_order=True,
             )
 
         # base_module should be respected.
@@ -103,58 +109,115 @@ class BuildTargetTest(unittest.TestCase):
             "project",
             base(
                 "library",
-                sources=Sources(files=["a.py", "b.py"]),
+                sources=Sources(files=identity_mapping(["a.py", "b.py"])),
                 base_module="foo.bar.baz",
             ),
         )
-        with patch.object(
-            filesystem,
-            "resolve_sources",
-            return_value=["/ROOT/project/a.py", "/ROOT/project/b.py"],
-        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+        with patch.object(filesystem, "get_filesystem"), patch.object(
+            build_target, "add_symbolic_link"
+        ) as add_symbolic_link:
             target.build("/out")
             add_symbolic_link.assert_has_calls(
                 [
                     call("/out/foo/bar/baz/a.py", "/ROOT/project/a.py"),
                     call("/out/foo/bar/baz/b.py", "/ROOT/project/b.py"),
-                ]
+                ],
+                any_order=True,
             )
 
         # Empty base_module should also work.
         target = PythonLibrary(
             "/ROOT",
             "project",
-            base("library", sources=Sources(files=["a.py", "b.py"]), base_module=""),
+            base(
+                "library",
+                sources=Sources(files=identity_mapping(["a.py", "b.py"])),
+                base_module="",
+            ),
         )
-        with patch.object(
-            filesystem,
-            "resolve_sources",
-            return_value=["/ROOT/project/a.py", "/ROOT/project/b.py"],
-        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
             target.build("/out")
             add_symbolic_link.assert_has_calls(
                 [
                     call("/out/a.py", "/ROOT/project/a.py"),
                     call("/out/b.py", "/ROOT/project/b.py"),
-                ]
+                ],
+                any_order=True,
             )
 
-    def test_build_python_unittest(self):
+        # Globs should work.
+        target = PythonLibrary(
+            "/ROOT",
+            "project",
+            base(
+                "library",
+                sources=Sources(globs=[Glob(["dir/*.py"], ["dir/exclude/*.py"])]),
+            ),
+        )
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            filesystem_list.return_value = ["dir/a.py", "dir/b.py"]
+            target.build("/out")
+            filesystem_list.assert_called_once_with(
+                "/ROOT/project", ["dir/*.py"], exclude=["dir/exclude/*.py"]
+            )
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/out/project/dir/a.py", "/ROOT/project/dir/a.py"),
+                    call("/out/project/dir/b.py", "/ROOT/project/dir/b.py"),
+                ],
+                any_order=True,
+            )
+
+        # Non-identity source mappings should work.
+        target = PythonLibrary(
+            "/ROOT",
+            "project",
+            base(
+                "library",
+                sources=Sources(files={"foo/bar/a.py": "a.py", "foo/bar/b.py": "b.py"}),
+            ),
+        )
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            target.build("/out")
+            add_symbolic_link.assert_has_calls(
+                [
+                    call("/out/project/a.py", "/ROOT/project/foo/bar/a.py"),
+                    call("/out/project/b.py", "/ROOT/project/foo/bar/b.py"),
+                ],
+                any_order=True,
+            )
+
+        # Non-identity source mapping + base module should work too.
+        target = PythonLibrary(
+            "/ROOT",
+            "project",
+            base(
+                "library",
+                sources=Sources(files={"foo/bar/a.py": "src/a.py"}),
+                base_module="x.y.z",
+            ),
+        )
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            target.build("/out")
+            add_symbolic_link.assert_called_once_with(
+                "/out/x/y/z/src/a.py", "/ROOT/project/foo/bar/a.py"
+            )
+
+    @patch.object(filesystem, "get_filesystem")
+    def test_build_python_unittest(self, get_filesystem):
+        filesystem_list = get_filesystem.return_value.list
         target = PythonUnitTest(
             "/ROOT",
             "project",
             base("test", sources=Sources(globs=[Glob(["tests/*.py"], [])])),
         )
 
-        with patch.object(
-            filesystem,
-            "resolve_sources",
-            return_value=[
-                "/ROOT/project/tests/test_a.py",
-                "/ROOT/project/tests/test_b.py",
-            ],
-        ), patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
+        with patch.object(build_target, "add_symbolic_link") as add_symbolic_link:
+            filesystem_list.return_value = ["tests/test_a.py", "tests/test_b.py"]
             target.build("/out")
+            filesystem_list.assert_called_once_with(
+                "/ROOT/project", ["tests/*.py"], exclude=[]
+            )
             add_symbolic_link.assert_has_calls(
                 [
                     call(
@@ -163,7 +226,8 @@ class BuildTargetTest(unittest.TestCase):
                     call(
                         "/out/project/tests/test_b.py", "/ROOT/project/tests/test_b.py"
                     ),
-                ]
+                ],
+                any_order=True,
             )
 
     @patch.object(tempfile, "TemporaryDirectory")

@@ -6,7 +6,7 @@
 # pyre-strict
 import ast
 import os
-from typing import Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from ..build_target import (
     BuildTarget,
@@ -153,10 +153,7 @@ def parse_python_wheel(
         )
     keywords = _get_keywords(python_wheel_default_calls[0])
     platform_versions = keywords["platform_versions"]
-    assert isinstance(platform_versions, ast.Dict)
-    keys = [_get_string(key) for key in platform_versions.keys]
-    values = [_get_string(value) for value in platform_versions.values]
-    platforms_to_wheel_version = dict(zip(keys, values))
+    platforms_to_wheel_version = _get_string_mapping(platform_versions)
 
     # Parse each python_wheel expression
     wheel_versions_mapping = {}
@@ -237,6 +234,16 @@ def _get_string_list(tree: Optional[ast.AST]) -> List[str]:
     )
 
 
+def _get_string_mapping(tree: Optional[ast.AST]) -> Mapping[str, str]:
+    if not tree:
+        return {}
+
+    assert isinstance(tree, ast.Dict)
+    keys = [_get_string(key) for key in tree.keys]
+    values = [_get_string(value) for value in tree.values]
+    return dict(zip(keys, values))
+
+
 def _get_keywords(tree: ast.AST) -> Dict[str, ast.expr]:
     assert isinstance(tree, ast.Call)
     result = {}
@@ -300,10 +307,15 @@ def _get_sources(sources: Optional[ast.AST]) -> Sources:
     if not sources:
         return Sources()
 
-    # Sources can be a list, a glob, or a concatenation of sources.
+    # Sources can be a list, a dict, a glob, or a concatenation of sources.
     def _get_sources(tree: ast.AST) -> Sources:
         if isinstance(tree, ast.List):
-            return Sources(files=_get_string_list(tree))
+            file_list = _get_string_list(tree)
+            files = dict(zip(file_list, file_list))  # Use an identity mapping.
+            return Sources(files=files)
+        elif isinstance(tree, ast.Dict):
+            files = _get_string_mapping(tree)
+            return Sources(files=files)
         elif isinstance(tree, ast.Call):
             function = tree.func
             assert isinstance(function, ast.Name) and function.id == "glob"
@@ -312,15 +324,13 @@ def _get_sources(sources: Optional[ast.AST]) -> Sources:
             exclude = (
                 _get_string_list(keywords["exclude"]) if "exclude" in keywords else []
             )
-
             return Sources(globs=[Glob(patterns, exclude)])
         elif isinstance(tree, ast.BinOp):
             assert isinstance(tree.op, ast.Add)
             left = _get_sources(tree.left)
             right = _get_sources(tree.right)
-            return Sources(
-                files=left.files + right.files, globs=left.globs + right.globs
-            )
+            files = {**left.files, **right.files}
+            return Sources(files=files, globs=left.globs + right.globs)
         raise ValueError(
             "Tree of type {} unexpected for sources field.".format(type(tree))
         )

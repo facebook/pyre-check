@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import List, Optional, Tuple
+from typing import List, Mapping, Optional, Tuple
 
 from ..build_target import BuildTarget
 from ..filesystem import Sources
@@ -24,3 +24,7 @@ def base(
         base_module=base_module,
         external_dependencies=external_dependencies or [],
     )
+
+
+def identity_mapping(files: List[str]) -> Mapping[str, str]:
+    return dict(zip(files, files))

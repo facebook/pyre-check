@@ -17,44 +17,54 @@ from ..filesystem import (
     Sources,
     build_thrift_stubs,
     download_and_extract_zip_file,
-    link_paths,
-    resolve_sources,
+    resolve_source_mapping,
 )
+from .test_common import identity_mapping
 
 
 class FilesystemTest(unittest.TestCase):
-    def assert_paths_match(self, first: Iterable[str], second: Iterable[str]) -> None:
-        self.assertListEqual(sorted(first), sorted(second))
-
     @patch.object(filesystem, "get_filesystem")
-    def test_resolve_sources(self, mock_filesystem):
+    def test_resolve_source_mapping(self, mock_filesystem):
         mock_list = mock_filesystem.return_value.list
-        directory = "/project"
+        source_directory = "/project"
+        output_directory = "/out"
 
-        sources = resolve_sources(directory, Sources(files=["a.py", "b.py"]))
-        self.assert_paths_match(sources, ["/project/a.py", "/project/b.py"])
-
-        # Duplicates are filtered out.
-        sources = resolve_sources(directory, Sources(files=["a.py", "b.py", "a.py"]))
-        self.assert_paths_match(sources, ["/project/a.py", "/project/b.py"])
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
+            Sources(files=identity_mapping(["a.py", "b.py"])),
+        )
+        self.assertDictEqual(
+            sources, {"/project/a.py": "/out/a.py", "/project/b.py": "/out/b.py"}
+        )
 
         mock_list.return_value = ["dir/c.py", "dir/d.py"]
-        sources = resolve_sources(directory, Sources(globs=[Glob(["dir/*.py"], [])]))
-        self.assert_paths_match(sources, ["/project/dir/c.py", "/project/dir/d.py"])
+        sources = resolve_source_mapping(
+            source_directory, output_directory, Sources(globs=[Glob(["dir/*.py"], [])])
+        )
+        self.assertDictEqual(
+            sources,
+            {
+                "/project/dir/c.py": "/out/dir/c.py",
+                "/project/dir/d.py": "/out/dir/d.py",
+            },
+        )
         mock_list.assert_called_once_with("/project", ["dir/*.py"], exclude=[])
         mock_list.reset_mock()
 
-        mock_list.return_value = [
-            "/project/dir/c.py",
-            "/project/dir/d.py",
-            "/project/other_dir/g.py",
-        ]
-        sources = resolve_sources(
-            directory, Sources(globs=[Glob(["dir/*.py", "other_dir/*.py"], [])])
+        mock_list.return_value = ["dir/c.py", "dir/d.py", "other_dir/g.py"]
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
+            Sources(globs=[Glob(["dir/*.py", "other_dir/*.py"], [])]),
         )
-        self.assert_paths_match(
+        self.assertDictEqual(
             sources,
-            ["/project/dir/c.py", "/project/dir/d.py", "/project/other_dir/g.py"],
+            {
+                "/project/dir/c.py": "/out/dir/c.py",
+                "/project/dir/d.py": "/out/dir/d.py",
+                "/project/other_dir/g.py": "/out/other_dir/g.py",
+            },
         )
         mock_list.assert_called_once_with(
             "/project", ["dir/*.py", "other_dir/*.py"], exclude=[]
@@ -62,17 +72,18 @@ class FilesystemTest(unittest.TestCase):
         mock_list.reset_mock()
 
         mock_list.return_value = ["dir/foo/e.py", "dir/foo/f.py", "other_dir/g.py"]
-        sources = resolve_sources(
-            directory,
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
             Sources(globs=[Glob(["dir/**/*.py", "other_dir/*.py"], ["dir/*.py"])]),
         )
-        self.assert_paths_match(
+        self.assertDictEqual(
             sources,
-            [
-                "/project/dir/foo/e.py",
-                "/project/dir/foo/f.py",
-                "/project/other_dir/g.py",
-            ],
+            {
+                "/project/dir/foo/e.py": "/out/dir/foo/e.py",
+                "/project/dir/foo/f.py": "/out/dir/foo/f.py",
+                "/project/other_dir/g.py": "/out/other_dir/g.py",
+            },
         )
         mock_list.assert_called_once_with(
             "/project", ["dir/**/*.py", "other_dir/*.py"], exclude=["dir/*.py"]
@@ -84,8 +95,9 @@ class FilesystemTest(unittest.TestCase):
             ["dir/foo/e.py", "dir/foo/f.py", "other_dir/g.py"],
             ["dir/c.py", "dir/d.py"],
         ]
-        sources = resolve_sources(
-            directory,
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
             Sources(
                 globs=[
                     Glob(["dir/**/*.py", "other_dir/*.py"], ["dir/*.py"]),
@@ -93,15 +105,15 @@ class FilesystemTest(unittest.TestCase):
                 ]
             ),
         )
-        self.assert_paths_match(
+        self.assertDictEqual(
             sources,
-            [
-                "/project/dir/c.py",
-                "/project/dir/d.py",
-                "/project/dir/foo/e.py",
-                "/project/dir/foo/f.py",
-                "/project/other_dir/g.py",
-            ],
+            {
+                "/project/dir/c.py": "/out/dir/c.py",
+                "/project/dir/d.py": "/out/dir/d.py",
+                "/project/dir/foo/e.py": "/out/dir/foo/e.py",
+                "/project/dir/foo/f.py": "/out/dir/foo/f.py",
+                "/project/other_dir/g.py": "/out/other_dir/g.py",
+            },
         )
         mock_list.assert_has_calls(
             [
@@ -115,22 +127,23 @@ class FilesystemTest(unittest.TestCase):
 
         # Globs and regular files work together.
         mock_list.side_effect = [["dir/c.py", "dir/d.py"], ["other_dir/g.py"]]
-        sources = resolve_sources(
-            directory,
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
             Sources(
-                files=["a.py", "b.py"],
+                files=identity_mapping(["a.py", "b.py"]),
                 globs=[Glob(["dir/*.py"], []), Glob(["other_dir/*.py"], [])],
             ),
         )
-        self.assert_paths_match(
+        self.assertDictEqual(
             sources,
-            [
-                "/project/a.py",
-                "/project/b.py",
-                "/project/dir/c.py",
-                "/project/dir/d.py",
-                "/project/other_dir/g.py",
-            ],
+            {
+                "/project/a.py": "/out/a.py",
+                "/project/b.py": "/out/b.py",
+                "/project/dir/c.py": "/out/dir/c.py",
+                "/project/dir/d.py": "/out/dir/d.py",
+                "/project/other_dir/g.py": "/out/other_dir/g.py",
+            },
         )
         mock_list.assert_has_calls(
             [
@@ -139,24 +152,19 @@ class FilesystemTest(unittest.TestCase):
             ]
         )
 
-    def test_link_paths(self):
-        with patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
-            link_paths(["/src/a.py", "/src/b/c.py"], "/src", "/output")
-            add_symbolic_link.assert_has_calls(
-                [
-                    call("/output/a.py", "/src/a.py"),
-                    call("/output/b/c.py", "/src/b/c.py"),
-                ]
-            )
-
-        with patch.object(filesystem, "add_symbolic_link") as add_symbolic_link:
-            link_paths(["/src/a.py", "/src/b/c.py"], "/src", "/src/.pyre")
-            add_symbolic_link.assert_has_calls(
-                [
-                    call("/src/.pyre/a.py", "/src/a.py"),
-                    call("/src/.pyre/b/c.py", "/src/b/c.py"),
-                ]
-            )
+        # Non-identity source mappings should work.
+        sources = resolve_source_mapping(
+            source_directory,
+            output_directory,
+            Sources(files={"a.py": "foo/bar/a.py", "b.py": "foo/bar/baz/b.py"}),
+        )
+        self.assertDictEqual(
+            sources,
+            {
+                "/project/a.py": "/out/foo/bar/a.py",
+                "/project/b.py": "/out/foo/bar/baz/b.py",
+            },
+        )
 
     def test_build_thrift_stubs(self):
         with patch.object(subprocess, "call") as subprocess_call:
