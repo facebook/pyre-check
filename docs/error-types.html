@@ -158,4 +158,36 @@ typing<span class="hljs-selector-class">.Set</span> → typing<span class="hljs-
   a: List[float] = [0] * number_of_elements
   return a #<span class="hljs-built_in"> Type </span>checks!
 </code></pre>
+<h2><a class="anchor" aria-hidden="true" id="35-invalid-type-variance"></a><a href="#35-invalid-type-variance" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>[35]: Invalid type variance</h2>
+<p>In brief, read-only data types can be covariant, write-only data types can be contravariant, and data types that support both reads and writes must be invariant.
+If a data type implements any functions accepting parameters of that type, we cannot guarantee that writes are not happening. If a data type implements any functions returning values of that type, we cannot guarantee that reads are not happening.
+For example (note: int is a subclass of float in the type system and in these examples):
+Writes taking covariants:</p>
+<pre><code class="hljs">_T_co = typing.TypeVar(<span class="hljs-string">"_T_co"</span>, covariant=<span class="hljs-literal">True</span>)
+
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyList</span><span class="hljs-params">(typing.Generic[_T_co])</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">write</span><span class="hljs-params">(self, element: _T_co)</span> -&gt; <span class="hljs-keyword">None</span>:</span>
+        ... <span class="hljs-comment"># adds element to list</span>
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">takes_float_list</span><span class="hljs-params">(float_list: MyList[float])</span> -&gt; <span class="hljs-keyword">None</span>:</span>
+    float_list.write(<span class="hljs-number">1.0</span>)
+
+int_list: MyList[int] = ...
+takes_float_list(int_list)  <span class="hljs-comment"># this call is OK because MyList is covariant: MyList[int] &lt; MyList[float]</span>
+<span class="hljs-comment"># int_list contains floats</span>
+</code></pre>
+<p>Reads returning contravariants:</p>
+<pre><code class="hljs">_T_cont = typing.TypeVar(<span class="hljs-string">"_T_cont"</span>, contravariant=True)
+
+class MyList(typing.Generic[_T_cont]):
+    def <span class="hljs-keyword">read</span>(self) -&gt; _T_con<span class="hljs-variable">t:</span>
+        ... # returns <span class="hljs-keyword">first</span> element from <span class="hljs-keyword">list</span>
+
+def takes_int_list(int_lis<span class="hljs-variable">t:</span> MyList[<span class="hljs-keyword">int</span>]) -&gt; in<span class="hljs-variable">t:</span>
+   <span class="hljs-keyword">return</span> int_list.<span class="hljs-keyword">read</span>()
+
+float_lis<span class="hljs-variable">t:</span> MyList[float] = ...
+takes_int_list(float_list)  # this <span class="hljs-keyword">call</span> <span class="hljs-keyword">is</span> OK because MyList <span class="hljs-keyword">is</span> contravarian<span class="hljs-variable">t:</span> MyList[float] &lt; MyList[<span class="hljs-keyword">int</span>]
+# problem with <span class="hljs-keyword">return</span> above <span class="hljs-keyword">is</span> clear
+</code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/error-suppression.html"><span class="arrow-prev">← </span><span>Error Suppression</span></a><a class="docs-next button" href="/docs/lsp-integration.html"><span>Editor Integration</span><span class="arrow-next"> →</span></a></div></div></div></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="https://code.facebook.com/projects/" target="_blank" class="fbOpenSource"><img src="/img/oss_logo.png" alt="Facebook Open Source" width="170" height="45"/></a><a href="https://code.facebook.com/projects/" target="_blank">Open Source Projects</a><a href="https://github.com/facebook/" target="_blank">Github</a><a href="https://twitter.com/fbOpenSource" target="_blank">Twitter</a><a href="https://github.com/facebook/pyre-check" target="_blank">Contribute to Pyre</a></section></footer></div></body></html>
