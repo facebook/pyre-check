@@ -1334,9 +1334,9 @@ module OrderImplementation = struct
                     |> List.fold ~f:(join order) ~init:Type.Bottom
               end
 
-        | other, Type.Variable variable
-        | Type.Variable variable, other ->
-            join order (Type.Variable.upper_bound variable) other
+        | _, Type.Variable _
+        | Type.Variable _, _ ->
+            union
 
         | Type.Parametric _, Type.Parametric _
         | Type.Parametric _, Type.Primitive _

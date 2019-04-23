@@ -2090,28 +2090,34 @@ let test_join _ =
   (* Variables. *)
   assert_type_equal
     (join order Type.integer (Type.variable "T"))
-    Type.object_primitive;
+    (Type.union [ Type.integer; Type.variable "T" ]);
   assert_type_equal
     (join order Type.integer (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T"))
-    (Type.union [Type.string; Type.integer]);
+    (Type.union [Type.integer; (Type.variable ~constraints:(Type.Variable.Bound Type.string) "T")]);
   assert_type_equal
     (join
        order
        Type.string
        (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T"))
-    (Type.union [Type.float; Type.integer; Type.string]);
+    (Type.union [
+        Type.string;
+        (Type.variable ~constraints:(Type.Variable.Explicit [Type.float; Type.integer]) "T");
+      ]);
   assert_type_equal
     (join
        order
        Type.string
        (Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"))
-    (Type.union [Type.integer; Type.string]);
+    (Type.union [ Type.string; Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"]);
   assert_type_equal
     (join
        order
        (Type.literal_integer 7)
        (Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T"))
-    Type.integer;
+    (Type.union [
+        Type.literal_integer 7;
+        Type.variable ~constraints:(Type.Variable.LiteralIntegers) "T";
+      ]);
 
   (* Variance. *)
   assert_type_equal

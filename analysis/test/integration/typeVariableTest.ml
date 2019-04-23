@@ -117,6 +117,17 @@ let test_check_unbounded_variables _ =
       "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd anonymous " ^
       "parameter to call `generic` but got `List[int]`.";
     ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T')
+      def foo(input: T, b: bool) -> typing.Optional[T]:
+        x = None
+        if b:
+          x = input
+        reveal_type(x)
+        return x
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[Variable[T]]`."];
   ()
 
 
