@@ -74,6 +74,7 @@ class FakeObjectGenerator:
         callee="triple_meh",
         callee_port="at the beginning of time",
         filename="lib/server/posts/request.py",
+        location=(4, 5, 6),
     ):
         filename_record = self.filename(filename)
         caller_record = self.callable(caller)
@@ -87,7 +88,7 @@ class FakeObjectGenerator:
             callee=callee,
             callee_id=callee_record.id,
             callee_port=callee_port,
-            callee_location=SourceLocation(4, 5, 6),
+            callee_location=SourceLocation(location[0], location[1], location[2]),
             filename=filename,
             filename_id=filename_record.id,
             titos=[],
@@ -110,6 +111,7 @@ class FakeObjectGenerator:
         callee="quintuple_meh",
         callee_port="callee_meh",
         filename="lib/server/posts/response.py",
+        location=(4, 5, 6),
     ):
         filename_record = self.filename(filename)
         caller_record = self.callable(caller)
@@ -123,7 +125,7 @@ class FakeObjectGenerator:
             callee=callee,
             callee_id=callee_record.id,
             callee_port=callee_port,
-            callee_location=SourceLocation(4, 5, 6),
+            callee_location=SourceLocation(location[0], location[1], location[2]),
             filename=filename,
             filename_id=filename_record.id,
             titos=[],

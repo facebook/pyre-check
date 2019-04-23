@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime
 from io import StringIO
+from typing import List
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
@@ -414,205 +415,205 @@ class InteractiveTest(TestCase):
 
     def _basic_trace_frames(self):
         return [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="call2",
                 callee_port="param0",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call2",
                 caller_port="param0",
                 callee="leaf",
                 callee_port="sink",
-                callee_location=SourceLocation(1, 2),
-                filename="file.py",
-                run_id=1,
+                location=(1, 2, 1),
             ),
         ]
 
     def testNextTraceFrames(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        trace_frames = self._basic_trace_frames()
-        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
-        assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
+        run = self.fakes.run()
+        frames = self._basic_trace_frames()
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add(
+            TraceFrameLeafAssoc.Record(
+                trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
+            )
+        )
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
             session.add(run)
-            session.add(sink)
-            session.add(assoc)
             session.commit()
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_forward_trace_frames(
-                session, trace_frames[0], set()
+                session, frames[0], set()
             )
             self.assertEqual(len(next_frames), 1)
-            self.assertEqual(int(next_frames[0].id), int(trace_frames[1].id))
+            self.assertEqual(int(next_frames[0].id), int(frames[1].id))
 
     def testNextTraceFramesMultipleRuns(self):
-        runs = [
-            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
-            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
-        ]
-        trace_frames_run1 = self._basic_trace_frames()
-        trace_frames_run2 = self._basic_trace_frames()
-        trace_frames_run2[0].id = 3
-        trace_frames_run2[0].run_id = 2
-        trace_frames_run2[1].id = 4
-        trace_frames_run2[1].run_id = 2
+        run1 = self.fakes.run()
+        frames = self._basic_trace_frames()
+        self.fakes.save_all(self.db)
 
-        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
-        assocs = [
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=1, trace_length=0),
-        ]
+        run2 = self.fakes.run()
+        frames.extend(self._basic_trace_frames())
+
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[3].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames_run1)
-            self._add_to_session(session, trace_frames_run2)
-            self._add_to_session(session, runs)
-            self._add_to_session(session, assocs)
-            session.add(sink)
+            session.add(run1)
+            session.add(run2)
             session.commit()
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_forward_trace_frames(
-                session, trace_frames_run2[0], set()
+                session, frames[2], set()
             )
             self.assertEqual(len(next_frames), 1)
-            self.assertEqual(int(next_frames[0].id), int(trace_frames_run2[1].id))
+            self.assertEqual(int(next_frames[0].id), int(frames[3].id))
 
     def testNextTraceFramesBackwards(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        trace_frames = self._basic_trace_frames()
-        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
-        assocs = [
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
+        run = self.fakes.run()
+        frames = [
+            self.fakes.precondition(
+                caller="call1",
+                caller_port="root",
+                callee="call3",
+                callee_port="param1",
+                location=(1, 1, 1),
+            ),
+            self.fakes.precondition(
+                caller="call3",
+                caller_port="param1",
+                callee="leaf",
+                callee_port="sink",
+                location=(1, 2, 1),
+            ),
         ]
-
-        trace_frames[0].callee = "call3"
-        trace_frames[0].callee_port = "param1"
-        trace_frames[1].caller = "call3"
-        trace_frames[1].caller_port = "param1"
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.add(run)
-            session.add(sink)
             session.commit()
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
             next_frames = self.interactive._next_backward_trace_frames(
-                session, trace_frames[1], set()
+                session, frames[1], set()
             )
             self.assertEqual(len(next_frames), 1)
-            self.assertEqual(int(next_frames[0].id), int(trace_frames[0].id))
+            self.assertEqual(int(next_frames[0].id), int(frames[0].id))
 
     def testNavigateTraceFrames(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        trace_frames = self._basic_trace_frames()
-        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
-        assoc = TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1)
+        run = self.fakes.run()
+        frames = self._basic_trace_frames()
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add(
+            TraceFrameLeafAssoc.Record(
+                trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
+            )
+        )
+        self.fakes.save_all(self.db)
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
             session.add(run)
-            session.add(sink)
-            session.add(assoc)
             session.commit()
 
             self.interactive.setup()
             self.interactive.sinks = {"sink1"}
-            result = self.interactive._navigate_trace_frames(session, [trace_frames[0]])
+            result = self.interactive._navigate_trace_frames(session, [frames[0]])
             self.assertEqual(len(result), 2)
-            self.assertEqual(int(result[0][0].id), 1)
-            self.assertEqual(int(result[1][0].id), 2)
+            self.assertEqual(int(result[0][0].id), int(frames[0].id))
+            self.assertEqual(int(result[1][0].id), int(frames[1].id))
 
     def testNavigateTraceFramesDetectsCycle(self):
         """This test checks that we don't get stuck in a cycle. Without cycle
         detection code, this test will go from 1->2->1->2->... . With cycle
         detection code it goes 1->2->3->4.
         """
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.PRECONDITION,
+        run = self.fakes.run()
+        frames = [
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="param1",
                 callee="call2",
                 callee_port="param2",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call2",
                 caller_port="param2",
                 callee="call1",
                 callee_port="param1",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
             ),
-            TraceFrame(
-                id=3,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="param1",
                 callee="call3",
                 callee_port="param3",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
             ),
-            TraceFrame(
-                id=4,
-                kind=TraceKind.PRECONDITION,
-                caller="call3",
-                caller_port="param3",
-                callee="leaf",
-                callee_port="sink",
-                callee_location=SourceLocation(1, 2),
-                filename="file.py",
-                run_id=1,
+            self.fakes.precondition(
+                caller="call3", caller_port="param3", callee="leaf", callee_port="sink"
             ),
         ]
-        assocs = [
-            # This trace_length 0 is part of a bug.
-            # See models.py:TraceFrameLeafAssoc.trace_length
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=1, trace_length=0),
-        ]
-        sink = SharedText(id=1, contents="sink1", kind=SharedTextKind.SINK)
+        sink = self.fakes.sink("sink")
+        self.fakes.saver.add_all(
+            [
+                # This trace_length 0 is part of a bug.
+                # See models.py:TraceFrameLeafAssoc.trace_length
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[2].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[3].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.add(run)
-            session.add(sink)
             session.commit()
 
             self.interactive.setup()
-            self.interactive.sinks = {"sink1"}
-            frames = self.interactive._navigate_trace_frames(session, [trace_frames[0]])
+            self.interactive.sinks = {"sink"}
+            trace = self.interactive._navigate_trace_frames(session, [frames[0]])
+            self.assertEqual(len(frames), 4)
             self.assertEqual(
-                [int(frame.id) for frame, _branches in frames], [1, 2, 3, 4]
+                [int(frame.id) for frame, _branches in trace],
+                [int(frame.id) for frame in frames],
             )
 
     def testCreateTraceTuples(self):
@@ -760,44 +761,49 @@ class InteractiveTest(TestCase):
     def testTraceFromIssue(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source()
-        self.fakes.save_all(self.db)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.POSTCONDITION,
+        frames = [
+            self.fakes.postcondition(
                 caller="call1",
                 caller_port="root",
                 callee="leaf",
                 callee_port="source",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="leaf",
                 callee_port="sink",
-                callee_location=SourceLocation(1, 1, 2),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 2),
             ),
         ]
-        assocs = [
-            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
-        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[0].id, issue_instance_id=instance.id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[1].id, issue_instance_id=instance.id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=source.id, trace_length=0
+                ),
+            ]
+        )
+
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -806,32 +812,41 @@ class InteractiveTest(TestCase):
         self.assertIn("Use 'issue ID' or 'frame ID'", stderr)
 
         self.interactive.issue(1)
+        self._clear_stdout()
         self.interactive.trace()
-        output = self.stdout.getvalue().strip()
-        self.assertIn("     1    leaf          source file.py:1|1|1", output)
-        self.assertIn(
-            " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8", output
+        self.assertEqual(
+            self.stdout.getvalue().split("\n"),
+            [
+                "     # ⎇  [callable]    [port] [location]",
+                "     1    leaf          source lib/server/posts/response.py:1|1|1",
+                " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8",
+                "     3    leaf          sink   lib/server/posts/request.py:1|1|2",
+                "",
+            ],
         )
-        self.assertIn("     3    leaf          sink   file.py:1|1|2", output)
 
     def testTraceFromFrame(self):
-        run = Run(id=1, date=datetime.now(), status=RunStatus.FINISHED)
-        trace_frames = self._basic_trace_frames()
-        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
-        assocs = [
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
-        ]
+        run = self.fakes.run()
+        frames = self._basic_trace_frames()
+        sink = self.fakes.sink("sink")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
-            session.add(shared_text)
             session.add(run)
             session.commit()
 
         self.interactive.setup()
-        self.interactive.frame(1)
+        self.interactive.frame(int(frames[0].id))
 
         self._clear_stdout()
         self.interactive.trace()
@@ -840,9 +855,9 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable] [port] [location]",
-                " --> 1    call1      root   file.py:1|1|1",
-                "     2    call2      param0 file.py:1|1|1",
-                "     3    leaf       sink   file.py:1|2|2",
+                " --> 1    call1      root   lib/server/posts/request.py:1|1|1",
+                "     2    call2      param0 lib/server/posts/request.py:1|1|1",
+                "     3    leaf       sink   lib/server/posts/request.py:1|2|1",
                 "",
             ],
         )
@@ -850,44 +865,48 @@ class InteractiveTest(TestCase):
     def testTraceMissingFrames(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source()
-        self.fakes.save_all(self.db)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.POSTCONDITION,
+        frames = [
+            self.fakes.postcondition(
                 caller="call1",
                 caller_port="root",
                 callee="leaf",
                 callee_port="source",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="call2",
                 callee_port="param0",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
         ]
-        assocs = [
-            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
-        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[0].id, issue_instance_id=instance.id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[1].id, issue_instance_id=instance.id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=source.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -899,43 +918,48 @@ class InteractiveTest(TestCase):
     def testTraceCursorLocation(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance(callable="Issue callable")
+        instance = self.fakes.instance(callable="Issue callable")
         source = self.fakes.source()
-        self.fakes.save_all(self.db)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.POSTCONDITION,
+        frames = [
+            self.fakes.postcondition(
                 caller="call1",
                 caller_port="root",
                 callee="leaf",
                 callee_port="source",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="leaf",
                 callee_port="sink",
-                callee_location=SourceLocation(1, 2),
-                filename="file.py",
-                run_id=1,
+                location=(1, 2, 1),
             ),
         ]
-        assocs = [
-            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
-        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[0].id, issue_instance_id=instance.id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[1].id, issue_instance_id=instance.id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=source.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -961,43 +985,41 @@ class InteractiveTest(TestCase):
     def testJumpToLocation(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source()
+        frames = [
+            self.fakes.postcondition(
+                caller="call1", caller_port="root", callee="leaf", callee_port="source"
+            ),
+            self.fakes.precondition(
+                caller="call1", caller_port="root", callee="leaf", callee_port="sink"
+            ),
+        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[0].id, issue_instance_id=instance.id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    trace_frame_id=frames[1].id, issue_instance_id=instance.id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=source.id, trace_length=0
+                ),
+            ]
+        )
+
         self.fakes.save_all(self.db)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.POSTCONDITION,
-                caller="call1",
-                caller_port="root",
-                callee="leaf",
-                callee_port="source",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
-            ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
-                caller="call1",
-                caller_port="root",
-                callee="leaf",
-                callee_port="sink",
-                callee_location=SourceLocation(1, 2),
-                filename="file.py",
-                run_id=1,
-            ),
-        ]
-        assocs = [
-            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            IssueInstanceTraceFrameAssoc(trace_frame_id=2, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id),
-        ]
+
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -1019,28 +1041,26 @@ class InteractiveTest(TestCase):
     def testTraceNoSinks(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source("source1")
-        self.fakes.save_all(self.db)
-        trace_frame = TraceFrame(
-            id=1,
-            kind=TraceKind.POSTCONDITION,
-            caller="call1",
-            caller_port="root",
-            callee="leaf",
-            callee_port="source",
-            callee_location=SourceLocation(1, 1),
-            filename="file.py",
-            run_id=1,
+        frame = self.fakes.postcondition(
+            caller="call1", caller_port="root", callee="leaf", callee_port="source"
         )
-        assocs = [
-            IssueInstanceTraceFrameAssoc(trace_frame_id=1, issue_instance_id=1),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id),
-        ]
+        self.fakes.saver.add(
+            IssueInstanceTraceFrameAssoc.Record(
+                trace_frame_id=frame.id, issue_instance_id=instance.id
+            )
+        )
+        self.fakes.saver.add(
+            TraceFrameLeafAssoc.Record(
+                trace_frame_id=frame.id, leaf_id=source.id, trace_length=0
+            )
+        )
+
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
             session.add(run)
-            session.add(trace_frame)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -1052,80 +1072,95 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable]    [port] [location]",
-                "     1    leaf          source file.py:1|1|1",
+                "     1    leaf          source lib/server/posts/response.py:4|5|6",
                 " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8",
                 "",
             ],
         )
 
-    def _set_up_branched_trace(self):
+    def _set_up_branched_trace(self) -> List[TraceFrame]:
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source("source1")
         sink = self.fakes.sink("sink1")
-        self.fakes.save_all(self.db)
-        trace_frames = []
-        assocs = [
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=source.id),
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=sink.id),
-        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceSharedTextAssoc.Record(
+                    issue_instance_id=instance.id, shared_text_id=source.id
+                ),
+                IssueInstanceSharedTextAssoc.Record(
+                    issue_instance_id=instance.id, shared_text_id=sink.id
+                ),
+            ]
+        )
+        frames = []
         for i in range(6):
-            trace_frames.append(
-                TraceFrame(
-                    id=i + 1,
-                    caller="call1",
-                    caller_port="root",
-                    filename="file.py",
-                    callee_location=SourceLocation(i, i, i),
-                    run_id=1,
-                )
-            )
             if i < 2:  # 2 postconditions
-                trace_frames[i].kind = TraceKind.POSTCONDITION
-                trace_frames[i].callee = "leaf"
-                trace_frames[i].callee_port = "source"
-                assocs.append(
-                    TraceFrameLeafAssoc(
-                        trace_frame_id=i + 1, leaf_id=source.id, trace_length=0
+                frames.append(
+                    self.fakes.postcondition(
+                        caller="call1",
+                        caller_port="root",
+                        callee="leaf",
+                        callee_port="source",
+                        location=(i, i, i),
                     )
                 )
-                assocs.append(
-                    IssueInstanceTraceFrameAssoc(
-                        trace_frame_id=i + 1, issue_instance_id=1
+                self.fakes.saver.add(
+                    TraceFrameLeafAssoc.Record(
+                        trace_frame_id=frames[-1].id, leaf_id=source.id, trace_length=i
+                    )
+                )
+                self.fakes.saver.add(
+                    IssueInstanceTraceFrameAssoc.Record(
+                        trace_frame_id=frames[-1].id, issue_instance_id=instance.id
                     )
                 )
             elif i < 4:
-                trace_frames[i].kind = TraceKind.PRECONDITION
-                trace_frames[i].callee = "call2"
-                trace_frames[i].callee_port = "param2"
-                assocs.append(
-                    TraceFrameLeafAssoc(
-                        trace_frame_id=i + 1, leaf_id=sink.id, trace_length=1
+                frames.append(
+                    self.fakes.precondition(
+                        caller="call1",
+                        caller_port="root",
+                        callee="call2",
+                        callee_port="param2",
+                        location=(i, i, i),
                     )
                 )
-                assocs.append(
-                    IssueInstanceTraceFrameAssoc(
-                        trace_frame_id=i + 1, issue_instance_id=1
+                self.fakes.saver.add(
+                    TraceFrameLeafAssoc.Record(
+                        trace_frame_id=frames[-1].id, leaf_id=sink.id, trace_length=i
+                    )
+                )
+                self.fakes.saver.add(
+                    IssueInstanceTraceFrameAssoc.Record(
+                        trace_frame_id=frames[-1].id, issue_instance_id=instance.id
                     )
                 )
             else:
-                trace_frames[i].kind = TraceKind.PRECONDITION
-                trace_frames[i].caller = "call2"
-                trace_frames[i].caller_port = "param2"
-                trace_frames[i].callee = "leaf"
-                trace_frames[i].callee_port = "sink"
-                assocs.append(
-                    TraceFrameLeafAssoc(
-                        trace_frame_id=i + 1, leaf_id=sink.id, trace_length=0
+                frames.append(
+                    self.fakes.precondition(
+                        caller="call2",
+                        caller_port="param2",
+                        callee="leaf",
+                        callee_port="sink",
+                        location=(i, i, i),
+                    )
+                )
+                self.fakes.saver.add(
+                    TraceFrameLeafAssoc.Record(
+                        trace_frame_id=frames[-1].id,
+                        leaf_id=sink.id,
+                        trace_length=5 - i,
                     )
                 )
 
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
+
+        return frames
 
     def testTraceBranchNumber(self):
         self._set_up_branched_trace()
@@ -1142,10 +1177,10 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable]    [port] [location]",
-                "     1 +2 leaf          source file.py:0|0|0",
+                "     1 +2 leaf          source lib/server/posts/response.py:0|0|0",
                 " --> 2    Foo.barMethod root   /r/some/filename.py:6|7|8",
-                "     3 +2 call2         param2 file.py:2|2|2",
-                "     4 +2 leaf          sink   file.py:4|4|4",
+                "     3 +2 call2         param2 lib/server/posts/request.py:2|2|2",
+                "     4 +2 leaf          sink   lib/server/posts/request.py:5|5|5",
                 "",
             ],
         )
@@ -1161,11 +1196,15 @@ class InteractiveTest(TestCase):
             self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] leaf : source\n        [0 hops: source1]\n        [file.py:0|0|0]",
+            "[*] leaf : source\n"
+            "        [0 hops: source1]\n"
+            "        [lib/server/posts/response.py:0|0|0]",
             output,
         )
         self.assertIn(
-            "[2] leaf : source\n        [0 hops: source1]\n        [file.py:1|1|1]",
+            "[2] leaf : source\n"
+            "        [1 hops: source1]\n"
+            "        [lib/server/posts/response.py:1|1|1]",
             output,
         )
 
@@ -1177,11 +1216,15 @@ class InteractiveTest(TestCase):
             self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] call2 : param2\n        [1 hops: sink1]\n        [file.py:2|2|2]",
+            "[*] call2 : param2\n"
+            "        [2 hops: sink1]\n"
+            "        [lib/server/posts/request.py:2|2|2]",
             output,
         )
         self.assertIn(
-            "[2] call2 : param2\n        [1 hops: sink1]\n        [file.py:3|3|3]",
+            "[2] call2 : param2\n"
+            "        [3 hops: sink1]\n"
+            "        [lib/server/posts/request.py:3|3|3]",
             output,
         )
 
@@ -1192,14 +1235,20 @@ class InteractiveTest(TestCase):
             self.interactive.branch()
         output = self.stdout.getvalue().strip()
         self.assertIn(
-            "[*] leaf : sink\n        [0 hops: sink1]\n        [file.py:4|4|4]", output
+            "[*] leaf : sink\n"
+            "        [0 hops: sink1]\n"
+            "        [lib/server/posts/request.py:5|5|5]",
+            output,
         )
         self.assertIn(
-            "[2] leaf : sink\n        [0 hops: sink1]\n        [file.py:5|5|5]", output
+            "[2] leaf : sink\n"
+            "        [1 hops: sink1]\n"
+            "        [lib/server/posts/request.py:4|4|4]",
+            output,
         )
 
     def testGetTraceFrameBranches(self):
-        self._set_up_branched_trace()
+        frames = self._set_up_branched_trace()
 
         self.interactive.setup()
         self.interactive.issue(1)
@@ -1209,8 +1258,8 @@ class InteractiveTest(TestCase):
         with self.db.make_session() as session:
             branches = self.interactive._get_trace_frame_branches(session)
             self.assertEqual(len(branches), 2)
-            self.assertEqual(int(branches[0].id), 1)
-            self.assertEqual(int(branches[1].id), 2)
+            self.assertEqual(int(branches[0].id), int(frames[0].id))
+            self.assertEqual(int(branches[1].id), int(frames[1].id))
 
             # Parent is no longer root
             self.interactive.next_cursor_location()
@@ -1219,8 +1268,8 @@ class InteractiveTest(TestCase):
 
             branches = self.interactive._get_trace_frame_branches(session)
             self.assertEqual(len(branches), 2)
-            self.assertEqual(int(branches[0].id), 5)
-            self.assertEqual(int(branches[1].id), 6)
+            self.assertEqual(int(branches[0].id), int(frames[5].id))
+            self.assertEqual(int(branches[1].id), int(frames[4].id))
 
     def testBranch(self):
         self._set_up_branched_trace()
@@ -1233,12 +1282,16 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         self.interactive.branch(2)  # location 0|0|0 -> 1|1|1
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 1 +2 leaf          source file.py:1|1|1", output)
+        self.assertIn(
+            " --> 1 +2 leaf          source lib/server/posts/response.py:1|1|1", output
+        )
 
         self._clear_stdout()
         self.interactive.branch(1)  # location 1|1|1 -> 0|0|0
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 1 +2 leaf          source file.py:0|0|0", output)
+        self.assertIn(
+            " --> 1 +2 leaf          source lib/server/posts/response.py:0|0|0", output
+        )
 
         self.interactive.next_cursor_location()
         self.interactive.next_cursor_location()
@@ -1246,15 +1299,21 @@ class InteractiveTest(TestCase):
         self._clear_stdout()
         self.interactive.branch(2)  # location 2|2|2 -> 3|3|3
         output = self.stdout.getvalue().strip()
-        self.assertIn(" --> 3 +2 call2         param2 file.py:3|3|3", output)
+        self.assertIn(
+            " --> 3 +2 call2         param2 lib/server/posts/request.py:3|3|3", output
+        )
 
         self.interactive.next_cursor_location()
 
         self._clear_stdout()
         self.interactive.branch(2)  # location 4|4|4 -> 5|5|5
         output = self.stdout.getvalue().strip()
-        self.assertIn("     3 +2 call2         param2 file.py:3|3|3", output)
-        self.assertIn(" --> 4 +2 leaf          sink   file.py:5|5|5", output)
+        self.assertIn(
+            "     3 +2 call2         param2 lib/server/posts/request.py:3|3|3", output
+        )
+        self.assertIn(
+            " --> 4 +2 leaf          sink   lib/server/posts/request.py:4|4|4", output
+        )
 
         self.interactive.branch(3)  # location 4|4|4 -> 5|5|5
         stderr = self.stderr.getvalue().strip()
@@ -1263,71 +1322,73 @@ class InteractiveTest(TestCase):
     def testBranchPrefixLengthChanges(self):
         run = self.fakes.run()
         self.fakes.issue()
-        self.fakes.instance()
+        instance = self.fakes.instance()
         source = self.fakes.source("source1")
         sink = self.fakes.sink("sink1")
-        self.fakes.save_all(self.db)
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.POSTCONDITION,
-                caller="call1",
-                caller_port="root",
-                callee="leaf",
-                callee_port="source",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+        frames = [
+            self.fakes.postcondition(
+                caller="call1", caller_port="root", callee="leaf", callee_port="source"
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.POSTCONDITION,
+            self.fakes.postcondition(
                 caller="call1",
                 caller_port="root",
                 callee="prev_call",
                 callee_port="result",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
             ),
-            TraceFrame(
-                id=3,
-                kind=TraceKind.POSTCONDITION,
+            self.fakes.postcondition(
                 caller="prev_call",
                 caller_port="result",
                 callee="leaf",
                 callee_port="source",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
             ),
-            TraceFrame(
-                id=4,
-                kind=TraceKind.PRECONDITION,
-                caller="call1",
-                caller_port="root",
-                callee="leaf",
-                callee_port="sink",
-                callee_location=SourceLocation(1, 2),
-                filename="file.py",
-                run_id=1,
+            self.fakes.precondition(
+                caller="call1", caller_port="root", callee="leaf", callee_port="sink"
             ),
         ]
-        assocs = [
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=source.id),
-            IssueInstanceSharedTextAssoc(issue_instance_id=1, shared_text_id=sink.id),
-            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=source.id),
-            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=sink.id),
-            IssueInstanceTraceFrameAssoc(issue_instance_id=1, trace_frame_id=4),
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=source.id, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=source.id, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=3, leaf_id=source.id, trace_length=0),
-            TraceFrameLeafAssoc(trace_frame_id=4, leaf_id=sink.id, trace_length=0),
-        ]
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceSharedTextAssoc.Record(
+                    issue_instance_id=instance.id, shared_text_id=source.id
+                ),
+                IssueInstanceSharedTextAssoc.Record(
+                    issue_instance_id=instance.id, shared_text_id=sink.id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                IssueInstanceTraceFrameAssoc.Record(
+                    issue_instance_id=instance.id, trace_frame_id=frames[0].id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    issue_instance_id=instance.id, trace_frame_id=frames[1].id
+                ),
+                IssueInstanceTraceFrameAssoc.Record(
+                    issue_instance_id=instance.id, trace_frame_id=frames[3].id
+                ),
+            ]
+        )
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=source.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[2].id, leaf_id=source.id, trace_length=0
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[3].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
             session.add(run)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
             session.commit()
 
         self.interactive.setup()
@@ -1339,9 +1400,9 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable]    [port] [location]",
-                " --> 1 +2 leaf          source file.py:1|1|1",
+                " --> 1 +2 leaf          source lib/server/posts/response.py:4|5|6",
                 "     2    Foo.barMethod root   /r/some/filename.py:6|7|8",
-                "     3    leaf          sink   file.py:1|2|2",
+                "     3    leaf          sink   lib/server/posts/request.py:4|5|6",
                 "",
             ],
         )
@@ -1352,10 +1413,10 @@ class InteractiveTest(TestCase):
             self.stdout.getvalue().split("\n"),
             [
                 "     # ⎇  [callable]    [port] [location]",
-                "     1    leaf          source file.py:1|1|1",
-                " --> 2 +2 prev_call     result file.py:1|1|1",
+                "     1    leaf          source lib/server/posts/response.py:4|5|6",
+                " --> 2 +2 prev_call     result lib/server/posts/response.py:4|5|6",
                 "     3    Foo.barMethod root   /r/some/filename.py:6|7|8",
-                "     4    leaf          sink   file.py:1|2|2",
+                "     4    leaf          sink   lib/server/posts/request.py:4|5|6",
                 "",
             ],
         )
@@ -1583,67 +1644,23 @@ else:
         )
 
     def testListTracesBasic(self):
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                caller="caller1",
-                caller_port="port1",
-                callee="callee1",
-                callee_port="port1",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
-                kind=TraceKind.POSTCONDITION,
-            ),
-            TraceFrame(
-                id=2,
-                caller="caller1",
-                caller_port="port1",
-                callee="callee2",
-                callee_port="port2",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
-                kind=TraceKind.POSTCONDITION,
-            ),
-            TraceFrame(
-                id=3,
-                caller="caller2",
-                caller_port="port2",
-                callee="callee3",
-                callee_port="port3",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
-                kind=TraceKind.POSTCONDITION,
-            ),
-            TraceFrame(
-                id=4,
-                caller="caller2",
-                caller_port="port2",
-                callee="callee4",
-                callee_port="port4",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
-                kind=TraceKind.POSTCONDITION,
-            ),
-            TraceFrame(
-                id=5,
-                caller="caller2",
-                caller_port="port3",
-                callee="callee5",
-                callee_port="port5",
-                callee_location=SourceLocation(1, 1, 1),
-                filename="file.py",
-                run_id=1,
-                kind=TraceKind.POSTCONDITION,
-            ),
-        ]
-
-        with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
-            session.commit()
+        self.fakes.run()
+        post1 = self.fakes.postcondition(
+            caller="caller1", caller_port="port1", callee="callee1", callee_port="port1"
+        )
+        post2 = self.fakes.postcondition(
+            caller="caller1", caller_port="port1", callee="callee2", callee_port="port2"
+        )
+        post3 = self.fakes.postcondition(
+            caller="caller2", caller_port="port2", callee="callee3", callee_port="port3"
+        )
+        post4 = self.fakes.postcondition(
+            caller="caller2", caller_port="port2", callee="callee4", callee_port="port4"
+        )
+        post5 = self.fakes.postcondition(
+            caller="caller2", caller_port="port3", callee="callee5", callee_port="port5"
+        )
+        self.fakes.save_all(self.db)
 
         self.interactive.current_run_id = 1
         self._clear_stdout()
@@ -1653,13 +1670,13 @@ else:
             [
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- caller1:port1 ->",
-                "1        callee1:port1",
-                "2        callee2:port2",
+                f"{post1.id}        callee1:port1",
+                f"{post2.id}        callee2:port2",
                 "---- caller2:port2 ->",
-                "3        callee3:port3",
-                "4        callee4:port4",
+                f"{post3.id}        callee3:port3",
+                f"{post4.id}        callee4:port4",
                 "---- caller2:port3 ->",
-                "5        callee5:port5",
+                f"{post5.id}        callee5:port5",
                 "",
             ],
         )
@@ -1669,9 +1686,12 @@ else:
         self.assertEqual(self.stdout.getvalue().strip(), "No trace frames found.")
 
     def testListTracesFilterCallersCallees(self):
-        trace_frames = self._basic_trace_frames()
+        run = self.fakes.run()
+        frames = self._basic_trace_frames()
+        self.fakes.save_all(self.db)
+
         with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
+            session.add(run)
             session.commit()
 
         self.interactive.current_run_id = 1
@@ -1682,7 +1702,7 @@ else:
             [
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- call2:param0 ->",
-                "2        leaf:sink",
+                f"{frames[1].id}        leaf:sink",
                 "",
             ],
         )
@@ -1694,13 +1714,13 @@ else:
             [
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- call1:root ->",
-                "1        call2:param0",
+                f"{frames[0].id}        call2:param0",
                 "",
             ],
         )
 
     def testListFramesWithLimit(self):
-        self._set_up_branched_trace()
+        frames = self._set_up_branched_trace()
         self.interactive.run(1)
 
         self._clear_stdout()
@@ -1710,9 +1730,9 @@ else:
             [
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- call1:root ->",
-                "3        call2:param2",
-                "4        call2:param2",
-                "1        leaf:source",
+                f"{frames[3].id}        call2:param2",
+                f"{frames[2].id}        call2:param2",
+                f"{frames[1].id}        leaf:source",
                 "...",
                 "Showing 3/6 matching frames. To see more, call 'frames' with "
                 "the 'limit' argument.",
@@ -1721,18 +1741,19 @@ else:
         )
 
     def testSetFrame(self):
-        trace_frames = self._basic_trace_frames()
-        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
-        assocs = [
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
-        ]
-
-        with self.db.make_session() as session:
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
-            session.add(shared_text)
-            session.commit()
+        frames = self._basic_trace_frames()
+        sink = self.fakes.sink("sink")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
 
         self.interactive.setup()
 
@@ -1750,50 +1771,45 @@ else:
         self.assertIn("Trace frame 2", self.stdout.getvalue())
 
     def testSetFrameUpdatesRun(self):
-        runs = [
-            Run(id=1, date=datetime.now(), status=RunStatus.FINISHED),
-            Run(id=2, date=datetime.now(), status=RunStatus.FINISHED),
-        ]
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.PRECONDITION,
+        run1 = self.fakes.run()
+        frames = [
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="call2",
                 callee_port="param0",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call2",
                 caller_port="param1",
                 callee="call3",
                 callee_port="param2",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
         ]
-        shared_text = SharedText(id=1, contents="sink", kind=SharedTextKind.SINK)
-        assocs = [
-            TraceFrameLeafAssoc(trace_frame_id=1, leaf_id=1, trace_length=1),
-            TraceFrameLeafAssoc(trace_frame_id=2, leaf_id=1, trace_length=0),
-        ]
+        run2 = self.fakes.run()
+        sink = self.fakes.sink("sink1")
+        self.fakes.saver.add_all(
+            [
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[0].id, leaf_id=sink.id, trace_length=1
+                ),
+                TraceFrameLeafAssoc.Record(
+                    trace_frame_id=frames[1].id, leaf_id=sink.id, trace_length=0
+                ),
+            ]
+        )
+        self.fakes.save_all(self.db)
 
         with self.db.make_session() as session:
-            self._add_to_session(session, runs)
-            self._add_to_session(session, trace_frames)
-            self._add_to_session(session, assocs)
-            session.add(shared_text)
+            session.add(run1)
+            session.add(run2)
             session.commit()
 
         self.interactive.setup()
         self.assertEqual(int(self.interactive.current_run_id), 2)
-        self.interactive.frame(1)
+        self.interactive.frame(int(frames[0].id))
         self.assertEqual(int(self.interactive.current_run_id), 1)
 
     def testIsBeforeRoot(self):
@@ -1856,9 +1872,9 @@ else:
                 "[2] call1 : root",
                 "",
                 "     # ⎇  [callable] [port] [location]",
-                " --> 1    call1      root   file.py:2|2|2",
-                "     2    call2      param2 file.py:2|2|2",
-                "     3 +2 leaf       sink   file.py:4|4|4",
+                " --> 1    call1      root   lib/server/posts/request.py:2|2|2",
+                "     2    call2      param2 lib/server/posts/request.py:2|2|2",
+                "     3 +2 leaf       sink   lib/server/posts/request.py:5|5|5",
                 "",
             ],
         )
@@ -1937,31 +1953,23 @@ else:
             )
 
     def testDetails(self):
-        trace_frames = [
-            TraceFrame(
-                id=1,
-                kind=TraceKind.PRECONDITION,
+        run = self.fakes.run()
+        frames = [
+            self.fakes.precondition(
                 caller="call1",
                 caller_port="root",
                 callee="call2",
                 callee_port="param0",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
-            TraceFrame(
-                id=2,
-                kind=TraceKind.PRECONDITION,
+            self.fakes.precondition(
                 caller="call2",
                 caller_port="param1",
                 callee="call3",
                 callee_port="param2",
-                callee_location=SourceLocation(1, 1),
-                filename="file.py",
-                run_id=1,
+                location=(1, 1, 1),
             ),
         ]
-        run = self.fakes.run()
         issues = [self.fakes.issue(), self.fakes.issue(), self.fakes.issue()]
         self.fakes.instance(issue_id=issues[0].id, callable="call2"),
         self.fakes.instance(issue_id=issues[1].id, callable="call3"),
@@ -1969,12 +1977,11 @@ else:
         self.fakes.save_all(self.db)
 
         with self.db.make_session(expire_on_commit=False) as session:
-            self._add_to_session(session, trace_frames)
             session.add(run)
             session.commit()
 
         self.interactive.setup()
-        self.interactive.trace_tuples = [TraceTuple(trace_frame=trace_frames[0])]
+        self.interactive.trace_tuples = [TraceTuple(trace_frame=frames[0])]
         self.interactive.current_issue_instance_id = 1
         self.interactive.current_trace_frame_index = 0
 
@@ -1983,12 +1990,12 @@ else:
         self.assertEqual(
             self.stdout.getvalue().split("\n"),
             [
-                "Trace frame 1",
+                f"Trace frame {frames[0].id}",
                 "     Caller: call1 : root",
                 "     Callee: call2 : param0",
                 "       Kind: TraceKind.precondition",
                 "      Sinks: ",
-                "   Location: file.py:1|1|1",
+                "   Location: lib/server/posts/request.py:1|1|1",
                 "",
                 "Issues in callable (call2): 2",
                 "",
@@ -1998,7 +2005,7 @@ else:
                 "Preconditions with caller (call2):",
                 "[id] [caller:caller_port -> callee:callee_port]",
                 "---- call2:param1 ->",
-                "2        call3:param2",
+                f"{frames[1].id}        call3:param2",
                 "",
             ],
         )

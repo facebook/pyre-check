@@ -61,6 +61,8 @@ T = TypeVar("T")
 
 FilenameText = aliased(SharedText)
 CallableText = aliased(SharedText)
+CallerText = aliased(SharedText)
+CalleeText = aliased(SharedText)
 MessageText = aliased(SharedText)
 
 
@@ -556,22 +558,27 @@ details              show additional information about the current trace frame
             _ matches 1 character (like . in regex)
         """
         with self.db.make_session() as session:
-            query = session.query(
-                TraceFrame.id,
-                TraceFrame.caller,
-                TraceFrame.caller_port,
-                TraceFrame.callee,
-                TraceFrame.callee_port,
-            ).filter(TraceFrame.run_id == self.current_run_id)
+            query = (
+                session.query(
+                    TraceFrame.id,
+                    CallerText.contents.label("caller"),
+                    TraceFrame.caller_port,
+                    CalleeText.contents.label("callee"),
+                    TraceFrame.callee_port,
+                )
+                .filter(TraceFrame.run_id == self.current_run_id)
+                .join(CallerText, CallerText.id == TraceFrame.caller_id)
+                .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+            )
 
             if callers is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callers, query, TraceFrame.caller, "callers"
+                    callers, query, CallerText.contents, "callers"
                 )
 
             if callees is not None:
                 query = self._add_list_or_string_filter_to_query(
-                    callees, query, TraceFrame.callee, "callees"
+                    callees, query, CalleeText.contents, "callees"
                 )
 
             if kind is not None:
@@ -586,7 +593,7 @@ details              show additional information about the current trace frame
                 raise UserError("'limit' should be an int or None.")
 
             trace_frames = query.group_by(TraceFrame.id).order_by(
-                TraceFrame.caller, TraceFrame.callee
+                CallerText.contents, CalleeText.contents
             )
 
             total_trace_frames = trace_frames.count()
@@ -715,15 +722,18 @@ details              show additional information about the current trace frame
             trace_frame = (
                 session.query(
                     TraceFrame.id,
-                    TraceFrame.caller,
+                    CallerText.contents.label("caller"),
                     TraceFrame.caller_port,
-                    TraceFrame.callee,
+                    CalleeText.contents.label("callee"),
                     TraceFrame.callee_port,
                     TraceFrame.callee_location,
                     TraceFrame.kind,
-                    TraceFrame.filename,
+                    FilenameText.contents.label("filename"),
                 )
                 .filter(TraceFrame.id == self.current_frame_id)
+                .join(CallerText, CallerText.id == TraceFrame.caller_id)
+                .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+                .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
                 .one()
             )
 
@@ -941,11 +951,11 @@ details              show additional information about the current trace frame
 
         if kind is None or kind == TraceKind.POSTCONDITION:
             print(f"\nPostconditions with caller ({callable}):")
-            self.frames(callers=[callable], kind=TraceKind.POSTCONDITION, limit=limit)
+            self.frames(callers=callable, kind=TraceKind.POSTCONDITION, limit=limit)
 
         if kind is None or kind == TraceKind.PRECONDITION:
             print(f"\nPreconditions with caller ({callable}):")
-            self.frames(callers=[callable], kind=TraceKind.PRECONDITION, limit=limit)
+            self.frames(callers=callable, kind=TraceKind.PRECONDITION, limit=limit)
 
     def warning(self, message: str) -> None:
         # pyre-fixme[6]: Expected `Optional[_Writer]` for 2nd param but got `TextIO`.
@@ -1208,21 +1218,24 @@ details              show additional information about the current trace frame
         return (
             session.query(
                 TraceFrame.id,
-                TraceFrame.caller,
+                CallerText.contents.label("caller"),
                 TraceFrame.caller_port,
-                TraceFrame.callee,
+                CalleeText.contents.label("callee"),
                 TraceFrame.callee_port,
                 TraceFrame.callee_location,
                 TraceFrame.kind,
-                TraceFrame.filename,
+                FilenameText.contents.label("filename"),
                 TraceFrameLeafAssoc.trace_length,
             )
+            .filter(TraceFrame.kind == kind)
             .join(
                 IssueInstanceTraceFrameAssoc,
                 IssueInstanceTraceFrameAssoc.trace_frame_id == TraceFrame.id,
             )
             .filter(IssueInstanceTraceFrameAssoc.issue_instance_id == issue_instance_id)
-            .filter(TraceFrame.kind == kind)
+            .join(CallerText, CallerText.id == TraceFrame.caller_id)
+            .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+            .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
             .join(
                 TraceFrameLeafAssoc, TraceFrameLeafAssoc.trace_frame_id == TraceFrame.id
             )
@@ -1306,27 +1319,30 @@ details              show additional information about the current trace frame
         query = (
             session.query(
                 TraceFrame.id,
-                TraceFrame.caller,
+                CallerText.contents.label("caller"),
                 TraceFrame.caller_port,
-                TraceFrame.callee,
+                CalleeText.contents.label("callee"),
                 TraceFrame.callee_port,
                 TraceFrame.callee_location,
                 TraceFrame.kind,
-                TraceFrame.filename,
+                FilenameText.contents.label("filename"),
                 TraceFrameLeafAssoc.trace_length,
             )
             .filter(TraceFrame.run_id == self.current_run_id)
-            .filter(
-                TraceFrame.caller != TraceFrame.callee
-            )  # skip recursive calls for now
             .filter(TraceFrame.kind == trace_frame.kind)
+            .join(CallerText, CallerText.id == TraceFrame.caller_id)
+            .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+            .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
+            .filter(
+                CallerText.contents != CalleeText.contents
+            )  # skip recursive calls for now
         )
         if backwards:
-            query = query.filter(TraceFrame.callee == trace_frame.caller).filter(
+            query = query.filter(CalleeText.contents == trace_frame.caller).filter(
                 TraceFrame.callee_port == trace_frame.caller_port
             )
         else:
-            query = query.filter(TraceFrame.caller == trace_frame.callee).filter(
+            query = query.filter(CallerText.contents == trace_frame.callee).filter(
                 TraceFrame.caller_port == trace_frame.callee_port
             )
 
@@ -1524,15 +1540,18 @@ details              show additional information about the current trace frame
             trace_frame = (
                 session.query(
                     TraceFrame.id,
-                    TraceFrame.caller,
+                    CallerText.contents.label("caller"),
                     TraceFrame.caller_port,
-                    TraceFrame.callee,
+                    CalleeText.contents.label("callee"),
                     TraceFrame.callee_port,
                     TraceFrame.kind,
-                    TraceFrame.filename,
+                    FilenameText.contents.label("filename"),
                     TraceFrame.callee_location,
                 )
                 .filter(TraceFrame.id == self.current_frame_id)
+                .join(CallerText, CallerText.id == TraceFrame.caller_id)
+                .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
+                .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
                 .one()
             )
 
