@@ -477,21 +477,17 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let purge ?(debug = false) handles =
     let purge_dependents keys =
+      let qualifiers =
+        handles
+        |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+        |> Reference.Set.Tree.of_list
+      in
       let new_dependents = Reference.Table.create () in
       let recompute_dependents key dependents =
-        let qualifiers =
-          handles
-          |> List.map ~f:(fun handle -> Source.qualifier ~handle)
-          |> Reference.Set.Tree.of_list
-        in
         Hashtbl.set
           new_dependents
           ~key
-          ~data:(
-          Reference.Set.Tree.diff
-            dependents
-            qualifiers
-        )
+          ~data:(Reference.Set.Tree.diff dependents qualifiers)
       in
       List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
       Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
