@@ -6,9 +6,15 @@ from pathlib import Path
 from typing import List
 
 import click
+from sqlalchemy.orm import aliased
 
 from .cli_lib import require_option
 from .models import Issue, IssueInstance, SharedText, TraceFrame
+
+
+FilenameText = aliased(SharedText)
+CallerText = aliased(SharedText)
+CalleeText = aliased(SharedText)
 
 
 @click.command()
@@ -47,16 +53,19 @@ def lint(click_ctx: click.Context, run_id: int, filenames: List[str]) -> None:
     with ctx.database.make_session() as session:
         frames = (
             session.query(
-                TraceFrame.caller,
-                TraceFrame.callee,
-                TraceFrame.filename,
+                CallerText.contents.label("caller"),
+                CalleeText.contents.label("callee"),
+                FilenameText.contents.label("filename"),
                 TraceFrame.callee_location,
                 TraceFrame.kind,
                 TraceFrame.callee_port,
                 TraceFrame.caller_port,
             )
             .filter(TraceFrame.run_id == run_id)
-            .filter(TraceFrame.filename.in_(relative))
+            .join(FilenameText, FilenameText.id == TraceFrame.filename_id)
+            .filter(FilenameText.contents.in_(relative))
+            .join(CallerText, CallerText.id == TraceFrame.caller_id)
+            .join(CalleeText, CalleeText.id == TraceFrame.callee_id)
             .all()
         )
 

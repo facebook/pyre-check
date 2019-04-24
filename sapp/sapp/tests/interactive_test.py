@@ -8,10 +8,18 @@ from typing import List
 from unittest import TestCase
 from unittest.mock import mock_open, patch
 
+from sqlalchemy.orm import Session
+
 from ..db import DB, DBType
 from ..decorators import UserError
-from ..interactive import Interactive, IssueQueryResult, TraceTuple
+from ..interactive import (
+    Interactive,
+    IssueQueryResult,
+    TraceFrameQueryResult,
+    TraceTuple,
+)
 from ..models import (
+    DBID,
     Issue,
     IssueInstance,
     IssueInstanceSharedTextAssoc,
@@ -53,6 +61,37 @@ class InteractiveTest(TestCase):
 
         for row in data:
             session.add(row)
+
+    def _frame_to_query_result(
+        self, session: Session, trace_frame: TraceFrame
+    ) -> TraceFrameQueryResult:
+        caller = (
+            session.query(SharedText.contents)
+            .filter(SharedText.id == trace_frame.caller_id)
+            .scalar()
+        )
+        callee = (
+            session.query(SharedText.contents)
+            .filter(SharedText.id == trace_frame.callee_id)
+            .scalar()
+        )
+        filename = (
+            session.query(SharedText.contents)
+            .filter(SharedText.id == trace_frame.filename_id)
+            .scalar()
+        )
+        return TraceFrameQueryResult(
+            id=trace_frame.id,
+            caller=caller,
+            caller_port=trace_frame.caller_port,
+            callee=callee,
+            callee_port=trace_frame.callee_port,
+            caller_id=trace_frame.caller_id,
+            callee_id=trace_frame.callee_id,
+            callee_location=trace_frame.callee_location,
+            kind=trace_frame.kind,
+            filename=filename,
+        )
 
     def testState(self):
         self.interactive.current_run_id = 1
@@ -620,7 +659,8 @@ class InteractiveTest(TestCase):
         # reverse order
         postcondition_traces = [
             (
-                TraceFrame(
+                TraceFrameQueryResult(
+                    id=DBID(1),
                     callee="call3",
                     callee_port="result",
                     filename="file3.py",
@@ -631,20 +671,24 @@ class InteractiveTest(TestCase):
                 1,
             ),
             (
-                TraceFrame(
+                TraceFrameQueryResult(
+                    id=DBID(2),
                     callee="call2",
                     callee_port="result",
                     caller="dummy caller",
+                    caller_port="dummy caller",
                     filename="file2.py",
                     callee_location=SourceLocation(1, 1, 2),
                 ),
                 2,
             ),
             (
-                TraceFrame(
+                TraceFrameQueryResult(
+                    id=DBID(3),
                     callee="leaf",
                     callee_port="source",
                     caller="dummy caller",
+                    caller_port="dummy caller",
                     filename="file1.py",
                     callee_location=SourceLocation(1, 1, 1),
                 ),
@@ -665,7 +709,10 @@ class InteractiveTest(TestCase):
     def testOutputTraceTuples(self):
         trace_tuples = [
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(1),
+                    caller="unused",
+                    caller_port="unused",
                     callee="leaf",
                     callee_port="source",
                     filename="file1.py",
@@ -673,7 +720,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(2),
+                    caller="unused",
+                    caller_port="unused",
                     callee="call2",
                     callee_port="result",
                     filename="file2.py",
@@ -681,7 +731,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(3),
+                    caller="unused",
+                    caller_port="unused",
                     callee="call3",
                     callee_port="result",
                     filename="file3.py",
@@ -689,7 +742,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(4),
+                    caller="unused",
+                    caller_port="unused",
                     callee="main",
                     callee_port="root",
                     filename="file4.py",
@@ -697,7 +753,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(5),
+                    caller="unused",
+                    caller_port="unused",
                     callee="call4",
                     callee_port="param0",
                     filename="file4.py",
@@ -705,7 +764,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(6),
+                    caller="unused",
+                    caller_port="unused",
                     callee="call5",
                     callee_port="param1",
                     filename="file5.py",
@@ -713,7 +775,10 @@ class InteractiveTest(TestCase):
                 )
             ),
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(7),
+                    caller="unused",
+                    caller_port="unused",
                     callee="leaf",
                     callee_port="sink",
                     filename="file6.py",
@@ -1557,11 +1622,16 @@ else:
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
             TraceTuple(
-                trace_frame=TraceFrame(
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(0),
                     filename="file.py",
+                    caller="",
+                    caller_port="",
                     callee="callee",
+                    callee_port="",
                     callee_location=SourceLocation(2, 10, 25),
-                )
+                ),
+                placeholder=True,
             )
         ]
         with patch("builtins.open", mock_open(read_data=mock_data)) as mock_file:
@@ -1606,8 +1676,14 @@ else:
         self.interactive.current_trace_frame_index = 0
         self.interactive.trace_tuples = [
             TraceTuple(
-                trace_frame=TraceFrame(
-                    filename="file.py", callee_location=SourceLocation(2, 1, 1)
+                trace_frame=TraceFrameQueryResult(
+                    id=DBID(0),
+                    caller="",
+                    caller_port="",
+                    callee="",
+                    callee_port="",
+                    filename="file.py",
+                    callee_location=SourceLocation(2, 1, 1),
                 )
             )
         ]
@@ -1619,11 +1695,41 @@ else:
 
     def testGroupTraceFrames(self):
         trace_frames = [
-            TraceFrame(id=1, caller="caller1", caller_port="port1"),
-            TraceFrame(id=2, caller="caller1", caller_port="port1"),
-            TraceFrame(id=3, caller="caller2", caller_port="port2"),
-            TraceFrame(id=4, caller="caller2", caller_port="port2"),
-            TraceFrame(id=5, caller="caller2", caller_port="port3"),
+            TraceFrameQueryResult(
+                id=DBID(1),
+                caller="caller1",
+                caller_port="port1",
+                callee="",
+                callee_port="",
+            ),
+            TraceFrameQueryResult(
+                id=DBID(2),
+                caller="caller1",
+                caller_port="port1",
+                callee="",
+                callee_port="",
+            ),
+            TraceFrameQueryResult(
+                id=DBID(3),
+                caller="caller2",
+                caller_port="port2",
+                callee="",
+                callee_port="",
+            ),
+            TraceFrameQueryResult(
+                id=DBID(4),
+                caller="caller2",
+                caller_port="port2",
+                callee="",
+                callee_port="",
+            ),
+            TraceFrameQueryResult(
+                id=DBID(5),
+                caller="caller2",
+                caller_port="port3",
+                callee="",
+                callee_port="",
+            ),
         ]
 
         buckets = self.interactive._group_trace_frames(trace_frames, 5)
@@ -1880,21 +1986,33 @@ else:
         )
 
     def testUpdateTraceTuplesNewParent(self):
+        frames = [
+            self.fakes.postcondition(callee="A"),
+            self.fakes.postcondition(callee="B"),
+            self.fakes.postcondition(callee="C"),
+            self.fakes.postcondition(callee="D"),
+            self.fakes.postcondition(callee="E"),
+        ]
+        self.fakes.save_all(self.db)
+
         self.interactive.setup()
         # Test postcondition
         self.interactive.current_trace_frame_index = 2
-        self.interactive.trace_tuples = [
-            TraceTuple(TraceFrame(callee="A")),
-            TraceTuple(TraceFrame(callee="B")),
-            TraceTuple(TraceFrame(callee="C")),
-            TraceTuple(TraceFrame(callee="D")),
-            TraceTuple(TraceFrame(callee="E")),
-        ]
+        with self.db.make_session() as session:
+            self.interactive.trace_tuples = [
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[0])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[1])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[2])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[3])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[4])),
+            ]
 
-        trace_frame = TraceFrame(
+        trace_frame = TraceFrameQueryResult(
+            id=DBID(0),
             caller="caller",
             caller_port="caller_port",
             callee="F",
+            callee_port="callee_port",
             filename="file.py",
             callee_location=SourceLocation(1, 1, 1),
             kind=TraceKind.POSTCONDITION,
@@ -1912,14 +2030,25 @@ else:
 
         # Test precondition
         self.interactive.current_trace_frame_index = 2
-        self.interactive.trace_tuples = [
-            TraceTuple(TraceFrame(callee="A")),
-            TraceTuple(TraceFrame(callee="B")),
-            TraceTuple(TraceFrame(callee="C")),
-            TraceTuple(TraceFrame(callee="D")),
-            TraceTuple(TraceFrame(callee="E")),
-        ]
-        trace_frame.kind = TraceKind.PRECONDITION
+        with self.db.make_session() as session:
+            self.interactive.trace_tuples = [
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[0])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[1])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[2])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[3])),
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[4])),
+            ]
+
+        trace_frame = TraceFrameQueryResult(
+            id=DBID(0),
+            caller="caller",
+            caller_port="caller_port",
+            callee="F",
+            callee_port="callee_port",
+            filename="file.py",
+            callee_location=SourceLocation(1, 1, 1),
+            kind=TraceKind.PRECONDITION,
+        )
         self.interactive._update_trace_tuples_new_parent(trace_frame)
         self.assertEqual(self.interactive.current_trace_frame_index, 0)
         self.assertEqual(
@@ -1981,7 +2110,10 @@ else:
             session.commit()
 
         self.interactive.setup()
-        self.interactive.trace_tuples = [TraceTuple(trace_frame=frames[0])]
+        with self.db.make_session() as session:
+            self.interactive.trace_tuples = [
+                TraceTuple(trace_frame=self._frame_to_query_result(session, frames[0]))
+            ]
         self.interactive.current_issue_instance_id = 1
         self.interactive.current_trace_frame_index = 0
 

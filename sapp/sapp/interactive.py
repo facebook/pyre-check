@@ -1002,14 +1002,14 @@ details              show additional information about the current trace frame
         return -1
 
     def _group_trace_frames(
-        self, trace_frames: Iterable[TraceFrame], limit: int
-    ) -> Dict[Tuple[str, str], List[TraceFrame]]:
+        self, trace_frames: Iterable[TraceFrameQueryResult], limit: int
+    ) -> Dict[Tuple[str, str], List[TraceFrameQueryResult]]:
         """Buckets together trace frames that have the same caller:caller_port.
         """
         # pyre-fixme[9]: caller_buckets has type `DefaultDict[Tuple[str, str], List[T...
-        caller_buckets: DefaultDict[Tuple[str, str], List[TraceFrame]] = defaultdict(
-            list
-        )
+        caller_buckets: DefaultDict[
+            Tuple[str, str], List[TraceFrameQueryResult]
+        ] = defaultdict(list)
         for trace_frame in itertools.islice(trace_frames, limit):
             caller_buckets[(trace_frame.caller, trace_frame.caller_port)].append(
                 trace_frame
@@ -1108,7 +1108,7 @@ details              show additional information about the current trace frame
 
     def _output_trace_frames(
         self,
-        trace_buckets: Dict[Tuple[str, str], List[TraceFrame]],
+        trace_buckets: Dict[Tuple[str, str], List[TraceFrameQueryResult]],
         limit: int,
         total_trace_frames: int,
     ) -> None:
