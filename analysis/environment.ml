@@ -14,7 +14,6 @@ open Statement
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
-  protocols: Identifier.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -41,9 +40,6 @@ module type Handler = sig
 
   val class_definition: Identifier.t -> Class.t Node.t option
   val class_metadata: Identifier.t -> Resolution.class_metadata option
-
-  val register_protocol: handle: File.Handle.t -> Identifier.t -> unit
-  val protocols: unit -> Identifier.t list
 
   val register_module
     :  qualifier: Reference.t
@@ -156,7 +152,6 @@ let handler
     {
       class_definitions;
       class_metadata;
-      protocols;
       modules;
       order;
       aliases;
@@ -258,8 +253,6 @@ let handler
       purge_table_given_keys undecorated_functions global_keys;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
-      |> List.iter ~f:(Hash_set.remove protocols);
       DependencyHandler.clear_keys_batch handles;
       List.map handles ~f:(fun handle -> Source.qualifier ~handle)
       |> List.iter ~f:(Hashtbl.remove modules);
@@ -283,13 +276,6 @@ let handler
 
     let class_metadata =
       Hashtbl.find class_metadata
-
-    let register_protocol ~handle protocol =
-      DependencyHandler.add_protocol_key ~handle protocol;
-      Hash_set.add protocols protocol
-
-    let protocols () =
-      Hash_set.to_list protocols
 
     let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
       let is_registered_empty_stub =
@@ -404,12 +390,6 @@ let register_class_definitions (module Handler: Handler) source =
             let name = Reference.show name in
             let primitive = Type.Primitive name in
             Handler.DependencyHandler.add_class_key ~handle name;
-            let annotated = Annotated.Class.create { Node.location; value = definition } in
-
-            if Annotated.Class.is_protocol annotated then
-              begin
-                Handler.register_protocol ~handle name
-              end;
 
             Handler.set_class_definition
               ~name
@@ -898,190 +878,6 @@ let register_dependencies (module Handler: Handler) source =
   Visit.visit () source
 
 
-let infer_implementations (module Handler: Handler) resolution ~implementing_classes ~protocol =
-  let module Edge = TypeOrder.Edge in
-  let open Annotated in
-
-  Resolution.class_definition resolution protocol
-  >>| (fun protocol_definition ->
-      let protocol_definition = Class.create protocol_definition in
-      let implementations =
-        let classes_to_analyze =
-          (* Get all implementing classes. *)
-          let names =
-            Class.methods protocol_definition
-            |> List.map ~f:Class.Method.name
-          in
-          if List.is_empty names then
-            let annotations = Handler.TypeOrderHandler.annotations () in
-            Handler.TypeOrderHandler.keys ()
-            |> List.filter_map ~f:(Handler.TypeOrderHandler.find annotations)
-          else
-            let get_implementing_methods method_name =
-              implementing_classes ~method_name
-              |> Option.value ~default:[]
-              |> List.map ~f:(fun class_name -> Type.Primitive (Reference.show class_name))
-            in
-            List.concat_map ~f:get_implementing_methods names
-            |> List.dedup_and_sort ~compare:Type.compare
-        in
-        let validate definition =
-          (* TODO(T40726328): temporary workaround until proxying implemented *)
-          Option.some_if
-            (
-              not (Class.is_protocol definition) ||
-              (
-                Reference.equal
-                  (Class.name protocol_definition) (Reference.create "typing.Sized") &&
-                (
-                  Reference.equal
-                    (Class.name definition) (Reference.create "typing._Collection") ||
-                  Reference.equal
-                    (Class.name definition) (Reference.create "typing.Collection")
-                )
-              )
-            )
-            definition
-        in
-        let implements (annotation: Type.t) =
-          annotation
-          |> Type.primitive_name
-          >>= Handler.class_definition
-          >>| Class.create
-          >>= validate
-          >>| Class.implements ~resolution ~protocol:protocol_definition
-          >>= function
-          | TypeOrder.Implements { parameters } -> Some (annotation, parameters)
-          | DoesNotImplement -> None
-        in
-        List.filter_map ~f:implements classes_to_analyze
-      in
-
-      (* Get edges to protocol. *)
-      let edges =
-        let add_edge sofar (source, parameters) =
-          (* Even if `object` technically implements a protocol, do not add cyclic edge. *)
-          if Type.equal source protocol || Type.equal source Type.object_primitive then
-            sofar
-          else
-            Set.add sofar { Edge.source; target = protocol; parameters }
-        in
-        List.fold ~init:Edge.Set.empty ~f:add_edge implementations
-      in
-      Log.log
-        ~section:`Protocols
-        "Found implementations for protocol %a: %s"
-        Type.pp protocol
-        (List.map ~f:fst implementations |> List.map ~f:Type.show |> String.concat ~sep:", ");
-      edges)
-  |> Option.value ~default:Edge.Set.empty
-
-
-let infer_protocol_edges
-    ~handler:((module Handler: Handler) as handler)
-    resolution
-    ~classes_to_infer =
-  let module Edge = TypeOrder.Edge in
-  Log.info "Inferring protocol implementations...";
-  let protocols =
-    (* Skip useless protocols for better performance. *)
-    let skip_protocol protocol =
-      match Handler.class_definition protocol with
-      | Some protocol_definition ->
-          let protocol_definition = Annotated.Class.create protocol_definition in
-          List.is_empty (Annotated.Class.methods protocol_definition)
-      | _ ->
-          true
-    in
-    List.filter ~f:(fun protocol -> not (skip_protocol protocol)) (Handler.protocols ())
-  in
-  let implementing_classes =
-    (* TODO(T40727281): This ignores transitive methods, for perf reasons *)
-    let methods_to_implementing_classes =
-      let open Statement in
-      let protocol_methods =
-        let names_of_methods protocol =
-          protocol
-          |> Handler.class_definition
-          >>| Annotated.Class.create
-          >>| Annotated.Class.methods
-          >>| List.map ~f:Annotated.Class.Method.name
-          |> Option.value ~default:[]
-        in
-        List.concat_map ~f:names_of_methods protocols
-        |> Identifier.Set.of_list
-      in
-      let annotations = Handler.TypeOrderHandler.annotations () in
-      let add_type_methods methods_to_implementing_classes index =
-        let class_definition =
-          Handler.TypeOrderHandler.find annotations index
-          >>= Type.primitive_name
-          >>= Handler.class_definition
-        in
-        match class_definition with
-        | None ->
-            methods_to_implementing_classes
-        | Some { Node.value = { Class.name = class_name; body; _ }; _ } ->
-            (* TODO(T30499509): Rely on existing class defines instead of repeating work. *)
-            let add_method methods_to_implementing_classes { Node.value = statement; _ } =
-              match statement with
-              | Define define ->
-                  let method_name = Define.unqualified_name define in
-                  if Set.mem protocol_methods method_name then
-                    let classes =
-                      match Map.find methods_to_implementing_classes method_name with
-                      | Some classes -> class_name :: classes
-                      | None -> [class_name]
-                    in
-                    Map.set methods_to_implementing_classes ~key:method_name ~data:classes
-                  else
-                    methods_to_implementing_classes
-              | _ ->
-                  methods_to_implementing_classes
-            in
-            List.fold body ~f:add_method ~init:methods_to_implementing_classes
-      in
-      List.fold classes_to_infer ~f:add_type_methods ~init:Identifier.Map.empty
-    in
-    fun ~method_name -> Map.find methods_to_implementing_classes method_name
-  in
-  let add_protocol_edges edges protocol =
-    let protocol = Type.Primitive protocol in
-    infer_implementations handler resolution ~implementing_classes ~protocol
-    |> Set.union edges
-  in
-  List.fold ~init:TypeOrder.Edge.Set.empty ~f:add_protocol_edges protocols
-
-
-let infer_protocols
-    ?classes_to_infer
-    ~handler:((module Handler: Handler) as handler)
-    resolution
-    () =
-  let timer = Timer.start () in
-  let classes_to_infer =
-    match classes_to_infer with
-    | Some classes ->
-        let f name =
-          Handler.TypeOrderHandler.find
-            (Handler.TypeOrderHandler.indices ())
-            (Type.Primitive name)
-        in
-        List.filter_map classes ~f
-    | None ->
-        Handler.TypeOrderHandler.keys ()
-  in
-  infer_protocol_edges ~handler resolution ~classes_to_infer
-  |> Set.iter ~f:(fun { TypeOrder.Edge.source; target; parameters } ->
-      TypeOrder.connect
-        (module Handler.TypeOrderHandler)
-        ~parameters
-        ~predecessor:source
-        ~successor:target);
-
-  Statistics.performance ~name:"inferred protocol implementations" ~timer ()
-
-
 let propagate_nested_classes (module Handler: Handler) resolution annotation =
   let propagate
       { Node.location; value = { Statement.Class.name; _ } as definition }
@@ -1138,7 +934,6 @@ module Builder = struct
   let create () =
     let class_definitions = Identifier.Table.create () in
     let class_metadata = Identifier.Table.create () in
-    let protocols = Identifier.Hash_set.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Type.Table.create () in
@@ -1301,7 +1096,6 @@ module Builder = struct
     {
       class_definitions;
       class_metadata;
-      protocols;
       modules;
       order;
       aliases;
@@ -1315,7 +1109,6 @@ module Builder = struct
       {
         class_definitions;
         class_metadata;
-        protocols;
         modules;
         order;
         aliases;
@@ -1326,7 +1119,6 @@ module Builder = struct
     {
       class_definitions = Hashtbl.copy class_definitions;
       class_metadata = Hashtbl.copy class_metadata;
-      protocols = Hash_set.copy protocols;
       modules = Hashtbl.copy modules;
       order = TypeOrder.Builder.copy order;
       aliases = Hashtbl.copy aliases;
@@ -1339,14 +1131,12 @@ module Builder = struct
   let statistics
       {
         class_definitions;
-        protocols;
         globals;
         _;
       } =
     Format.asprintf
-      "Found %d classes, %d protocols, and %d globals"
+      "Found %d classes, and %d globals"
       (Hashtbl.length class_definitions)
-      (Hash_set.length protocols)
       (Hashtbl.length globals)
 
 

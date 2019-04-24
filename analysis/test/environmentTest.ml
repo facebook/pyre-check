@@ -66,7 +66,6 @@ let order_and_environment source =
   {
     TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
     constructor = (fun _ -> None);
-    implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
     attributes = (fun _ -> None);
     is_protocol = (fun _ -> false);
     any_is_bottom = false;
@@ -950,90 +949,6 @@ let test_populate _ =
       })
 
 
-let test_infer_protocols_edges _ =
-  let edges =
-    let environment =
-      populate_preprocess
-        ~environment:(Environment.Builder.create ())
-        {|
-          class Empty(typing.Protocol):
-            pass
-          class Sized(typing.Protocol):
-            def empty(self) -> bool: pass
-            def len(self) -> int: pass
-          class Supersized(typing.Protocol):
-            def empty(self) -> bool: pass
-            def len(self) -> int: pass
-          class List():
-            def empty(self) -> bool: pass
-            def length(self) -> int: pass
-          class Set():
-            def empty(self) -> bool: pass
-            def len(self) -> int: pass
-          class Subset(Set): pass
-          class AlmostSet():
-            def empty(self, a) -> bool: pass
-            def len(self) -> int: pass
-          class object:
-            def __hash__(self) -> int: ...
-          class SuperObject(typing.Protocol):
-              @abstractmethod
-              def __hash__(self) -> int: ...
-        |}
-    in
-    let resolution = TypeCheck.resolution environment () in
-
-    let methods_to_implementing_classes =
-      let add key values map =
-        Map.set map ~key ~data:(List.map values ~f:Reference.create)
-      in
-      Identifier.Map.empty
-      |> add "__hash__" ["object"; "SuperObject"]
-      |> add "len" ["Sized"; "Supersized"; "Set"; "AlmostSet"]
-      |> add "empty" ["Sized"; "Supersized"; "List"; "Set"; "AlmostSet"]
-    in
-    let implementing_classes ~method_name =
-      Map.find methods_to_implementing_classes method_name
-    in
-    (* We infer implementations for protocols based on the type order. *)
-    let empty_edges =
-      Environment.infer_implementations
-        environment
-        resolution
-        ~implementing_classes
-        ~protocol:(Type.Primitive "Empty")
-    in
-    assert_equal 11 (Set.length empty_edges);
-    Environment.infer_implementations
-      environment
-      resolution
-      ~implementing_classes
-      ~protocol:(Type.Primitive "Sized")
-    |> Set.union
-      (Environment.infer_implementations
-         environment
-         resolution
-         ~implementing_classes
-         ~protocol:(Type.Primitive "SuperObject"))
-    |> Set.union empty_edges
-  in
-  let assert_edge_inferred source target parameters =
-    assert_true (Set.mem edges { TypeOrder.Edge.source; target; parameters })
-  in
-  let assert_edge_not_inferred source target parameters =
-    assert_false (Set.mem edges { TypeOrder.Edge.source; target; parameters })
-  in
-
-  assert_equal ~printer:Int.to_string (Set.length edges) 12;
-
-  assert_edge_not_inferred (Type.Primitive "List") (Type.Primitive "Sized") [];
-  assert_edge_inferred (Type.Primitive "Set") (Type.Primitive "Sized") [];
-  assert_edge_not_inferred (Type.Primitive "AlmostSet") (Type.Primitive "Sized") [];
-  assert_edge_not_inferred (Type.Any) (Type.Primitive "SuperObject") [];
-  assert_edge_inferred (Type.Primitive "List") (Type.Primitive "Empty") [];
-  assert_edge_not_inferred (Type.Any) (Type.Primitive "Empty") []
-
-
 let test_less_or_equal_type_order _ =
   let order, environment  =
     order_and_environment {|
@@ -1312,57 +1227,6 @@ let test_class_definition _ =
   assert_equal any.Class.name (!&"object")
 
 
-let test_protocols _ =
-  let environment =
-    let environment = Environment.Builder.create () in
-    Test.populate
-      ~configuration
-      (Environment.handler environment)
-      ([]);
-    populate
-      ~environment
-      {|
-      class A(): ...
-      class B(typing.Protocol): pass
-      class C(): pass
-      class D(metaclass=abc.ABCMeta): ...
-      T = typing.TypeVar("T")
-      class E(typing.Protocol[T]): pass
-    |} in
-  let module Handler = (val environment) in
-
-  let cmp left right =
-    let left = List.sort ~compare:Identifier.compare left in
-    let right = List.sort ~compare:Identifier.compare right in
-    List.equal ~equal:Identifier.equal left right
-  in
-
-  assert_equal
-    ~cmp
-    ~printer:(String.concat ~sep:",")
-    (Handler.protocols ())
-    (["B"; "E"]);
-
-  let environment = populate "" in
-  let module Handler = (val environment) in
-  assert_equal
-    ~cmp
-    ~printer:(String.concat ~sep:",")
-    (Handler.protocols ())
-    ([
-      "typing.Hashable";
-      "typing.Iterable";
-      "typing.Sized";
-      "typing.AsyncIterable";
-      "typing.Iterator";
-      "typing.AsyncIterator";
-      "typing.Collection";
-      "typing.AsyncContextManager";
-      "typing.Awaitable";
-    ]);
-  ()
-
-
 let test_modules _ =
   let environment =
     populate_with_sources [
@@ -1481,160 +1345,14 @@ let test_purge _ =
   assert_equal
     (dependencies "a.py")
     (Some ["test"]);
-  assert_equal
-    (Handler.protocols ())
-    ["P"];
 
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.aliases (Type.Primitive "_T"));
-  assert_equal (Handler.protocols ()) [];
   assert_equal
     (dependencies "a.py")
     (Some [])
-
-
-let test_infer_protocols _ =
-  let open Analysis in
-  let configuration = Configuration.Analysis.create () in
-  let assert_protocols ?classes_to_infer source expected_edges =
-    Annotated.Class.Attribute.Cache.clear ();
-    let expected_edges =
-      let to_edge (source, target, parameters) =
-        {
-          TypeOrder.Edge.source = Type.Primitive source;
-          target = Type.Primitive target;
-          parameters = List.map parameters ~f:(fun parameter -> Type.Primitive parameter);
-        }
-      in
-      List.map expected_edges ~f:to_edge
-    in
-    let open TypeOrder in
-    let source =
-      Test.parse source
-      |> Preprocessing.preprocess
-    in
-    let environment = Environment.handler (create_environment ()) in
-    Test.populate ~configuration environment [source];
-    let ((module Handler: Environment.Handler) as handler) = environment in
-    let resolution = TypeCheck.resolution (module Handler) () in
-    let classes_to_infer =
-      match classes_to_infer with
-      | None ->
-          Handler.TypeOrderHandler.keys ()
-      | Some classes_to_infer ->
-          List.map classes_to_infer ~f:(fun to_infer -> Type.Primitive to_infer)
-          |> List.filter_map
-            ~f:(Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.indices ()))
-    in
-    let edges = Environment.infer_protocol_edges ~handler resolution ~classes_to_infer in
-    let expected_edges = Edge.Set.of_list expected_edges in
-    assert_equal
-      ~cmp:Edge.Set.equal
-      ~printer:(fun set -> Edge.Set.to_list set |> List.map ~f:Edge.show |> String.concat ~sep:", ")
-      expected_edges
-      edges
-  in
-  assert_protocols
-    ~classes_to_infer:["A"; "B"]
-    {|
-      class P(typing.Protocol):
-        def foo() -> int:
-          pass
-
-      class A:
-        def foo() -> int:
-          pass
-      class B:
-        def foo() -> str:
-          pass
-    |}
-    ["A", "P", []];
-
-  assert_protocols
-    ~classes_to_infer:["A"]
-    {|
-      class P(typing.Protocol):
-        def foo() -> int:
-          pass
-
-      class A:
-        def foo() -> int:
-          pass
-      class B:
-        def foo() -> int:
-          pass
-    |}
-    ["A", "P", []];
-
-  assert_protocols
-    ~classes_to_infer:["B"]
-    {|
-      class P(typing.Protocol):
-        def foo() -> int:
-          pass
-
-      class A:
-        def foo() -> int:
-          pass
-      class B:
-        def foo() -> int:
-          pass
-    |}
-    ["B", "P", []];
-
-  assert_protocols
-    ~classes_to_infer:["A"; "B"]
-    {|
-      T = typing.TypeVar("T")
-      class P(typing.Protocol, typing.Generic[T]):
-        def foo() -> T:
-          pass
-
-      class A:
-        def foo() -> str:
-          pass
-      class B():
-        def foo() -> int:
-          pass
-    |}
-    ["A", "P", ["str"]; "B", "P", ["int"]];
-
-
-  assert_protocols
-    ~classes_to_infer:["A"; "B"; "C"; "D"]
-    {|
-      class P(typing.Protocol):
-        def foo() -> int:
-          pass
-        def bar() -> str:
-          pass
-
-      class A:
-        def foo() -> int:
-          pass
-        def bar() -> str:
-          pass
-      class B:
-        def foo() -> str:
-          pass
-        def bar() -> str:
-          pass
-      class C:
-        def bar() -> str:
-          pass
-        def foo() -> int:
-          pass
-      class D:
-        def bar() -> int:
-          pass
-        def foo() -> str:
-          pass
-    |}
-    ["A", "P", []; "C", "P", []];
-
-  ()
 
 
 let test_propagate_nested_classes _ =
@@ -1745,11 +1463,8 @@ let () =
     "class_definition">::test_class_definition;
     "connect_definition">::test_connect_definition;
     "import_dependencies">::test_import_dependencies;
-    "infer_protocols_edges">::test_infer_protocols_edges;
-    "infer_protocols">::test_infer_protocols;
     "modules">::test_modules;
     "populate">::test_populate;
-    "protocols">::test_protocols;
     "purge">::test_purge;
     "register_class_metadata">::test_register_class_metadata;
     "register_aliases">::test_register_aliases;

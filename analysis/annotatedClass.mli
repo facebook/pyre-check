@@ -82,14 +82,6 @@ val abstract_methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
 
-val callable_implements
-  :  resolution: Resolution.t
-  -> Type.Callable.t
-  -> protocol: t
-  -> TypeOrder.implements_result
-val implements: resolution: Resolution.t -> t -> protocol: t -> TypeOrder.implements_result
-
-
 val create_attribute
   :  resolution: Resolution.t
   -> parent: t

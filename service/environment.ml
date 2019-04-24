@@ -254,13 +254,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
         ~get:DependentKeys.get
         ~add:DependentKeys.add
 
-    let add_protocol_key ~handle protocol =
-      add_new_key
-        ~handle
-        ~key:protocol
-        ~get:ProtocolKeys.get
-        ~add:ProtocolKeys.add
-
     let add_dependent ~handle dependent =
       add_dependent_key ~handle dependent;
       let qualifier = Source.qualifier ~handle in
@@ -274,15 +267,13 @@ module SharedHandler: Analysis.Environment.Handler = struct
     let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
     let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
     let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
-    let get_protocol_keys ~handle = ProtocolKeys.get handle |> Option.value ~default:[]
 
     let clear_keys_batch handles =
       FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list handles);
       ClassKeys.remove_batch (ClassKeys.KeySet.of_list handles);
       AliasKeys.remove_batch (AliasKeys.KeySet.of_list handles);
       GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list handles);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles);
-      ProtocolKeys.remove_batch (ProtocolKeys.KeySet.of_list handles)
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
 
     let dependents = Dependents.get
 
@@ -352,19 +343,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
   let class_metadata =
     ClassMetadata.get
-
-  let register_protocol ~handle protocol =
-    DependencyHandler.add_protocol_key ~handle protocol;
-    match Protocols.get SharedMemory.SingletonKey.key with
-    | None ->
-        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.singleton protocol)
-    | Some protocols ->
-        Protocols.add SharedMemory.SingletonKey.key (Identifier.Set.Tree.add protocols protocol)
-
-  let protocols () =
-    Protocols.get SharedMemory.SingletonKey.key
-    |> Option.value ~default:Identifier.Set.Tree.empty
-    |> Identifier.Set.Tree.to_list
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
     let string =
@@ -524,20 +502,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
 
-    let purge_protocols removed_protocols =
-      match Protocols.get Memory.SingletonKey.key with
-      | None ->
-          ()
-      | Some protocols ->
-          Protocols.remove_batch (Protocols.KeySet.singleton Memory.SingletonKey.key);
-          Protocols.add
-            Memory.SingletonKey.key
-            (Identifier.Set.Tree.diff protocols removed_protocols)
-    in
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_protocol_keys ~handle) handles
-    |> Identifier.Set.Tree.of_list
-    |> purge_protocols;
-
     DependencyHandler.clear_keys_batch handles;
     List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers;
@@ -561,7 +525,6 @@ let populate_shared_memory
       {
         Environment.class_definitions;
         class_metadata;
-        protocols;
         modules;
         aliases;
         globals;
@@ -573,7 +536,6 @@ let populate_shared_memory
             alias_keys;
             global_keys;
             dependent_keys;
-            protocol_keys;
           };
           dependents;
         };
@@ -606,12 +568,7 @@ let populate_shared_memory
     add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
-    add_table ProtocolKeys.write_through (Hashtbl.map ~f:Hash_set.to_list protocol_keys);
 
-    protocols
-    |> Hash_set.to_list
-    |> Identifier.Set.Tree.of_list
-    |> Protocols.write_through SharedMemory.SingletonKey.key;
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;
@@ -620,9 +577,6 @@ let populate_shared_memory
   let environment = Environment.Builder.create () in
   add_to_shared_memory environment;
   build (module SharedHandler) ~configuration ~scheduler ~stubs ~sources;
-
-  let resolution = TypeCheck.resolution (module SharedHandler) () in
-  Environment.infer_protocols ~handler:(module SharedHandler) resolution ();
 
   if debug then
     TypeOrder.check_integrity (module SharedHandler.TypeOrderHandler);

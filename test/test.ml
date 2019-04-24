@@ -1127,8 +1127,6 @@ let assert_errors
           ~scheduler:(Scheduler.mock ())
           environment
           sources;
-        let resolution = TypeCheck.resolution environment () in
-        Analysis.Environment.infer_protocols ~handler:environment resolution ();
         environment
       in
       let configuration =

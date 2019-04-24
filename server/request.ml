@@ -663,16 +663,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                           >>| Reference.Set.Tree.to_list
                           >>| List.to_string ~f:Reference.show;
                       }
-                  | Ok (Protocols.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = ProtocolValue.description;
-                        actual_key = Int.to_string key;
-                        actual_value =
-                          value
-                          >>| Identifier.Set.Tree.to_list
-                          >>| List.to_string ~f:(Identifier.show);
-                      }
                   | Ok (FunctionKeys.Decoded (key, value)) ->
                       Some {
                         TypeQuery.serialized_key;
@@ -1449,16 +1439,6 @@ let process_type_check_files
   Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
   |> Service.Environment.populate ~configuration ~scheduler environment;
-  let classes_to_infer =
-    let get_class_keys handle =
-      Handler.DependencyHandler.get_class_keys ~handle
-    in
-    List.concat_map repopulate_handles ~f:get_class_keys
-  in
-  let resolution = TypeCheck.resolution environment () in
-  Handler.transaction
-    ~f:(Analysis.Environment.infer_protocols ~handler:environment resolution ~classes_to_infer)
-    ();
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

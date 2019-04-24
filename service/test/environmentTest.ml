@@ -122,31 +122,6 @@ let test_register_modules _ =
     (annotation (Type.dictionary ~key:Type.string ~value:Type.Any))
 
 
-let test_purge _ =
-  Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
-  Handler.register_protocol ~handle:(File.Handle.create "test.py") "MyProtocol";
-  Handler.DependencyHandler.add_dependent
-    ~handle:(File.Handle.create "test.py")
-    (Reference.create "typing");
-  assert_equal
-    (Some (Reference.Set.Tree.singleton (!&"test")))
-    (Handler.DependencyHandler.dependents (!&"typing"));
-
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    (Handler.protocols ())
-    ["MyProtocol"];
-
-  Handler.purge [File.Handle.create "test.py"];
-  assert_equal
-    (Some Reference.Set.Tree.empty)
-    (Handler.DependencyHandler.dependents (!&"typing"));
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    (Handler.protocols ())
-    []
-
-
 let test_normalize_dependencies _ =
   let handle = File.Handle.create "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
@@ -294,6 +269,5 @@ let () =
     "normalize">::test_normalize;
     "register_modules">::test_register_modules;
     "populate">::test_populate;
-    "purge">::test_purge;
   ]
   |> Test.run

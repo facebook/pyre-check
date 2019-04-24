@@ -784,66 +784,6 @@ let attributes_to_names_and_types =
   in
   List.concat_map ~f:attribute_to_name_and_type
 
-let map_of_name_to_annotation_implements ~resolution all_instance_methods ~protocol =
-  let overload_implements ~constraints (name, annotation) (protocol_name, protocol_annotation) =
-    if Identifier.equal name protocol_name then
-      Resolution.solve_less_or_equal
-        resolution
-        ~left:(Type.Variable.mark_all_variables_as_bound annotation ~simulated:true)
-        ~right:protocol_annotation
-        ~constraints
-    else
-      []
-  in
-  (* TODO(T40727281): This needs to be transitive once we're actually checking based on
-       transitive *)
-  let all_protocol_methods =
-    attributes ~resolution ~transitive:true protocol
-    |> List.filter ~f:(fun { Node.value = {Attribute.parent; _}; _} ->
-        not (Type.equal parent Type.object_primitive) && not (Type.equal parent Type.generic))
-    |> attributes_to_names_and_types
-  in
-  let rec implements ~constraints instance_methods protocol_methods =
-    match instance_methods, protocol_methods with
-    | _, [] ->
-        [constraints]
-    | [], _ :: _ ->
-        []
-    | instance_method :: instance_methods,
-      ((protocol_method :: protocol_methods) as old_protocol_methods) ->
-        match overload_implements ~constraints instance_method protocol_method with
-        | [] ->
-            implements ~constraints instance_methods old_protocol_methods
-        | constraints_set ->
-            List.concat_map constraints_set ~f:(fun constraints ->
-                implements ~constraints all_instance_methods protocol_methods)
-  in
-  let instantiate_protocol_generics solution =
-    let generics = generics ~resolution protocol in
-    let solution = Type.default_to_bottom solution generics in
-    List.map generics ~f:(Type.instantiate ~constraints:(Type.Map.find solution))
-  in
-  implements ~constraints:TypeConstraints.empty all_instance_methods all_protocol_methods
-  |> List.filter_map ~f:(Resolution.solve_constraints resolution)
-  |> List.hd
-  >>| Type.Map.map ~f:Type.Variable.free_all_simulated_bound_variables
-  >>| instantiate_protocol_generics
-  >>| (fun parameters -> TypeOrder.Implements { parameters })
-  |> Option.value ~default:TypeOrder.DoesNotImplement
-
-
-let callable_implements ~resolution { Type.Callable.implementation; overloads; _ } ~protocol =
-  List.map
-    (implementation :: overloads)
-    ~f:(fun overload -> ("__call__", Type.Callable.create_from_implementation overload))
-  |> map_of_name_to_annotation_implements ~resolution ~protocol
-
-
-let implements ~resolution definition ~protocol =
-  attributes_to_names_and_types (attributes ~resolution definition)
-  |> map_of_name_to_annotation_implements ~resolution ~protocol
-
-
 let attribute_fold
     ?(transitive = false)
     ?(class_attributes = false)

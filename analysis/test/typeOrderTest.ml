@@ -21,30 +21,44 @@ let (!) name =
 let connect ?(parameters = []) handler ~predecessor ~successor =
   connect ~parameters handler ~predecessor ~successor
 
+let parse_attributes ~parse_annotation ~class_name =
+  let parse_attribute (name, annotation) =
+    {
+      Attribute.name;
+      annotation = Annotation.create (parse_annotation annotation);
+      value = Ast.Node.create_with_default_location (Ast.Expression.Ellipsis);
+      parent = Type.Primitive class_name;
+      defined = true;
+      class_attribute = false;
+      async = false;
+      initialized = true;
+      property = false;
+    } |> Ast.Node.create_with_default_location
+  in
+  List.map ~f:parse_attribute
+
 let less_or_equal
     ?(constructor = fun _ -> None)
-    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
+    ?(attributes = fun _ -> None)
+    ?(is_protocol = fun _ -> false)
     handler =
   less_or_equal
     {
       handler;
       constructor;
-      implements;
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      attributes;
+      is_protocol;
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty;
     }
 
 let is_compatible_with
     ?(constructor = fun _ -> None)
-    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
   is_compatible_with
     {
       handler;
       constructor;
-      implements;
       attributes = (fun _ -> None);
       is_protocol = (fun _ -> false);
       any_is_bottom = false;
@@ -53,13 +67,11 @@ let is_compatible_with
 
 let join
     ?(constructor = fun _ -> None)
-    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
   join
     {
       handler;
       constructor;
-      implements;
       attributes = (fun _ -> None);
       is_protocol = (fun _ -> false);
       any_is_bottom = false;
@@ -68,13 +80,11 @@ let join
 
 let meet
     ?(constructor = fun _ -> None)
-    ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
   meet
     {
       handler;
       constructor;
-      implements;
       attributes = (fun _ -> None);
       is_protocol = (fun _ -> false);
       any_is_bottom = false;
@@ -883,6 +893,9 @@ let test_less_or_equal _ =
       ~successor:!"typing.Generic";
     insert order (Type.Primitive "dict");
 
+    insert order (Type.Primitive "MatchesProtocol");
+    insert order (Type.Primitive "DoesNotMatchProtocol");
+
     order
   in
   assert_true
@@ -1056,7 +1069,7 @@ let test_less_or_equal _ =
        ~right:Type.integer);
 
   (* Behavioral subtyping of callables. *)
-  let less_or_equal ?implements order ~left ~right =
+  let less_or_equal ?attributes ?is_protocol order ~left ~right =
     let aliases = function
       | Type.Primitive "T_Unconstrained" ->
           Some (Type.variable "T_Unconstrained")
@@ -1067,10 +1080,11 @@ let test_less_or_equal _ =
       | _ -> None
     in
     less_or_equal
+      ?attributes
+      ?is_protocol
       order
       ~left:(parse_callable ~aliases left)
       ~right:(parse_callable ~aliases right)
-      ?implements
   in
   assert_true
     (less_or_equal
@@ -1384,37 +1398,65 @@ let test_less_or_equal _ =
        ~right:"typing_extensions.Literal['a', 'b']");
 
   (* Callback protocols *)
-  let implements ~protocol callable =
-    match protocol, callable with
-    | Type.Primitive "MatchesProtocol", Type.Callable _  ->
-        TypeOrder.Implements { parameters = [] }
-    | Type.Parametric { name = "B"; _ }, Type.Callable _  ->
-        TypeOrder.Implements { parameters = [Type.integer] }
+  let parse_annotation =
+    let aliases = function
+      | Type.Primitive "_T" -> Some (Type.variable "_T")
+      | _ -> None
+    in
+    parse_callable ~aliases
+  in
+  let is_protocol = function
+    | Type.Primitive "MatchesProtocol"
+    | Type.Primitive "DoesNotMatchProtocol"
+    | Type.Parametric { name = "B"; _ } ->
+        true
+    | _ -> false
+  in
+  let attributes = function
+    | Type.Primitive "MatchesProtocol" ->
+        Some (parse_attributes
+                ~parse_annotation
+                ~class_name:"MatchesProtocol"
+                ["__call__", "typing.Callable[[int], str]"]);
+    | Type.Primitive "DoesNotMatchProtocol" ->
+        Some (parse_attributes
+                ~parse_annotation
+                ~class_name:"DoesNotMatchProtocol"
+                ["__call__", "typing.Callable[[str], int]"]);
+    | Type.Primitive "B" ->
+        Some (parse_attributes
+                ~parse_annotation
+                ~class_name:"B"
+                ["__call__", "typing.Callable[[_T], str]"]);
     | _ ->
-        TypeOrder.DoesNotImplement
+        failwith "getting attributes for wrong class"
   in
   assert_true
     (less_or_equal
        order
-       ~implements
+       ~is_protocol
+       ~attributes
        ~left:"typing.Callable[[int], str]"
        ~right:"MatchesProtocol");
   assert_false
     (less_or_equal
        order
-       ~implements
+       ~is_protocol
+       ~attributes
        ~left:"typing.Callable[[int], str]"
        ~right:"DoesNotMatchProtocol");
   assert_true
     (less_or_equal
        order
-       ~implements
+       ~is_protocol
+       ~attributes
        ~left:"typing.Callable[[int], str]"
        ~right:"B[int]");
   assert_false
     (less_or_equal
        order
-       ~implements
+       ~is_protocol
+       ~attributes
        ~left:"typing.Callable[[int], str]"
        ~right:"B[str]");
 
@@ -2604,7 +2646,6 @@ let test_instantiate_parameters _ =
     {
       handler = default;
       constructor = (fun _ -> None);
-      implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
       attributes = (fun _ -> None);
       is_protocol = (fun _ -> false);
       any_is_bottom = false;
@@ -3095,37 +3136,31 @@ let test_solve_less_or_equal _ =
     |}
     |> fun environment -> TypeCheck.resolution environment ()
   in
-  let handler =
-    let constructor instantiated =
-      Resolution.class_definition resolution instantiated
-      >>| Class.create
-      >>| Class.constructor ~instantiated ~resolution
-    in
-    let implements ~protocol callable =
-      match protocol, callable with
-      | Type.Parametric { name = "G_invariant"; _ }, Type.Callable _  ->
-          TypeOrder.Implements { parameters = [Type.integer] }
-      | _ ->
-          TypeOrder.DoesNotImplement
-    in
-    {
-      handler = Resolution.order resolution;
-      constructor;
-      implements;
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
-      any_is_bottom = false;
-      protocol_assumptions = ProtocolAssumptions.empty;
-    }
-  in
   let assert_solve
       ~left
       ~right
+      ?(is_protocol = (fun _ -> false))
+      ?(attributes = (fun _ -> None))
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.Variable.mark_all_variables_as_bound ~simulated:false)
       ?(replace_escaped_variables_with_any = false)
       expected =
+    let handler =
+      let constructor instantiated =
+        Resolution.class_definition resolution instantiated
+        >>| Class.create
+        >>| Class.constructor ~instantiated ~resolution
+      in
+      {
+        handler = Resolution.order resolution;
+        constructor;
+        attributes;
+        is_protocol;
+        any_is_bottom = false;
+        protocol_assumptions = ProtocolAssumptions.empty;
+      }
+    in
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
@@ -3386,7 +3421,28 @@ let test_solve_less_or_equal _ =
     [["T2", "str"; "T1", "int"]];
 
   (* Callback protocols *)
+  let parse_annotation annotation =
+    annotation
+    |> parse_single_expression
+    |> Resolution.parse_annotation resolution
+  in
+  let is_protocol = function
+    | Type.Parametric { name = "G_invariant"; _ } ->
+        true
+    | _ -> false
+  in
+  let attributes = function
+    | Type.Primitive "G_invariant" ->
+        Some (parse_attributes
+                ~parse_annotation
+                ~class_name:"B"
+                ["__call__", "typing.Callable[[T], str]"]);
+    | _ ->
+        failwith "getting attributes for wrong class"
+  in
   assert_solve
+    ~is_protocol
+    ~attributes
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
     [["T1", "int"]];
@@ -3442,7 +3498,6 @@ let test_is_consistent_with _ =
       {
         handler = default;
         constructor = (fun _ -> None);
-        implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
         attributes = (fun _ -> None);
         is_protocol = (fun _ -> false);
         any_is_bottom = false;
@@ -3683,20 +3738,7 @@ let test_instantiate_protocol_parameters _ =
     in
     let parse_attributes =
       let parse_class (class_name, attributes) =
-        let parse_attribute (name, annotation) =
-          {
-            Attribute.name;
-            annotation = Annotation.create (parse_annotation annotation);
-            value = Ast.Node.create_with_default_location (Ast.Expression.Ellipsis);
-            parent = Type.Primitive class_name;
-            defined = true;
-            class_attribute = false;
-            async = false;
-            initialized = true;
-            property = false;
-          } |> Ast.Node.create_with_default_location
-        in
-        (class_name, List.map attributes ~f:parse_attribute)
+        (class_name, parse_attributes attributes ~class_name ~parse_annotation)
       in
       List.map ~f:parse_class
     in
@@ -3719,7 +3761,6 @@ let test_instantiate_protocol_parameters _ =
       {
         handler = Resolution.order resolution;
         constructor = (fun _ -> None);
-        implements = (fun ~protocol:_ _ -> DoesNotImplement);
         attributes;
         is_protocol;
         any_is_bottom = false;

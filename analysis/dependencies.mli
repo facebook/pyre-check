@@ -14,7 +14,6 @@ type index = {
   alias_keys: (Type.t Hash_set.t) File.Handle.Table.t;
   global_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
   dependent_keys: (Reference.t Hash_set.t) File.Handle.Table.t;
-  protocol_keys: (Identifier.t Hash_set.t) File.Handle.Table.t;
 }
 
 type t = {
@@ -28,7 +27,6 @@ module type Handler = sig
   val add_alias_key: handle: File.Handle.t -> Type.t -> unit
   val add_global_key: handle: File.Handle.t -> Reference.t -> unit
   val add_dependent_key: handle: File.Handle.t -> Reference.t -> unit
-  val add_protocol_key: handle: File.Handle.t -> Identifier.t -> unit
 
   val add_dependent: handle: File.Handle.t -> Reference.t -> unit
 
@@ -39,7 +37,6 @@ module type Handler = sig
   val get_alias_keys: handle: File.Handle.t -> Type.t list
   val get_global_keys: handle: File.Handle.t -> Reference.t list
   val get_dependent_keys: handle: File.Handle.t -> Reference.t list
-  val get_protocol_keys: handle: File.Handle.t -> Identifier.t list
 
   val clear_keys_batch: File.Handle.t list -> unit
 

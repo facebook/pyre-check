@@ -11,7 +11,6 @@ open Statement
 type t = {
   class_definitions: (Class.t Node.t) Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
-  protocols: Identifier.Hash_set.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.t Type.Table.t;
@@ -42,9 +41,6 @@ module type Handler = sig
 
   val class_definition: Identifier.t -> Class.t Node.t option
   val class_metadata: Identifier.t -> Resolution.class_metadata option
-
-  val register_protocol: handle: File.Handle.t -> Identifier.t -> unit
-  val protocols: unit -> Identifier.t list
 
   val register_module
     :  qualifier: Reference.t
@@ -114,27 +110,6 @@ val connect_type_order
 val register_dependencies
   :  (module Handler)
   -> Source.t
-  -> unit
-
-(* Exposed for testing. *)
-val infer_implementations
-  :  (module Handler)
-  -> Resolution.t
-  -> implementing_classes: (method_name: Identifier.t -> (Ast.Reference.t list) option)
-  -> protocol: Type.t
-  -> TypeOrder.Edge.Set.t
-(* Exposed for testing. *)
-val infer_protocol_edges
-  :  handler: (module Handler)
-  -> Resolution.t
-  -> classes_to_infer: int list
-  -> TypeOrder.Edge.Set.t
-(* If classes_to_infer is not None, only infers protocols for the specified classes. *)
-val infer_protocols
-  :  ?classes_to_infer: Identifier.t list
-  -> handler: (module Handler)
-  -> Resolution.t
-  -> unit
   -> unit
 
 val propagate_nested_classes: (module Handler) -> Resolution.t -> Type.t -> unit

@@ -57,7 +57,6 @@ type t = {
   class_definition: Type.primitive -> (Class.t Node.t) option;
   class_metadata: Type.primitive -> class_metadata option;
   constructor: (resolution: t -> Type.primitive -> Type.t option);
-  implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
   generics: resolution: t -> Class.t Node.t -> Type.t list;
   attributes: resolution: t -> Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
@@ -76,7 +75,6 @@ let create
     ~class_definition
     ~class_metadata
     ~constructor
-    ~implements
     ~generics
     ~undecorated_signature
     ~attributes
@@ -94,7 +92,6 @@ let create
     class_definition;
     class_metadata;
     constructor;
-    implements;
     generics;
     undecorated_signature;
     attributes;
@@ -213,10 +210,6 @@ let constructor ({ constructor; _ } as resolution) =
   constructor ~resolution
 
 
-let implements ({ implements; _ } as resolution) =
-  implements ~resolution
-
-
 let generics ({ generics; class_definition; _ } as resolution) annotation =
   primitive_name annotation
   >>= fun key ->
@@ -302,7 +295,6 @@ let full_order ({ order; _ } as resolution) =
   {
     TypeOrder.handler = order;
     constructor;
-    implements = implements resolution;
     attributes = attributes resolution;
     is_protocol = is_protocol resolution;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;

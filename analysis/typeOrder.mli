@@ -102,10 +102,6 @@ val successors: (module Handler) -> Type.primitive -> Type.primitive list
 
 val variables: (module Handler) -> Type.t -> Type.t list option
 
-type implements_result =
-  | DoesNotImplement
-  | Implements of { parameters: Type.t list }
-
 module ProtocolAssumptions: sig
   type t
   val empty: t
@@ -115,7 +111,6 @@ end
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
-  implements: protocol: Type.t -> Type.t -> implements_result;
   attributes: Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
   any_is_bottom: bool;

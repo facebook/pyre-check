@@ -34,7 +34,6 @@ val create
   -> class_definition: (Type.primitive -> (Class.t Node.t) option)
   -> class_metadata: (Type.primitive -> class_metadata option)
   -> constructor: (resolution: t -> Type.primitive -> Type.t option)
-  -> implements: (resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result)
   -> generics: (resolution: t -> Class.t Node.t -> Type.t list)
   -> undecorated_signature: (Reference.t -> Type.t Type.Callable.overload option)
   -> attributes: (resolution: t -> Type.t -> AnnotatedAttribute.t list option)

@@ -4064,7 +4064,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~class_definition:(fun _ -> None)
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
-        ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ~generics:(fun ~resolution:_ _ -> [])
         ~undecorated_signature:(fun _ -> None)
         ~attributes:(fun ~resolution:_ _ -> None)
@@ -4096,25 +4095,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     >>| AnnotatedClass.constructor ~instantiated ~resolution
   in
 
-  let implements ~resolution ~protocol annotation =
-    let implements protocol =
-      if AnnotatedClass.is_protocol protocol then
-        match annotation with
-        | Type.Callable callable ->
-            AnnotatedClass.callable_implements ~resolution callable ~protocol
-        | _ ->
-            Resolution.class_definition resolution annotation
-            >>| AnnotatedClass.create
-            >>| AnnotatedClass.implements ~resolution ~protocol
-            |> Option.value ~default:TypeOrder.DoesNotImplement
-      else
-        TypeOrder.DoesNotImplement
-    in
-    Resolution.class_definition resolution protocol
-    >>| AnnotatedClass.create
-    >>| implements
-    |> Option.value ~default:TypeOrder.DoesNotImplement
-  in
 
   let generics ~resolution class_definition =
     AnnotatedClass.create class_definition
@@ -4147,7 +4127,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     ~class_definition:Handler.class_definition
     ~class_metadata:Handler.class_metadata
     ~constructor
-    ~implements
     ~undecorated_signature:Handler.undecorated_signature
     ~generics
     ~attributes

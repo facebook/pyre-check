@@ -413,10 +413,6 @@ let get_generic_parameters ~generic_index edges =
   List.find_map ~f:generic_parameters edges
 
 
-type implements_result =
-  | DoesNotImplement
-  | Implements of { parameters: Type.t list }
-
 module ProtocolAssumptions: sig
   type t
   val find_assumed_protocol_parameters
@@ -451,7 +447,6 @@ end
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
-  implements: protocol: Type.t -> Type.t -> implements_result;
   attributes: Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
   any_is_bottom: bool;
@@ -672,7 +667,7 @@ module OrderImplementation = struct
        List.filter_map ~f:OrderedConstraints.solve *)
 
     and solve_less_or_equal_safe
-        ({ handler; constructor; implements; any_is_bottom; is_protocol; _ } as order)
+        ({ handler; constructor; any_is_bottom; is_protocol; _ } as order)
         ~constraints
         ~left
         ~right =
@@ -736,20 +731,11 @@ module OrderImplementation = struct
                 [constraints]
               else
                 []
-          | Type.Callable _, Type.Parametric { name; _ } ->
-              begin
-                match implements ~protocol:right left with
-                | Implements { parameters } ->
-                    let left = Type.parametric name parameters in
-                    solve_less_or_equal_throws order ~constraints ~left ~right
-                | _ when is_protocol right ->
-                    instantiate_protocol_parameters order ~protocol:name ~candidate:left
-                    >>| Type.parametric name
-                    >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
-                    |> Option.value ~default:[]
-                | _ ->
-                    []
-              end
+          | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ->
+              instantiate_protocol_parameters order ~protocol:name ~candidate:left
+              >>| Type.parametric name
+              >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
+              |> Option.value ~default:[]
           | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
               let solve_parameters left_parameters =
                 let solve_parameter_pair constraints (variable, (left, right)) =
@@ -856,7 +842,6 @@ module OrderImplementation = struct
         ({
           handler = ((module Handler: Handler) as handler);
           constructor;
-          implements;
           any_is_bottom;
           is_protocol;
           _;
@@ -1137,23 +1122,6 @@ module OrderImplementation = struct
                   false
             end
 
-        | Type.Callable _, Type.Parametric { name; _ } ->
-            begin
-              match implements ~protocol:right left with
-              | Implements { parameters } ->
-                  less_or_equal order ~left:(Type.parametric name parameters) ~right
-              | _ ->
-                  false
-            end
-
-        | Type.Callable _, Type.Primitive _ ->
-            begin
-              match implements ~protocol:right left with
-              | Implements { parameters = [] } ->
-                  true
-              | _ ->
-                  false
-            end
         | Type.Callable _, _ ->
             false
 
@@ -2362,7 +2330,6 @@ let connect_annotations_to_top
       {
         handler;
         constructor = (fun _ -> None);
-        implements = (fun ~protocol:_ _ -> DoesNotImplement);
         attributes = (fun _ -> None);
         is_protocol = (fun _ -> false);
         any_is_bottom = false;
