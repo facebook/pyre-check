@@ -47,10 +47,10 @@ let test_alias_keys _ =
       keys
       expected
   in
-  assert_aliases [Type.Primitive "first_key"] ~expected:[Type.Primitive "first_key"];
+  assert_aliases ["first_key"] ~expected:["first_key"];
   assert_aliases
-    [Type.Primitive "first_key"; Type.Primitive "second_key"]
-    ~expected:[Type.Primitive "second_key"; Type.Primitive "first_key"]
+    ["first_key"; "second_key"]
+    ~expected:["second_key"; "first_key"]
 
 
 let test_class_keys _ =
@@ -163,14 +163,14 @@ let test_normalize_dependencies _ =
     (DependencyHandler.get_class_keys ~handle)
     ["T1"; "T2"; "T3"];
 
-  DependencyHandler.add_alias_key ~handle (Type.Primitive "C_Alias");
-  DependencyHandler.add_alias_key ~handle (Type.Primitive "A_Alias");
-  DependencyHandler.add_alias_key ~handle (Type.Primitive "B_Alias");
+  DependencyHandler.add_alias_key ~handle "C_Alias";
+  DependencyHandler.add_alias_key ~handle "A_Alias";
+  DependencyHandler.add_alias_key ~handle "B_Alias";
   DependencyHandler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Type.show)
+    ~printer:(List.to_string ~f:Identifier.show)
     (DependencyHandler.get_alias_keys ~handle)
-    [Type.Primitive "A_Alias"; Type.Primitive "B_Alias"; Type.Primitive "C_Alias"]
+    ["A_Alias"; "B_Alias"; "C_Alias"]
 
 
 let test_normalize _ =

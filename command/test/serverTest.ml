@@ -1279,11 +1279,10 @@ let test_decode_serialized_ocaml_values context =
       actual_value = Some {|{"successors":"(str)","is_test":false}|};
     };
   assert_decode
-    ~key:(Aliases.serialize_key (Type.Primitive "my_integer"))
+    ~key:(Aliases.serialize_key "my_integer")
     ~value:Type.integer
     ~response:{
-      TypeQuery.serialized_key =
-        Aliases.serialize_key (Type.Primitive "my_integer");
+      TypeQuery.serialized_key = Aliases.serialize_key "my_integer";
       kind = "Alias";
       actual_key = "my_integer";
       actual_value = Some "int";

@@ -299,7 +299,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
           match AliasKeys.get handle with
           | Some keys ->
               AliasKeys.remove_batch (AliasKeys.KeySet.singleton handle);
-              AliasKeys.add handle (List.dedup_and_sort ~compare:Type.compare keys)
+              AliasKeys.add handle (List.dedup_and_sort ~compare:Identifier.compare keys)
           | None ->
               ()
         end;

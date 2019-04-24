@@ -21,9 +21,6 @@ let populate source =
   |> Environment.handler
 
 
-let primitive name = Type.Primitive name
-
-
 let test_index _ =
   let environment = Environment.Builder.create () in
   let source = {|
@@ -48,7 +45,7 @@ let test_index _ =
   in
   assert_table_contains_key class_keys "baz.baz";
   assert_table_contains_key function_keys (!&"foo");
-  assert_table_contains_key alias_keys (primitive "_T")
+  assert_table_contains_key alias_keys "_T"
 
 
 let add_dependent table handle dependent =

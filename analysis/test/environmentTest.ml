@@ -1335,7 +1335,7 @@ let test_purge _ =
     handler
     [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition "baz.baz");
-  assert_is_some (Handler.aliases (Type.Primitive "_T"));
+  assert_is_some (Handler.aliases "_T");
   let dependencies handle =
     let handle = File.Handle.create handle in
     Handler.dependencies (Source.qualifier ~handle)
@@ -1349,7 +1349,7 @@ let test_purge _ =
   Handler.purge [File.Handle.create "test.py"];
 
   assert_is_none (Handler.class_definition "baz.baz");
-  assert_is_none (Handler.aliases (Type.Primitive "_T"));
+  assert_is_none (Handler.aliases "_T");
   assert_equal
     (dependencies "a.py")
     (Some [])

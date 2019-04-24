@@ -16,7 +16,7 @@ type t = {
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
-  aliases: Type.t Type.Table.t;
+  aliases: Type.t Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
   undecorated_functions: (Type.t Type.Callable.overload) Reference.Table.t;
@@ -35,7 +35,7 @@ module type Handler = sig
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Identifier.t -> unit
-  val register_alias: handle: File.Handle.t -> key: Type.t -> data: Type.t -> unit
+  val register_alias: handle: File.Handle.t -> key: Identifier.t -> data: Type.t -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val class_definition: Identifier.t -> Class.t Node.t option
@@ -53,7 +53,7 @@ module type Handler = sig
   val module_definition: Reference.t -> Module.t option
 
   val in_class_definition_keys: Identifier.t -> bool
-  val aliases: Type.t -> Type.t option
+  val aliases: Identifier.t -> Type.t option
   val globals: Reference.t -> Resolution.global option
   val undecorated_signature: Reference.t -> Type.t Type.Callable.overload option
   val dependencies: Reference.t -> Reference.Set.Tree.t option
@@ -585,9 +585,10 @@ let register_aliases (module Handler: Handler) sources =
       end)
     in
     let all_valid, value_annotation = TrackedTransform.visit true value_annotation in
+    let target_primitive_name = Option.value_exn (Type.primitive_name target_primitive) in
     if all_valid && not (TypeOrder.contains order target_primitive) then
       begin
-        Handler.register_alias ~handle ~key:target_annotation ~data:value_annotation;
+        Handler.register_alias ~handle ~key:target_primitive_name ~data:value_annotation;
         (true, unresolved)
       end
     else
@@ -903,7 +904,7 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
       else
         begin
           let primitive name = Type.Primitive (Reference.show name) in
-          Handler.register_alias ~handle ~key:(primitive alias) ~data:(primitive full_name);
+          Handler.register_alias ~handle ~key:(Reference.show alias) ~data:(primitive full_name);
           alias :: added_sofar
         end
     in
@@ -936,7 +937,7 @@ module Builder = struct
     let class_metadata = Identifier.Table.create () in
     let modules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
-    let aliases = Type.Table.create () in
+    let aliases = Identifier.Table.create () in
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
     let undecorated_functions = Reference.Table.create () in
@@ -1071,21 +1072,21 @@ module Builder = struct
     (* Register hardcoded aliases. *)
     Hashtbl.set
       aliases
-      ~key:(Type.Primitive "typing.DefaultDict")
+      ~key:"typing.DefaultDict"
       ~data:(Type.Primitive "collections.defaultdict");
     Hashtbl.set
       aliases
-      ~key:(Type.Primitive "None")
+      ~key:"None"
       ~data:(Type.Optional Type.Bottom);
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set
       aliases
-      ~key:(Type.Primitive "PathLike")
+      ~key:"PathLike"
       ~data:(Type.Primitive "_PathLike");
     Hashtbl.set
       aliases
-      ~key:(Type.Primitive "TSelf")
+      ~key:"TSelf"
       ~data:(Type.variable "_PathLike");
 
     TypeOrder.insert
@@ -1145,7 +1146,7 @@ module Builder = struct
       let alias (key, data) =
         Format.asprintf
           "  %a -> %a"
-          Type.pp key
+          Identifier.pp key
           Type.pp data in
       Hashtbl.to_alist aliases
       |> List.map ~f:alias

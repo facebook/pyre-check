@@ -242,7 +242,7 @@ end
 
 val create
   : ?convert: bool
-  -> aliases:(t -> t option)
+  -> aliases:(primitive -> t option)
   -> Expression.t
   -> t
 

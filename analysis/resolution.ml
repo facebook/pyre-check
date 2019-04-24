@@ -49,7 +49,7 @@ type t = {
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
-  aliases: Type.t -> Type.t option;
+  aliases: Type.primitive -> Type.t option;
 
   global: Reference.t -> global option;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
@@ -434,11 +434,11 @@ let parse_annotation
     Expression.delocalize expression
     |> Expression.convert
   in
-  let aliases annotation =
+  let aliases name =
     if allow_invalid_type_parameters then
-      aliases annotation
+      aliases name
     else
-      aliases annotation
+      aliases name
       >>| check_invalid_type_parameters resolution
       >>| snd
   in

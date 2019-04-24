@@ -139,21 +139,21 @@ let test_create _ =
   assert_create
     "typing.TypeVar('_CallableT', bound='typing.Callable')"
     (Type.variable
-      ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
-      "_CallableT");
+       ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
+       "_CallableT");
 
   (* Check that type aliases are resolved. *)
   let assert_alias source resolved =
     let aliases =
-      Type.Table.of_alist_exn [
-        Type.Primitive "Alias", Type.Primitive "Aliased";
-        Type.Primitive "_Future",
+      Identifier.Table.of_alist_exn [
+        "Alias", Type.Primitive "Aliased";
+        "_Future",
         Type.union [
           Type.parametric "Future" [Type.integer; Type.variable "_T"];
           Type.awaitable (Type.variable "_T");
         ];
       ]
-      |> Type.Table.find
+      |> Identifier.Table.find
     in
     assert_create ~aliases source resolved
   in
@@ -176,22 +176,22 @@ let test_create _ =
 
   (* Recursive aliasing. *)
   let aliases = function
-    | Type.Primitive name when name = "A" -> Some (Type.Primitive "B")
-    | Type.Primitive name when name = "B" -> Some (Type.Primitive "C")
+    | "A" -> Some (Type.Primitive "B")
+    | "B" -> Some (Type.Primitive "C")
     | _ -> None
   in
   assert_create ~aliases "A" (Type.Primitive "C");
 
   (* Recursion with loop. *)
   let aliases = function
-    | Type.Primitive name when name = "A" ->
+    | "A" ->
         Some (Type.Primitive "A")
     | _ ->
         None
   in
   assert_create ~aliases "A" (Type.Primitive "A");
   let aliases = function
-    | Type.Primitive name when name = "A" ->
+    | "A" ->
         Some (Type.list (Type.Primitive "A"))
     | _ ->
         None
@@ -200,18 +200,18 @@ let test_create _ =
 
   (* Nested aliasing. *)
   let aliases = function
-    | Type.Primitive "A" -> Some (Type.list (Type.Primitive "B"))
-    | Type.Primitive "B" -> Some (Type.Primitive "C")
-    | Type.Primitive "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ());
+    | "A" -> Some (Type.list (Type.Primitive "B"))
+    | "B" -> Some (Type.Primitive "C")
+    | "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ());
     | _ -> None
   in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
   assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
   (* Aliasing of subclasses through imports. *)
   let aliases = function
-    | Type.Primitive name when Identifier.show name = "A" ->
+    | "A" ->
         Some (Type.Primitive "B")
-    | Type.Primitive name when Identifier.show name = "module.R" ->
+    | "module.R" ->
         Some (Type.Primitive "module.R.R")
     | _ ->
         None
@@ -227,7 +227,7 @@ let test_create _ =
 
   (* Aliases with Unions. *)
   let aliases = function
-    | Type.Primitive name when name = "A" ->
+    | "A" ->
         Some (Type.union [Type.string; Type.bytes])
     | _ ->
         None
@@ -1154,9 +1154,9 @@ let test_variables _ =
   let assert_variables source expected =
     let aliases =
       let aliases =
-        Type.Map.of_alist_exn [
-          Type.Primitive "T", Type.variable "T";
-          Type.Primitive "S", Type.variable "S";
+        Identifier.Map.of_alist_exn [
+          "T", Type.variable "T";
+          "S", Type.variable "S";
         ]
       in
       Map.find aliases

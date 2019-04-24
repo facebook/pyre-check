@@ -50,7 +50,7 @@ module GlobalKeyValue = struct
 end
 
 module AliasKeyValue = struct
-  type t = Type.t list
+  type t = Identifier.t list
   let prefix = Prefix.make ()
   let description = "Alias keys"
 end
@@ -162,7 +162,7 @@ module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 
 module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
 
-module Aliases = Memory.NoCache (TypeKey) (AliasValue)
+module Aliases = Memory.NoCache (StringKey) (AliasValue)
 
 module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 

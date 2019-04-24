@@ -28,7 +28,7 @@ val create
   :  annotations: Annotation.t Reference.Map.t
   -> order: (module TypeOrder.Handler)
   -> resolve: (resolution: t -> Expression.t -> Type.t)
-  -> aliases: (Type.t -> Type.t option)
+  -> aliases: (Type.primitive -> Type.t option)
   -> global: (Reference.t -> global option)
   -> module_definition: (Reference.t -> Module.t option)
   -> class_definition: (Type.primitive -> (Class.t Node.t) option)

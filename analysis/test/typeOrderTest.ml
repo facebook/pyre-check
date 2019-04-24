@@ -9,6 +9,7 @@ open OUnit2
 open Pyre
 
 open Analysis
+open Ast
 open Test
 open TypeOrder
 open Annotated
@@ -856,8 +857,7 @@ let test_less_or_equal _ =
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
     connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
     let callable =
-      let aliases annotation =
-        match Type.show annotation with
+      let aliases = function
         | "_T" ->
             Some (Type.variable "_T")
         | _ ->
@@ -1071,9 +1071,9 @@ let test_less_or_equal _ =
   (* Behavioral subtyping of callables. *)
   let less_or_equal ?attributes ?is_protocol order ~left ~right =
     let aliases = function
-      | Type.Primitive "T_Unconstrained" ->
+      | "T_Unconstrained" ->
           Some (Type.variable "T_Unconstrained")
-      | Type.Primitive "T_int_bool" ->
+      | "T_int_bool" ->
           Some (Type.variable
                   "T_int_bool"
                   ~constraints:(Type.Variable.Explicit [Type.integer; Type.bool]))
@@ -1400,7 +1400,7 @@ let test_less_or_equal _ =
   (* Callback protocols *)
   let parse_annotation =
     let aliases = function
-      | Type.Primitive "_T" -> Some (Type.variable "_T")
+      | "_T" -> Some (Type.variable "_T")
       | _ -> None
     in
     parse_callable ~aliases
@@ -1971,8 +1971,7 @@ let test_join _ =
       ~successor:!"typing.Callable";
     connect order ~predecessor:!"typing.Callable" ~successor:Type.Top;
     let callable =
-      let aliases annotation =
-        match Type.show annotation with
+      let aliases = function
         | "_T" ->
             Some (Type.variable "_T")
         | _ ->
@@ -1995,12 +1994,12 @@ let test_join _ =
     order
   in
   let aliases =
-    Type.Table.of_alist_exn [
-      Type.Primitive "_1", Type.variable "_1";
-      Type.Primitive "_2", Type.variable "_2";
-      Type.Primitive "_T", Type.variable "_T";
+    Identifier.Table.of_alist_exn [
+      "_1", Type.variable "_1";
+      "_2", Type.variable "_2";
+      "_T", Type.variable "_T";
     ]
-    |> Type.Table.find
+    |> Identifier.Table.find
   in
 
   assert_join
@@ -2271,12 +2270,12 @@ let test_join _ =
        (Type.parametric "LinkedList" [Type.integer]))
     (Type.parametric "LinkedList" [Type.Any]);
   let variance_aliases =
-    Type.Table.of_alist_exn [
-      Type.Primitive "_T", Type.variable "_T";
-      Type.Primitive "_T_co", Type.variable "_T_co" ~variance:Covariant;
-      Type.Primitive "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
+    Identifier.Table.of_alist_exn [
+      "_T", Type.variable "_T";
+      "_T_co", Type.variable "_T_co" ~variance:Covariant;
+      "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
     ]
-    |> Type.Table.find
+    |> Identifier.Table.find
   in
   assert_join
     ~order:variance_order
