@@ -543,7 +543,7 @@ let register_aliases (module Handler: Handler) sources =
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
     let target_annotation =
-      Type.create ~aliases:Handler.aliases (Reference.expression target)
+      Type.create ~aliases:(fun _ -> None) (Reference.expression target)
     in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
