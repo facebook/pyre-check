@@ -400,7 +400,17 @@ let test_check_init _ =
       c: C = C("")
     |}
     ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`."]
+     "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`."];
+  assert_type_errors
+    {|
+      from typing import final
+      @final
+      class A:
+          pass
+      class B(A):
+          pass
+    |}
+    ["Invalid inheritance [39]: Cannot inherit from final class `A`."]
 
 
 let test_check_constructors _ =

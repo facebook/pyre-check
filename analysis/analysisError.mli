@@ -109,6 +109,7 @@ type kind =
     }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
+  | InvalidInheritance of Identifier.t
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation

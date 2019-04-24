@@ -463,7 +463,7 @@ module State = struct
         errors;
         define = ({
             Node.value = { Define.signature = { name; _ }; _ } as define;
-            _;
+            location;
           } as define_node);
         _;
       } =
@@ -515,8 +515,42 @@ module State = struct
            definition)
         |> Option.value ~default:errors
       in
+      let check_bases define =
+        let open Annotated in
+        let is_final { Call.Argument.name; value } =
+          let add_error definition =
+            if Class.is_final definition then
+              let error =
+                Error.create
+                  ~location
+                  ~kind:(
+                    Error.InvalidInheritance (Expression.show value)
+                  )
+                  ~define:define_node
+              in
+              error :: errors
+            else
+              errors
+          in
+          match name, value with
+          | None, { Node.value = Access (SimpleAccess identifiers); _ } ->
+              let reference = Reference.from_access identifiers in
+              Resolution.class_definition resolution (Type.Primitive (Reference.show reference))
+              >>| Class.create
+              >>| add_error
+              |> Option.value ~default:errors
+          | _ ->
+              errors
+        in
+        Define.parent_definition ~resolution (Define.create define)
+        >>| Class.bases
+        >>| List.map ~f:is_final
+        >>| List.concat
+        |> Option.value ~default:errors
+      in
       if Define.is_constructor define then
-        check_attributes_initialized define
+        let base_errors = check_bases define in
+        List.append base_errors (check_attributes_initialized define)
       else if Define.is_class_toplevel define then
         begin
           let no_explicit_class_constructor =
@@ -531,7 +565,8 @@ module State = struct
             |> Option.value ~default:false
           in
           if no_explicit_class_constructor then
-            check_attributes_initialized define
+            let base_errors = check_bases define in
+            List.append base_errors (check_attributes_initialized define)
           else
             errors
         end
