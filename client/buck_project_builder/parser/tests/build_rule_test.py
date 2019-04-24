@@ -164,6 +164,10 @@ python_wheel(
     deps = ["//other:target"],
 )
 
+FOO = "something"
+
+40 + 2
+
 python_wheel_default(
     platform_versions = {
         "py3-platform007": "1.0",

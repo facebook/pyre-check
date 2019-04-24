@@ -139,11 +139,14 @@ def parse_python_wheel(
     python_wheel_default_calls = []
     python_wheel_calls = []
     for expression in expressions:
-        assert isinstance(expression, ast.Expr)
+        if not isinstance(expression, ast.Expr):
+            continue
         call = expression.value
-        assert isinstance(call, ast.Call)
+        if not isinstance(call, ast.Call):
+            continue
         named = call.func
-        assert isinstance(named, ast.Name)
+        if not isinstance(named, ast.Name):
+            continue
         rule = named.id
         if rule == "python_wheel_default":
             python_wheel_default_calls.append(call)
