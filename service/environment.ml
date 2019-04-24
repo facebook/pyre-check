@@ -405,6 +405,12 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let register_class_metadata class_name =
     let open Statement in
     let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+    let is_final =
+      ClassDefinitions.get class_name
+      >>| (fun { Node.value = definition; _ } ->
+          Class.is_final definition)
+      |> Option.value ~default: false
+    in
     let in_test =
       let is_unit_test { Node.value = definition; _ } =
         Class.is_unit_test definition
@@ -419,6 +425,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
       {
         Resolution.is_test = in_test;
         successors;
+        is_final;
       }
 
 

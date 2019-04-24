@@ -82,7 +82,6 @@ val abstract_methods: t -> resolution: Resolution.t -> Method.t list
 
 val is_protocol: t -> bool
 
-val is_final: t -> bool
 
 
 val create_attribute

@@ -207,12 +207,18 @@ let handler
         List.filter_map successors ~f:(Hashtbl.find class_definitions)
         |> List.exists ~f:is_unit_test
       in
+      let is_final =
+        Hashtbl.find class_definitions class_name
+        >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
+        |> Option.value ~default:false
+      in
       Hashtbl.set
         class_metadata
         ~key:class_name
         ~data:{
           is_test = in_test;
           successors;
+          is_final;
         }
 
 
@@ -1000,6 +1006,7 @@ module Builder = struct
         ~data:{
           Resolution.successors;
           is_test = false;
+          is_final = false;
         }
         class_metadata;
       Hashtbl.set

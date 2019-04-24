@@ -279,6 +279,8 @@ module Class : sig
   val has_decorator: t -> string -> bool
 
   val is_unit_test: t -> bool
+
+  val is_final: t -> bool
 end
 
 module For : sig

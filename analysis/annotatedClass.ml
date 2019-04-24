@@ -394,10 +394,6 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
   List.exists ~f:is_protocol bases
 
 
-let is_final definition =
-  not (List.is_empty (get_decorator definition ~decorator:"typing.final"))
-
-
 let create_attribute
     ~resolution
     ~parent

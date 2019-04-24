@@ -518,8 +518,8 @@ module State = struct
       let check_bases define =
         let open Annotated in
         let is_final { Call.Argument.name; value } =
-          let add_error definition =
-            if Class.is_final definition then
+          let add_error { Resolution.is_final; _ } =
+            if is_final then
               let error =
                 Error.create
                   ~location
@@ -535,8 +535,7 @@ module State = struct
           match name, value with
           | None, { Node.value = Access (SimpleAccess identifiers); _ } ->
               let reference = Reference.from_access identifiers in
-              Resolution.class_definition resolution (Type.Primitive (Reference.show reference))
-              >>| Class.create
+              Resolution.class_metadata resolution (Type.Primitive (Reference.show reference))
               >>| add_error
               |> Option.value ~default:errors
           | _ ->

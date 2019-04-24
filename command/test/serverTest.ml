@@ -1271,12 +1271,13 @@ let test_decode_serialized_ocaml_values context =
     ~value:{
       Resolution.successors = ["str"];
       is_test = false;
+      is_final = false;
     }
     ~response:{
       TypeQuery.serialized_key = ClassMetadata.serialize_key "int";
       kind = "Class metadata";
       actual_key = "int";
-      actual_value = Some {|{"successors":"(str)","is_test":false}|};
+      actual_value = Some {|{"successors":"(str)","is_test":false,"is_final":false}|};
     };
   assert_decode
     ~key:(Aliases.serialize_key "my_integer")

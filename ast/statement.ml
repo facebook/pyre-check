@@ -1146,6 +1146,12 @@ module Class = struct
   let is_unit_test { name; _ } =
     let name = Reference.show name in
     String.equal name "unittest.TestCase" || String.equal name "unittest.case.TestCase"
+
+
+  let is_final definition =
+    has_decorator definition "typing.final"
+
+
 end
 
 

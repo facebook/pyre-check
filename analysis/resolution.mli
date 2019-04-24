@@ -13,6 +13,7 @@ type global = Annotation.t Node.t
 type class_metadata = {
   successors: Type.primitive list;
   is_test: bool;
+  is_final: bool;
 }
 
 type t
