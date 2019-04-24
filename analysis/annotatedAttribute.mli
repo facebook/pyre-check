@@ -34,3 +34,16 @@ val defined: t -> bool
 val class_attribute: t -> bool
 
 val instantiate: t -> constraints: (Type.t -> Type.t option) -> t
+
+module Table : sig
+  type element = t
+  type t
+
+  val create: unit -> t
+  val add: t -> element -> unit
+  val lookup_name: t -> string -> element option
+  val to_list: t -> element list
+  val clear: t -> unit
+
+  val filter_map: f:(element -> element option) -> t -> unit
+end

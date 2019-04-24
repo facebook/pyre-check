@@ -718,7 +718,6 @@ let test_class_attributes _ =
         foo.class_attribute: typing.ClassVar[int]
     |}
     [
-      "__init__";
       "class_attribute";
       "first";
       "implicit";

@@ -74,3 +74,43 @@ let instantiate
     attribute_node with
     Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
   }
+
+
+module Table = struct
+  type element = t
+
+  type t = {
+    attributes: element String.Table.t;
+    names: string list ref;
+  }
+
+  let create () = {
+    attributes = String.Table.create ();
+    names = ref []
+  }
+
+  let add { attributes; names } ({ Node.value = { name; _ }; _ } as attribute) =
+    match Hashtbl.add attributes ~key:name ~data:attribute with
+    | `Ok ->
+        names := name :: !names;
+    | `Duplicate ->
+        ()
+
+  let lookup_name { attributes; _ } = Hashtbl.find attributes
+
+  let to_list { attributes; names } =
+    List.rev_map !names ~f:(Hashtbl.find_exn attributes)
+
+  let clear { attributes; names } =
+    Hashtbl.clear attributes;
+    names := []
+
+  let filter_map ~f table =
+    let add_attribute attribute =
+      Option.iter (f attribute) ~f:(add table)
+    in
+    let attributes = to_list table in
+    clear table;
+    List.iter attributes ~f:add_attribute
+
+end

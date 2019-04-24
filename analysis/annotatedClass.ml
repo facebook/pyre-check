@@ -46,7 +46,7 @@ module AttributeCache = struct
     end)
 
 
-  let cache: Attribute.t list Table.t =
+  let cache: Attribute.Table.t Table.t =
     Table.create ~size:1023 ()
 
 
@@ -644,12 +644,10 @@ let create_attribute
   }
 
 
-
-
-let attributes
-    ?(transitive = false)
-    ?(class_attributes = false)
-    ?(include_generated_attributes = true)
+let attribute_table
+    ~transitive
+    ~class_attributes
+    ~include_generated_attributes
     ?instantiated
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution =
@@ -672,56 +670,21 @@ let attributes
           ~in_test
           ~instantiated
           ~class_attributes
-          attributes
+          ~table
           ({ Node.value = ({ Class.name = parent_name; _ } as definition); _ } as parent) =
-        let collect_attributes attributes attribute =
-          let attribute_node =
-            create_attribute
-              attribute
-              ~resolution
-              ~parent
-              ~instantiated
-              ~inherited:(not (Reference.equal name parent_name))
-              ~default_class_attribute:class_attributes
-          in
-          let existing_attribute =
-            let compare_names existing_attribute =
-              String.equal (Attribute.name attribute_node) (Attribute.name existing_attribute)
-            in
-            List.find ~f:compare_names attributes
-          in
-          (* We allow instance variables to be accessed as class variables. *)
-          match existing_attribute, attribute_node with
-          | Some { Node.value = { Attribute.annotation = existing_annotation; _ }; _ },
-            { Node.value = ({ Attribute.annotation = new_annotation; _ } as attribute); _ } ->
-              let open Type.Callable in
-              let merged_annotation =
-                match
-                  Annotation.annotation existing_annotation,
-                  Annotation.annotation new_annotation with
-                | Type.Callable ({ overloads; _ } as existing_callable),
-                  Type.Callable
-                    { implementation; overloads = new_overloads; _ } ->
-                    Annotation.create (Type.Callable {
-                        existing_callable with
-                        implementation;
-                        overloads = new_overloads @ overloads })
-                | _ ->
-                    existing_annotation
-              in
-              {
-                attribute_node with
-                Node.value = { attribute with Attribute.annotation = merged_annotation }
-              } :: attributes
-          | _ ->
-              attribute_node :: attributes
+        let collect_attributes attribute =
+          create_attribute
+            attribute
+            ~resolution
+            ~parent
+            ~instantiated
+            ~inherited:(not (Reference.equal name parent_name))
+            ~default_class_attribute:class_attributes
+          |> Attribute.Table.add table
         in
         Statement.Class.attributes ~include_generated_attributes ~in_test definition
         |> fun attribute_map ->
-        Identifier.SerializableMap.fold
-          (fun _ data attributes -> collect_attributes attributes data)
-          attribute_map
-          attributes
+        Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
       in
       let superclass_definitions =
         let superclasses = superclasses ~resolution definition in
@@ -749,19 +712,17 @@ let attributes
           (definition :: superclass_definitions)
           ~f:(fun { Node.value; _ } -> Class.is_unit_test value)
       in
+      let table = Attribute.Table.create () in
       (* Pass over normal class hierarchy. *)
-      let accumulator =
-        let definitions =
-          if transitive then
-            definition :: superclass_definitions
-          else
-            [definition]
-        in
-        List.fold
-          ~f:(definition_attributes ~in_test ~instantiated ~class_attributes)
-          ~init:[]
-          definitions
+      let definitions =
+        if transitive then
+          definition :: superclass_definitions
+        else
+          [definition]
       in
+      List.iter
+        definitions
+        ~f:(definition_attributes ~in_test ~instantiated ~class_attributes ~table);
       (* Class over meta hierarchy if necessary. *)
       let meta_definitions =
         if class_attributes then
@@ -772,36 +733,47 @@ let attributes
         else
           []
       in
-      let result =
-        let instantiate attribute =
-          match original_instantiated with
-          | Some instantiated ->
-              Attribute.parent attribute
-              |> Resolution.class_definition resolution
-              >>| (fun target ->
-                  let constraints =
-                    constraints
-                      ~target
-                      ~instantiated
-                      ~resolution
-                      definition
-                  in
-                  Attribute.instantiate ~constraints:(Type.Map.find constraints) attribute)
-          | None ->
-              Some attribute
-        in
-        List.fold
-          ~f:(definition_attributes
-                ~in_test
-                ~instantiated:(Type.meta instantiated)
-                ~class_attributes:false)
-          ~init:accumulator
-          meta_definitions
-        |> List.rev
-        |> List.filter_map ~f:instantiate
+      List.iter
+        meta_definitions
+        ~f:(definition_attributes
+              ~in_test
+              ~instantiated:(Type.meta instantiated)
+              ~class_attributes:false
+              ~table);
+      let instantiate ~instantiated attribute =
+        Attribute.parent attribute
+        |> Resolution.class_definition resolution
+        >>| (fun target ->
+            let constraints =
+              constraints
+                ~target
+                ~instantiated
+                ~resolution
+                definition
+            in
+            Attribute.instantiate ~constraints:(Type.Map.find constraints) attribute)
       in
-      Hashtbl.set ~key ~data:result AttributeCache.cache;
-      result
+      Option.iter original_instantiated
+        ~f:(fun instantiated -> Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
+      Hashtbl.set ~key ~data:table AttributeCache.cache;
+      table
+
+let attributes
+    ?(transitive = false)
+    ?(class_attributes = false)
+    ?(include_generated_attributes = true)
+    ?instantiated
+    definition
+    ~resolution =
+  attribute_table
+    ~transitive
+    ~class_attributes
+    ~include_generated_attributes
+    ?instantiated
+    definition
+    ~resolution
+  |>
+  Attribute.Table.to_list
 
 let attributes_to_names_and_types =
   let attribute_to_name_and_type attribute =
@@ -833,18 +805,16 @@ let attribute
     ~resolution
     ~name
     ~instantiated =
-  let attribute =
-    attributes
+  let table =
+    attribute_table
       ~instantiated
       ~transitive
       ~class_attributes
       ~include_generated_attributes:true
       ~resolution
       definition
-    |> List.find
-      ~f:(fun attribute -> String.equal name (Attribute.name attribute))
   in
-  match attribute with
+  match Attribute.Table.lookup_name table name with
   | Some attribute ->
       attribute
   | None ->
