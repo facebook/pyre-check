@@ -70,17 +70,24 @@ let stop ~local_root =
       in
       poll ()
     in
-    let socket_paths = [
-      Operations.socket_path configuration;
-      Operations.socket_path ~name:"json_server" configuration
-    ]
-    in
-    match poll_for_deletion socket_paths with
-    | exit_code ->
-        exit_code
-    | exception Operations.ServerNotRunning ->
-        (* Our job is done if the server is not running. *)
+    begin
+      try
+        let socket_paths = [
+          Operations.socket_path configuration;
+          Operations.socket_path ~name:"json_server" configuration
+        ]
+        in
+        match poll_for_deletion socket_paths with
+        | exit_code ->
+            exit_code
+        | exception Operations.ServerNotRunning ->
+            (* Our job is done if the server is not running. *)
+            0
+      with Operations.ServerNotRunning ->
+        (* The initial call to socket_path might also fail if the server's cleaned up
+           already. *)
         0
+    end
   with
   | NotRunning
   | Unix.Unix_error _
