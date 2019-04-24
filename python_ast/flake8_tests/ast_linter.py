@@ -4,7 +4,7 @@ import ast
 from pathlib import Path
 from typing import Iterator, List, NamedTuple, Type
 
-from tools.pyre.python_ast.pyre import PyreAst
+from ..pyre import PyreAst
 
 
 class Error(NamedTuple):

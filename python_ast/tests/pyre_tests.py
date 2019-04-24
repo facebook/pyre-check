@@ -8,24 +8,19 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List, Mapping, Optional, Tuple  # noqa
 from unittest.mock import Mock, patch
 
-from tools.pyre.python_ast.pyre import (
-    Annotation,
-    Location,
-    PyreAst,
-    PyreServerException,
-)
+from ..pyre import Annotation, Location, PyreAst, PyreServerException
 
 
 class AddTypeAttribute(ast.NodeTransformer):
     def generic_visit(self, node: ast.AST) -> ast.AST:
         if hasattr(node, "lineno") and hasattr(node, "col_offset"):
-            setattr(node, "_attributes", node._attributes + ("type",))
+            setattr(node, "_attributes", node._attributes + ("type",))  # noqa
         super(AddTypeAttribute, self).generic_visit(node)
         return node
 
 
 class TypedAstTestCase(unittest.TestCase):
-    """Test tools.pyre.python_ast.pyre.PyreAST functionality"""
+    """Test python_ast.pyre.PyreAST functionality"""
 
     @patch.object(PyreAst, "_initialize_server")
     @patch("os.path.abspath", side_effect=lambda x: x)
