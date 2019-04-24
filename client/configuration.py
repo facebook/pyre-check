@@ -338,7 +338,7 @@ class Configuration:
             self.local_configuration = local_configuration
         self._read(local_configuration)
 
-    def _read(self, path) -> None:
+    def _read(self, path: str) -> None:
         try:
             with open(path) as file:
                 LOG.debug("Reading configuration `%s`...", path)

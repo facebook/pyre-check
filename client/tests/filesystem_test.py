@@ -86,7 +86,8 @@ class FilesystemTest(unittest.TestCase):
         )
 
     def test_merge_into_paths(self) -> None:
-        root = os.path.realpath(tempfile.mkdtemp())
+        directory = tempfile.mkdtemp()  # type: str
+        root = os.path.realpath(directory)
 
         def create_file(name: str) -> None:
             with open(os.path.join(root, name), "w+"):

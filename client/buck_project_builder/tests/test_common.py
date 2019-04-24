@@ -17,13 +17,14 @@ def base(
     external_dependencies: Optional[List[Tuple[str, str]]] = None,
     version_subdirectory: Optional[str] = None,
 ) -> BuildTarget.BaseInformation:
+    external_dependencies = external_dependencies or []  # type: List[Tuple[str, str]]
     return BuildTarget.BaseInformation(
         keywords={},
         name=name,
         dependencies=dependencies or [],
         sources=sources or Sources(),
         base_module=base_module,
-        external_dependencies=external_dependencies or [],
+        external_dependencies=external_dependencies,
         version_subdirectory=version_subdirectory,
     )
 
