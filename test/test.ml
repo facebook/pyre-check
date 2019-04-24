@@ -452,6 +452,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __init__(self) -> None: pass
           def __new__(self) -> Any: pass
           def __sizeof__(self) -> int: pass
+          def __hash__(self) -> int: ...
 
         class ellipsis: ...
         Ellipsis: ellipsis
@@ -705,6 +706,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         TypeVar = object()
         List = TypeAlias(object)
         Dict = TypeAlias(object)
+        Any = object()
+        overload = object()
 
         Callable: _SpecialForm = ...
         Protocol: _SpecialForm = ...
@@ -768,8 +771,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
           pass
-
-        def overload(func: Callable[..., Any]) -> Callable[..., Any]: ...
 
         class AbstractSet(_Collection[_T_co], Generic[_T_co]):
             @abstractmethod

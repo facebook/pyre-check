@@ -4067,6 +4067,8 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~implements:(fun  ~resolution:_ ~protocol:_ _ -> TypeOrder.DoesNotImplement)
         ~generics:(fun ~resolution:_ _ -> [])
         ~undecorated_signature:(fun _ -> None)
+        ~attributes:(fun ~resolution:_ _ -> None)
+        ~is_protocol:(fun _ -> false)
         ()
     in
     {
@@ -4119,6 +4121,22 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     |>  AnnotatedClass.generics ~resolution
   in
 
+  let is_protocol annotation =
+    Type.split annotation
+    |> fst
+    |> Type.primitive_name
+    >>= Handler.class_definition
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.is_protocol
+    |> Option.value ~default:false
+  in
+
+  let attributes ~resolution annotation =
+    Resolution.class_definition resolution annotation
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.attributes ~resolution ~transitive:true ~instantiated:annotation
+  in
+
   Resolution.create
     ~annotations
     ~order
@@ -4132,6 +4150,8 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     ~implements
     ~undecorated_signature:Handler.undecorated_signature
     ~generics
+    ~attributes
+    ~is_protocol
     ()
 
 

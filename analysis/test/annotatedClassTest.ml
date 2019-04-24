@@ -1140,6 +1140,7 @@ let test_class_attributes _ =
       "__init__";
       "__new__";
       "__sizeof__";
+      "__hash__";
     ];
   assert_fold
     ~class_attributes:true
@@ -1164,6 +1165,7 @@ let test_class_attributes _ =
       "__init__";
       "__new__";
       "__sizeof__";
+      "__hash__";
     ];
 
   (* Test 'attribute' *)

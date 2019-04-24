@@ -91,8 +91,6 @@ let test_check_protocol _ =
       "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st anonymous parameter " ^
       "to call `takesFooBarProtocol` but got `FooClass`."
     ];
-  (* TODO:(T40727281) This doesn't work because we only identify even possible implementations
-     based on what a class directly contains, for perf reasons *)
   assert_type_errors
     {|
       class ParentFoo():
@@ -112,11 +110,7 @@ let test_check_protocol _ =
       def fun() -> int:
         return takesFooBar(Child())
     |}
-    [
-      "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st anonymous parameter " ^
-      "to call `takesFooBar` but got `Child`."
-    ];
-  (* TODO(T40726328): Allow protocols to implement other protocols *)
+    [];
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -136,11 +130,7 @@ let test_check_protocol _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter " ^
-      "to call `foo` but got `Child`."
-    ];
-  (* TODO(T40726328): Allow protocols to implement other protocols *)
+    [];
   assert_type_errors
     {|
       class FooProtocol(typing.Protocol):
@@ -154,10 +144,7 @@ let test_check_protocol _ =
         y = takesFoo(x)
         return x.bar() + y
     |}
-    [
-      "Incompatible parameter type [6]: Expected `FooProtocol` for 1st anonymous parameter " ^
-      "to call `takesFoo` but got `FooBarProtocol`."
-    ];
+    [];
   (* Collection -> Sized is special cased for now *)
   assert_type_errors
     {|
@@ -193,7 +180,6 @@ let test_check_protocol _ =
 
     |}
     [];
-  (* TODO(T41436690): end to end support for attribute protocols *)
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -212,9 +198,49 @@ let test_check_protocol _ =
     [
       "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` " ^
       "but is never initialized.";
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
-      "but got `A`.";
     ];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def foo(self) -> P: ...
+
+      class Alpha:
+        def foo(self) -> A:
+          return A()
+
+      def foo(p: P) -> P:
+        return p.foo()
+
+      def bar(a: Alpha) -> None:
+        foo(a)
+
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
+      "but got `Alpha`.";
+    ];
+  assert_type_errors
+    {|
+      class P1(typing.Protocol):
+        def foo(self) -> P2: ...
+      class P2(typing.Protocol):
+        def foo(self) -> P1: ...
+
+      class Alpha:
+        def foo(self) -> Beta:
+          return Beta()
+      class Beta:
+        def foo(self) -> Alpha:
+          return Alpha()
+
+      def foo(p: P1) -> P2:
+        return p.foo()
+
+      def bar(a: Alpha) -> None:
+        foo(a)
+
+    |}
+    [];
   ()
 
 
@@ -401,8 +427,6 @@ let test_check_generic_implementors _ =
 
     |}
     [];
-  (* This should work but doesn't because we don't currently support back-edge parameters, i.e.
-     the situation where A is only a subclass of P when it has int as a parameter *)
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -423,10 +447,7 @@ let test_check_generic_implementors _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `P` for 1st anonymous parameter to call `foo` but got `Alpha[int]`."
-    ];
+    [];
   ()
 
 

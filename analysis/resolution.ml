@@ -59,6 +59,8 @@ type t = {
   constructor: (resolution: t -> Type.primitive -> Type.t option);
   implements: resolution: t -> protocol: Type.t -> Type.t -> TypeOrder.implements_result;
   generics: resolution: t -> Class.t Node.t -> Type.t list;
+  attributes: resolution: t -> Type.t -> AnnotatedAttribute.t list option;
+  is_protocol: Type.t -> bool;
 
   parent: Reference.t option;
 }
@@ -77,6 +79,8 @@ let create
     ~implements
     ~generics
     ~undecorated_signature
+    ~attributes
+    ~is_protocol
     ?parent
     () =
   {
@@ -93,6 +97,8 @@ let create
     implements;
     generics;
     undecorated_signature;
+    attributes;
+    is_protocol;
     parent;
   }
 
@@ -219,6 +225,14 @@ let generics ({ generics; class_definition; _ } as resolution) annotation =
     )
 
 
+let attributes ({ attributes; _ } as resolution) =
+  attributes ~resolution
+
+
+let is_protocol { is_protocol; _ } =
+  is_protocol
+
+
 module FunctionDefinitionsCache = struct
   let cache =
     Reference.Table.create ()
@@ -285,17 +299,14 @@ let full_order ({ order; _ } as resolution) =
     |> Type.primitive_name
     >>= constructor resolution
   in
-  let implements =
-    implements resolution
-  in
   {
     TypeOrder.handler = order;
     constructor;
-    implements;
-    any_is_bottom = false;
-    attributes = (fun _ -> None);
-    is_protocol = (fun _ -> false);
+    implements = implements resolution;
+    attributes = attributes resolution;
+    is_protocol = is_protocol resolution;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+    any_is_bottom = false;
   }
 
 
