@@ -106,11 +106,20 @@ type implements_result =
   | DoesNotImplement
   | Implements of { parameters: Type.t list }
 
+module ProtocolAssumptions: sig
+  type t
+  val empty: t
+end
+
+[@@deriving show]
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
   implements: protocol: Type.t -> Type.t -> implements_result;
+  attributes: Type.t -> AnnotatedAttribute.t list option;
+  is_protocol: Type.t -> bool;
   any_is_bottom: bool;
+  protocol_assumptions: ProtocolAssumptions.t;
 }
 
 val solve_less_or_equal
@@ -135,6 +144,12 @@ val widen
 val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
 
 module OrderedConstraints: TypeConstraints.OrderedConstraintsType with type order = order
+
+val instantiate_protocol_parameters
+  :  order
+  -> candidate: Type.t
+  -> protocol: Ast.Identifier.t
+  -> Type.t list option
 
 
 val instantiate_successors_parameters

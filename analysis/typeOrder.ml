@@ -417,12 +417,45 @@ type implements_result =
   | DoesNotImplement
   | Implements of { parameters: Type.t list }
 
+module ProtocolAssumptions: sig
+  type t
+  val find_assumed_protocol_parameters
+    :  candidate: Type.t
+    -> protocol: Identifier.t
+    -> t
+    -> Type.t list option
+  val add: candidate: Type.t -> protocol: Identifier.t -> protocol_parameters: Type.t list -> t -> t
+  val empty: t
+end = struct
+  type protocol_parameters =  Type.t list
+
+  type assumption = { candidate: Type.t; protocol: Identifier.t }
+  [@@deriving eq]
+
+  type t = (assumption, protocol_parameters) List.Assoc.t
+
+  let find_assumed_protocol_parameters ~candidate ~protocol assumptions =
+    List.Assoc.find assumptions { candidate; protocol } ~equal:equal_assumption
+
+  let add ~candidate ~protocol ~protocol_parameters existing_assumptions =
+    List.Assoc.add
+      existing_assumptions
+      { candidate; protocol }
+      protocol_parameters
+      ~equal:equal_assumption
+
+  let empty = []
+end
+
 
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;
   implements: protocol: Type.t -> Type.t -> implements_result;
+  attributes: Type.t -> AnnotatedAttribute.t list option;
+  is_protocol: Type.t -> bool;
   any_is_bottom: bool;
+  protocol_assumptions: ProtocolAssumptions.t;
 }
 
 
@@ -444,6 +477,11 @@ module type FullOrderTypeWithoutT = sig
     -> source: Type.t
     -> target: Type.t
     -> Type.t List.t Option.t
+  val instantiate_protocol_parameters
+    :  order
+    -> candidate: Type.t
+    -> protocol: Ast.Identifier.t
+    -> Type.t list option
 end
 
 
@@ -634,7 +672,10 @@ module OrderImplementation = struct
        List.filter_map ~f:OrderedConstraints.solve *)
 
     and solve_less_or_equal_safe
-        ({ handler; constructor; implements; any_is_bottom } as order) ~constraints ~left ~right =
+        ({ handler; constructor; implements; any_is_bottom; is_protocol; _ } as order)
+        ~constraints
+        ~left
+        ~right =
       let rec solve_less_or_equal_throws order ~constraints ~left ~right =
         if (Type.Variable.all_variables_are_resolved left) &&
            (Type.Variable.all_variables_are_resolved right) then
@@ -690,12 +731,22 @@ module OrderImplementation = struct
           | bound, Type.Variable variable when Type.Variable.is_free variable ->
               OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
               |> Option.to_list
+          | Type.Callable _, Type.Primitive protocol when is_protocol right ->
+              if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then
+                [constraints]
+              else
+                []
           | Type.Callable _, Type.Parametric { name; _ } ->
               begin
                 match implements ~protocol:right left with
                 | Implements { parameters } ->
                     let left = Type.parametric name parameters in
                     solve_less_or_equal_throws order ~constraints ~left ~right
+                | _ when is_protocol right ->
+                    instantiate_protocol_parameters order ~protocol:name ~candidate:left
+                    >>| Type.parametric name
+                    >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
+                    |> Option.value ~default:[]
                 | _ ->
                     []
               end
@@ -728,10 +779,20 @@ module OrderImplementation = struct
                 >>= zip_on_parameters
                 >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
               in
-              instantiate_successors_parameters
-                order
-                ~source:left
-                ~target:(Type.Primitive right_name)
+              let parameters =
+                let parameters =
+                  instantiate_successors_parameters
+                    order
+                    ~source:left
+                    ~target:(Type.Primitive right_name)
+                in
+                match parameters with
+                | None when is_protocol right ->
+                    instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
+                | _ ->
+                    parameters
+              in
+              parameters
               >>= solve_parameters
               |> Option.value ~default:[]
           | Type.Parametric _, Type.Primitive _ ->
@@ -797,334 +858,358 @@ module OrderImplementation = struct
           constructor;
           implements;
           any_is_bottom;
+          is_protocol;
+          _;
         } as order)
         ~left
         ~right =
-      Type.equal left right ||
-      match left, right with
-      | _, Type.Any ->
-          true
-      | other, Type.Top ->
-          not
-            (Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared))
-      | Type.Top, _ ->
-          false
-      | Type.Any, _ ->
-          any_is_bottom
+      let nominally_less_or_equal ~left ~right =
+        Type.equal left right ||
+        match left, right with
+        | _, Type.Any ->
+            true
+        | other, Type.Top ->
+            not
+              (Type.exists
+                 other
+                 ~predicate:(fun annotation -> Type.equal annotation Type.undeclared))
+        | Type.Top, _ ->
+            false
+        | Type.Any, _ ->
+            any_is_bottom
 
-      | Type.Bottom, _ ->
-          true
-      | _, Type.Bottom ->
-          false
+        | Type.Bottom, _ ->
+            true
+        | _, Type.Bottom ->
+            false
 
-      | _, Type.Primitive "object" ->
-          true
+        | _, Type.Primitive "object" ->
+            true
 
-      | _ , Type.Variable _ ->
-          false
+        | _ , Type.Variable _ ->
+            false
 
-      | Type.Parametric { name = left_name; _ },
-        Type.Parametric _ ->
-          let compare_parameter left right variable =
-            match left, right, variable with
-            | Type.Bottom, _, _ ->
-                (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
-                true
-            | _, Type.Top, _ ->
-                (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-                true
-            | Type.Top, _, _ ->
-                false
-            | _, _, Type.Variable { variance = Covariant; _ } ->
-                less_or_equal order ~left ~right
-            | _, _, Type.Variable { variance = Contravariant; _ } ->
-                less_or_equal order ~left:right ~right:left
-            | _, _, Type.Variable { variance = Invariant; _ } ->
-                less_or_equal order ~left ~right &&
-                less_or_equal order ~left:right ~right:left
-            | _ ->
-                Log.warning "Cannot compare %a and %a, not a variable: %a"
-                  Type.pp left Type.pp right Type.pp variable;
-                false
-          in
-
-          let left_primitive, left_parameters = Type.split left in
-          let right_primitive, right_parameters = Type.split right in
-          raise_if_untracked handler left_primitive;
-          raise_if_untracked handler right_primitive;
-          let generic_index = Handler.find (Handler.indices ()) Type.generic in
-          let left_variables = variables handler left in
-
-          if Type.equal left_primitive right_primitive then
-            (* Left and right primitives coincide, a simple parameter comparison is enough. *)
-            let compare_parameters ~left ~right variables =
-              List.length variables = List.length left &&
-              List.length variables = List.length right &&
-              List.map3_exn ~f:compare_parameter left right variables
-              |> List.for_all ~f:Fn.id
-            in
-            left_variables
-            >>| compare_parameters ~left:left_parameters ~right:right_parameters
-            |> Option.value ~default:false
-          else
-            (* Perform one step in all appropriate directions. *)
-            let parametric ~primitive ~parameters =
-              match primitive with
-              | Type.Primitive name ->
-                  Some (Type.Parametric { name; parameters })
+        | Type.Parametric { name = left_name; _ },
+          Type.Parametric _ ->
+            let compare_parameter left right variable =
+              match left, right, variable with
+              | Type.Bottom, _, _ ->
+                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
+                     variance. *)
+                  true
+              | _, Type.Top, _ ->
+                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+                  true
+              | Type.Top, _, _ ->
+                  false
+              | _, _, Type.Variable { variance = Covariant; _ } ->
+                  less_or_equal order ~left ~right
+              | _, _, Type.Variable { variance = Contravariant; _ } ->
+                  less_or_equal order ~left:right ~right:left
+              | _, _, Type.Variable { variance = Invariant; _ } ->
+                  less_or_equal order ~left ~right &&
+                  less_or_equal order ~left:right ~right:left
               | _ ->
-                  None
+                  Log.warning "Cannot compare %a and %a, not a variable: %a"
+                    Type.pp left Type.pp right Type.pp variable;
+                  false
             in
 
-            (* 1. Go one level down in the class hierarchy and try from there. *)
-            let step_into_subclasses () =
-              let target_to_parametric { Target.target; parameters } =
-                let parameters =
-                  Handler.find (Handler.edges ()) target
-                  >>| get_instantiated_successors ~generic_index ~parameters
-                  >>= get_generic_parameters ~generic_index
-                  |> Option.value ~default:[]
-                in
-                Handler.find (Handler.annotations ()) target
-                >>| Type.split
-                >>| fst
-                >>= (fun primitive -> parametric ~primitive ~parameters)
-              in
-              let successors =
-                let left_index = index_of handler left_primitive in
-                Handler.find (Handler.edges ()) left_index
-                |> Option.value ~default:[]
-              in
-              get_instantiated_successors ~generic_index ~parameters:left_parameters successors
-              |> List.filter_map ~f:target_to_parametric
-              |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
-            in
+            let left_primitive, left_parameters = Type.split left in
+            let right_primitive, right_parameters = Type.split right in
+            raise_if_untracked handler left_primitive;
+            raise_if_untracked handler right_primitive;
+            let generic_index = Handler.find (Handler.indices ()) Type.generic in
+            let left_variables = variables handler left in
 
-            (* 2. Try and replace all parameters, one at a time, to get closer to the
-               destination. *)
-            let replace_parameters_with_destination left_variables =
-              (* Mapping from a variable in `left` to the target parameter (via subclass
-                 substitutions) in `right`. *)
-              let variable_substitutions =
-                let right_propagated =
-                  (* Create a "fake" primitive+variables type that we can propagate to the
-                     target. *)
-                  parametric ~primitive:left_primitive ~parameters:left_variables
-                  >>= (fun source ->
-                      instantiate_successors_parameters order ~source ~target:right_primitive)
+            if Type.equal left_primitive right_primitive then
+              (* Left and right primitives coincide, a simple parameter comparison is enough. *)
+              let compare_parameters ~left ~right variables =
+                List.length variables = List.length left &&
+                List.length variables = List.length right &&
+                List.map3_exn ~f:compare_parameter left right variables
+                |> List.for_all ~f:Fn.id
+              in
+              left_variables
+              >>| compare_parameters ~left:left_parameters ~right:right_parameters
+              |> Option.value ~default:false
+            else
+              (* Perform one step in all appropriate directions. *)
+              let parametric ~primitive ~parameters =
+                match primitive with
+                | Type.Primitive name ->
+                    Some (Type.Parametric { name; parameters })
+                | _ ->
+                    None
+              in
+
+              (* 1. Go one level down in the class hierarchy and try from there. *)
+              let step_into_subclasses () =
+                let target_to_parametric { Target.target; parameters } =
+                  let parameters =
+                    Handler.find (Handler.edges ()) target
+                    >>| get_instantiated_successors ~generic_index ~parameters
+                    >>= get_generic_parameters ~generic_index
+                    |> Option.value ~default:[]
+                  in
+                  Handler.find (Handler.annotations ()) target
+                  >>| Type.split
+                  >>| fst
+                  >>= (fun primitive -> parametric ~primitive ~parameters)
+                in
+                let successors =
+                  let left_index = index_of handler left_primitive in
+                  Handler.find (Handler.edges ()) left_index
                   |> Option.value ~default:[]
                 in
-                match
-                  List.fold2
-                    right_propagated
-                    right_parameters
-                    ~init:Type.Map.empty
-                    ~f:diff_variables
-                with
-                | Ok result -> result
-                | Unequal_lengths -> Type.Map.empty
+                get_instantiated_successors ~generic_index ~parameters:left_parameters successors
+                |> List.filter_map ~f:target_to_parametric
+                |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
               in
-              let propagate_with_substitutions index variable =
-                let replace_one_parameter replacement =
-                  let head, tail = List.split_n left_parameters index in
-                  match List.hd tail with
-                  | Some original when
-                      (* If the original and replacement do not differ, no recursion is needed. *)
-                      Type.equal original replacement or
-                      (* Cannot perform the replacement if variance does not allow it. *)
-                      not (compare_parameter original replacement variable) ->
-                      None
-                  | _ ->
-                      let tail = List.tl tail |> Option.value ~default:[] in
-                      let parameters = head @ [replacement] @ tail in
-                      Some (Type.Parametric { name = left_name; parameters })
+
+              (* 2. Try and replace all parameters, one at a time, to get closer to the
+                 destination. *)
+              let replace_parameters_with_destination left_variables =
+                (* Mapping from a variable in `left` to the target parameter (via subclass
+                   substitutions) in `right`. *)
+                let variable_substitutions =
+                  let right_propagated =
+                    (* Create a "fake" primitive+variables type that we can propagate to the
+                       target. *)
+                    parametric ~primitive:left_primitive ~parameters:left_variables
+                    >>= (fun source ->
+                        instantiate_successors_parameters order ~source ~target:right_primitive)
+                    |> Option.value ~default:[]
+                  in
+                  match
+                    List.fold2
+                      right_propagated
+                      right_parameters
+                      ~init:Type.Map.empty
+                      ~f:diff_variables
+                  with
+                  | Ok result -> result
+                  | Unequal_lengths -> Type.Map.empty
                 in
-                Map.find variable_substitutions variable
-                >>= replace_one_parameter
-                >>| (fun left -> less_or_equal order ~left ~right)
+                let propagate_with_substitutions index variable =
+                  let replace_one_parameter replacement =
+                    let head, tail = List.split_n left_parameters index in
+                    match List.hd tail with
+                    | Some original when
+                        (* If the original and replacement do not differ, no recursion is needed. *)
+                        Type.equal original replacement or
+                        (* Cannot perform the replacement if variance does not allow it. *)
+                        not (compare_parameter original replacement variable) ->
+                        None
+                    | _ ->
+                        let tail = List.tl tail |> Option.value ~default:[] in
+                        let parameters = head @ [replacement] @ tail in
+                        Some (Type.Parametric { name = left_name; parameters })
+                  in
+                  Map.find variable_substitutions variable
+                  >>= replace_one_parameter
+                  >>| (fun left -> less_or_equal order ~left ~right)
+                  |> Option.value ~default:false
+                in
+                List.existsi left_variables ~f:propagate_with_substitutions
+              in
+              let step_sideways () =
+                left_variables
+                >>| (fun left_variables ->
+                    (List.length left_variables == List.length left_parameters) &&
+                    replace_parameters_with_destination left_variables)
                 |> Option.value ~default:false
               in
-              List.existsi left_variables ~f:propagate_with_substitutions
+
+              step_into_subclasses () or
+              step_sideways ()
+
+        (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
+        | Type.Union left, right ->
+            List.fold
+              ~init:true
+              ~f:(fun current left ->
+                  current && less_or_equal order ~left ~right)
+              left
+
+        (* We have to consider both the variables' constraint and its full value against the
+           union. *)
+        | Type.Variable variable, Type.Union union ->
+            List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
+            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+
+        (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
+        | left, Type.Union right ->
+            List.exists ~f:(fun right -> less_or_equal order ~left ~right) right
+
+        (* We have to consider both the variables' constraint and its full value against the
+           optional. *)
+        | Type.Variable variable, Type.Optional optional ->
+            less_or_equal order ~left ~right:optional ||
+            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+
+        (* A <= B -> A <= Optional[B].*)
+        | Type.Optional left, Type.Optional right ->
+            less_or_equal order ~left ~right
+        | _, Type.Optional parameter ->
+            less_or_equal order ~left ~right:parameter
+        | Type.Optional _, _ ->
+            false
+
+        | Type.Variable variable, right ->
+            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+
+        (* Tuple variables are covariant. *)
+        | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+          when List.length left = List.length right ->
+            List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
+        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
+            less_or_equal order ~left ~right
+        | Type.Tuple (Type.Bounded []), Type.Tuple (Type.Unbounded _) ->
+            true
+        | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right) ->
+            let left = List.fold tail ~init:left ~f:(join order) in
+            less_or_equal order ~left ~right
+        | Type.Tuple _, Type.Parametric _ ->
+            (* Join parameters to handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+            let parametric =
+              let primitive, parameters = Type.split left in
+              let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
+              let name =
+                match primitive with
+                | Type.Primitive name -> name
+                | _ -> "?"
+              in
+              Type.Parametric { name; parameters = [parameter] }
             in
-            let step_sideways () =
-              left_variables
-              >>| (fun left_variables ->
-                  (List.length left_variables == List.length left_parameters) &&
-                  replace_parameters_with_destination left_variables)
-              |> Option.value ~default:false
+            less_or_equal order ~left:parametric ~right
+        | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
+            less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
+        | Type.Tuple (Type.Bounded (left :: tail)), Type.Primitive _ ->
+            let parameter = List.fold ~f:(join order) ~init:left tail in
+            less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
+        | Type.Primitive name, Type.Tuple _ ->
+            String.equal name "tuple"
+        | Type.Tuple _, _
+        | _, Type.Tuple _ ->
+            false
+
+        | Type.Callable { Callable.kind = Callable.Named left; _ },
+          Type.Callable { Callable.kind = Callable.Named right; _ }
+          when Reference.equal left right ->
+            true
+        | Type.Callable callable,
+          Type.Callable { Callable.implementation; overloads; _ } ->
+            let validate_overload called_as =
+              simulate_signature_select
+                order
+                ~callable
+                ~called_as
+                ~constraints:TypeConstraints.empty
+              |> List.exists
+                ~f:(fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
             in
-
-            step_into_subclasses () or
-            step_sideways ()
-
-      (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
-      | Type.Union left, right ->
-          List.fold
-            ~init:true
-            ~f:(fun current left ->
-                current && less_or_equal order ~left ~right)
-            left
-
-      (* We have to consider both the variables' constraint and its full value against the union. *)
-      | Type.Variable variable, Type.Union union ->
-          List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
-          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
-
-      (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
-      | left, Type.Union right ->
-          List.exists ~f:(fun right -> less_or_equal order ~left ~right) right
-
-      (* We have to consider both the variables' constraint and its full value against the
-         optional. *)
-      | Type.Variable variable, Type.Optional optional ->
-          less_or_equal order ~left ~right:optional ||
-          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
-
-      (* A <= B -> A <= Optional[B].*)
-      | Type.Optional left, Type.Optional right ->
-          less_or_equal order ~left ~right
-      | _, Type.Optional parameter ->
-          less_or_equal order ~left ~right:parameter
-      | Type.Optional _, _ ->
-          false
-
-      | Type.Variable variable, right ->
-          less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
-
-      (* Tuple variables are covariant. *)
-      | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
-        when List.length left = List.length right ->
-          List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
-      | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
-          less_or_equal order ~left ~right
-      | Type.Tuple (Type.Bounded []), Type.Tuple (Type.Unbounded _) ->
-          true
-      | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right) ->
-          let left = List.fold tail ~init:left ~f:(join order) in
-          less_or_equal order ~left ~right
-      | Type.Tuple _, Type.Parametric _ ->
-          (* Join parameters to handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-          let parametric =
-            let primitive, parameters = Type.split left in
-            let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
-            let name =
-              match primitive with
-              | Type.Primitive name -> name
-              | _ -> "?"
-            in
-            Type.Parametric { name; parameters = [parameter] }
-          in
-          less_or_equal order ~left:parametric ~right
-      | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
-          less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-      | Type.Tuple (Type.Bounded (left :: tail)), Type.Primitive _ ->
-          let parameter = List.fold ~f:(join order) ~init:left tail in
-          less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-      | Type.Primitive name, Type.Tuple _ ->
-          String.equal name "tuple"
-      | Type.Tuple _, _
-      | _, Type.Tuple _ ->
-          false
-
-      | Type.Callable { Callable.kind = Callable.Named left; _ },
-        Type.Callable { Callable.kind = Callable.Named right; _ }
-        when Reference.equal left right ->
-          true
-      | Type.Callable callable,
-        Type.Callable { Callable.implementation; overloads; _ } ->
-          let validate_overload called_as =
-            simulate_signature_select order ~callable ~called_as ~constraints:TypeConstraints.empty
-            |> List.exists
-              ~f:(fun (left, _) -> less_or_equal order ~left ~right:called_as.annotation)
-          in
-          List.for_all (implementation :: overloads) ~f:validate_overload
-      | _, Type.Callable _  when Type.is_meta left ->
-          Type.single_parameter left
-          |> constructor
-          >>| (fun left -> less_or_equal order ~left ~right)
-          |> Option.value ~default:false
+            List.for_all (implementation :: overloads) ~f:validate_overload
+        | _, Type.Callable _  when Type.is_meta left ->
+            Type.single_parameter left
+            |> constructor
+            >>| (fun left -> less_or_equal order ~left ~right)
+            |> Option.value ~default:false
 
 
-      (* A[...] <= B iff A <= B. *)
-      | Type.Parametric _, Type.Primitive _  ->
-          let parametric_primitive, _ = Type.split left in
-          less_or_equal order ~left:parametric_primitive ~right
+        (* A[...] <= B iff A <= B. *)
+        | Type.Parametric _, Type.Primitive _  ->
+            let parametric_primitive, _ = Type.split left in
+            less_or_equal order ~left:parametric_primitive ~right
 
-      | Type.Primitive name, Type.Parametric _ ->
-          let left = Type.Parametric { name; parameters = [] } in
-          less_or_equal order ~left ~right
+        | Type.Primitive name, Type.Parametric _ ->
+            let left = Type.Parametric { name; parameters = [] } in
+            less_or_equal order ~left ~right
 
-      | left, Type.Callable _ ->
-          let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
-          begin
-            match joined with
-            | Type.Parametric { name; parameters = [left] }
-              when Identifier.equal name "typing.Callable" ->
-                less_or_equal order ~left ~right
-            | _ ->
-                false
-          end
+        | left, Type.Callable _ ->
+            let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
+            begin
+              match joined with
+              | Type.Parametric { name; parameters = [left] }
+                when Identifier.equal name "typing.Callable" ->
+                  less_or_equal order ~left ~right
+              | _ ->
+                  false
+            end
 
-      | Type.Callable _, Type.Parametric { name; _ } ->
-          begin
-            match implements ~protocol:right left with
-            | Implements { parameters } ->
-                less_or_equal order ~left:(Type.parametric name parameters) ~right
-            | _ ->
-                false
-          end
+        | Type.Callable _, Type.Parametric { name; _ } ->
+            begin
+              match implements ~protocol:right left with
+              | Implements { parameters } ->
+                  less_or_equal order ~left:(Type.parametric name parameters) ~right
+              | _ ->
+                  false
+            end
 
-      | Type.Callable _, Type.Primitive _ ->
-          begin
-            match implements ~protocol:right left with
-            | Implements { parameters = [] } ->
-                true
-            | _ ->
-                false
-          end
-      | Type.Callable _, _ ->
-          false
-
-      | Type.TypedDictionary left, Type.TypedDictionary right ->
-          let field_not_found field =
-            not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
-          in
-          (left.total = right.total) && not (List.exists right.fields ~f:field_not_found)
-
-      | Type.TypedDictionary _, _ ->
-          less_or_equal order ~left:(Type.Primitive "TypedDictionary") ~right
-      | _, Type.TypedDictionary _ ->
-          less_or_equal order ~left ~right:(Type.Primitive "TypedDictionary")
-
-      | _, Type.Literal _ ->
-          false
-      | Type.Literal _, _ ->
-          less_or_equal order ~left:(Type.weaken_literals left) ~right
-
-      | _ ->
-          raise_if_untracked handler left;
-          raise_if_untracked handler right;
-
-          let worklist = Queue.create () in
-          Queue.enqueue
-            worklist
-            { Target.target = index_of handler left; parameters = [] };
-
-          let rec iterate worklist =
-            match Queue.dequeue worklist with
-            | Some { Target.target; _ } ->
-                if target = (index_of handler right) then
+        | Type.Callable _, Type.Primitive _ ->
+            begin
+              match implements ~protocol:right left with
+              | Implements { parameters = [] } ->
                   true
-                else
-                  begin
-                    Option.iter
-                      (Handler.find (Handler.edges ()) target)
-                      ~f:(Target.enqueue worklist []);
-                    iterate worklist
-                  end
-            | None ->
-                false in
-          iterate worklist
+              | _ ->
+                  false
+            end
+        | Type.Callable _, _ ->
+            false
+
+        | Type.TypedDictionary left, Type.TypedDictionary right ->
+            let field_not_found field =
+              not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
+            in
+            (left.total = right.total) && not (List.exists right.fields ~f:field_not_found)
+
+        | Type.TypedDictionary _, _ ->
+            less_or_equal order ~left:(Type.Primitive "TypedDictionary") ~right
+        | _, Type.TypedDictionary _ ->
+            less_or_equal order ~left ~right:(Type.Primitive "TypedDictionary")
+
+        | _, Type.Literal _ ->
+            false
+        | Type.Literal _, _ ->
+            less_or_equal order ~left:(Type.weaken_literals left) ~right
+
+        | _ ->
+            raise_if_untracked handler left;
+            raise_if_untracked handler right;
+
+            let worklist = Queue.create () in
+            Queue.enqueue
+              worklist
+              { Target.target = index_of handler left; parameters = [] };
+
+            let rec iterate worklist =
+              match Queue.dequeue worklist with
+              | Some { Target.target; _ } ->
+                  if target = (index_of handler right) then
+                    true
+                  else
+                    begin
+                      Option.iter
+                        (Handler.find (Handler.edges ()) target)
+                        ~f:(Target.enqueue worklist []);
+                      iterate worklist
+                    end
+              | None ->
+                  false in
+            iterate worklist
+      in
+      let is_nominally_less_or_equal = nominally_less_or_equal ~left ~right in
+      match right with
+      | Type.Primitive name when (not is_nominally_less_or_equal) && is_protocol right ->
+          instantiate_protocol_parameters order ~candidate:left ~protocol:name = Some []
+      | Type.Parametric { name; _ } when (not is_nominally_less_or_equal) && is_protocol right ->
+          instantiate_protocol_parameters order ~candidate:left ~protocol:name
+          >>| Type.parametric name
+          >>| (fun left -> nominally_less_or_equal ~left ~right)
+          |> Option.value ~default:false
+      | _ ->
+          is_nominally_less_or_equal
+
 
     and least_common_successor ((module Handler: Handler) as order) ~successors left right =
       raise_if_untracked order left;
@@ -1287,7 +1372,7 @@ module OrderImplementation = struct
       { annotation = return_join order left.annotation right.annotation; parameters = parameters }
 
     and join
-        ({ handler = ((module Handler: Handler) as handler); constructor; _ } as order)
+        ({ handler = ((module Handler: Handler) as handler); constructor; is_protocol; _ } as order)
         left
         right =
       let union = Type.union [left; right] in
@@ -1536,6 +1621,10 @@ module OrderImplementation = struct
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)
 
+        | _ when is_protocol right && less_or_equal order ~left ~right ->
+            right
+        | _ when is_protocol left && less_or_equal order ~left:right ~right:left ->
+            left
         | _ ->
             match List.hd (least_upper_bound handler left right) with
             | Some joined ->
@@ -1543,14 +1632,13 @@ module OrderImplementation = struct
                   joined
                 else
                   union
-
             | None ->
                 Log.debug "Couldn't find a upper bound for %a and %a" Type.pp left Type.pp right;
                 union
 
 
     and meet
-        ({ handler = ((module Handler: Handler) as handler); constructor; _ } as order)
+        ({ handler = ((module Handler: Handler) as handler); constructor; is_protocol; _ } as order)
         left
         right =
       if Type.equal left right then
@@ -1744,6 +1832,10 @@ module OrderImplementation = struct
         | _, Type.Literal _ ->
             Type.Bottom
 
+        | _ when is_protocol right && less_or_equal order ~left ~right ->
+            left
+        | _ when is_protocol left && less_or_equal order ~left:right ~right:left ->
+            right
         | _ ->
             match List.hd (greatest_lower_bound handler left right) with
             | Some bound -> bound
@@ -1978,6 +2070,147 @@ module OrderImplementation = struct
       match List.fold2 left right ~init:substitutions ~f:diff_variables with
       | Ok substitutions -> substitutions
       | Unequal_lengths -> substitutions
+
+
+    and instantiate_protocol_parameters
+        ({
+          attributes;
+          handler = ((module Handler: Handler) as handler);
+          protocol_assumptions;
+          _;
+        } as order)
+        ~candidate
+        ~protocol =
+      let find_generic_parameters name =
+        let generic_index = Handler.find (Handler.indices ()) Type.generic in
+        let index = index_of handler (Type.Primitive name) in
+        Handler.find (Handler.edges ()) index
+        >>= get_generic_parameters ~generic_index
+      in
+      match candidate with
+      | Type.Primitive candidate_name
+        when Option.is_some (find_generic_parameters candidate_name) ->
+          (* If we are given a "stripped" generic, we decline to do structural analysis, as these
+             kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
+          None
+      | Type.Primitive candidate_name when Identifier.equal candidate_name protocol ->
+          Some []
+      | Type.Parametric { name; parameters } when Identifier.equal name protocol ->
+          Some parameters
+      | _ ->
+          let assumed_protocol_parameters =
+            ProtocolAssumptions.find_assumed_protocol_parameters
+              protocol_assumptions
+              ~candidate
+              ~protocol
+          in
+          match assumed_protocol_parameters with
+          | Some result ->
+              Some result
+          | None ->
+              let protocol_attributes =
+                let is_not_object_or_generic_method
+                    { Node.value = {AnnotatedAttribute.parent; _}; _} =
+                  not (Type.equal parent Type.object_primitive) &&
+                  not (Type.equal parent Type.generic)
+                in
+                attributes (Type.Primitive protocol)
+                >>| List.filter ~f:is_not_object_or_generic_method
+              in
+              let candidate_attributes =
+                match candidate with
+                | Type.Callable _ as callable ->
+                    [Node.create_with_default_location
+                       {
+                         AnnotatedAttribute.name = "__call__";
+                         parent = callable;
+                         annotation = Annotation.create callable;
+                         value = Node.create_with_default_location (Expression.Ellipsis);
+                         defined = true;
+                         class_attribute = false;
+                         async = false;
+                         initialized = true;
+                         property = false;
+                       }]
+                    |> Option.some
+                | _ ->
+                    (* We don't return constraints for the candidate's free variables, so we must
+                       underapproximate and determine conformance in the worst case *)
+                    Type.Variable.mark_all_variables_as_bound ~simulated:true candidate
+                    |> attributes
+              in
+              match candidate_attributes, protocol_attributes with
+              | Some all_candidate_attributes, Some all_protocol_attributes ->
+                  let build_attribute_map =
+                    let add_to_map map data =
+                      match Identifier.Map.add map ~key:(AnnotatedAttribute.name data) ~data with
+                      | `Ok x -> x
+                      (* Attributes are listed in resolution order *)
+                      | `Duplicate -> map
+                    in
+                    List.fold ~f:add_to_map ~init:Identifier.Map.empty
+                  in
+                  let merge_attributes ~key:_ = function
+                    | `Both pair -> Some (`Found pair)
+                    (* In candidate but not protocol *)
+                    | `Left _ -> None
+                    (* In protocol but not candidate *)
+                    | `Right _ -> Some `Missing
+                  in
+                  let protocol_generics =
+                    find_generic_parameters protocol
+                    >>| List.map
+                      ~f:(function | Type.Variable variable -> Some variable | _ -> None)
+                    >>= Option.all
+                    >>| List.map ~f:(fun variable -> Type.Variable variable)
+                  in
+                  let order_with_new_assumption =
+                    {
+                      order with
+                      protocol_assumptions =
+                        ProtocolAssumptions.add
+                          protocol_assumptions
+                          ~candidate
+                          ~protocol
+                          ~protocol_parameters:(Option.value protocol_generics ~default:[])
+                    }
+                  in
+                  let attribute_implements ~key:_ ~data constraints_set =
+                    match data with
+                    | `Found (candidate_attribute, protocol_attribute) ->
+                        let attribute_annotation attribute =
+                          AnnotatedAttribute.annotation attribute
+                          |> Annotation.annotation
+                        in
+                        List.concat_map
+                          constraints_set
+                          ~f:(fun constraints ->
+                              solve_less_or_equal_safe
+                                order_with_new_assumption
+                                ~left:(attribute_annotation candidate_attribute)
+                                ~right:(attribute_annotation protocol_attribute)
+                                ~constraints)
+                    | `Missing ->
+                        []
+                  in
+                  let instantiate_protocol_generics solution =
+                    protocol_generics
+                    >>| List.map ~f:(Type.instantiate ~constraints:(Type.Map.find solution))
+                    >>| List.map ~f:(Type.Variable.free_all_simulated_bound_variables)
+                    |> Option.value ~default:[]
+                  in
+                  Identifier.Map.merge
+                    (build_attribute_map all_candidate_attributes)
+                    (build_attribute_map all_protocol_attributes)
+                    ~f:merge_attributes
+                  |> Identifier.Map.fold ~init:[TypeConstraints.empty] ~f:attribute_implements
+                  |> List.filter_map
+                    ~f:(OrderedConstraints.solve ~order:order_with_new_assumption)
+                  |> List.hd
+                  >>| instantiate_protocol_generics
+              | _ ->
+                  None
+
     let solve_less_or_equal order ~constraints ~left ~right =
       solve_less_or_equal_safe order ~constraints ~left ~right
   end
@@ -2130,7 +2363,10 @@ let connect_annotations_to_top
         handler;
         constructor = (fun _ -> None);
         implements = (fun ~protocol:_ _ -> DoesNotImplement);
+        attributes = (fun _ -> None);
+        is_protocol = (fun _ -> false);
         any_is_bottom = false;
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     if not (less_or_equal order ~left:top ~right:annotation) then

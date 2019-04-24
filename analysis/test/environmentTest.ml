@@ -67,7 +67,10 @@ let order_and_environment source =
     TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
     constructor = (fun _ -> None);
     implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+    attributes = (fun _ -> None);
+    is_protocol = (fun _ -> false);
     any_is_bottom = false;
+    protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
   },
   environment
 

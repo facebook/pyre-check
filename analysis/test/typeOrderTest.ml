@@ -25,25 +25,61 @@ let less_or_equal
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  less_or_equal { handler; constructor; implements; any_is_bottom = false }
+  less_or_equal
+    {
+      handler;
+      constructor;
+      implements;
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
+      any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
+    }
 
 let is_compatible_with
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  is_compatible_with { handler; constructor; implements; any_is_bottom = false }
+  is_compatible_with
+    {
+      handler;
+      constructor;
+      implements;
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
+      any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
+    }
 
 let join
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  join { handler; constructor; implements; any_is_bottom = false }
+  join
+    {
+      handler;
+      constructor;
+      implements;
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
+      any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
+    }
 
 let meet
     ?(constructor = fun _ -> None)
     ?(implements = fun ~protocol:_ _ -> DoesNotImplement)
     handler =
-  meet  { handler; constructor; implements; any_is_bottom = false }
+  meet
+    {
+      handler;
+      constructor;
+      implements;
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
+      any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
+    }
 
 (* Butterfly:
     0 - 2
@@ -2569,7 +2605,10 @@ let test_instantiate_parameters _ =
       handler = default;
       constructor = (fun _ -> None);
       implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
       any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
     }
   in
   assert_equal
@@ -3069,7 +3108,15 @@ let test_solve_less_or_equal _ =
       | _ ->
           TypeOrder.DoesNotImplement
     in
-    { handler = Resolution.order resolution; constructor; implements; any_is_bottom = false }
+    {
+      handler = Resolution.order resolution;
+      constructor;
+      implements;
+      attributes = (fun _ -> None);
+      is_protocol = (fun _ -> false);
+      any_is_bottom = false;
+      protocol_assumptions = ProtocolAssumptions.empty;
+    }
   in
   let assert_solve
       ~left
@@ -3396,7 +3443,10 @@ let test_is_consistent_with _ =
         handler = default;
         constructor = (fun _ -> None);
         implements = (fun ~protocol:_ _ -> TypeOrder.DoesNotImplement);
+        attributes = (fun _ -> None);
+        is_protocol = (fun _ -> false);
         any_is_bottom = false;
+        protocol_assumptions = ProtocolAssumptions.empty;
       }
     in
     is_consistent_with order
@@ -3595,6 +3645,215 @@ let test_is_consistent_with _ =
        (parse_callable "typing.Callable[[typing.Any], typing.Any]"))
 
 
+let test_instantiate_protocol_parameters _ =
+  let assert_instantiate_protocol_parameters
+      ?context
+      ~classes
+      ~protocols
+      ~candidate
+      ~protocol
+      expected =
+    let resolution =
+      let configuration = Configuration.Analysis.create () in
+      let environment =
+        let environment = Environment.Builder.create () in
+        let source = context >>| parse |> Option.to_list in
+        Test.populate
+          ~configuration
+          (Environment.handler environment)
+          (source @ typeshed_stubs ());
+        environment
+      in
+      TypeCheck.resolution (Environment.handler environment) ()
+    in
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> Resolution.parse_annotation
+        resolution
+        ~allow_untracked:true
+        ~allow_invalid_type_parameters:true
+    in
+    let optional_list_printer optional_list =
+      optional_list
+      >>| List.map ~f:Type.show
+      >>| String.concat ~sep:", "
+      >>| Printf.sprintf "[%s]"
+      |> Option.value ~default:"None"
+    in
+    let parse_attributes =
+      let parse_class (class_name, attributes) =
+        let parse_attribute (name, annotation) =
+          {
+            Attribute.name;
+            annotation = Annotation.create (parse_annotation annotation);
+            value = Ast.Node.create_with_default_location (Ast.Expression.Ellipsis);
+            parent = Type.Primitive class_name;
+            defined = true;
+            class_attribute = false;
+            async = false;
+            initialized = true;
+            property = false;
+          } |> Ast.Node.create_with_default_location
+        in
+        (class_name, List.map attributes ~f:parse_attribute)
+      in
+      List.map ~f:parse_class
+    in
+    let order =
+      let classes, protocols = parse_attributes classes, parse_attributes protocols in
+      let attributes = function
+        | Type.Primitive primitive ->
+            List.Assoc.find (classes @ protocols) primitive ~equal:String.equal
+        | _ ->
+            None
+      in
+      let is_protocol annotation =
+        match Type.split annotation with
+        | Type.Primitive primitive, _ ->
+            List.Assoc.mem protocols primitive ~equal:String.equal
+        | _ ->
+            false
+      in
+
+      {
+        handler = Resolution.order resolution;
+        constructor = (fun _ -> None);
+        implements = (fun ~protocol:_ _ -> DoesNotImplement);
+        attributes;
+        is_protocol;
+        any_is_bottom = false;
+        protocol_assumptions = ProtocolAssumptions.empty;
+      }
+    in
+    assert_equal
+      ~printer:optional_list_printer
+      (expected >>| List.map ~f:parse_annotation)
+      (instantiate_protocol_parameters
+         order
+         ~candidate:(parse_annotation candidate)
+         ~protocol)
+  in
+
+  (* Simple attribute protocols *)
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", []]
+    ~protocols:["P", []]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some []);
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["prop", "int"]]
+    ~protocols:["P", ["prop", "int"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some []);
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["prop", "str"]]
+    ~protocols:["P", ["prop", "int"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    None;
+  assert_instantiate_protocol_parameters
+    ~context:{|
+      T1 = typing.TypeVar("T1")
+      class P(typing.Generic[T1]): pass
+    |}
+    ~classes:["A", ["prop", "int"]]
+    ~protocols:["P", ["prop", "T1"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some ["int"]);
+
+  (* Simple method protocols *)
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["method", "typing.Callable[[int], str]"]]
+    ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some []);
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["othermethod", "typing.Callable[[int], str]"]]
+    ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    None;
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["method", "typing.Callable[[int], str]"]]
+    ~protocols:
+      ["P", ["method", "typing.Callable[[int], str]"; "othermethod", "typing.Callable[[int], str]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    None;
+  assert_instantiate_protocol_parameters
+    ~context:{|
+      T1 = typing.TypeVar("T1")
+      class P(typing.Generic[T1]): pass
+    |}
+    ~classes:["A", ["method", "typing.Callable[[int], str]"]]
+    ~protocols:["P", ["method", "typing.Callable[[int], T1]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some ["str"]);
+
+  (* Primitive recursive protocol, primitive recursive candidate *)
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["prop", "A"]]
+    ~protocols:["P", ["prop", "P"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some []);
+  assert_instantiate_protocol_parameters
+    ~context:"class P(): pass"
+    ~classes:["A", ["prop", "int"]]
+    ~protocols:["P", ["prop", "P"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    None;
+  assert_instantiate_protocol_parameters
+    ~context:{|
+      T1 = typing.TypeVar("T1")
+      class P(typing.Generic[T1]): pass
+    |}
+    ~classes:["A", ["prop", "int"; "recursive_prop", "A"]]
+    ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[T1]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some ["int"]);
+  (* Ideally this would work, but avoiding for now *)
+  assert_instantiate_protocol_parameters
+    ~context:{|
+      T1 = typing.TypeVar("T1")
+      class P(typing.Generic[T1]): pass
+    |}
+    ~classes:["A", ["prop", "int"; "recursive_prop", "A"]]
+    ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[int]"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (None);
+
+  (* Protocol depends on other protocol *)
+  assert_instantiate_protocol_parameters
+    ~context:{|
+      class P1(): pass
+      class P2(): pass
+    |}
+    ~classes:["A", ["prop", "B"]; "B", ["prop", "int"]]
+    ~protocols:["P1", ["prop", "P2"]; "P2", ["prop", "int"]]
+    ~candidate:"A"
+    ~protocol:"P1"
+    (Some []);
+  ()
+
+
+
 let () =
   "order">:::[
     "backedges">::test_backedges;
@@ -3619,5 +3878,6 @@ let () =
     "variables">::test_variables;
     "solve_less_or_equal">::test_solve_less_or_equal;
     "is_consistent_with">::test_is_consistent_with;
+    "instantiate_protocol_parameters">::test_instantiate_protocol_parameters;
   ]
   |> Test.run

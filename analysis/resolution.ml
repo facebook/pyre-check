@@ -288,7 +288,15 @@ let full_order ({ order; _ } as resolution) =
   let implements =
     implements resolution
   in
-  { TypeOrder.handler = order; constructor; implements; any_is_bottom = false }
+  {
+    TypeOrder.handler = order;
+    constructor;
+    implements;
+    any_is_bottom = false;
+    attributes = (fun _ -> None);
+    is_protocol = (fun _ -> false);
+    protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+  }
 
 
 let solve_less_or_equal resolution ~constraints ~left ~right =
