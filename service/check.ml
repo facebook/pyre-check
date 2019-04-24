@@ -33,7 +33,7 @@ let analyze_sources
     ~environment
     ~handles =
   let open Analysis in
-  Annotated.Class.Attribute.Cache.clear ();
+  Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ();
   let timer = Timer.start () in
   let handles =
@@ -75,7 +75,7 @@ let analyze_sources
       Log.info "Running check `%s`..." Check.name;
       let timer = Timer.start () in
       let map _ handles =
-        Annotated.Class.Attribute.Cache.clear ();
+        Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
         Resolution.Cache.clear ();
         let analyze_source { errors; number_files } handle =

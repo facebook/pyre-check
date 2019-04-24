@@ -1272,7 +1272,7 @@ let process_type_check_files
     ~files
     ~should_analyze_dependencies =
 
-  Annotated.Class.Attribute.Cache.clear ();
+  Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   Resolution.Cache.clear ();
   let removed_handles, update_environment_with, check =

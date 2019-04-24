@@ -1087,7 +1087,7 @@ let assert_errors
     ~check
     source
     errors =
-  Annotated.Class.Attribute.Cache.clear ();
+  Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ();
   let descriptions =
     let check source =

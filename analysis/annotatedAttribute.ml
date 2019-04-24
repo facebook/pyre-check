@@ -74,32 +74,3 @@ let instantiate
     attribute_node with
     Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
   }
-
-module Cache = struct
-  type t = {
-    transitive: bool;
-    class_attributes: bool;
-    include_generated_attributes: bool;
-    name: Reference.t;
-    instantiated: Type.t;
-  }
-  [@@deriving compare, sexp, hash]
-
-
-  include Hashable.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let hash = Hashtbl.hash
-      let hash_fold_t = hash_fold_t
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-
-
-  let cache: attribute Node.t list Table.t =
-    Table.create ~size:1023 ()
-
-
-  let clear () =
-    Table.clear cache
-end

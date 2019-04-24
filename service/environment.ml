@@ -92,7 +92,7 @@ let populate
     ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)
     ();
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
-  Annotated.Class.Attribute.Cache.clear ();
+  Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ()
 
 

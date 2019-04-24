@@ -4,7 +4,6 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Ast
-open Core
 
 
 type attribute = {
@@ -35,17 +34,3 @@ val defined: t -> bool
 val class_attribute: t -> bool
 
 val instantiate: t -> constraints: (Type.t -> Type.t option) -> t
-
-module Cache: sig
-  type t = {
-    transitive: bool;
-    class_attributes: bool;
-    include_generated_attributes: bool;
-    name: Reference.t;
-    instantiated: Type.t;
-  }
-  [@@deriving compare, sexp, hash]
-  include Hashable with type t := t
-  val cache: attribute Node.t list Table.t
-  val clear: unit -> unit
-end

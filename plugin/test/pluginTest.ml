@@ -13,7 +13,7 @@ open Test
 
 
 let assert_environment_contains source expected =
-  Annotated.Class.Attribute.Cache.clear ();
+  Annotated.Class.AttributeCache.clear ();
   let (module Handler: Environment.Handler) =
     environment ~sources:[] ()
   in

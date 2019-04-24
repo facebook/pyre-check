@@ -271,7 +271,7 @@ let test_get_decorator _ =
 
 let test_constructors _ =
   let assert_constructor source instantiated constructors =
-    Class.Attribute.Cache.clear ();
+    Class.AttributeCache.clear ();
     let resolution =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()
@@ -607,7 +607,7 @@ let test_class_attributes _ =
 
   (* Test `Class.attributes`. *)
   let assert_attributes definition attributes =
-    Annotated.Class.Attribute.Cache.clear ();
+    Annotated.Class.AttributeCache.clear ();
     let attribute_list_equal =
       let equal left right =
         (Attribute.name left) = (Attribute.name right) &&
@@ -669,7 +669,7 @@ let test_class_attributes _ =
 
   (* Test `attribute_fold`. *)
   let assert_fold ?(class_attributes = false) source fold =
-    Annotated.Class.Attribute.Cache.clear ();
+    Annotated.Class.AttributeCache.clear ();
     let callback names attribute = (Attribute.name attribute) :: names in
     let resolution, parent = setup source in
     let actual =
@@ -852,7 +852,7 @@ let test_class_attributes _ =
 
 let test_fallback_attribute _ =
   let assert_fallback_attribute ~name source annotation =
-    Class.Attribute.Cache.clear ();
+    Class.AttributeCache.clear ();
     let resolution =
       populate source
       |> fun environment -> TypeCheck.resolution environment ()

@@ -25,6 +25,36 @@ type decorator = {
 [@@deriving compare, eq, sexp, show, hash]
 
 
+module AttributeCache = struct
+  type t = {
+    transitive: bool;
+    class_attributes: bool;
+    include_generated_attributes: bool;
+    name: Reference.t;
+    instantiated: Type.t;
+  }
+  [@@deriving compare, sexp, hash]
+
+
+  include Hashable.Make(struct
+      type nonrec t = t
+      let compare = compare
+      let hash = Hashtbl.hash
+      let hash_fold_t = hash_fold_t
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+    end)
+
+
+  let cache: Attribute.t list Table.t =
+    Table.create ~size:1023 ()
+
+
+  let clear () =
+    Table.clear cache
+end
+
+
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
@@ -627,14 +657,14 @@ let attributes
   let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
     {
-      Attribute.Cache.transitive;
+      AttributeCache.transitive;
       class_attributes;
       include_generated_attributes;
       name;
       instantiated;
     }
   in
-  match Hashtbl.find Attribute.Cache.cache key with
+  match Hashtbl.find AttributeCache.cache key with
   | Some result ->
       result
   | None ->
@@ -770,7 +800,7 @@ let attributes
         |> List.rev
         |> List.filter_map ~f:instantiate
       in
-      Hashtbl.set ~key ~data:result Attribute.Cache.cache;
+      Hashtbl.set ~key ~data:result AttributeCache.cache;
       result
 
 let attributes_to_names_and_types =
