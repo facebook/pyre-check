@@ -13,4 +13,3 @@ module Query = QueryCommand
 module Rage = RageCommand
 module Start = StartCommand
 module Stop = StopCommand
-module Watchman = WatchmanCommand

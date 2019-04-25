@@ -17,8 +17,7 @@
   languageServerTest
   persistentClientTest
   serverProtocolTest
-  serverTest
-  WatchmanTest)
+  serverTest)
  (modules :standard \ commandTest)
  (libraries
   oUnit

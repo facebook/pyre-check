@@ -20,20 +20,6 @@ module Request = Server.Request
 exception AlreadyRunning
 
 
-let spawn_watchman_client
-    {
-      Configuration.Server.configuration = { sections; project_root; local_root; search_path; _ };
-      _;
-    } =
-  WatchmanCommand.run_command
-    ~daemonize:true
-    ~verbose:false
-    ~sections
-    ~local_root:(Path.absolute local_root)
-    ~search_path
-    ~project_root:(Some (Path.absolute project_root))
-
-
 let handshake_message version =
   let open LanguageServer.Types in
   {

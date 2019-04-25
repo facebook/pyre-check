@@ -18,7 +18,6 @@ let commands = [
   "persistent", Persistent.command;
   "start", Start.command;
   "stop", Stop.command;
-  "watchman", Watchman.command;
 ]
 
 
