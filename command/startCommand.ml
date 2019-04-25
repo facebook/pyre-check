@@ -247,8 +247,6 @@ let computation_thread request_queue configuration state =
 let request_handler_thread
     ({
       Configuration.Server.configuration = ({ expected_version; local_root; _ });
-      use_watchman;
-      watchman_creation_timeout;
       _;
     } as server_configuration,
       lock,
@@ -302,7 +300,7 @@ let request_handler_thread
               let persistent_clients = !(connections).persistent_clients in
               Hashtbl.remove persistent_clients socket)
   in
-  let handle_readable_file_notifier last_watchman_created socket =
+  let handle_readable_file_notifier socket =
     try
       Log.log ~section:`Server "A file notifier is readable.";
       let { file_notifiers; _ } = Mutex.critical_section lock ~f:(fun () -> !connections) in
@@ -330,7 +328,6 @@ let request_handler_thread
         Mutex.critical_section lock
           ~f:(fun () ->
               let { file_notifiers; _ } = !connections in
-              let disconnected_socket_type = Hashtbl.find file_notifiers socket in
               let file_notifiers =
                 Hashtbl.filter_keys
                   ~f:(fun file_notifier_socket ->
@@ -354,25 +351,8 @@ let request_handler_thread
                     Log.log ~section:`Server "pid %d successfully reaped." (Pid.to_int pid)
               in
               Option.iter ~f:wait_on_watchman old_watchman_pid;
-
-              let exceeds_timeout () =
-                let current_time = Unix.time () in
-                current_time -. (!last_watchman_created) >= watchman_creation_timeout
-              in
-              let watchman_pid =
-                if Hashtbl.is_empty file_notifiers && use_watchman && (exceeds_timeout ()) then
-                  match disconnected_socket_type with
-                  | Some OCaml ->
-                      last_watchman_created := Unix.time ();
-                      Some (spawn_watchman_client server_configuration)
-                  | _ ->
-                      None
-                else
-                  None
-              in
-              connections := { !connections with file_notifiers; watchman_pid });
+              connections := { !connections with file_notifiers });
   in
-  let last_watchman_created = ref 0.0 in
   let rec loop () =
     let { socket = server_socket; json_socket; persistent_clients; file_notifiers; _ } =
       Mutex.critical_section lock ~f:(fun () -> !connections)
@@ -456,7 +436,7 @@ let request_handler_thread
       else if Mutex.critical_section lock ~f:(fun () -> Hashtbl.mem persistent_clients socket) then
         handle_readable_persistent socket
       else
-        handle_readable_file_notifier last_watchman_created socket
+        handle_readable_file_notifier socket
     in
     List.iter ~f:handle_socket readable;
     loop ()
@@ -475,8 +455,7 @@ let request_handler_thread
 let serve
     ~socket
     ~json_socket
-    ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration)
-    ~watchman_pid =
+    ~server_configuration:({ Configuration.Server.configuration; _ } as server_configuration) =
   Version.log_version_banner ();
   (fun () ->
      Log.log ~section:`Server "Starting daemon server loop...";
@@ -489,7 +468,7 @@ let serve
          json_socket;
          persistent_clients = Unix.File_descr.Table.create ();
          file_notifiers = Unix.File_descr.Table.create ();
-         watchman_pid;
+         watchman_pid = None;
        }
      in
 
@@ -527,7 +506,7 @@ let acquire_lock ~server_configuration:{ Configuration.Server.lock_path; pid_pat
 
 (** Daemon forking code *)
 type run_server_daemon_entry =
-  ((Socket.t * Socket.t * Configuration.Server.t * Pid.t option),
+  ((Socket.t * Socket.t * Configuration.Server.t),
    unit Daemon.in_channel,
    unit Daemon.out_channel) Daemon.entry
 
@@ -538,14 +517,14 @@ type run_server_daemon_entry =
 let run_server_daemon_entry : run_server_daemon_entry =
   Daemon.register_entry_point
     "server_daemon"
-    (fun (socket, json_socket, server_configuration, watchman_pid)
+    (fun (socket, json_socket, server_configuration)
       (parent_in_channel, parent_out_channel)  ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
       (* Detach the from a controlling terminal *)
       Unix.Terminal_io.setsid () |> ignore;
       acquire_lock ~server_configuration;
-      serve ~socket ~json_socket ~server_configuration ~watchman_pid)
+      serve ~socket ~json_socket ~server_configuration)
 
 
 let run ({
@@ -561,7 +540,6 @@ let run ({
     log_path;
     daemonize;
     configuration;
-    use_watchman;
     _;
   } as server_configuration) =
   (fun () ->
@@ -577,18 +555,6 @@ let run ({
        let socket = Socket.initialize_unix_socket socket_path in
        let json_socket = Socket.initialize_unix_socket json_socket_path in
 
-       let watchman_pid =
-         if use_watchman then
-           let pid = spawn_watchman_client server_configuration in
-           (* If the server is being run as a daemon, the watchman pid will be detached from
-              the server pid and shouldn't be waited on. *)
-           if not daemonize then
-             Some pid
-           else
-             None
-         else
-           None
-       in
        if daemonize then
          let stdin = Daemon.null_fd () in
          let log_path = Log.rotate (Path.absolute log_path) in
@@ -597,7 +563,7 @@ let run ({
          let { Daemon.pid; _ } as handle =
            Daemon.spawn
              (stdin, stdout, stdout)
-             run_server_daemon_entry (socket, json_socket, server_configuration, watchman_pid)
+             run_server_daemon_entry (socket, json_socket, server_configuration)
          in
          Daemon.close handle;
          Log.log ~section:`Server "Forked off daemon with pid %d" pid;
@@ -606,7 +572,7 @@ let run ({
        else
          begin
            acquire_lock ~server_configuration;
-           serve ~socket ~json_socket ~server_configuration ~watchman_pid;
+           serve ~socket ~json_socket ~server_configuration;
            0
          end
      with AlreadyRunning ->
@@ -706,10 +672,12 @@ let run_start_command
         | _ ->
             None
   in
+  (* TODO(T41488848): This argument is no longer used, so include this line to please the linter.
+     Once client-side changes catch up, we should remove the argument. *)
+  let _ = use_watchman in
   run
     (Operations.create_configuration
        ~daemonize:(not terminal)
-       ~use_watchman
        ?log_path
        ?saved_state_action
        configuration)

@@ -43,7 +43,6 @@ let sample
     | Some {
         Configuration.Server.socket = { path = socket_path; _ };
         saved_state_action;
-        use_watchman;
         _
       } ->
         let saved_state_metadata =
@@ -69,7 +68,6 @@ let sample
               []
         in
         ("socket_path", Path.absolute socket_path) ::
-        ("use_watchman", Bool.to_string use_watchman) ::
         saved_state_metadata
     | None ->
         []

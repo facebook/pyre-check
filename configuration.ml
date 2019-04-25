@@ -175,8 +175,6 @@ module Server = struct
     pid_path: Path.t;
     log_path: Path.t;
     daemonize: bool;
-    use_watchman: bool;
-    watchman_creation_timeout: float;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
     configuration: Analysis.t;

@@ -23,7 +23,6 @@ val socket_path: ?create: bool -> ?name: string -> Configuration.Analysis.t -> P
 val create_configuration :
   ?daemonize: bool ->
   ?log_path: PyrePath.t ->
-  ?use_watchman: bool ->
   ?saved_state_action: Configuration.Server.saved_state_action ->
   Configuration.Analysis.t ->
   Configuration.Server.t

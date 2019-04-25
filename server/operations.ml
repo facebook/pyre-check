@@ -49,7 +49,6 @@ let socket_path ?(create = false) ?(name = "server") configuration =
 let create_configuration
     ?(daemonize = true)
     ?log_path
-    ?(use_watchman = false)
     ?saved_state_action
     configuration =
   let server_root = Constants.Server.root configuration in
@@ -70,8 +69,6 @@ let create_configuration
     pid_path = server_root ^| "server.pid";
     log_path;
     daemonize;
-    use_watchman;
-    watchman_creation_timeout = 5.0 (* Seconds. *);
     saved_state_action;
     configuration;
   }
