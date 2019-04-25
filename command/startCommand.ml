@@ -341,16 +341,6 @@ let request_handler_thread
                         true)
                   file_notifiers
               in
-              let old_watchman_pid = !(connections).watchman_pid in
-              let wait_on_watchman pid =
-                Log.log ~section:`Server "Waiting on watchman pid %d" (Pid.to_int pid);
-                match Unix.wait_nohang (`Pid pid) with
-                | None ->
-                    Log.log ~section:`Server "Unable to wait on pid %d" (Pid.to_int pid)
-                | Some _ ->
-                    Log.log ~section:`Server "pid %d successfully reaped." (Pid.to_int pid)
-              in
-              Option.iter ~f:wait_on_watchman old_watchman_pid;
               connections := { !connections with file_notifiers });
   in
   let rec loop () =
@@ -468,7 +458,6 @@ let serve
          json_socket;
          persistent_clients = Unix.File_descr.Table.create ();
          file_notifiers = Unix.File_descr.Table.create ();
-         watchman_pid = None;
        }
      in
 

@@ -201,7 +201,6 @@ let test_invalid_configuration context =
       State.socket;
       persistent_clients = Network.Socket.Table.create ();
       file_notifiers = [];
-      watchman_pid = None;
     }
   in
   (* Trying to load from an incompatible configuration raises an exception. *)

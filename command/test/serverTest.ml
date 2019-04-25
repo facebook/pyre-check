@@ -285,7 +285,6 @@ let mock_server_state
         json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
         persistent_clients = Unix.File_descr.Table.create ();
         file_notifiers = Unix.File_descr.Table.create ();
-        watchman_pid = None;
       };
     scheduler = Scheduler.mock ();
   }

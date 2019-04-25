@@ -18,7 +18,6 @@ type connections = {
   json_socket: Socket.t;
   persistent_clients: int Socket.Table.t;
   file_notifiers: socket_encoding Socket.Table.t;
-  watchman_pid: Pid.t option;
 }
 
 type lookups_cache_entry = {
