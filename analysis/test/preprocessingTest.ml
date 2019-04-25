@@ -151,6 +151,12 @@ let test_expand_string_annotations _ =
   assert_expand
     "def foo(f: te.Literal['A', 'B']): ..."
     "def foo(f: te.Literal['A', 'B']): ...";
+  assert_expand
+    "class Foo(typing.List['str']): ..."
+    "class Foo(typing.List[str]): ...";
+  assert_expand
+    "class Foo('str'): ..."
+    "class Foo('str'): ...";
   ()
 
 

@@ -170,11 +170,23 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
             define with signature
           }
         in
+        let transform_class ~class_statement:({ Class.bases; _ } as class_statement) =
+          let transform_base ({ Expression.Call.Argument.value; _ } as base) =
+            let value =
+              match value with
+              | { Node.value = Expression.String _; _ } -> value
+              | _ -> transform_string_annotation_expression handle value
+            in
+            { base with value }
+          in
+          { class_statement with bases = List.map bases ~f:transform_base }
+        in
         let statement =
           let value =
             match value with
             | Assign assign -> Assign (transform_assign ~assign)
             | Define define -> Define (transform_define ~define)
+            | Class class_statement -> Class (transform_class ~class_statement)
             | _ -> value
           in
           { statement with Node.value }
