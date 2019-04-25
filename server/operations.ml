@@ -10,7 +10,6 @@ open Path.AppendOperator
 open Network
 open State
 open Service
-open Constants
 
 
 type version_mismatch = {
@@ -180,8 +179,7 @@ let start
 let stop
     ~reason
     ~configuration:{
-    Configuration.Server.configuration;
-    lock_path;
+    Configuration.Server.lock_path;
     socket = {
       path = socket_path;
       link = socket_link;
@@ -197,19 +195,6 @@ let stop
   }
     ~socket =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
-  let watchman_pid =
-    try
-      Watchman.pid_path configuration
-      |> Path.absolute
-      |> Sys_utils.cat
-      |> Int.of_string
-      |> Pid.of_int
-      |> fun pid -> Some (`Pid pid)
-    with Sys_error _ ->
-      None
-  in
-  watchman_pid >>| Signal.send_i Signal.int  |> ignore;
-
   Path.absolute lock_path
   |> Lock.release
   |> ignore;
