@@ -1301,6 +1301,7 @@ let primitive_substitution_map =
     "function", Callable.create ~annotation:Any ();
     "dict", parametric_anys "dict" 2;
     "list", list Any;
+    "tuple", Tuple (Unbounded Any);
     "type", parametric_anys "type" 1;
     "typing.Any", Any;
     "typing.AsyncContextManager", parametric_anys "typing.AsyncContextManager" 1;
