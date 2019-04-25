@@ -14,7 +14,7 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class StartTest(unittest.TestCase):
-    @patch("{}.ProjectFilesMonitor".format(project_files_monitor.__name__))
+    @patch("{}.Monitor".format(project_files_monitor.__name__))
     @patch("fcntl.lockf")
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")

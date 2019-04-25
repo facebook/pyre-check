@@ -15,12 +15,12 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class IncrementalTest(unittest.TestCase):
-    @patch.object(incremental, "ProjectFilesMonitor")
+    @patch.object(incremental, "Monitor")
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
     @patch.object(stop, "Stop")
     def test_incremental(
-        self, commands_Stop, commands_Start, commands_Command_state, ProjectFilesMonitor
+        self, commands_Stop, commands_Start, commands_Command_state, Monitor
     ) -> None:
         state = MagicMock()
         state.running = ["running"]
@@ -30,8 +30,8 @@ class IncrementalTest(unittest.TestCase):
         start_exit_code.return_value = commands.ExitCode.SUCCESS
         commands_Start().run().exit_code = start_exit_code
         file_monitor_instance = MagicMock()
-        ProjectFilesMonitor.return_value = file_monitor_instance
-        ProjectFilesMonitor.is_alive.return_value = False
+        Monitor.return_value = file_monitor_instance
+        Monitor.is_alive.return_value = False
 
         arguments = mock_arguments()
 
@@ -63,14 +63,14 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor.is_alive.assert_called_once_with(".")
-            ProjectFilesMonitor.assert_called_once_with(
+            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.assert_called_once_with(
                 arguments, configuration, analysis_directory
             )
             file_monitor_instance.daemonize.assert_called_once_with()
 
-        ProjectFilesMonitor.reset_mock()
-        ProjectFilesMonitor.is_alive.return_value = True
+        Monitor.reset_mock()
+        Monitor.is_alive.return_value = True
         file_monitor_instance.reset_mock()
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
@@ -99,12 +99,12 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor.is_alive.assert_called_once_with(".")
-            ProjectFilesMonitor.assert_not_called()
+            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
         commands_Command_state.return_value = commands.command.State.DEAD
-        ProjectFilesMonitor.reset_mock()
+        Monitor.reset_mock()
         file_monitor_instance.reset_mock()
         with patch.object(commands.Command, "_call_client") as call_client, patch(
             "json.loads", return_value=[]
@@ -133,7 +133,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_has_calls(
                 [call(command=commands.Incremental.NAME)], any_order=True
             )
-            ProjectFilesMonitor.assert_not_called()
+            Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
         with patch.object(commands.Command, "_call_client") as call_client, patch(
@@ -160,7 +160,7 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor.assert_not_called()
+            Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
             # Prepare only gets called when actually starting the server.
             prepare.assert_not_called()
@@ -196,7 +196,7 @@ class IncrementalTest(unittest.TestCase):
             call_client.assert_has_calls(
                 [call(command=commands.Incremental.NAME)], any_order=True
             )
-            ProjectFilesMonitor.assert_not_called()
+            Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
         arguments = mock_arguments()
@@ -244,7 +244,7 @@ class IncrementalTest(unittest.TestCase):
 
             command.run()
             call_client.assert_called_once_with(command=commands.Incremental.NAME)
-            ProjectFilesMonitor.assert_not_called()
+            Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
             self.assertEqual(command._exit_code, commands.ExitCode.FOUND_ERRORS)
 

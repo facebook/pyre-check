@@ -16,16 +16,12 @@ from ..language_server_protocol import (
     read_message,
     write_message,
 )
-from ..project_files_monitor import (
-    ProjectFilesMonitor,
-    ProjectFilesMonitorException,
-    SocketConnection,
-)
+from ..project_files_monitor import Monitor, MonitorException, SocketConnection
 
 
-class ProjectFilesMonitorTest(unittest.TestCase):
+class MonitorTest(unittest.TestCase):
     @patch.object(language_server_protocol, "perform_handshake")
-    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
+    @patch.object(Monitor, "_connect_to_socket")
     @patch.object(project_files_monitor, "find_root")
     def test_subscriptions(self, find_root, _connect_to_socket, perform_handshake):
         find_root.return_value = "/ROOT"
@@ -37,7 +33,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
 
         # no additional extensions
         configuration.extensions = []
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+        monitor = Monitor(arguments, configuration, analysis_directory)
         self.assertEqual(len(monitor._subscriptions), 1)
         subscription = monitor._subscriptions[0]
         self.assertEqual(subscription.root, "/ROOT")
@@ -54,7 +50,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
 
         # additional extensions
         configuration.extensions = ["thrift", "whl"]
-        monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+        monitor = Monitor(arguments, configuration, analysis_directory)
         self.assertEqual(len(monitor._subscriptions), 1)
         subscription = monitor._subscriptions[0]
         self.assertEqual(subscription.root, "/ROOT")
@@ -78,23 +74,17 @@ class ProjectFilesMonitorTest(unittest.TestCase):
         # no watchman root -> terminate
         find_root.return_value = None
         self.assertRaises(
-            ProjectFilesMonitorException,
-            ProjectFilesMonitor,
-            arguments,
-            configuration,
-            analysis_directory,
+            MonitorException, Monitor, arguments, configuration, analysis_directory
         )
 
     def test_bad_socket(self):
         with tempfile.TemporaryDirectory() as root:
             bad_socket_path = os.path.join(root, "bad.sock")
             self.assertRaises(
-                ProjectFilesMonitorException,
-                ProjectFilesMonitor._connect_to_socket,
-                bad_socket_path,
+                MonitorException, Monitor._connect_to_socket, bad_socket_path
             )
 
-    @patch.object(ProjectFilesMonitor, "_find_watchman_path")
+    @patch.object(Monitor, "_find_watchman_path")
     def test_socket_communication(self, _find_watchman_path):
         # Create a "server" thread to complete the handshake
         server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -152,9 +142,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
 
             # only create the monitor once the socket is open
             with socket_created_lock:
-                monitor = ProjectFilesMonitor(
-                    arguments, configuration, analysis_directory
-                )
+                monitor = Monitor(arguments, configuration, analysis_directory)
                 monitor._handle_response(
                     {"root": "/ROOT", "files": ["a.py", "subdir/b.py"]}
                 )
@@ -167,9 +155,9 @@ class ProjectFilesMonitorTest(unittest.TestCase):
         self.assertEqual(errors, [])
 
     @patch.object(language_server_protocol, "perform_handshake")
-    @patch.object(ProjectFilesMonitor, "_watchman_client")
-    @patch.object(ProjectFilesMonitor, "_connect_to_socket")
-    @patch.object(ProjectFilesMonitor, "_find_watchman_path")
+    @patch.object(Monitor, "_watchman_client")
+    @patch.object(Monitor, "_connect_to_socket")
+    @patch.object(Monitor, "_find_watchman_path")
     def test_files_cleaned_up(
         self,
         _find_watchman_path,
@@ -184,7 +172,7 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
 
-            monitor = ProjectFilesMonitor(arguments, configuration, analysis_directory)
+            monitor = Monitor(arguments, configuration, analysis_directory)
             monitor._alive = False  # never enter watchman loop
             monitor._run()
 
@@ -226,5 +214,5 @@ class ProjectFilesMonitorTest(unittest.TestCase):
             server_thread.start()
 
             with socket_created_lock:
-                ProjectFilesMonitor._connect_to_socket(socket_link)
+                Monitor._connect_to_socket(socket_link)
             server_thread.join()

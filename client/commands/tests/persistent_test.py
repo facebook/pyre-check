@@ -13,12 +13,12 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class PersistentTest(unittest.TestCase):
-    @patch.object(project_files_monitor, "ProjectFilesMonitor")
+    @patch.object(project_files_monitor, "Monitor")
     @patch.object(commands.Persistent, "run_null_server", return_value=None)
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")
     def test_persistent(
-        self, _daemonize, directories_to_analyze, run_null_server, ProjectFilesMonitor
+        self, _daemonize, directories_to_analyze, run_null_server, Monitor
     ) -> None:
         arguments = mock_arguments()
         configuration = mock_configuration()

@@ -10,7 +10,7 @@ import subprocess
 import sys
 from typing import IO, List, cast
 
-from ..project_files_monitor import ProjectFilesMonitor, ProjectFilesMonitorException
+from ..project_files_monitor import Monitor, MonitorException
 from .command import ClientException, ExitCode, State
 from .reporting import Reporting
 from .start import Start
@@ -102,12 +102,12 @@ class Incremental(Reporting):
             super(Incremental, self)._read_stderr(cast(IO[bytes], stderr_tail.stdout))
 
     def _refresh_file_monitor(self) -> None:
-        if not ProjectFilesMonitor.is_alive(self._analysis_directory.get_root()):
+        if not Monitor.is_alive(self._analysis_directory.get_root()):
             LOG.info("File monitor is not running.")
             try:
-                ProjectFilesMonitor(
+                Monitor(
                     self._arguments, self._configuration, self._analysis_directory
                 ).daemonize()
                 LOG.info("Restarted file monitor.")
-            except ProjectFilesMonitorException as exception:
+            except MonitorException as exception:
                 LOG.warning("Failed to restart file monitor: %s", exception)

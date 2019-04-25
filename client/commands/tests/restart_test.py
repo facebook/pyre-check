@@ -12,7 +12,7 @@ from .command_test import mock_arguments, mock_configuration
 
 
 class RestartTest(unittest.TestCase):
-    @patch("{}.ProjectFilesMonitor".format(project_files_monitor.__name__))
+    @patch("{}.Monitor".format(project_files_monitor.__name__))
     @patch.object(restart, "Stop")
     @patch.object(monitor.Monitor, "daemonize")
     def test_restart(

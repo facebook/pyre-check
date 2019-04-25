@@ -23,7 +23,7 @@ from .watchman_subscriber import Subscription, WatchmanSubscriber
 LOG = logging.getLogger(__name__)  # type: logging.Logger
 
 
-class ProjectFilesMonitorException(Exception):
+class MonitorException(Exception):
     pass
 
 
@@ -44,7 +44,7 @@ class SocketConnection(object):
 
     def __del__(self) -> None:
         """
-            ProjectFilesMonitor is created and then runs in a forked process.
+            Monitor is created and then runs in a forked process.
             As a result, in the original process, this object gets garbage
             collected without the socket being closed.
             For this reason, we explicitly close the socket on destruction.
@@ -52,7 +52,7 @@ class SocketConnection(object):
         self.close()
 
 
-class ProjectFilesMonitor(WatchmanSubscriber):
+class Monitor(WatchmanSubscriber):
     NAME = "file_monitor"
 
     def __init__(
@@ -61,7 +61,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         configuration: Configuration,
         analysis_directory: AnalysisDirectory,
     ) -> None:
-        super(ProjectFilesMonitor, self).__init__(analysis_directory)
+        super(Monitor, self).__init__(analysis_directory)
         self._arguments = arguments
         self._configuration = configuration
         self._analysis_directory = analysis_directory
@@ -88,7 +88,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
                 self._configuration.version_hash,
             )
         except (OSError, ValueError) as error:
-            raise ProjectFilesMonitorException(
+            raise MonitorException(
                 "Exception encountered during handshake: `{}`".format(error)
             )
 
@@ -119,13 +119,13 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         return os.path.join(
             analysis_directory_root,
             ".pyre",
-            ProjectFilesMonitor.NAME,
-            "{}.pid".format(ProjectFilesMonitor.NAME),
+            Monitor.NAME,
+            "{}.pid".format(Monitor.NAME),
         )
 
     @staticmethod
     def is_alive(analysis_directory_root: str) -> bool:
-        pid_path = ProjectFilesMonitor.pid_path(analysis_directory_root)
+        pid_path = Monitor.pid_path(analysis_directory_root)
         try:
             with open(pid_path) as file:
                 pid = int(file.read())
@@ -166,7 +166,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
     def _find_watchman_path(directory: str) -> str:
         watchman_path = find_root(directory, ".watchmanconfig")
         if not watchman_path:
-            raise ProjectFilesMonitorException(
+            raise MonitorException(
                 "Could not find a watchman directory from "
                 "the current directory `{}`".format(directory)
             )
@@ -177,7 +177,7 @@ class ProjectFilesMonitor(WatchmanSubscriber):
         try:
             return SocketConnection(os.path.realpath(socket_path))
         except (ConnectionRefusedError, FileNotFoundError, OSError) as error:
-            raise ProjectFilesMonitorException(
+            raise MonitorException(
                 "Failed to connect to server at `{}`. Reason: `{}`".format(
                     socket_path, error
                 )
