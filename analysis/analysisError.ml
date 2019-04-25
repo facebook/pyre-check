@@ -123,6 +123,7 @@ type kind =
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of Identifier.t
+  | InvalidOverride of Identifier.t
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -201,6 +202,7 @@ let code = function
   | IncompleteType _ -> 37
   | UninitializableClass _ -> 38
   | InvalidInheritance _ -> 39
+  | InvalidOverride _ -> 40
 
 
   (* Additional errors. *)
@@ -228,6 +230,7 @@ let name = function
   | InvalidTypeVariable _ -> "Invalid type variable"
   | InvalidTypeVariance _ -> "Invalid type variance"
   | InvalidInheritance _ -> "Invalid inheritance"
+  | InvalidOverride _ -> "Invalid override"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -685,6 +688,12 @@ let messages ~concise ~signature location kind =
       ]
   | InvalidInheritance class_name ->
       [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
+  (* Should we combine these two errors into one? *)
+  | InvalidOverride method_name ->
+      [ Format.asprintf
+          "`%a` cannot override final method defined in `%a`."
+          pp_reference define_name
+          pp_identifier method_name]
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
@@ -1428,6 +1437,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidTypeVariable _
   | InvalidTypeVariance _
   | InvalidInheritance _
+  | InvalidOverride _
   | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
@@ -1511,6 +1521,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidTypeVariable _
   | InvalidTypeVariance _
   | InvalidInheritance _
+  | InvalidOverride _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1629,6 +1640,8 @@ let less_or_equal ~resolution left right =
         equal_type_variance_origin left_origin right_origin
     | InvalidInheritance left, InvalidInheritance right ->
         Identifier.equal_sanitized left right
+    | InvalidOverride left, InvalidOverride right ->
+        Identifier.equal_sanitized left right
     | MissingArgument left, MissingArgument right ->
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -1720,6 +1733,7 @@ let less_or_equal ~resolution left right =
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
     | InvalidInheritance _, _
+    | InvalidOverride _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2012,6 +2026,7 @@ let join ~resolution left right =
     | InvalidTypeVariable _, _
     | InvalidTypeVariance _, _
     | InvalidInheritance _, _
+    | InvalidOverride _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2428,6 +2443,8 @@ let dequalify
         InvalidTypeVariance { annotation = dequalify annotation; origin }
     | InvalidInheritance class_name ->
         InvalidInheritance class_name
+    | InvalidOverride method_name ->
+        InvalidOverride method_name
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

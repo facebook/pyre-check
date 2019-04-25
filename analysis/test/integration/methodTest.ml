@@ -675,7 +675,20 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import final
+      class Foo:
+        @final
+        def bar(self) -> None:
+          pass
+      class Bar(Foo):
+        def bar(self) -> None:
+          pass
+    |}
+    ["Undefined attribute [16]: Module `typing` has no attribute `final`.";
+     "Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."]
 
 
 let test_check_nested_class_inheritance _ =

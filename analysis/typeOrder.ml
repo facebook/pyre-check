@@ -2099,6 +2099,7 @@ module OrderImplementation = struct
                          async = false;
                          initialized = true;
                          property = false;
+                         final = false;
                        }]
                     |> Option.some
                 | _ ->

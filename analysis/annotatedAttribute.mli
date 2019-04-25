@@ -16,6 +16,7 @@ type attribute = {
   async: bool;
   initialized: bool;
   property: bool;
+  final: bool;
 }
 [@@deriving eq, show]
 
@@ -32,6 +33,7 @@ val initialized: t -> bool
 val location: t -> Location.t
 val defined: t -> bool
 val class_attribute: t -> bool
+val final: t -> bool
 
 val instantiate: t -> constraints: (Type.t -> Type.t option) -> t
 

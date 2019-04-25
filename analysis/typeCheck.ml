@@ -1314,6 +1314,7 @@ module State = struct
       ~f:(fun _ ~resolution:_ ~resolved:_ ~element ~lead:_ -> element)
       access
 
+
   let rec initial
       ?(configuration = Configuration.Analysis.create ())
       ~resolution
@@ -1704,6 +1705,20 @@ module State = struct
                ~resolution
                ~name:(Statement.Define.unqualified_name define)
              >>| fun overridden_attribute ->
+
+             let errors =
+               if Attribute.final overridden_attribute then
+                 let parent = overridden_attribute
+                              |> Attribute.parent
+                              |> Type.show
+                 in
+                 let error = Error.create
+                     ~location
+                     ~kind:(Error.InvalidOverride parent)
+                     ~define:define_node
+                 in Set.add errors error
+               else errors
+             in
              (* Check strengthening of postcondition. *)
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
              | Type.Callable { Type.Callable.implementation; _ } ->

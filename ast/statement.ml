@@ -208,6 +208,7 @@ module Attribute = struct
     property: bool;
     primitive: bool;
     toplevel: bool;
+    final: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -226,9 +227,10 @@ module Attribute = struct
       ?value
       ?annotation
       ?defines
+      ?(final = false)
       ~name
       () =
-    { name; annotation; defines; value; async; setter; property; primitive; toplevel }
+    { name; annotation; defines; value; async; setter; property; primitive; toplevel; final }
     |> Node.create ~location
 
 
@@ -326,6 +328,10 @@ module Define = struct
 
     let is_static_method signature =
       has_decorator signature "staticmethod"
+
+
+    let is_final_method signature =
+      has_decorator signature "typing.final"
 
 
     let is_dunder_method signature =
@@ -430,6 +436,10 @@ module Define = struct
 
   let is_static_method { signature; _ } =
     Signature.is_static_method signature
+
+
+  let is_final_method { signature; _ } =
+    Signature.is_final_method signature
 
 
   let is_dunder_method { signature; _ } =
@@ -939,12 +949,14 @@ module Class = struct
                         ~location
                         ~name
                         ~defines:(define :: defines)
+                        ~final:(Define.is_final_method define)
                         ()
                   | _ ->
                       Attribute.create
                         ~location
                         ~name
                         ~defines:[define]
+                        ~final:(Define.is_final_method define)
                         ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute)

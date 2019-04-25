@@ -183,6 +183,7 @@ module Attribute : sig
     property: bool;
     primitive: bool;
     toplevel: bool;
+    final: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -209,6 +210,7 @@ module Define : sig
     val is_abstract_method: t -> bool
     val is_overloaded_method: t -> bool
     val is_static_method: t -> bool
+    val is_final_method: t -> bool
     val is_class_method: t -> bool
     val is_class_property: t -> bool
     val is_dunder_method: t -> bool
@@ -232,6 +234,7 @@ module Define : sig
   val is_abstract_method: t -> bool
   val is_overloaded_method: t -> bool
   val is_static_method: t -> bool
+  val is_final_method: t -> bool
   val is_class_method: t -> bool
   val is_class_property: t -> bool
   val is_dunder_method: t -> bool

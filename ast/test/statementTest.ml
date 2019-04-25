@@ -278,6 +278,7 @@ let test_attributes _ =
       ?(property = false)
       ?(setter = false)
       ?(toplevel = true)
+      ?(final = false)
       ~name
       ~annotation
       ?defines
@@ -293,6 +294,7 @@ let test_attributes _ =
       property;
       primitive;
       toplevel;
+      final;
     }
     |> Node.create_with_default_location
   in

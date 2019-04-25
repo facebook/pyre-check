@@ -34,6 +34,7 @@ let parse_attributes ~parse_annotation ~class_name =
       async = false;
       initialized = true;
       property = false;
+      final = false;
     } |> Ast.Node.create_with_default_location
   in
   List.map ~f:parse_attribute
