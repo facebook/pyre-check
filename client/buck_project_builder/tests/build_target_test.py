@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import distutils.dir_util
 import os
 import shutil
 import tempfile
@@ -357,7 +358,10 @@ class BuildTargetTest(unittest.TestCase):
                 "/tmp_dir/gen-py/foo/bar.pyi", "/out/foo/bar.pyi"
             )
 
-    def test_build_python_wheel(self):
+    @patch.object(tempfile, "TemporaryDirectory")
+    def test_build_python_wheel(self, TemporaryDirectory):
+        TemporaryDirectory.return_value.__enter__.return_value = "/tmp_dir"
+
         version_mapping = {
             "1.0": PythonWheel.VersionedWheel(
                 version="1.0",
@@ -389,11 +393,14 @@ class BuildTargetTest(unittest.TestCase):
         )
         with patch.object(
             filesystem, "download_and_extract_zip_file"
-        ) as download_and_extract_zip_file:
+        ) as download_and_extract_zip_file, patch.object(
+            distutils.dir_util, "copy_tree"
+        ) as copy_tree:
             target.build("/out")
             download_and_extract_zip_file.assert_called_with(
-                "py3-platform007_1.0_url", "/out"
+                "py3-platform007_1.0_url", "/tmp_dir"
             )
+            copy_tree.assert_called_with("/tmp_dir", "/out")
 
         target = PythonWheel(
             "/ROOT",
@@ -404,17 +411,22 @@ class BuildTargetTest(unittest.TestCase):
         )
         with patch.object(
             filesystem, "download_and_extract_zip_file"
-        ) as download_and_extract_zip_file:
+        ) as download_and_extract_zip_file, patch.object(
+            distutils.dir_util, "copy_tree"
+        ) as copy_tree:
             target.build("/out")
             download_and_extract_zip_file.assert_called_with(
-                "py3-platform007_2.0_url", "/out"
+                "py3-platform007_2.0_url", "/tmp_dir"
             )
+            copy_tree.assert_called_with("/tmp_dir", "/out")
 
         with patch.object(
             platform, "get_platform", return_value="gcc-5-glibc-2.23"
         ), patch.object(
             filesystem, "download_and_extract_zip_file"
-        ) as download_and_extract_zip_file:
+        ) as download_and_extract_zip_file, patch.object(
+            distutils.dir_util, "copy_tree"
+        ) as copy_tree:
             target = PythonWheel(
                 "/ROOT",
                 "project",
@@ -424,14 +436,17 @@ class BuildTargetTest(unittest.TestCase):
             )
             target.build("/out")
             download_and_extract_zip_file.assert_called_with(
-                "py3-gcc-5-glibc-2.23_2.0_url", "/out"
+                "py3-gcc-5-glibc-2.23_2.0_url", "/tmp_dir"
             )
+            copy_tree.assert_called_with("/tmp_dir", "/out")
 
         with patch.object(
             platform, "get_python_version", return_value=(2, 7)
         ), patch.object(
             filesystem, "download_and_extract_zip_file"
-        ) as download_and_extract_zip_file:
+        ) as download_and_extract_zip_file, patch.object(
+            distutils.dir_util, "copy_tree"
+        ) as copy_tree:
             target = PythonWheel(
                 "/ROOT",
                 "project",
@@ -441,8 +456,9 @@ class BuildTargetTest(unittest.TestCase):
             )
             target.build("/out")
             download_and_extract_zip_file.assert_called_with(
-                "py2-platform007_2.0_url", "/out"
+                "py2-platform007_2.0_url", "/tmp_dir"
             )
+            copy_tree.assert_called_with("/tmp_dir", "/out")
 
         # Raise on construction if no platform could be found.
         self.assertRaises(

@@ -6,6 +6,7 @@
 # pyre-strict
 
 import ast
+import distutils.dir_util
 import os
 import shutil
 import tempfile
@@ -253,4 +254,6 @@ class PythonWheel(BuildTarget):
             pass
 
     def build(self, output_directory: str) -> None:
-        filesystem.download_and_extract_zip_file(self._url, output_directory)
+        with tempfile.TemporaryDirectory(prefix="pyre_tmp_") as temporary_directory:
+            filesystem.download_and_extract_zip_file(self._url, temporary_directory)
+            distutils.dir_util.copy_tree(temporary_directory, output_directory)
