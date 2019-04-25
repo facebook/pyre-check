@@ -5,7 +5,7 @@
 
 import glob
 import unittest
-from typing import List, Optional
+from typing import Callable, List, Mapping
 from unittest.mock import MagicMock, patch
 
 from .. import BuilderException, FastBuckBuilder, Target, parser
@@ -18,6 +18,23 @@ from ..build_target import (
 )
 from ..filesystem import Sources
 from .test_common import base
+
+
+def mock_parse_call(
+    build_file_mapping: Mapping[str, parser.BuildFile]
+) -> Callable[[str], parser.BuildFile]:
+    """
+        Given a mapping from directory to parsed BuildFile, returns a function which
+        takes a directory and returns a BuildFile, raising a ParserException if the
+        file is not found.
+    """
+
+    def callable(directory: str) -> parser.BuildFile:
+        if directory in build_file_mapping:
+            return build_file_mapping[directory]
+        raise parser.ParserException()
+
+    return callable
 
 
 class BuilderTest(unittest.TestCase):
@@ -58,18 +75,20 @@ class BuilderTest(unittest.TestCase):
         # b <- c
         # |  /
         # d      e
-        build_file = MagicMock()
-        build_file.targets = {
-            "a": PythonBinary(
-                "/ROOT", "project", base("a", ["//project:b", "//project:c"])
-            ),
-            "b": PythonLibrary("/ROOT", "project", base("b", ["//project:d"])),
-            "c": PythonLibrary(
-                "/ROOT", "project", base("c", ["//project:b", "//project:d"])
-            ),
-            "d": PythonLibrary("/ROOT", "project", base("d")),
-            "e": PythonLibrary("/ROOT", "project", base("e")),
-        }
+        build_file = parser.BuildFile(
+            "project",
+            {
+                "a": PythonBinary(
+                    "/ROOT", "project", base("a", ["//project:b", "//project:c"])
+                ),
+                "b": PythonLibrary("/ROOT", "project", base("b", ["//project:d"])),
+                "c": PythonLibrary(
+                    "/ROOT", "project", base("c", ["//project:b", "//project:d"])
+                ),
+                "d": PythonLibrary("/ROOT", "project", base("d")),
+                "e": PythonLibrary("/ROOT", "project", base("e")),
+            },
+        )
 
         with patch.object(parser.Parser, "parse_file", return_value=build_file):
             builder = FastBuckBuilder("/ROOT")
@@ -124,22 +143,26 @@ class BuilderTest(unittest.TestCase):
         # b    c
         # |    |
         # d <- e
-        build_file_1 = MagicMock()
-        build_file_1.targets = {
-            "a": PythonBinary(
-                "/ROOT", "project1", base("a", ["//project1:b", "//project2:c"])
-            ),
-            "b": PythonLibrary("/ROOT", "project1", base("b", ["//project2:d"])),
-        }
-        build_file_2 = MagicMock()
-        build_file_2.targets = {
-            "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:e"])),
-            "d": PythonLibrary("/ROOT", "project2", base("d")),
-            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
-        }
+        build_file_1 = parser.BuildFile(
+            "project1",
+            {
+                "a": PythonBinary(
+                    "/ROOT", "project1", base("a", ["//project1:b", "//project2:c"])
+                ),
+                "b": PythonLibrary("/ROOT", "project1", base("b", ["//project2:d"])),
+            },
+        )
+        build_file_2 = parser.BuildFile(
+            "project2",
+            {
+                "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:e"])),
+                "d": PythonLibrary("/ROOT", "project2", base("d")),
+                "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
+            },
+        )
         build_file_mapping = {"project1": build_file_1, "project2": build_file_2}
         with patch.object(
-            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+            parser.Parser, "parse_file", side_effect=mock_parse_call(build_file_mapping)
         ):
             builder = FastBuckBuilder("/ROOT")
 
@@ -178,21 +201,25 @@ class BuilderTest(unittest.TestCase):
     def test_targets_to_build_file_wildcard(self):
         # Dependency graph:
         #  a -> c -> d <- e   b
-        build_file_1 = MagicMock()
-        build_file_1.targets = {
-            "a": PythonBinary("/ROOT", "project1", base("a", ["//project2:c"])),
-            "b": PythonLibrary("/ROOT", "project1", base("b")),
-        }
-        build_file_2 = MagicMock()
-        build_file_2.targets = {
-            "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:d"])),
-            "d": PythonLibrary("/ROOT", "project2", base("d")),
-            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
-        }
+        build_file_1 = parser.BuildFile(
+            "project1",
+            {
+                "a": PythonBinary("/ROOT", "project1", base("a", ["//project2:c"])),
+                "b": PythonLibrary("/ROOT", "project1", base("b")),
+            },
+        )
+        build_file_2 = parser.BuildFile(
+            "project2",
+            {
+                "c": PythonLibrary("/ROOT", "project2", base("c", ["//project2:d"])),
+                "d": PythonLibrary("/ROOT", "project2", base("d")),
+                "e": PythonLibrary("/ROOT", "project2", base("e", ["//project2:d"])),
+            },
+        )
 
         build_file_mapping = {"project1": build_file_1, "project2": build_file_2}
         with patch.object(
-            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+            parser.Parser, "parse_file", side_effect=mock_parse_call(build_file_mapping)
         ):
             builder = FastBuckBuilder("/ROOT")
 
@@ -222,24 +249,28 @@ class BuilderTest(unittest.TestCase):
     def test_targets_to_build_directory_wildcard(self):
         # Dependency graph:
         # a -> c   d   b <- e
-        build_file_1 = MagicMock()
-        build_file_1.targets = {
-            "a": PythonBinary(
-                "/ROOT", "project1", base("a", ["//project1/subproject:c"])
-            ),
-            "b": PythonLibrary("/ROOT", "project1", base("b")),
-        }
+        build_file_1 = parser.BuildFile(
+            "project1",
+            {
+                "a": PythonBinary(
+                    "/ROOT", "project1", base("a", ["//project1/subproject:c"])
+                ),
+                "b": PythonLibrary("/ROOT", "project1", base("b")),
+            },
+        )
 
-        build_file_2 = MagicMock()
-        build_file_2.targets = {
-            "c": PythonLibrary("/ROOT", "project1/subproject", base("c")),
-            "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
-        }
+        build_file_2 = parser.BuildFile(
+            "project1/subproject",
+            {
+                "c": PythonLibrary("/ROOT", "project1/subproject", base("c")),
+                "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
+            },
+        )
 
-        build_file_3 = MagicMock()
-        build_file_3.targets = {
-            "e": PythonLibrary("/ROOT", "project2", base("e", ["//project1:b"]))
-        }
+        build_file_3 = parser.BuildFile(
+            "project2",
+            {"e": PythonLibrary("/ROOT", "project2", base("e", ["//project1:b"]))},
+        )
 
         build_file_mapping = {
             "project1": build_file_1,
@@ -247,7 +278,7 @@ class BuilderTest(unittest.TestCase):
             "project2": build_file_3,
         }
         with patch.object(
-            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+            parser.Parser, "parse_file", side_effect=mock_parse_call(build_file_mapping)
         ):
             builder = FastBuckBuilder("/ROOT")
 
@@ -343,14 +374,15 @@ class BuilderTest(unittest.TestCase):
             )
 
     def test_targets_to_build_wheels(self):
-        build_file_1 = MagicMock()
-        build_file_1.targets = {
-            "a": PythonBinary(
-                "/ROOT", "project1", base("a", ["//project2/wheel:wheel"])
-            ),
-            "b": PythonLibrary("/ROOT", "project1", base("b")),
-        }
-        build_file_2 = MagicMock()
+        build_file_1 = parser.BuildFile(
+            "project1",
+            {
+                "a": PythonBinary(
+                    "/ROOT", "project1", base("a", ["//project2/wheel:wheel"])
+                ),
+                "b": PythonLibrary("/ROOT", "project1", base("b")),
+            },
+        )
         with patch.object(
             PythonWheel,
             "_get_platform_information",
@@ -362,12 +394,18 @@ class BuilderTest(unittest.TestCase):
                 external_dependencies=[("foo", "foo-py")],
             ),
         ):
-            build_file_2.targets = {
-                "wheel": PythonWheel("/ROOT", "project2/wheel", base("wheel"), {}, {})
-            }
+            build_file_2 = parser.BuildFile(
+                "project2/wheel",
+                {
+                    "wheel": PythonWheel(
+                        "/ROOT", "project2/wheel", base("wheel"), {}, {}
+                    )
+                },
+            )
+
         build_file_mapping = {"project1": build_file_1, "project2/wheel": build_file_2}
         with patch.object(
-            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+            parser.Parser, "parse_file", side_effect=mock_parse_call(build_file_mapping)
         ):
             builder = FastBuckBuilder("/ROOT")
 
@@ -409,21 +447,26 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(reverse_dependencies["//project:e"], [])
 
     def test_normalize_targets(self):
-        build_file_1 = MagicMock()
-        build_file_1.targets = {
-            "a": PythonLibrary("/ROOT", "project1", base("a")),
-            "b": PythonLibrary("/ROOT", "project1", base("b")),
-            "c": PythonLibrary("/ROOT", "project1", base("c")),
-        }
+        build_file_1 = parser.BuildFile(
+            "project1",
+            {
+                "a": PythonLibrary("/ROOT", "project1", base("a")),
+                "b": PythonLibrary("/ROOT", "project1", base("b")),
+                "c": PythonLibrary("/ROOT", "project1", base("c")),
+            },
+        )
 
-        build_file_2 = MagicMock()
-        build_file_2.targets = {
-            "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
-            "e": PythonLibrary("/ROOT", "project1/subproject", base("e")),
-        }
+        build_file_2 = parser.BuildFile(
+            "project1/subproject",
+            {
+                "d": PythonLibrary("/ROOT", "project1/subproject", base("d")),
+                "e": PythonLibrary("/ROOT", "project1/subproject", base("e")),
+            },
+        )
 
-        build_file_3 = MagicMock()
-        build_file_3.targets = {"f": PythonLibrary("/ROOT", "project2", base("f"))}
+        build_file_3 = parser.BuildFile(
+            "project2", {"f": PythonLibrary("/ROOT", "project2", base("f"))}
+        )
 
         build_file_mapping = {
             "project1": build_file_1,
@@ -431,7 +474,7 @@ class BuilderTest(unittest.TestCase):
             "project2": build_file_3,
         }
         with patch.object(
-            parser.Parser, "parse_file", side_effect=build_file_mapping.get
+            parser.Parser, "parse_file", side_effect=mock_parse_call(build_file_mapping)
         ):
             builder = FastBuckBuilder("/ROOT")
 
