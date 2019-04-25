@@ -50,9 +50,6 @@ let show identifier =
   identifier
 
 
-let sanitization_pattern = Str.regexp "^\\$.*\\$"
-
-
 let sanitized name =
   let stars, name =
     if String.is_prefix name ~prefix:"**" then
@@ -62,8 +59,14 @@ let sanitized name =
     else
       "", name
   in
-  Str.global_replace sanitization_pattern "" name
-  |> Format.asprintf "%s%s" stars
+  let name =
+    match String.is_prefix name ~prefix:"$", String.rindex name '$' with
+    | true, Some index when index > 0 ->
+        String.drop_prefix name (index + 1)
+    | _ ->
+        name
+  in
+  stars ^ name
 
 
 let equal_sanitized left right =
