@@ -25,8 +25,7 @@ class Start(Reporting):
         super(Start, self).__init__(arguments, configuration, analysis_directory)
         self._terminal = arguments.terminal  # type: bool
         self._store_type_check_resolution = arguments.store_type_check_resolution
-        # TODO(T41488848) respect no_watchman flag after OCaml daemon phased out
-        self._no_watchman = True  # type: bool
+        self._use_watchman = not arguments.no_watchman  # type: bool
         self._number_of_workers = configuration.number_of_workers  # type: int
         self._configuration_file_hash = configuration.file_hash  # type: Optional[str]
         self._file_monitor = None  # type: Optional[project_files_monitor.Monitor]
@@ -96,16 +95,17 @@ class Start(Reporting):
 
                     self._call_client(command=self.NAME).check()
 
-                    try:  # TODO(T41488848) guard this block with a no_watchman check
-                        self._file_monitor = project_files_monitor.Monitor(
-                            self._arguments,
-                            self._configuration,
-                            self._analysis_directory,
-                        )
-                        self._file_monitor.daemonize()
-                        LOG.info("Initialized file monitor.")
-                    except project_files_monitor.MonitorException as error:
-                        LOG.warning("Failed to initialize file monitor: %s", error)
+                    if self._use_watchman:
+                        try:
+                            self._file_monitor = project_files_monitor.Monitor(
+                                self._arguments,
+                                self._configuration,
+                                self._analysis_directory,
+                            )
+                            self._file_monitor.daemonize()
+                            LOG.info("Initialized file monitor.")
+                        except project_files_monitor.MonitorException as error:
+                            LOG.warning("Failed to initialize file monitor: %s", error)
 
                     return
             except OSError as exception:
@@ -120,8 +120,6 @@ class Start(Reporting):
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-        if not self._no_watchman:
-            flags.append("-use-watchman")
         if self._terminal:
             flags.append("-terminal")
         if self._store_type_check_resolution:
