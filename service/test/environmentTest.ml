@@ -176,10 +176,6 @@ let test_normalize_dependencies _ =
 let test_normalize _ =
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.integer;
   TypeOrder.insert (module Handler.TypeOrderHandler) Type.string;
-  Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
-  ["C"; "B"; "A"]
-  |> Identifier.Set.Tree.of_list
-  |> Protocols.add SharedMemory.SingletonKey.key;
   let indices =
     let index_of annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
@@ -190,10 +186,7 @@ let test_normalize _ =
   Service.Environment.normalize_shared_memory ();
   assert_equal
     (Service.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
-    (Some indices);
-  assert_equal
-    (Protocols.get SharedMemory.SingletonKey.key)
-    (Some (Identifier.Set.Tree.of_list ["A"; "B"; "C"]))
+    (Some indices)
 
 
 let test_populate context =

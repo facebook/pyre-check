@@ -168,7 +168,6 @@ module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
 
-module Protocols = Memory.WithCache (Memory.SingletonKey) (ProtocolValue)
 
 module UndecoratedFunctions =
   Memory.WithCache

@@ -151,7 +151,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let transaction ~f () =
     Ast.SharedMemory.Modules.begin_transaction ();
 
-    Protocols.LocalChanges.push_stack ();
     ProtocolKeys.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     ClassKeys.LocalChanges.push_stack ();
@@ -173,7 +172,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
     Ast.SharedMemory.Modules.end_transaction ();
 
-    Protocols.LocalChanges.commit_all ();
     ProtocolKeys.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     ClassKeys.LocalChanges.commit_all ();
@@ -191,7 +189,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderKeys.LocalChanges.commit_all ();
     OrderIndices.LocalChanges.commit_all ();
 
-    Protocols.LocalChanges.pop_stack ();
     ProtocolKeys.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     ClassKeys.LocalChanges.pop_stack ();
@@ -606,18 +603,6 @@ let normalize_shared_memory () =
         OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
         List.sort ~compare:Int.compare keys
         |> OrderKeys.add SharedMemory.SingletonKey.key;
-  end;
-  begin
-    match Protocols.get SharedMemory.SingletonKey.key with
-    | None ->
-        ()
-    | Some protocols ->
-        Protocols.remove_batch (Protocols.KeySet.singleton SharedMemory.SingletonKey.key);
-        let protocols =
-          Identifier.Set.Tree.to_list protocols
-          |> Identifier.Set.Tree.of_list
-        in
-        Protocols.add SharedMemory.SingletonKey.key protocols
   end;
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in
