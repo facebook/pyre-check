@@ -5,7 +5,7 @@
 
 
 type t
-[@@deriving compare, eq, sexp, show]
+[@@deriving eq, sexp, show]
 
 val create
   :  qualifier: Reference.t

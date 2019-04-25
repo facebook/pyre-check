@@ -11,12 +11,12 @@ open Statement
 
 
 type t = {
-  aliased_exports: (Reference.t * Reference.t) list;
+  aliased_exports: Reference.t Reference.Map.Tree.t;
   empty_stub: bool;
   handle: File.Handle.t option;
   wildcard_exports: Reference.t list;
 }
-[@@deriving compare, eq, sexp]
+[@@deriving eq, sexp]
 
 (* We cache results of `from_empty_stub` here since module definition lookup requires shared memory
    lookup, which can be expensive *)
@@ -29,7 +29,8 @@ end
 
 let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
   let aliased_exports =
-    List.map aliased_exports
+    Map.Tree.to_alist aliased_exports
+    |> List.map
       ~f:(fun (source, target) ->
           Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
     |> String.concat ~sep:", "
@@ -132,7 +133,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           aliases
     in
     List.fold statements ~f:aliased_exports ~init:Reference.Map.empty
-    |> Map.to_alist
+    |> Map.to_tree
   in
   let toplevel_public, dunder_all =
     let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
@@ -188,11 +189,8 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
 
 
 let aliased_export { aliased_exports; _ } access =
-  Reference.Map.of_alist aliased_exports
-  |> (function
-      | `Ok exports -> Some exports
-      | _ -> None)
-  >>= (fun exports -> Map.find exports access)
+  let aliased_exports = Reference.Map.of_tree aliased_exports in
+  Map.find aliased_exports access
 
 
 let in_wildcard_exports { wildcard_exports; _ } reference =
