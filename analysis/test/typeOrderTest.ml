@@ -3893,6 +3893,60 @@ let test_instantiate_protocol_parameters _ =
     (Some []);
   ()
 
+let test_disconnect_successors _ =
+  let order () =
+    let order = Builder.create () |> TypeOrder.handler in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order !"a";
+    insert order !"b";
+    insert order !"1";
+    insert order !"2";
+    connect order ~predecessor:Type.Bottom ~successor:!"a";
+    connect order ~predecessor:Type.Bottom ~successor:!"b";
+    connect order ~predecessor:!"a" ~successor:!"1";
+    connect order ~predecessor:!"b" ~successor:!"1";
+    connect order ~predecessor:!"1" ~successor:!"2";
+    connect order ~predecessor:!"2" ~successor:Type.Top;
+    order
+  in
+  let () =
+    let (module Handler) = order () in
+    let index key = Handler.find_unsafe (Handler.indices ()) !key in
+    TypeOrder.disconnect_successors (module Handler) [!"1"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) (index "1")) [];
+    assert_equal (Handler.find_unsafe (Handler.backedges ()) (index "2")) [];
+    assert_equal
+      (Handler.find_unsafe (Handler.edges ()) (index "a"))
+      [{ Target.target = index "1"; parameters = [] }];
+  in
+  let () =
+    let (module Handler) = order () in
+    let index key = Handler.find_unsafe (Handler.indices ()) !key in
+    TypeOrder.disconnect_successors (module Handler) [!"a"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
+    assert_equal
+      (Handler.find_unsafe (Handler.backedges ()) (index "1"))
+      [{ Target.target = index "b"; parameters = [] }];
+  in
+  let () =
+    let (module Handler) = order () in
+    let index key = Handler.find_unsafe (Handler.indices ()) !key in
+    TypeOrder.disconnect_successors (module Handler) [!"b"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
+    assert_equal
+      (Handler.find_unsafe (Handler.backedges ()) (index "1"))
+      [{ Target.target = index "a"; parameters = [] }];
+  in
+  let () =
+    let (module Handler) = order () in
+    let index key = Handler.find_unsafe (Handler.indices ()) !key in
+    TypeOrder.disconnect_successors (module Handler) [!"a"; !"b"];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
+    assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
+    assert_equal (Handler.find_unsafe (Handler.backedges ()) (index "1")) [];
+  in
+  ()
 
 
 let () =
@@ -3902,6 +3956,7 @@ let () =
     "connect_annotations_to_top">::test_connect_annotations_to_top;
     "deduplicate">::test_deduplicate;
     "default">::test_default;
+    "disconnect_successors">::test_disconnect_successors;
     "greatest_lower_bound">::test_greatest_lower_bound;
     "instantiate_parameters">::test_instantiate_parameters;
     "is_instantiated">::test_is_instantiated;

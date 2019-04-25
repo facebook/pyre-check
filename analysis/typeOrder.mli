@@ -74,9 +74,9 @@ val connect
   -> successor: Type.t
   -> unit
 
-(* Disconnect the annotation from all of its successors, including any
-   backedges. It does not remove the annotation from the TypeOrder. *)
-val disconnect_successors: (module Handler) -> Type.t -> unit
+(* Disconnect the annotations from all of its successors, including any
+   backedges. It does not remove the annotations from the TypeOrder. *)
+val disconnect_successors: (module Handler) -> Type.t list -> unit
 
 (* Converts the type order representation into a canonical format in order to support comparing type
    environment states. *)

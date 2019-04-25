@@ -487,7 +487,7 @@ module SharedHandler: Analysis.Environment.Handler = struct
        classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
     |> List.map ~f:(fun name -> Type.Primitive name)
-    |> List.iter ~f:(TypeOrder.disconnect_successors (module TypeOrderHandler));
+    |> TypeOrder.disconnect_successors (module TypeOrderHandler);
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
     |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);

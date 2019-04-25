@@ -237,43 +237,48 @@ let connect
     end
 
 
-let disconnect_successors ((module Handler: Handler) as order) annotation =
-  if not (Handler.contains (Handler.indices ()) annotation) then
-    Statistics.event
-      ~name:"invalid type order disconnection"
-      ~integers:[]
-      ~normals:[
-        "Annotation", Type.show annotation;
-      ]
-      ()
-  else
-    begin
-      let key = index_of order annotation in
-
-      let edges = Handler.edges () in
-      let backedges = Handler.backedges () in
-      let remove_backedge ~predecessor ~successor =
-        Handler.find backedges successor
-        >>| (fun current_predecessors ->
-            let new_predecessors =
-              List.filter
-                ~f:(fun { Target.target; _ } -> target <> predecessor)
-                current_predecessors
-            in
-            Handler.set backedges ~key:successor ~data:new_predecessors)
-        |> ignore
-      in
-
-      Handler.find edges key
-      >>| (fun successors ->
-          Handler.set edges ~key ~data:[];
-          (* Remove corresponding backedges. *)
+let disconnect_successors (module Handler: Handler) annotations =
+  let edges = Handler.edges () in
+  let backedges = Handler.backedges () in
+  let keys_to_remove =
+    List.filter_map annotations ~f:(Handler.find (Handler.indices ()))
+    |> Int.Hash_set.of_list
+  in
+  let all_successors =
+    let all_successors = Int.Hash_set.create () in
+    let add_successors key =
+      match Handler.find edges key with
+      | Some successors ->
           List.iter
-            ~f:(fun { Target.target = successor; _ } -> remove_backedge ~predecessor:key ~successor)
             successors
-        )
-      |> ignore
-    end
+            ~f:(fun { Target.target; _ } -> Hash_set.add all_successors target)
+      | None ->
+          ()
+    in
+    Hash_set.iter keys_to_remove ~f:add_successors;
+    all_successors
+  in
+  let remove_backedges successor =
+    Handler.find backedges successor
+    >>| (fun current_predecessors ->
+        let new_predecessors =
+          List.filter
+            ~f:(fun { Target.target; _ } -> not (Hash_set.mem keys_to_remove target))
+            current_predecessors
+        in
+        Handler.set backedges ~key:successor ~data:new_predecessors)
+    |> ignore
+  in
+  Hash_set.iter all_successors ~f:remove_backedges;
+
+  let clear_edges key =
+    match Handler.find edges key with
+    | Some _ ->
+        Handler.set edges ~key ~data:[]
+    | None ->
+        ()
+  in
+  Hash_set.iter keys_to_remove ~f:clear_edges
 
 
 let normalize (module Handler: Handler) =
