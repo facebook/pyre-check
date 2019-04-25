@@ -599,7 +599,23 @@ let test_register_globals _ =
   in
   Environment.register_values (module Handler) resolution source;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
-  assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"))
+  assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"));
+
+  let source =
+    parse
+      ~handle:"tuples.py"
+      ~qualifier:(!&"tuples")
+      {|
+        def f():
+          return 7, 8
+        y, z = f()
+      |}
+    |> Preprocessing.preprocess
+  in
+  Environment.register_values (module Handler) resolution source;
+  assert_global "tuples.y" (Some (Type.Top));
+  assert_global "tuples.z" (Some (Type.Top));
+  ()
 
 
 let test_connect_type_order _ =

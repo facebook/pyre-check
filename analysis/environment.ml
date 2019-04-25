@@ -821,6 +821,9 @@ let register_values
           | Tuple elements, Type.Tuple (Type.Unbounded parameter) ->
               List.map ~f:(fun target -> register_assign ~target ~annotation:parameter) elements
               |> ignore
+          | Tuple elements, _ ->
+              List.map ~f:(fun target -> register_assign ~target ~annotation:Type.Top) elements
+              |> ignore
           | _ ->
               ()
         in
