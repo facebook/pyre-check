@@ -19,11 +19,5 @@ module Server: sig
 end
 
 module Watchman: sig
-  val watchman_root: Configuration.Analysis.t -> Path.t
-
-  val lock_path: Configuration.Analysis.t -> Path.t
-
-  val pid_path: Configuration.Analysis.t -> Path.t
-
   val log_path: Configuration.Analysis.t -> Path.t
 end
