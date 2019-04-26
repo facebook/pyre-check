@@ -1610,6 +1610,26 @@ let test_is_compatible_with _ =
     list_of_string (Type.union [list_of_float; Type.optional list_of_string]);
   assert_not_compatible
     list_of_string (Type.union [list_of_float; list_of_integer]);
+  assert_is_compatible
+    (Type.union [Type.integer; Type.string])
+    (Type.union [Type.integer; Type.string]);
+  assert_is_compatible
+    (Type.union [Type.integer; Type.string])
+    (Type.union [Type.string; Type.integer]);
+  assert_is_compatible
+    (Type.set (Type.union [Type.integer; Type.string]))
+    (Type.set (Type.union [Type.string; Type.integer]));
+  assert_is_compatible
+    (Type.union [Type.integer; list_of_integer])
+    (Type.union [Type.integer; Type.integer; list_of_integer]);
+  assert_not_compatible
+    (Type.union [Type.integer; Type.string]) Type.integer;
+  assert_not_compatible
+    (Type.union [Type.integer; Type.string; list_of_float])
+    (Type.union [Type.integer; list_of_float]);
+  assert_not_compatible
+    (Type.set (Type.union [Type.integer; Type.string]))
+    (Type.set (Type.union [list_of_string; list_of_integer]));
 
   (* Parametric *)
   assert_is_compatible

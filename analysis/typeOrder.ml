@@ -2217,6 +2217,12 @@ let rec is_compatible_with order ~left ~right =
         ~f:(fun bounded_type -> is_compatible_with order ~left:bounded_type ~right)
 
   (* Union *)
+  | Type.Union left, right ->
+      List.fold
+        ~init:true
+        ~f:(fun current left ->
+            current && is_compatible_with order ~left ~right)
+        left
   | left, Type.Union right ->
       List.exists ~f:(fun right -> is_compatible_with order ~left ~right) right
 
