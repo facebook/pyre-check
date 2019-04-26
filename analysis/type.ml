@@ -776,9 +776,7 @@ let parametric_substitution_map =
     "typing.Type", "type";
     "typing_extensions.Protocol", "typing.Protocol";
   ]
-  |> List.map
-    ~f:(fun (original, substitute) -> original, substitute)
-  |> Identifier.Map.of_alist_exn
+  |> Identifier.Table.of_alist_exn
 
 
 let rec expression ?(convert = false) annotation =
@@ -1328,9 +1326,7 @@ let primitive_substitution_map =
     "typing.Type", parametric_anys "type" 1;
     "typing_extensions.Protocol", Primitive "typing.Protocol";
   ]
-  |> List.map
-    ~f:(fun (original, substitute) -> original, substitute)
-  |> Identifier.Map.of_alist_exn
+  |> Identifier.Table.of_alist_exn
 
 
 let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
@@ -1409,15 +1405,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                         [current]
                   in
                   let name = Access.show state in
-                  let annotation =
-                    if String.equal name "None" then
-                      none
-                    else
-                      Primitive name
-                  in
-                  annotation
-                  |> resolve_aliases
-                  |> Option.some
+                  Some (resolve_aliases (Primitive name))
               | _, _ ->
                   Some Top
             in
@@ -1426,10 +1414,9 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
           in
           let rec handle_access reversed_lead tail =
             match tail with
-            |  (Access.Identifier get_item)
+            |  (Access.Identifier "__getitem__")
                :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
-               :: _
-              when String.equal get_item "__getitem__" ->
+               :: _ ->
                 begin
                   let parameters =
                     match Node.value argument with
@@ -1463,13 +1450,13 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
         match resolved with
         | Primitive name ->
             begin
-              match Identifier.Map.find primitive_substitution_map name with
+              match Identifier.Table.find primitive_substitution_map name with
               | Some substitute -> substitute
               | None -> resolved
             end
         | Parametric { name; parameters } ->
             begin
-              match Identifier.Map.find parametric_substitution_map name with
+              match Identifier.Table.find parametric_substitution_map name with
               | Some name ->
                   Parametric { name; parameters }
               | None ->
@@ -1893,8 +1880,9 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
         let result =
           let create_logic = create_logic_new ~use_cache ~aliases in
           let resolve_aliases annotation =
+            let visited = Hash_set.create () in
             let module ResolveTransform = Transform.Make(struct
-                type state = Set.t
+                type state = unit
 
                 let visit_children_before _ _ =
                   false
@@ -1902,45 +1890,46 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
                 let visit_children_after =
                   true
 
-                let rec visit visited annotation =
-                  let rec resolve visited annotation =
-                    if Set.mem visited annotation then
-                      visited, annotation
+                let rec visit _ annotation =
+                  let rec resolve annotation =
+                    if Core.Hash_set.mem visited annotation then
+                      annotation
                     else
-                      let visited = Set.add visited annotation in
-                      match aliases annotation, annotation with
-                      | Some aliased, _ ->
-                          (* We need to fully resolve aliases to aliases before we go on to resolve
-                             the aliases those may contain *)
-                          resolve visited aliased
-                      | None, Parametric { name; parameters } ->
-                          let visited, annotation = resolve visited (Primitive name) in
-                          visited,
-                          begin
-                            match annotation with
-                            | Primitive name ->
-                                parametric name parameters
-                            | Parametric { name; _ } ->
-                                (* Ignore parameters for now. *)
-                                parametric name parameters
-                            | Union elements ->
-                                let replace_parameters = function
-                                  | Parametric { name; _ } -> parametric name parameters
-                                  | annotation -> annotation
-                                in
-                                Union (List.map elements ~f:replace_parameters)
-                            | _ ->
-                                (* This should probably error or something *)
-                                parametric name parameters
-                          end
-                      | _ ->
-                          visited, annotation
+                      begin
+                        Core.Hash_set.add visited annotation;
+                        match aliases annotation, annotation with
+                        | Some aliased, _ ->
+                            (* We need to fully resolve aliases to aliases before we go on to
+                               resolve the aliases those may contain *)
+                            resolve aliased
+                        | None, Parametric { name; parameters } ->
+                            let annotation = resolve (Primitive name) in
+                            begin
+                              match annotation with
+                              | Primitive name ->
+                                  parametric name parameters
+                              | Parametric { name; _ } ->
+                                  (* Ignore parameters for now. *)
+                                  parametric name parameters
+                              | Union elements ->
+                                  let replace_parameters = function
+                                    | Parametric { name; _ } -> parametric name parameters
+                                    | annotation -> annotation
+                                  in
+                                  Union (List.map elements ~f:replace_parameters)
+                              | _ ->
+                                  (* This should probably error or something *)
+                                  parametric name parameters
+                            end
+                        | _ ->
+                            annotation
+                      end
                   in
-                  let new_state, transformed_annotation = resolve visited annotation in
-                  { Transform.transformed_annotation; new_state }
+                  let transformed_annotation = resolve annotation in
+                  { Transform.transformed_annotation; new_state = () }
               end)
             in
-            snd (ResolveTransform.visit Set.empty annotation)
+            snd (ResolveTransform.visit () annotation)
           in
           let rec is_typing_callable = function
             | Name (
@@ -2417,13 +2406,13 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
         match result with
         | Primitive name ->
             begin
-              match Identifier.Map.find primitive_substitution_map name with
+              match Identifier.Table.find primitive_substitution_map name with
               | Some substitute -> substitute
               | None -> result
             end
         | Parametric { name; parameters } ->
             begin
-              match Identifier.Map.find parametric_substitution_map name with
+              match Identifier.Table.find parametric_substitution_map name with
               | Some name ->
                   Parametric { name; parameters }
               | None ->

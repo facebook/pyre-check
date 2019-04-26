@@ -548,9 +548,8 @@ let register_aliases (module Handler: Handler) sources =
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
   in
   let register_alias (any_changed, unresolved) (handle, target, value) =
-    let target_annotation =
-      Type.create ~aliases:(fun _ -> None) (Reference.expression target)
-    in
+    let target_primitive_name = Reference.show target in
+    let target_primitive = Type.Primitive target_primitive_name in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
@@ -558,7 +557,6 @@ let register_aliases (module Handler: Handler) sources =
       | annotation ->
           annotation
     in
-    let target_primitive, _ = Type.split target_annotation in
     let module TrackedTransform = Type.Transform.Make(struct
         type state = bool
 
@@ -591,7 +589,6 @@ let register_aliases (module Handler: Handler) sources =
       end)
     in
     let all_valid, value_annotation = TrackedTransform.visit true value_annotation in
-    let target_primitive_name = Option.value_exn (Type.primitive_name target_primitive) in
     if all_valid && not (TypeOrder.contains order target_primitive) then
       begin
         Handler.register_alias ~handle ~key:target_primitive_name ~data:value_annotation;
