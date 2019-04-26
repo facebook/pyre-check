@@ -7,6 +7,7 @@ _build
 .merlin
 .ignore
 /pyrelib.install
+/hack_parallel.install
 /dune
 /_tags
 /scripts/dist
