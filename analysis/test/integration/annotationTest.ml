@@ -287,7 +287,7 @@ let test_check_undefined_type _ =
     [
       "Undefined name [18]: Global name `Derp` is not defined, or there is at least one \
        control flow path that doesn't define `Derp`.";
-      "Incompatible return type [7]: Expected `None` but got `unknown`.";
+      "Incompatible return type [7]: Expected `None` but got `int`.";
     ]
 
 

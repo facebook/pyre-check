@@ -56,8 +56,8 @@ let test_check_isinstance _ =
     [
       "Undefined name [18]: Global name `NonexistentClass` is not defined, or there is at least \
        one control flow path that doesn't define `NonexistentClass`.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
-      "Revealed type [-1]: Revealed type for `x` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
     ];
   assert_type_errors
     {|
@@ -68,7 +68,7 @@ let test_check_isinstance _ =
           reveal_type(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.List[int]`.";
       "Revealed type [-1]: Revealed type for `x` is `int`.";
     ];
   assert_type_errors
@@ -80,8 +80,50 @@ let test_check_isinstance _ =
           reveal_type(x)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `typing.List[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `x` is " ^
+      "`typing.Union[typing.List[int], typing.List[str]]`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, typing.Set[str], str, typing.Set[int]]) -> None:
+        if isinstance(x, set):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is " ^
+      "`typing.Union[typing.Set[int], typing.Set[str]]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]`.";
+    ];
+  assert_type_errors
+    {|
+      class CommonBase(): pass
+      class ChildA(CommonBase): pass
+      class ChildB(CommonBase): pass
+      class Unrelated(): pass
+      def foo(x: typing.Union[int, ChildA, ChildB, Unrelated]) -> None:
+        if isinstance(x, CommonBase):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[ChildA, ChildB]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[Unrelated, int]`.";
+    ];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, float, bool]) -> None:
+        if isinstance(x, str):
+          reveal_type(x)
+        else:
+          reveal_type(x)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[bool, float, int]`.";
     ];
 
   assert_type_errors "isinstance(1, (int, str))" [];

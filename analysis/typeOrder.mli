@@ -106,8 +106,8 @@ module ProtocolAssumptions: sig
   type t
   val empty: t
 end
-
 [@@deriving show]
+
 type order = {
   handler: (module Handler);
   constructor: Type.t -> Type.t option;

@@ -225,6 +225,9 @@ module State = struct
     initial: nested_define_state;
   }
 
+  type partitioned =
+    { consistent_with_boundary: Type.t; not_consistent_with_boundary: Type.t option }
+
   and t = {
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
@@ -3481,6 +3484,27 @@ module State = struct
             | _ ->
                 parse_meta annotation
           in
+          let partition annotation ~boundary =
+            let consistent_with_boundary, not_consistent_with_boundary =
+              let rec extract_union_members = function
+                | Type.Union parameters -> parameters
+                | Type.Optional optional -> Type.none :: (extract_union_members optional)
+                | annotation -> [annotation]
+              in
+              extract_union_members annotation
+              |> List.partition_tf
+                ~f:(fun left ->
+                    Resolution.is_consistent_with resolution left boundary ~expression:None)
+            in
+            let not_consistent_with_boundary =
+              if List.is_empty not_consistent_with_boundary then
+                None
+              else
+                Some (Type.union not_consistent_with_boundary)
+            in
+            let consistent_with_boundary = Type.union consistent_with_boundary in
+            { consistent_with_boundary; not_consistent_with_boundary }
+          in
           match Node.value test with
           | False ->
               (* Explicit bottom. *)
@@ -3512,10 +3536,25 @@ module State = struct
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
                 in
                 match Resolution.get_local resolution ~reference with
+                (* Allow Anys [especially from placeholder stubs] to clobber *)
+                | _ when Type.equal annotation Type.Any ->
+                    Annotation.create annotation
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
                     existing_annotation
-                | _ ->
+                (* Clarify Anys if possible *)
+                | Some existing_annotation
+                  when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
                     Annotation.create annotation
+                | None ->
+                    Annotation.create annotation
+                | Some existing_annotation ->
+                    let { consistent_with_boundary; _ } =
+                      partition (Annotation.annotation existing_annotation) ~boundary:annotation
+                    in
+                    if Type.equal consistent_with_boundary Type.Bottom then
+                      Annotation.create annotation
+                    else
+                      Annotation.create consistent_with_boundary
               in
               let resolution =
                 Resolution.set_local
@@ -3592,40 +3631,14 @@ module State = struct
                 in
                 let resolve ~reference =
                   match Resolution.get_local resolution ~reference with
-                  | Some {
-                      Annotation.annotation = (Type.Optional (Type.Union parameters)) as unrefined;
-                      _;
-                    }
-                  | Some { Annotation.annotation = (Type.Union parameters) as unrefined; _ } ->
-                      let parameters =
-                        match unrefined with
-                        | Type.Optional _ ->
-                            Type.none :: parameters
-                        | _ ->
-                            parameters
+                  | Some { annotation = previous_annotation; _ } ->
+                      let { not_consistent_with_boundary; _ } =
+                        partition previous_annotation ~boundary:annotation
                       in
-                      let parameters, constraints =
-                        let is_not_list = function
-                          | Type.Parametric { name = "list"; _ } -> false
-                          | _ -> true
-                        in
-                        match annotation with
-                        | Type.Union elements ->
-                            parameters, elements
-                        | Type.Parametric { name = "list"; parameters = [Type.Any] } ->
-                            List.filter parameters ~f:is_not_list, []
-                        | _ ->
-                            parameters, [annotation]
-                      in
-                      let constrained =
-                        Set.diff (Type.Set.of_list parameters) (Type.Set.of_list constraints)
-                        |> Set.to_list
-                        |> Type.union
-                      in
-                      Resolution.set_local
-                        resolution
-                        ~reference
-                        ~annotation:(Annotation.create constrained)
+                      not_consistent_with_boundary
+                      >>| Annotation.create
+                      >>| (fun annotation -> Resolution.set_local resolution ~reference ~annotation)
+                      |> Option.value ~default:resolution
                   | _ ->
                       resolution
                 in
