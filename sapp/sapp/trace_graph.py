@@ -31,17 +31,17 @@ class TraceGraph(object):
         self._issue_instances: Dict[int, IssueInstance] = {}
         self._trace_annotations: Dict[int, TraceFrameAnnotation] = {}
 
-        # Create a mapping of (caller, caller_port) to the corresponding
+        # Create a mapping of (caller_id, caller_port) to the corresponding
         # trace frame's id.
         self._trace_frames_map: DefaultDict[  # pyre-ignore: T41307149
-            Tuple[str, str], Set[int]
+            Tuple[int, str], Set[int]
         ] = defaultdict(set)
 
         # Similar to _trace_frames_map, but maps the reverse direction
-        # of the trace graph, i.e. (callee[, callee_port]) to the
+        # of the trace graph, i.e. (callee_id, callee_port) to the
         # trace_frame_id.
         self._trace_frames_rev_map: DefaultDict[  # pyre-ignore: T41307149
-            Tuple[str, str], Set[int]
+            Tuple[int, str], Set[int]
         ] = defaultdict(set)
 
         self._trace_frames: Dict[int, TraceFrame] = {}
@@ -105,6 +105,9 @@ class TraceGraph(object):
         ), "Instance fix info already exists"
         self._issue_instance_fix_info[instance.id.local_id] = fix_info
 
+    def get_text(self, shared_text_id: DBID) -> str:
+        return self._shared_texts[shared_text_id.local_id].contents
+
     def get_shared_text(
         self, kind: SharedTextKind, content: str
     ) -> Optional[SharedText]:
@@ -114,8 +117,8 @@ class TraceGraph(object):
                 return self._shared_texts[contents[content]]
         return None
 
-    def has_postconditions_with_caller(self, caller: str, caller_port: str) -> bool:
-        key = (caller, caller_port)
+    def has_postconditions_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
+        key = (caller_id.local_id, caller_port)
         post_ids = {
             tf_id
             for tf_id in self._trace_frames_map[key]
@@ -123,8 +126,8 @@ class TraceGraph(object):
         }
         return len(post_ids) != 0
 
-    def has_preconditions_with_caller(self, caller: str, caller_port: str) -> bool:
-        key = (caller, caller_port)
+    def has_preconditions_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
+        key = (caller_id.local_id, caller_port)
         pre_ids = {
             tf_id
             for tf_id in self._trace_frames_map[key]
@@ -143,21 +146,21 @@ class TraceGraph(object):
         ]
 
     def add_trace_frame(self, trace_frame: TraceFrame) -> None:
-        key = (trace_frame.caller, trace_frame.caller_port)
-        rev_key = (trace_frame.callee, trace_frame.callee_port)
+        key = (trace_frame.caller_id.local_id, trace_frame.caller_port)
+        rev_key = (trace_frame.callee_id.local_id, trace_frame.callee_port)
         self._trace_frames_map[key].add(trace_frame.id.local_id)
         self._trace_frames_rev_map[rev_key].add(trace_frame.id.local_id)
         self._trace_frames[trace_frame.id.local_id] = trace_frame
 
-    def has_trace_frame_with_caller(self, caller: str, caller_port: str) -> bool:
-        key = (caller, caller_port)
+    def has_trace_frame_with_caller(self, caller_id: DBID, caller_port: str) -> bool:
+        key = (caller_id.local_id, caller_port)
         return key in self._trace_frames_map
 
     def get_trace_frames_from_caller(
-        self, caller: str, caller_port: str
+        self, caller_id: DBID, caller_port: str
     ) -> List[TraceFrame]:
-        if self.has_trace_frame_with_caller(caller, caller_port):
-            key = (caller, caller_port)
+        if self.has_trace_frame_with_caller(caller_id, caller_port):
+            key = (caller_id.local_id, caller_port)
             return [
                 self._trace_frames[trace_frame_id]
                 for trace_frame_id in self._trace_frames_map[key]
@@ -172,6 +175,10 @@ class TraceGraph(object):
         assert (
             shared_text.id.local_id not in self._shared_texts
         ), "Shared text already exists"
+        assert (
+            shared_text.kind not in self._shared_text_lookup
+            or shared_text.contents not in self._shared_text_lookup[shared_text.kind]
+        ), "Shared text with same kind, contents exists"
 
         self._shared_texts[shared_text.id.local_id] = shared_text
 

@@ -635,16 +635,21 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         doc="Location (possibly a range) of the issue",
     )
 
-    filename = Column(
-        String(length=767),
-        doc="Filename containing the issue",
-        nullable=True,
-        index=True,
-    )
-
     filename_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
+    filename = relationship(
+        "SharedText",
+        primaryjoin="foreign(SharedText.id) == IssueInstance.filename_id",
+        uselist=False,
+    )
+
     callable_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
+
+    callable = relationship(
+        "SharedText",
+        primaryjoin="foreign(SharedText.id) == IssueInstance.callable_id",
+        uselist=False,
+    )
 
     is_new_issue = Column(
         Boolean,
@@ -793,13 +798,6 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
     code = Column(
         Integer, doc="Code identifiying the issue type", nullable=False, index=True
-    )
-
-    callable = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        doc="Callable containing the issue",
-        nullable=False,
-        index=True,
     )
 
     instances = relationship(
@@ -1090,12 +1088,6 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     kind = Column(Enum(TraceKind), nullable=False, index=False)
 
-    caller: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The function/method that produces the tainted trace",
-    )
-
     caller_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
 
     caller_port: str = Column(
@@ -1103,12 +1095,6 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         nullable=False,
         server_default="",
         doc="The caller port of this call edge",
-    )
-
-    callee: str = Column(
-        String(length=INNODB_MAX_INDEX_LENGTH),
-        nullable=False,
-        doc="The function/method within the caller that produces the tainted trace.",
     )
 
     callee_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)
@@ -1124,10 +1110,6 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
         nullable=False,
         server_default="",
         doc="The callee port of this call edge'",
-    )
-
-    filename = Column(
-        String(length=4096), doc="Filename containing the call", nullable=False
     )
 
     filename_id = Column(BIGDBIDType, nullable=False, server_default="0", default=0)

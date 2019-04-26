@@ -82,14 +82,11 @@ class FakeObjectGenerator:
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.PRECONDITION,
-            caller=caller,
             caller_id=caller_record.id,
             caller_port=caller_port,
-            callee=callee,
             callee_id=callee_record.id,
             callee_port=callee_port,
             callee_location=SourceLocation(location[0], location[1], location[2]),
-            filename=filename,
             filename_id=filename_record.id,
             titos=[],
             run_id=self.run_id,
@@ -119,14 +116,11 @@ class FakeObjectGenerator:
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.POSTCONDITION,
-            caller=caller,
             caller_id=caller_record.id,
             caller_port=caller_port,
-            callee=callee,
             callee_id=callee_record.id,
             callee_port=callee_port,
             callee_location=SourceLocation(location[0], location[1], location[2]),
-            filename=filename,
             filename_id=filename_record.id,
             titos=[],
             run_id=self.run_id,
@@ -142,6 +136,11 @@ class FakeObjectGenerator:
         return trace_frame
 
     def shared_text(self, contents, kind):
+        if self.graph:
+            shared_text = self.graph.get_shared_text(kind, contents)
+            if shared_text is not None:
+                return shared_text
+
         result = SharedText.Record(id=DBID(), contents=contents, kind=kind)
         if self.graph:
             self.graph.add_shared_text(result)
@@ -194,7 +193,6 @@ class FakeObjectGenerator:
         result = IssueInstance.Record(
             id=DBID(),
             location=SourceLocation(6, 7, 8),
-            filename=filename.contents,
             filename_id=filename.id,
             message_id=message.id,
             callable_id=callable.id,

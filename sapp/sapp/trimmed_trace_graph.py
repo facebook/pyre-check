@@ -87,7 +87,9 @@ class TrimmedTraceGraph(TraceGraph):
         affected_instance_ids = [
             instance.id.local_id
             for instance in graph._issue_instances.values()
-            if self._is_filename_prefixed_with(instance.filename, self._affected_files)
+            if self._is_filename_prefixed_with(
+                graph.get_text(instance.filename_id), self._affected_files
+            )
         ]
 
         for instance_id in affected_instance_ids:
@@ -128,7 +130,7 @@ class TrimmedTraceGraph(TraceGraph):
             trace_frame
             for trace_frame in graph._trace_frames.values()
             if self._is_filename_prefixed_with(
-                trace_frame.filename, self._affected_files
+                graph.get_text(trace_frame.filename_id), self._affected_files
             )
         ]
 
@@ -142,7 +144,7 @@ class TrimmedTraceGraph(TraceGraph):
                 [
                     graph._trace_frames[trace_frame_id]
                     for trace_frame_id in graph._trace_frames_rev_map[
-                        (trace_frame.caller, trace_frame.caller_port)
+                        (trace_frame.caller_id.local_id, trace_frame.caller_port)
                     ]
                     if graph._trace_frames[trace_frame_id].kind == trace_frame.kind
                 ]
@@ -274,7 +276,7 @@ class TrimmedTraceGraph(TraceGraph):
         filtered_ids = []
         for trace_frame_id in trace_frame_ids:
             frame = graph._trace_frames[trace_frame_id]
-            if not kind or kind == frame.kind:
+            if kind is None or kind == frame.kind:
                 self.add_issue_instance_trace_frame_assoc(instance, frame)
                 filtered_ids.append(trace_frame_id)
         self._populate_trace(graph, filtered_ids)
@@ -318,7 +320,7 @@ class TrimmedTraceGraph(TraceGraph):
             self._add_trace_frame(graph, trace_frame)
             self._visited_trace_frame_ids.add(trace_frame_id)
 
-            key = (trace_frame.callee, trace_frame.callee_port)
+            key = (trace_frame.callee_id.local_id, trace_frame.callee_port)
             trace_frame_ids.extend(
                 [
                     trace_frame_id

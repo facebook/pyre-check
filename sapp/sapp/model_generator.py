@@ -147,8 +147,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             id=IssueDBID(),
             code=entry["code"],
             handle=handle,
-            callable=callable,
-            filename=entry["filename"],
             status=IssueStatus.UNCATEGORIZED,
             first_seen=run.date,
             run_id=run.id,
@@ -174,7 +172,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             id=DBID(),
             issue_id=issue.id,
             location=self.get_location(entry),
-            filename=entry["filename"],
             filename_id=filename_record.id,
             callable_id=callable_record.id,
             run_id=run.id,
@@ -187,7 +184,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             min_trace_length_to_sinks=self._get_minimum_trace_length(
                 entry["preconditions"]
             ),
-            callable_count=callablesCount[issue.callable],
+            callable_count=callablesCount[callable],
         )
 
         for sink in final_sinks:
@@ -226,12 +223,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callinfo["leaves"],  # sources
             callinfo["type_interval"],
         )
-        keys = [(callee, callee_port)]
+        keys = [(call_tf.callee_id, callee_port)]
         while len(keys) > 0:
             key = keys.pop()
             if self.graph.has_postconditions_with_caller(key[0], key[1]):
                 continue
 
+            key = (self.graph.get_text(key[0]), key[1])
             new = [
                 self._generate_postcondition(run, e)
                 for e in self.summary["postcondition_entries"].pop(key, [])
@@ -239,7 +237,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             if len(new) == 0 and key[1] != "source":
                 self.summary["missing_postconditions"].add(key)
 
-            keys.extend([(tf.callee, tf.callee_port) for tf in new])
+            keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
 
         return call_tf
 
@@ -280,16 +278,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.POSTCONDITION,
-            caller=caller,
             caller_id=caller_record.id,
-            callee=callee,
             callee_id=callee_record.id,
             callee_location=SourceLocation(
                 callee_location["line"],
                 callee_location["start"],
                 callee_location["end"],
             ),
-            filename=filename,
             filename_id=filename_record.id,
             run_id=run.id,
             caller_port=caller_port,
@@ -329,12 +324,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             callinfo["type_interval"],
             callinfo["features"],
         )
-        keys = [(callee, callee_port)]
+        keys = [(call_tf.callee_id, callee_port)]
         while len(keys) > 0:
             key = keys.pop()
             if self.graph.has_preconditions_with_caller(key[0], key[1]):
                 continue
 
+            key = (self.graph.get_text(key[0]), key[1])
             new = [
                 self._generate_precondition(run, e)
                 for e in self.summary["precondition_entries"].pop(key, [])
@@ -342,7 +338,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             if len(new) == 0 and key[1] != "sink":
                 self.summary["missing_preconditions"].add(key)
 
-            keys.extend([(tf.callee, tf.callee_port) for tf in new])
+            keys.extend([(tf.callee_id, tf.callee_port) for tf in new])
 
         return call_tf
 
@@ -399,10 +395,8 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         trace_frame = TraceFrame.Record(
             id=DBID(),
             kind=TraceKind.PRECONDITION,
-            caller=caller,
             caller_id=caller_record.id,
             caller_port=caller_port,
-            callee=callee,
             callee_id=callee_record.id,
             callee_port=callee_port,
             callee_location=SourceLocation(
@@ -410,7 +404,6 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
                 callee_location["start"],
                 callee_location["end"],
             ),
-            filename=filename,
             filename_id=filename_record.id,
             titos=titos,
             run_id=run.id,
@@ -467,11 +460,10 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         return entry["handle"]
 
     def _get_shared_text(self, kind, name):
+        name = name[:SHARED_TEXT_LENGTH]
         shared_text = self.graph.get_shared_text(kind, name)
         if shared_text is None:
-            shared_text = SharedText.Record(
-                id=DBID(), contents=name[:SHARED_TEXT_LENGTH], kind=kind
-            )
+            shared_text = SharedText.Record(id=DBID(), contents=name, kind=kind)
             self.graph.add_shared_text(shared_text)
         return shared_text
 
