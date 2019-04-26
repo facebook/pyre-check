@@ -24,7 +24,7 @@ val track_distribution: ?record:record -> string -> bucket_size:float -> unit
 val sample: ?record:record -> string -> float -> unit
 val time: ?record:record -> string -> (unit -> 'a) -> 'a
 
-val merge: ?record:record -> from:record -> unit
+val merge: ?record:record -> from:record -> unit -> unit
 
 val get_sum: ?record:record -> string -> float option
 

@@ -122,7 +122,7 @@ let try_with_channel oc f1 f2 =
 
 let iter_n_acc n f acc =
   let acc = ref acc in
-  for i = 1 to n-1 do
+  for _i = 1 to n-1 do
     acc := fst (f !acc)
   done;
   f !acc

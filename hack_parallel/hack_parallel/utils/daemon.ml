@@ -134,7 +134,7 @@ end = struct
         Sys_utils.close_in_no_fail "Daemon.get_context" ic;
         Sys.remove file;
         res
-      with exn ->
+      with _exn ->
         failwith "Can't find daemon parameters." in
     (entry, param,
      (Timeout.in_channel_of_descr in_handle,

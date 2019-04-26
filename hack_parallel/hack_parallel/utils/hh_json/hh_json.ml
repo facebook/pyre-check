@@ -331,7 +331,7 @@ let buf_concat ~buf ~lb ~rb ~sep ~concat_elt l =
    | [] -> ()
    | elt :: elts ->
        concat_elt buf elt;
-       List.iter elts begin fun e ->
+       List.iter elts ~f:begin fun e ->
          Buffer.add_string buf sep; concat_elt buf e
        end);
   Buffer.add_string buf rb
@@ -388,13 +388,13 @@ and json_to_multiline json =
     if String.length single < 80 then single else
       match json with
       | JSON_Array l ->
-          let nl = List.map l (loop (indent ^ "  ")) in
+          let nl = List.map l ~f:(loop (indent ^ "  ")) in
           "[\n" ^ indent ^ "  " ^ (String.concat (",\n" ^ indent ^ "  ") nl) ^
           "\n" ^ indent ^ "]"
       | JSON_Object l ->
           let nl =
             List.map l
-              (fun (k, v) ->
+              ~f:(fun (k, v) ->
                  indent ^ "  " ^ (json_to_string (JSON_String k)) ^ ":" ^
                  (loop (indent ^ "  ") v))
           in
@@ -533,7 +533,7 @@ module Access = struct
 
   let keytrace_to_string x =
     if x = [] then "" else
-      let res = List.map x (fun x -> "[" ^ x ^ "]")  |> String.concat " " in
+      let res = List.map x ~f:(fun x -> "[" ^ x ^ "]")  |> String.concat " " in
       " (at field " ^ res ^ ")"
 
   let access_failure_to_string = function

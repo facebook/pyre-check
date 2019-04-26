@@ -1,5 +1,0 @@
-description = "hack_parallol"
-requires = "str"
-version = "0.1"
-archive(native) = "hack_parallel.cmxa"
-archive(byte) = "hack_parallel.cma"

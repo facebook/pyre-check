@@ -38,7 +38,7 @@ module Alarm_timeout = struct
   (** Channel *)
 
   type in_channel = Pervasives.in_channel * int option
-  let ignore_timeout f ?timeout (ic, _pid) = f ic
+  let ignore_timeout f ?timeout (ic, _pid) = ignore(timeout); f ic
   let input = ignore_timeout Pervasives.input
   let really_input = ignore_timeout Pervasives.really_input
   let input_char = ignore_timeout Pervasives.input_char
@@ -104,6 +104,7 @@ module Alarm_timeout = struct
 
   let open_connection ?timeout sockaddr =
     let (ic, oc) = Unix.open_connection sockaddr in
+    ignore(timeout);
     ((ic, None), oc)
 
   let shutdown_connection (ic, _) =
@@ -405,7 +406,7 @@ module Select_timeout = struct
           let timeout = get_current_timeout timeout in
           match Unix.select [] [sock] [] timeout with
           | _, [], _ -> raise Timeout
-          | _, [sock], _ -> ()
+          | _, [_sock], _ -> ()
           | _, _, _ -> assert false
         end
       | exn -> Unix.close sock; raise exn in

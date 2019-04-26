@@ -1,0 +1,4 @@
+(library
+  (name stubs)
+  (public_name hack_parallel.stubs)
+  (wrapped false))

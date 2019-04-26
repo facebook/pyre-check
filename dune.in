@@ -230,4 +230,5 @@
 
 (install
  (section bin)
+ (package pyrelib)
  (files (main.exe as pyrelib)))

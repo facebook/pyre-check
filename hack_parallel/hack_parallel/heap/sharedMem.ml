@@ -1027,7 +1027,7 @@ module FreqCache (Key : sig type t end) (Config:ConfigType) :
         l := (key, !freq, v) :: !l
       end cache;
       Hashtbl.clear cache;
-      l := List.sort (fun (_, x, _) (_, y, _) -> y - x) !l;
+      l := List.sort ~cmp:(fun (_, x, _) (_, y, _) -> y - x) !l;
       let i = ref 0 in
       while !i < Config.capacity do
         match !l with
@@ -1129,7 +1129,7 @@ end
 
 let invalidate_callback_list = ref []
 let invalidate_caches () =
-  List.iter !invalidate_callback_list begin fun callback -> callback() end
+  List.iter !invalidate_callback_list ~f:begin fun callback -> callback() end
 
 module LocalCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
 

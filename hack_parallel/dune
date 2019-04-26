@@ -1,0 +1,10 @@
+(library
+  (name hack_parallel)
+  (wrapped false)
+  (public_name hack_parallel)
+  (library_flags (-cclib -l -cclib pthread -cclib -l -cclib sqlite3))
+  (libraries
+    hack_parallel.collections
+    hack_parallel.heap
+    hack_parallel.procs
+    hack_parallel.socket))

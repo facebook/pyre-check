@@ -1,0 +1,13 @@
+opam-version: "2.0"
+version: ""
+maintainer: "pyre@fb.com"
+authors: ["Pyre team"]
+homepage: "https://github.com/facebook/pyre-check"
+bug-reports: "https://github.com/facebook/pyre-check/issues"
+dev-repo: "https://github.com/facebook/pyre-check.git"
+license: "MIT"
+build: ["dune" "build" "-p" name]
+depends: [
+  "core"
+  "str"
+]

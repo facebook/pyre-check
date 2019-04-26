@@ -102,7 +102,7 @@ type record = record_data ref
 let create () = ref SMap.empty
 
 let global: (record list) ref = ref [create ()]
-let push_global record =
+let push_global _record =
   global := (create ()) :: (!global)
 let pop_global () =
   match !global with
@@ -216,7 +216,7 @@ let merge_entries name from into = match (from, into) with
                                  "Merging buckets for %s failed: bucket sizes %f, %f"
                                  name from into
         | Some { bucket_size; buckets = from; }, Some { buckets = into; _; } ->
-            let buckets = FloatMap.merge (fun bucket from_count into_count ->
+            let buckets = FloatMap.merge (fun _bucket from_count into_count ->
                 match (from_count, into_count) with
                 | None, into -> into
                 | from, None -> from
@@ -226,8 +226,11 @@ let merge_entries name from into = match (from, into) with
       Some { count; mean; variance_sum; max; min; distribution; }
 
 (* Merges all the samples from "from" into "record". If "record" is omitted
- * then it uses the global record *)
-let merge ?record ~from =
+ * then it uses the global record
+ * The additional unit argument is to help the typechecker know if ?record
+ * is to be expected or not (see warning 16)
+ *)
+let merge ?record ~from _ =
   let into = get_record record in
   into := SMap.merge merge_entries (!from) (!into)
 

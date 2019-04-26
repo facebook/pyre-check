@@ -154,7 +154,7 @@ let slave_main ic oc =
     if len > 10 * 1024 * 1024 (* 10 MB *) then begin
       Hh_logger.log "WARNING: you are sending quite a lot of data (%d bytes), \
                      which may have an adverse performance impact. If you are sending \
-                     closures, double-check to ensure that they have not captured large
+                     closures, double-check to ensure that they have not captured large \
         values in their environment." len;
       Printf.eprintf "%s" (Printexc.raw_backtrace_to_string
                              (Printexc.get_callstack 100));
@@ -271,7 +271,7 @@ let make_one ?call_wrapper spawn id =
 (** Make a few workers. When workload is given to a worker (via "call" below),
  * the workload is wrapped in the calL_wrapper. *)
 let make ?call_wrapper ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
-  let spawn log_fd =
+  let spawn _log_fd =
     Unix.clear_close_on_exec heap_handle.SharedMem.h_fd;
     let handle =
       Daemon.spawn
@@ -306,7 +306,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
     | 0, _ | _, Unix.WEXITED 0 ->
         let res : b * Measure.record_data = Daemon.input_value inc in
         if w.prespawned = None then Daemon.close h;
-        Measure.merge (Measure.deserialize (snd res));
+        Measure.merge ~from:(Measure.deserialize (snd res)) ();
         fst res
     | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
         raise SharedMem.Out_of_shared_memory
