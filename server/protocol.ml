@@ -123,8 +123,16 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
+  type compatibility = {
+    actual: Type.t;
+    expected: Type.t;
+    result: bool;
+  }
+  [@@deriving eq, show]
+
   type base_response =
     | Boolean of bool
+    | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | FoundAttributes of attribute list
@@ -143,6 +151,12 @@ module TypeQuery = struct
   let base_response_to_yojson = function
     | Boolean boolean ->
         `Assoc ["boolean", `Bool boolean]
+    | Compatibility { actual; expected; result } ->
+        `Assoc [
+          "actual", Type.to_yojson actual;
+          "expected", Type.to_yojson expected;
+          "boolean", `Bool result;
+        ]
     | CoverageAtLocations annotations ->
         `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
     | Decoded { decoded; undecodable_keys } ->

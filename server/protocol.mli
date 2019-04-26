@@ -115,6 +115,13 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
+  type compatibility = {
+    actual: Type.t;
+    expected: Type.t;
+    result: bool;
+  }
+  [@@derving eq, show]
+
   type key_mapping = {
     hash: string;
     key: string;
@@ -123,6 +130,7 @@ module TypeQuery: sig
 
   type base_response =
     | Boolean of bool
+    | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
     | FoundAttributes of attribute list

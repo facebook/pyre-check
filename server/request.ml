@@ -899,7 +899,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | unwrapped -> unwrapped
         in
         Resolution.is_compatible_with resolution ~left ~right
-        |> (fun response -> TypeQuery.Response (TypeQuery.Boolean response))
+        |> (fun result ->
+            TypeQuery.Response
+              (TypeQuery.Compatibility { actual = left; expected = right; result })
+          )
 
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in

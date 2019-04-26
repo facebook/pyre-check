@@ -493,49 +493,69 @@ let test_query context =
        )
     );
 
-  assert_type_query_response
+  let assert_compatibility_response ~source ~query ~actual ~expected result =
+    assert_type_query_response
+      ~source
+      ~query
+      (Protocol.TypeQuery.Response
+         (Protocol.TypeQuery.Compatibility { actual; expected; result })
+      );
+  in
+  assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, str)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+    ~actual:Type.integer
+    ~expected:Type.string
+    false;
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:
       {|
         A = int
       |}
     ~query:"is_compatible_with(int, A)"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    ~actual:Type.integer
+    ~expected:Type.integer
+    true;
 
   assert_type_query_response
     ~source:""
     ~query:"is_compatible_with(int, Unknown)"
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, int])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    ~actual:Type.integer
+    ~expected:Type.integer
+    true;
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, str])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
+    ~actual:Type.integer
+    ~expected:Type.string
+    false;
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:"A = int"
     ~query:"is_compatible_with(A, typing.Coroutine[typing.Any, typing.Any, A])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    ~actual:Type.integer
+    ~expected:Type.integer
+    true;
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:
       {|
          class A: ...
          class B(A): ...
       |}
     ~query:"is_compatible_with(B, typing.Coroutine[typing.Any, typing.Any, A])"
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    ~actual:(Type.Primitive "B")
+    ~expected:(Type.Primitive "A")
+    true;
 
-  assert_type_query_response
+  assert_compatibility_response
     ~source:
       {|
          class A: ...
@@ -544,7 +564,9 @@ let test_query context =
     ~query:
       ("is_compatible_with(typing.Type[B]," ^
        "typing.Coroutine[typing.Any, typing.Any, typing.Type[A]])")
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
+    ~actual:(Type.meta (Type.Primitive "B"))
+    ~expected:(Type.meta (Type.Primitive "A"))
+    true;
 
   assert_type_query_response
     ~source:""
