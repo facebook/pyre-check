@@ -257,13 +257,12 @@ let request_handler_thread
         Mutex.critical_section
           lock
           ~f:(fun () ->
-              let { persistent_clients; file_notifiers; _ } = !connections in
+              let { persistent_clients; _ } = !connections in
               Socket.write socket (ClientConnectionResponse client);
               match client with
               | Persistent ->
                   Hashtbl.set persistent_clients ~key:socket ~data:0
-              | FileNotifier ->
-                  Hashtbl.set file_notifiers ~key:socket ~data:OCaml
+              | _ -> ()
             )
     | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
@@ -289,23 +288,15 @@ let request_handler_thread
   let handle_readable_file_notifier socket =
     try
       Log.log ~section:`Server "A file notifier is readable.";
-      let { file_notifiers; _ } = Mutex.critical_section lock ~f:(fun () -> !connections) in
-      match Hashtbl.find file_notifiers socket with
-      | Some OCaml ->
-          let request = Socket.read socket in
-          queue_request ~origin:Protocol.Request.FileNotifier request
-      | Some JSON -> (
-          socket
-          |> Unix.in_channel_of_descr
-          |> LanguageServer.Protocol.read_message
-          >>| Yojson.Safe.to_string
-          >>| (fun request ->
-              Protocol.Request.LanguageServerProtocolRequest request)
-          |> function
-          | Some request -> queue_request ~origin:Protocol.Request.FileNotifier request
-          | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."
-        )
-      | None -> Log.error "The encoding of the file notifier is unknown."
+      socket
+      |> Unix.in_channel_of_descr
+      |> LanguageServer.Protocol.read_message
+      >>| Yojson.Safe.to_string
+      >>| (fun request ->
+          Protocol.Request.LanguageServerProtocolRequest request)
+      |> function
+      | Some request -> queue_request ~origin:Protocol.Request.FileNotifier request
+      | None -> Log.log ~section:`Server "Failed to parse LSP message from JSON socket."
     with
     | End_of_file
     | Yojson.Json_error _
@@ -315,7 +306,7 @@ let request_handler_thread
           ~f:(fun () ->
               let { file_notifiers; _ } = !connections in
               let file_notifiers =
-                Hashtbl.filter_keys
+                List.filter
                   ~f:(fun file_notifier_socket ->
                       if socket = file_notifier_socket then
                         begin
@@ -348,7 +339,7 @@ let request_handler_thread
           server_socket
           :: json_socket
           :: (Hashtbl.keys persistent_clients)
-          @ (Hashtbl.keys file_notifiers)
+          @ file_notifiers
         )
         ~write:[]
         ~except:[]
@@ -398,7 +389,11 @@ let request_handler_thread
           |> (function
               | Some (Ok _) ->
                   Mutex.critical_section lock
-                    ~f:(fun () -> Hashtbl.set file_notifiers ~key:new_socket ~data:JSON)
+                    ~f:(fun () -> let { file_notifiers; _ } = !connections in
+                         connections := {
+                           !connections with file_notifiers = new_socket :: file_notifiers
+                         }
+                       )
               | Some (Error error) ->
                   Log.warning "Failed to parse handshake: %s" error
               | None -> Log.warning "Failed to parse handshake as LSP."
@@ -443,7 +438,7 @@ let serve
          socket;
          json_socket;
          persistent_clients = Unix.File_descr.Table.create ();
-         file_notifiers = Unix.File_descr.Table.create ();
+         file_notifiers = [];
        }
      in
 

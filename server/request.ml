@@ -1693,7 +1693,7 @@ let rec process
               lock
               ~f:(fun () ->
                   let { file_notifiers; _ } = !connections in
-                  Hashtbl.is_empty file_notifiers)
+                  List.is_empty file_notifiers)
           in
           if check_on_save then
             process_type_check_request

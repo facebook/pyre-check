@@ -9,15 +9,11 @@ open Network
 
 module Error = Analysis.Error
 
-type socket_encoding =
-  | OCaml
-  | JSON
-
 type connections = {
   socket: Socket.t;
   json_socket: Socket.t;
   persistent_clients: int Socket.Table.t;
-  file_notifiers: socket_encoding Socket.Table.t;
+  file_notifiers: Socket.t list;
 }
 
 type lookups_cache_entry = {
