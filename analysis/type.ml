@@ -1429,7 +1429,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
             |  (Access.Identifier get_item)
                :: (Access.Call { Node.value = [{ Argument.value = argument; _ }]; _ })
                :: _
-              when String.equal (Identifier.show get_item) "__getitem__" ->
+              when String.equal get_item "__getitem__" ->
                 begin
                   let parameters =
                     match Node.value argument with

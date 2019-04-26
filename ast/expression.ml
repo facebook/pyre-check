@@ -1133,7 +1133,7 @@ module PrettyPrinter = struct
         Format.fprintf
           formatter
           "%s = %a"
-          (Node.value name |> Identifier.show)
+          (Node.value name)
           pp_expression_t value
     | None ->
         Format.fprintf formatter "%a" pp_expression_t value

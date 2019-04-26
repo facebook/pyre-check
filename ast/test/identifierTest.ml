@@ -14,7 +14,6 @@ let test_remove_leading_underscores _ =
     let removed =
       identifier
       |> Identifier.remove_leading_underscores
-      |> Identifier.show
     in
     assert_equal ~printer:ident removed expected
   in

@@ -1069,7 +1069,7 @@ from:
 from_string:
   | { "" }
   | identifier = identifier; from_string = from_string {
-      (Identifier.show (snd identifier)) ^ from_string
+      (snd identifier) ^ from_string
     }
   | relative = nonempty_list(ellipsis_or_dot);
     from_string = from_string {

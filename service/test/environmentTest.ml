@@ -168,7 +168,7 @@ let test_normalize_dependencies _ =
   DependencyHandler.add_alias_key ~handle "B_Alias";
   DependencyHandler.normalize [handle];
   assert_equal
-    ~printer:(List.to_string ~f:Identifier.show)
+    ~printer:(List.to_string ~f:ident)
     (DependencyHandler.get_alias_keys ~handle)
     ["A_Alias"; "B_Alias"; "C_Alias"]
 

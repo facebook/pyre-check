@@ -6,7 +6,7 @@
 open Core
 
 type t = string
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, eq, sexp, hash]
 
 module Map : Map.S with type Key.t = t
 module SerializableMap: SerializableMap.S with type key = t

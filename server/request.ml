@@ -694,7 +694,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                         actual_key = File.Handle.show key;
                         actual_value =
                           value
-                          >>| List.to_string ~f:Identifier.show;
+                          >>| List.to_string ~f:ident;
                       }
                   | Ok (DependentKeys.Decoded (key, value)) ->
                       Some {
