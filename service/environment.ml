@@ -54,14 +54,11 @@ let populate
       ~bottom:Type.Bottom
       ~top:Type.object_primitive
       all_annotations;
-    Type.Cache.disable ();
-    (* TODO(T30713406): Merge with class registration. *)
-    List.iter  all_annotations
+    List.iter all_annotations
       ~f:(fun annotation ->
           match Type.primitive_name annotation with
           | Some name -> Handler.register_class_metadata name
           | _ -> ());
-    Type.Cache.enable ();
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
   Handler.transaction ~f:populate ();
