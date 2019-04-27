@@ -1551,6 +1551,32 @@ let test_is_compatible_with _ =
   let list_of_integer = Type.list Type.integer in
   let list_of_float = Type.list Type.float in
   let list_of_string = Type.list Type.string in
+  let list_of_top = Type.list Type.Top in
+  let list_of_any = Type.list Type.Any in
+
+  (* Any *)
+  assert_is_compatible list_of_integer Type.Any;
+  assert_is_compatible Type.Any list_of_integer;
+  assert_is_compatible Type.none Type.Any;
+  assert_is_compatible Type.Any Type.none;
+  assert_is_compatible (Type.Primitive "A") Type.Any;
+  assert_is_compatible Type.Any (Type.Primitive "A");
+  assert_is_compatible Type.Top Type.Any;
+  assert_is_compatible Type.Any Type.Top;
+  assert_is_compatible list_of_integer list_of_any;
+  assert_is_compatible list_of_any list_of_integer;
+  assert_is_compatible Type.Any Type.Any;
+
+  (* Top *)
+  assert_is_compatible list_of_integer Type.Top;
+  assert_not_compatible Type.Top list_of_integer;
+  assert_is_compatible Type.none Type.Top;
+  assert_not_compatible Type.Top Type.none;
+  assert_is_compatible (Type.Primitive "A") Type.Top;
+  assert_not_compatible Type.Top (Type.Primitive "A");
+  assert_is_compatible list_of_integer list_of_top;
+  assert_not_compatible list_of_top list_of_integer;
+  assert_is_compatible Type.Top Type.Top;
 
   (* Basic *)
   assert_is_compatible list_of_integer list_of_integer;
@@ -1559,6 +1585,10 @@ let test_is_compatible_with _ =
   assert_not_compatible list_of_integer list_of_string;
 
   (* Optional *)
+  assert_is_compatible Type.none (Type.optional Type.Any);
+  assert_is_compatible (Type.optional Type.Any) Type.none;
+  assert_is_compatible Type.none (Type.optional Type.Top);
+  assert_not_compatible (Type.optional Type.Top) Type.none;
   assert_is_compatible list_of_integer (Type.optional list_of_integer);
   assert_is_compatible
     (Type.optional list_of_integer) (Type.optional list_of_integer);
@@ -1656,6 +1686,18 @@ let test_is_compatible_with _ =
   assert_not_compatible
     list_of_string
     (Type.dictionary ~key:list_of_string ~value:list_of_integer);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
+    (Type.dictionary ~key:list_of_any ~value:list_of_any);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_any ~value:list_of_any)
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
+  assert_is_compatible
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
+    (Type.dictionary ~key:list_of_top ~value:list_of_top);
+  assert_not_compatible
+    (Type.dictionary ~key:list_of_top ~value:list_of_top)
+    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
 
   ()
 

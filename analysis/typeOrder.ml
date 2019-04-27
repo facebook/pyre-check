@@ -2200,6 +2200,17 @@ include IncludableImplementation
 let rec is_compatible_with order ~left ~right =
   match left, right with
 
+  (* Any *)
+  | _, Type.Any
+  | Type.Any, _ ->
+      true
+
+  (* Top *)
+  | _, Type.Top ->
+      true
+  | Type.Top, _ ->
+      false
+
   (* Optional *)
   | Type.Optional left, Type.Optional right ->
       is_compatible_with order ~left ~right
