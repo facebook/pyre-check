@@ -14,11 +14,11 @@ from typing import Dict, List, Optional, Union
 from . import (
     BINARY_NAME,
     CONFIGURATION_FILE,
-    EnvironmentException,
     assert_readable_directory,
     find_typeshed,
     number_of_workers,
 )
+from .exceptions import EnvironmentException
 
 
 LOG = logging.getLogger(__name__)

@@ -7,14 +7,16 @@ import hashlib  # noqa
 import os
 import sys
 import unittest
+from typing import Any, cast
 from unittest.mock import MagicMock, call, patch
 
-from .. import CONFIGURATION_FILE, EnvironmentException, number_of_workers
+from .. import CONFIGURATION_FILE, number_of_workers
 from ..configuration import (  # noqa
     Configuration,
     InvalidConfiguration,
     SearchPathElement,
 )
+from ..exceptions import EnvironmentException
 
 
 class ConfigurationTest(unittest.TestCase):
@@ -422,7 +424,7 @@ class ConfigurationTest(unittest.TestCase):
         # differently because its 'import typeshed' will
         # succeed. Hence, poison the module cache as described here:
         # https://docs.python.org/3.6/reference/import.html#the-module-cache
-        sys.modules["typeshed"] = None
+        sys.modules["typeshed"] = cast(Any, None)
 
         with patch.object(Configuration, "_read"):
             # __init__.py is in the parent directory.

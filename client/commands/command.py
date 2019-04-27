@@ -17,8 +17,9 @@ import threading
 from abc import abstractmethod
 from typing import Iterable, List, Optional, Set  # noqa
 
-from .. import EnvironmentException, log
+from .. import log
 from ..configuration import Configuration
+from ..exceptions import EnvironmentException
 from ..filesystem import AnalysisDirectory, make_pyre_directory, remove_if_exists
 
 

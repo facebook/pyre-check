@@ -15,7 +15,6 @@ import traceback
 from typing import Type  # noqa
 
 from . import (
-    EnvironmentException,
     assert_writable_directory,
     buck,
     commands,
@@ -30,6 +29,7 @@ from . import (
 )
 from .commands import Command, ExitCode  # noqa
 from .configuration import Configuration
+from .exceptions import EnvironmentException
 from .filesystem import AnalysisDirectory
 from .version import __version__
 

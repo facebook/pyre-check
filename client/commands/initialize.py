@@ -10,7 +10,8 @@ import shutil
 import subprocess
 from typing import Any, Dict
 
-from .. import BINARY_NAME, CONFIGURATION_FILE, EnvironmentException, find_typeshed, log
+from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
+from ..exceptions import EnvironmentException
 from .command import Command
 
 

@@ -10,8 +10,9 @@ import subprocess
 import sys
 import time
 
-from . import FAILURE, SUCCESS, EnvironmentException, log, switch_root
+from . import FAILURE, SUCCESS, log, switch_root
 from .configuration import Configuration
+from .exceptions import EnvironmentException
 
 
 LOG = logging.getLogger(__name__)
