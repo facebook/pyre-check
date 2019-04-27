@@ -148,7 +148,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
   let transaction ~f () =
     Ast.SharedMemory.Modules.begin_transaction ();
 
-    ProtocolKeys.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     ClassKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
@@ -169,7 +168,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
 
     Ast.SharedMemory.Modules.end_transaction ();
 
-    ProtocolKeys.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     ClassKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
@@ -186,7 +184,6 @@ module SharedHandler: Analysis.Environment.Handler = struct
     OrderKeys.LocalChanges.commit_all ();
     OrderIndices.LocalChanges.commit_all ();
 
-    ProtocolKeys.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     ClassKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();

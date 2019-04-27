@@ -61,22 +61,10 @@ module ClassKeyValue = struct
   let description = "Class keys"
 end
 
-module ProtocolValue = struct
-  type t = Identifier.Set.Tree.t
-  let prefix = Prefix.make ()
-  let description = "Protocols"
-end
-
 module DependentKeyValue = struct
   type t = Reference.t list
   let prefix = Prefix.make ()
   let description = "Dependent keys"
-end
-
-module ProtocolKeyValue = struct
-  type t = Identifier.t list
-  let prefix = Prefix.make ()
-  let description = "Protocol keys"
 end
 
 module ClassValue = struct
@@ -184,8 +172,6 @@ module GlobalKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (GlobalKeyValu
 module AliasKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (AliasKeyValue)
 
 module DependentKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (DependentKeyValue)
-
-module ProtocolKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (ProtocolKeyValue)
 
 (** Type order maps *)
 module OrderIndices = Memory.WithCache (TypeKey) (OrderIndexValue)
