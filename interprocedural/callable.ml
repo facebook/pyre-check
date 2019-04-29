@@ -142,6 +142,15 @@ let class_matches search { Node.value = { Class.name; _ } ; _ } =
 
 
 let get_definition ~resolution = function
+  | `Function name when String.is_suffix name ~suffix:".$toplevel" ->
+      String.drop_suffix name 10
+      |> Reference.create
+      |> SharedMemory.Sources.get_for_qualifier
+      >>| (fun { Source.handle; qualifier; statements; _ } ->
+          Define.create_toplevel
+            ~qualifier:(Some qualifier)
+            ~statements:(List.map statements ~f:Statement.convert)
+          |> Node.create ~location:(Location.Reference.create_with_handle ~handle))
   | `Function name ->
       (Reference.create name)
       |> Resolution.function_definitions resolution

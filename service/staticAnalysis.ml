@@ -28,7 +28,7 @@ let record_overrides overrides =
 
 
 let callables ~resolution ~source =
-  let defines = Preprocessing.defines ~include_stubs:true source in
+  let defines = Preprocessing.defines ~include_stubs:true ~extract_into_toplevel:true source in
   let record_toplevel_definition definition =
     let name = definition.Node.value.Define.signature.name in
     match definition.Node.value.Define.signature.parent with
