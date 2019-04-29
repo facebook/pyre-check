@@ -149,10 +149,8 @@ if [[ ${opam_version:0:1} == "2" ]] ; then
     && opam update \
     && ocaml_succeeded=1
 else
-  opam init --yes --compiler "$COMPILER" --root "$OPAM_ROOT" default "$OPAM_REPOSITORY" \
-    && eval "$(opam config --root "$OPAM_ROOT" env)" \
-    && opam update \
-    && ocaml_succeeded=1
+    echo "Pyre only supports opam 2.0.0 and above, please update your opam version."
+    exit 1
 fi
 test "$ocaml_succeeded" = 1 \
   || die 'Unable to setup OCaml environment'
