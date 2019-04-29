@@ -894,29 +894,55 @@ module State = struct
               | Annotated.Signature.Found
                   ({ kind = Type.Callable.Named (access); implementation; _ } as callable), _
                 when String.equal "__init__" (Reference.last access) ->
-                  let open Annotated in
                   let definition =
                     Resolution.class_definition
                       resolution
                       implementation.annotation
-                    >>| Class.create
                   in
-                  let abstract_methods =
-                    definition
-                    >>| Class.abstract_methods ~resolution
-                    |> Option.value ~default:[]
+                  let gather_abstract_methods sofar { Node.value = class_definition; _ } =
+                    let abstract_methods, base_methods =
+                      class_definition
+                      |> Statement.Class.defines
+                      |> List.partition_tf ~f:Statement.Define.is_abstract_method
+                    in
+                    let sofar =
+                      if Statement.Class.is_abstract class_definition then
+                        abstract_methods
+                        |> List.map ~f:Statement.Define.unqualified_name
+                        |> List.fold ~init:sofar ~f:Set.add
+                      else
+                        sofar
+                    in
+                    base_methods
+                    |> List.map ~f:Statement.Define.unqualified_name
+                    |> List.fold ~init:sofar ~f:Set.remove
                   in
-                  if List.is_empty abstract_methods then
-                    signature
-                  else
-                    Signature.NotFound {
-                      callable;
-                      reason = Some (UninitializableClass {
-                          method_names = List.map abstract_methods ~f:Class.Method.name;
-                          class_name =
-                            definition >>| Class.name |> Option.value ~default:(Reference.create "")
-                        })
-                    }
+                  definition
+                  >>| begin fun definition ->
+                    let abstract_methods =
+                      definition
+                      |> Annotated.Class.create
+                      |> Annotated.Class.successors ~resolution
+                      |> List.filter_map ~f:(fun name ->
+                          Resolution.class_definition resolution (Type.Primitive name))
+                      |> (List.cons definition)
+                      |> List.rev
+                      |> List.fold ~init:String.Set.empty ~f:gather_abstract_methods
+                    in
+                    if Set.is_empty abstract_methods then
+                      signature
+                    else
+                      Annotated.Signature.NotFound {
+                        callable;
+                        reason = Some (UninitializableClass {
+                            method_names = Set.to_list abstract_methods;
+                            class_name =
+                              definition
+                              |> (fun { Node.value = { name; _ }; _ } -> name)
+                          })
+                      }
+                  end
+                  |> Option.value ~default: signature
               | _ ->
                   signature
             in

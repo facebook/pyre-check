@@ -470,9 +470,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [ "Undefined attribute [16]: Module `abc` has no attribute `abstractmethod`.";
-      "Uninitializable class [38]: Abstract method(s) `bar` in class `Foo` are never initialized."
-    ];
+    ["Uninitializable class [38]: Abstract method(s) `bar` in class `Foo` are never initialized."];
 
   assert_type_errors
     {|
@@ -484,7 +482,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [ "Undefined attribute [16]: Module `abc` has no attribute `abstractmethod`.";];
+    [];
 
   assert_type_errors
     {|
@@ -496,6 +494,74 @@ let test_check_constructors _ =
         Foo()
       |}
     [];
+
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class A(metaclass=ABCMeta):
+        @abstractmethod
+        def f(self) -> None:
+            pass
+      class B(A):
+         pass
+      def foo() -> None:
+         B()
+   |}
+    [
+      "Uninitializable class [38]: Abstract method(s) `f` in class `B` are never initialized."
+    ];
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class A(metaclass=ABCMeta):
+          @abstractmethod
+          def h(self) -> None:
+              pass
+          @abstractmethod
+          def g(self) -> None:
+              pass
+      class B(A, metaclass=ABCMeta):
+          def g(self) -> None:
+              pass
+          @abstractmethod
+          def f(self) -> None:
+              pass
+      class C(B):
+          pass
+      def foo() -> None:
+        B()
+        C()
+    |}
+    [
+      "Uninitializable class [38]: Abstract method(s) `f, h` in class `B` are never initialized.";
+      "Uninitializable class [38]: Abstract method(s) `f, h` in class `C` are never initialized."
+    ];
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class A(metaclass=ABCMeta):
+          @abstractmethod
+          def h(self) -> None:
+              pass
+          @abstractmethod
+          def g(self) -> None:
+              pass
+      class B(A):
+          def g(self) -> None:
+              pass
+          @abstractmethod
+          def f(self) -> None:
+              pass
+      class C(B):
+          pass
+      def foo() -> None:
+        B()
+        C()
+    |}
+    [
+      "Uninitializable class [38]: Abstract method(s) `h` in class `B` are never initialized.";
+      "Uninitializable class [38]: Abstract method(s) `h` in class `C` are never initialized."
+    ];
 
   (* Explicit call. *)
   assert_type_errors

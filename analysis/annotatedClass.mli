@@ -78,8 +78,6 @@ val immediate_superclasses
 
 
 val methods: t -> Method.t list
-val abstract_methods: t -> resolution: Resolution.t -> Method.t list
-
 val is_protocol: t -> bool
 
 

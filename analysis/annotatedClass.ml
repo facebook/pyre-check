@@ -339,25 +339,6 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   List.filter_map ~f:extract_define body
 
 
-let abstract_methods definition ~resolution =
-  let has_metaclass definition ~base ~resolution =
-    let meta = metaclass definition ~resolution in
-    match meta with
-    | Type.Primitive name ->
-        Identifier.equal_sanitized name base
-    | _ -> false
-  in
-  let is_abstract_method method_ =
-    let define = Method.define method_ in
-    Statement.Define.is_abstract_method define
-  in
-  if has_metaclass definition ~resolution ~base:"abc.ABCMeta"
-  then
-    methods definition |> List.filter ~f:is_abstract_method
-  else
-    []
-
-
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
   let is_protocol { Call.Argument.name; value = { Node.value; _ } } =
     match name, value with

@@ -284,6 +284,8 @@ module Class : sig
   val is_unit_test: t -> bool
 
   val is_final: t -> bool
+
+  val is_abstract: t -> bool
 end
 
 module For : sig

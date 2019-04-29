@@ -828,6 +828,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def cast(tp: str, obj: Any) -> Any: ...
       |}
     |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "abc")
+      ~handle:"abc.pyi"
+      {|
+        _T = TypeVar('_T')
+        class ABCMeta(type):
+          def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
+        def abstractmethod(callable: _FuncT) -> _FuncT: ...
+      |}
+    |> Preprocessing.preprocess;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
     parse
       ~qualifier:Reference.empty

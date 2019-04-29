@@ -1163,6 +1163,14 @@ module Class = struct
   let is_final definition =
     has_decorator definition "typing.final"
 
+  let is_abstract { bases; _ } =
+    let abstract_metaclass { Expression.Call.Argument.value; _ } =
+      match value with
+      | { Node.value = Expression.Access (SimpleAccess identifiers); _ } ->
+          String.equal "abc.ABCMeta" (Expression.Access.show identifiers)
+      | _ -> false
+    in
+    List.exists bases ~f:abstract_metaclass
 
 end
 
@@ -1586,7 +1594,7 @@ module PrettyPrinter = struct
       pp_decorators decorators
       Reference.pp name
       Expression.pp_expression_argument_list
-        (List.map ~f:(fun { name; value } -> { Argument.name; value }) bases)
+      (List.map ~f:(fun { name; value } -> { Argument.name; value }) bases)
       pp_statement_list body
 
 
