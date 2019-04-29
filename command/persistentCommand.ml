@@ -93,6 +93,8 @@ let communicate server_socket =
         Unix.close server_socket;
         raise (ClientExit ("Unix error while processing sockets", 0))
     end;
+    if List.is_empty read then
+      Unix.nanosleep 0.1 |> ignore;
     listen server_socket ()
   in
   listen server_socket ()

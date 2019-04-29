@@ -410,6 +410,9 @@ let request_handler_thread
         handle_readable_file_notifier socket
     in
     List.iter ~f:handle_socket readable;
+    (* We need to introduce this nanosleep to avoid burning CPU. *)
+    if List.is_empty readable then
+      Unix.nanosleep 0.1 |> ignore;
     loop ()
   in
   try
