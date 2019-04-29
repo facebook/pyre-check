@@ -731,18 +731,19 @@ let save_results ~configuration ~analyses all_callables =
   match configuration.Configuration.StaticAnalysis.result_json_path with
   | None -> ()
   | Some directory ->
+      let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
+      let root =
+        configuration.Configuration.StaticAnalysis.configuration.local_root
+        |> Path.absolute
+      in
       let save_models (Result.Analysis { Result.analysis; kind }) =
         let kind = Result.Kind.abstract kind in
         let module Analysis = (val analysis) in
-        let filename = Format.sprintf "%s-output.json" Analysis.name in
+        let filename = models_path Analysis.name in
         let output_path = Path.append directory ~element:filename in
         let out_channel = open_out (Path.absolute output_path) in
         let out_buffer = Bi_outbuf.create_channel_writer out_channel in
         let array_emitter = emit_json_array_elements out_buffer in
-        let root =
-          configuration.Configuration.StaticAnalysis.configuration.local_root
-          |> Path.absolute
-        in
         let config =
           `Assoc [
             "repo", `String root;
@@ -767,7 +768,16 @@ let save_results ~configuration ~analyses all_callables =
         let output_path = Path.append directory ~element:filename in
         let out_channel = open_out (Path.absolute output_path) in
         let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-        Analysis.metadata ()
+        let filename_spec = models_path Analysis.name in
+        let toplevel_metadata =
+          `Assoc [
+            "filename_spec", `String filename_spec;
+            "root", `String root;
+            "version", `String (Version.version ());
+          ]
+        in
+        let analysis_metadata = Analysis.metadata () in
+        Json.Util.combine toplevel_metadata analysis_metadata
         |> Json.to_outbuf out_buffer;
         Bi_outbuf.flush_output_writer out_buffer;
         close_out out_channel

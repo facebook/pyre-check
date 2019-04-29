@@ -23,4 +23,5 @@
   pyrelib.recognized
   pyrelib.scheduler
   pyrelib.statistics
+  pyrelib.version
   pyrelib.file))
