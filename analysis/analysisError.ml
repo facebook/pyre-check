@@ -87,6 +87,11 @@ type illegal_action_on_incomplete_type =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type override_kind =
+  | Method
+  | Attribute
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -111,6 +116,7 @@ type kind =
       overridden_method: Identifier.t;
       parent: Reference.t;
       override: override;
+      override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
@@ -550,7 +556,17 @@ let messages ~concise ~signature location kind =
           (if due_to_invariance then " " ^ invariance_message else "")
       in
       [message; trace]
-  | InconsistentOverride { parent; override; _ } ->
+  | InconsistentOverride { parent; override; override_kind; overridden_method; } ->
+      let kind =
+        match override_kind with
+        | Method -> "method"
+        | Attribute -> "attribute"
+      in
+      let define_name =
+        match override_kind with
+        | Method -> define_name
+        | Attribute -> Reference.create overridden_method
+      in
       let detail =
         match override with
         | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
@@ -560,6 +576,11 @@ let messages ~concise ~signature location kind =
                 pp_type expected
             else if due_to_invariance then
               invariance_message
+            else if override_kind = Attribute then
+              Format.asprintf
+                "Type `%a` is not a subtype of the overridden attribute `%a`."
+                pp_type actual
+                pp_type expected
             else
               Format.asprintf
                 "Returned type `%a` is not a subtype of the overridden return `%a`."
@@ -581,8 +602,9 @@ let messages ~concise ~signature location kind =
       in
       [
         Format.asprintf
-          "`%a` overrides method defined in `%a` inconsistently.%s"
+          "`%a` overrides %s defined in `%a` inconsistently.%s"
           pp_reference define_name
+          kind
           pp_reference parent
           (if concise then "" else " " ^ detail)]
   | InvalidArgument argument when concise ->

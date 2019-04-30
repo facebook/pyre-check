@@ -410,7 +410,24 @@ let test_check_init _ =
       class B(A):
           pass
     |}
-    ["Invalid inheritance [39]: Cannot inherit from final class `A`."]
+    ["Invalid inheritance [39]: Cannot inherit from final class `A`."];
+  assert_type_errors
+    {|
+      class A:
+        foo:int = 3
+      class B(A):
+        foo = "string"
+    |}
+    ["Inconsistent override [15]: `foo` overrides attribute defined in `A` inconsistently. " ^
+     "Type `str` is not a subtype of the overridden attribute `int`."];
+  assert_type_errors
+    {|
+      class A:
+        foo:int = 3
+      class B(A):
+        foo = 100
+    |}
+    []
 
 
 let test_check_constructors _ =

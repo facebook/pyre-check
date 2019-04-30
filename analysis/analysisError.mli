@@ -73,6 +73,10 @@ type illegal_action_on_incomplete_type =
   | AttributeAccess of Identifier.t
 [@@deriving compare, eq, sexp, show, hash]
 
+type override_kind =
+  | Method
+  | Attribute
+[@@deriving compare, eq, sexp, show, hash]
 
 type kind =
   | AnalysisFailure of Type.t
@@ -98,6 +102,7 @@ type kind =
       overridden_method: Identifier.t;
       parent: Reference.t;
       override: override;
+      override_kind: override_kind;
     }
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }

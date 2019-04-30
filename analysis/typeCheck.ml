@@ -480,6 +480,7 @@ module State = struct
          >>| fun definition ->
          let propagate_initialization_errors errors attribute =
            let expected = Annotation.annotation (Attribute.annotation attribute) in
+           let location = Attribute.location attribute in
            match Attribute.name attribute with
            | name
              when not (Type.equal expected Type.Top ||
@@ -493,7 +494,7 @@ module State = struct
                else
                  let error =
                    Error.create
-                     ~location:(Attribute.location attribute)
+                     ~location
                      ~kind:(
                        Error.UninitializedAttribute {
                          name;
@@ -508,7 +509,44 @@ module State = struct
                      ~define:define_node
                  in
                  error :: errors
-           | _ -> errors
+           | name ->
+               let actual = expected in
+               let check_override
+                   ({ Node.value = { Attribute.annotation; _ }; _ } as overridden_attribute) =
+                 let expected = Annotation.annotation annotation in
+                 if Resolution.less_or_equal
+                     resolution
+                     ~left:actual
+                     ~right:expected
+                 then
+                   errors
+                 else
+                   let error =
+                     Error.create
+                       ~location
+                       ~kind:(Error.InconsistentOverride {
+                           overridden_method = name;
+                           parent =
+                             Attribute.parent overridden_attribute
+                             |> Type.show
+                             |> Reference.create;
+                           override_kind = Attribute;
+                           override =
+                             Error.WeakenedPostcondition
+                               (Error.create_mismatch
+                                  ~resolution
+                                  ~actual
+                                  ~actual_expression:None
+                                  ~expected
+                                  ~covariant:false)
+                         })
+                       ~define:define_node
+                   in
+                   error :: errors
+               in
+               Class.overrides ~resolution ~name definition
+               >>| check_override
+               |> Option.value ~default:errors;
          in
          Class.attribute_fold
            ~include_generated_attributes:false
@@ -1774,6 +1812,7 @@ module State = struct
                                Attribute.parent overridden_attribute
                                |> Type.show
                                |> Reference.create;
+                             override_kind = Method;
                              override =
                                Error.WeakenedPostcondition
                                  (Error.create_mismatch
@@ -1851,6 +1890,7 @@ module State = struct
                                        Attribute.parent overridden_attribute
                                        |> Type.show
                                        |> Reference.create;
+                                     override_kind = Method;
                                      override =
                                        Error.StrengthenedPrecondition
                                          (Error.Found
@@ -1897,6 +1937,7 @@ module State = struct
                              ~location
                              ~kind:(Error.InconsistentOverride {
                                  overridden_method = Statement.Define.unqualified_name define;
+                                 override_kind = Method;
                                  parent =
                                    Attribute.parent overridden_attribute
                                    |> Type.show

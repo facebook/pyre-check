@@ -502,6 +502,7 @@ let test_due_to_mismatch_with_any _ =
         overridden_method = "foo";
         parent = !&(Type.show mock_parent);
         override = (StrengthenedPrecondition (NotFound "x"));
+        override_kind = Method;
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
@@ -513,6 +514,7 @@ let test_due_to_mismatch_with_any _ =
             expected = Type.integer;
             due_to_invariance = false;
           });
+        override_kind = Method;
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
@@ -524,6 +526,7 @@ let test_due_to_mismatch_with_any _ =
             expected = Type.integer;
             due_to_invariance = false;
           });
+        override_kind = Method;
       });
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride {
@@ -535,6 +538,7 @@ let test_due_to_mismatch_with_any _ =
             expected = Type.integer;
             due_to_invariance = false;
           }));
+        override_kind = Method;
       });
   assert_due_to_mismatch_with_any
     (InconsistentOverride {
@@ -546,6 +550,7 @@ let test_due_to_mismatch_with_any _ =
             expected = Type.Any;
             due_to_invariance = false;
           }));
+        override_kind = Method;
       });
 
   (* InvalidArgument *)
@@ -1124,6 +1129,7 @@ let test_filter _ =
       overridden_method = name;
       parent = !&(Type.show mock_parent);
       override;
+      override_kind = Method;
     }
   in
   (* Suppress parameter errors on override of dunder methods *)
