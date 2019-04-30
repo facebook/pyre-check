@@ -514,10 +514,10 @@ module State = struct
                let check_override
                    ({ Node.value = { Attribute.annotation; _ }; _ } as overridden_attribute) =
                  let expected = Annotation.annotation annotation in
-                 if Resolution.less_or_equal
-                     resolution
-                     ~left:actual
-                     ~right:expected
+                 if (Resolution.less_or_equal
+                       resolution
+                       ~left:actual
+                       ~right:expected) || (Type.equal actual Type.Top)
                  then
                    errors
                  else

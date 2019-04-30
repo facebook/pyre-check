@@ -427,7 +427,18 @@ let test_check_init _ =
       class B(A):
         foo = 100
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import Optional
+      def example() -> int: return 1
+      class A:
+          x:Optional[int] = None
+      class B(A):
+          x = example()
+    |}
+    ["Missing attribute annotation [4]:" ^
+     " Attribute `x` of class `B` has type `int` but no type is specified."]
 
 
 let test_check_constructors _ =
