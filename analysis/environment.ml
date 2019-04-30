@@ -984,17 +984,23 @@ module Builder = struct
        in the stubs. *)
     let add_special_class ~name ~bases ~body =
       let definition =
+        let create_argument annotation =
+          {
+            Expression.Call.Argument.name = None;
+            value = Type.expression annotation;
+          }
+        in
         {
           Class.name = Reference.create name;
-          bases;
+          bases = (List.map bases ~f:create_argument);
           body;
           decorators = [];
           docstring = None;
         }
       in
       let successors =
-        let successor { Expression.Call.Argument.value; _ } =
-          Type.create value ~aliases:(fun _ -> None)
+        let successor annotation =
+          annotation
           |> Type.split
           |> fst
           |> Type.primitive_name
@@ -1027,12 +1033,7 @@ module Builder = struct
         "typing.NoReturn", [], [];
         "typing.Type",
         [
-          {
-            Expression.Call.Argument.name = None;
-            value =
-              Type.parametric "typing.Generic" [Type.variable "typing._T"]
-              |> Type.expression
-          };
+          Type.parametric "typing.Generic" [Type.variable "typing._T"]
         ],
         [];
         "typing.Generic",
@@ -1056,24 +1057,10 @@ module Builder = struct
           |> Node.create_with_default_location
         ];
         "TypedDictionary",
-        [
-          {
-            Expression.Call.Argument.name = None;
-            value =
-              (Type.parametric "typing.Mapping" [Type.string; Type.Any])
-              |> Type.expression
-          };
-        ],
+        [Type.parametric "typing.Mapping" [Type.string; Type.Any]],
         Type.TypedDictionary.defines ~t_self_expression ~total:true;
         "NonTotalTypedDictionary",
-        [
-          {
-            Expression.Call.Argument.name = None;
-            value =
-              (Type.Primitive "TypedDictionary")
-              |> Type.expression
-          };
-        ],
+        [Type.Primitive "TypedDictionary"],
         Type.TypedDictionary.defines ~t_self_expression ~total:false;
       ];
     (* Register hardcoded aliases. *)
