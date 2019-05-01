@@ -19,6 +19,7 @@ type attribute = {
   initialized: bool;
   property: bool;
   final: bool;
+  static: bool;
 }
 [@@deriving eq, show]
 
@@ -70,6 +71,10 @@ let async { Node.value = { async; _ }; _ } =
 
 let final { Node.value = { final; _ }; _ } =
   final
+
+
+let static { Node.value = { static; _}; _ } =
+  static
 
 let instantiate
     ({ Node.value = ({ annotation; _ } as attribute); _ } as attribute_node)

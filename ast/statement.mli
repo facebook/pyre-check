@@ -184,6 +184,7 @@ module Attribute : sig
     primitive: bool;
     toplevel: bool;
     final: bool;
+    static: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 

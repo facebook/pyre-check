@@ -83,6 +83,13 @@ type invalid_inheritance =
   | NonMethodFunction of Identifier.t
 [@@deriving compare, eq, sexp, show, hash]
 
+
+type invalid_override_kind =
+  | Final
+  | StaticSuper
+  | StaticOverride
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -120,7 +127,7 @@ type kind =
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
-  | InvalidOverride of Identifier.t
+  | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation

@@ -17,6 +17,7 @@ type attribute = {
   initialized: bool;
   property: bool;
   final: bool;
+  static: bool;
 }
 [@@deriving eq, show]
 
@@ -34,6 +35,7 @@ val location: t -> Location.t
 val defined: t -> bool
 val class_attribute: t -> bool
 val final: t -> bool
+val static: t -> bool
 
 val instantiate: t -> constraints: (Type.t -> Type.t option) -> t
 

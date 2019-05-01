@@ -209,6 +209,7 @@ module Attribute = struct
     primitive: bool;
     toplevel: bool;
     final: bool;
+    static: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -228,9 +229,22 @@ module Attribute = struct
       ?annotation
       ?defines
       ?(final = false)
+      ?(static = false)
       ~name
       () =
-    { name; annotation; defines; value; async; setter; property; primitive; toplevel; final }
+    {
+      name;
+      annotation;
+      defines;
+      value;
+      async;
+      setter;
+      property;
+      primitive;
+      toplevel;
+      final;
+      static;
+    }
     |> Node.create ~location
 
 
@@ -950,6 +964,7 @@ module Class = struct
                         ~name
                         ~defines:(define :: defines)
                         ~final:(Define.is_final_method define)
+                        ~static:(Define.is_static_method define)
                         ()
                   | _ ->
                       Attribute.create
@@ -957,6 +972,7 @@ module Class = struct
                         ~name
                         ~defines:[define]
                         ~final:(Define.is_final_method define)
+                        ~static:(Define.is_static_method define)
                         ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute)

@@ -1770,7 +1770,6 @@ module State = struct
         try
           if Define.is_constructor define ||
              Define.is_class_method define ||
-             Define.is_static_method define ||
              Define.is_dunder_method define then
             errors
           else
@@ -1786,20 +1785,50 @@ module State = struct
 
              let errors =
                if Attribute.final overridden_attribute then
-                 let parent = overridden_attribute
-                              |> Attribute.parent
-                              |> Type.show
+                 let parent =
+                   overridden_attribute
+                   |> Attribute.parent
+                   |> Type.show
                  in
-                 let error = Error.create
+
+                 let error =
+                   Error.create
                      ~location
-                     ~kind:(Error.InvalidOverride parent)
+                     ~kind:(Error.InvalidOverride ({ parent; decorator = Final }))
                      ~define:define_node
                  in Set.add errors error
                else errors
              in
+
+             let errors =
+               if not (Bool.equal (Attribute.static overridden_attribute)
+                         (Statement.Define.is_static_method define)) then
+                 let parent =
+                   overridden_attribute
+                   |> Attribute.parent
+                   |> Type.show
+                 in
+                 let decorator =
+                   if Attribute.static overridden_attribute then
+                     Error.StaticSuper
+                   else
+                     Error.StaticOverride
+                 in
+                 let error =
+                   Error.create
+                     ~location
+                     ~kind:(Error.InvalidOverride ({ parent; decorator }))
+                     ~define:define_node
+                 in
+                 Set.add errors error
+               else
+                 errors
+             in
+
              (* Check strengthening of postcondition. *)
              match Annotation.annotation (Attribute.annotation overridden_attribute) with
-             | Type.Callable { Type.Callable.implementation; _ } ->
+             | Type.Callable { Type.Callable.implementation; _ }
+               when not (Statement.Define.is_static_method define) ->
                  let original_implementation =
                    Reference.expression ~convert:true name
                    |> Resolution.resolve resolution

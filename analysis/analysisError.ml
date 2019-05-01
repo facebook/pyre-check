@@ -99,6 +99,13 @@ type invalid_inheritance =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type invalid_override_kind =
+  | Final
+  | StaticSuper
+  | StaticOverride
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -136,7 +143,7 @@ type kind =
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
-  | InvalidOverride of Identifier.t
+  | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -728,11 +735,23 @@ let messages ~concise ~signature location kind =
                 pp_identifier decorator_name;
             ]
       end
-  | InvalidOverride method_name ->
-      [ Format.asprintf
-          "`%a` cannot override final method defined in `%a`."
+  | InvalidOverride { parent; decorator } ->
+      let preamble, message =
+        begin
+          match decorator with
+          | Final -> "", "cannot override final method defined in"
+          | StaticSuper -> "Non-static method ", "cannot override a static method defined in"
+          | StaticOverride -> "Static method ","cannot override a non-static method defined in"
+        end
+      in
+      [
+        Format.asprintf
+          "%s`%a` %s `%a`."
+          preamble
           pp_reference define_name
-          pp_identifier method_name]
+          message
+          pp_identifier parent
+      ]
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
@@ -1686,8 +1705,17 @@ let less_or_equal ~resolution left right =
           | _, _ ->
               false
         end
-    | InvalidOverride left, InvalidOverride right ->
-        Identifier.equal_sanitized left right
+    | InvalidOverride { parent = left_parent; decorator = left_decorator },
+      InvalidOverride { parent = right_parent; decorator = right_decorator } ->
+        begin
+          match left_decorator, right_decorator with
+          | Final, Final
+          | StaticSuper, StaticSuper
+          | StaticOverride, StaticOverride ->
+              Identifier.equal_sanitized left_parent right_parent
+          | _, _ ->
+              false
+        end
     | MissingArgument left, MissingArgument right ->
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -2489,8 +2517,8 @@ let dequalify
         InvalidTypeVariance { annotation = dequalify annotation; origin }
     | InvalidInheritance name ->
         InvalidInheritance name
-    | InvalidOverride method_name ->
-        InvalidOverride method_name
+    | InvalidOverride { parent; decorator } ->
+        InvalidOverride { parent; decorator }
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

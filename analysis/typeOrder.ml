@@ -2105,6 +2105,7 @@ module OrderImplementation = struct
                          initialized = true;
                          property = false;
                          final = false;
+                         static = false;
                        }]
                     |> Option.some
                 | _ ->

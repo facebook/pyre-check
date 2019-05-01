@@ -548,6 +548,7 @@ let test_class_attributes _ =
       ?(primitive = false)
       ?(toplevel = true)
       ?(final = false)
+      ?(static = false)
       name =
     +{
       Statement.Attribute.name;
@@ -560,6 +561,7 @@ let test_class_attributes _ =
       primitive;
       toplevel;
       final;
+      static;
     }
   in
 
@@ -773,6 +775,7 @@ let test_class_attributes _ =
       async = false;
       initialized = false;
       final = false;
+      static = false;
       property;
     }
   in

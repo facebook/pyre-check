@@ -395,6 +395,7 @@ let create_attribute
         primitive;
         toplevel;
         final;
+        static;
       };
     } =
   let class_annotation = annotation parent in
@@ -622,6 +623,7 @@ let create_attribute
       initialized;
       property;
       final;
+      static;
     };
 
   }
@@ -819,6 +821,7 @@ let attribute
             primitive = true;
             toplevel = true;
             final = false;
+            static = false;
           }
         }
 
@@ -917,6 +920,7 @@ let rec fallback_attribute ~resolution ~name
                      primitive = true;
                      toplevel = true;
                      final = false;
+                     static = false;
                    };
                  })
         | _ ->
