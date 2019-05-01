@@ -11,10 +11,11 @@ type t =
   | FileSystem
   | GetAttr
   | IdentityCreation
-  | LocalReturn  (* Special marker to infer function in-out behavior *)
+  | LocalReturn  (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
   | ODS
+  | ParameterUpdate of int  (* Special marker to describe side effect in-out behavior *)
   | RemoteCodeExecution
   | RequestSend
   | SQL
@@ -34,6 +35,7 @@ let show = function
   | Logging -> "Logging"
   | NamedSink name -> name
   | ODS -> "ODS"
+  | ParameterUpdate index -> Format.sprintf "ParameterUpdate%d" index
   | RemoteCodeExecution -> "RemoteCodeExecution"
   | RequestSend -> "RequestSend"
   | SQL -> "SQL"
@@ -58,7 +60,11 @@ let create = function
   | "Thrift" -> Thrift
   | "XMLParser" -> XMLParser
   | "XSS" -> XSS
-  | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
+  | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
+      let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
+      ParameterUpdate (Int.of_string index)
+  | name ->
+      failwith (Format.sprintf "Unsupported taint sink `%s`" name)
 
 
 let parse ~allowed name =

@@ -215,6 +215,41 @@ let test_taint_in_taint_out_models_alternate _ =
     ]
 
 
+let test_taint_in_taint_out_update_models _ =
+  assert_model
+    ~model_source:"def update(self, arg1: TaintInTaintOut[Updates[self]]): ..."
+    ~expect:[
+      outcome
+        ~kind:`Function
+        ~tito_parameters:["arg1 updates parameter 0"]
+        "update";
+    ];
+
+  assert_model
+    ~model_source:"def update(self, arg1, arg2: TaintInTaintOut[Updates[self, arg1]]): ..."
+    ~expect:[
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[
+          "arg2 updates parameter 0";
+          "arg2 updates parameter 1";
+        ]
+        "update";
+    ];
+
+  assert_model
+    ~model_source:"def update(self: TaintInTaintOut[LocalReturn, Updates[arg1]], arg1): ..."
+    ~expect:[
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[
+          "self";
+          "self updates parameter 1";
+        ]
+        "update";
+    ]
+
+
 let test_union_models _ =
   assert_model
     ~model_source:"def both(parameter: Union[TaintInTaintOut, TaintSink[XSS]]): ..."
@@ -353,7 +388,11 @@ let test_invalid_models _ =
 
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Test, Via[bad_feature]]): ..."
-    ~expect:"Invalid model for `sink`: Unrecognized Via annotation `bad_feature`"
+    ~expect:"Invalid model for `sink`: Unrecognized Via annotation `bad_feature`";
+
+  assert_invalid_model
+    ~model_source:"def sink(parameter: TaintSink[Updates[self]]): ..."
+    ~expect:"Invalid model for `sink`: No such parameter `self`"
 
 
 let () =
@@ -362,6 +401,8 @@ let () =
     "sink_models">::test_sink_models;
     "class_sink_models">::test_class_sink_models;
     "taint_in_taint_out_models">::test_taint_in_taint_out_models;
+    "taint_in_taint_out_models_alternate">::test_taint_in_taint_out_models_alternate;
+    "taint_in_taint_out_update_models">::test_taint_in_taint_out_update_models;
     "taint_union_models">::test_union_models;
     "test_source_breadcrumbs">::test_source_breadcrumbs;
     "test_sink_breadcrumbs">::test_sink_breadcrumbs;

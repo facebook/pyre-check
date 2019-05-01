@@ -142,14 +142,29 @@ let check_expectation
       ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
   in
-  let extract_tito_parameter_name positions root =
+  let extract_tito_parameter_name positions (root, taint) =
+    let leafs =
+      Domains.BackwardState.Tree.fold
+        Domains.BackwardTaint.leaf
+        taint
+        ~f:(Fn.flip List.cons)
+        ~init:[]
+    in
+    let get_tito_name parameter_name = function
+      | Sinks.LocalReturn -> parameter_name
+      | Sinks.ParameterUpdate n -> Format.sprintf "%s updates parameter %d" parameter_name n
+      | _ -> failwith "not a tito sink"
+    in
     match AccessPath.Root.parameter_name root with
-    | Some name -> String.Set.add positions name
+    | Some name ->
+        List.fold leafs
+          ~init:positions
+          ~f:(fun positions leaf -> String.Set.add positions (get_tito_name name leaf))
     | _ -> positions
   in
   let taint_in_taint_out_names =
     Domains.BackwardState.fold
-      Domains.BackwardState.Key
+      Domains.BackwardState.KeyValue
       backward.taint_in_taint_out
       ~f:extract_tito_parameter_name
       ~init:String.Set.empty

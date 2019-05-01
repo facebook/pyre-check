@@ -9,10 +9,11 @@ type t =
   | FileSystem
   | GetAttr
   | IdentityCreation
-  | LocalReturn  (* Special marker to infer function in-out behavior *)
+  | LocalReturn  (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
   | ODS
+  | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
   | RemoteCodeExecution
   | RequestSend
   | SQL

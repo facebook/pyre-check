@@ -106,6 +106,16 @@ let introduce_taint_in_taint_out
           |> BackwardState.Tree.create_leaf in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in
         { taint.backward with taint_in_taint_out }
+    | Sinks.ParameterUpdate _ ->
+        let update_taint =
+          BackwardTaint.singleton taint_sink_kind
+          |> BackwardTaint.transform
+            BackwardTaint.simple_feature_set
+            ~f:(add_breadcrumbs breadcrumbs)
+          |> BackwardState.Tree.create_leaf
+        in
+        let taint_in_taint_out = assign_backward_taint taint_in_taint_out update_taint in
+        { taint.backward with taint_in_taint_out }
     | _ ->
         Format.asprintf "Invalid TaintInTaintOut annotation `%s`" (Sinks.show taint_sink_kind)
         |> raise_invalid_model
@@ -144,7 +154,18 @@ type leaf_kind =
   | Breadcrumbs of breadcrumbs
 
 
-let rec parse_annotations ~configuration annotation =
+let rec parse_annotations ~configuration ~parameters annotation =
+  let get_parameter_position name =
+    let matches_parameter_name index { Node.value = parameter; _ } =
+      if parameter.Parameter.name = name then
+        Some index
+      else
+        None
+    in
+    match List.find_mapi parameters ~f:matches_parameter_name with
+    | Some index -> index
+    | None -> raise_invalid_model (Format.sprintf "No such parameter `%s`" name)
+  in
   let rec extract_breadcrumbs expression =
     let open Configuration in
     match expression.Node.value with
@@ -152,6 +173,15 @@ let rec parse_annotations ~configuration annotation =
         [Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions ->
         List.concat_map ~f:extract_breadcrumbs expressions
+    | _ ->
+        []
+  in
+  let rec extract_names expression =
+    match expression.Node.value with
+    | Access (SimpleAccess [Identifier name]) ->
+        [name]
+    | Tuple expressions ->
+        List.concat_map ~f:extract_names expressions
     | _ ->
         []
   in
@@ -166,6 +196,15 @@ let rec parse_annotations ~configuration annotation =
            value = { Argument.value = expression; _; } :: _; _ }
          :: _))) ->
         [Breadcrumbs (extract_breadcrumbs expression)]
+    | Access (SimpleAccess (
+        (Identifier "Updates"
+         :: _
+         :: Call {
+           value = { Argument.value = expression; _; } :: _; _ }
+         :: _))) ->
+        extract_names expression
+        |> List.map
+          ~f:(fun name -> Leaf (Format.sprintf "ParameterUpdate%d" (get_parameter_position name)))
     | Tuple expressions ->
         List.concat_map ~f:extract_kinds expressions
     | _ ->
@@ -223,7 +262,7 @@ let rec parse_annotations ~configuration annotation =
            :: _) ->
             List.concat_map
               expressions
-              ~f:(fun expression -> parse_annotations ~configuration (Some expression))
+              ~f:(fun expression -> parse_annotations ~configuration ~parameters (Some expression))
         | (Identifier "TaintSink"
            :: _
            :: Call {
@@ -259,7 +298,7 @@ let rec parse_annotations ~configuration annotation =
       |> raise_invalid_model
 
 
-let taint_parameter ~configuration model (root, _name, parameter) =
+let taint_parameter ~configuration ~parameters model (root, _name, parameter) =
   let add_to_model model annotation =
     match annotation with
     | Sink { sink; breadcrumbs } ->
@@ -274,11 +313,11 @@ let taint_parameter ~configuration model (root, _name, parameter) =
         raise_invalid_model "Sanitize annotation must be in return position"
   in
   let annotation = parameter.Node.value.Parameter.annotation in
-  parse_annotations ~configuration annotation
+  parse_annotations ~configuration ~parameters annotation
   |> List.fold ~init:model ~f:add_to_model
 
 
-let taint_return ~configuration model expression =
+let taint_return ~configuration ~parameters model expression =
   let add_to_model model annotation =
     let root = AccessPath.Root.LocalResult in
     match annotation with
@@ -293,7 +332,7 @@ let taint_return ~configuration model expression =
     | Sanitize ->
         { model with mode = TaintResult.Sanitize; }
   in
-  parse_annotations ~configuration expression
+  parse_annotations ~configuration ~parameters expression
   |> List.fold ~init:model ~f:add_to_model
 
 
@@ -410,11 +449,12 @@ let create ~resolution ?(verify = true) ~configuration source =
         (* Make sure we know about what we model. *)
         let call_target = (call_target :> Callable.t) in
         let annotation = Resolution.resolve resolution (Reference.expression ~convert:true name) in
-        if Type.equal annotation Type.Top then
-          raise_invalid_model "Modeled entity is not part of the environment!";
-
+        let () =
+          if Type.equal annotation Type.Top then
+            raise_invalid_model "Modeled entity is not part of the environment!"
+        in
         (* Check model matches callables primary signature. *)
-        begin
+        let () =
           match verify, annotation with
           | true,
             (Type.Callable {
@@ -436,10 +476,10 @@ let create ~resolution ?(verify = true) ~configuration source =
                 raise_invalid_model message
           | _ ->
               ()
-        end;
+        in
         AccessPath.Root.normalize_parameters parameters
-        |> List.fold ~init:TaintResult.empty_model ~f:(taint_parameter ~configuration)
-        |> (fun model -> taint_return ~configuration model return_annotation)
+        |> List.fold ~init:TaintResult.empty_model ~f:(taint_parameter ~configuration ~parameters)
+        |> (fun model -> taint_return ~configuration ~parameters model return_annotation)
         |> (fun model -> { model; call_target; is_obscure = false })
       end
     with (Failure message | InvalidModel message) ->
