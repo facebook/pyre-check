@@ -124,10 +124,14 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
         if not taint_model.is_obscure then
           let { TaintResult.backward; _ } = taint_model.model in
-          let sink_roots = BackwardState.roots backward.sink_taint in
-          let sink_argument_matches = AccessPath.match_actuals_to_formals arguments sink_roots in
-          let tito_roots = BackwardState.roots backward.taint_in_taint_out in
-          let tito_argument_matches = AccessPath.match_actuals_to_formals arguments tito_roots in
+          let sink_argument_matches =
+            BackwardState.roots backward.sink_taint
+            |> AccessPath.match_actuals_to_formals arguments
+          in
+          let tito_argument_matches =
+            BackwardState.roots backward.taint_in_taint_out
+            |> AccessPath.match_actuals_to_formals arguments
+          in
           let combined_matches = List.zip_exn sink_argument_matches tito_argument_matches in
           let combine_sink_taint location taint_tree { root; actual_path; formal_path; } =
             BackwardState.read
