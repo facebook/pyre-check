@@ -687,8 +687,7 @@ let test_check_behavioral_subtyping _ =
         def bar(self) -> None:
           pass
     |}
-    ["Undefined attribute [16]: Module `typing` has no attribute `final`.";
-     "Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."]
+    ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."]
 
 
 let test_check_nested_class_inheritance _ =
@@ -1479,6 +1478,28 @@ let test_check_enter _ =
      "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
 
 
+let test_check_decorators _ =
+  assert_type_errors
+    {|
+      from typing import final
+
+      @final
+      def foo() -> None:
+        pass
+    |}
+    ["Invalid inheritance [39]: `typing.final` cannot be used with non-method functions."];
+  assert_type_errors
+    {|
+      from typing import final
+
+      class A:
+        @final
+        def foo(self) -> None:
+          pass
+    |}
+    []
+
+
 let () =
   "method">:::[
     "check_method_returns">::test_check_method_returns;
@@ -1496,5 +1517,6 @@ let () =
     "check_static">::test_check_static;
     "check_in">::test_check_in;
     "check_enter">::test_check_enter;
+    "check_decorators">::test_check_decorators;
   ]
   |> Test.run

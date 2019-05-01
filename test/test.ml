@@ -435,7 +435,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           Sequence, MutableSequence, Mapping, MutableMapping, Tuple, List, Any,
           Dict, Callable, Generic, Set, AbstractSet, FrozenSet, MutableSet, Sized,
           Reversible, SupportsInt, SupportsFloat, SupportsAbs,
-          SupportsComplex, SupportsRound, IO, BinaryIO, Union,
+          SupportsComplex, SupportsRound, IO, BinaryIO, Union, final,
           ItemsView, KeysView, ValuesView, ByteString, Optional, AnyStr, Type, Text,
         )
 
@@ -708,6 +708,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         Dict = TypeAlias(object)
         Any = object()
         overload = object()
+        final = object()
 
         Callable: _SpecialForm = ...
         Protocol: _SpecialForm = ...

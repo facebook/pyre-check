@@ -92,6 +92,13 @@ type override_kind =
   | Attribute
 [@@deriving compare, eq, sexp, show, hash]
 
+
+type invalid_inheritance =
+  | Class of Identifier.t
+  | NonMethodFunction of Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -128,7 +135,7 @@ type kind =
     }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
-  | InvalidInheritance of Identifier.t
+  | InvalidInheritance of invalid_inheritance
   | InvalidOverride of Identifier.t
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
@@ -709,9 +716,18 @@ let messages ~concise ~signature location kind =
         Format.asprintf format pp_type annotation;
         "See `https://pyre-check.org/docs/error-types.html#35-invalid-type-variance` for details.";
       ]
-  | InvalidInheritance class_name ->
-      [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
-  (* Should we combine these two errors into one? *)
+  | InvalidInheritance invalid_inheritance ->
+      begin
+        match invalid_inheritance with
+        | Class class_name ->
+            [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
+        | NonMethodFunction decorator_name ->
+            [
+              Format.asprintf
+                "`%a` cannot be used with non-method functions."
+                pp_identifier decorator_name;
+            ]
+      end
   | InvalidOverride method_name ->
       [ Format.asprintf
           "`%a` cannot override final method defined in `%a`."
@@ -1662,7 +1678,14 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right &&
         equal_type_variance_origin left_origin right_origin
     | InvalidInheritance left, InvalidInheritance right ->
-        Identifier.equal_sanitized left right
+        begin
+          match left, right with
+          | Class left, Class right
+          | NonMethodFunction left, NonMethodFunction right ->
+              Identifier.equal_sanitized left right
+          | _, _ ->
+              false
+        end
     | InvalidOverride left, InvalidOverride right ->
         Identifier.equal_sanitized left right
     | MissingArgument left, MissingArgument right ->
@@ -2464,8 +2487,8 @@ let dequalify
         InvalidTypeVariable { annotation = dequalify annotation; origin }
     | InvalidTypeVariance { annotation; origin } ->
         InvalidTypeVariance { annotation = dequalify annotation; origin }
-    | InvalidInheritance class_name ->
-        InvalidInheritance class_name
+    | InvalidInheritance name ->
+        InvalidInheritance name
     | InvalidOverride method_name ->
         InvalidOverride method_name
     | TooManyArguments extra_argument ->

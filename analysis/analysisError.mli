@@ -78,6 +78,11 @@ type override_kind =
   | Attribute
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_inheritance =
+  | Class of Identifier.t
+  | NonMethodFunction of Identifier.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -114,7 +119,7 @@ type kind =
     }
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
-  | InvalidInheritance of Identifier.t
+  | InvalidInheritance of invalid_inheritance
   | InvalidOverride of Identifier.t
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }

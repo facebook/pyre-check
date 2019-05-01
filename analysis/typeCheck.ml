@@ -565,7 +565,7 @@ module State = struct
                 Error.create
                   ~location
                   ~kind:(
-                    Error.InvalidInheritance (Expression.show value)
+                    Error.InvalidInheritance (Class (Expression.show value))
                   )
                   ~define:define_node
               in
@@ -1392,6 +1392,16 @@ module State = struct
           ; _ } as define)
       } as define_node) =
     let check_decorators state =
+      let check_final_decorator state =
+        if Option.is_none parent && (Define.is_final_method define) then
+          emit_error
+            ~state
+            ~location
+            ~kind:(Error.InvalidInheritance (NonMethodFunction "typing.final"))
+            ~define:define_node
+        else
+          state
+      in
       let check_decorator state decorator =
         let is_whitelisted decorator =
           let has_suffix { Node.value; _ } suffix =
@@ -1435,6 +1445,7 @@ module State = struct
           state
       in
       List.fold decorators ~init:state ~f:check_decorator
+      |> check_final_decorator
     in
     let check_return_annotation state =
       let add_variance_error (state, annotation) =
