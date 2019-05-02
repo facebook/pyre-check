@@ -759,7 +759,7 @@ let run
     ~section:`Taint
     "Starting analysis of %a"
     Interprocedural.Callable.pp (Interprocedural.Callable.create define);
-  let cfg = Cfg.create define.value in
+  let cfg = Cfg.create ~convert:true define.value in
   let initial =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     FixpointState.create ~existing_model normalized_parameters

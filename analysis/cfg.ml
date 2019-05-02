@@ -232,7 +232,7 @@ let exit_index =
   3
 
 
-let create define =
+let create ?(convert = false) define =
   Node.reset_count ();
 
   let graph = Int.Table.create () in
@@ -265,7 +265,13 @@ let create define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let body = create ((For.preamble loop |> Statement.convert) :: body) loop_jumps split in
+        let preamble =
+          if convert then
+            Statement.convert (For.preamble loop)
+          else
+            For.preamble loop
+        in
+        let body = create (preamble :: body) loop_jumps split in
         Node.connect_option body split;
         let orelse = create orelse jumps split in
         Node.connect_option orelse join;
@@ -374,7 +380,12 @@ let create define =
 
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
-          let preamble = List.map ~f:Statement.convert (Try.preamble handler) in
+          let preamble =
+            if convert then
+              List.map ~f:Statement.convert (Try.preamble handler)
+            else
+              Try.preamble handler
+          in
           create (preamble @ handler_body) local_jumps dispatch
           |> (Fn.flip Node.connect_option) normal_entry
         in
@@ -388,7 +399,12 @@ let create define =
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in
-        let preamble = List.map ~f:Statement.convert (With.preamble block) in
+        let preamble =
+          if convert then
+            List.map ~f:Statement.convert (With.preamble block)
+          else
+            With.preamble block
+        in
         Node.connect predecessor split;
         create (preamble @ body) jumps split
         >>= create statements jumps

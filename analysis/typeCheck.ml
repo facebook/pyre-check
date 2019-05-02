@@ -4399,7 +4399,7 @@ let run
         end
     in
     let exit =
-      let cfg = Cfg.create define in
+      let cfg = Cfg.create ~convert:true define in
       let fixpoint = Fixpoint.forward ~cfg ~initial in
       dump_cfg cfg fixpoint;
       Fixpoint.exit fixpoint

@@ -156,7 +156,7 @@ let test_block _ =
 
 let test_for _ =
   let loop = {
-    For.target = +Access (SimpleAccess (!+"a"));
+    For.target = +Name (Name.Identifier "a");
     iterator = +List [];
     body = [!!"body"];
     orelse = [!!"orelse"];
@@ -175,7 +175,7 @@ let test_for _ =
       node
         7
         (Node.Block
-          [parse_single_statement ~convert:true "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
+          [parse_single_statement "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ]
 
@@ -682,7 +682,7 @@ let test_try _ =
 
 let test_with _ =
   let block = {
-    With.items = [!"item", None];
+    With.items = [+Name (Name.Identifier "item"), None];
     body = [!!"body"];
     async = false;
   } in

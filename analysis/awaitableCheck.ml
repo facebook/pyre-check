@@ -151,7 +151,7 @@ let run ~configuration:_ ~environment ~source =
     let module State = State(Context) in
     let module Fixpoint = Fixpoint.Make(State) in
     Fixpoint.forward
-      ~cfg:(Cfg.create (Node.value define))
+      ~cfg:(Cfg.create ~convert:true (Node.value define))
       ~initial:State.initial
     |> Fixpoint.exit
     >>| State.errors

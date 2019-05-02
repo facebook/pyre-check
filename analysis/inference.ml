@@ -430,7 +430,7 @@ let run
     in
 
     try
-      let cfg = Cfg.create define in
+      let cfg = Cfg.create ~convert:true define in
       let exit =
         backward_fixpoint
           cfg

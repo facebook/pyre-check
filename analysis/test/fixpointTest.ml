@@ -80,7 +80,7 @@ let assert_fixpoint body expected =
     ~printer:(fun fixpoint -> Format.asprintf "%a" CountingFixpoint.pp fixpoint)
     ~pp_diff:(diff ~print:CountingFixpoint.pp)
     expected
-    (CountingFixpoint.forward ~cfg:(Cfg.create define) ~initial:0)
+    (CountingFixpoint.forward ~cfg:(Cfg.create ~convert:true define) ~initial:0)
 
 let test_forward _ =
   assert_fixpoint
@@ -92,7 +92,7 @@ let test_forward _ =
         5, 0; (* Pass *)
       ]);
   assert_fixpoint
-    [+Pass; !!"ignored"]
+    [+Pass; +Statement.Expression !"ignored"]
     (Int.Table.of_alist_exn [
         0, 0;
         1, 1;
@@ -110,7 +110,7 @@ let test_forward _ =
       ]);
 
   assert_fixpoint
-    [+Pass; +Pass; !!"ignored"; +Pass]
+    [+Pass; +Pass; +Statement.Expression !"ignored"; +Pass]
     (Int.Table.of_alist_exn [
         0, 0;
         1, 3;

@@ -388,7 +388,9 @@ module Scheduler (State: State) (Context: Context) = struct
     let module Fixpoint = Fixpoint.Make(State) in
 
     let rec run ~state ~define =
-      Fixpoint.forward ~cfg:(Cfg.create define) ~initial:(State.initial ~state ~define)
+      Fixpoint.forward
+        ~cfg:(Cfg.create ~convert:true define)
+        ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state ->
           State.nested_defines state

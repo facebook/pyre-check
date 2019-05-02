@@ -651,7 +651,7 @@ let run ~environment ~define ~existing_model:_ =
   in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint define.Node.value } in
-  let cfg = Cfg.create define.value in
+  let cfg = Cfg.create ~convert:true define.value in
   let entry_state =
     Analyzer.backward ~cfg ~initial
     |> Analyzer.entry

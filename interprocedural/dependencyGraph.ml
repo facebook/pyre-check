@@ -26,7 +26,7 @@ let create_callgraph ~environment ~source =
   let fold_defines
       dependencies
       ({ Node.value = { Define.signature = { name = caller; parent; _ }; _ }; _ } as define) =
-    let cfg = Cfg.create define.value in
+    let cfg = Cfg.create ~convert:true define.value in
     let caller_callable = Callable.create define in
     let fold_cfg ~key:node_id ~data:node callees =
       let statements = Cfg.Node.statements node in

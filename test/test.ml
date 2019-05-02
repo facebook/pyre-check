@@ -298,7 +298,9 @@ let (!) name =
 
 
 let (!!) name =
-  +Statement.Expression !name
+  +Statement.Expression (
+    +Expression.Name (Expression.create_name ~location:Location.Reference.any name)
+  )
 
 
 let (!+) name =

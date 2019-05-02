@@ -165,7 +165,7 @@ let test_fixpoint_backward _ =
       ~pp_diff:(diff ~print:Fixpoint.pp)
       expected
       (Inference.backward_fixpoint
-         (Cfg.create define)
+         (Cfg.create ~convert:true define)
          ~initial_forward:
            (State.initial
               ~resolution:(Test.resolution ())
