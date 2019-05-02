@@ -1483,10 +1483,6 @@ module Try = struct
 
   let preamble { kind; name; _ } =
     let open Expression in
-    let name =
-      name
-      >>| Access.create
-    in
     let assume ~location ~target ~annotation =
       [
         {
@@ -1503,18 +1499,13 @@ module Try = struct
           value = Assert {
               Assert.test = {
                 Node.location;
-                value = Access (
-                    Access.SimpleAccess [
-                      Access.Identifier "isinstance";
-                      Access.Call {
-                        Node.location;
-                        Node.value = [
-                          { Argument.name = None; value = target };
-                          { Argument.name = None; value = annotation };
-                        ];
-                      };
-                    ]
-                  );
+                value = Call {
+                  callee = { Node.location; value = Name (Name.Identifier "isinstance") };
+                  arguments = [
+                    { Call.Argument.name = None; value = target };
+                    { Call.Argument.name = None; value = annotation };
+                  ];
+                };
               };
               message = None;
               origin = Assert.Assertion
@@ -1523,27 +1514,38 @@ module Try = struct
       ]
     in
     match kind, name with
-    | Some ({ Node.location; value = Access _; _ } as annotation), Some name ->
-        assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation
+    | Some ({ Node.location; value = Access _; _ } as annotation), Some name
+    | Some ({ Node.location; value = Name _; _ } as annotation), Some name ->
+        assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some { Node.location; value = Tuple values; _ }, Some name ->
         let annotation =
-          let get_item =
-            let tuple =
-              Tuple values
-              |> Node.create ~location
-            in
-            Access.call
-              ~arguments:[{ Argument.name = None; value = tuple }]
-              ~location
-              ~name:"__getitem__"
-              ()
-          in
           {
             Node.location;
-            value = Access (SimpleAccess ((Access.create "typing.Union") @ get_item));
+            value = Call {
+              callee = {
+                Node.location;
+                value = Name (
+                  Name.Attribute {
+                    base = {
+                      Node.location;
+                      value = Name (
+                        Name.Attribute {
+                          base = { Node.location; value = Name (Name.Identifier "typing") };
+                          attribute = "Union";
+                        }
+                      );
+                    };
+                    attribute = "__getitem__";
+                  }
+                );
+              };
+              arguments = [
+                { Call.Argument.name = None; value = { Node.location; value = Tuple values} }
+              ];
+            };
           }
         in
-        assume ~location ~target:{ Node.location; value = Access (SimpleAccess name) } ~annotation
+        assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
         [Node.create ~location (Expression expression)]

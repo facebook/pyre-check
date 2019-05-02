@@ -830,13 +830,13 @@ let test_preamble _ =
 
   let assert_preamble block preambles =
     let handlers =
-      match parse_single_statement ~convert:true block with
+      match parse_single_statement block with
       | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
       | _ -> failwith "Could not parse `try` statement."
     in
     let preambles =
       let preamble source =
-        let { Source.statements = preamble; _ } = parse ~convert:true source in
+        let { Source.statements = preamble; _ } = parse source in
         preamble
       in
       List.map preambles ~f:preamble

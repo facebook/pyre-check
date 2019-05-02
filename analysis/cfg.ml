@@ -374,7 +374,8 @@ let create define =
 
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
-          create (Try.preamble handler @ handler_body) local_jumps dispatch
+          let preamble = List.map ~f:Statement.convert (Try.preamble handler) in
+          create (preamble @ handler_body) local_jumps dispatch
           |> (Fn.flip Node.connect_option) normal_entry
         in
         List.iter handlers ~f:handler;
