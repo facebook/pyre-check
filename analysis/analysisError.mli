@@ -106,7 +106,7 @@ type kind =
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
   | IncompleteType of {
-      target: Expression.Access.general_access;
+      target: Expression.t;
       annotation: Type.t;
       attempted_action: illegal_action_on_incomplete_type;
     }

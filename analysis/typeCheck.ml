@@ -38,7 +38,7 @@ module AccessState = struct
     | Undefined of undefined_origin
   [@@deriving show]
 
-  type accesses_incomplete_type = { target: Access.general_access; annotation: Type.t }
+  type accesses_incomplete_type = { target: Expression.t; annotation: Type.t }
   [@@deriving show]
 
   type element =
@@ -823,12 +823,14 @@ module State = struct
         match resolved with
         | Some { Annotation.annotation; _ }
           when Type.Variable.contains_escaped_free_variable annotation ->
-            let full_lead =
+            let expression =
               expression
               >>| (fun expression -> Access.ExpressionAccess { expression; access = lead })
               |> Option.value ~default:(Access.SimpleAccess lead)
+              |> (fun access -> Access access)
+              |> Node.create_with_default_location
             in
-            Some { target = full_lead; annotation }
+            Some { target = expression; annotation }
         | _ ->
             None
       in
@@ -3406,7 +3408,7 @@ module State = struct
                   then
                     let kind =
                       Error.IncompleteType {
-                        target = Access.SimpleAccess access;
+                        target = { Node.location; value = target_value };
                         annotation = resolved;
                         attempted_action = Naming;
                       }

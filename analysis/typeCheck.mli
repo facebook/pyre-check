@@ -33,7 +33,7 @@ module AccessState: sig
     | Undefined of undefined_origin
   [@@deriving show]
 
-  type accesses_incomplete_type = { target: Access.general_access; annotation: Type.t }
+  type accesses_incomplete_type = { target: Expression.t; annotation: Type.t }
   [@@deriving show]
 
   type element =

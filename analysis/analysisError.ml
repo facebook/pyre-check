@@ -122,7 +122,7 @@ type kind =
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
   | IncompleteType of {
-      target: Access.general_access;
+      target: Expression.t;
       annotation: Type.t;
       attempted_action: illegal_action_on_incomplete_type;
     }
@@ -418,7 +418,7 @@ let messages ~concise ~signature location kind =
         Format.asprintf
           "Type %sinferred for `%s` is incomplete, %s"
           inferred
-          (Expression.show_sanitized (Node.create_with_default_location (Expression.Access target)))
+          (Expression.show_sanitized target)
           consequence
       ]
   | ImpossibleIsinstance _ when concise ->
@@ -1635,7 +1635,7 @@ let less_or_equal ~resolution left right =
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
         { target = right_target; annotation = right; attempted_action = right_attempted_action }
-      when Access.equal_general_access left_target right_target &&
+      when Expression.equal left_target right_target &&
            equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleAttributeType left, IncompatibleAttributeType right
@@ -1877,7 +1877,7 @@ let join ~resolution left right =
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
         { target = right_target; annotation = right; attempted_action = right_attempted_action }
-      when Access.equal_general_access left_target right_target &&
+      when Expression.equal left_target right_target &&
            equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
         IncompleteType {
           target = left_target;
