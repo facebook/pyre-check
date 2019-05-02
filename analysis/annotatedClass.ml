@@ -285,21 +285,6 @@ let superclasses definition ~resolution =
   |> List.map ~f:create
 
 
-let immediate_superclasses definition ~resolution =
-  let (module Handler: TypeOrder.Handler) = Resolution.order resolution in
-  let annotation = annotation definition in
-
-  let has_definition { TypeOrder.Target.target; _ } =
-    Handler.find (Handler.annotations ()) target
-    >>= Resolution.class_definition resolution
-    >>| create
-  in
-  Handler.find (Handler.indices ()) annotation
-  >>= Handler.find (Handler.edges ())
-  |> Option.value ~default:[]
-  |> List.find_map ~f:has_definition
-
-
 let metaclass definition ~resolution =
   let get_metaclass { Node.value = { Class.bases; _ }; _ } =
     let get_metaclass = function
