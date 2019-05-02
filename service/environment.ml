@@ -329,8 +329,17 @@ module SharedHandler: Analysis.Environment.Handler = struct
   end: Dependencies.Handler)
 
 
-  let class_definition =
-    ClassDefinitions.get
+  let class_definition annotation =
+    match ClassDefinitions.get annotation with
+    | Some { Node.location; value } ->
+        { Node.location; value = Statement.Class value }
+        |> Statement.convert
+        |> (function
+            | { Node.location; value = Statement.Class value } -> { Node.location; value }
+            | _ -> failwith "Impossible.")
+        |> Option.some
+    | None ->
+        None
 
   let class_metadata =
     ClassMetadata.get

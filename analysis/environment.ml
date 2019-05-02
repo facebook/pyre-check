@@ -407,7 +407,7 @@ let register_class_definitions (module Handler: Handler) source =
             new_annotations
     end)
   in
-  Visit.visit Type.Set.empty (Preprocessing.convert source)
+  Visit.visit Type.Set.empty source
 
 
 let register_aliases (module Handler: Handler) sources =

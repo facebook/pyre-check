@@ -1090,9 +1090,10 @@ module Class = struct
         match statement with
         | { Node.location; value = Assign ({ Assign.target; _ } as assign)} ->
             begin
+              let convert = Expression.convert in
               let is_stub = function
                 | { Node.value = Assign { Assign.target = stub_target; _; }; _; }
-                  when Expression.equal target stub_target ->
+                  when Expression.equal (convert target) (convert stub_target) ->
                     true
                 | _ ->
                     false
