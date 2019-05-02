@@ -387,8 +387,9 @@ let create define =
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in
+        let preamble = List.map ~f:Statement.convert (With.preamble block) in
         Node.connect predecessor split;
-        create ((With.preamble block) @ body) jumps split
+        create (preamble @ body) jumps split
         >>= create statements jumps
 
     | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->

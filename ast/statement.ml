@@ -1436,20 +1436,27 @@ module With = struct
        >>| fun target ->
        let open Expression in
        let enter_call =
-         let base_call =
-           let enter_call_name =
-             if async then
-               "__aenter__"
-             else
-               "__enter__"
-           in
-           Access.combine expression (Access.call ~name:enter_call_name ~location ())
-           |> fun access -> Node.create (Access access) ~location
+         let create_call call_name =
+           {
+             Node.location;
+             value = Call {
+               callee = {
+                 Node.location;
+                 value = Name (
+                   Name.Attribute {
+                     base = expression;
+                     attribute = call_name;
+                   }
+                 );
+               };
+               arguments = [];
+             };
+           }
          in
          if async then
-           Node.create ~location (Await base_call)
+           Node.create ~location (Await (create_call "__aenter__"))
          else
-           base_call
+           create_call "__enter__"
        in
        let assign =
          {

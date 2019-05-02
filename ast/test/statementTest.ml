@@ -792,11 +792,11 @@ let test_update _ =
 let test_preamble _ =
   let assert_preamble block preamble =
     let block =
-      match parse_single_statement ~convert:true block with
+      match parse_single_statement block with
       | { Node.value = With block; _ } -> block
       | _ -> failwith "Could not parse `with` statement."
     in
-    let { Source.statements = preamble; _ } = parse ~convert:true preamble in
+    let { Source.statements = preamble; _ } = parse preamble in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
@@ -804,7 +804,7 @@ let test_preamble _ =
       (With.preamble block)
   in
 
-  assert_preamble "with item: pass" "item"  ;
+  assert_preamble "with item: pass" "item";
   assert_preamble "with item, other: pass" "item; other";
   assert_preamble "with item as name: pass" "name = item.__enter__()";
   assert_preamble "async with item as name: pass" "name = await item.__aenter__()";
