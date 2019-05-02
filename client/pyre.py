@@ -63,12 +63,9 @@ def main() -> int:
     )
 
     parser.add_argument(
-        "--version", action="version", version="%(prog)s version " + __version__
-    )
-    parser.add_argument(
-        "--binary-version",
+        "--version",
         action="store_true",
-        help="Print the pyre.bin version to be used",
+        help="Print the client and binary versions of Pyre.",
     )
 
     parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
@@ -426,8 +423,13 @@ def main() -> int:
                 )
                 return ExitCode.SUCCESS
 
-            if arguments.binary_version:
-                log.stdout.write(get_binary_version(configuration))
+            if arguments.version:
+                binary_version = get_binary_version(configuration)
+                log.stdout.write(
+                    "binary version: {}\nclient version: {}".format(
+                        binary_version, __version__
+                    )
+                )
                 return ExitCode.SUCCESS
 
             if arguments.command in [commands.Kill]:
