@@ -360,7 +360,10 @@ let create ~resolution ?(verify = true) ~configuration source =
           in
           List.find_map bases ~f:class_sink_base
           >>= (fun base ->
-              Resolution.class_definition resolution (Type.Primitive (Reference.show name))
+              Resolution.class_definition
+                ~convert:true
+                resolution
+                (Type.Primitive (Reference.show name))
               >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let sink_signature { Node.value; _ } =
                     match value with

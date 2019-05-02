@@ -42,7 +42,7 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
   match parent with
   | Some parent ->
       let parent_type = Type.Primitive (Reference.show parent) in
-      Resolution.class_definition resolution parent_type
+      Resolution.class_definition ~convert:true resolution parent_type
       >>| Class.create
   | _ -> None
 

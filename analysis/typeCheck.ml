@@ -934,6 +934,7 @@ module State = struct
                 when String.equal "__init__" (Reference.last access) ->
                   let definition =
                     Resolution.class_definition
+                      ~convert:true
                       resolution
                       implementation.annotation
                   in
@@ -961,8 +962,12 @@ module State = struct
                       definition
                       |> Annotated.Class.create
                       |> Annotated.Class.successors ~resolution
-                      |> List.filter_map ~f:(fun name ->
-                          Resolution.class_definition resolution (Type.Primitive name))
+                      |> List.filter_map
+                          ~f:(fun name ->
+                            Resolution.class_definition
+                              ~convert:true
+                              resolution
+                              (Type.Primitive name))
                       |> (List.cons definition)
                       |> List.rev
                       |> List.fold ~init:String.Set.empty ~f:gather_abstract_methods
@@ -1137,7 +1142,7 @@ module State = struct
                         |> extract_access_data ~inside_meta:true
                     | _ ->
                         begin
-                          match Resolution.class_definition resolution annotation with
+                          match Resolution.class_definition ~convert:true resolution annotation with
                           | Some class_definition ->
                               [{
                                 instantiated = annotation;
@@ -4230,7 +4235,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ~aliases:(fun _ -> None)
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
-        ~class_definition:(fun _ -> None)
+        ~class_definition:(fun ?convert:_ _ -> None)
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
         ~generics:(fun ~resolution:_ _ -> [])

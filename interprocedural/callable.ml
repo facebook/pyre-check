@@ -157,7 +157,7 @@ let get_definition ~resolution = function
       >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
   | `Method { class_name; method_name; } ->
       Type.Primitive class_name
-      |> Resolution.class_definition resolution
+      |> Resolution.class_definition ~convert:true resolution
       >>| Node.value
       >>= Class.find_define ~method_name
 

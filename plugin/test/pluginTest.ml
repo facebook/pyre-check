@@ -29,7 +29,7 @@ let assert_environment_contains source expected =
   let expected =
     List.map
       expected
-      ~f:(fun definition -> parse definition |> Preprocessing.preprocess |> Preprocessing.convert)
+      ~f:(fun definition -> parse definition |> Preprocessing.preprocess)
   in
   let class_names =
     let get_name_if_class { Node.value; _ } =
