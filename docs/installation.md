@@ -19,7 +19,9 @@ to use Pyre.
 Note that
 - on *MacOS* you might have to invoke `pip36` explicitly to use a current version,
 - we currently only provide *linux/AMD64* and *OSX/AMD64* binaries. If you need support for a
-different architecture, feel free to reach out to us.
+different architecture, feel free to reach out to us via a GitHub Issue.
+- Please see below for a unsupported workaround to get `pyre` working on Windows via
+[WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)
 
 
 # Building from Source
@@ -74,4 +76,28 @@ Pyre with
 $ make
 $ make test
 $ make python_tests
+```
+
+## Windows Subsystem for Linux (WSL) Install
+
+On *x86_64* Windows `pyre` can run via Linux using [WSL](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux).
+A brief summary to get this running on Ubuntu please follow:
+- [Install WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) *(external Microsoft Documentation)*
+- Once you have a login to your Linux of choice:
+  - Optionally: Install build environment (some dependencies of `pyre` might need to be built)
+  - Use `pip` as described above or via a [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html)
+- Here is an example using [Ubuntu](https://www.ubuntu.com/) with a [venv](https://docs.python.org/3/tutorial/venv.html):
+
+```bash
+sudo apt install python3-venv build-essential python3-dev libpython3-dev
+python3 -m venv /tmp/tp
+/tmp/tp/bin/pip install --update pip setuptools wheel
+/tmp/tp/bin/pip install pyre-check
+source /tmp/tp/bin/activate
+cd /mnt/c/path/to/repo
+pyre --source-directory . check
+
+(tp) cooper@TESTFAC-1FMHLI2:/mnt/c/path/to/repo$ pyre --source-directory . check
+ ƛ Setting up a `.pyre_configuration` with `pyre init` may reduce overhead.
+ ƛ No type errors found
 ```
