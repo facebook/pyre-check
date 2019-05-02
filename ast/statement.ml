@@ -1372,27 +1372,39 @@ module For = struct
   [@@deriving compare, eq, sexp, show, hash]
 
 
-  let preamble
-      {
-        target = { Node.location; _ } as target;
-        iterator = { Node.value; _ };
-        async;
-        _;
-      } =
+  let preamble { target = { Node.location; _ } as target; iterator; async; _ } =
     let open Expression in
     let value =
-      let next =
+      let value =
+        let create_call base iterator next =
+          Call {
+            callee = {
+              Node.location;
+              value = Name (Name.Attribute {
+                base = {
+                  Node.location;
+                  value = Call {
+                    callee = {
+                      Node.location;
+                      value = Name (Name.Attribute {
+                        base;
+                        attribute = iterator;
+                      });
+                    };
+                    arguments = [];
+                  };
+                };
+                attribute = next;
+              });
+            };
+            arguments = [];
+          }
+        in
         if async then
-          (Access.call ~name:"__aiter__" ~location ()) @
-          (Access.call ~name: "__anext__" ~location ())
+          create_call iterator "__aiter__" "__anext__"
         else
-          (Access.call ~name:"__iter__" ~location ()) @
-          (Access.call ~name: "__next__" ~location ())
+          create_call iterator "__iter__" "__next__"
       in
-      Access.combine { Node.location; value } next
-      |> fun access -> Access access
-    in
-    let value =
       if async then
         { Node.location; value = Await (Node.create value ~location) }
       else

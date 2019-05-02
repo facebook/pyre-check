@@ -810,6 +810,10 @@ let rec convert { Node.location; value } =
       { Node.location; value }
     in
     match expression with
+    | Access (SimpleAccess access) ->
+        None, List.rev access
+    | Access (ExpressionAccess { expression; access }) ->
+        Some (convert expression |> Node.value), List.rev access
     | Name (Name.Identifier identifier) ->
         None, [Access.Identifier identifier]
     | Name (

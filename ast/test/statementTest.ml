@@ -811,11 +811,11 @@ let test_preamble _ =
 
   let assert_preamble block preamble =
     let block =
-      match parse_single_statement ~convert:true block with
+      match parse_single_statement block with
       | { Node.value = For block; _ } -> block
       | _ -> failwith "Could not parse `for` statement."
     in
-    let { Source.statements = preamble; _ } = parse ~convert:true preamble in
+    let { Source.statements = preamble; _ } = parse preamble in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
