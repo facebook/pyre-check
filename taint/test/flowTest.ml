@@ -176,6 +176,11 @@ let test_errors _ =
     |> ForwardState.Tree.create_leaf
     |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
   in
+  let source_tree_c =
+    ForwardTaint.singleton Sources.Demo
+    |> ForwardState.Tree.create_leaf
+    |> ForwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
+  in
   let sink_tree_a =
     BackwardTaint.singleton Sinks.RemoteCodeExecution
     |> BackwardState.Tree.create_leaf
@@ -187,7 +192,7 @@ let test_errors _ =
     |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "b"]
   in
   let sink_tree_c =
-    BackwardTaint.singleton Sinks.Thrift
+    BackwardTaint.singleton Sinks.Demo
     |> BackwardState.Tree.create_leaf
     |> BackwardState.Tree.prepend [AbstractTreeDomain.Label.Field "a"]
   in
@@ -215,7 +220,7 @@ let test_errors _ =
   in
   assert_error ~source_tree:source_tree_a ~sink_tree:sink_tree_a 5001;
   assert_error ~source_tree:source_tree_b ~sink_tree:sink_tree_b 5002;
-  assert_error ~source_tree:source_tree_a ~sink_tree:sink_tree_c 5003;
+  assert_error ~source_tree:source_tree_c ~sink_tree:sink_tree_c 5009;
   assert_error ~source_tree:source_tree_a ~sink_tree:sink_tree_d 5002;
   ()
 

@@ -147,20 +147,6 @@ let default =
       };
       {
         sources = [ Sources.UserControlled ];
-        sinks = [ Sinks.Thrift ];
-        code = 5003;
-        name = "User controlled data to thrift.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-      };
-      {
-        sources = [ Sources.Thrift ];
-        sinks = [ Sinks.RemoteCodeExecution ];
-        code = 5004;
-        name = "Thrift return data to remote code execution.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-      };
-      {
-        sources = [ Sources.UserControlled ];
         sinks = [ Sinks.SQL ];
         code = 5005;
         name = "User controlled data to SQL execution.";
@@ -200,34 +186,6 @@ let default =
         code = 5010;
         name = "User data to getattr.";
         message_format = "Attacker may control at least one argument to getattr(,)."
-      };
-      {
-        sources = [ Sources.UserControlled ];
-        sinks = [ Sinks.FileSystem ];
-        code = 5011;
-        name = "User data to filesystem operation.";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-      };
-      {
-        sources = [ Sources.UserControlled ];
-        sinks = [ Sinks.RequestSend ];
-        code = 5012;
-        name = "Potential Server-side request forgery (SSRF)";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-      };
-      {
-        sources = [ Sources.UserControlled ];
-        sinks = [ Sinks.IdentityCreation ];
-        code = 5013;
-        name = "User-controlled identity creation (experimental)";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
-      };
-      {
-        sources = [ Sources.UserControlled ];
-        sinks = [ Sinks.ODS ];
-        code = 5014;
-        name = "User-controlled ODS key";
-        message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
       };
     ];
   }

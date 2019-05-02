@@ -8,17 +8,13 @@ type t =
   | Demo
   | FileSystem
   | GetAttr
-  | IdentityCreation
   | LocalReturn  (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
-  | ODS
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
   | RemoteCodeExecution
-  | RequestSend
   | SQL
   | Test
-  | Thrift
   | XMLParser
   | XSS
 [@@deriving compare, eq, sexp, show, hash]

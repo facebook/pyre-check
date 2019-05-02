@@ -134,15 +134,15 @@ let test_sink_models _ =
     ];
 
   assert_model
-    ~model_source:"def thrift(parameter0: TaintSink[Thrift]) -> TaintSource[Thrift]: ..."
+    ~model_source:"def both(parameter0: TaintSink[Demo]) -> TaintSource[Demo]: ..."
     ~expect:[
       outcome
         ~kind:`Function
-        ~returns:[Sources.Thrift]
+        ~returns:[Sources.Demo]
         ~sink_parameters:[
-          { name = "parameter0"; sinks = [Sinks.Thrift] };
+          { name = "parameter0"; sinks = [Sinks.Demo] };
         ]
-        "thrift";
+        "both";
     ];
 
   assert_model
@@ -157,12 +157,12 @@ let test_sink_models _ =
     ];
 
   assert_model
-    ~model_source:"def multiple(parameter: TaintSink[XSS, Thrift]): ..."
+    ~model_source:"def multiple(parameter: TaintSink[XSS, Demo]): ..."
     ~expect:[
       outcome
         ~kind:`Function
         ~sink_parameters:[
-          { name = "parameter"; sinks = [Sinks.Thrift; Sinks.XSS] };
+          { name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] };
         ]
         "multiple";
     ]
