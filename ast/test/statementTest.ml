@@ -302,35 +302,41 @@ let test_attributes _ =
   in
   (* Test define field assigns. *)
   let assert_implicit_attributes source expected =
-    let expected =
-      let attribute (name, annotation, value, toplevel) =
-        create_attribute
-          ~name
-          ~annotation
-          ~value
-          ~toplevel
-          ~primitive:true
-          ()
+    let assertion ~convert =
+      let expected =
+        let attribute (name, annotation, value, toplevel) =
+          create_attribute
+            ~name
+            ~annotation:(annotation >>| Type.expression ~convert)
+            ~value:(value >>| parse_single_expression ~convert)
+            ~toplevel
+            ~primitive:true
+            ()
+        in
+        List.map expected ~f:attribute
       in
-      List.map expected ~f:attribute
+      let definition =
+        {
+          Record.Class.name = !&"";
+          bases = [];
+          body = [];
+          decorators = [];
+          docstring = None;
+        }
+      in
+      assert_equal
+        ~cmp:(List.equal ~equal:Attribute.equal)
+        ~printer:(
+          fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n"
+        )
+        expected
+        (parse_single_define ~convert source
+         |> Define.implicit_attributes ~convert ~definition
+         |> Identifier.SerializableMap.bindings
+         |> List.map ~f:snd)
     in
-    let definition =
-      {
-        Record.Class.name = !&"";
-        bases = [];
-        body = [];
-        decorators = [];
-        docstring = None;
-      }
-    in
-    assert_equal
-      ~cmp:(List.equal ~equal:Attribute.equal)
-      ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
-      expected
-      (parse_single_define ~convert:true source
-       |> Define.implicit_attributes ~definition
-       |> Identifier.SerializableMap.bindings
-       |> List.map ~f:snd)
+    assertion ~convert:true;
+    assertion ~convert:false
   in
   assert_implicit_attributes "def foo(): pass" [];
 
@@ -340,26 +346,21 @@ let test_attributes _ =
         self.attribute = value
         self.attribute: int = value
     |}
-    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
+    ["attribute", Some Type.integer, Some "value", true];
   assert_implicit_attributes
     {|
       def foo():
         self.attribute: int = value
         self.attribute = value
     |}
-    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
+    ["attribute", Some Type.integer, Some "value", true];
   assert_implicit_attributes
     {|
       def foo():
         self.attribute: int = value
         self.attribute: str = value
     |}
-    [
-      "attribute",
-      Some (Type.expression ~convert:true (Type.Union [Type.string; Type.integer])),
-      Some !"value",
-      true
-    ];
+    ["attribute", Some (Type.Union [Type.string; Type.integer]), Some "value", true];
 
   assert_implicit_attributes
     {|
@@ -367,14 +368,8 @@ let test_attributes _ =
         self.attribute, self.other = derp()
     |}
     [
-      "attribute",
-      None,
-      Some (parse_single_expression ~convert:true "derp()"),
-      true;
-      "other",
-      None,
-      Some (parse_single_expression ~convert:true "derp()"),
-      true;
+      "attribute", None, Some "derp()", true;
+      "other", None, Some "derp()", true;
     ];
   assert_implicit_attributes
     {|
@@ -382,14 +377,8 @@ let test_attributes _ =
         self.attribute, self.other = derp
     |}
     [
-      "attribute",
-      None,
-      Some (parse_single_expression ~convert:true "derp"),
-      true;
-      "other",
-      None,
-      Some (parse_single_expression ~convert:true "derp"),
-      true;
+      "attribute", None, Some "derp", true;
+      "other", None, Some "derp", true;
     ];
 
   assert_implicit_attributes
@@ -397,21 +386,21 @@ let test_attributes _ =
       def foo(self, argument: str):
         self.attribute = argument
     |}
-    ["attribute", None, Some !"argument", true];
+    ["attribute", None, Some "argument", true];
 
   assert_implicit_attributes
     {|
       def foo(self, attribute: str):
         self.attribute = attribute
     |}
-    ["attribute", Some (Type.expression ~convert:true Type.string), Some !"attribute", true];
+    ["attribute", Some Type.string, Some "attribute", true];
 
   assert_implicit_attributes
     {|
       def foo(self, attribute: MyType):
         self.attribute = attribute
     |}
-    ["attribute", Some (!"MyType"), Some !"attribute", true];
+    ["attribute", Some (Type.Primitive "MyType"), Some "attribute", true];
 
   assert_implicit_attributes
     {|
@@ -419,14 +408,14 @@ let test_attributes _ =
         if test:
           self.attribute = attribute
     |}
-    ["attribute", None, Some !"attribute", false];
+    ["attribute", None, Some "attribute", false];
 
   assert_implicit_attributes
     {|
       def foo(self, argument: str):
         self.argument = unknown
     |}
-    ["argument", None, Some !"unknown", true];
+    ["argument", None, Some "unknown", true];
 
   (* Implicit arguments in branches. *)
   assert_implicit_attributes
@@ -440,9 +429,9 @@ let test_attributes _ =
             self.nested = value
     |}
     [
-      "attribute", None, Some !"value", true;
-      "nested", None, Some !"value", false;
-      "other", None, Some !"value", false;
+      "attribute", None, Some "value", true;
+      "nested", None, Some "value", false;
+      "other", None, Some "value", false;
     ];
 
   (* `self` isn't special cased if a self parameter is passed into the function. *)
@@ -451,24 +440,34 @@ let test_attributes _ =
     def foo(renamed_self):
       renamed_self.attribute: int = value
   |}
-    ["attribute", Some (Type.expression ~convert:true Type.integer), Some !"value", true];
+    ["attribute", Some Type.integer, Some "value", true];
 
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
-    let expected =
-      expected
-      >>| fun (name, annotation, value, setter) ->
-      create_attribute ~setter ~name ~annotation ~value ~property:true ()
+    let assertion ~convert =
+      let expected =
+        expected
+        >>| fun (name, annotation, value, setter) ->
+          create_attribute
+            ~setter
+            ~name
+            ~annotation:(annotation >>| Type.expression ~convert)
+            ~value
+            ~property:true
+            ()
+      in
+      let define =
+        let define = parse_single_define ~convert source in
+        let signature = { define.signature with parent = Some (!&"Parent") } in
+        { define with signature  }
+      in
+      assert_equal
+        ~cmp:(Option.equal Attribute.equal)
+        expected
+        (Define.property_attribute define ~location:Location.Reference.any)
     in
-    let define =
-      let define = parse_single_define ~convert:true source in
-      let signature = { define.signature with parent = Some (!&"Parent") } in
-      { define with signature  }
-    in
-    assert_equal
-      ~cmp:(Option.equal Attribute.equal)
-      expected
-      (Define.property_attribute define ~location:Location.Reference.any)
+    assertion ~convert:true;
+    assertion ~convert:false
   in
   assert_property_attribute "def Parent.foo(): pass" None;
   assert_property_attribute "@property\ndef Parent.foo(): pass" (Some ("foo", None, None, false));
@@ -477,7 +476,7 @@ let test_attributes _ =
       @foo.setter
       def Parent.foo(self, value: int) -> None: pass
     |}
-    (Some ("foo", Some (Type.expression ~convert:true Type.integer), None, true));
+    (Some ("foo", Some Type.integer, None, true));
   assert_property_attribute
     {|
       @__property__
@@ -489,7 +488,7 @@ let test_attributes _ =
       @abc.abstractproperty
       def Parent.foo() -> int: pass
     |}
-    (Some ("foo", Some (Type.expression ~convert:true Type.integer), None, false));
+    (Some ("foo", Some Type.integer, None, false));
 
   (* Test class attributes. *)
   let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =

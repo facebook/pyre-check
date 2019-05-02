@@ -497,7 +497,7 @@ module Define = struct
   let contains_call { body; _ } name =
     let matches = function
       | {
-        Node.value = Expression {
+          Node.value = Expression {
             Node.value =
               Expression.Access
                 (SimpleAccess [
@@ -508,6 +508,20 @@ module Define = struct
           };
         _;
       } when String.equal identifier name ->
+          true
+      | {
+          Node.value = Expression {
+            Node.value = Expression.Call {
+              callee = {
+                Node.value = Expression.Name (Expression.Name.Identifier identifier);
+                _;
+              };
+              _;
+            };
+            _;
+          };
+          _;
+        } when String.equal identifier name ->
           true
       | _ ->
           false
@@ -534,22 +548,21 @@ module Define = struct
 
   let implicit_attributes
       ({ body; signature = { parameters; _ } } as define)
+      ?(convert = false)
       ~definition:{
-      Record.Class.body = definition_body;
-      _;
-    } : Attribute.t Identifier.SerializableMap.t =
+        Record.Class.body = definition_body;
+        _;
+      } : Attribute.t Identifier.SerializableMap.t =
+    let convert_generated_ast = convert in
     let open Expression in
     let parameter_annotations =
       let add_parameter map = function
         | { Node.value = { Parameter.name; annotation = Some annotation; _ }; _ } ->
-            Access.SerializableMap.set
-              map
-              ~key:[Access.Identifier name]
-              ~data:annotation
+            Identifier.SerializableMap.set map ~key:name ~data:annotation
         | _ ->
             map
       in
-      List.fold ~init:Access.SerializableMap.empty ~f:add_parameter parameters
+      List.fold ~init:Identifier.SerializableMap.empty ~f:add_parameter parameters
     in
     let attribute ~toplevel map { Node.value; _ } =
       match value with
@@ -557,10 +570,18 @@ module Define = struct
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
-              Node.value = Access (
+                Node.value = Access (
                   SimpleAccess ((Access.Identifier self) :: [Access.Identifier name]));
-              _;
-            } when Identifier.equal self (self_identifier define) ->
+                _;
+              }
+            | {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier self); _ };
+                    attribute = name;
+                  });
+                _;
+              } when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   Attribute.create ~primitive:true ~toplevel ~location ~name ?annotation ~value ()
                 in
@@ -574,20 +595,32 @@ module Define = struct
           in
           begin
             match target with
-            | { Node.value = Access _; _ } as target ->
+            | { Node.value = Access _; _ }
+            | { Node.value = Name _; _ } ->
                 let annotation =
                   let is_reassignment target value =
-                    let target = Access.show_sanitized target in
-                    let value = Access.show_sanitized value in
+                    let target = Identifier.sanitized target in
+                    let value = Identifier.sanitized value in
                     String.equal target value || String.equal target ("_" ^ value)
                   in
                   match toplevel, annotation, target, value with
                   | true,
                     None,
-                    { Node.value = Access (SimpleAccess (_ :: ([_] as target_access))); _ },
-                    { Node.value = Access (SimpleAccess value_access); _ }
-                    when is_reassignment target_access value_access ->
-                      Access.SerializableMap.find_opt value_access parameter_annotations
+                    { Node.value = Access (SimpleAccess (_ :: [Access.Identifier target])); _ },
+                    { Node.value = Access (SimpleAccess [Access.Identifier value]); _ }
+                  | true,
+                    None,
+                    {
+                      Node.value = Name (
+                        Name.Attribute {
+                          base = { Node.value = Name (Name.Identifier _ ); _ };
+                          attribute = target;
+                        });
+                        _;
+                      },
+                    { Node.value = Name (Name.Identifier value); _ }
+                    when is_reassignment target value ->
+                      Identifier.SerializableMap.find_opt value parameter_annotations
                   | _ ->
                       annotation
                 in
@@ -616,15 +649,12 @@ module Define = struct
             | [] ->
                 None
             | ({ Node.location; _ } as annotation) :: annotations ->
+                let argument_value =
+                  Node.create_with_default_location (Tuple (annotation :: annotations))
+                in
                 if List.for_all ~f:(Expression.equal annotation) annotations then
                   Some annotation
-                else
-                  let argument =
-                    {
-                      Argument.name = None;
-                      value = Node.create_with_default_location (Tuple (annotation :: annotations));
-                    }
-                  in
+                else if convert_generated_ast then
                   Some {
                     Node.location;
                     value =
@@ -633,8 +663,40 @@ module Define = struct
                             Access.Identifier "typing";
                             Access.Identifier "Union";
                             Access.Identifier "__getitem__";
-                            Access.Call (Node.create_with_default_location [argument]);
+                            Access.Call (
+                              Node.create_with_default_location [
+                                { Argument.name = None; value = argument_value };
+                              ]
+                            );
                           ]);
+                  }
+                else
+                  Some {
+                   Node.location;
+                   value =
+                    Call {
+                      callee = {
+                        Node.location;
+                        value = Name (
+                          Name.Attribute {
+                            base = {
+                              Node.location;
+                              value = Name (
+                                Name.Attribute {
+                                  base = {
+                                    Node.location;
+                                    value = Name (Name.Identifier "typing")
+                                  };
+                                  attribute = "Union"
+                                }
+                              );
+                            };
+                            attribute = "__getitem__";
+                          }
+                        );
+                      };
+                      arguments = [{ Call.Argument.name = None; value = argument_value }]
+                    };
                   }
           in
           { Node.location; value = { attribute with Attribute.annotation }}
@@ -664,6 +726,20 @@ module Define = struct
                     Access.Identifier name;
                     Access.Call _;
                   ]);
+            _;
+          }
+        | Expression {
+            Node.value = Call {
+              callee = {
+                Node.value = Name (
+                  Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier self); _ };
+                    attribute = name;
+                  });
+                _;
+              };
+              _;
+            };
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
@@ -697,12 +773,12 @@ module Define = struct
     |> Identifier.SerializableMap.map merge_attributes
 
 
-  let property_attribute ~location
-      ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define) =
+  let property_attribute
+    ~location
+    ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define) =
     let attribute ?(setter = false) annotation =
       parent
-      >>= (fun parent ->
-          Attribute.name ~parent (Reference.expression ~convert:true ~location name))
+      >>= (fun parent -> Attribute.name ~parent (Reference.expression ~location name))
       >>| fun name ->
       Attribute.create
         ~location
@@ -719,12 +795,7 @@ module Define = struct
           let open Expression in
           match return_annotation with
           | Some ({ Node.location; value = Access _ } as access) ->
-              let argument =
-                {
-                  Argument.name = None;
-                  value = access;
-                }
-              in
+              let argument = { Argument.name = None; value = access } in
               Some {
                 Node.location;
                 value =
@@ -735,6 +806,31 @@ module Define = struct
                         Access.Identifier "__getitem__";
                         Access.Call (Node.create_with_default_location [argument]);
                       ]);
+              }
+          | Some ({ Node.location; value = Name _ } as name) ->
+              Some {
+                Node.location;
+                value =
+                  Call {
+                    callee = {
+                      Node.location;
+                      value = Name (
+                        Name.Attribute {
+                          base = {
+                            Node.location;
+                            value = Name (
+                              Name.Attribute {
+                                base = { Node.location; value = Name (Name.Identifier "typing") };
+                                attribute = "ClassVar";
+                              }
+                            );
+                          };
+                          attribute = "__getitem__";
+                        }
+                      );
+                    };
+                    arguments = [{ Call.Argument.name = None; value = name }];
+                  };
               }
           | _ ->
               None
@@ -893,7 +989,7 @@ module Class = struct
     in
     let implicitly_assigned_attributes =
       constructors ~in_test definition
-      |> List.map ~f:(Define.implicit_attributes ~definition)
+      |> List.map ~f:(Define.implicit_attributes ~convert:true ~definition)
       |> List.fold
         ~init:Identifier.SerializableMap.empty
         ~f:(Identifier.SerializableMap.merge merge)
