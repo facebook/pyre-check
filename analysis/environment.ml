@@ -111,7 +111,8 @@ let connect_definition
     let register_supertype { Expression.Call.Argument.value; _ } =
       let value = Expression.delocalize value in
       match Node.value value with
-      | Access (SimpleAccess name) ->
+      | Call _
+      | Name _ ->
           let supertype, parameters =
             (* While building environment, allow untracked to parse into primitives *)
             Resolution.parse_annotation
@@ -132,7 +133,7 @@ let connect_definition
             Statistics.event
               ~name:"superclass of top"
               ~section:`Environment
-              ~normals:["unresolved name", Access.show name]
+              ~normals:["unresolved name", Expression.show value]
               ()
           else
             connect ~predecessor:primitive ~successor:supertype ~parameters
@@ -847,7 +848,7 @@ let connect_type_order (module Handler: Handler) resolution source =
             ()
     end)
   in
-  Visit.visit () (Preprocessing.convert source)
+  Visit.visit () source
   |> ignore
 
 

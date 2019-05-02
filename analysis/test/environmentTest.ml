@@ -518,7 +518,7 @@ let test_connect_definition _ =
   assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "C");
 
   let definition =
-    +(Test.parse_single_class ~convert:true {|
+    +(Test.parse_single_class {|
        class D(int, float):
          ...
      |})

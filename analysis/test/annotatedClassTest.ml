@@ -1238,7 +1238,7 @@ let test_inferred_generic_base _ =
      |}
     [{
       Argument.name = None;
-      value = Type.expression ~convert:true (Type.parametric "typing.Generic" [Type.variable "_T"]);
+      value = Type.expression (Type.parametric "typing.Generic" [Type.variable "_T"]);
     }];
   assert_inferred_generic
     ~target:"List"
@@ -1260,7 +1260,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression ~convert:true
+        Type.expression
           (Type.parametric "typing.Generic" [Type.variable "_T1"; Type.variable "_T2"]);
     }];
   assert_inferred_generic
@@ -1272,7 +1272,7 @@ let test_inferred_generic_base _ =
     [{
       Argument.name = None;
       value =
-        Type.expression ~convert:true
+        Type.expression
           (Type.parametric "typing.Generic" [Type.variable "_T1"]);
     }];
 

@@ -241,7 +241,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
         Expression.Call.Argument.name = None;
         value =
           Type.parametric "typing.Generic" variables
-          |> Type.expression ~convert:true;
+          |> Type.expression;
       }]
 
 
