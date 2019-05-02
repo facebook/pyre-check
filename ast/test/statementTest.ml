@@ -491,71 +491,71 @@ let test_attributes _ =
     (Some ("foo", Some Type.integer, None, false));
 
   (* Test class attributes. *)
-  let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
-    let annotation =
-      annotation
-      >>| Type.expression ~convert:true
-    in
-    let value =
-      value
-      >>| Access.create
-      >>| Access.expression
-    in
-    name, annotation, value, setter, number_of_defines
-  in
   let assert_attributes
       ?(in_test = false)
       ?(include_generated_attributes = true)
       source
       expected =
-    let expected =
-      let attribute (name, annotation, value, setter, number_of_defines) =
-        let defines =
-          if number_of_defines > 0 then
-            let define = {
-              Statement.Define.signature = {
-                name = !&"foo";
-                parameters = [];
-                decorators = [];
-                docstring = None;
-                return_annotation = Some !"int";
-                async = false;
-                parent = None;
-              };
-              body = [];
-            }
-            in
-            Some (List.init ~f:(fun _ -> define) number_of_defines)
-          else
-            None
+    let assertion ~convert =
+      let expected =
+        let attribute (name, annotation, value, setter, number_of_defines) =
+          let defines =
+            if number_of_defines > 0 then
+              let define = {
+                Statement.Define.signature = {
+                  name = !&"foo";
+                  parameters = [];
+                  decorators = [];
+                  docstring = None;
+                  return_annotation = Some !"int";
+                  async = false;
+                  parent = None;
+                };
+                body = [];
+              }
+              in
+              Some (List.init ~f:(fun _ -> define) number_of_defines)
+            else
+              None
+          in
+          create_attribute
+            ~name
+            ~annotation:(annotation >>| Type.expression ~convert)
+            ?defines
+            ~value:(value >>| parse_single_expression ~convert)
+            ~setter
+            ()
         in
-        create_attribute ~name ~annotation ?defines ~value ~setter ()
+        List.map expected ~f:attribute
       in
-      List.map expected ~f:attribute
+      let printer attributes =
+        List.map attributes ~f:Attribute.show
+        |> String.concat ~sep:"\n\n"
+      in
+      let equal { Node.value = left; _ } { Node.value = right; _ } =
+        let open Attribute in
+        left.async = right.async &&
+        left.setter = right.setter &&
+        String.equal left.name right.name &&
+        Option.equal Expression.equal left.annotation right.annotation &&
+        Option.equal Expression.equal left.value right.value &&
+        Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
+      in
+      assert_equal
+        ~cmp:(List.equal ~equal)
+        ~printer
+        expected
+        (parse_single_class ~convert source
+         |> Class.attributes ~in_test ~include_generated_attributes ~convert
+         |> Identifier.SerializableMap.bindings
+         |> List.map ~f:snd)
     in
-    let printer attributes =
-      List.map attributes ~f:Attribute.show
-      |> String.concat ~sep:"\n\n"
-    in
-    let equal { Node.value = left; _ } { Node.value = right; _ } =
-      let open Attribute in
-      left.async = right.async &&
-      left.setter = right.setter &&
-      String.equal left.name right.name &&
-      Option.equal Expression.equal left.annotation right.annotation &&
-      Option.equal Expression.equal left.value right.value &&
-      Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
-    in
-    assert_equal
-      ~cmp:(List.equal ~equal)
-      ~printer
-      expected
-      (parse_single_class ~convert:true source
-       |> Class.attributes ~in_test ~include_generated_attributes
-       |> Identifier.SerializableMap.bindings
-       |> List.map ~f:snd)
+    assertion ~convert:true;
+    assertion ~convert:false
   in
-
+  let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
+    name, annotation, value, setter, number_of_defines
+  in
   assert_attributes
     {|
       class Foo:
@@ -669,8 +669,8 @@ let test_attributes _ =
         Foo.a, Foo.b = 1, 2
      |}
     [
-      "a", None, Some (parse_single_expression ~convert:true "1"), false, 0;
-      "b", None, Some (parse_single_expression ~convert:true "2"), false, 0;
+      "a", None, Some "1", false, 0;
+      "b", None, Some "2", false, 0;
     ];
   assert_attributes
     {|
@@ -678,8 +678,8 @@ let test_attributes _ =
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, Some (parse_single_expression ~convert:true "list(range(2))[0]"), false, 0;
-      "b", None, Some (parse_single_expression ~convert:true "list(range(2))[1]"), false, 0;
+      "a", None, Some "list(range(2))[0]", false, 0;
+      "b", None, Some "list(range(2))[1]", false, 0;
     ];
 
   (* Implicit attributes in tests. *)

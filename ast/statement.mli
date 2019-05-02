@@ -271,11 +271,16 @@ module Class : sig
   val defines: t -> Define.t list
   val find_define: t -> method_name:Identifier.t -> Define.t Node.t option
 
-  val implicit_attributes: ?in_test: bool -> t -> Attribute.t Identifier.SerializableMap.t
+  val implicit_attributes
+    :  ?in_test: bool
+    -> ?convert: bool
+    -> t
+    -> Attribute.t Identifier.SerializableMap.t
   val explicitly_assigned_attributes: t -> Attribute.t Identifier.SerializableMap.t
   val attributes
     :  ?include_generated_attributes: bool
     -> ?in_test: bool
+    -> ?convert:bool
     -> t
     -> Attribute.t Identifier.SerializableMap.t
 

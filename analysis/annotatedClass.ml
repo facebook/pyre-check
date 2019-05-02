@@ -667,7 +667,7 @@ let attribute_table
             ~default_class_attribute:class_attributes
           |> Attribute.Table.add table
         in
-        Statement.Class.attributes ~include_generated_attributes ~in_test definition
+        Statement.Class.attributes ~include_generated_attributes ~in_test ~convert:true definition
         |> fun attribute_map ->
         Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
       in
