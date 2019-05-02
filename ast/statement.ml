@@ -9,6 +9,7 @@ open Pyre
 
 module Access = Expression.Access
 module Argument = Expression.Argument
+module Name = Expression.Name
 
 
 module Record = struct
@@ -96,7 +97,6 @@ module While = struct
   }
   [@@deriving compare, eq, sexp, show, hash]
 end
-
 
 
 module If = struct
@@ -254,13 +254,15 @@ module Attribute = struct
     | Access (SimpleAccess access) ->
         begin
           match List.rev access with
-          | (Access.Call _) :: (Access.Identifier identifier) :: class_name
           | (Access.Identifier identifier) :: class_name
-            when Access.equal parent (List.rev class_name) ->
+            when Reference.equal parent (Reference.from_access (List.rev class_name)) ->
               Some identifier
           | _ ->
               None
         end
+    | Name (Name.Attribute { base; attribute; _ })
+      when Expression.equal base (Reference.expression parent) ->
+        Some attribute
     | _ ->
         None
 end
@@ -700,9 +702,7 @@ module Define = struct
     let attribute ?(setter = false) annotation =
       parent
       >>= (fun parent ->
-          Attribute.name
-            ~parent:(Reference.access parent)
-            (Reference.expression ~convert:true ~location name))
+          Attribute.name ~parent (Reference.expression ~convert:true ~location name))
       >>| fun name ->
       Attribute.create
         ~location
@@ -821,7 +821,7 @@ module Class = struct
           _;
         } ->
           let add_attribute map target value =
-            Attribute.name ~parent:(Reference.access name) target
+            Attribute.name ~parent:name target
             |> function
             | Some name ->
                 let attribute = Attribute.create ~primitive:true ~location ~name ~value () in
@@ -839,7 +839,7 @@ module Class = struct
           _;
         } ->
           let add_attribute index map target =
-            Attribute.name ~parent:(Reference.access name) target
+            Attribute.name ~parent:name target
             |> function
             | Some name ->
                 let value =
@@ -868,7 +868,7 @@ module Class = struct
           List.foldi ~init:map ~f:add_attribute targets
       | Assign { Assign.target; annotation; value; _ } ->
           begin
-            Attribute.name ~parent:(Reference.access name) target
+            Attribute.name ~parent:name target
             |> function
             | Some name  ->
                 let attribute =
@@ -954,7 +954,7 @@ module Class = struct
         | Define ({ Define.signature = { name = target; _ }; _ } as define) ->
             Attribute.name
               (Reference.expression ~convert:true ~location target)
-              ~parent:(Reference.access name)
+              ~parent:name
             >>| (fun name ->
                 let attribute =
                   match Identifier.SerializableMap.find_opt name map with
