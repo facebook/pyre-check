@@ -404,7 +404,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           _;
         }
         when String.equal (Expression.show annotation) "_SpecialForm" ->
-          let name = Reference.from_name name in
+          let name = Reference.from_name_exn name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
@@ -564,7 +564,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       let aliases =
                         let update = function
                           | Some alias -> alias
-                          | None -> local_alias ~qualifier ~name:(Reference.from_name qualified)
+                          | None -> local_alias ~qualifier ~name:(Reference.from_name_exn qualified)
                         in
                         Map.update aliases (Reference.create name) ~f:update
                       in
@@ -584,7 +584,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                          not (Set.mem immutables reference) then
                         let alias =
                           qualify_local_identifier name ~qualifier
-                          |> Reference.from_name
+                          |> Reference.from_name_exn
                         in
                         {
                           scope with
@@ -948,7 +948,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | { Node.value = Tuple elements; _ } ->
           List.fold elements ~init:scope ~f:renamed_scope
       | { Node.value = Name (Name.Identifier name); _ } ->
-          if Set.mem locals (Reference.from_name (Name.Identifier name)) then
+          if Set.mem locals (Reference.create name) then
             scope
           else
             let scope, _, _ = prefix_identifier ~scope ~prefix:"target" name in
@@ -1790,7 +1790,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                   };
                 _;
               } ->
-                  Reference.drop_prefix ~prefix:class_name (Reference.from_name name)
+                  Reference.drop_prefix ~prefix:class_name (Reference.from_name_exn name)
                   |> Reference.single
                   >>| (fun name -> string_literal name, annotation)
               | _ ->

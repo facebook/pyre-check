@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 open Sexplib.Conv
 
 open Expression
@@ -100,15 +101,25 @@ let access =
 let from_name name =
   let rec get_reversed_identifiers = function
     | Name.Identifier identifier ->
-        [identifier]
+        Some [identifier]
     | Name.Attribute { base = { Node.value = Name base; _ }; attribute } ->
-        attribute :: (get_reversed_identifiers base)
+        begin
+          match get_reversed_identifiers base with
+          | Some sofar -> Some (attribute :: sofar)
+          | None -> None
+        end
     | _ ->
-        failwith "Cannot convert expression with non-identifiers to reference."
+        None
   in
   get_reversed_identifiers name
-  |> List.rev
-  |> create_from_list
+  >>| List.rev
+  >>| create_from_list
+
+
+let from_name_exn name =
+  match from_name name with
+  | Some name -> name
+  | None -> failwith "Cannot convert expression with non-identifiers to reference."
 
 
 let name reference =

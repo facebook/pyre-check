@@ -85,7 +85,7 @@ let test_name _ =
       ~printer:Reference.show
       ~cmp:Reference.equal
       (Reference.create expected)
-      (Reference.from_name name)
+      (Reference.from_name_exn name)
   in
   assert_create_from_name
     (Expression.Name.Identifier "a")

@@ -425,7 +425,7 @@ let register_aliases (module Handler: Handler) sources =
         } when Expression.is_simple_name target ->
           let target =
             let target =
-              Reference.from_name target
+              Reference.from_name_exn target
               |> Reference.sanitize_qualified
             in
             if in_class_body then target else Reference.combine qualifier target
@@ -572,7 +572,13 @@ let register_aliases (module Handler: Handler) sources =
             match annotation with
             | Type.Parametric { name = primitive; _ }
             | Primitive primitive ->
-                let reference = Reference.create primitive in
+                let reference =
+                  match Node.value (Type.expression (Type.Primitive primitive)) with
+                  | Expression.Name name when Expression.is_simple_name name ->
+                      Reference.from_name_exn name
+                  | _ ->
+                      Reference.create "typing.Any"
+                in
                 let module_definition = Handler.module_definition in
                 if Module.from_empty_stub ~reference ~module_definition then
                   sofar, Type.Any
@@ -808,7 +814,7 @@ let register_values
           in
           match target.Node.value, annotation with
           | Name name, _ when Expression.is_simple_name name ->
-              register ~location:target.Node.location (Reference.from_name name) annotation
+              register ~location:target.Node.location (Reference.from_name_exn name) annotation
           | Tuple elements, Type.Tuple (Type.Bounded parameters)
             when List.length elements = List.length parameters ->
               List.map2_exn

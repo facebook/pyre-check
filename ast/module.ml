@@ -90,13 +90,14 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           Assign.target = { Node.value = Name (Name.Identifier target); _ };
           value = { Node.value = Name value; _ };
           _;
-        } when Expression.is_simple_name value ->
-          let target = Reference.create target in
-          let value = Reference.from_name value in
-          if Reference.is_strict_prefix ~prefix:qualifier value then
-            Map.set aliases ~key:(Reference.sanitized target) ~data:value
-          else
-            aliases
+        } ->
+          begin
+            match Reference.from_name value with
+            | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
+                Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
+            | _ ->
+                aliases
+          end
       | Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import ?handle ~qualifier ~from in
           let export aliases { Import.name; alias } =
@@ -167,7 +168,7 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           public_values, Some (List.filter_map ~f:to_reference names)
       | Assign { Assign.target = { Node.value = Name target; _ }; _ }
         when Expression.is_simple_name target ->
-          public_values @ (filter_private [target |> Reference.from_name]), dunder_all
+          public_values @ (filter_private [target |> Reference.from_name_exn]), dunder_all
       | Class { Record.Class.name; _ } ->
           public_values @ (filter_private [name]), dunder_all
       | Define { Define.signature = { name; _ }; _ } ->

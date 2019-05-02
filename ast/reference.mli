@@ -21,7 +21,8 @@ val combine: t -> t -> t
 
 val from_access: Expression.Access.t -> t
 val access: t -> Expression.Access.t
-val from_name: Expression.t Expression.Name.t -> t
+val from_name: Expression.t Expression.Name.t -> t option
+val from_name_exn: Expression.t Expression.Name.t -> t
 val name: t -> Expression.t Expression.Name.t
 val expression: ?convert:bool -> ?location: Location.t -> t -> Expression.t
 

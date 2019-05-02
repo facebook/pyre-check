@@ -4,6 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 
 open Ast
 open Expression
@@ -169,11 +170,11 @@ let transform_ast ({ Source.statements; _ } as source) =
           Assign.target = { Node.value = Name name; _ };
           value = expression;
           _;
-        } when Expression.is_simple_name name ->
-          let name = Reference.delocalize (Reference.from_name name) in
+        } ->
+          let name = Reference.from_name name >>| Reference.delocalize in
           begin
-            match extract_attributes expression with
-            | Some attributes
+            match extract_attributes expression, name with
+            | Some attributes, Some name
               (* TODO (T42893621): properly handle the excluded case *)
               when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$self") name) ->
                 let constructor = tuple_constructor ~parent:name ~location attributes in
