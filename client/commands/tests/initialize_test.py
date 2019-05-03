@@ -5,6 +5,7 @@
 
 import builtins  # noqa
 import os
+import sys
 import unittest
 from unittest.mock import call, mock_open, patch
 
@@ -78,6 +79,18 @@ class InitializeTest(unittest.TestCase):
                 initialize.Initialize(
                     arguments, configuration, AnalysisDirectory(".")
                 ).run()
+
+        with patch.object(commands.Command, "_call_client"), patch.object(
+            sys, "argv", ["/tmp/pyre/bin/pyre"]
+        ):
+            which.reset_mock()
+            which.side_effect = [True, None, "/tmp/pyre/bin/pyre.bin"]
+            initialize.Initialize(
+                arguments, configuration, AnalysisDirectory(".")
+            )._get_configuration()
+            which.assert_has_calls(
+                [call("watchman"), call("pyre.bin"), call("/tmp/pyre/bin/pyre.bin")]
+            )
 
     def test_get_local_configuration(self):
         arguments = mock_arguments()

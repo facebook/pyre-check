@@ -492,6 +492,11 @@ class Configuration:
             )
             self._binary = shutil.which(BINARY_NAME)
             if not self._binary:
+                binary_candidate = os.path.join(
+                    os.path.dirname(sys.argv[0]), BINARY_NAME
+                )
+                self._binary = shutil.which(binary_candidate)
+            if not self._binary:
                 LOG.warning("Could not find `{}` in PATH".format(BINARY_NAME))
             else:
                 LOG.info("Found: `%s`", self._binary)

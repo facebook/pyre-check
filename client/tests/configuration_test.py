@@ -5,9 +5,10 @@
 
 import hashlib  # noqa
 import os
+import shutil  # noqa
 import sys
 import unittest
-from typing import Any, cast
+from typing import Any, Optional, cast
 from unittest.mock import MagicMock, call, patch
 
 from .. import CONFIGURATION_FILE, number_of_workers
@@ -510,3 +511,26 @@ class ConfigurationTest(unittest.TestCase):
                 {},
             ]
             Configuration()
+
+    @patch.object(Configuration, "_read")
+    @patch.object(Configuration, "_override_version_hash")
+    @patch.object(Configuration, "_resolve_versioned_paths")
+    @patch.object(Configuration, "_validate")
+    def test_find_binary(
+        self, _validate, _resolve_versioned_paths, _override_version_hash, _read
+    ):
+        def accept_tmp(argument: str) -> Optional[str]:
+            if argument == "/tmp/pyre/bin/pyre.bin":
+                return argument
+            return None
+
+        with patch.object(sys, "argv", ["/tmp/pyre/bin/pyre"]), patch(
+            "shutil.which", side_effect=accept_tmp
+        ):
+            configuration = Configuration()
+            self.assertEqual(configuration._binary, "/tmp/pyre/bin/pyre.bin")
+        with patch.object(sys, "argv", ["/tmp/unknown/bin/pyre"]), patch(
+            "shutil.which", side_effect=accept_tmp
+        ):
+            configuration = Configuration()
+            self.assertEqual(configuration._binary, None)

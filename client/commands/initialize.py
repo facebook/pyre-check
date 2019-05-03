@@ -8,6 +8,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from typing import Any, Dict
 
 from .. import BINARY_NAME, CONFIGURATION_FILE, find_typeshed, log
@@ -40,6 +41,10 @@ class Initialize(Command):
                 LOG.warning("Unable to initialize watchman for the current directory.")
 
         binary_path = shutil.which(BINARY_NAME)
+        if binary_path is None:
+            binary_path = shutil.which(
+                os.path.join(os.path.dirname(sys.argv[0]), BINARY_NAME)
+            )
         if binary_path is None:
             binary_path = os.path.abspath(
                 log.get_input(
