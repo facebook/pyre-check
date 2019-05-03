@@ -74,7 +74,9 @@ class Configuration:
     @staticmethod
     def gather_local_configurations(arguments) -> List["Configuration"]:
         LOG.info("Finding configurations...")
-        configuration_paths = get_filesystem().list(".", [".pyre_configuration.local"])
+        configuration_paths = get_filesystem().list(
+            ".", patterns=[r"**\.pyre_configuration.local"]
+        )
         if not configuration_paths:
             LOG.info("No projects with local configurations found.")
             project_configuration = Configuration.find_project_configuration()

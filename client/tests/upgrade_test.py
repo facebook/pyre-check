@@ -7,6 +7,7 @@ import itertools
 import json
 import os
 import pathlib
+import subprocess
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
@@ -80,13 +81,19 @@ class FixmeAllTest(unittest.TestCase):
                 "path/to/.pyre_configuration.local", json.loads(configuration_contents)
             )
         ]
-        with patch("subprocess.run", return_value=process):
+        with patch("subprocess.run", return_value=process) as subprocess_run:
             with patch("builtins.open", mock_open(read_data=configuration_contents)):
                 configurations = upgrade.Configuration.gather_local_configurations(
                     arguments
                 )
                 self.assertTrue(
                     configuration_lists_equal(expected_configurations, configurations)
+                )
+                subprocess_run.assert_called_once_with(
+                    ["hg", "files", "--include", r"**\.pyre_configuration.local"],
+                    cwd=".",
+                    stderr=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
                 )
 
         configurations_string = (
