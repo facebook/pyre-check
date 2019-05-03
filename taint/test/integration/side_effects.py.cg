@@ -1,0 +1,8 @@
+@generated
+Call dependencies
+side_effects.MyList::append (method) -> []
+side_effects.test_from_0_to_1 (fun) -> [__test_source (fun) side_effects.change_arg1 (fun)]
+side_effects.test_from_1_to_0 (fun) -> [__test_source (fun) side_effects.change_arg0 (fun)]
+side_effects.test_from_1_to_0_nested (fun) -> [__test_source (fun) side_effects.change_arg0 (fun)]
+side_effects.test_from_1_to_0_nested_distinct (fun) -> [__test_source (fun) side_effects.change_arg0 (fun)]
+side_effects.test_list_append (fun) -> [__test_source (fun) side_effects.MyList::__init__ (method) side_effects.MyList::append (method)]

@@ -90,13 +90,13 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       { taint }
 
 
-    let store_taint ~root ~path taint { taint = state_taint } =
-      { taint = ForwardState.assign ~root ~path taint state_taint }
+    let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
+      { taint = ForwardState.assign ~weak ~root ~path taint state_taint }
 
 
-    let store_taint_option access_path taint state =
+    let store_taint_option ?(weak = false) access_path taint state =
       match access_path with
-      | Some { AccessPath.root; path } -> store_taint ~root ~path taint state
+      | Some { AccessPath.root; path } -> store_taint ~weak ~root ~path taint state
       | None -> state
 
 
@@ -156,23 +156,33 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.prepend actual_path
             |> BackwardState.Tree.join taint_tree
           in
-          let combine_tito taint_tree { AccessPath.root; actual_path; formal_path; } =
-            let new_tito =
+          let merge_tito_effect join ~key:_ = function
+            | `Left left -> Some left
+            | `Right right -> Some right
+            | `Both (left, right) -> Some (join left right)
+          in
+          let combine_tito tito_map { AccessPath.root; actual_path; formal_path; } =
+            let new_tito_map =
               BackwardState.read
                 ~root
                 ~path:formal_path
                 backward.taint_in_taint_out
               |> BackwardState.Tree.prepend actual_path
+              |> BackwardState.Tree.partition Domains.BackwardTaint.leaf ~f:Fn.id
             in
-            BackwardState.Tree.join taint_tree new_tito
+            Map.Poly.merge tito_map new_tito_map ~f:(merge_tito_effect BackwardState.Tree.join)
           in
-          let analyze_argument_and_compute_tito
-              (tito, state)
+          let analyze_argument_and_compute_tito_effect
+              (tito_effects, state)
               ((argument, sink_matches), (_dup, tito_matches)) =
             let { Node.location; _ } = argument in
             let argument_taint, state = analyze_unstarred_expression ~resolution argument state in
             let tito =
-              let convert_tito tito {BackwardState.Tree.path; tip=return_taint; _} =
+              let convert_tito_path
+                  kind
+                  accumulated_tito
+                  {BackwardState.Tree.path; tip=return_taint; _}
+                =
                 let breadcrumbs =
                   let gather_breadcrumbs breadcrumbs feature =
                     match feature with
@@ -200,29 +210,36 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                   |> ForwardState.Tree.create_leaf
                 in
                 let return_paths =
-                  let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
-                    extra_path :: paths
-                  in
-                  BackwardTaint.fold
-                    BackwardTaint.complex_feature
-                    return_taint
-                    ~f:gather_paths
-                    ~init:[]
+                  match kind with
+                  | Sinks.LocalReturn ->
+                      let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
+                        extra_path :: paths
+                      in
+                      BackwardTaint.fold
+                        BackwardTaint.complex_feature
+                        return_taint
+                        ~f:gather_paths
+                        ~init:[]
+                  | _ ->
+                      (* No special handling of paths for side effects *)
+                      [[]]
                 in
                 let create_tito_return_paths tito return_path =
                   ForwardState.Tree.prepend return_path taint_to_propagate
                   |> ForwardState.Tree.join tito
                 in
-                List.fold return_paths ~f:create_tito_return_paths ~init:tito
+                List.fold return_paths ~f:create_tito_return_paths ~init:accumulated_tito
               in
-              let taint_in_taint_out =
-                List.fold tito_matches ~f:combine_tito ~init:BackwardState.Tree.empty
+              let convert_tito ~key:kind ~data:tito_tree =
+                BackwardState.Tree.fold
+                  BackwardState.Tree.RawPath
+                  tito_tree
+                  ~init:ForwardState.Tree.empty
+                  ~f:(convert_tito_path kind)
               in
-              BackwardState.Tree.fold
-                BackwardState.Tree.RawPath
-                taint_in_taint_out
-                ~init:tito
-                ~f:convert_tito
+              List.fold tito_matches ~f:combine_tito ~init:Map.Poly.empty
+              |> Map.Poly.mapi ~f:convert_tito
+              |> Map.Poly.merge tito_effects ~f:(merge_tito_effect ForwardState.Tree.join)
             in
             let sink_tree =
               List.fold
@@ -233,10 +250,10 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
             FunctionContext.check_flow ~location ~source_tree:argument_taint ~sink_tree;
             tito, state
           in
-          let tito, state =
+          let tito_effects, state =
             List.fold
-              ~f:analyze_argument_and_compute_tito combined_matches
-              ~init:(ForwardState.Tree.empty, state)
+              ~f:analyze_argument_and_compute_tito_effect combined_matches
+              ~init:(Map.Poly.empty, state)
           in
           let result_taint =
             ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
@@ -245,7 +262,28 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               ~callees:[call_target]
               ~port:AccessPath.Root.LocalResult
           in
-          ForwardState.Tree.join result_taint tito, state
+          let tito =
+            Map.Poly.find tito_effects Sinks.LocalReturn
+            |> Option.value ~default:ForwardState.Tree.empty
+          in
+          let apply_tito_side_effects tito_effects state =
+            let for_each_target ~key:target ~data:taint state =
+              match target with
+              | Sinks.LocalReturn -> state  (* This is regular tito which was computed above *)
+              | ParameterUpdate n ->  (* Side effect on argument n *)
+                  begin
+                    match List.nth arguments n with
+                    | None -> state
+                    | Some { Argument.value = exp; _ } ->
+                        let access_path = AccessPath.of_expression exp in
+                        store_taint_option ~weak:true access_path taint state
+                  end
+              | _ ->
+                  failwith "unexpected sink in tito"
+            in
+            Map.Poly.fold tito_effects ~f:for_each_target ~init:state
+          in
+          ForwardState.Tree.join result_taint tito, apply_tito_side_effects tito_effects state
         else
           (* Obscure/no model. *)
           List.fold

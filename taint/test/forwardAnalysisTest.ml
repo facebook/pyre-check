@@ -1012,6 +1012,79 @@ let test_composed_models _ =
     ]
 
 
+let test_tito_side_effects _ =
+  assert_taint
+    ~models:{|
+      def change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
+      def change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
+      def qualifier.MyList.append(self, arg: TaintInTaintOut[Updates[self]]): ...
+    |}
+    {|
+      def test_from_1_to_0():
+        x = 0
+        change_arg0(x, __test_source())
+        return x
+
+      def test_from_0_to_1():
+        y = 0
+        change_arg1(__test_source(), y)
+        return y
+
+      def test_from_1_to_0_nested():
+        x = {}
+        change_arg0(x.foo, __test_source())
+        return x.foo
+
+      def test_from_1_to_0_nested_distinct():
+        x = {}
+        change_arg0(x.foo, __test_source())
+        return x.bar
+
+      def test_weak_assign():
+        x = __test_source()
+        change_arg0(x, 'no taint')
+        return x
+
+      class MyList:
+        def append(self, arg): ...
+
+      def test_list_append():
+        l = MyList()
+        l.append(__test_source())
+        return l
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.test_from_1_to_0";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.test_from_0_to_1";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.test_from_1_to_0_nested";
+      outcome
+        ~kind:`Function
+        ~returns:[]
+        "qualifier.test_from_1_to_0_nested_distinct";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.test_weak_assign";
+      outcome
+        ~kind:`Method
+        ~tito_parameters:["arg updates parameter 0"]
+        "qualifier.MyList.append";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.test_list_append";
+    ]
+
+
 let () =
   "taint">:::[
     "no_model">::test_no_model;
@@ -1036,5 +1109,6 @@ let () =
     "test_yield">::test_yield;
     "test_construction">::test_construction;
     "test_composed_models">::test_composed_models;
+    "test_tito_side_effects">::test_tito_side_effects;
   ]
   |> TestHelper.run_with_taint_models

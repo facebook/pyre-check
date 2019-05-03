@@ -1,0 +1,158 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.MyList.append",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.change_arg0",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg1)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.change_arg1",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(arg0)",
+        "taint": [
+          { "decl": null, "leaves": [ { "kind": "ParameterUpdate1" } ] }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.test_from_0_to_1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 10,
+              "start": 14,
+              "end": 27
+            },
+            "tito": [ { "line": 10, "start": 14, "end": 27 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.test_from_1_to_0",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 5,
+              "start": 17,
+              "end": 30
+            },
+            "tito": [ { "line": 5, "start": 17, "end": 30 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.test_from_1_to_0_nested",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 15,
+              "start": 21,
+              "end": 34
+            },
+            "tito": [ { "line": 15, "start": 21, "end": 34 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "tito" },
+              { "via": "special_source" },
+              { "has": "first-field" },
+              { "first-field": "foo" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.test_list_append",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 25,
+              "start": 11,
+              "end": 24
+            },
+            "tito": [ { "line": 25, "start": 11, "end": 24 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
