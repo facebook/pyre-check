@@ -29,6 +29,7 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path;
 }
+[@@deriving show]
 
 val create: Root.t -> AbstractTreeDomain.Label.path -> t
 

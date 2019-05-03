@@ -144,44 +144,67 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
               features
             in
             let translate_tito argument_taint {BackwardState.Tree.path=tito_path; tip=element; _} =
-              let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
-                extra_path :: paths
-              in
-              let extra_paths =
-                BackwardTaint.fold
-                  BackwardTaint.complex_feature
-                  element
-                  ~f:gather_paths
-                  ~init:[]
-              in
-              let breadcrumbs =
-                let gather_breadcrumbs breadcrumbs feature =
-                  match feature with
-                  | (Features.Simple.Breadcrumb _) as breadcrumb ->
-                      breadcrumb :: breadcrumbs
-                  | _ ->
-                      breadcrumbs
+              let compute_parameter_tito ~key:kind ~data:element argument_taint =
+                let extra_paths =
+                  match kind with
+                  | Sinks.LocalReturn ->
+                      let gather_paths paths (Features.Complex.ReturnAccessPath extra_path) =
+                        extra_path :: paths
+                      in
+                      BackwardTaint.fold
+                        BackwardTaint.complex_feature
+                        element
+                        ~f:gather_paths
+                        ~init:[]
+                  | _ ->  (* No special path handling for side effect taint *)
+                      [[]]
                 in
-                BackwardTaint.fold
-                  BackwardTaint.simple_feature
-                  element
-                  ~f:gather_breadcrumbs
-                  ~init:[]
+                let breadcrumbs =
+                  let gather_breadcrumbs breadcrumbs feature =
+                    match feature with
+                    | (Features.Simple.Breadcrumb _) as breadcrumb ->
+                        breadcrumb :: breadcrumbs
+                    | _ ->
+                        breadcrumbs
+                  in
+                  BackwardTaint.fold
+                    BackwardTaint.simple_feature
+                    element
+                    ~f:gather_breadcrumbs
+                    ~init:[]
+                in
+                let add_features features =
+                  List.rev_append breadcrumbs features
+                in
+                let taint_to_propagate =
+                  match kind with
+                  | Sinks.LocalReturn ->
+                      call_taint
+                  | Sinks.ParameterUpdate n ->
+                      begin
+                        match List.nth arguments n with
+                        | None -> BackwardState.Tree.empty
+                        | Some { Argument.value = exp; _ } ->
+                            let access_path = of_expression exp in
+                            get_taint access_path state
+                      end
+                  | _ ->
+                      failwith "unexpected tito sink"
+                in
+                List.fold
+                  extra_paths
+                  ~f:(fun taint extra_path ->
+                      read_tree extra_path taint_to_propagate
+                      |> BackwardState.Tree.collapse
+                      |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_features
+                      |> BackwardState.Tree.create_leaf
+                      |> BackwardState.Tree.prepend tito_path
+                      |> BackwardState.Tree.join taint
+                    )
+                  ~init:argument_taint
               in
-              let add_features features =
-                List.rev_append breadcrumbs features
-              in
-              List.fold
-                extra_paths
-                ~f:(fun taint extra_path ->
-                    read_tree extra_path call_taint
-                    |> BackwardState.Tree.collapse
-                    |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:add_features
-                    |> BackwardState.Tree.create_leaf
-                    |> BackwardState.Tree.prepend tito_path
-                    |> BackwardState.Tree.join taint
-                  )
-                ~init:argument_taint
+              BackwardTaint.partition BackwardTaint.leaf ~f:Fn.id element
+              |> Map.Poly.fold ~f:compute_parameter_tito ~init:argument_taint
             in
             BackwardState.read
               ~transform_non_leaves

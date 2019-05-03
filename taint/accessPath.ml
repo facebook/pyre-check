@@ -228,6 +228,7 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path;
 }
+[@@deriving show]
 
 
 let create root path = { root; path; }

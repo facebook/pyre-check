@@ -156,3 +156,29 @@
     "tito": []
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.to_sink_via_side_effect",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "root": {
+              "filename": "side_effects.py",
+              "line": 37,
+              "start": 16,
+              "end": 17
+            },
+            "tito": [ { "line": 36, "start": 19, "end": 20 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "tito" }, { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
+  }
+}
