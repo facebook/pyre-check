@@ -87,13 +87,6 @@ let show kind =
   | _ -> failwith "unregistered kind"
 
 
-let assert_non_empty_options (type a) (kind : a kind) options =
-  if options = [] then
-    get_kind_name kind
-    |> Format.sprintf "Analysis %s is not specifying any options and will never run"
-    |> failwith
-
-
 let assert_unique_kind (type a) (kind : a kind) abstract_kind =
   if Map.mem abstract_kind !kinds then
     get_kind_name kind

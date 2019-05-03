@@ -40,24 +40,11 @@ type reason =
 [@@deriving eq, show, compare]
 
 
-let pp_found format callable =
-  Format.fprintf format "%a" Type.Callable.pp callable
-
-
-let show_found =
-  Format.asprintf "%a" pp_found
-
-
-let equal_found left right =
-  (* Ignore constraints. *)
-  Type.Callable.equal left right
-
-
 type closest = {
   callable: Type.Callable.t;
   reason: reason option;
 }
-[@@deriving eq, show]
+[@@deriving show]
 
 
 let equal_closest (left: closest) (right: closest) =
@@ -75,7 +62,6 @@ type t =
 type argument =
   | Argument of { argument: Argument.t; position: int }
   | Default
-[@@deriving eq, show]
 
 
 type ranks = {

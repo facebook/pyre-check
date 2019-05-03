@@ -23,7 +23,7 @@ module State (Context: Context) = struct
     | Unawaited of Location.t
     | Awaited
   [@@deriving show]
-
+  let _ = show_state  (* unused *)
 
   type t = {
     unawaited: state Reference.Map.t;

@@ -230,7 +230,7 @@ type t = {
   qualifier: Reference.t;
   statements: Statement.t list;
 }
-[@@deriving compare, eq, hash, show, sexp]
+[@@deriving compare, eq, hash, sexp]
 
 
 let pp format { statements; _ } =

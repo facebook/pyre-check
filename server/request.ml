@@ -280,11 +280,6 @@ module LookupCache = struct
         lookup
 
 
-  let get ~state ~configuration file =
-    handle ~configuration file
-    >>= fun handle -> get_by_handle ~state ~file ~handle
-
-
   let evict ~state:{ lookups; _ } ~configuration file =
     handle ~configuration file
     >>| File.Handle.show

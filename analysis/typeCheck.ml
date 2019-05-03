@@ -84,10 +84,6 @@ module AccessState = struct
     { resolution; accumulator; f; resolved; target; continue }
 
 
-  let annotation { annotation; _ } =
-    annotation
-
-
   let redirect ~resolution ~access =
     (* Resolve special-cased calls. *)
     match access with
@@ -241,10 +237,6 @@ module State = struct
 
   let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
     Format.fprintf format "%a" Reference.pp name
-
-
-  let show_nested_define nested =
-    Format.asprintf "%a" pp_nested_define nested
 
 
   let pp
@@ -715,29 +707,6 @@ module State = struct
 
 
   let widening_threshold = 10
-
-
-  let rec meet ({ resolution; _ } as left) right =
-    if left.bottom then
-      left
-    else if right.bottom then
-      right
-    else
-      let annotations =
-        let merge meet ~key:_ = function
-          | `Both (left, right) ->
-              Some (meet left right)
-          | `Left _
-          | `Right _ ->
-              None
-        in
-        Map.merge
-          (Resolution.annotations left.resolution)
-          (Resolution.annotations right.resolution)
-          ~f:(merge (Refinement.meet ~resolution));
-      in
-      let errors = Set.union left.errors right.errors in
-      { left with errors; resolution = Resolution.with_annotations resolution ~annotations }
 
 
   let widen ~previous:({ resolution; _ } as previous) ~next ~iteration =

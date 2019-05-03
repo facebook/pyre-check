@@ -16,7 +16,6 @@ open AccessPath
 
 module type FixpointState = sig
   type t = { taint: ForwardState.t }
-  [@@deriving show]
 
   include Fixpoint.State with type t := t
 
@@ -38,7 +37,6 @@ module type FUNCTION_CONTEXT = sig
     -> sink_tree: BackwardState.Tree.t
     -> unit
 
-  val generate_issues: unit -> Flow.issue list
   val return_sink: BackwardState.Tree.t
 end
 

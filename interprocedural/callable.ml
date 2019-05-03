@@ -133,14 +133,6 @@ module Set = Caml.Set.Make(Key)
 module OverrideSet = Caml.Set.Make(OverrideKey)
 
 
-let define_matches search { Node.value = { Define.name; _ } ; _ } =
-  search = Reference.show name
-
-
-let class_matches search { Node.value = { Class.name; _ } ; _ } =
-  search = Reference.show name
-
-
 let get_definition ~resolution = function
   | `Function name when String.is_suffix name ~suffix:".$toplevel" ->
       String.drop_suffix name 10
@@ -202,11 +194,6 @@ let external_target_name = function
       Format.sprintf "Ovr{%s::%s}" class_name method_name
   | `Object name ->
       Format.sprintf "Obj{%s}" name
-
-
-let raw_to_string callable =
-  sexp_of_t callable
-  |> Sexp.to_string
 
 
 let compare target1 target2 =

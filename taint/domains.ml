@@ -91,6 +91,8 @@ module TraceInfo = struct
       }
   [@@deriving compare, sexp, show]
 
+  let _ = show  (* shadowed below *)
+
   let show = function
     | Declaration -> "declaration"
     | Origin location ->

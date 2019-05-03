@@ -27,7 +27,7 @@ type missing_annotation = {
   evidence_locations: Location.Instantiated.t list;
   thrown_at_source: bool;
 }
-[@@deriving compare, eq, sexp, hash]
+[@@deriving compare, eq, show, sexp, hash]
 
 type incompatible_type = {
   name: Reference.t;

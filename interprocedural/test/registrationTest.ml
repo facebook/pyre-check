@@ -12,6 +12,7 @@ open Interprocedural
 module SimpleAnalysis = Interprocedural.Result.Make(struct
     type result = string
     type call_model = int
+    [@@deriving show]
 
     let name = "simple-test-analysis"
     let empty_model = 0
@@ -19,8 +20,6 @@ module SimpleAnalysis = Interprocedural.Result.Make(struct
 
     let get_errors _ =
       []
-
-    let show_call_model = string_of_int
 
     let join ~iteration:_ a b =
       a + b

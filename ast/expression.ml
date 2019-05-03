@@ -339,10 +339,7 @@ and t = expression Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
-let equal_t = equal
-
-
-let pp_t = pp
+let _ = show  (* shadowed below *)
 
 
 type expression_t = t
@@ -358,13 +355,10 @@ end
 
 
 module Access = struct
-  let create_call_expression callee arguments =
-    Call { callee; arguments }
-
   include Record.Access
 
   type t = expression_t Record.Access.record
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, hash]
 
   type general_access = expression_t Record.Access.general_access_record
   [@@deriving compare, eq, sexp, show, hash]

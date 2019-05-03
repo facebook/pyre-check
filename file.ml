@@ -81,6 +81,9 @@ module Handle = struct
   [@@deriving compare, eq, show, sexp, hash]
 
 
+  let _ = show  (* shadowed below *)
+
+
   let show path =
     path
 

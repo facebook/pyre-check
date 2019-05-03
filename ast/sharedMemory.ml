@@ -81,7 +81,6 @@ module Sources = struct
     let description = "AST"
 
     type out = string
-    let from_string = ident
   end
 
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)

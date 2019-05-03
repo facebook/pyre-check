@@ -745,17 +745,6 @@ let attributes
   |>
   Attribute.Table.to_list
 
-let attributes_to_names_and_types =
-  let attribute_to_name_and_type attribute =
-    let name = Attribute.name attribute in
-    match Annotation.annotation (Attribute.annotation attribute) with
-    | Type.Callable { kind = Type.Record.Callable.Named _; implementation; overloads; _ } ->
-        List.map ~f:Type.Callable.create_from_implementation (implementation :: overloads)
-        |> List.map ~f:(fun annotation -> (name, annotation))
-    | annotation -> [(name, annotation)]
-  in
-  List.concat_map ~f:attribute_to_name_and_type
-
 let attribute_fold
     ?(transitive = false)
     ?(class_attributes = false)

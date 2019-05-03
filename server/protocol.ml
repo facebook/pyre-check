@@ -130,6 +130,8 @@ module TypeQuery = struct
   }
   [@@deriving eq, show]
 
+  let _ = show_compatibility (* unused, but pp is *)
+
   type base_response =
     | Boolean of bool
     | Compatibility of compatibility

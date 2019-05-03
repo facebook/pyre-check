@@ -33,13 +33,6 @@ let get_empty_model (type a) (kind: <model:a;..> Result.storable_kind) : a =
   Analysis.empty_model
 
 
-let get_obscure_model (type a) (kind: <model:a;..> Result.storable_kind) : a =
-  (* Existentially abstract unspecified analysis data *)
-  let Result.ModelPart k1 = Result.ModelPart kind in
-  let module Analysis = (val (Result.get_analysis k1)) in
-  Analysis.obscure_model
-
-
 let get_obscure_models analyses =
   let get_analysis_specific_obscure_model map abstract_analysis =
     let Result.Analysis { kind; analysis; } = abstract_analysis in

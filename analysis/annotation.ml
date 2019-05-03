@@ -42,6 +42,9 @@ let pp format { annotation; mutability } =
   Format.fprintf format "(%a: %s)" Type.pp annotation mutability
 
 
+let _ = show (* Ignore unused generated show *)
+
+
 let show =
   Format.asprintf "%a" pp
 

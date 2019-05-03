@@ -46,10 +46,6 @@ let pp format identifier =
   Format.fprintf format "%a" String.pp identifier
 
 
-let show identifier =
-  identifier
-
-
 let sanitized name =
   let stars, name =
     if String.is_prefix name ~prefix:"**" then

@@ -71,6 +71,9 @@ module Make(Kind: Kind) = struct
   [@@deriving compare, eq, show, sexp, hash]
 
 
+  let _ = show  (* shadowed below *)
+
+
   include Hashable.Make(struct
       type nonrec t = t
       let compare = compare

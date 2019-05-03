@@ -47,10 +47,6 @@ module Node = struct
       Sexp.pp [%message (Set.elements node.successors : int list)]
 
 
-  let show graph =
-    Format.asprintf "%a" pp graph
-
-
   let create id kind predecessors successors =
     { id; kind; predecessors; successors }
 

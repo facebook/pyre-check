@@ -90,6 +90,7 @@ type literal =
   | Boolean of bool
   | Integer of int
   | String of string
+[@@deriving compare, eq, sexp, show, hash]
 
 type tuple =
   | Bounded of t list
@@ -318,7 +319,6 @@ module Variable : sig
   val is_free: t -> bool
   val namespace: t -> namespace: Namespace.t -> t
   val upper_bound: t -> type_t
-  val is_escaped_and_free: t -> bool
 
   val mark_all_variables_as_bound: ?simulated: bool -> type_t -> type_t
   val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t

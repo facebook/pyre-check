@@ -36,9 +36,8 @@ type call_model = {
   backward: Backward.model;
   mode: mode;
 }
-[@@deriving show, sexp]
+[@@deriving sexp]
 
-val empty_model: call_model
 val empty_skip_model: call_model  (* Skips analysis *)
 
 type result = Flow.issue list

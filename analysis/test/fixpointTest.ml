@@ -15,7 +15,7 @@ open Test
 
 module CountingState : sig
   type t = int
-  [@@deriving eq, show]
+  [@@deriving eq]
   include Fixpoint.State with type t := t
 end = struct
   type t = int
@@ -43,12 +43,6 @@ end = struct
 
   let join left right =
     Int.max left right
-
-  let meet left right =
-    Int.min left right
-
-  let update_only_existing_annotations left _ =
-    left
 
   let widening_threshold =
     10

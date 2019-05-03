@@ -28,13 +28,16 @@ type breadcrumbs = Features.Breadcrumb.t list
 [@@deriving show, sexp]
 
 
+let _ = show_breadcrumbs  (* unused but derived *)
+
+
 type taint_annotation =
   | Sink of { sink: Sinks.t; breadcrumbs: breadcrumbs }
   | Source of { source: Sources.t; breadcrumbs: breadcrumbs }
   | Tito of { tito: Sinks.t; breadcrumbs: breadcrumbs }
   | SkipAnalysis  (* Don't analyze methods with SkipAnalysis *)
   | Sanitize      (* Don't propagate inferred model of methods with Sanitize *)
-[@@deriving show, sexp]
+[@@deriving sexp]
 
 
 exception InvalidModel of string
@@ -142,11 +145,6 @@ let introduce_source_taint
       source_taint
   in
   { taint with forward = { source_taint } }
-
-
-let extract_identifier = function
-  | Access.Identifier name -> Some name
-  | _ -> None
 
 
 type leaf_kind =

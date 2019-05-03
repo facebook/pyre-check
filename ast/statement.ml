@@ -193,6 +193,9 @@ and t = statement Node.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
+let _ = show  (* shadowed below *)
+
+
 type statement_t = t
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -1722,26 +1725,6 @@ module PrettyPrinter = struct
     function
     | None -> ()
     | Some reference -> Format.fprintf formatter "%a" Reference.pp reference
-
-
-  let pp_access_list_option formatter =
-    function
-    | None -> ()
-    | Some access_list ->
-        Format.fprintf
-          formatter
-          "@[%a@]"
-          Expression.pp_expression_access_list access_list
-
-
-  let pp_access_list formatter =
-    function
-    | [] -> ()
-    | access_list ->
-        Format.fprintf
-          formatter
-          "@[%a@]"
-          Expression.pp_expression_access_list access_list
 
 
   let pp_list formatter pp sep list =

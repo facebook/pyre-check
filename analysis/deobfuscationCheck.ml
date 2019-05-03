@@ -32,10 +32,6 @@ module NestedDefines = struct
     Location.Reference.Map.empty
 
 
-  let nested_defines nested_defines =
-    Map.data nested_defines
-
-
   let update_nested_defines nested_defines ~statement ~state =
     match statement with
     | { Node.location; value = Define nested_define } ->
@@ -46,7 +42,6 @@ end
 
 
 module type Context = sig
-  val configuration: Configuration.Analysis.t
   val environment: (module Environment.Handler)
   val transformations: (Statement.t list) Location.Reference.Table.t
 end
@@ -428,12 +423,11 @@ end
 
 
 let run
-    ~configuration
+    ~configuration:_
     ~environment
     ~source:({ Source.qualifier; statements; handle; _ } as source) =
   let module Context =
     (struct
-      let configuration = configuration
       let environment = environment
       let transformations = Location.Reference.Table.create ()
     end)

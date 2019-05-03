@@ -325,16 +325,9 @@ let test_double_count _ =
   let module DoubleCounterTransformer : sig
     type t = int
     include Transform.Transformer with type t := t
-    val final: t -> int
   end = struct
     include Transform.Identity
     type t = int
-
-    let final count =
-      count
-
-    let statement_preorder count statement =
-      count + 1, statement
 
     let statement count statement =
       count + 1, [statement]
@@ -344,7 +337,6 @@ let test_double_count _ =
   let module ShallowDoubleCounterTransformer : sig
     type t = int
     include Transform.Transformer with type t := t
-    val final: t -> int
   end = struct
     include Transform.Identity
     include DoubleCounterTransformer

@@ -27,6 +27,13 @@ val get_decorator: t -> decorator: string -> decorator list
 
 val annotation: t -> Type.t
 val successors: t -> resolution: Resolution.t -> Type.primitive list
+val successors_fold:
+  'a Class.record Node.t ->
+  resolution:Resolution.t ->
+  f:('b -> string -> 'b) ->
+  initial:'b ->
+  'b
+
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
 module Method : sig

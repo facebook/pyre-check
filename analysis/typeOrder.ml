@@ -156,9 +156,6 @@ let handler order =
     let set table ~key ~data =
       Hashtbl.set table ~key ~data
 
-    let fold table ~init ~f =
-      Hashtbl.fold table ~init ~f
-
     let add_key _ = ()
 
     let keys () =

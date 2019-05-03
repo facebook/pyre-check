@@ -173,6 +173,7 @@ module ResultArgument = struct
   type nonrec call_model = call_model
 
   let show_call_model = show_call_model
+  let pp_call_model = pp_call_model
 
   let obscure_model = {
     forward = Forward.obscure;

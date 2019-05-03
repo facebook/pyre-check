@@ -13,6 +13,7 @@ module Kind = AnalysisKind
 module type ANALYSIS_PROVIDED = sig
   (* Registration info. *)
   type call_model  (* Used in fixpoint computation (widened), used at call sites. *)
+  [@@deriving show]
   type result      (* Produced in each iteration (replaced), not used at call sites. *)
 
   val name: string
@@ -27,8 +28,6 @@ module type ANALYSIS_PROVIDED = sig
   val get_errors: result -> InterproceduralError.t list
   val externalize: Callable.t -> result option -> call_model -> Yojson.Safe.json list
   val metadata: unit -> Yojson.Safe.json
-
-  val show_call_model: call_model -> string
 end
 
 
@@ -56,8 +55,10 @@ type 'a kind = 'a Kind.kind
    parts. *)
 type model = MK
 [@@deriving show]
+let _ = show_model  (* unused *)
 type result = RK
 [@@deriving show]
+let _ = show_result  (* unused *)
 
 
 (* Abstract a full kind to just the part necessary. The model and result markers

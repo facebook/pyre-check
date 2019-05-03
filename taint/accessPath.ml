@@ -97,7 +97,6 @@ type argument_position = [
   | `Precise of int
   | `Approximate of int
 ]
-[@@deriving show]
 
 
 let match_actuals_to_formals arguments roots =
@@ -229,7 +228,6 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path;
 }
-[@@deriving eq]
 
 
 let create root path = { root; path; }

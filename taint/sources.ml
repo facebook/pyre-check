@@ -16,6 +16,7 @@ type t =
   | Thrift
   | UserControlled
 [@@deriving compare, eq, sexp, show, hash]
+let _ = show  (* unused *)
 
 
 let show = function

@@ -110,6 +110,9 @@ module Record = struct
     [@@deriving compare, eq, sexp, show, hash]
 
 
+    let _ = equal_record  (* suppress warning about unused generated version *)
+
+
     let equal_record equal_annotation left right =
       (* Ignores implicit argument to simplify unit tests. *)
       equal_kind left.kind right.kind &&
@@ -161,6 +164,9 @@ and t =
   | Union of t list
   | Variable of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
+
+
+let _ = show  (* shadowed below *)
 
 
 type type_t = t

@@ -12,6 +12,7 @@ module Kind = AnalysisKind
 module type ANALYSIS_PROVIDED = sig
   (* Registration info. *)
   type call_model  (* Used in fixpoint computation (widened), used at call sites. *)
+  [@@deriving show]
   type result      (* Produced in each iteration (replaced), not used at call sites. *)
 
   (* Used as part of a filename, so avoid spaces and slashes *)
@@ -28,8 +29,6 @@ module type ANALYSIS_PROVIDED = sig
   val externalize: Callable.t -> result option -> call_model -> Yojson.Safe.json list
   (* Additional metadata an analysis wants to save, e.g., warning code explanation. *)
   val metadata: unit -> Yojson.Safe.json
-
-  val show_call_model: call_model -> string
 end
 
 (* Representation of the kind of data manipulated by each individual analysis.

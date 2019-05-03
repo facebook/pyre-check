@@ -31,6 +31,7 @@ let setup_environment ?(sources = []) () =
 module ResultA = Interprocedural.Result.Make(struct
     type result = string
     type call_model = int
+    [@@deriving show]
 
     let name = "analysisA"
     let empty_model = 0
@@ -38,8 +39,6 @@ module ResultA = Interprocedural.Result.Make(struct
 
     let get_errors _ =
       []
-
-    let show_call_model = string_of_int
 
     let join ~iteration:_ a b =
       a + b
@@ -83,6 +82,7 @@ module AnalysisA = ResultA.Register(struct
 module ResultB = Interprocedural.Result.Make(struct
     type result = int
     type call_model = string
+    [@@deriving show]
 
     let name = "analysisB"
     let empty_model = "empty"
@@ -90,9 +90,6 @@ module ResultB = Interprocedural.Result.Make(struct
 
     let get_errors _ =
       []
-
-    let show_call_model model =
-      model
 
     let join ~iteration:_ a b =
       a ^ b

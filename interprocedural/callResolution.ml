@@ -11,22 +11,6 @@ open Expression
 open Pyre
 
 
-let global_prefix ~resolution access =
-  let rec module_prefix ~lead ~tail =
-    match tail with
-    | (Access.Identifier _ as identifier) :: new_tail ->
-        let new_lead = lead @ [identifier] in
-        let reference = Reference.from_access lead in
-        if Resolution.module_definition resolution reference |> Option.is_some then
-          module_prefix ~lead:new_lead ~tail:new_tail
-        else
-          lead, tail
-    | _ ->
-        lead, tail
-  in
-  module_prefix ~lead:[] ~tail:access
-
-
 let normalize_global ~resolution access =
   (* Determine if this is a constructor call, as we need to add the
      uninitialized object argument for self.

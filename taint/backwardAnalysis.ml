@@ -16,7 +16,6 @@ open AccessPath
 
 module type FixpointState = sig
   type t = { taint: BackwardState.t }
-  [@@deriving show]
 
   include Fixpoint.State with type t := t
 
@@ -106,12 +105,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     let store_weak_taint ~root ~path taint { taint = state_taint } =
       { taint = BackwardState.assign ~weak:true ~root ~path taint state_taint }
-
-
-    let store_weak_taint_option access_path taint state =
-      match access_path with
-      | None -> state
-      | Some (root, path) -> store_weak_taint ~root ~path taint state
 
 
     let rec analyze_argument ~resolution taint { Argument.value = argument; _ } state =

@@ -22,6 +22,9 @@ type t =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+let _ = show  (* unused but derived  *)
+
+
 let show = function
   | Demo -> "Demo"
   | FileSystem -> "FileSystem"

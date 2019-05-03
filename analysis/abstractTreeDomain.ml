@@ -111,12 +111,16 @@ module Label = struct
     | Any
   [@@deriving eq, show, compare, sexp, hash]
 
+  let _ = show  (* shadowed below *)
+
   let show = function
     | Field name -> Format.sprintf "[%s]" name
     | Any -> "[*]"
 
   type path = t list
   [@@deriving compare, eq, show, sexp]
+
+  let _ = show_path  (* shadowed below *)
 
   let show_path path =
     List.map ~f:show path
@@ -190,9 +194,6 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
 
   let bottom = empty_tree
   let is_bottom = is_empty_tree
-
-  let tree_has_children { children; _ } =
-    not (LabelMap.is_empty children)
 
 
   let create_tree_option path tree =
@@ -269,10 +270,6 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
       formatter
       "%s"
       (show map)
-
-
-  let tree_to_string_just_access_path tree =
-    to_string_tree ~show_element:false "" tree
 
 
   let rec max_depth { children; _ } =
@@ -587,28 +584,6 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
       option_node_tree acc_opt ~message
     in
     LabelMap.fold ~f:collapse_child ~init:(create_leaf ancestors) children
-
-
-  let rec remove_tree path ({ children; _ } as tree) =
-    match path with
-    | [] -> None  (* Remove entire subtree here *)
-    (* Do not remove below AnyIndex, since that is a weak assignment. *)
-    | Label.Any :: _ -> Some tree
-    | label_element :: rest ->
-        match LabelMap.find children label_element with
-        | None -> Some tree  (* subtree is already empty *)
-        | Some subtree ->
-            match remove_tree rest subtree with
-            | None ->
-                (* Remove subtree *)
-                let tree = { tree with children = LabelMap.remove children label_element } in
-                if is_empty_tree tree then
-                  None
-                else
-                  Some tree
-            | Some subtree ->
-                (* Replace subtree *)
-                Some { tree with children = LabelMap.set children ~key:label_element ~data:subtree }
 
 
   (** Read the subtree at path within tree and return the ancestors separately.
@@ -942,56 +917,6 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
     |> check_join_property tree mold
 
 
-  let get_root_taint { element; _ } =
-    element
-
-
-  let join_root_element tree element =
-    let message () = "join_root_element" in
-    join_path ~ancestors:Element.bottom ~tree [] ~subtree:(create_leaf element)
-    |> option_node_tree ~message
-
-
-  let rec exists_in_tree ~f ({ element; children } as tree) =
-    if is_empty_tree tree then false
-    else if f element then true
-    else exists_in_children ~f children
-
-  and exists_in_children ~f children =
-    LabelMap.exists ~f:(exists_in_tree ~f) children
-
-
-  let rec filter_map_tree ancestors ~f ({ element; children } as tree) =
-    if is_empty_tree tree then
-      None
-    else
-      let filtered_element = f element in
-      let { new_element; ancestors } =
-        filter_by_ancestors ~ancestors ~element:filtered_element
-      in
-      let children =
-        filter_map_children ancestors ~f children
-      in
-      create_node_option new_element children
-
-  and filter_map_children ancestors ~f label_map =
-    LabelMap.filter_map ~f:(filter_map_tree ancestors ~f) label_map
-
-
-  let replace_root_taint { children; _ } element =
-    (* In order to maintain minimal trees, we have to filter the children by
-       the new ancestors. *)
-    let result =
-      {
-        element;
-        children = LabelMap.filter_map ~f:(prune_tree element) children
-      }
-    in
-    let message () = "replace root taint" in
-    Checks.check (fun () -> check_minimal ~message result);
-    result
-
-
   (** Fold over tree, where each non-bottom element node is visited. The
       function ~f is passed the path to the node, the joined ancestor elements,
       and the non-bottom element at the node. *)
@@ -1043,10 +968,6 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
         path, element
     in
     filter_map_tree_paths ~f:filter tree
-
-
-  let fold_tree_children { children; _ } ~init ~f =
-    LabelMap.fold ~init ~f:(fun ~key ~data acc -> f key data acc) children
 
 
   let create_tree path element =

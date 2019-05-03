@@ -91,7 +91,7 @@ module State : sig
     bottom: bool;
     resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
   }
-  [@@deriving eq, show]
+  [@@deriving eq]
 
   val create
     :  ?configuration: Configuration.Analysis.t

@@ -40,10 +40,11 @@ type non_override_target = [ real_target | object_target]
 [@@deriving show, sexp, compare, hash, eq]
 
 type t = [ non_override_target | override_target ]
-[@@deriving show, sexp, compare, hash, eq]
+[@@deriving sexp, compare, hash, eq]
 
-val pretty_print: Format.formatter -> [< t] -> unit
+val pp: Format.formatter -> t -> unit
 val show: [< t ] -> string
+val pretty_print: Format.formatter -> [< t] -> unit
 val external_target_name: [< t ] -> string
 val compare: ([< t ] as 'a) -> 'a -> int
 
