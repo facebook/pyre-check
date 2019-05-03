@@ -61,8 +61,6 @@ end
 
 module Make(Kind: Kind) = struct
 
-  type kind = Kind.t
-
   type t = {
     location: Location.Instantiated.t;
     kind: Kind.t;

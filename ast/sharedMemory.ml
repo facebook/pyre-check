@@ -79,8 +79,6 @@ module Sources = struct
     type t = Source.t
     let prefix = Prefix.make ()
     let description = "AST"
-
-    type out = string
   end
 
   module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)

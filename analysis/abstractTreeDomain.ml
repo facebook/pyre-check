@@ -235,7 +235,7 @@ module Make(Config: CONFIG) (Element: AbstractDomain.S)() = struct
     | Some _ -> failwith "Decrementing widen depth below 0"
 
 
-  let element_join ~widen_depth w1 w2 =
+  let element_join ~(widen_depth: widen_depth) w1 w2 =
     if must_widen_element widen_depth then
       Element.widen ~iteration:2 ~previous:w1 ~next:w2
     else

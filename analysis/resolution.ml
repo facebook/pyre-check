@@ -31,8 +31,6 @@ type type_parameters_mismatch = {
 
 module Cache = struct
   module Generics = struct
-    type t = (Type.t list option) Identifier.Table.t
-
     let cache =
       Identifier.Table.create ()
 
