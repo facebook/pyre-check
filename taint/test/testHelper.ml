@@ -8,6 +8,10 @@ module TypeCheck = Analysis.TypeCheck
 open Core
 open OUnit2
 
+open Analysis
+
+module AnalysisError = Analysis.Error
+
 open Ast
 open Pyre
 open Taint
@@ -345,3 +349,105 @@ let run_with_taint_models tests =
     |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[]
   in
   Test.run tests
+
+
+type test_environment = {
+  callgraph: DependencyGraph.callgraph;
+  overrides: DependencyGraph.t;
+  all_callables: Callable.t list;
+  environment: (module Environment.Handler);
+}
+
+
+let initialize ?(qualifier = "test.py") ?models source_content =
+  let source_content = Test.trim_extra_indentation source_content in
+  let handle = File.Handle.create qualifier in
+  let source =
+    Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:qualifier source_content
+    |> Preprocessing.preprocess
+  in
+  let path =
+    let path = Test.mock_path qualifier in
+    File.create ~content:source_content path
+    |> File.write;
+    path
+  in
+  let configuration = Configuration.Analysis.create ~strict:true () in
+
+  (* Parse sources. *)
+  Ast.SharedMemory.Sources.remove ~handles:[handle];
+  Service.Parser.parse_sources
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~preprocessing_state:None
+    ~files:[File.create ~content:source_content path]
+  |> ignore;
+
+  let environment =
+    let models =
+      models
+      >>| (fun model -> [Test.parse ~qualifier:(Reference.create qualifier) model])
+      |> Option.value ~default:[]
+    in
+    Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
+  in
+  Service.Environment.populate
+    ~configuration:Test.mock_configuration
+    ~scheduler:(Scheduler.mock ())
+    environment
+    [source];
+
+  let errors =
+    TypeCheck.run ~configuration ~environment ~source
+    |> List.filter ~f:(fun error -> AnalysisError.code error = 11)  (* Undefined types. *)
+  in
+  if not (List.is_empty errors) then
+    begin
+      let errors =
+        List.map errors ~f:(AnalysisError.description ~show_error_traces:false)
+        |> String.concat ~sep:"\n"
+      in
+      failwithf
+        "Unable to construct callgraph for %s because of undefined types:\n%s"
+        (File.Handle.show source.Source.handle)
+        errors
+        ()
+    end;
+  (* Overrides must be done first, as they influence the call targets. *)
+  let overrides =
+    let overrides = DependencyGraph.create_overrides ~environment ~source in
+    Service.StaticAnalysis.record_overrides overrides;
+    DependencyGraph.from_overrides overrides
+  in
+  let callgraph =
+    Service.StaticAnalysis.record_and_merge_call_graph
+      ~environment
+      ~call_graph:DependencyGraph.empty_callgraph
+      ~path:handle
+      ~source
+  in
+  let all_callables =
+    Service.StaticAnalysis.callables ~resolution:(TypeCheck.resolution environment ()) ~source
+    |> List.map ~f:(fun (callable, _define) -> (callable :> Callable.t))
+    |> List.rev_append (Callable.Map.keys overrides)
+  in
+  (* Initialize models *)
+  let () =
+    let keys = Fixpoint.KeySet.of_list all_callables in
+    Fixpoint.remove_new keys;
+    Fixpoint.remove_old keys;
+    let initial_models =
+      match models with
+      | None -> Callable.Map.empty
+      | Some source ->
+          Model.parse
+            ~resolution:(TypeCheck.resolution environment ())
+            ~source:(Test.trim_extra_indentation source)
+            ~configuration:TaintConfiguration.default
+            Callable.Map.empty
+    in
+    initial_models
+    |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+    |> Interprocedural.Analysis.record_initial_models ~functions:all_callables ~stubs:[]
+  in
+  { callgraph; overrides; all_callables; environment }
