@@ -31,15 +31,15 @@ class InvalidConfiguration(Exception):
 class SearchPathElement:
     def __init__(self, element: Union[Dict[str, str], str]) -> None:
         if isinstance(element, str):
-            self.root = os.path.abspath(element)
+            self.root = os.path.abspath(os.path.expanduser(element))
             self.subdirectory = None
         else:
             if "root" not in element or "subdirectory" not in element:
                 raise InvalidConfiguration(
                     "Search path elements must have `root` and `subdirectory` specified."
                 )
-            self.root = os.path.abspath(element["root"])
-            self.subdirectory = element["subdirectory"]
+            self.root = os.path.abspath(os.path.expanduser(element["root"]))
+            self.subdirectory = os.path.expanduser(element["subdirectory"])
 
     def path(self) -> str:
         subdirectory = self.subdirectory
@@ -354,7 +354,7 @@ class Configuration:
                 configuration_directory = os.path.dirname(path)
                 if configuration_directory:
                     self.source_directories = [
-                        os.path.join(configuration_directory, directory)
+                        os.path.join(configuration_directory, os.path.expanduser(directory))
                         for directory in source_directories
                     ]
                 else:
@@ -396,7 +396,7 @@ class Configuration:
 
                 binary = configuration.consume("binary", current=self._binary)
                 assert binary is None or isinstance(binary, str)
-                self._binary = binary
+                self._binary = os.path.expanduser(binary)
 
                 additional_search_path = configuration.consume(
                     "search_path", default=[]
@@ -420,7 +420,7 @@ class Configuration:
 
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
-                self._typeshed = typeshed
+                self._typeshed = os.path.expanduser(typeshed)
 
                 taint_models_path = configuration.consume(
                     "taint_models_path", current=self.taint_models_path
