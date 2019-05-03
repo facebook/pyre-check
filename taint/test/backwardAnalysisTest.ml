@@ -453,24 +453,25 @@ let test_apply_method_model_at_call_site _ =
 let test_tito_via_receiver _ =
   assert_taint
     {|
-      class Foo:
+      class TitoClass:
+        f = {}
         def tito(self, argument1):
             return self.f
 
       def tito_via_receiver(parameter):
-        x = Foo()
+        x = TitoClass()
         x.f = parameter
-        return f.tito
+        return x.tito('')
     |}
     [
+      outcome
+        ~kind:`Method
+        ~tito_parameters:["self"]
+        "qualifier.TitoClass.tito";
       outcome
         ~kind:`Function
         ~tito_parameters:["parameter"]
         "qualifier.tito_via_receiver";
-      outcome
-        ~kind:`Function
-        ~tito_parameters:["self"]
-        "qualifier.Foo.tito";
     ]
 
 
@@ -1605,6 +1606,7 @@ let () =
     "rce_and_test_sink">::test_rce_and_test_sink;
     "test_call_tito">::test_call_taint_in_taint_out;
     "test_tito_sink">::test_tito_sink;
+    "test_tito_via_receiver">::test_tito_via_receiver;
     "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
     "test_seqential_call_path">::test_sequential_call_path;
     "test_chained_call_path">::test_chained_call_path;
