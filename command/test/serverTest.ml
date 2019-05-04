@@ -524,6 +524,27 @@ let test_query context =
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
 
   assert_compatibility_response
+    ~source:"class unknown: ..."
+    ~query:"is_compatible_with(int, unknown)"
+    ~actual:Type.integer
+    ~expected:Type.Top
+    true;
+
+  assert_compatibility_response
+    ~source:"class unknown: ..."
+    ~query:"is_compatible_with(typing.List[int], typing.List[unknown])"
+    ~actual:(Type.list Type.integer)
+    ~expected:(Type.list Type.Top)
+    true;
+
+  assert_compatibility_response
+    ~source:"class unknown: ..."
+    ~query:"is_compatible_with(int, typing.List[unknown])"
+    ~actual:Type.integer
+    ~expected:(Type.list Type.Top)
+    false;
+
+  assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, int])"
     ~actual:Type.integer

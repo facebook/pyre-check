@@ -893,6 +893,13 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Type.Top -> right
           | unwrapped -> unwrapped
         in
+        let right =
+          let constraints = function
+            | Type.Primitive "unknown" -> Some Type.Top
+            | _ -> None
+          in
+          Type.instantiate right ~constraints
+        in
         Resolution.is_compatible_with resolution ~left ~right
         |> (fun result ->
             TypeQuery.Response
