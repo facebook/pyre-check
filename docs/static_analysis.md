@@ -158,4 +158,4 @@ The `--save-results-to` option will save more detailed results to
 
 ### Understanding the results
 
-See [Static Analysis Post Processor](./static-analysis-post-processor.html).
+See [Static Analysis Post Processor](static_analysis_post_processor.md).
