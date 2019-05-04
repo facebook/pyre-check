@@ -2195,6 +2195,13 @@ module IncludableImplementation: FullOrderTypeWithoutT = Implementation
 include IncludableImplementation
 
 
+let rec is_consistent_with order left right =
+  less_or_equal
+    { order with any_is_bottom = true }
+    ~left
+    ~right
+
+
 let rec is_compatible_with order ~left ~right =
   match left, right with
 
@@ -2245,14 +2252,7 @@ let rec is_compatible_with order ~left ~right =
 
   (* Fallback *)
   | _, _ ->
-      less_or_equal order ~left ~right
-
-
-let rec is_consistent_with order left right =
-  less_or_equal
-    { order with any_is_bottom = true }
-    ~left
-    ~right
+      is_consistent_with order left right
 
 
 let rec consistent_solution_exists order left right =

@@ -1554,6 +1554,8 @@ let test_is_compatible_with _ =
   let list_of_string = Type.list Type.string in
   let list_of_top = Type.list Type.Top in
   let list_of_any = Type.list Type.Any in
+  let iterable_of_integer = Type.iterable Type.integer in
+  let iterable_of_any = Type.iterable Type.Any in
 
   (* Any *)
   assert_is_compatible list_of_integer Type.Any;
@@ -1699,7 +1701,13 @@ let test_is_compatible_with _ =
   assert_not_compatible
     (Type.dictionary ~key:list_of_top ~value:list_of_top)
     (Type.dictionary ~key:list_of_integer ~value:list_of_string);
-
+  assert_is_compatible list_of_integer iterable_of_integer;
+  assert_not_compatible list_of_string iterable_of_integer;
+  assert_not_compatible iterable_of_integer list_of_integer;
+  assert_is_compatible list_of_any iterable_of_any;
+  assert_not_compatible iterable_of_any list_of_any;
+  assert_is_compatible list_of_any iterable_of_integer;
+  assert_is_compatible list_of_integer iterable_of_any;
   ()
 
 
