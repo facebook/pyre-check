@@ -19,11 +19,23 @@ type class_metadata = {
 type t
 [@@deriving show]
 
+type generic_type_problems =
+  | IncorrectNumberOfParameters of {
+      actual: int;
+      expected: int;
+    }
+  | ViolateConstraints of {
+      actual: Type.t;
+      expected: Type.Variable.t;
+    }
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type type_parameters_mismatch = {
   name: string;
-  expected_number_of_parameters: int;
-  given_number_of_parameters: int;
+  kind: generic_type_problems;
 }
+[@@deriving compare, eq, sexp, show, hash]
 
 val create
   :  annotations: Annotation.t Reference.Map.t

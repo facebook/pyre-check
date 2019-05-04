@@ -119,11 +119,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
-  | InvalidTypeParameters of {
-      annotation: Type.t;
-      expected_number_of_parameters: int;
-      given_number_of_parameters: int;
-    }
+  | InvalidTypeParameters of Resolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance

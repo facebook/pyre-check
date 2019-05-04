@@ -3038,24 +3038,25 @@ let is_concrete annotation =
   not (Variable.contains_escaped_free_variable annotation)
 
 
-let rec dequalify map annotation =
-  let dequalify_identifier identifier =
-    let rec fold accumulator reference =
-      if Reference.Map.mem map reference then
-        Reference.combine
-          (Reference.Map.find_exn map reference)
-          (Reference.create_from_list accumulator)
-      else
-        match Reference.prefix reference with
-        | Some prefix -> fold (Reference.last reference :: accumulator) prefix
-        | None -> Reference.create_from_list accumulator
-    in
-    identifier
-    |> Reference.create
-    |> fold []
-    |> Reference.show
+let dequalify_identifier map identifier =
+  let rec fold accumulator reference =
+    if Reference.Map.mem map reference then
+      Reference.combine
+        (Reference.Map.find_exn map reference)
+        (Reference.create_from_list accumulator)
+    else
+      match Reference.prefix reference with
+      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
+      | None -> Reference.create_from_list accumulator
   in
-  let dequalify_string string = string |> dequalify_identifier in
+  identifier
+  |> Reference.create
+  |> fold []
+  |> Reference.show
+
+
+let rec dequalify map annotation =
+  let dequalify_string string = string |> dequalify_identifier map in
   let module DequalifyTransform = Transform.Make(struct
       type state = unit
 
@@ -3071,13 +3072,13 @@ let rec dequalify map annotation =
           | Optional parameter ->
               Parametric { name = dequalify_string "typing.Optional"; parameters = [parameter]; }
           | Parametric { name; parameters } ->
-              Parametric { name = dequalify_identifier (reverse_substitute name); parameters; }
+              Parametric { name = dequalify_identifier map (reverse_substitute name); parameters; }
           | Union parameters ->
               Parametric { name = dequalify_string "typing.Union"; parameters; }
           | Primitive name ->
-              Primitive (dequalify_identifier name)
+              Primitive (dequalify_identifier map name)
           | Variable ({ variable = name; _ } as annotation) ->
-              Variable { annotation with variable = dequalify_identifier name }
+              Variable { annotation with variable = dequalify_identifier map name}
           | _ ->
               annotation
         in

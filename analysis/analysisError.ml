@@ -135,11 +135,7 @@ type kind =
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of Type.t
-  | InvalidTypeParameters of {
-      annotation: Type.t;
-      expected_number_of_parameters: int;
-      given_number_of_parameters: int;
-    }
+  | InvalidTypeParameters of Resolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
@@ -666,24 +662,33 @@ let messages ~concise ~signature location kind =
           pp_type annotation
       ]
   | InvalidTypeParameters
-      { annotation; expected_number_of_parameters; given_number_of_parameters } ->
-      if expected_number_of_parameters > 0 then
+      { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual };} ->
+      if expected > 0 then
         let received =
-          if given_number_of_parameters = 0 then
+          if actual = 0 then
             ""
           else
-            Format.asprintf ", received %d" given_number_of_parameters
+            Format.asprintf ", received %d" actual
         in
         [
           Format.asprintf
-            "Generic type `%a` expects %d type parameter%s%s."
-            pp_type annotation
-            expected_number_of_parameters
-            (if (expected_number_of_parameters = 1) then "" else "s")
+            "Generic type `%s` expects %d type parameter%s%s."
+            name
+            expected
+            (if (expected = 1) then "" else "s")
             received;
         ]
       else
-        [ Format.asprintf "Non-generic type `%a` cannot take parameters." pp_type annotation ]
+        [ Format.asprintf "Non-generic type `%s` cannot take parameters." name ]
+  | InvalidTypeParameters
+      { name; kind = Resolution.ViolateConstraints { expected; actual} } ->
+      [
+        Format.asprintf
+          "Type parameter `%a` violates constraints on `%a` in generic type `%s`"
+          pp_type actual
+          pp_type (Type.Variable expected)
+          name;
+      ]
   | InvalidTypeVariable { annotation; origin } when concise ->
       let format: ('a, Format.formatter, unit, string) format4 =
         match origin with
@@ -1486,7 +1491,6 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType actual
-  | InvalidTypeParameters { annotation = actual; _ }
   | NotCallable actual
   | ProhibitedAny { given_annotation = Some actual; _ }
   | RedundantCast actual
@@ -1504,6 +1508,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidMethodSignature _
+  | InvalidTypeParameters _
   | InvalidTypeVariable _
   | InvalidTypeVariance _
   | InvalidInheritance _
@@ -1688,18 +1693,8 @@ let less_or_equal ~resolution left right =
         end
     | InvalidType left, InvalidType right ->
         Resolution.less_or_equal resolution ~left ~right
-    | InvalidTypeParameters {
-        annotation = left;
-        expected_number_of_parameters = left_expected;
-        given_number_of_parameters = left_given;
-      },
-      InvalidTypeParameters {
-        annotation = right;
-        expected_number_of_parameters = right_expected;
-        given_number_of_parameters = right_given;
-      }
-      when left_expected = right_expected && left_given = right_given ->
-        Resolution.less_or_equal resolution ~left ~right
+    | InvalidTypeParameters left, InvalidTypeParameters right ->
+        Resolution.equal_type_parameters_mismatch left right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
         Resolution.less_or_equal resolution ~left ~right &&
@@ -1896,22 +1891,9 @@ let join ~resolution left right =
           annotation = Resolution.join resolution left right;
           attempted_action = left_attempted_action;
         }
-    | InvalidTypeParameters {
-        annotation = left;
-        expected_number_of_parameters = left_expected;
-        given_number_of_parameters = left_given;
-      },
-      InvalidTypeParameters {
-        annotation = right;
-        expected_number_of_parameters = right_expected;
-        given_number_of_parameters = right_given;
-      }
-      when left_expected = right_expected && left_given = right_given ->
-        InvalidTypeParameters {
-          annotation = Resolution.join resolution left right;
-          expected_number_of_parameters = left_expected;
-          given_number_of_parameters = left_given;
-        }
+    | InvalidTypeParameters left, InvalidTypeParameters right
+      when Resolution.equal_type_parameters_mismatch left right ->
+        InvalidTypeParameters left
     | MissingArgument left, MissingArgument right
       when Option.equal Reference.equal_sanitized left.callee right.callee &&
            Identifier.equal_sanitized left.name right.name ->
@@ -2421,8 +2403,8 @@ let suppress ~mode ~resolution error =
         _;
       } ->
         true
-    | InvalidTypeParameters { given_number_of_parameters; _ }
-      when given_number_of_parameters = 0 ->
+    | InvalidTypeParameters
+        { kind = Resolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
         true
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
@@ -2521,8 +2503,9 @@ let dequalify
         InvalidMethodSignature { kind with annotation = (annotation >>| dequalify) }
     | InvalidType annotation ->
         InvalidType (dequalify annotation)
-    | InvalidTypeParameters ({ annotation; _ } as missing_type_parameters) ->
-        InvalidTypeParameters { missing_type_parameters with annotation = dequalify annotation }
+    | InvalidTypeParameters ({ name ; _ } as invalid_type_parameters) ->
+        InvalidTypeParameters
+          { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }
     | InvalidTypeVariable { annotation; origin } ->
         InvalidTypeVariable { annotation = dequalify annotation; origin }
     | InvalidTypeVariance { annotation; origin } ->

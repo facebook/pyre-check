@@ -22,11 +22,23 @@ type class_metadata = {
 }
 
 
+type generic_type_problems =
+  | IncorrectNumberOfParameters of {
+      actual: int;
+      expected: int;
+    }
+  | ViolateConstraints of {
+      actual: Type.t;
+      expected: Type.Variable.t;
+    }
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type type_parameters_mismatch = {
   name: string;
-  expected_number_of_parameters: int;
-  given_number_of_parameters: int;
+  kind: generic_type_problems;
 }
+[@@deriving compare, eq, sexp, show, hash]
 
 
 module Cache = struct
@@ -395,27 +407,61 @@ let check_invalid_type_parameters resolution annotation =
           in
           let invalid_type_parameters ~name ~given =
             let generics = generics_for_name name in
-            if List.length generics = given then
-              annotation, sofar
-            else
-              let mismatch =
-                {
-                  name;
-                  expected_number_of_parameters = List.length generics;
-                  given_number_of_parameters = given;
-                }
-              in
-              Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
+            match List.zip generics given with
+            | Some paired ->
+                let check_parameter (generic, given) =
+                  match generic with
+                  | Type.Variable generic ->
+                      let invalid =
+                        let order =
+                          let order = full_order resolution in
+                          { order with any_is_bottom = true }
+                        in
+                        TypeOrder.OrderedConstraints.add_lower_bound
+                          TypeConstraints.empty
+                          ~order
+                          ~variable:generic
+                          ~bound:given
+                        >>| TypeOrder.OrderedConstraints.add_upper_bound
+                          ~order
+                          ~variable:generic
+                          ~bound:given
+                        |> Option.is_none
+                      in
+                      if invalid then
+                        Some ({
+                            name;
+                            kind = ViolateConstraints { actual = given; expected = generic };
+                          })
+                      else
+                        None
+                  | _ ->
+                      (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
+                      None
+                in
+                List.filter_map paired ~f:check_parameter
+                |> (fun mismatches ->  annotation, mismatches @ sofar)
+            | None ->
+                let mismatch =
+                  {
+                    name;
+                    kind = IncorrectNumberOfParameters {
+                        actual = List.length given;
+                        expected = List.length generics;
+                      }
+                  }
+                in
+                Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
           in
           match annotation with
           | Type.Primitive name ->
-              invalid_type_parameters ~name ~given:0
+              invalid_type_parameters ~name ~given:[]
           (* natural variadics *)
           | Type.Parametric { name = "typing.Protocol"; _ }
           | Type.Parametric { name = "typing.Generic"; _ } ->
               annotation, sofar
           | Type.Parametric { name; parameters } ->
-              invalid_type_parameters ~name ~given:(List.length parameters)
+              invalid_type_parameters ~name ~given:parameters
           | _ ->
               annotation, sofar
         in

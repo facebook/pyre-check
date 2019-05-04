@@ -311,6 +311,23 @@ let test_check_variable_bindings _ =
       "for 1st anonymous parameter to call `typing.Generic.__getitem__` but got " ^
       "`typing.Type[int]`.";
     ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      class ConstrainedBase(typing.Generic[T]): pass
+      class BadChild(ConstrainedBase[str]): pass
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `str` violates constraints on " ^
+      "`Variable[T (bound to int)]` in generic type `ConstrainedBase`";
+    ];
+  assert_type_errors
+    {|
+      T = typing.TypeVar('T', bound=int)
+      class ConstrainedBase(typing.Generic[T]): pass
+      class AnyChild(ConstrainedBase[typing.Any]): pass
+    |}
+    [];
   ()
 
 
@@ -459,8 +476,12 @@ let test_unbound_variables _ =
         return g
     |}
     [
+      "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
+      "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
       "Incompatible variable type [9]: g is declared to have type `G[bool]` but is used " ^
       "as type `G[Variable[T_Explicit <: [int, str]]]`.";
+      "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
+      "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
       "Revealed type [-1]: Revealed type for `g` is `G[bool]`.";
     ];
   assert_type_errors

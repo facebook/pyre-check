@@ -331,16 +331,10 @@ module State = struct
 
   let add_invalid_type_parameters_errors ~resolution ~location ~define ~errors annotation =
     let mismatches, annotation = Resolution.check_invalid_type_parameters resolution annotation in
-    let add_error
-        errors
-        { Resolution.name; expected_number_of_parameters; given_number_of_parameters } =
+    let add_error errors mismatch =
       Error.create
         ~location
-        ~kind:(Error.InvalidTypeParameters {
-            annotation = Type.Primitive name;
-            expected_number_of_parameters;
-            given_number_of_parameters;
-          })
+        ~kind:(Error.InvalidTypeParameters  mismatch)
         ~define
       |> Set.add errors
     in

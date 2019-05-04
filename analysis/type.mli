@@ -304,6 +304,7 @@ val assume_any: t -> t
 
 (* Takes a map generated from Preprocessing.dequalify_map and a type and dequalifies the type *)
 val dequalify: Reference.t Reference.Map.t -> t -> t
+val dequalify_identifier: Reference.t Reference.Map.t -> Identifier.t -> Identifier.t
 
 module Variable : sig
   module Namespace : sig
