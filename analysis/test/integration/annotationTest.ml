@@ -1326,6 +1326,24 @@ let test_check_aliases _ =
     []
 
 
+let test_final_type _ =
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[str] = 3
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `str` \
+       but is used as type `int`."
+    ]
+
+
 let () =
   "annotation">:::[
     "check_undefined_type">::test_check_undefined_type;
@@ -1338,5 +1356,6 @@ let () =
     "check_incomplete_annotations">::test_check_incomplete_annotations;
     "check_refinement">::test_check_refinement;
     "check_aliases">::test_check_aliases;
+    "check_final_type">::test_final_type
   ]
   |> Test.run

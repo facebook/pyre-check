@@ -2941,7 +2941,11 @@ module State = struct
         let original_annotation =
           original_annotation
           >>| (fun annotation ->
-              Type.class_variable_value annotation
+              begin if Type.is_final annotation then
+                Type.final_value annotation
+              else
+                Type.class_variable_value annotation
+              end
               |> Option.value ~default:annotation)
         in
         let parsed =

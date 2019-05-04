@@ -2490,6 +2490,11 @@ let is_ellipsis = function
   | _ -> false
 
 
+let is_final = function
+  | Parametric { name; _ } ->  String.equal name "typing.Final"
+  | _ -> false
+
+
 let is_generator = function
   | Parametric { name; _ } ->
       List.mem
@@ -2814,6 +2819,13 @@ let class_variable_value = function
   | Parametric { name = "typing.ClassVar"; parameters = [parameter] } ->
       Some parameter
   | _ -> None
+
+
+let final_value = function
+  | Parametric { name = "typing.Final"; parameters = [parameter] } ->
+      Some parameter
+  | _ ->
+      None
 
 
 (* Angelic assumption: Any occurrences of top indicate that we're dealing with Any instead of None.

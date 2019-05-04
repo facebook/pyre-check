@@ -386,6 +386,7 @@ let check_invalid_type_parameters resolution annotation =
             | "typing.ClassVar"
             | "typing.Iterator"
             | "Optional"
+            | "typing.Final"
             | "typing.Optional" ->
                 [Type.Variable (Type.Variable.create "T")]
             | _ ->

@@ -591,6 +591,7 @@ let test_default _ =
   assert_has_special_form "typing.Protocol";
   assert_has_special_form "typing.Callable";
   assert_has_special_form "typing.ClassVar";
+  assert_has_special_form "typing.Final";
 
   (* Object *)
   assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);

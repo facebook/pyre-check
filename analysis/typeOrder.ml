@@ -2535,6 +2535,7 @@ module Builder = struct
       singleton (Type.Primitive "unittest.mock.Base");
       singleton (Type.Primitive "unittest.mock.NonCallableMock");
       singleton (Type.Primitive "typing.ClassVar");
+      singleton (Type.Primitive "typing.Final");
       [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.object_primitive];
       singleton (Type.Primitive "None");
       (* Numerical hierarchy. *)

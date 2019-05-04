@@ -252,6 +252,7 @@ val contains_callable: t -> bool
 val is_callable: t -> bool
 val is_dictionary: ?with_key: t option -> t -> bool
 val is_ellipsis: t -> bool
+val is_final: t -> bool
 val is_generator: t -> bool
 val is_generic: t -> bool
 val is_iterable: t -> bool
@@ -297,6 +298,7 @@ val class_name: t -> Reference.t
 
 val class_variable: t -> t
 val class_variable_value: t -> t option
+val final_value: t -> t option
 
 val assume_any: t -> t
 
