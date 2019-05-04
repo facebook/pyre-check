@@ -36,7 +36,7 @@ type reason =
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
-  | UninitializableClass of { class_name: Reference.t; method_names: Identifier.t list }
+  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
 [@@deriving eq, show, compare]
 
 
@@ -645,7 +645,7 @@ let select
             | MutuallyRecursiveTypeVariables -> 1
             | TooManyArguments _ -> 1
             | UnexpectedKeyword _ -> 1
-            | UninitializableClass _ -> 1
+            | AbstractClassInstantiation _ -> 1
           in
           let get_most_important best_reason reason =
             if importance reason > importance best_reason then

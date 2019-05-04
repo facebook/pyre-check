@@ -948,7 +948,7 @@ module State = struct
                     else
                       Annotated.Signature.NotFound {
                         callable;
-                        reason = Some (UninitializableClass {
+                        reason = Some (AbstractClassInstantiation {
                             method_names = Set.to_list abstract_methods;
                             class_name =
                               definition
@@ -2254,10 +2254,10 @@ module State = struct
                       ~location
                       ~kind:(Error.UnexpectedKeyword { callee; name })
                       ~define
-                | UninitializableClass { class_name; method_names } ->
+                | AbstractClassInstantiation { class_name; method_names } ->
                     Error.create
                       ~location
-                      ~kind:(Error.UninitializableClass { class_name; method_names })
+                      ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
                       ~define
               in
               Some error

@@ -164,7 +164,7 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
-  | UninitializableClass of { class_name: Reference.t; method_names: Identifier.t list }
+  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
 
@@ -220,7 +220,7 @@ let code = function
   | InvalidTypeVariance _ -> 35
   | InvalidMethodSignature _ -> 36
   | IncompleteType _ -> 37
-  | UninitializableClass _ -> 38
+  | AbstractClassInstantiation _ -> 38
   | InvalidInheritance _ -> 39
   | InvalidOverride _ -> 40
 
@@ -272,7 +272,7 @@ let name = function
   | UndefinedType _ -> "Undefined type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
-  | UninitializableClass _ -> "Uninitializable class"
+  | AbstractClassInstantiation _ -> "Abstract class instantiation"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
 
@@ -1282,12 +1282,24 @@ let messages ~concise ~signature location kind =
            start_line
            pp_type actual)
       ]
-  | UninitializableClass { class_name; method_names } ->
+  | AbstractClassInstantiation { class_name; method_names } ->
+      let method_names =
+        List.map method_names ~f:(fun name -> Format.asprintf "`%s`" name)
+      in
+      let method_pluralization, verb_pluralization  =
+        begin
+          match method_names with
+          | [_] -> "method", "is"
+          | _ -> "methods", "are"
+        end
+      in
       [
         Format.asprintf
-          "Abstract method(s) `%a` in class `%a` are never initialized."
+          "Cannot instantiate class `%a` because %s %a %s not implemented."
+          pp_reference class_name
+          method_pluralization
           pp_identifier (String.concat ~sep:", " method_names)
-          pp_reference class_name;
+          verb_pluralization
       ]
   | UnusedIgnore codes ->
       let string_from_codes codes =
@@ -1515,7 +1527,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
-  | UninitializableClass _
+  | AbstractClassInstantiation _
   | UnusedIgnore _ ->
       false
 
@@ -1599,7 +1611,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
-  | UninitializableClass _
+  | AbstractClassInstantiation _
   | Unpack _
   | UnusedIgnore _ ->
       false
@@ -1785,7 +1797,7 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
-    | UninitializableClass left, UninitializableClass right ->
+    | AbstractClassInstantiation left, AbstractClassInstantiation right ->
         Reference.equal_sanitized left.class_name right.class_name
     | _, Top -> true
     | AnalysisFailure _, _
@@ -1829,7 +1841,7 @@ let less_or_equal ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
-    | UninitializableClass _, _
+    | AbstractClassInstantiation _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
         false
@@ -2121,7 +2133,7 @@ let join ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
-    | UninitializableClass _, _
+    | AbstractClassInstantiation _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
         Log.debug
@@ -2588,8 +2600,8 @@ let dequalify
           inconsistent_usage with
           mismatch = dequalify_mismatch mismatch;
         }
-    | UninitializableClass { class_name; method_names } ->
-        UninitializableClass {
+    | AbstractClassInstantiation { class_name; method_names } ->
+        AbstractClassInstantiation {
           class_name; method_names;
         }
     | UnawaitedAwaitable left ->

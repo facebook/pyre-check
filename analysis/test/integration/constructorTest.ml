@@ -498,7 +498,28 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    ["Uninitializable class [38]: Abstract method(s) `bar` in class `Foo` are never initialized."];
+    [
+      "Abstract class instantiation [38]: Cannot instantiate class `Foo` \
+       because method `bar` is not implemented."
+    ];
+
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABCMeta
+      class Foo(metaclass=ABCMeta):
+        @abstractmethod
+        def bar(self) -> None:
+          pass
+        @abstractmethod
+        def foo(self) -> None:
+          pass
+      def foo() -> None:
+        Foo()
+      |}
+    [
+      "Abstract class instantiation [38]: Cannot instantiate class `Foo` \
+       because methods `bar`, `foo` are not implemented."
+    ];
 
   assert_type_errors
     {|
@@ -536,7 +557,8 @@ let test_check_constructors _ =
          B()
    |}
     [
-      "Uninitializable class [38]: Abstract method(s) `f` in class `B` are never initialized."
+      "Abstract class instantiation [38]: Cannot instantiate class `B` \
+       because method `f` is not implemented."
     ];
   assert_type_errors
     {|
@@ -561,8 +583,10 @@ let test_check_constructors _ =
         C()
     |}
     [
-      "Uninitializable class [38]: Abstract method(s) `f, h` in class `B` are never initialized.";
-      "Uninitializable class [38]: Abstract method(s) `f, h` in class `C` are never initialized."
+      "Abstract class instantiation [38]: Cannot instantiate class `B` \
+       because methods `f`, `h` are not implemented.";
+      "Abstract class instantiation [38]: Cannot instantiate class `C` \
+       because methods `f`, `h` are not implemented."
     ];
   assert_type_errors
     {|
@@ -587,8 +611,10 @@ let test_check_constructors _ =
         C()
     |}
     [
-      "Uninitializable class [38]: Abstract method(s) `h` in class `B` are never initialized.";
-      "Uninitializable class [38]: Abstract method(s) `h` in class `C` are never initialized."
+      "Abstract class instantiation [38]: Cannot instantiate class `B` \
+       because method `h` is not implemented.";
+      "Abstract class instantiation [38]: Cannot instantiate class `C` \
+       because method `h` is not implemented.";
     ];
 
   (* Explicit call. *)
