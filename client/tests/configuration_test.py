@@ -24,6 +24,7 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")
+    @patch("os.path.expanduser")
     @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("hashlib.sha1")
@@ -38,6 +39,7 @@ class ConfigurationTest(unittest.TestCase):
         sha1,
         builtins_open,
         access,
+        expanduser,
         exists,
         isdir,
         _abspath,
@@ -53,6 +55,9 @@ class ConfigurationTest(unittest.TestCase):
                 "ignore_all_errors": ["buck-out/dev/gen"],
             },
             {},
+        ]
+        expanduser.side_effect = [
+            "a"
         ]
         configuration = Configuration()
         self.assertEqual(configuration.source_directories, ["a"])
@@ -180,6 +185,21 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
+
+        expanduser.side_effect = [
+            "/home/user/simple_string_searchpath",
+            "/home/user/simple_string_searchpath"
+        ]
+        json_load.side_effect = [
+            {
+                "search_path": "~/simple_string_searchpath",
+                "typeshed": "~/simple_string_typeshed",
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.search_path, "/home/user/simple_string_searchpath")
+        self.assertEqual(configuration.typeshed, "/home/user/simple_string_typeshed")
 
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.
