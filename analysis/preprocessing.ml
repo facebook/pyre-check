@@ -358,14 +358,7 @@ let qualify_local_identifier name ~qualifier =
 
 let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
-    let stars, name =
-      if String.is_prefix name ~prefix:"**" then
-        "**", String.drop_prefix name 2
-      else if String.is_prefix name ~prefix:"*" then
-        "*", String.drop_prefix name 1
-      else
-        "", name
-    in
+    let stars, name = Identifier.split_star name in
     let renamed =
       Format.asprintf "$%s$%s" prefix name
     in

@@ -60,18 +60,19 @@ let create_overload
     ~define:({ Define.signature = { parameters; _ }; _ } as define) =
   let open Type.Callable in
   let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
-    let bare_name = String.lstrip ~drop:(function | '*' -> true | _ -> false) name in
     let annotation =
       annotation
       >>| Resolution.parse_annotation resolution
       |> Option.value ~default:Type.Top
     in
-    if String.is_prefix ~prefix:"**" name then
-      Parameter.Keywords { Parameter.name = bare_name; annotation; default = false }
-    else if String.is_prefix ~prefix:"*" name then
-      Parameter.Variable { Parameter.name = bare_name; annotation; default = false }
-    else
-      Parameter.Named { Parameter.name = bare_name; annotation; default = Option.is_some value }
+    let star, name = Identifier.split_star name in
+    match star with
+    | "**" ->
+        Parameter.Keywords { Parameter.name; annotation; default = false }
+    | "*" ->
+        Parameter.Variable { Parameter.name; annotation; default = false }
+    | _ ->
+        Parameter.Named { Parameter.name; annotation; default = Option.is_some value }
   in
   {
     annotation = return_annotation ~define ~resolution;

@@ -21,3 +21,5 @@ val pp: Format.formatter -> t -> unit
 val pp_sanitized: Format.formatter -> t -> unit
 
 val remove_leading_underscores: t -> t
+
+val split_star: t -> string * t

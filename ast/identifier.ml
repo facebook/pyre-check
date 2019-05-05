@@ -46,15 +46,17 @@ let pp format identifier =
   Format.fprintf format "%a" String.pp identifier
 
 
+let split_star name =
+  if String.is_prefix name ~prefix:"**" then
+    "**", String.drop_prefix name 2
+  else if String.is_prefix name ~prefix:"*" then
+    "*", String.drop_prefix name 1
+  else
+    "", name
+
+
 let sanitized name =
-  let stars, name =
-    if String.is_prefix name ~prefix:"**" then
-      "**", String.drop_prefix name 2
-    else if String.is_prefix name ~prefix:"*" then
-      "*", String.drop_prefix name 1
-    else
-      "", name
-  in
+  let stars, name = split_star name in
   let name =
     match String.is_prefix name ~prefix:"$", String.rindex name '$' with
     | true, Some index when index > 0 ->

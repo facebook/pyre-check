@@ -199,6 +199,7 @@ module Callable : sig
 
     module Map : Core.Map.S with type Key.t = parameter
 
+    val create: ?annotation:type_t -> ?default: bool -> Identifier.t -> type_t t
     val name: parameter -> Identifier.t
     val annotation: parameter -> type_t
     val default: parameter -> bool

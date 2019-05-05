@@ -1155,6 +1155,14 @@ module Callable = struct
         let t_of_sexp = t_of_sexp type_t_of_sexp
       end)
 
+    let create ?(annotation=Any) ?(default=false) name =
+      let star, name = Identifier.split_star name in
+      let named = { name; annotation; default } in
+      match star with
+      | "**" -> Keywords named
+      | "*" -> Variable named
+      | _ -> Named named
+
     let name = function
       | Named { name; _ } -> name
       | Variable { name; _ } -> ("*" ^ name)

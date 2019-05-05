@@ -2701,21 +2701,7 @@ module State = struct
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
-          let create_named name =
-            {
-              Type.Callable.Parameter.name;
-              annotation = Type.Any;
-              default = false;
-            }
-          in
-          if String.is_prefix name ~prefix:"**" then
-            let name = String.drop_prefix name 2 in
-            Type.Callable.Parameter.Keywords (create_named name)
-          else if String.is_prefix name ~prefix:"*" then
-            let name = String.drop_prefix name 1 in
-            Type.Callable.Parameter.Variable (create_named name)
-          else
-            Type.Callable.Parameter.Named (create_named name)
+          Type.Callable.Parameter.create name
         in
         let parameters =
           List.map parameters ~f:create_parameter
