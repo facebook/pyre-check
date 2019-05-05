@@ -56,9 +56,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
-        expanduser.side_effect = [
-            "a"
-        ]
+        expanduser.side_effect = ["a"]
         configuration = Configuration()
         self.assertEqual(configuration.source_directories, ["a"])
         self.assertEqual(configuration.targets, [])
@@ -71,8 +69,9 @@ class ConfigurationTest(unittest.TestCase):
             {"source_directories": ["a"]},
             {},
         ]
+        expanduser.side_effect = ["local/path"]
         configuration = Configuration("local/path")
-        self.assertEqual(configuration.source_directories, ["local/path/a"])
+        self.assertEqual(configuration.source_directories, ["local/path"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
@@ -85,6 +84,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertTrue(configuration.disabled)
 
         json_load.side_effect = [{"typeshed": "TYPESHED/"}, {}]
+        expanduser.side_effect = ["TYPESHED/"]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPESHED/")
         self.assertEqual(configuration.number_of_workers, number_of_workers())
@@ -99,8 +99,10 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
+        expanduser.side_effect = ["additional/", "TYPE/%V/SHED/"]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        expanduser.side_effect = ["additional/"]
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
@@ -117,8 +119,10 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
+        expanduser.side_effect = ["additional/", "TYPE/%V/SHED/"]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        expanduser.side_effect = ["additional/"]
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.taint_models_path, None)
@@ -136,6 +140,12 @@ class ConfigurationTest(unittest.TestCase):
                 "workers": 20,
             },
             {},
+        ]
+        expanduser.side_effect = [
+            "additional/",
+            "root/",
+            "subdirectory",
+            "TYPE/%V/SHED/",
         ]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
@@ -167,6 +177,7 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
+        expanduser.side_effect = ["simple_string/", "TYPE/%V/SHED/"]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
@@ -181,15 +192,12 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
+        expanduser.side_effect = ["simple_string/", "TYPE/%V/SHED/"]
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
 
-        expanduser.side_effect = [
-            "/home/user/simple_string_searchpath",
-            "/home/user/simple_string_searchpath"
-        ]
         json_load.side_effect = [
             {
                 "search_path": "~/simple_string_searchpath",
@@ -197,8 +205,14 @@ class ConfigurationTest(unittest.TestCase):
             },
             {},
         ]
+        expanduser.side_effect = [
+            "/home/user/simple_string_searchpath",
+            "/home/user/simple_string_typeshed",
+        ]
         configuration = Configuration()
-        self.assertEqual(configuration.search_path, "/home/user/simple_string_searchpath")
+        self.assertEqual(
+            configuration.search_path, ["/home/user/simple_string_searchpath"]
+        )
         self.assertEqual(configuration.typeshed, "/home/user/simple_string_typeshed")
 
         # Test loading of additional directories in the search path
@@ -206,6 +220,21 @@ class ConfigurationTest(unittest.TestCase):
         json_load.side_effect = [
             {"search_path": ["json/", "file/"], "typeshed": "TYPESHED/"},
             {},
+        ]
+        expanduser.side_effect = [
+            "additional/",
+            "directories/",
+            "command/",
+            "line/",
+            "json/",
+            "file/",
+            "TYPESHED/",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
         ]
         with patch.object(os, "getenv", return_value="additional/:directories/"):
             with patch.object(os.path, "isdir", return_value=True):

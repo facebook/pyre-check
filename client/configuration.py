@@ -354,9 +354,7 @@ class Configuration:
                 configuration_directory = os.path.dirname(path)
                 if configuration_directory:
                     self.source_directories = [
-                        # TODO: Does it make sense to expanduser
-                        # when a configuration directory is present?
-                        os.path.join(configuration_directory, os.path.expanduser(directory))
+                        os.path.join(configuration_directory, directory)
                         for directory in source_directories
                     ]
                 else:
