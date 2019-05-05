@@ -928,7 +928,7 @@ module State = struct
                       |> Annotated.Class.create
                       |> Annotated.Class.successors ~resolution
                       |> List.filter_map
-                          ~f:(fun name ->
+                        ~f:(fun name ->
                             Resolution.class_definition
                               ~convert:true
                               resolution
@@ -2701,11 +2701,21 @@ module State = struct
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
         let create_parameter { Node.value = { Parameter.name; _ }; _ } =
-          Type.Callable.Parameter.Named {
-            Type.Callable.Parameter.name;
-            annotation = Type.Any;
-            default = false;
-          }
+          let create_named name =
+            {
+              Type.Callable.Parameter.name;
+              annotation = Type.Any;
+              default = false;
+            }
+          in
+          if String.is_prefix name ~prefix:"**" then
+            let name = String.drop_prefix name 2 in
+            Type.Callable.Parameter.Keywords (create_named name)
+          else if String.is_prefix name ~prefix:"*" then
+            let name = String.drop_prefix name 1 in
+            Type.Callable.Parameter.Variable (create_named name)
+          else
+            Type.Callable.Parameter.Named (create_named name)
         in
         let parameters =
           List.map parameters ~f:create_parameter
@@ -2936,9 +2946,9 @@ module State = struct
           original_annotation
           >>| (fun annotation ->
               begin if Type.is_final annotation then
-                Type.final_value annotation
-              else
-                Type.class_variable_value annotation
+                  Type.final_value annotation
+                else
+                  Type.class_variable_value annotation
               end
               |> Option.value ~default:annotation)
         in

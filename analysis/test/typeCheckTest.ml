@@ -2117,6 +2117,12 @@ let test_callable_selection _ =
   assert_resolved "call: typing.Callable[[int], int]" "call()" "int"
 
 
+type parameter_kind =
+  | NamedParameter
+  | VariableParameter
+  | KeywordParameter
+
+
 let test_forward_expression _ =
   let assert_forward
       ?(precondition = [])
@@ -2316,12 +2322,18 @@ let test_forward_expression _ =
   let callable ~parameters ~annotation =
     let parameters =
       let open Type.Callable in
-      let to_parameter name =
-        Parameter.Named {
-          Parameter.name;
-          annotation = Type.Any;
-          default = false;
-        }
+      let to_parameter (name, kind) =
+        let named =
+          {
+            Parameter.name;
+            annotation = Type.Any;
+            default = false;
+          }
+        in
+        match kind with
+        | NamedParameter -> Parameter.Named named
+        | VariableParameter -> Parameter.Variable named
+        | KeywordParameter -> Parameter.Keywords named
       in
       Defined (List.map parameters ~f:to_parameter)
     in
@@ -2331,8 +2343,18 @@ let test_forward_expression _ =
   assert_forward
     "lambda parameter: parameter"
     (callable
-       ~parameters:["parameter"]
+       ~parameters:["parameter", NamedParameter]
        ~annotation:Type.Any);
+  assert_forward
+    "lambda *parameter: 42"
+    (callable
+       ~parameters:["parameter", VariableParameter]
+       ~annotation:Type.integer);
+  assert_forward
+    "lambda **parameter: 42"
+    (callable
+       ~parameters:["parameter", KeywordParameter]
+       ~annotation:Type.integer);
   assert_forward
     ~errors:(`Undefined 1)
     "lambda: undefined"
