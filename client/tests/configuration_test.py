@@ -200,20 +200,22 @@ class ConfigurationTest(unittest.TestCase):
 
         json_load.side_effect = [
             {
-                "search_path": "~/simple_string_searchpath",
-                "typeshed": "~/simple_string_typeshed",
+                "search_path": ["~/simple", {"root": "~/simple", "subdirectory": "subdir"}],
+                "typeshed": "~/typeshed",
             },
             {},
         ]
         expanduser.side_effect = [
-            "/home/user/simple_string_searchpath",
-            "/home/user/simple_string_typeshed",
+            "/home/user/simple",
+            "/home/user/simple",
+            "subdir",
+            "/home/user/typeshed",
         ]
         configuration = Configuration()
         self.assertEqual(
-            configuration.search_path, ["/home/user/simple_string_searchpath"]
+            configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
         )
-        self.assertEqual(configuration.typeshed, "/home/user/simple_string_typeshed")
+        self.assertEqual(configuration.typeshed, "/home/user/typeshed")
 
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.

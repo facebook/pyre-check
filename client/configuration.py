@@ -399,7 +399,7 @@ class Configuration:
 
                 binary = configuration.consume("binary", current=self._binary)
                 assert binary is None or isinstance(binary, str)
-                if isinstance(binary, str):
+                if binary is not None:
                     binary = os.path.expanduser(binary)
                 self._binary = binary
 
@@ -425,7 +425,7 @@ class Configuration:
 
                 typeshed = configuration.consume("typeshed", current=self._typeshed)
                 assert typeshed is None or isinstance(typeshed, str)
-                if isinstance(typeshed, str):
+                if typeshed is not None:
                     typeshed = os.path.expanduser(typeshed)
                 self._typeshed = typeshed
 
