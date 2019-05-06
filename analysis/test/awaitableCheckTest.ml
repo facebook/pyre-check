@@ -112,7 +112,7 @@ let test_forward _ =
     |}
     ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
 
-  (* We have limitations at the moment. *)
+  (* Tuples. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
@@ -120,8 +120,158 @@ let test_forward _ =
         awaited = awaitable()
         yield (await awaited, 3)
     |}
+    [];
+
+  (* Boolean operators. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        await awaited or Exception("You must await.")
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        1 and (2 and (await awaited))
+    |}
+    [];
+
+  (* Calls are blocked on the access fold refactor to be complete. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def takes_awaitable(x: typing.Awaitable[int]): ...
+      def meta_awaitable():
+        awaited = awaitable()
+        takes_awaitable(awaited)
+    |}
     ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
 
+  (* Comparison operators. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        return (await awaited) > 2
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable() -> bool:
+        awaited = awaitable()
+        return 0 == (await awaited)
+    |}
+    [];
+
+  (* Container literals. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        return [1, await awaited, 2]
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        return {1, await awaited, 2}
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        return {await awaited: 1, 2: 2}
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        return {"foo": [await awaited]}
+    |}
+    [];
+  (* Lambdas. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        lambda x: (await awaited) or 42
+    |}
+    [];
+
+  (* Starred expressions. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[typing.Iterable[int]]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        [1, *(await awaited)]
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[typing.Dict[int, str]]: ...
+      async def meta_awaitable():
+        awaited = awaitable()
+        {1: "x", **(await awaited)}
+    |}
+    [];
+
+  (* Ternaries. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      1 if (await awaited) else 2
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      (await awaited) if 1 else 2
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      1 if 2 else (await awaited)
+    |}
+    [];
+
+  (* Unary operators. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      -(not (await awaited))
+    |}
+    [];
+
+  (* Yield. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      yield (await awaited) if 1 > 2 else False
+    |}
+    [];
+
+  (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...

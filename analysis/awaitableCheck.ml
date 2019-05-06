@@ -91,13 +91,77 @@ module State (Context: Context) = struct
     join previous next
 
 
-  let forward_expression
+  let rec forward_expression
       ~state:{ unawaited }
       ~expression:{ Node.value; _ } =
+    let open Expression in
     match value with
-    | Expression.Await { Node.value = Access (SimpleAccess access); _ } ->
+    | Access _ ->
+        unawaited
+    | Await { Node.value = Access (SimpleAccess access); _ } ->
         Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
-    | _ ->
+    | Await _ ->
+        unawaited
+    | BooleanOperator { BooleanOperator.left; right; _ } ->
+        let unawaited = forward_expression ~state:{ unawaited } ~expression:left in
+        forward_expression ~state:{ unawaited } ~expression:right
+    | Call { Call.callee; arguments } ->
+        let unawaited = forward_expression ~state: { unawaited } ~expression:callee in
+        let forward_argument unawaited { Call.Argument.value; _ } =
+          forward_expression ~state:{ unawaited } ~expression:value
+        in
+        List.fold arguments ~init:unawaited ~f:forward_argument
+    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+        let unawaited = forward_expression ~state:{ unawaited } ~expression:left in
+        forward_expression ~state:{ unawaited } ~expression:right
+    | Dictionary { Dictionary.entries; keywords } ->
+        let forward_entry unawaited { Dictionary.key; value } =
+          let unawaited = forward_expression ~state:{ unawaited } ~expression:key in
+          forward_expression ~state:{ unawaited } ~expression:value
+        in
+        let unawaited = List.fold entries ~init:unawaited ~f:forward_entry in
+        List.fold
+          keywords
+          ~init:unawaited
+          ~f:(fun unawaited expression -> forward_expression ~state:{ unawaited } ~expression)
+    | Lambda { Lambda.body; _ } ->
+        forward_expression ~state:{ unawaited } ~expression:body
+    | Starred (Starred.Once expression)
+    | Starred (Starred.Twice expression) ->
+        forward_expression ~state:{ unawaited } ~expression
+    | Ternary { Ternary.target; test; alternative } ->
+        let unawaited = forward_expression ~state:{ unawaited } ~expression:target in
+        let unawaited = forward_expression ~state:{ unawaited } ~expression:test in
+        forward_expression ~state:{ unawaited } ~expression:alternative
+    | List items
+    | Set items
+    | Tuple items ->
+        List.fold
+          items
+          ~init:unawaited
+          ~f:(fun unawaited expression -> forward_expression ~state:{ unawaited } ~expression)
+    | UnaryOperator { UnaryOperator.operand; _ } ->
+        forward_expression ~state:{ unawaited } ~expression:operand
+    | Yield (Some expression) ->
+        forward_expression ~state:{ unawaited } ~expression
+    | Yield None ->
+        unawaited
+
+    (* Base cases. *)
+    | Complex _
+    | False
+    | Float _
+    | Integer _
+    | String _
+    | True
+    | Name _
+    | Ellipsis ->
+        unawaited
+    (* Unimplemented. *)
+    | DictionaryComprehension _
+    | Generator _
+    | ListComprehension _
+    | SetComprehension _ ->
         unawaited
 
 
@@ -113,7 +177,6 @@ module State (Context: Context) = struct
         ~name
         ~key
     in
-
     let unawaited =
       let is_awaitable value =
         try
