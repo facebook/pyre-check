@@ -75,7 +75,25 @@ let test_forward _ =
     |}
     [];
 
-  (* First prototype is very limited. *)
+  (* Return. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable() -> typing.Awaitable[int]:
+        awaited = awaitable()
+        return awaited
+    |}
+    [];
+  (* We have limitations at the moment. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable() -> typing.Tuple[typing.Awaitable[int], int]:
+        awaited = awaitable()
+        return awaited, 1
+    |}
+    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
+
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...

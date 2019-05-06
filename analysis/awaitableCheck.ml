@@ -141,6 +141,17 @@ module State (Context: Context) = struct
           unawaited
       | Raise (Some expression) ->
           forward_expression ~state ~expression
+      | Return { expression = Some expression; _ } ->
+          let unawaited = forward_expression ~state ~expression in
+          begin
+            match Node.value expression with
+            | Access (SimpleAccess access) ->
+                Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+            | _ ->
+                unawaited
+          end
+      | Return { expression = None; _ } ->
+          unawaited
       (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
       | If _
       | Class _
@@ -160,8 +171,6 @@ module State (Context: Context) = struct
           unawaited
       (* Need to implement. *)
       | Assign _ ->
-          unawaited
-      | Return _ ->
           unawaited
       | Yield _ ->
           unawaited
