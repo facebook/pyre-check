@@ -158,6 +158,10 @@ module State (Context: Context) = struct
           forward_return ~unawaited ~expression
       | Yield _ ->
           unawaited
+      | YieldFrom { Node.value = Expression.Yield (Some expression); _ } ->
+          forward_expression ~state ~expression
+      | YieldFrom _ ->
+          unawaited
       (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
       | If _
       | Class _
@@ -177,8 +181,6 @@ module State (Context: Context) = struct
           unawaited
       (* Need to implement. *)
       | Assign _ ->
-          unawaited
-      | YieldFrom _ ->
           unawaited
     in
     { state with unawaited }

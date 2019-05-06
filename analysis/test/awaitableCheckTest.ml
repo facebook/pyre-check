@@ -102,6 +102,15 @@ let test_forward _ =
         yield (await awaited)
     |}
     [];
+  (* We aren't handling (await awaited).__iter__() correctly at the moment, causing this issue. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        yield from (await awaited)
+    |}
+    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
 
   (* We have limitations at the moment. *)
   assert_awaitable_errors
