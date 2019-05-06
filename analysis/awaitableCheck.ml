@@ -91,6 +91,16 @@ module State (Context: Context) = struct
     join previous next
 
 
+  let forward_expression
+      ~state:{ unawaited }
+      ~expression:{ Node.value; _ } =
+    match value with
+    | Expression.Await { Node.value = Access (SimpleAccess access); _ } ->
+        Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+    | _ ->
+        unawaited
+
+
   let forward
       ?key
       ({ unawaited } as state)
@@ -120,14 +130,44 @@ module State (Context: Context) = struct
       | Assign {
           value = { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ };
           _
-        }
-      | Expression { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ } ->
+        } ->
           Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
-
-      | _ ->
+      | Expression expression ->
+          forward_expression ~state ~expression
+      (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
+      | If _
+      | Class _
+      | Define _
+      | For _
+      | While _
+      | Try _ ->
+          unawaited
+      (* Trivial cases. *)
+      | Break
+      | Continue
+      | Global _
+      | Import _
+      | Nonlocal _
+      | Pass ->
+          unawaited
+      (* Need to implement. *)
+      | Assert _ ->
+          unawaited
+      | Assign _ ->
+          unawaited
+      | Delete _ ->
+          unawaited
+      | Raise _ ->
+          unawaited
+      | Return _ ->
+          unawaited
+      | With _ ->
+          unawaited
+      | Yield _ ->
+          unawaited
+      | YieldFrom _ ->
           unawaited
     in
-
     { state with unawaited }
 
 
