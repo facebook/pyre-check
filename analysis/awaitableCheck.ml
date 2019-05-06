@@ -134,7 +134,12 @@ module State (Context: Context) = struct
           _
         } ->
           Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+      | Delete expression
       | Expression expression ->
+          forward_expression ~state ~expression
+      | Raise None ->
+          unawaited
+      | Raise (Some expression) ->
           forward_expression ~state ~expression
       (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
       | If _
@@ -154,10 +159,6 @@ module State (Context: Context) = struct
           unawaited
       (* Need to implement. *)
       | Assign _ ->
-          unawaited
-      | Delete _ ->
-          unawaited
-      | Raise _ ->
           unawaited
       | Return _ ->
           unawaited

@@ -56,6 +56,25 @@ let test_forward _ =
     |}
     ["Unawaited awaitable [101]: `awaited` is never awaited."];
 
+  (* Delete. *)
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      if "moon_is_high":
+        del (await awaited)
+    |}
+    [];
+
+  (* Raise. *)
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[Exception]: ...
+      awaitable()
+      raise (await awaitable)
+    |}
+    [];
+
   (* First prototype is very limited. *)
   assert_awaitable_errors
     {|
