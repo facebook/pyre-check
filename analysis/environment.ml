@@ -68,6 +68,12 @@ module type Handler = sig
 end
 
 
+module AliasEntry = struct
+  type t = { handle: File.Handle.t; target: Reference.t; value: Expression.expression_t }
+  [@@deriving sexp, compare, hash, show]
+end
+
+
 let connect_definition
     ~resolution
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition) =
@@ -411,144 +417,148 @@ let register_class_definitions (module Handler: Handler) source =
   Visit.visit Type.Set.empty source
 
 
-let register_aliases (module Handler: Handler) sources =
-  Type.Cache.disable ();
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  let collect_aliases { Source.handle; statements; qualifier; _ } =
-    let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
-      match value with
-      | Assign {
-          Assign.target = { Node.value = Name target; _ };
-          annotation;
-          value;
-          _;
-        } when Expression.is_simple_name target ->
+let collect_aliases (module Handler: Handler) { Source.handle; statements; qualifier; _ } =
+  let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
+    match value with
+    | Assign {
+        Assign.target = { Node.value = Name target; _ };
+        annotation;
+        value;
+        _;
+      } when Expression.is_simple_name target ->
+        let target =
           let target =
-            let target =
-              Reference.from_name_exn target
-              |> Reference.sanitize_qualified
-            in
-            if in_class_body then target else Reference.combine qualifier target
+            Reference.from_name_exn target
+            |> Reference.sanitize_qualified
           in
-          let target_annotation =
-            Type.create ~aliases:Handler.aliases (Reference.expression target)
-          in
-          begin
-            match Node.value value, annotation with
-            | _, Some {
-                Node.value =
-                  Call {
-                    callee = {
-                      Node.value = Name (Name.Attribute {
-                          base = {
-                            Node.value = Name (Name.Attribute {
-                                base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                attribute = "Type";
-                              });
+          if in_class_body then target else Reference.combine qualifier target
+        in
+        let target_annotation =
+          Type.create ~aliases:Handler.aliases (Reference.expression target)
+        in
+        begin
+          match Node.value value, annotation with
+          | _, Some {
+              Node.value =
+                Call {
+                  callee = {
+                    Node.value = Name (Name.Attribute {
+                        base = {
+                          Node.value = Name (Name.Attribute {
+                              base = { Node.value = Name (Name.Identifier "typing"); _ };
+                              attribute = "Type";
+                            });
+                          _;
+                        };
+                        attribute = "__getitem__";
+                      });
+                    _;
+                  };
+                  arguments = [{
+                      Call.Argument.value = {
+                        Node.value = Call {
+                            callee = {
+                              Node.value = Name (Name.Attribute {
+                                  base = {
+                                    Node.value = Name (Name.Attribute {
+                                        base = {
+                                          Node.value = Name (Name.Identifier "mypy_extensions");
+                                          _;
+                                        };
+                                        attribute = "TypedDict";
+                                      });
+                                    _;
+                                  };
+                                  attribute = "__getitem__";
+                                });
+                              _;
+                            };
                             _;
                           };
-                          attribute = "__getitem__";
-                        });
-                      _;
-                    };
-                    arguments = [{
-                        Call.Argument.value = ({
-                            Node.value = Call {
-                                callee = {
-                                  Node.value = Name (Name.Attribute {
-                                      base = {
-                                        Node.value = Name (Name.Attribute {
-                                            base = {
-                                              Node.value = Name (Name.Identifier "mypy_extensions");
-                                              _;
-                                            };
-                                            attribute = "TypedDict";
-                                          });
-                                        _;
-                                      };
-                                      attribute = "__getitem__";
-                                    });
-                                  _;
-                                };
-                                _;
-                              };
-                            _;
-                          } as annotation);
                         _;
-                      }];
-                  };
-                _;
-              } ->
-                if not (Type.equal target_annotation Type.Top) then
-                  (handle, target, annotation) :: aliases
-                else
-                  aliases
-            | _, Some ({
-                Node.value =
-                  Name (Name.Attribute {
-                      base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "Any";
-                    });
-                _;
-              } as annotation) ->
-                if not (Type.equal target_annotation Type.Top) then
-                  (handle, target, annotation) :: aliases
-                else
-                  aliases
-            | Call _, None
-            | Name _, None ->
-                let value = Expression.delocalize value in
-                let value_annotation = Type.create ~aliases:Handler.aliases value in
-                if not (Type.equal target_annotation Type.Top ||
-                        Type.equal value_annotation Type.Top ||
-                        Type.equal value_annotation target_annotation) then
-                  (handle, target, value) :: aliases
-                else
-                  aliases
-            | _ ->
+                      };
+                      _;
+                    }];
+                };
+              _;
+            } ->
+              if not (Type.equal target_annotation Type.Top) then
+                { AliasEntry.handle; target; value } :: aliases
+              else
                 aliases
-          end
-      | Class { Class.name; body; _ } ->
-          List.fold
-            body
-            ~init:aliases
-            ~f:(visit_statement ~qualifier:name ~in_class_body:true)
-      | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
-        when Reference.show name = "*" ->
-          (* Don't register x.* as an alias when a user writes `from x import *`. *)
-          aliases
-      | Import {
-          Import.from = Some from;
-          imports;
-        } ->
-          let from =
-            match Reference.show from with
-            | "future.builtins"
-            | "builtins" -> Reference.empty
-            | _ -> from
+          | _, Some ({
+              Node.value =
+                Name (Name.Attribute {
+                    base = { Node.value = Name (Name.Identifier "typing"); _ };
+                    attribute = "Any";
+                  });
+              _;
+            } as value) ->
+              if not (Type.equal target_annotation Type.Top) then
+                { AliasEntry.handle; target; value } :: aliases
+              else
+                aliases
+          | Call _, None
+          | Name _, None ->
+              let value = Expression.delocalize value in
+              let value_annotation = Type.create ~aliases:Handler.aliases value in
+              if not (Type.equal target_annotation Type.Top ||
+                      Type.equal value_annotation Type.Top ||
+                      Type.equal value_annotation target_annotation) then
+                { AliasEntry.handle; target; value } :: aliases
+              else
+                aliases
+          | _ ->
+              aliases
+        end
+    | Class { Class.name; body; _ } ->
+        List.fold
+          body
+          ~init:aliases
+          ~f:(visit_statement ~qualifier:name ~in_class_body:true)
+    | Import { Import.from = Some _; imports = [{ Import.name; _ }] }
+      when Reference.show name = "*" ->
+        (* Don't register x.* as an alias when a user writes `from x import *`. *)
+        aliases
+    | Import {
+        Import.from = Some from;
+        imports;
+      } ->
+        let from =
+          match Reference.show from with
+          | "future.builtins"
+          | "builtins" -> Reference.empty
+          | _ -> from
+        in
+        let import_to_alias { Import.name; alias } =
+          let qualified_name =
+            match alias with
+            | None -> Reference.combine qualifier name
+            | Some alias -> Reference.combine qualifier alias
           in
-          let import_to_alias { Import.name; alias } =
-            let qualified_name =
-              match alias with
-              | None -> Reference.combine qualifier name
-              | Some alias -> Reference.combine qualifier alias
-            in
-            let original_name = Reference.combine from name in
-            match Reference.as_list qualified_name, Reference.as_list original_name with
-            | single_identifier :: [], typing :: [identifier]
-              when String.equal typing "typing" && String.equal single_identifier identifier ->
-                (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
-                []
-            | _ ->
-                [handle, qualified_name, Reference.expression original_name]
-          in
-          List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
-      | _ ->
-          aliases
-    in
-    List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
+          let original_name = Reference.combine from name in
+          match Reference.as_list qualified_name, Reference.as_list original_name with
+          | single_identifier :: [], typing :: [identifier]
+            when String.equal typing "typing" && String.equal single_identifier identifier ->
+              (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
+              []
+          | _ ->
+              [{
+                AliasEntry.handle;
+                target = qualified_name;
+                value = Reference.expression original_name
+              }]
+        in
+        List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
+    | _ ->
+        aliases
   in
-  let register_alias (any_changed, unresolved) (handle, target, value) =
+  List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
+
+
+let resolve_aliases (module Handler: Handler) alias_entries =
+  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let register_alias (any_changed, unresolved) { AliasEntry.handle; target; value } =
     let target_primitive_name = Reference.show target in
     let target_primitive = Type.Primitive target_primitive_name in
     let value_annotation =
@@ -602,17 +612,17 @@ let register_aliases (module Handler: Handler) sources =
         (true, unresolved)
       end
     else
-      (any_changed, (handle, target, value) :: unresolved)
+      (any_changed, { AliasEntry.handle; target; value } :: unresolved)
   in
-  let rec resolve_aliases unresolved =
+  let rec fixpoint unresolved =
     if List.is_empty unresolved then
       ()
     else
       let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
       if any_changed then
-        resolve_aliases unresolved
+        fixpoint unresolved
       else
-        let show_unresolved (handle, target, value) =
+        let show_unresolved { AliasEntry.handle; target; value } =
           Log.debug
             "Unresolved alias %a:%a <- %a"
             File.Handle.pp handle
@@ -621,8 +631,13 @@ let register_aliases (module Handler: Handler) sources =
         in
         List.iter ~f:show_unresolved unresolved
   in
-  List.concat_map ~f:collect_aliases sources
-  |> resolve_aliases;
+  fixpoint alias_entries
+
+
+let register_aliases (module Handler: Handler) sources =
+  Type.Cache.disable ();
+  List.concat_map ~f:(collect_aliases (module Handler)) sources
+  |> resolve_aliases (module Handler);
   Type.Cache.enable ()
 
 
