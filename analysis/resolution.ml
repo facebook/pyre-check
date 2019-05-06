@@ -408,6 +408,8 @@ let check_invalid_type_parameters resolution annotation =
           let invalid_type_parameters ~name ~given =
             let generics = generics_for_name name in
             match List.zip generics given with
+            | Some [] ->
+                Type.Primitive name, sofar
             | Some paired ->
                 let check_parameter (generic, given) =
                   match generic with
@@ -429,18 +431,21 @@ let check_invalid_type_parameters resolution annotation =
                         |> Option.is_none
                       in
                       if invalid then
+                        Type.Any,
                         Some ({
                             name;
                             kind = ViolateConstraints { actual = given; expected = generic };
                           })
                       else
-                        None
+                        given, None
                   | _ ->
                       (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
-                      None
+                      given, None
                 in
-                List.filter_map paired ~f:check_parameter
-                |> (fun mismatches ->  annotation, mismatches @ sofar)
+                List.map paired ~f:check_parameter
+                |> List.unzip
+                |> (fun (parameters, errors) ->
+                    Type.parametric name parameters, (List.filter_map errors ~f:Fn.id) @ sofar)
             | None ->
                 let mismatch =
                   {

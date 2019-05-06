@@ -478,11 +478,45 @@ let test_unbound_variables _ =
     [
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
       "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
-      "Incompatible variable type [9]: g is declared to have type `G[bool]` but is used " ^
+      "Incompatible variable type [9]: g is declared to have type `G[typing.Any]` but is used " ^
       "as type `G[Variable[T_Explicit <: [int, str]]]`.";
       "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
       "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
-      "Revealed type [-1]: Revealed type for `g` is `G[bool]`.";
+      "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
+    ];
+  assert_type_errors
+    ~debug:false
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      class G(typing.Generic[T_Explicit]):
+        def __init__(self) -> None:
+          pass
+      def bar() -> G[bool]:
+        g: G[bool] = G()
+        reveal_type(g)
+        return g
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
+      "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
+      "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      T_Explicit = typing.TypeVar("T_Explicit", int, str)
+      T = typing.TypeVar("T")
+      class G(typing.Generic[T_Explicit, T]):
+        def __init__(self) -> None:
+          pass
+      def bar(g: G[bool, bool]) -> None:
+        reveal_type(g)
+    |}
+    [
+      "Invalid type parameters [24]: Type parameter `bool` violates constraints on " ^
+      "`Variable[T_Explicit <: [int, str]]` in generic type `G`";
+      "Revealed type [-1]: Revealed type for `g` is `G[typing.Any, bool]`.";
     ];
   assert_type_errors
     {|
