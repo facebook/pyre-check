@@ -122,6 +122,13 @@ module State (Context: Context) = struct
         with TypeOrder.Untracked _ ->
           false
       in
+      let forward_return ~unawaited ~expression =
+        match Node.value expression with
+        | Expression.Access (SimpleAccess access) ->
+            Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+        | _ ->
+            unawaited
+      in
       match value with
       | Assert { Assert.test; _ } ->
           forward_expression ~state ~expression:test
@@ -143,14 +150,13 @@ module State (Context: Context) = struct
           forward_expression ~state ~expression
       | Return { expression = Some expression; _ } ->
           let unawaited = forward_expression ~state ~expression in
-          begin
-            match Node.value expression with
-            | Access (SimpleAccess access) ->
-                Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
-            | _ ->
-                unawaited
-          end
+          forward_return ~unawaited ~expression
       | Return { expression = None; _ } ->
+          unawaited
+      | Yield { Node.value = Expression.Yield (Some expression); _ } ->
+          let unawaited = forward_expression ~state ~expression in
+          forward_return ~unawaited ~expression
+      | Yield _ ->
           unawaited
       (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
       | If _
@@ -171,8 +177,6 @@ module State (Context: Context) = struct
           unawaited
       (* Need to implement. *)
       | Assign _ ->
-          unawaited
-      | Yield _ ->
           unawaited
       | YieldFrom _ ->
           unawaited

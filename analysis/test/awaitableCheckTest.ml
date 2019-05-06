@@ -84,7 +84,35 @@ let test_forward _ =
         return awaited
     |}
     [];
+
+  (* Yield. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        yield awaited
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        yield (await awaited)
+    |}
+    [];
+
   (* We have limitations at the moment. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      def meta_awaitable():
+        awaited = awaitable()
+        yield (await awaited, 3)
+    |}
+    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
+
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
