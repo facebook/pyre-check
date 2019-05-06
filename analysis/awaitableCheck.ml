@@ -147,6 +147,7 @@ module State (Context: Context) = struct
       | Define _
       | For _
       | While _
+      | With _
       | Try _ ->
           unawaited
       (* Trivial cases. *)
@@ -161,8 +162,6 @@ module State (Context: Context) = struct
       | Assign _ ->
           unawaited
       | Return _ ->
-          unawaited
-      | With _ ->
           unawaited
       | Yield _ ->
           unawaited
