@@ -66,6 +66,7 @@ let join ~resolution left right =
         Immutable {
           scope = Global;
           original = Resolution.join resolution left.original right.original;
+          final = false
         }
 
     | (Immutable { scope = Global; _ } as immutable), _
@@ -77,6 +78,7 @@ let join ~resolution left right =
         Immutable {
           scope = Local;
           original = Resolution.join resolution left.original right.original;
+          final = false;
         }
 
     | (Immutable { scope = Local; _ } as immutable), _
@@ -100,6 +102,7 @@ let meet ~resolution left right =
         Immutable {
           scope = Local;
           original = Resolution.meet resolution left.original right.original;
+          final = false;
         }
 
     | (Immutable { scope = Local; _ } as immutable), _
@@ -111,6 +114,7 @@ let meet ~resolution left right =
         Immutable {
           scope = Global;
           original = Resolution.meet resolution left.original right.original;
+          final = false;
         }
   in
   { annotation = Resolution.meet resolution left.annotation right.annotation; mutability }

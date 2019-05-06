@@ -91,8 +91,23 @@ let test_check_assign _ =
     [
       "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
        flow path that doesn't define `x`.";
-    ]
-
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+      x = 200
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final
+      i = 0
+      while i < 10:
+        i += 1
+        x: Final[int] = i
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."]
 
 let () =
   "assign">:::[

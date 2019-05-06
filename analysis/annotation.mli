@@ -9,6 +9,7 @@ type scope = | Local | Global
 and immutable = {
   scope: scope;
   original: Type.t;
+  final: bool;
 }
 
 and mutability =
@@ -22,7 +23,7 @@ and t = {
 [@@deriving eq, show, hash, sexp]
 
 val create: ?mutability: mutability -> Type.t -> t
-val create_immutable: global: bool -> ?original: Type.t option -> Type.t -> t
+val create_immutable: global: bool -> ?original: Type.t option -> ?final: bool -> Type.t -> t
 
 val annotation: t -> Type.t
 val original: t -> Type.t
@@ -31,5 +32,6 @@ val scope: t -> scope option
 
 val is_global: t -> bool
 val is_immutable: t -> bool
+val is_final: t -> bool
 
 val instantiate: t -> constraints: (Type.t -> Type.t option) -> t

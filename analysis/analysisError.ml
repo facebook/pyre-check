@@ -140,6 +140,7 @@ type kind =
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
+  | InvalidAssignment of Reference.t
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -219,6 +220,7 @@ let code = function
   | AbstractClassInstantiation _ -> 38
   | InvalidInheritance _ -> 39
   | InvalidOverride _ -> 40
+  | InvalidAssignment _ -> 41
 
 
   (* Additional errors. *)
@@ -247,6 +249,7 @@ let name = function
   | InvalidTypeVariance _ -> "Invalid type variance"
   | InvalidInheritance _ -> "Invalid inheritance"
   | InvalidOverride _ -> "Invalid override"
+  | InvalidAssignment _ -> "Invalid assignment"
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
@@ -756,6 +759,12 @@ let messages ~concise ~signature location kind =
           pp_reference define_name
           message
           pp_identifier parent
+      ]
+  | InvalidAssignment name ->
+      [
+        Format.asprintf
+          "Cannot reassign final attribute `%a`."
+          pp_reference name
       ]
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
@@ -1513,6 +1522,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidTypeVariance _
   | InvalidInheritance _
   | InvalidOverride _
+  | InvalidAssignment _
   | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
@@ -1597,6 +1607,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidTypeVariance _
   | InvalidInheritance _
   | InvalidOverride _
+  | InvalidAssignment _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingParameterAnnotation _
@@ -1723,6 +1734,8 @@ let less_or_equal ~resolution left right =
           | _, _ ->
               false
         end
+    | InvalidAssignment left, InvalidAssignment right ->
+        Reference.equal left right
     | MissingArgument left, MissingArgument right ->
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -1815,6 +1828,7 @@ let less_or_equal ~resolution left right =
     | InvalidTypeVariance _, _
     | InvalidInheritance _, _
     | InvalidOverride _, _
+    | InvalidAssignment _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2095,6 +2109,7 @@ let join ~resolution left right =
     | InvalidTypeVariance _, _
     | InvalidInheritance _, _
     | InvalidOverride _, _
+    | InvalidAssignment _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2514,6 +2529,8 @@ let dequalify
         InvalidInheritance name
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent; decorator }
+    | InvalidAssignment name ->
+        InvalidAssignment name
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

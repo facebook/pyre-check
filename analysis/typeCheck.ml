@@ -1180,13 +1180,14 @@ module State = struct
                           ~global_fallback:(Type.is_meta parent_annotation)
                       in
                       match annotation with
-                      | Some { annotation; mutability = Immutable { scope = Global; original } }
+                      | Some { annotation; mutability = Immutable { scope = Global; original; _ }; }
                         when Type.is_unknown original ->
                           {
                             annotation;
                             mutability = Immutable {
                                 scope = Global;
                                 original = Annotation.original resolved;
+                                final = false;
                               }
                           }
                       | Some local ->
@@ -1668,10 +1669,11 @@ module State = struct
           in
           let mutability =
             match mutability with
-            | Immutable { original; scope } ->
+            | Immutable { original; scope; final } ->
                 Annotation.Immutable {
                   original = Type.Variable.mark_all_variables_as_bound original;
                   scope;
+                  final;
                 }
             | _ ->
                 mutability
@@ -2928,6 +2930,11 @@ module State = struct
           >>| (fun (state, annotation) -> state, Some annotation)
           |> Option.value ~default:(state, None)
         in
+        let is_final =
+          original_annotation
+          >>| Type.is_final
+          |> Option.value ~default:false
+        in
         let original_annotation =
           original_annotation
           >>| (fun annotation ->
@@ -3088,6 +3095,16 @@ module State = struct
                       Annotation.original target_annotation, true
                     else
                       Type.Top, false
+              in
+              let state =
+                if Annotation.is_final target_annotation then begin
+                  let kind =
+                    Error.InvalidAssignment (Reference.from_access access)
+                  in
+                  emit_error ~state ~location ~kind ~define:define_node
+                end
+                else
+                  state
               in
               let resolved =
                 Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
@@ -3352,6 +3369,7 @@ module State = struct
                     let annotation =
                       Annotation.create_immutable
                         ~global:(Resolution.is_global ~reference resolution)
+                        ~final:is_final
                         guide
                     in
                     if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
