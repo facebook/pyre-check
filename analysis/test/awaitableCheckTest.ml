@@ -32,6 +32,8 @@ let test_forward _ =
       await awaited
     |}
     [];
+
+  (* Assert. *)
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
@@ -39,6 +41,20 @@ let test_forward _ =
       _ = await awaited
     |}
     [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      assert (await awaited)
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      assert awaited
+    |}
+    ["Unawaited awaitable [101]: `awaited` is never awaited."];
 
   (* First prototype is very limited. *)
   assert_awaitable_errors

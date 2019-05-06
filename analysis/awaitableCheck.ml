@@ -123,6 +123,8 @@ module State (Context: Context) = struct
           false
       in
       match value with
+      | Assert { Assert.test; _ } ->
+          forward_expression ~state ~expression:test
       | Assign { target = { Node.value = Access (SimpleAccess access); location }; value; _ }
         when is_awaitable value ->
           Map.set unawaited ~key:(Reference.from_access access) ~data:(Unawaited location)
@@ -151,8 +153,6 @@ module State (Context: Context) = struct
       | Pass ->
           unawaited
       (* Need to implement. *)
-      | Assert _ ->
-          unawaited
       | Assign _ ->
           unawaited
       | Delete _ ->
