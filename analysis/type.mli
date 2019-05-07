@@ -336,6 +336,8 @@ module Variable : sig
   val convert_all_escaped_free_variables_to_anys: type_t -> type_t
 end
 
+val namespace_insensitive_compare: t -> t -> int
+
 val variable
   :  ?constraints: type_t Variable.constraints
   -> ?variance: Variable.variance

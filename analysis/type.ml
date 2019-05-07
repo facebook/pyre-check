@@ -3005,9 +3005,20 @@ module Variable = struct
       | _ -> None
     in
     instantiate annotation ~constraints
+
+  let converge_all_variable_namespaces  =
+    let constraints = function
+      | Variable variable -> Some (Variable { variable with namespace = -1 })
+      | _ -> None
+    in
+    instantiate ~constraints
 end
 
 
+let namespace_insensitive_compare left right =
+  compare
+    (Variable.converge_all_variable_namespaces left)
+    (Variable.converge_all_variable_namespaces right)
 
 
 let is_concrete annotation =

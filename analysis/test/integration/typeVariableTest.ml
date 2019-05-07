@@ -567,6 +567,27 @@ let test_unbound_variables _ =
         return [], []
     |}
     [];
+  (* This could cause an infinite loop due to mismatching errors if we didn't make the error set
+     namespace insensitive *)
+  assert_type_errors
+    {|
+      def foo(x: int) -> None: pass
+      def bar() -> None:
+        for x in [1, 2, 3]:
+          foo([])
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `typing.List[Variable[_T]]`.";
+    ];
+  assert_type_errors
+    {|
+      def bar(
+          a: typing.Optional[typing.List[int]], b: typing.Optional[typing.List[str]]
+      ) -> typing.Tuple[typing.List[int], typing.List[str]]:
+         return a or [], b or []
+    |}
+    [];
   ()
 
 

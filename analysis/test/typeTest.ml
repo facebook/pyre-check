@@ -1395,6 +1395,29 @@ let test_collapse_escaped_variable_unions _ =
   ()
 
 
+let test_namespace_insensitive_compare _ =
+  let no_namespace_variable = Type.Variable.create "A" in
+  let namespaced_variable_1 =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable { no_namespace_variable with namespace }
+  in
+  let namespaced_variable_2 =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable { no_namespace_variable with namespace }
+  in
+  assert_false ((Type.compare namespaced_variable_1 namespaced_variable_2) == 0);
+  assert_equal
+    (Type.namespace_insensitive_compare namespaced_variable_1 namespaced_variable_2)
+    0;
+  assert_equal
+    (Type.namespace_insensitive_compare
+       (Type.list namespaced_variable_1)
+       (Type.list namespaced_variable_2))
+    0;
+  ()
+
+
+
 let () =
   "type">:::[
     "create">::test_create;
@@ -1422,8 +1445,9 @@ let () =
     "dequalify">::test_dequalify;
     "variables">::test_variables;
     "lambda">::test_lambda;
-    "visit">:: test_visit;
-    "collapse_escaped_variable_unions">:: test_collapse_escaped_variable_unions;
+    "visit">::test_visit;
+    "collapse_escaped_variable_unions">::test_collapse_escaped_variable_unions;
+    "namespace_insensitive_compare">::test_namespace_insensitive_compare;
   ]
   |> Test.run;
   "callable">:::[

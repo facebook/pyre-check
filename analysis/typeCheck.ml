@@ -2829,7 +2829,6 @@ module State = struct
           _;
         } as state)
       ~statement:{ Node.location; value } =
-    Type.Variable.Namespace.reset ();
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in

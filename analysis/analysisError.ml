@@ -10,6 +10,12 @@ open Pyre
 open Statement
 
 
+module Type = struct
+  include Type
+  let compare = Type.namespace_insensitive_compare
+end
+
+
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
   | Module of Reference.t

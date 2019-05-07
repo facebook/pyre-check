@@ -1260,6 +1260,23 @@ let test_suppress _ =
     (incompatible_return_type (Type.Primitive "donotexist") (Type.Primitive "meneither"))
 
 
+let test_namespace_insensitive_set _ =
+  let no_namespace_variable = Type.Variable.create "A" in
+  let namespaced_variable_1 =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable { no_namespace_variable with namespace }
+  in
+  let namespaced_variable_2 =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable { no_namespace_variable with namespace }
+  in
+  let error_1 = error (Error.NotCallable (Type.list namespaced_variable_1)) in
+  let error_2 = error (Error.NotCallable (Type.list namespaced_variable_2)) in
+  assert_true ((Error.compare error_1 error_2) == 0);
+  let set_containing_error_1 = Error.Set.add Error.Set.empty error_1 in
+  assert_true (Error.Set.mem set_containing_error_1 error_2)
+
+
 let () =
   "error">:::[
     "due_to_analysis_limitations">::test_due_to_analysis_limitations;
@@ -1268,5 +1285,6 @@ let () =
     "less_or_equal">::test_less_or_equal;
     "filter">::test_filter;
     "suppress">::test_suppress;
+    "namespace_insensitive_set">:: test_namespace_insensitive_set;
   ]
   |> Test.run
