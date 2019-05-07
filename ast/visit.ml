@@ -71,9 +71,12 @@ module Make (Visitor: Visitor) = struct
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;
           visit_expression right;
-      | Call _ ->
-          (* TODO: T37313693 *)
-          ()
+      | Call { Call.callee; arguments } ->
+          visit_expression callee;
+          let visit_argument { Call.Argument.value; _ } =
+            visit_expression value
+          in
+          List.iter arguments ~f:visit_argument
       | Dictionary { Dictionary.entries; keywords } ->
           List.iter entries ~f:(visit_entry ~visit_expression);
           List.iter keywords ~f:(visit_expression) |> ignore
@@ -91,9 +94,10 @@ module Make (Visitor: Visitor) = struct
       | ListComprehension { Comprehension.element; generators } ->
           visit_expression element;
           List.iter generators ~f:(visit_generator ~visit_expression);
-      | Name _ ->
-          (* TODO: T37313693 *)
+      | Name (Name.Identifier _) ->
           ()
+      | Name (Name.Attribute { base; _ }) ->
+          visit_expression base
       | Set elements ->
           List.iter elements ~f:visit_expression
       | SetComprehension { Comprehension.element; generators } ->
