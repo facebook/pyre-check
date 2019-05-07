@@ -69,7 +69,7 @@ class ConfigurationTest(unittest.TestCase):
             {},
         ]
         configuration = Configuration("local/path")
-        self.assertEqual(configuration.source_directories, ["local/path"])
+        self.assertEqual(configuration.source_directories, ["local/path/a"])
 
         json_load.side_effect = [{"targets": ["//a/b/c"], "disabled": 1}, {}]
         configuration = Configuration()
@@ -187,6 +187,8 @@ class ConfigurationTest(unittest.TestCase):
             {
                 "search_path": ["~/simple", {"root": "~/simple", "subdirectory": "subdir"}],
                 "typeshed": "~/typeshed",
+                "source_directories": ["a", "~/b"],
+                "binary": "~/bin"
             },
             {},
         ]
@@ -195,6 +197,8 @@ class ConfigurationTest(unittest.TestCase):
             configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
         )
         self.assertEqual(configuration.typeshed, "/home/user/typeshed")
+        self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
+        self.assertEqual(configuration.binary, "/home/user/bin")
 
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.
