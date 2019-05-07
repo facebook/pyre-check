@@ -1181,7 +1181,7 @@ module State = struct
                       in
                       match annotation with
                       | Some
-                        { annotation; mutability = Immutable { scope = Global; original; final } }
+                          { annotation; mutability = Immutable { scope = Global; original; final } }
                         when Type.is_unknown original ->
                           {
                             annotation;
@@ -2703,8 +2703,9 @@ module State = struct
            to write a function that take in callables with literal return types.  If you really want
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
-        let create_parameter { Node.value = { Parameter.name; _ }; _ } =
-          Type.Callable.Parameter.create name
+        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+          let default = Option.is_some value in
+          Type.Callable.Parameter.create ~default name
         in
         let parameters =
           List.map parameters ~f:create_parameter
@@ -3120,7 +3121,7 @@ module State = struct
                         ~kind:(Error.InvalidAssignment (Reference.from_access access))
                         ~define:define_node
                   | _ ->
-                    state
+                      state
                 end
               in
               let state =

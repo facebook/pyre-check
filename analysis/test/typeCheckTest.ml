@@ -2322,12 +2322,12 @@ let test_forward_expression _ =
   let callable ~parameters ~annotation =
     let parameters =
       let open Type.Callable in
-      let to_parameter (name, kind) =
+      let to_parameter (name, kind, default) =
         let named =
           {
             Parameter.name;
             annotation = Type.Any;
-            default = false;
+            default;
           }
         in
         match kind with
@@ -2343,17 +2343,22 @@ let test_forward_expression _ =
   assert_forward
     "lambda parameter: parameter"
     (callable
-       ~parameters:["parameter", NamedParameter]
+       ~parameters:["parameter", NamedParameter, false]
+       ~annotation:Type.Any);
+  assert_forward
+    "lambda parameter=1: parameter"
+    (callable
+       ~parameters:["parameter", NamedParameter, true]
        ~annotation:Type.Any);
   assert_forward
     "lambda *parameter: 42"
     (callable
-       ~parameters:["parameter", VariableParameter]
+       ~parameters:["parameter", VariableParameter, false]
        ~annotation:Type.integer);
   assert_forward
     "lambda **parameter: 42"
     (callable
-       ~parameters:["parameter", KeywordParameter]
+       ~parameters:["parameter", KeywordParameter, false]
        ~annotation:Type.integer);
   assert_forward
     ~errors:(`Undefined 1)
