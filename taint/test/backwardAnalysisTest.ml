@@ -1596,6 +1596,42 @@ let test_assignment _ =
     ]
 
 
+let test_access_paths _ =
+  assert_taint
+    {|
+      def access_downward_closed(arg):
+        o = { 'a': arg }
+        x = o.a
+        __test_sink(x.g)
+
+      def access_non_taint(arg):
+        o = { 'a': arg }
+        x = o.b
+        __test_sink(x.g)
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] } ]
+        "qualifier.access_downward_closed";
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[]
+        "qualifier.access_non_taint";
+    ];
+  assert_taint
+    {|
+      def access_through_expression(arg):
+        __test_sink(" ".join(arg))
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] } ]
+        "qualifier.access_through_expression";
+    ]
+
+
 let () =
   "taint">:::[
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
@@ -1625,5 +1661,6 @@ let () =
     "test_constructor_argument_tito">::test_constructor_argument_tito;
     "decorator">::test_decorator;
     "assignment">::test_assignment;
+    "access_paths">::test_access_paths;
   ]
   |> TestHelper.run_with_taint_models

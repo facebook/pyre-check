@@ -19,7 +19,7 @@ let normalize_global ~resolution access =
   if Type.is_meta global_type then
     let dummy_self = {
       Expression.Argument.name = None;
-      value = Node.create ~location:Location.Reference.any Expression.False;
+      value = Node.create_with_default_location Expression.False;
     }
     in
     let full_access =
@@ -37,14 +37,14 @@ let is_local identifier =
 
 let is_class ~resolution access =
   Reference.from_access access
-  |> fun reference -> Type.Primitive (Reference.show reference)
+  |> (fun reference -> Type.Primitive (Reference.show reference))
   |> Resolution.class_definition resolution
   |> Option.is_some
 
 
 let is_global ~resolution access =
   match access with
-  | Access.Identifier head::_
+  | Access.SimpleAccess (Access.Identifier head::_ as access)
     when not (is_local head)
       && not (String.equal head "super")
       && not (String.equal head "type") ->
@@ -112,39 +112,52 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             List.map subtypes ~f:create_override_target
 
 
-let resolve_target ~resolution ?receiver_type access =
+let resolve_target ~resolution ?receiver_type function_access =
   let is_super_call = function
-    | Access.Identifier name :: Access.Call _ :: _ ->
+    | Access.SimpleAccess (Access.Identifier name :: Access.Call _ :: _) ->
         name = "super"
     | _ ->
         false
   in
-  let rec is_all_names = function
-    | [] -> true
-    | Access.Identifier name :: rest
-      when not (is_local name) ->
-        is_all_names rest
+  let is_all_names access =
+    let rec is_all_names = function
+      | [] -> true
+      | Access.Identifier name :: rest
+        when not (is_local name) ->
+          is_all_names rest
+      | _ -> false
+    in
+    match access with
+    | Access.SimpleAccess path ->
+        is_all_names path
     | _ -> false
   in
   let rec resolve_type callable_type =
     match callable_type, receiver_type with
     | Type.Callable { implicit; kind = Named name; _ }, _
-      when is_global ~resolution access ->
+      when is_global ~resolution function_access ->
         [Callable.create_function name, implicit]
     | Type.Callable { implicit; kind = Named name; _ }, _
-      when is_super_call access ->
+      when is_super_call function_access ->
         [Callable.create_method name, implicit]
     | Type.Callable { implicit = None; kind = Named name; _ }, None
-      when is_all_names access ->
+      when is_all_names function_access ->
         [Callable.create_function name, None]
     | Type.Callable { implicit; kind = Named name; _ }, _
-      when is_all_names access ->
+      when is_all_names function_access ->
         [Callable.create_method name, implicit]
     | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, implicit)
-    | access_type, _ when Type.is_meta access_type && is_global ~resolution access ->
-        let access, _ = normalize_global ~resolution access in
+    | access_type, _ when Type.is_meta access_type && is_global ~resolution function_access ->
+        let global_access =
+          match function_access with
+          | Access.SimpleAccess access ->
+              access
+          | _ ->
+              failwith "is_global should be used before calling this"
+        in
+        let access, _ = normalize_global ~resolution global_access in
         [
           Callable.create_method (Reference.from_access access),
           Some { Type.Callable.implicit_annotation = access_type; name = "self" };
@@ -154,40 +167,61 @@ let resolve_target ~resolution ?receiver_type access =
     | _ ->
         []
   in
-  resolve_type (Resolution.resolve resolution (Access.expression access))
+  let node = Node.create_with_default_location (Expression.Access function_access) in
+  resolve_type (Resolution.resolve resolution node)
+
 
 let get_indirect_targets ~resolution ~receiver ~method_name =
-  let receiver_type = Resolution.resolve resolution (Access.expression receiver) in
-  resolve_target ~resolution ~receiver_type (receiver @ [Access.Identifier method_name])
+  let receiver_node = Node.create_with_default_location (Access receiver) in
+  let receiver_type = Resolution.resolve resolution receiver_node in
+  let access = Access.combine receiver_node [Access.Identifier method_name] in
+  resolve_target ~resolution ~receiver_type access
 
 
-let get_targets ~resolution ~global =
-  resolve_target ~resolution global
+let get_global_targets ~resolution ~global =
+  resolve_target ~resolution (Access.SimpleAccess global)
 
 
-let resolve_call_targets ~resolution access =
-  let get_receiver_type ~reverse_prefix =
-    match reverse_prefix with
-    | _member :: receiver ->
-        Some (Resolution.resolve resolution (Access.expression (List.rev receiver)))
-    | _ ->
-        None
-  in
-  let rec accumulate_targets targets reverse_prefix = function
-    | Access.Call _ as head :: tail ->
-        let access = List.rev reverse_prefix in
-        let receiver_type = get_receiver_type ~reverse_prefix in
-        let targets =
-          List.rev_append
-            (resolve_target ~resolution ?receiver_type access)
-            targets
-        in
-        accumulate_targets targets (head :: reverse_prefix) tail
-    | (Access.Identifier name as head) :: tail when not (is_local name) ->
-        accumulate_targets targets (head :: reverse_prefix) tail
-    | head :: tail ->
-        accumulate_targets targets (head :: reverse_prefix) tail
+let resolve_call_targets ~resolution (access: Access.general_access) =
+  let rec visit_each ~accumulator ?receiver_type ~access suffix =
+    let receiver = Node.create_with_default_location (Expression.Access access) in
+    match suffix with
+    | Access.Call _ as next :: tail ->
+        let targets = resolve_target ~resolution ?receiver_type access in
+        let accumulator = List.rev_append targets accumulator in
+        let call = Access.combine receiver [next] in
+        let call_node = Node.create_with_default_location (Expression.Access call) in
+        let receiver_type = Resolution.resolve resolution call_node in
+        visit_each
+          ~accumulator
+          ~receiver_type
+          ~access:call tail
+    | Access.Identifier _ as next :: tail ->
+        let receiver_type = Resolution.resolve resolution receiver in
+        let member = Access.combine receiver [next] in
+        visit_each
+          ~accumulator
+          ~receiver_type
+          ~access:member tail
     | [] ->
-        targets
+        accumulator
   in
-  accumulate_targets [] [] access
+  match access with
+  | Access.SimpleAccess (head :: tail) ->
+      let access = Access.SimpleAccess [head] in
+      visit_each
+        ~accumulator:[]
+        ~access
+        tail
+
+  | Access.ExpressionAccess ({ access = tail; _ } as base_access) ->
+      let access = Access.ExpressionAccess { base_access with access = [] }
+      in
+      visit_each
+        ~accumulator:[]
+        ~access
+        tail
+
+  | Access.SimpleAccess [] ->
+      (* Probably impossible *)
+      []

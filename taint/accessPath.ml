@@ -331,11 +331,21 @@ let split_root ~resolution = function
       failwith "empty access"
 
 
-let normalize_access ~resolution access =
+let resolve_exports ~resolution = function
+  | Access.SimpleAccess access ->
+      let access = TypeCheck.AccessState.resolve_exports ~resolution ~access in
+      Access.SimpleAccess access
+  | expression ->
+      expression
+
+let normalize_access ~resolution (access: Access.general_access) =
   (* TODO(T42218730): should we also handle redirects here? *)
-  let access = TypeCheck.AccessState.resolve_exports ~resolution ~access in
-  let (root, rest) = split_root access ~resolution in
-  List.fold rest ~init:root ~f:normalize_access_list
+  match resolve_exports ~resolution access with
+  | Access.SimpleAccess access ->
+      let (root, rest) = split_root access ~resolution in
+      List.fold rest ~init:root ~f:normalize_access_list
+  | Access.ExpressionAccess { expression; access; _ } ->
+      List.fold access ~init:(Expression expression) ~f:normalize_access_list
 
 
 let rec as_access = function

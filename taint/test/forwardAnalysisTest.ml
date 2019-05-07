@@ -272,6 +272,17 @@ let test_access_paths _ =
         ~kind:`Function
         ~returns:[]
         "qualifier.access_non_taint";
+    ];
+  assert_taint
+    {|
+      def access_through_expression():
+        return " ".join(__test_source())
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.Test]
+        "qualifier.access_through_expression";
     ]
 
 

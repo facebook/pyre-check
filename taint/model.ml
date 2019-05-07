@@ -585,7 +585,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
 let get_global_model ~resolution ~expression =
   Node.value expression
   |> (function
-      | Access (SimpleAccess access) ->
+      | Access access ->
           (match AccessPath.normalize_access ~resolution access with
            | Global access ->
                Some (Reference.from_access access)

@@ -311,21 +311,20 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
       | AccessPath.Global access ->
-          let targets = Interprocedural.CallResolution.get_targets ~resolution ~global:access in
+          let targets =
+            Interprocedural.CallResolution.get_global_targets ~resolution ~global:access
+          in
           let _, extra_arguments =
             Interprocedural.CallResolution.normalize_global ~resolution access
           in
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
       | AccessPath.Access { expression; member = method_name } ->
-          let receiver =
-            AccessPath.as_access expression
-            |> fun access -> Node.create (Expression.Access access) ~location
-          in
+          let receiver = AccessPath.as_access expression in
           let arguments =
             let receiver = {
               Argument.name = None;
-              value = receiver;
+              value = Node.create (Expression.Access receiver) ~location;
             } in
             receiver :: arguments
           in
@@ -344,16 +343,12 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
                 | _ ->
                     taint
             in
-            match Node.value receiver with
-            | Access (SimpleAccess receiver) ->
-                Interprocedural.CallResolution.get_indirect_targets
-                  ~resolution
-                  ~receiver
-                  ~method_name
-                |> apply_call_targets ~resolution location arguments state
-                |>> add_index_breadcrumb_if_necessary
-            | _ ->
-                analyze_expression ~resolution ~state ~expression:receiver
+            Interprocedural.CallResolution.get_indirect_targets
+              ~resolution
+              ~receiver
+              ~method_name
+            |> apply_call_targets ~resolution location arguments state
+            |>> add_index_breadcrumb_if_necessary
           end
       | callee ->
           (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
@@ -521,7 +516,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       match expression.Node.value with
-      | Access (SimpleAccess access) ->
+      | Access access ->
           let expression =
             AccessPath.normalize_access access ~resolution
             |> Node.create ~location
@@ -549,8 +544,6 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
       | False
       | Float _ ->
           ForwardState.Tree.empty, state
-      | Access (ExpressionAccess { expression; _ }) ->
-          analyze_expression ~resolution ~state ~expression
       | Generator comprehension ->
           analyze_comprehension ~resolution comprehension state
       | Integer _ ->

@@ -256,36 +256,26 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
     and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
       | Global access ->
-          let targets = Interprocedural.CallResolution.get_targets ~resolution ~global:access in
+          let targets =
+            Interprocedural.CallResolution.get_global_targets ~resolution ~global:access
+          in
           let _, extra_arguments =
             Interprocedural.CallResolution.normalize_global ~resolution access
           in
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution arguments state taint targets
 
-      | Access { expression = receiver; member = method_name} ->
-          let state =
-            let receiver = Expression.Access (as_access receiver) in
-            let arguments =
-              let receiver_argument_record =
-                {
-                  Argument.name = None;
-                  value = Node.create receiver ~location;
-                }
-              in
-              receiver_argument_record :: arguments
-            in
-            let receiver =
-              match receiver with
-              | Access (Access.SimpleAccess access) ->
-                  access
-              | _ ->
-                  []
-            in
-            Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-            |> apply_call_targets ~resolution arguments state taint
+      | Access { expression; member = method_name} ->
+          let receiver = AccessPath.as_access expression in
+          let arguments =
+            let receiver = {
+              Argument.name = None;
+              value = Node.create (Expression.Access receiver) ~location;
+            } in
+            receiver :: arguments
           in
-          state
+          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
+          |> apply_call_targets ~resolution arguments state taint
 
       | _ ->
           (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for
@@ -382,12 +372,8 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
         ~expression:{ Node.location; value = expression } =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
-      | Access (SimpleAccess access) ->
+      | Access access ->
           normalize_access access ~resolution
-          |> Node.create ~location
-          |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
-      | Access (ExpressionAccess { expression; access }) ->
-          List.fold access ~init:(Expression expression) ~f:normalize_access_list
           |> Node.create ~location
           |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Await expression ->

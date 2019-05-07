@@ -10,14 +10,14 @@ open Expression
 
 val is_local: Identifier.t -> bool
 
-val get_targets:
+val get_global_targets:
   resolution: Resolution.t
   -> global: Access.t
   -> (Callable.t * Type.Callable.implicit option) list
 
 val get_indirect_targets:
   resolution: Resolution.t
-  -> receiver: Access.t
+  -> receiver: Access.general_access
   -> method_name: Identifier.t
   -> (Callable.t * Type.Callable.implicit option) list
 
@@ -33,5 +33,5 @@ val normalize_global:
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets:
   resolution: Resolution.t
-  -> Access.t
+  -> Access.general_access
   -> (Callable.t * Type.Callable.implicit option) list

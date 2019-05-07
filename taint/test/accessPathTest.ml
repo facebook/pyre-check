@@ -13,8 +13,13 @@ open Test
 
 
 let test_normalize_access _ =
+  let parse_access expression =
+    match Test.parse_single_expression ~convert:true expression with
+    | { Node.value = Expression.Access access; _ } -> access
+    | _ -> failwith "not an access"
+  in
   let assert_normalized ?(modules = []) access expected =
-    let access = Test.parse_single_access ~convert:true access in
+    let access = parse_access access in
     let resolution =
       let sources =
         if List.is_empty modules then
@@ -32,7 +37,7 @@ let test_normalize_access _ =
     assert_equal
       ~cmp:Expression.Access.equal_general_access
       ~printer:Expression.Access.show_general_access
-      (Access.SimpleAccess access)
+      access
       re_accessed;
     assert_equal
       ~cmp:AccessPath.equal_normalized_expression
@@ -43,6 +48,10 @@ let test_normalize_access _ =
 
   let local name = AccessPath.Local name in
   let global access = AccessPath.Global (Access.create access) in
+  let literal literal =
+    Expression.String (Expression.StringLiteral.create literal)
+    |> Node.create_with_default_location
+  in
 
   assert_normalized "a" (global "a");
   assert_normalized "a()" (AccessPath.Call { callee = global "a"; arguments = +[] });
@@ -70,7 +79,12 @@ let test_normalize_access _ =
   assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = +[] });
   assert_normalized
     "$a.b"
-    (AccessPath.Access { expression = local "$a"; member = "b" })
+    (AccessPath.Access { expression = local "$a"; member = "b" });
+  assert_normalized
+    "'some string'.join"
+    (AccessPath.Access
+       {expression = (AccessPath.Expression (literal "some string")); member = "join"})
+
 
 
 let () =
