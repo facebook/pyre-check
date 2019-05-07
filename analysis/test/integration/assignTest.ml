@@ -107,7 +107,16 @@ let test_check_assign _ =
         i += 1
         x: Final[int] = i
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `x`."]
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int] = 10
+      A.x = 20
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `A.x`."]
+
 
 let () =
   "assign">:::[

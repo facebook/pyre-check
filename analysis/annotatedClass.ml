@@ -393,15 +393,34 @@ let create_attribute
         true
   in
 
+  let parsed_annotation =
+    attribute_annotation
+    >>| Resolution.parse_annotation resolution
+  in
+
   (* Account for class attributes. *)
   let annotation, class_attribute =
-    (attribute_annotation
-     >>| Resolution.parse_annotation resolution
+    (parsed_annotation
      >>| (fun annotation ->
-         match Type.class_variable_value annotation with
+         let annotation_value =
+           if Type.is_final annotation then
+             Type.final_value annotation
+           else
+             Type.class_variable_value annotation
+         in
+         match annotation_value with
          | Some annotation -> Some annotation, true
          | _ -> Some annotation, false))
     |> Option.value ~default:(None, default_class_attribute)
+  in
+
+  let final =
+    let is_final_annotation =
+      (parsed_annotation
+       >>| Type.is_final)
+      |> Option.value ~default:false
+    in
+    final || is_final_annotation
   in
 
   (* Handle enumeration attributes. *)

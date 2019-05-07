@@ -62,7 +62,7 @@ let create ?(mutability = Mutable) annotation =
 let create_immutable ~global ?(original = None) ?(final = false) annotation  =
   let scope = if global then Global else Local in
   let original = Option.value ~default:annotation original in
-  { annotation; mutability = Immutable { scope; original; final }}
+  { annotation; mutability = Immutable { scope; original; final } }
 
 
 let annotation { annotation; _ } =
@@ -79,7 +79,7 @@ let scope { mutability; _ } =
   | _ -> None
 
 
-let original { annotation; mutability; _ } =
+let original { annotation; mutability } =
   match mutability with
   | Immutable { original; _ } -> original
   | Mutable -> annotation

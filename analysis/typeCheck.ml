@@ -1180,14 +1180,15 @@ module State = struct
                           ~global_fallback:(Type.is_meta parent_annotation)
                       in
                       match annotation with
-                      | Some { annotation; mutability = Immutable { scope = Global; original; _ }; }
+                      | Some
+                        { annotation; mutability = Immutable { scope = Global; original; final } }
                         when Type.is_unknown original ->
                           {
                             annotation;
                             mutability = Immutable {
                                 scope = Global;
                                 original = Annotation.original resolved;
-                                final = false;
+                                final
                               }
                           }
                       | Some local ->
@@ -3096,18 +3097,36 @@ module State = struct
                     else
                       Type.Top, false
               in
-              let state =
-                if Annotation.is_final target_annotation then begin
+              let resolved =
+                Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
+              in
+              let check_global_final_reassignment state =
+                if Annotation.is_final target_annotation then
                   let kind =
                     Error.InvalidAssignment (Reference.from_access access)
                   in
                   emit_error ~state ~location ~kind ~define:define_node
-                end
                 else
                   state
               in
-              let resolved =
-                Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
+              let check_class_final_reassignment state =
+                begin
+                  match element with
+                  | Attribute {
+                      definition = Defined (Instance { value = { final = true; _ }; _ }); _
+                    } when Option.is_none original_annotation ->
+                      emit_error
+                        ~state
+                        ~location
+                        ~kind:(Error.InvalidAssignment (Reference.from_access access))
+                        ~define:define_node
+                  | _ ->
+                    state
+                end
+              in
+              let state =
+                check_global_final_reassignment state
+                |> check_class_final_reassignment
               in
               let is_typed_dictionary_initialization =
                 (* Special-casing to avoid throwing errors *)
