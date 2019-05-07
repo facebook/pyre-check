@@ -325,8 +325,7 @@ let rec pp format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Parametric { name; parameters = [Bottom] }
-    when (String.equal name "typing.Optional" or String.equal name "Optional")  ->
+  | Parametric { name = ("typing.Optional" | "Optional"); parameters = [Bottom] } ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let parameters =
@@ -464,8 +463,7 @@ let rec pp_concise format annotation =
       Format.fprintf format "None"
   | Optional parameter ->
       Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Parametric { name; parameters = [Bottom] }
-    when (String.equal name "typing.Optional" or String.equal name "Optional") ->
+  | Parametric { name = ("typing.Optional" | "Optional"); parameters = [Bottom] } ->
       Format.fprintf format "None"
   | Parametric { name; parameters } ->
       let name = strip_qualification (reverse_substitute name) in
@@ -484,17 +482,16 @@ let rec pp_concise format annotation =
       Format.fprintf format "Tuple[%a]" pp_comma_separated parameters
   | Tuple (Unbounded parameter) ->
       Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
-  | TypedDictionary { name; fields; _ } ->
-      if String.equal name "$anonymous" then
-        let fields =
-          fields
-          |> List.map
-            ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp_concise annotation)
-          |> String.concat ~sep:", "
-        in
-        Format.fprintf format "TypedDict(%s)" fields
-      else
-        Format.fprintf format "%s" (strip_qualification name)
+  | TypedDictionary { name = "$anonymous"; fields; _ } ->
+      let fields =
+        fields
+        |> List.map
+          ~f:(fun { name; annotation } -> Format.asprintf "%s: %a" name pp_concise annotation)
+        |> String.concat ~sep:", "
+      in
+      Format.fprintf format "TypedDict(%s)" fields
+  | TypedDictionary { name; _ } ->
+      Format.fprintf format "%s" (strip_qualification name)
   | Union parameters ->
       Format.fprintf format "Union[%a]" pp_comma_separated parameters
   | Variable { variable; _ } ->
@@ -2499,50 +2496,47 @@ let is_ellipsis = function
 
 
 let is_final = function
-  | Parametric { name; _ } ->  String.equal name "typing.Final"
+  | Parametric { name = "typing.Final"; _ } -> true
   | _ -> false
 
 
 let is_generator = function
-  | Parametric { name; _ } ->
-      List.mem
-        ~equal:String.equal
-        ["typing.Generator"; "typing.AsyncGenerator"]
-        name
+  | Parametric { name = ("typing.Generator" | "typing.AsyncGenerator"); _ } ->
+      true
   | _ ->
       false
 
 
 let is_generic = function
-  | Parametric { name; _ } ->
-      String.equal name "typing.Generic"
+  | Parametric { name = "typing.Generic"; _ } ->
+      true
   | _ ->
       false
 
 
 let is_iterable = function
-  | Parametric { name; _ } ->
-      String.equal name "typing.Iterable"
+  | Parametric { name = "typing.Iterable"; _ } ->
+      true
   | _ ->
       false
 
 
 let is_iterator = function
-  | Parametric { name; _ } ->
-      String.equal name "typing.Iterator"
+  | Parametric { name = "typing.Iterator"; _ } ->
+      true
   | _ ->
       false
 
 
 let is_async_iterator = function
-  | Parametric { name; _ } ->
-      String.equal name "typing.AsyncIterator"
+  | Parametric { name = "typing.AsyncIterator"; _ } ->
+      true
   | _ ->
       false
 
 
 let is_meta = function
-  | Parametric { name; _ } -> String.equal name "type"
+  | Parametric { name = "type"; _ } -> true
   | _ -> false
 
 
@@ -2552,7 +2546,7 @@ let is_none = function
 
 
 let is_noreturn = function
-  | Primitive name -> String.equal name "typing.NoReturn"
+  | Primitive "typing.NoReturn" -> true
   | _ -> false
 
 
@@ -2572,8 +2566,8 @@ let is_primitive = function
 
 
 let is_protocol = function
-  | Parametric { name; _ } ->
-      String.equal name "typing.Protocol"
+  | Parametric { name = "typing.Protocol"; _ } ->
+      true
   | _ ->
       false
 
