@@ -39,7 +39,7 @@ class SearchPathElement:
                     "Search path elements must have `root` and `subdirectory` specified."
                 )
             self.root = os.path.abspath(os.path.expanduser(element["root"]))
-            self.subdirectory = os.path.expanduser(element["subdirectory"])
+            self.subdirectory = element["subdirectory"]
 
     def path(self) -> str:
         subdirectory = self.subdirectory
