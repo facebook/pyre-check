@@ -2467,9 +2467,6 @@ let create ?(convert = false) ~aliases =
   else
     create_logic_new ~use_cache:true ~aliases
 
-let create_without_aliases =
-  create_logic ~use_cache:false ~aliases:(fun _ -> None)
-
 let contains_callable annotation =
   exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
 
@@ -2592,10 +2589,42 @@ let contains_any annotation =
   exists annotation ~predicate:(function | Any -> true | _ -> false)
 
 
-let expression_contains_any expression =
-  (* Check if there is a literal Any provided, not including type aliases to Any. *)
-  create_without_aliases expression
-  |> contains_any
+module LiteralAnyVisitor = struct
+  module Visitor = struct
+    type t = bool
+
+    let statement state _ = state
+
+    let expression state { Node.value; _ } =
+      match state, value with
+      | true, _ ->
+          true
+      | false, Access (Access.SimpleAccess access) ->
+          Reference.from_access access
+          |> Reference.show
+          (* We also want to take into account annotations like `list`, `dict`, etc. *)
+          |> Hashtbl.find primitive_substitution_map
+          |> Option.value_map ~default:false ~f:contains_any
+      | false, Name name ->
+          Reference.from_name name
+          >>| Reference.show
+          (* We also want to take into account annotations like `list`, `dict`, etc. *)
+          >>= Hashtbl.find primitive_substitution_map
+          |> Option.value_map ~default:false ~f:contains_any
+      | _, _ ->
+          false
+  end
+  include Visit.Make (Visitor)
+
+  let expression_contains_any expression =
+    let state = ref false in
+    visit_expression ~state ~visitor:Visitor.expression expression;
+    !state
+end
+
+
+(* Check if there is a literal Any provided, not including type aliases to Any. *)
+let expression_contains_any = LiteralAnyVisitor.expression_contains_any
 
 
 let is_type_alias annotation = equal annotation (Primitive "typing.TypeAlias")
