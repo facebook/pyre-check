@@ -452,7 +452,18 @@ let test_concise _ =
       class Foo:
         x: int
     |}
-    ["Uninitialized attribute [13]: Attribute `x` is never initialized."]
+    ["Uninitialized attribute [13]: Attribute `x` is never initialized."];
+
+  (* ClassVar  *)
+  assert_type_errors ~concise:true
+    {|
+      from typing import ClassVar
+      class Base:
+        y: ClassVar[int] = 0
+      b = Base()
+      b.y = 12 # error
+    |}
+    ["Invalid assignment [41]: Assigning to class variable through instance."]
 
 
 let () =

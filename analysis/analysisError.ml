@@ -112,6 +112,15 @@ type invalid_override_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type invalid_assignment_kind =
+  | Final of Reference.t
+  | ClassVariable of {
+      class_variable: Identifier.t;
+      class_name: Identifier.t;
+    }
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -146,7 +155,7 @@ type kind =
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
-  | InvalidAssignment of Reference.t
+  | InvalidAssignment of invalid_assignment_kind
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
@@ -766,12 +775,26 @@ let messages ~concise ~signature location kind =
           message
           pp_identifier parent
       ]
-  | InvalidAssignment name ->
-      [
-        Format.asprintf
-          "Cannot reassign final attribute `%a`."
-          pp_reference name
-      ]
+  | InvalidAssignment kind ->
+      begin
+        match kind with
+        | Final name ->
+            [
+              Format.asprintf
+                "Cannot reassign final attribute `%a`."
+                pp_reference name
+            ]
+        | ClassVariable _ when concise ->
+            ["Assigning to class variable through instance."]
+        | ClassVariable { class_variable; class_name; } ->
+            [
+              Format.asprintf
+                "Assigning to class variable through instance, \
+                 did you mean to assign to `%a.%a` instead?"
+                pp_identifier class_name
+                pp_identifier class_variable
+            ]
+      end
   | MissingArgument { name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { callee; name } ->
@@ -1741,7 +1764,16 @@ let less_or_equal ~resolution left right =
               false
         end
     | InvalidAssignment left, InvalidAssignment right ->
-        Reference.equal left right
+        begin
+          match left, right with
+          | Final left, Final right ->
+              Reference.equal left right
+          | ClassVariable left, ClassVariable right ->
+              Identifier.equal left.class_variable right.class_variable &&
+              Identifier.equal left.class_name right.class_name
+          | _, _ ->
+              false
+        end
     | MissingArgument left, MissingArgument right ->
         Option.equal Reference.equal_sanitized left.callee right.callee &&
         Identifier.equal_sanitized left.name right.name
@@ -2535,8 +2567,8 @@ let dequalify
         InvalidInheritance name
     | InvalidOverride { parent; decorator } ->
         InvalidOverride { parent; decorator }
-    | InvalidAssignment name ->
-        InvalidAssignment name
+    | InvalidAssignment kind ->
+        InvalidAssignment kind
     | TooManyArguments extra_argument ->
         TooManyArguments extra_argument
     | Top ->

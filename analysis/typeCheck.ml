@@ -52,6 +52,7 @@ module AccessState = struct
         attribute: Identifier.t;
         definition: definition;
         accesses_incomplete_type: accesses_incomplete_type option;
+        parent_annotation: Type.t option;
       }
     | NotCallable of Type.t
     | Value
@@ -1125,7 +1126,7 @@ module State = struct
                   if was_variable then List.map data ~f:reset_instantiated else data
                 in
                 let parent_annotation = Annotation.annotation resolved in
-                let attribute_step ~definition ~resolved =
+                let attribute_step ~definition ~resolved parent_annotation =
                   let continue =
                     match definition with
                     | Defined _ -> true
@@ -1138,7 +1139,11 @@ module State = struct
                     }
                   in
                   let element =
-                    AccessState.Attribute { attribute = name; definition; accesses_incomplete_type }
+                    AccessState.Attribute {
+                      attribute = name; definition;
+                      accesses_incomplete_type;
+                      parent_annotation = Some parent_annotation
+                    }
                   in
                   step state ~resolved ~target ~element ~continue ~lead ()
                 in
@@ -1218,6 +1223,7 @@ module State = struct
                   attribute_step
                     ~definition:(join_definitions ~head_definition ~tail_definitions)
                     ~resolved:(join_resolveds ~head_resolved ~tail_resolveds)
+                    parent_annotation
                 in
                 begin
                   try
@@ -1230,6 +1236,7 @@ module State = struct
                     attribute_step
                       ~definition:(Undefined (TypeWithoutClass type_without_class))
                       ~resolved:(Annotation.create Type.Top)
+                      parent_annotation
                 end
 
             | None, Access.Identifier name ->
@@ -1318,6 +1325,7 @@ module State = struct
                                 attribute = name;
                                 definition = Undefined (Module (Reference.from_access qualifier));
                                 accesses_incomplete_type;
+                                parent_annotation = None;
                               }
                             in
                             abort state ~element ~lead ()
@@ -3107,7 +3115,7 @@ module State = struct
               let check_global_final_reassignment state =
                 if Annotation.is_final target_annotation then
                   let kind =
-                    Error.InvalidAssignment (Reference.from_access access)
+                    Error.InvalidAssignment (Final (Reference.from_access access))
                   in
                   emit_error ~state ~location ~kind ~define:define_node
                 else
@@ -3122,8 +3130,33 @@ module State = struct
                       emit_error
                         ~state
                         ~location
-                        ~kind:(Error.InvalidAssignment (Reference.from_access access))
+                        ~kind:(Error.InvalidAssignment (Final (Reference.from_access access)))
                         ~define:define_node
+                  | _ ->
+                      state
+                end
+              in
+              let check_assign_class_variable_on_instance state =
+                begin
+                  match element with
+                  | Attribute {
+                      definition = Defined (Instance {
+                          value = { class_attribute = true; name = class_variable; _ }; _
+                        });
+                      parent_annotation = Some annotation;
+                      _
+                    } when Option.is_none original_annotation && not (Type.is_meta annotation) ->
+                      emit_error
+                        ~state
+                        ~location
+                        ~kind:
+                          (Error.InvalidAssignment
+                             (ClassVariable {
+                                 class_name = Type.show annotation;
+                                 class_variable;
+                               }))
+                        ~define:define_node
+
                   | _ ->
                       state
                 end
@@ -3131,6 +3164,7 @@ module State = struct
               let state =
                 check_global_final_reassignment state
                 |> check_class_final_reassignment
+                |> check_assign_class_variable_on_instance
               in
               let is_typed_dictionary_initialization =
                 (* Special-casing to avoid throwing errors *)

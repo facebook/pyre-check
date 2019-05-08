@@ -47,6 +47,7 @@ module AccessState: sig
         attribute: Identifier.t;
         definition: definition;
         accesses_incomplete_type: accesses_incomplete_type option;
+        parent_annotation: Type.t option;
       }
     | NotCallable of Type.t
     | Value

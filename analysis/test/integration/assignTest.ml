@@ -115,7 +115,28 @@ let test_check_assign _ =
         x: Final[int] = 10
       A.x = 20
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `A.x`."]
+    ["Invalid assignment [41]: Cannot reassign final attribute `A.x`."];
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      class Base:
+          y: ClassVar[int] = 0
+      Base.y = 100 # ok
+      b = Base()
+      b.y = 12 # error
+    |}
+    ["Invalid assignment [41]: Assigning to class variable through instance, \
+      did you mean to assign to `Base.y` instead?"];
+  assert_type_errors
+    {|
+      from typing import ClassVar
+      class Base:
+          y: ClassVar[int] = 0
+
+      x = Base
+      x.y = 100
+    |}
+    []
 
 
 let () =

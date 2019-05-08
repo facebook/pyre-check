@@ -90,6 +90,16 @@ type invalid_override_kind =
   | StaticOverride
 [@@deriving compare, eq, sexp, show, hash]
 
+
+type invalid_assignment_kind =
+  | Final of Reference.t
+  | ClassVariable of {
+      class_variable: Identifier.t;
+      class_name: Identifier.t;
+    }
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -124,7 +134,7 @@ type kind =
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
-  | InvalidAssignment of Reference.t
+  | InvalidAssignment of invalid_assignment_kind
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
