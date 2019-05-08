@@ -116,12 +116,12 @@ let test_lexer _ =
     "print (a, file=b)"
     [+Expression
       (+Call {
-        callee = !"print";
-        arguments = [
-          { Call.Argument.name = None; value = !"a" };
-          { Call.Argument.name = (Some ~+"file"); value = !"b" };
-        ]
-      })
+         callee = !"print";
+         arguments = [
+           { Call.Argument.name = None; value = !"a" };
+           { Call.Argument.name = (Some ~+"file"); value = !"b" };
+         ]
+       })
     ];
 
   assert_parsed_equal
@@ -133,48 +133,48 @@ let test_lexer _ =
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = +Integer 1;
-              attribute = "__add__";
-            });
-            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-        });
+           callee = +Name (Name.Attribute {
+               base = +Integer 1;
+               attribute = "__add__";
+             });
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+         });
     ];
   assert_parsed_equal
     "1 + \\\n 2"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = +Integer 1;
-              attribute = "__add__";
-            });
-            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-        });
+           callee = +Name (Name.Attribute {
+               base = +Integer 1;
+               attribute = "__add__";
+             });
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = +Integer 1;
-              attribute = "__add__";
-            });
-            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-        });
+           callee = +Name (Name.Attribute {
+               base = +Integer 1;
+               attribute = "__add__";
+             });
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+         });
     ];
   assert_parsed_equal
     "(1 +\n 2)\n3"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = +Integer 1;
-              attribute = "__add__";
-            });
-            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-        });
+           callee = +Name (Name.Attribute {
+               base = +Integer 1;
+               attribute = "__add__";
+             });
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+         });
       +Expression (+Integer 3)
     ]
 
@@ -243,9 +243,9 @@ let test_access _ =
     [
       +Expression (
         +Name (Name.Attribute {
-          base = !"a";
-          attribute = "b";
-        })
+            base = !"a";
+            attribute = "b";
+          })
       )
     ];
   assert_parsed_equal
@@ -253,9 +253,9 @@ let test_access _ =
     [
       +Expression (
         +Name (Name.Attribute {
-          base = !"a";
-          attribute = "async";
-        })
+            base = !"a";
+            attribute = "async";
+          })
       );
     ];
   assert_parsed_equal
@@ -263,9 +263,9 @@ let test_access _ =
     [
       +Expression (
         +Name (Name.Attribute {
-          base = +Float 1.0;
-          attribute = "b";
-        })
+            base = +Float 1.0;
+            attribute = "b";
+          })
       )
     ];
   assert_parsed_equal
@@ -273,12 +273,12 @@ let test_access _ =
     [
       +Expression (
         +Name (Name.Attribute {
-          base = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "b";
-          });
-          attribute = "c";
-        })
+            base = +Name (Name.Attribute {
+                base = !"a";
+                attribute = "b";
+              });
+            attribute = "c";
+          })
       );
     ];
 
@@ -288,9 +288,9 @@ let test_access _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__getitem__";
-          });
+              base = !"a";
+              attribute = "__getitem__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         }
       )
@@ -301,9 +301,9 @@ let test_access _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__getitem__";
-          });
+              base = !"a";
+              attribute = "__getitem__";
+            });
           arguments = [
             {
               Call.Argument.name = None;
@@ -323,15 +323,15 @@ let test_access _ =
     [
       +Expression (
         +Name (Name.Attribute {
-         base = +Call {
-           callee = +Name (Name.Attribute {
-             base = !"a";
-             attribute = "__getitem__";
-           });
-           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
-         };
-         attribute = "b";
-        })
+            base = +Call {
+              callee = +Name (Name.Attribute {
+                  base = !"a";
+                  attribute = "__getitem__";
+                });
+              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+            };
+            attribute = "b";
+          })
       )
     ];
   assert_parsed_equal
@@ -340,9 +340,9 @@ let test_access _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__getitem__";
-          });
+              base = !"a";
+              attribute = "__getitem__";
+            });
           arguments = [{ Call.Argument.name = None; value = !"b" }];
         }
       )
@@ -353,9 +353,9 @@ let test_access _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__getitem__";
-          });
+              base = !"a";
+              attribute = "__getitem__";
+            });
           arguments = [
             {
               Call.Argument.name = None;
@@ -377,11 +377,11 @@ let test_access _ =
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
              {
                Call.Argument.name = None;
                value = +Call {
@@ -393,19 +393,19 @@ let test_access _ =
                  ];
                };
              };
-            ]
-          });
+           ]
+         });
     ];
   assert_parsed_equal
     "a[::2]"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
              {
                Call.Argument.name = None;
                value = +Call {
@@ -417,19 +417,19 @@ let test_access _ =
                  ];
                };
              };
-            ]
-          });
+           ]
+         });
     ];
   assert_parsed_equal
     "a[:1]"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
              {
                Call.Argument.name = None;
                value = +Call {
@@ -441,19 +441,19 @@ let test_access _ =
                  ];
                };
              };
-            ]
-          });
+           ]
+         });
     ];
   assert_parsed_equal
     "a[:1 if True else 2]"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
              {
                Call.Argument.name = None;
                value = +Call {
@@ -473,19 +473,19 @@ let test_access _ =
                  ];
                };
              };
-            ]
-          });
+           ]
+         });
     ];
   assert_parsed_equal
     "a[1:1]"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
              {
                Call.Argument.name = None;
                value = +Call {
@@ -497,49 +497,49 @@ let test_access _ =
                  ];
                };
              };
-            ]
-          });
+           ]
+         });
     ];
   assert_parsed_equal
     "a[1,2]"
     [
       +Expression
         (+Call {
-          callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__getitem__";
-          });
-          arguments = [
-            { Call.Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }
-          ];
-        })
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
+             { Call.Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }
+           ];
+         })
     ];
   assert_parsed_equal
     "a[:1,2]"
     [
       +Expression
         (+Call {
-            callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "__getitem__";
-            });
-            arguments = [
-              {
-                Call.Argument.name = None;
-                value = +Tuple [
-                  +Call {
-                    callee = !"slice";
-                    arguments = [
-                      { Call.Argument.name = None; value = !"None" };
-                      { Call.Argument.name = None; value = +Integer 1 };
-                      { Call.Argument.name = None; value = !"None" };
-                    ];
-                  };
-                  +Integer 2;
-                ];
-              }
-            ]
-          });
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__getitem__";
+             });
+           arguments = [
+             {
+               Call.Argument.name = None;
+               value = +Tuple [
+                 +Call {
+                   callee = !"slice";
+                   arguments = [
+                     { Call.Argument.name = None; value = !"None" };
+                     { Call.Argument.name = None; value = +Integer 1 };
+                     { Call.Argument.name = None; value = !"None" };
+                   ];
+                 };
+                 +Integer 2;
+               ];
+             }
+           ]
+         });
     ];
 
   assert_raises
@@ -992,17 +992,17 @@ let test_define _ =
               value = None;
               annotation = Some
                   (+Call {
-                    callee = +Name (Name.Attribute {
-                      base = !"Tuple";
-                      attribute = "__getitem__";
-                    });
-                    arguments = [
-                      {
-                        Call.Argument.name = None;
-                        value = +Tuple [!"int"; !"str"];
-                      };
-                    ];
-                  })
+                     callee = +Name (Name.Attribute {
+                         base = !"Tuple";
+                         attribute = "__getitem__";
+                       });
+                     arguments = [
+                       {
+                         Call.Argument.name = None;
+                         value = +Tuple [!"int"; !"str"];
+                       };
+                     ];
+                   })
             };
           ];
           decorators = [];
@@ -1617,9 +1617,9 @@ let test_binary_operator _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Integer 1;
-            attribute = "__add__";
-          });
+              base = +Integer 1;
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
       )
@@ -1630,9 +1630,9 @@ let test_binary_operator _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Integer 1;
-            attribute = "__xor__";
-          });
+              base = +Integer 1;
+              attribute = "__xor__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
       )
@@ -1643,9 +1643,9 @@ let test_binary_operator _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Integer 1;
-            attribute = "__floordiv__";
-          });
+              base = +Integer 1;
+              attribute = "__floordiv__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
       )
@@ -1656,15 +1656,15 @@ let test_binary_operator _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Call {
-              callee = +Name (Name.Attribute {
-                base = +Integer 1;
-                attribute = "__rshift__";
-              });
-              arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-            };
-            attribute = "__rshift__";
-          });
+              base = +Call {
+                callee = +Name (Name.Attribute {
+                    base = +Integer 1;
+                    attribute = "__rshift__";
+                  });
+                arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+              };
+              attribute = "__rshift__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
         }
       )
@@ -1675,15 +1675,15 @@ let test_binary_operator _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Call {
-              callee = +Name (Name.Attribute {
-                base = +Integer 1;
-                attribute = "__sub__";
-              });
-              arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-            };
-            attribute = "__add__";
-          });
+              base = +Call {
+                callee = +Name (Name.Attribute {
+                    base = +Integer 1;
+                    attribute = "__sub__";
+                  });
+                arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
+              };
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
         }
       )
@@ -1693,17 +1693,17 @@ let test_binary_operator _ =
     [
       +Expression
         (+Call {
-          callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__add__";
-          });
-          arguments = [
-            {
-              Call.Argument.name = None;
-              value = +Name (Name.Attribute { base = !"b"; attribute = "c" });
-            };
-          ];
-        })
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "__add__";
+             });
+           arguments = [
+             {
+               Call.Argument.name = None;
+               value = +Name (Name.Attribute { base = !"b"; attribute = "c" });
+             };
+           ];
+         })
     ]
 
 
@@ -1808,12 +1808,12 @@ let test_lambda _ =
              };
            ];
            body = +Call {
-              callee = +Name (Name.Attribute {
-                base = +Name (Name.Identifier "x");
-                attribute = "__add__";
-              });
-              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
-            };
+             callee = +Name (Name.Attribute {
+                 base = +Name (Name.Identifier "x");
+                 attribute = "__add__";
+               });
+             arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+           };
          });
     ]
 
@@ -2409,13 +2409,13 @@ let test_yield _ =
       +Statement.YieldFrom
         (+Expression.Yield
           (Some
-            (+Call {
-              callee = +Name (Name.Attribute {
-                base = !"a";
-                attribute = "__iter__";
+             (+Call {
+                callee = +Name (Name.Attribute {
+                    base = !"a";
+                    attribute = "__iter__";
+                  });
+                arguments = [];
               });
-              arguments = [];
-            });
           )
         )
     ];
@@ -2424,6 +2424,36 @@ let test_yield _ =
     [
       +Statement.Yield
         (+Expression.Yield (Some (+Tuple [+Integer 1; +Integer 2])));
+    ];
+  assert_parsed_equal
+    "x = yield 1"
+    [
+      +Assign {
+        Assign.target = !"x";
+        annotation = None;
+        value = +Expression.Yield (Some (+Integer 1));
+        parent = None;
+      };
+    ];
+  assert_parsed_equal
+    "x += yield 1"
+    [
+      +Assign {
+        Assign.target = !"x";
+        annotation = None;
+        value = +Call {
+          callee = +Name (Name.Attribute {
+              base = !"x";
+              attribute = "__iadd__";
+            });
+          arguments =
+            [{
+              Call.Argument.name = None;
+              value = +Expression.Yield (Some (+Integer 1))
+            }];
+        };
+        parent = None;
+      };
     ]
 
 
@@ -2434,7 +2464,7 @@ let test_comparison _ =
       +Expression
         (+ComparisonOperator {
            ComparisonOperator.left =
-            +Name (Name.Attribute { base = !"a"; attribute = "b" });
+             +Name (Name.Attribute { base = !"a"; attribute = "b" });
            operator = ComparisonOperator.LessThan;
            right = +Integer 2;
          });
@@ -2533,136 +2563,136 @@ let test_call _ =
     [
       +Expression
         (+Call {
-          callee = !"foo";
-          arguments = [
-            {
-              Call.Argument.name = None;
-              value = +Generator {
-                Comprehension.element = !"a";
-                generators = [
-                  {
-                    Comprehension.target = !"a";
-                    iterator = +List [];
-                    conditions = [];
-                    async = false;
-                  };
-                ];
-              };
-            };
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             {
+               Call.Argument.name = None;
+               value = +Generator {
+                 Comprehension.element = !"a";
+                 generators = [
+                   {
+                     Comprehension.target = !"a";
+                     iterator = +List [];
+                     conditions = [];
+                     async = false;
+                   };
+                 ];
+               };
+             };
+           ];
+         })
     ];
   assert_parsed_equal
     "foo(a for a in [],)"
     [
       +Expression
         (+Call{
-          callee = !"foo";
-          arguments = [
-            {
-              Call.Argument.name = None;
-              value = +Generator {
-                Comprehension.element = !"a";
-                generators = [
-                  {
-                    Comprehension.target = !"a";
-                    iterator = +List [];
-                    conditions = [];
-                    async = false;
-                  };
-                ];
-              };
-            }
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             {
+               Call.Argument.name = None;
+               value = +Generator {
+                 Comprehension.element = !"a";
+                 generators = [
+                   {
+                     Comprehension.target = !"a";
+                     iterator = +List [];
+                     conditions = [];
+                     async = false;
+                   };
+                 ];
+               };
+             }
+           ];
+         })
     ];
   assert_parsed_equal
     "foo(1, 2,)"
     [
       +Expression
         (+Call  {
-          callee = !"foo";
-          arguments = [
-            { Call.Argument.name = None; value = +Integer 1 };
-            { Call.Argument.name = None; value = +Integer 2 };
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             { Call.Argument.name = None; value = +Integer 1 };
+             { Call.Argument.name = None; value = +Integer 2 };
+           ];
+         })
     ];
   assert_parsed_equal
     "foo((1, 2))"
     [
       +Expression
         (+Call  {
-          callee = !"foo";
-          arguments = [{ Call.Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) }];
-        })
+           callee = !"foo";
+           arguments = [{ Call.Argument.name = None; value = (+Tuple [+Integer 1; +Integer 2]) }];
+         })
     ];
   assert_parsed_equal
     "foo(x, 1, (a, b))"
     [
       +Expression
         (+Call  {
-          callee = !"foo";
-          arguments = [
-            { Call.Argument.name = None; value = !"x"; };
-            { Call.Argument.name = None; value = +Integer 1 };
-            { Call.Argument.name = None; value = (+Tuple [!"a"; !"b"]) };
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             { Call.Argument.name = None; value = !"x"; };
+             { Call.Argument.name = None; value = +Integer 1 };
+             { Call.Argument.name = None; value = (+Tuple [!"a"; !"b"]) };
+           ];
+         })
     ];
   assert_parsed_equal
     "a.foo(x)"
     [
       +Expression
         (+Call  {
-          callee = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "foo";
-            });
-          arguments = [{ Call.Argument.name = None; value = !"x"; }];
-        })
+           callee = +Name (Name.Attribute {
+               base = !"a";
+               attribute = "foo";
+             });
+           arguments = [{ Call.Argument.name = None; value = !"x"; }];
+         })
     ];
   assert_parsed_equal
     "foo(1, a = 1, b = 2)"
     [
       +Expression
         (+Call  {
-          callee = !"foo";
-          arguments = [
-            { Call.Argument.name = None; value = +Integer 1 };
-            {
-              Call.Argument.name = (Some ~+"a");
-              value = +Integer 1;
-            };
-            {
-              Call.Argument.name = (Some ~+"b");
-              value = +Integer 2;
-            };
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             { Call.Argument.name = None; value = +Integer 1 };
+             {
+               Call.Argument.name = (Some ~+"a");
+               value = +Integer 1;
+             };
+             {
+               Call.Argument.name = (Some ~+"b");
+               value = +Integer 2;
+             };
+           ];
+         })
     ];
   assert_parsed_equal
     "foo(1, a = 2, *args, **kwargs)"
     [
       +Expression
         (+Call  {
-          callee = !"foo";
-          arguments = [
-            { Call.Argument.name = None; value = +Integer 1 };
-            {
-              Call.Argument.name = (Some ~+"a");
-              value = (+Integer 2);
-            };
-            {
-              Call.Argument.name = None;
-              value = +Starred (Starred.Once !"args");
-            };
-            {
-              Call.Argument.name = None;
-              value = +Starred (Starred.Twice !"kwargs");
-            };
-          ];
-        })
+           callee = !"foo";
+           arguments = [
+             { Call.Argument.name = None; value = +Integer 1 };
+             {
+               Call.Argument.name = (Some ~+"a");
+               value = (+Integer 2);
+             };
+             {
+               Call.Argument.name = None;
+               value = +Starred (Starred.Once !"args");
+             };
+             {
+               Call.Argument.name = None;
+               value = +Starred (Starred.Twice !"kwargs");
+             };
+           ];
+         })
     ]
 
 
@@ -2762,9 +2792,9 @@ let test_string _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +String (StringLiteral.create "a");
-            attribute = "__add__";
-          });
+              base = +String (StringLiteral.create "a");
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
       )
@@ -2775,9 +2805,9 @@ let test_string _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +String (StringLiteral.create "a");
-            attribute = "__add__";
-          });
+              base = +String (StringLiteral.create "a");
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
       )
@@ -2788,9 +2818,9 @@ let test_string _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +String (StringLiteral.create "a");
-            attribute = "__add__";
-          });
+              base = +String (StringLiteral.create "a");
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
       )
@@ -2801,9 +2831,9 @@ let test_string _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +String (StringLiteral.create "a");
-            attribute = "__add__";
-          });
+              base = +String (StringLiteral.create "a");
+              attribute = "__add__";
+            });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
       )
@@ -3049,7 +3079,7 @@ let test_class _ =
                   Name.Attribute {
                     base = !"self";
                     attribute = "bar";
-                });
+                  });
                 annotation = None;
                 value = +Integer 0;
                 parent = None;
@@ -3222,12 +3252,12 @@ let test_assign _ =
         annotation = None;
         value = +Call {
           callee = +Name (Name.Attribute {
-            base = +Call {
-              callee = !"a";
-              arguments = [];
-            };
-            attribute = "foo";
-          });
+              base = +Call {
+                callee = !"a";
+                arguments = [];
+              };
+              attribute = "foo";
+            });
           arguments = [];
         };
         parent = None;
@@ -3269,9 +3299,9 @@ let test_assign _ =
         annotation = None;
         value = +Call {
           callee = +Name (Name.Attribute {
-            base = !"a";
-            attribute = "__iadd__";
-          });
+              base = !"a";
+              attribute = "__iadd__";
+            });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         };
         parent = None;
@@ -3288,12 +3318,12 @@ let test_assign _ =
         annotation = None;
         value = +Call {
           callee = +Name (Name.Attribute {
-            base = +Name (Name.Attribute {
-              base = !"a";
-              attribute = "b";
+              base = +Name (Name.Attribute {
+                  base = !"a";
+                  attribute = "b";
+                });
+              attribute = "__iadd__";
             });
-            attribute = "__iadd__";
-          });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         };
         parent = None;
@@ -4284,12 +4314,12 @@ let test_tuple _ =
            +Integer 1;
            +Call {
              callee = +Name (Name.Attribute {
-               base = +Integer 1;
-               attribute = "__add__";
-             });
+                 base = +Integer 1;
+                 attribute = "__add__";
+               });
              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
            };
-          ]);
+         ]);
     ];
   assert_parsed_equal
     "1, 2 if 3 else 4"
@@ -4309,13 +4339,13 @@ let test_tuple _ =
     [
       +Expression
         (+Tuple [
-            +Call {
-              callee = +Name (Name.Attribute {
-                base = +Integer 1;
-                attribute = "__add__";
-              });
-              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
-            };
+           +Call {
+             callee = +Name (Name.Attribute {
+                 base = +Integer 1;
+                 attribute = "__add__";
+               });
+             arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+           };
            +Integer 1;
          ])];
   assert_parsed_equal
@@ -4387,9 +4417,9 @@ let test_stubs _ =
         annotation = Some (
             +Call {
               callee = +Name (Name.Attribute {
-                base = !"Optional";
-                attribute = "__getitem__";
-              });
+                  base = !"Optional";
+                  attribute = "__getitem__";
+                });
               arguments = [
                 { Call.Argument.name = None; value = !"int" }
               ];
@@ -4596,9 +4626,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
             { Call.Argument.name = None; value = +Integer 3 };
@@ -4612,24 +4642,24 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
             {
               Call.Argument.name = None;
               value = +Call {
                 callee = +Name (Name.Attribute {
-                  base = +Call {
-                    callee = +Name (Name.Attribute {
-                      base = !"i";
-                      attribute = "__getitem__";
-                    });
-                    arguments = [{ Call.Argument.name = None; value = !"j" }];
-                  };
-                  attribute = "__iadd__";
-                });
+                    base = +Call {
+                      callee = +Name (Name.Attribute {
+                          base = !"i";
+                          attribute = "__getitem__";
+                        });
+                      arguments = [{ Call.Argument.name = None; value = !"j" }];
+                    };
+                    attribute = "__iadd__";
+                  });
                 arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
               };
             };
@@ -4643,15 +4673,15 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = +Call {
-              callee = +Name (Name.Attribute {
-                base = !"i";
-                attribute = "__getitem__";
-              });
-              arguments = [{ Call.Argument.name = None; value = !"j" }];
-            };
-            attribute = "__setitem__";
-          });
+              base = +Call {
+                callee = +Name (Name.Attribute {
+                    base = !"i";
+                    attribute = "__getitem__";
+                  });
+                arguments = [{ Call.Argument.name = None; value = !"j" }];
+              };
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = +Integer 7 };
             { Call.Argument.name = None; value = +Integer 8 };
@@ -4665,9 +4695,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             {
               Call.Argument.name = None;
@@ -4684,9 +4714,9 @@ let test_setitem _ =
               Call.Argument.name = None;
               value = +Call {
                 callee = +Name (Name.Attribute {
-                  base = !"i";
-                  attribute = "__getitem__";
-                });
+                    base = !"i";
+                    attribute = "__getitem__";
+                  });
                 arguments = [
                   {
                     Call.Argument.name = None;
@@ -4711,23 +4741,23 @@ let test_setitem _ =
     [
       +Expression
         (+Call {
-          callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
-          arguments = [
-            { Call.Argument.name = None; value = !"j" };
-            {
-              Call.Argument.name = None;
-              value = +Ternary {
-                target = +Integer 5;
-                test = +Integer 1;
-                alternative = +Integer 1;
-              };
-            }
-          ];
-        };
-      );
+           callee = +Name (Name.Attribute {
+               base = !"i";
+               attribute = "__setitem__";
+             });
+           arguments = [
+             { Call.Argument.name = None; value = !"j" };
+             {
+               Call.Argument.name = None;
+               value = +Ternary {
+                 target = +Integer 5;
+                 test = +Integer 1;
+                 alternative = +Integer 1;
+               };
+             }
+           ];
+         };
+        );
     ];
   assert_parsed_equal
     "x = i[j] = y"
@@ -4741,9 +4771,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
             { Call.Argument.name = None; value = !"y" };
@@ -4757,9 +4787,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"j";
-            attribute = "__setitem__";
-          });
+              base = !"j";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"i" };
             { Call.Argument.name = None; value = !"y" };
@@ -4775,9 +4805,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
             { Call.Argument.name = None; value = !"y" };
@@ -4793,9 +4823,9 @@ let test_setitem _ =
           !"x";
           +Call {
             callee = +Name (Name.Attribute {
-              base = !"i";
-              attribute = "__getitem__";
-            });
+                base = !"i";
+                attribute = "__getitem__";
+              });
             arguments = [{ Call.Argument.name = None; value = !"j" }];
           };
         ];
@@ -4810,9 +4840,9 @@ let test_setitem _ =
       +Expression (
         +Call {
           callee = +Name (Name.Attribute {
-            base = !"i";
-            attribute = "__setitem__";
-          });
+              base = !"i";
+              attribute = "__setitem__";
+            });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
             { Call.Argument.name = None; value = +Ellipsis };

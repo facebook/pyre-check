@@ -364,7 +364,7 @@ small_statement:
   }
   | target = test_list;
     compound = compound_operator;
-    value = test_list {
+    value = value {
       let value = binary_operator ~compound:true ~left:target ~operator:compound ~right:value in
       [{
         Node.location = {
