@@ -65,6 +65,9 @@ val get_override_reference: override_target -> Reference.t
 val get_corresponding_method: override_target -> [> method_target]
 val get_corresponding_override: method_target -> [> override_target]
 
+(* function or method name, no class or anything else *)
+val get_short_name: [< t ] -> string
+
 module Key : sig
   type nonrec t = t
   val to_string: t -> string

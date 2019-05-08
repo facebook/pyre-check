@@ -196,6 +196,13 @@ let external_target_name = function
       Format.sprintf "Obj{%s}" name
 
 
+let get_short_name = function
+  | `Function target -> target
+  | `Method { method_name; _ }
+  | `OverrideTarget { method_name; _ } -> method_name
+  | `Object name -> name
+
+
 let compare target1 target2 =
   let target1 = (target1 :> t) in
   let target2 = (target2 :> t) in
