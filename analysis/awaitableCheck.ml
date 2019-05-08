@@ -277,6 +277,6 @@ let run ~configuration:_ ~environment ~source =
   in
   source
   |> Preprocessing.convert
-  |> Preprocessing.defines ~extract_into_toplevel:true
+  |> Preprocessing.defines ~include_toplevels:true
   |> List.map ~f:check
   |> List.concat

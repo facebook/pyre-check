@@ -275,9 +275,9 @@ let create_of_source environment source =
     let define_signature = { define_node with value = Define { define with Define.body = [] } } in
     walk_statement Cfg.entry_index 0 define_signature;
   in
-  (* TODO(T31738631): remove extract_into_toplevel *)
+  (* TODO(T31738631): remove include_toplevels *)
   Preprocessing.convert source
-  |> Preprocessing.defines ~include_nested:true ~extract_into_toplevel:true
+  |> Preprocessing.defines ~include_nested:true ~include_toplevels:true
   |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
 

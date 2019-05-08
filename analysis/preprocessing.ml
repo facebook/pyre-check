@@ -1496,7 +1496,7 @@ let expand_implicit_returns source =
 let defines
     ?(include_stubs = false)
     ?(include_nested = false)
-    ?(extract_into_toplevel = false)
+    ?(include_toplevels = false)
     ({ Source.qualifier; statements; _ } as source) =
 
   let module Collector = Visit.StatementCollector(struct
@@ -1519,7 +1519,7 @@ let defines
     end)
   in
   let defines = (Collector.collect source) in
-  if extract_into_toplevel then
+  if include_toplevels then
     let toplevel =
       Node.create_with_default_location
         (Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements)

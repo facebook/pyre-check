@@ -541,8 +541,8 @@ let run
       List.fold ~init:(false, []) ~f:add_error errors
     in
     let errors =
-      (* TODO(T31738631): remove extract_into_toplevel *)
-      Preprocessing.defines ~extract_into_toplevel:true source
+      (* TODO(T31738631): remove include_toplevels *)
+      Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:check
       |> List.map ~f:SingleSourceResult.errors
       |> List.concat

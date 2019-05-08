@@ -1676,7 +1676,7 @@ let test_defines _ =
       ~cmp:(List.equal ~equal:Define.equal)
       ~printer
       defines
-      (Preprocessing.defines ~extract_into_toplevel:true (Source.create statements)
+      (Preprocessing.defines ~include_toplevels:true (Source.create statements)
        |> List.map ~f:Node.value)
   in
   let create_define name =

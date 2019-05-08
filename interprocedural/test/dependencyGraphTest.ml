@@ -216,7 +216,7 @@ let test_type_collection _ =
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
       Preprocessing.convert source
-      |> Preprocessing.defines ~extract_into_toplevel:true
+      |> Preprocessing.defines ~include_toplevels:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 1 in
