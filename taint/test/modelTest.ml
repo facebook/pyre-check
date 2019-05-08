@@ -33,7 +33,8 @@ let assert_model ~model_source ~expect =
   let get_model callable =
     let message = Format.asprintf "Model %a missing" Interprocedural.Callable.pp callable in
     Callable.Map.find models callable
-    |> Option.value_exn ?here:None ?error:None ~message
+    |> Option.value_exn ?here:None ?error:None ~message,
+    false  (* obscure *)
   in
   List.iter ~f:(check_expectation ~get_model) expect
 

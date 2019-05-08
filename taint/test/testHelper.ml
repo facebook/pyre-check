@@ -45,6 +45,7 @@ type expectation = {
   tito_parameters: string list;
   returns: Taint.Sources.t list;
   errors: error_expectation list;
+  obscure: bool option;
 }
 
 
@@ -55,6 +56,7 @@ let outcome
     ?(tito_parameters = [])
     ?(returns = [])
     ?(errors = [])
+    ?obscure
     define_name =
   {
     kind;
@@ -64,6 +66,7 @@ let outcome
     tito_parameters;
     returns;
     errors;
+    obscure;
   }
 
 
@@ -73,10 +76,14 @@ let get_model callable =
       OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Callable.pp callable)
     )
   in
-  Fixpoint.get_model callable
-  |> Option.value_exn ?here:None ~error ?message:None
+  let model =
+    Fixpoint.get_model callable
+    |> Option.value_exn ?here:None ~error ?message:None
+  in
+  model
   |> Result.get_model Taint.Result.kind
-  |> Option.value ~default:Taint.Result.empty_model
+  |> Option.value ~default:Taint.Result.empty_model,
+  model.is_obscure
 
 
 let create_callable kind define_name =
@@ -90,7 +97,16 @@ let create_callable kind define_name =
 
 let check_expectation
     ?(get_model = get_model)
-    { define_name; source_parameters; sink_parameters; tito_parameters; returns; errors; kind }
+    {
+      define_name;
+      source_parameters;
+      sink_parameters;
+      tito_parameters;
+      returns;
+      errors;
+      kind;
+      obscure;
+    }
   =
   let callable = create_callable kind define_name in
   let open Taint.Result in
@@ -128,9 +144,9 @@ let check_expectation
     | _ ->
         sink_map
   in
-  let backward, forward =
-    let { backward; forward; _ } = get_model callable in
-    backward, forward
+  let backward, forward, is_obscure =
+    let { backward; forward; _ }, is_obscure = get_model callable in
+    backward, forward, is_obscure
   in
   let sink_taint_map =
     Domains.BackwardState.fold
@@ -220,6 +236,17 @@ let check_expectation
   let expected_parameter_sources =
     List.map ~f:(fun { name; sources; } -> name, sources) source_parameters
     |> String.Map.of_alist_exn
+  in
+  (* Check obscure *)
+  let () =
+    match obscure with
+    | None -> ()
+    | Some obscure ->
+        assert_equal
+          obscure
+          is_obscure
+          ~msg:(Format.sprintf "Obscure for %s" define_name)
+          ~printer:Bool.to_string
   in
   (* Check sources. *)
   let returned_sources =
@@ -426,11 +453,19 @@ let initialize ?(qualifier = "test.py") ?models source_content =
       ~path:handle
       ~source
   in
-  let all_callables =
+  let callables, stubs =
     Service.StaticAnalysis.callables ~resolution:(TypeCheck.resolution environment ()) ~source
-    |> List.map ~f:(fun (callable, _define) -> (callable :> Callable.t))
+    |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
+    |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
+  in
+  let callables =
+    List.map ~f:fst callables
     |> List.rev_append (Callable.Map.keys overrides)
   in
+  let stubs =
+    List.map ~f:fst stubs
+  in
+  let all_callables = List.rev_append stubs callables in
   (* Initialize models *)
   let () =
     let keys = Fixpoint.KeySet.of_list all_callables in
@@ -448,6 +483,6 @@ let initialize ?(qualifier = "test.py") ?models source_content =
     in
     initial_models
     |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
-    |> Interprocedural.Analysis.record_initial_models ~functions:all_callables ~stubs:[]
+    |> Interprocedural.Analysis.record_initial_models ~functions:callables ~stubs:stubs
   in
   { callgraph; overrides; all_callables; environment }

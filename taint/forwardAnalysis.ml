@@ -38,6 +38,8 @@ module type FUNCTION_CONTEXT = sig
     -> unit
 
   val return_sink: BackwardState.Tree.t
+
+  val debug: bool
 end
 
 
@@ -48,9 +50,15 @@ let is_numeric name =
 let (|>>) (taint, state) f = (f taint, state)
 
 module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
+  let log format =
+    if FunctionContext.debug then
+      Log.dump format
+    else
+      Log.log ~section:`Taint format
+
   module rec FixpointState : FixpointState = struct
     type t = { taint: ForwardState.t }
-    [@@deriving show]
+    [@@deriving show { with_path = false }]
 
 
     let initial_taint = ForwardState.empty
@@ -366,6 +374,24 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     and analyze_normalized_expression
+        ~resolution
+        ~state
+        ~expression =
+      let result, state = analyze_normalized_expression_internal
+          ~resolution
+          ~state
+          ~expression
+      in
+      let () =
+        log
+          "Expression taint: %a:\n  result taint: %a"
+          AccessPath.pp_normalized_expression expression.value
+          ForwardState.Tree.pp result
+      in
+      result, state
+
+
+    and analyze_normalized_expression_internal
         ~resolution
         ~state
         ~expression:({ Node.location; value = expression } as expression_node) =
@@ -693,8 +719,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
 
     let forward ?key state ~statement =
-      Log.log
-        ~section:`Taint
+      log
         "State: %a\nAnalyzing statement: %a"
         pp state
         Statement.pp statement;
@@ -741,6 +766,7 @@ let run
   let module Context = struct
     let definition = define
     let environment = environment
+    let debug = Define.dump define.value
 
     let candidates = Location.Reference.Table.create ()
 
@@ -784,8 +810,7 @@ let run
   in
   let module AnalysisInstance = AnalysisInstance(Context) in
   let open AnalysisInstance in
-  Log.log
-    ~section:`Taint
+  log
     "Starting analysis of %a"
     Interprocedural.Callable.pp (Interprocedural.Callable.create define);
   let cfg = Cfg.create ~convert:true define.value in
@@ -793,7 +818,7 @@ let run
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     FixpointState.create ~existing_model normalized_parameters
   in
-  let () = Log.log ~section:`Taint "Processing CFG:@.%a" Cfg.pp cfg in
+  let () = log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
     Analyzer.forward ~cfg ~initial
     |> Analyzer.exit
@@ -801,13 +826,12 @@ let run
   let resolution = TypeCheck.resolution environment () in
   let extract_model ({ FixpointState.taint; _ } as result) =
     let source_taint = extract_source_model ~define:define.value ~resolution taint in
-    let () = Log.log ~section:`Taint "Model: %a" FixpointState.pp result in
+    let () = log "Model: %a" FixpointState.pp result in
     TaintResult.Forward.{ source_taint; }
   in
   let issues = Context.generate_issues () in
   let () =
-    Log.log
-      ~section:`Taint
+    log
       "Issues %a"
       Sexp.pp [%message (issues: Flow.issue list)]
   in

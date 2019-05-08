@@ -20,7 +20,7 @@ module Root = struct
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show { with_path = false }, hash]
 
   let chop_parameter_prefix name =
     match String.chop_prefix ~prefix:"$parameter$" name with
@@ -90,7 +90,7 @@ type argument_match = {
   actual_path: AbstractTreeDomain.Label.path;
   formal_path: AbstractTreeDomain.Label.path;
 }
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 
 type argument_position = [
@@ -228,7 +228,7 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path;
 }
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 
 let create root path = { root; path; }
@@ -268,7 +268,7 @@ type normalized_expression =
   | Global of Access.t
   | Local of Identifier.t
   | Expression of Expression.t
-[@@deriving eq, show]
+[@@deriving eq, show { with_path = false }]
 
 
 let is_get_item member =

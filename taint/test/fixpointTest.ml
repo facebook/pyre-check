@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 
-open Pyre
 open Taint
 
 open Interprocedural
@@ -45,51 +44,9 @@ let assert_fixpoint ?models source ~expect:{ iterations = expect_iterations; exp
       ~all_callables
       Fixpoint.Epoch.initial
   in
-  let read_analysis_result { define_name; kind; _ } =
-    let call_target = TestHelper.create_callable kind define_name in
-    Fixpoint.get_result call_target
-    |> Result.get_result Taint.Result.kind
-    >>| List.map ~f:Flow.generate_error
-    >>| (fun result -> define_name, result)
-  in
-  let assert_error define { code; pattern } error =
-    if code <> Error.code error then
-      Format.sprintf "Expected error code %d for %s, but got %d"
-        code
-        define
-        (Error.code error)
-      |> assert_failure;
-    let error_string = Error.description ~show_error_traces:true error in
-    let regexp = Str.regexp pattern in
-    if not (Str.string_match regexp error_string 0) then
-      Format.sprintf "Expected error for %s to match %s, but got %s"
-        define
-        pattern
-        error_string
-      |> assert_failure
-  in
-  let assert_errors (define1, error_patterns) (define2, errors) =
-    if define1 <> define2 then
-      Format.sprintf "Expected errors for %s, but found %s"
-        define1
-        define2
-      |> assert_failure;
-    assert_equal
-      (List.length error_patterns)
-      (List.length errors)
-      ~msg:(Format.sprintf "Number of errors for %s" define1)
-      ~printer:Int.to_string;
-    List.iter2_exn ~f:(assert_error define1) error_patterns errors
-  in
-  let results = List.filter_map expect ~f:read_analysis_result in
-  let expect_results =
-    let create_result_patterns { define_name; errors; _ } = define_name, errors in
-    List.map expect ~f:create_result_patterns
-  in
   assert_bool "Callgraph is empty!" (Callable.RealMap.length callgraph > 0);
   assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
-  List.iter ~f:check_expectation expect;
-  List.iter2_exn expect_results results ~f:assert_errors
+  List.iter ~f:check_expectation expect
 
 
 let test_fixpoint _ =
@@ -473,6 +430,112 @@ let test_primed_sink_analysis _ =
     }
 
 
+(* Check that overrides are propagated properly, sources, sinks, and whether a
+   target is obscure or not. *)
+let test_overrides _ =
+  assert_fixpoint
+    {|
+      class Base:
+        def split():
+          pass
+
+        def some_source():
+          pass
+
+        def some_sink(arg):
+          pass
+
+      class C(Base):
+        def split(): ...
+
+        def some_sink(arg):
+          __test_sink(arg)
+
+      class D(C):
+        def some_source():
+          return __test_source()
+
+        def some_sink(arg):
+          eval(arg)
+
+      class E(Base):
+        def some_source():
+          return __user_controlled()
+
+      def test_obscure_override(b: Base):
+        return b.split()
+
+    |}
+    ~expect:{
+      iterations = 4;
+      expect = [
+        outcome
+          ~kind:`Override
+          ~obscure:true
+          "qualifier.Base.split";
+
+        outcome
+          ~kind:`Function
+          ~tito_parameters:["b"]
+          ~errors:[]
+          "qualifier.test_obscure_override";
+
+        outcome
+          ~kind:`Override
+          ~returns:[Sources.Test; Sources.UserControlled]
+          "qualifier.Base.some_source";
+
+        outcome
+          ~kind:`Method
+          ~returns:[]
+          "qualifier.Base.some_source";
+
+        outcome
+          ~kind:`Method
+          "qualifier.Base.some_sink";
+
+        outcome
+          ~kind:`Override
+          ~sink_parameters:[
+            { name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }
+          ]
+          "qualifier.Base.some_sink";
+
+        outcome
+          ~kind:`Method
+          ~sink_parameters:[
+            { name = "arg"; sinks = [Sinks.Test] }
+          ]
+          "qualifier.C.some_sink";
+
+        outcome
+          ~kind:`Override
+          ~sink_parameters:[
+            { name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }
+          ]
+          "qualifier.C.some_sink";
+
+        outcome
+          ~kind:`Method
+          ~sink_parameters:[
+            { name = "arg"; sinks = [Sinks.RemoteCodeExecution] }
+          ]
+          "qualifier.D.some_sink";
+
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.Test]
+          "qualifier.D.some_source";
+
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.UserControlled]
+          "qualifier.E.some_source";
+
+      ]
+    }
+
+
 let () =
   "taint">:::[
     "fixpoint">::test_fixpoint;
@@ -481,5 +544,6 @@ let () =
     "sanitized_analysis">::test_sanitized_analysis;
     "primed_source_analysis">::test_primed_source_analysis;
     "primed_sink_analysis">::test_primed_sink_analysis;
+    "overrides">::test_overrides;
   ]
   |> TestHelper.run_with_taint_models
