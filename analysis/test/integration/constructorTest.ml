@@ -732,7 +732,19 @@ let test_check_constructors _ =
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
        parameter to call `foo` but got `typing.Type[Class]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+      class A:
+        x: Final[int] = 0
+      class B(A):
+        x = 200
+    |}
+    [
+      "Invalid assignment [41]: Cannot reassign final attribute `x`."
     ]
+
 
 
 let test_infer_constructor_attributes _ =

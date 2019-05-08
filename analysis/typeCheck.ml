@@ -497,38 +497,42 @@ module State = struct
                  error :: errors
            | name ->
                let actual = expected in
-               let check_override
-                   ({ Node.value = { Attribute.annotation; _ }; _ } as overridden_attribute) =
+               let check_override ({
+                   Node.value = { Attribute.annotation; name; final; _ };
+                   _
+                 } as overridden_attribute) =
                  let expected = Annotation.annotation annotation in
-                 if (Resolution.less_or_equal
-                       resolution
-                       ~left:actual
-                       ~right:expected) || (Type.equal actual Type.Top)
+                 if ((Resolution.less_or_equal
+                        resolution
+                        ~left:actual
+                        ~right:expected)
+                     || (Type.equal actual Type.Top))
+                 && not final
                  then
                    errors
                  else
-                   let error =
-                     Error.create
-                       ~location
-                       ~kind:(Error.InconsistentOverride {
-                           overridden_method = name;
-                           parent =
-                             Attribute.parent overridden_attribute
-                             |> Type.show
-                             |> Reference.create;
-                           override_kind = Attribute;
-                           override =
-                             Error.WeakenedPostcondition
-                               (Error.create_mismatch
-                                  ~resolution
-                                  ~actual
-                                  ~actual_expression:None
-                                  ~expected
-                                  ~covariant:false)
-                         })
-                       ~define:define_node
+                   let kind =
+                     if final then
+                       Error.InvalidAssignment (Reference.create name)
+                     else
+                       Error.InconsistentOverride {
+                         overridden_method = name;
+                         parent =
+                           Attribute.parent overridden_attribute
+                           |> Type.show
+                           |> Reference.create;
+                         override_kind = Attribute;
+                         override =
+                           Error.WeakenedPostcondition
+                             (Error.create_mismatch
+                                ~resolution
+                                ~actual
+                                ~actual_expression:None
+                                ~expected
+                                ~covariant:false)
+                       }
                    in
-                   error :: errors
+                   (Error.create ~location ~kind ~define:define_node) :: errors
                in
                Class.overrides ~resolution ~name definition
                >>| check_override
