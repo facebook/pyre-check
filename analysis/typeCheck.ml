@@ -514,7 +514,7 @@ module State = struct
                  else
                    let kind =
                      if final then
-                       Error.InvalidAssignment (Reference.create name)
+                       Error.InvalidAssignment (Final (Reference.create name))
                      else
                        Error.InconsistentOverride {
                          overridden_method = name;
