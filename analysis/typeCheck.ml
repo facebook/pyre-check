@@ -1418,9 +1418,7 @@ module State = struct
           in
           (* TODO (T41383196): Properly deal with @property and @click *)
           is_property_derivative decorator ||
-          is_click_derivative decorator ||
-          Set.exists Recognized.whitelisted_decorators
-            ~f:(Expression.exists_in_list ~match_prefix:true ~expression_list:[decorator])
+          is_click_derivative decorator
         in
         if is_whitelisted decorator then
           state

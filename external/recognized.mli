@@ -14,8 +14,6 @@ val property_decorators: String.Set.t
 
 val classproperty_decorators: String.Set.t
 
-val whitelisted_decorators: String.Set.t
-
 val enumeration_classes: String.Set.t
 
 (* Names of functions that implement an 'assert'. *)
