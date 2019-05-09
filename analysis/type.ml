@@ -2646,6 +2646,13 @@ let contains_literal annotation =
   in
   exists annotation ~predicate
 
+let contains_final annotation =
+  let predicate = function
+    | Parametric { name ="typing.Final"; _ } -> true
+    | _ -> false
+  in
+  exists annotation ~predicate
+
 
 let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make(struct

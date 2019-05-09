@@ -121,6 +121,12 @@ type invalid_assignment_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 
+type invalid_type_kind =
+  | Final of Type.t
+  | InvalidType of Type.t
+[@@deriving compare, eq, sexp, show, hash]
+
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -149,7 +155,7 @@ type kind =
     }
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
-  | InvalidType of Type.t
+  | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
@@ -248,7 +254,7 @@ let code = function
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
   | Deobfuscation _ -> "Deobfuscation"
-  | IllegalAnnotationTarget _ -> "Illegal annotation target"
+  | IllegalAnnotationTarget _ -> "Illegal annotation"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
@@ -676,11 +682,21 @@ let messages ~concise ~signature location kind =
           "Non-static method must specify `%a` parameter."
           pp_identifier name
       ]
-  | InvalidType annotation ->
+  | InvalidType kind ->
+      let post_script, annotation =
+        begin
+          match kind with
+          | Final annotation ->
+              " Final cannot be nested.", annotation
+          | InvalidType annotation ->
+              "", annotation
+        end
+      in
       [
         Format.asprintf
-          "Expression `%a` is not a valid type."
+          "Expression `%a` is not a valid type.%s"
           pp_type annotation
+          post_script
       ]
   | InvalidTypeParameters
       { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual };} ->
@@ -1537,7 +1553,8 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
-  | InvalidType actual
+  | InvalidType (InvalidType actual)
+  | InvalidType (Final actual)
   | NotCallable actual
   | ProhibitedAny { given_annotation = Some actual; _ }
   | RedundantCast actual
@@ -1742,7 +1759,8 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
-    | InvalidType left, InvalidType right ->
+    | InvalidType (InvalidType left), InvalidType (InvalidType right)
+    | InvalidType (Final left), InvalidType (Final right) ->
         Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeParameters left, InvalidTypeParameters right ->
         Resolution.equal_type_parameters_mismatch left right
@@ -2068,8 +2086,8 @@ let join ~resolution left right =
             Option.merge ~f:(Resolution.join resolution) left.annotation right.annotation
           )
         }
-    | InvalidType left, InvalidType right when Type.equal left right ->
-        InvalidType left
+    | InvalidType (InvalidType left), InvalidType (InvalidType right) when Type.equal left right ->
+        InvalidType (InvalidType left)
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin }
       when Type.equal left right && equal_type_variable_origin left_origin right_origin ->
@@ -2574,8 +2592,10 @@ let dequalify
         InvalidArgument (Variable { expression; annotation = dequalify annotation })
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
         InvalidMethodSignature { kind with annotation = (annotation >>| dequalify) }
-    | InvalidType annotation ->
-        InvalidType (dequalify annotation)
+    | InvalidType (InvalidType annotation) ->
+        InvalidType (InvalidType (dequalify annotation))
+    | InvalidType (Final annotation) ->
+        InvalidType (Final (dequalify annotation))
     | InvalidTypeParameters ({ name ; _ } as invalid_type_parameters) ->
         InvalidTypeParameters
           { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }

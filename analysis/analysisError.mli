@@ -83,13 +83,11 @@ type invalid_inheritance =
   | NonMethodFunction of Identifier.t
 [@@deriving compare, eq, sexp, show, hash]
 
-
 type invalid_override_kind =
   | Final
   | StaticSuper
   | StaticOverride
 [@@deriving compare, eq, sexp, show, hash]
-
 
 type invalid_assignment_kind =
   | Final of Reference.t
@@ -99,6 +97,10 @@ type invalid_assignment_kind =
     }
 [@@deriving compare, eq, sexp, show, hash]
 
+type invalid_type_kind =
+  | Final of Type.t
+  | InvalidType of Type.t
+[@@deriving compare, eq, sexp, show, hash]
 
 type kind =
   | AnalysisFailure of Type.t
@@ -128,7 +130,7 @@ type kind =
     }
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
-  | InvalidType of Type.t
+  | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }

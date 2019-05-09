@@ -222,7 +222,7 @@ let test_concise _ =
       class Foo: ...
       Foo().a: int = 1
     |}
-    ["Illegal annotation target [35]: Target cannot be annotated."];
+    ["Illegal annotation [35]: Target cannot be annotated."];
 
   (* Impossible Isinstance *)
   assert_type_errors ~concise:true

@@ -352,7 +352,7 @@ module State = struct
       if Resolution.is_tracked resolution annotation || is_aliased_to_any then
         errors
       else if not (Type.is_unknown resolved || Type.equal resolved Type.Any) then
-        Error.create ~location ~kind:(Error.InvalidType annotation) ~define :: errors
+        Error.create ~location ~kind:(Error.InvalidType (InvalidType annotation)) ~define :: errors
       else
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
     in
@@ -430,7 +430,7 @@ module State = struct
         (* Could not even parse expression. *)
         Error.create
           ~location
-          ~kind:(Error.InvalidType (Type.Primitive (Expression.show expression)))
+          ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
           ~define
         |> Set.add errors
       else
@@ -3174,10 +3174,24 @@ module State = struct
                       state
                 end
               in
+              let check_final_is_outermost_qualifier state =
+                original_annotation
+                >>| (fun annotation ->
+                    if Type.contains_final annotation then
+                      emit_error
+                        ~state
+                        ~location
+                        ~kind:(Error.InvalidType (Final annotation))
+                        ~define:define_node
+                    else
+                      state
+                  ) |> Option.value ~default:state
+              in
               let state =
                 check_global_final_reassignment state
                 |> check_class_final_reassignment
                 |> check_assign_class_variable_on_instance
+                |> check_final_is_outermost_qualifier
               in
               let is_typed_dictionary_initialization =
                 (* Special-casing to avoid throwing errors *)
