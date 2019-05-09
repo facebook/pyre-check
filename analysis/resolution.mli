@@ -92,9 +92,11 @@ module FunctionDefinitionsCache : sig
 end
 
 val function_definitions: t -> Reference.t -> ((Define.t Node.t) list) option
+(*  Exposed only for parallelism. Future not guaranteed. *)
 val undecorated_signature: t -> Reference.t -> Type.t Type.Callable.overload option
 
 val less_or_equal: t -> left: Type.t -> right: Type.t -> bool
+(* Only for use in monkey check. *)
 val is_compatible_with: t -> left: Type.t -> right: Type.t -> bool
 val join: t -> Type.t -> Type.t -> Type.t
 val meet: t -> Type.t -> Type.t -> Type.t
