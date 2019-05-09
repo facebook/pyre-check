@@ -168,6 +168,7 @@ let test_fixpoint_backward _ =
          (Cfg.create ~convert:true define)
          ~initial_forward:
            (State.initial
+              ~convert:true
               ~resolution:(Test.resolution ())
               define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))

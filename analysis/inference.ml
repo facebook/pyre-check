@@ -27,7 +27,7 @@ module State = struct
       ({
         Node.value = ({ Define.signature = { parameters; parent; _ }; _ } as define)
       ; _ } as define_node) =
-    let state = State.initial ~configuration ~resolution define_node in
+    let state = State.initial ~convert:true ~configuration ~resolution define_node in
     let annotations =
       let reset_parameter
           index

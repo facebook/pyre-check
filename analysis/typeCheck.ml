@@ -1470,7 +1470,7 @@ module State = struct
             let signature =
               {
                 define.signature
-                with return_annotation = Some (Type.expression ~convert:true annotation)
+                with return_annotation = Some (Type.expression ~convert annotation)
               }
             in
             { define with signature }
@@ -1854,7 +1854,7 @@ module State = struct
              | Type.Callable { Type.Callable.implementation; _ }
                when not (Statement.Define.is_static_method define) ->
                  let original_implementation =
-                   Reference.expression ~convert:true name
+                   Reference.expression ~convert name
                    |> Resolution.resolve resolution
                    |> function
                    | Type.Callable { Type.Callable.implementation = original_implementation; _ } ->
@@ -2063,9 +2063,7 @@ module State = struct
       ~expression:{ Node.location; value } =
     (* Redirect accesses. *)
     let forward_expression = forward_expression ~convert in
-    let forward_statement ~state ~statement =
-      forward_statement ~convert:false ~state ~statement:(Statement.convert statement)
-    in
+    let forward_statement = forward_statement ~convert in
     let value, ({ resolution; _ } as state) =
       match value with
       | Access (SimpleAccess access) ->
@@ -3292,28 +3290,31 @@ module State = struct
 
     | Call { callee; arguments } ->
         let { errors = old_errors; _ } = state in
-        let { state = { errors; _ }; resolved } = forward_expression ~state ~expression:callee in
+        let { state; resolved } = forward_expression ~state ~expression:callee in
+        let ({ errors; _ } as state), resolved =
+          if Type.Variable.contains_escaped_free_variable resolved then
+            let state =
+              Error.IncompleteType {
+                target = callee;
+                annotation = resolved;
+                attempted_action = Error.Calling;
+              }
+              |> (fun kind -> Error.create ~location ~kind ~define)
+              |> emit_raw_error ~state
+            in
+            state,
+            Type.Variable.convert_all_escaped_free_variables_to_anys resolved
+          else
+            state, resolved
+        in
+        let { state = updated_state; resolved } =
+          forward_callable ~state ~callee ~resolved ~arguments
+        in
         if Set.length errors > Set.length old_errors then
-          (* Do not continue checking if base already contains error. *)
+          (* Do not throw more errors if callee already contains error. *)
           { state; resolved }
         else
-          let state, resolved =
-            if Type.Variable.contains_escaped_free_variable resolved then
-              let state =
-                Error.IncompleteType {
-                  target = { Node.location; value };
-                  annotation = resolved;
-                  attempted_action = Error.Calling;
-                }
-                |> (fun kind -> Error.create ~location ~kind ~define)
-                |> emit_raw_error ~state
-              in
-              state,
-              Type.Variable.convert_all_escaped_free_variables_to_anys resolved
-            else
-              state, resolved
-          in
-          forward_callable ~state ~callee ~resolved ~arguments
+          { state = updated_state; resolved }
 
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
@@ -3577,12 +3578,12 @@ module State = struct
     | Name ((Name.Attribute { base; attribute }) as name) ->
         let reference = Reference.from_name name in
         let { errors = old_errors; _ } = state in
-        let { state = { errors; _ }; resolved } = forward_expression ~state ~expression:base in
-        let state, resolved =
+        let { state; resolved } = forward_expression ~state ~expression:base in
+        let ({ errors; _ } as state), resolved =
           if Type.Variable.contains_escaped_free_variable resolved then
             let state =
               Error.IncompleteType {
-                target = { Node.location; value };
+                target = base;
                 annotation = resolved;
                 attempted_action = Error.AttributeAccess attribute;
               }
@@ -3594,69 +3595,68 @@ module State = struct
           else
             state, resolved
         in
-        if Set.length errors > Set.length old_errors then
-          (* Do not continue checking if base already contains error. *)
-          { state; resolved }
-        else if Type.is_undeclared resolved then
-          let state =
-            reference
-            >>| (fun reference -> Error.UndefinedName reference)
-            >>| (fun kind -> emit_error ~state ~location ~kind ~define)
-            |> Option.value ~default:state
-          in
-          { state; resolved }
-        else if Type.equal resolved Type.Top then
-          (* Global or local. *)
-          reference
-          >>| forward_reference ~state
-          |> Option.value ~default:{ state; resolved }
-        else if Type.is_callable resolved then
-          (* Nested function. *)
-          let resolved =
-            reference
-            >>= (fun reference -> Resolution.get_local resolution ~reference)
-          in
-          match resolved with
-          | Some annotation ->
-              { state; resolved = Annotation.annotation annotation }
-          | None ->
-              { state; resolved = Type.Top }
-        else
-          (* Attribute access. *)
-          let rec extract_class_data ~is_meta original_annotation =
-            let annotation =
-              match original_annotation with
-              | Type.Variable variable -> Type.Variable.upper_bound variable
-              | _ -> original_annotation
+        let { state = updated_state; resolved } =
+          if Type.is_undeclared resolved then
+            let state =
+              reference
+              >>| (fun reference -> Error.UndefinedName reference)
+              >>| (fun kind -> emit_error ~state ~location ~kind ~define)
+              |> Option.value ~default:state
             in
-            match annotation with
-            | Type.Top | Type.Bottom | Type.Any ->
-                Some []
-            | annotation when Type.equal Type.ellipsis annotation ->
-                Some []
-            | Type.Union annotations ->
-                let flatten_optional sofar optional =
-                  match sofar, optional with
-                  | Some sofar, Some optional -> Some (optional :: sofar)
-                  | _ -> None
-                in
-                List.map ~f:(extract_class_data ~is_meta) annotations
-                |> List.fold ~init:(Some []) ~f:flatten_optional
-                >>| List.concat
-                >>| List.rev
-            | annotation when Type.is_meta annotation ->
-                Type.single_parameter annotation
-                |> extract_class_data ~is_meta:true
-            | _ ->
-                begin
-                  match Resolution.class_definition resolution annotation with
-                  | Some class_definition ->
-                      Some [(original_annotation, is_meta, Annotated.Class.create class_definition)]
-                  | None ->
-                      None
-                end
-          in
-          begin
+            { state; resolved }
+          else if Type.equal resolved Type.Top then
+            (* Global or local. *)
+            reference
+            >>| forward_reference ~state
+            |> Option.value ~default:{ state; resolved }
+          else if Type.is_callable resolved then
+            (* Nested function. *)
+            let resolved =
+              reference
+              >>= (fun reference -> Resolution.get_local resolution ~reference)
+            in
+            match resolved with
+            | Some annotation ->
+                { state; resolved = Annotation.annotation annotation }
+            | None ->
+                { state; resolved = Type.Top }
+          else
+            (* Attribute access. *)
+            let rec extract_class_data ~is_meta original_annotation =
+              let annotation =
+                match original_annotation with
+                | Type.Variable variable -> Type.Variable.upper_bound variable
+                | _ -> original_annotation
+              in
+              match annotation with
+              | Type.Top | Type.Bottom | Type.Any ->
+                  Some []
+              | annotation when Type.equal Type.ellipsis annotation ->
+                  Some []
+              | Type.Union annotations ->
+                  let flatten_optional sofar optional =
+                    match sofar, optional with
+                    | Some sofar, Some optional -> Some (optional :: sofar)
+                    | _ -> None
+                  in
+                  List.map ~f:(extract_class_data ~is_meta) annotations
+                  |> List.fold ~init:(Some []) ~f:flatten_optional
+                  >>| List.concat
+                  >>| List.rev
+              | annotation when Type.is_meta annotation ->
+                  Type.single_parameter annotation
+                  |> extract_class_data ~is_meta:true
+              | _ ->
+                  begin
+                    match Resolution.class_definition resolution annotation with
+                    | Some class_definition ->
+                        Some [
+                          (original_annotation, is_meta, Annotated.Class.create class_definition)
+                        ]
+                    | None ->
+                        None
+                  end
+            in
             match extract_class_data ~is_meta:false resolved with
             | None ->
                 let state =
@@ -3770,7 +3770,12 @@ module State = struct
                   |> Annotation.annotation
                 in
                 { state; resolved }
-          end
+        in
+        if Set.length errors > Set.length old_errors then
+          (* Do not throw more errors if base already contains error. *)
+          { state; resolved }
+        else
+          { state = updated_state; resolved }
 
     | Set elements ->
         let { state; resolved } = forward_elements ~state ~elements in
@@ -4036,7 +4041,7 @@ module State = struct
         let explicit = Option.is_some annotation in
         let rec forward_assign
             ~state:({ resolution; _ } as state)
-            ~target:{ Node.location; value = target_value }
+            ~target:({ Node.location; value = target_value } as target)
             ~guide
             ~resolved
             ~expression =
@@ -4513,6 +4518,360 @@ module State = struct
                 { state with resolution }
               in
               state
+          | Name name when Expression.is_simple_name name ->
+              let reference = Reference.from_name_exn name in
+              let target_annotation = Resolution.get_local resolution ~reference in
+              let expected, is_immutable =
+                match original_annotation, target_annotation with
+                | Some original, _ ->
+                    original, true
+                | _, Some target_annotation when Annotation.is_immutable target_annotation ->
+                    Annotation.original target_annotation, true
+                | _ ->
+                    Type.Top, false
+              in
+              let resolved =
+                Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected
+              in
+              let is_typed_dictionary_initialization =
+                (* Special-casing to avoid throwing errors *)
+                let open Type in
+                match expected with
+                | Parametric { name = "type"; parameters = [parameter] }
+                  when is_typed_dictionary parameter ->
+                    is_unknown resolved
+                | _ ->
+                    false
+              in
+              let state =
+                let is_valid_enumeration_assignment =
+                  let parent_annotation =
+                    match parent with
+                    | None -> Type.Top
+                    | Some reference ->
+                        Type.Primitive (Reference.show reference)
+                  in
+                  let resolved = Type.weaken_literals resolved in
+                  let compatible =
+                    if explicit then
+                      Resolution.less_or_equal resolution ~left:expected ~right:resolved
+                    else
+                      true
+                  in
+                  Resolution.less_or_equal
+                    resolution
+                    ~left:parent_annotation
+                    ~right:Type.enumeration &&
+                  compatible
+                in
+                if is_immutable &&
+                   not (Type.equal resolved Type.ellipsis) &&
+                   not (Resolution.constraints_solution_exists
+                          resolution ~left:resolved ~right:expected) &&
+                   not is_typed_dictionary_initialization &&
+                   not is_valid_enumeration_assignment then
+                  let kind =
+                    let open Annotated in
+                    let attribute =
+                      match name with
+                      | Name.Attribute { base; attribute } ->
+                          let parent = Resolution.resolve resolution base in
+                          Resolution.class_definition resolution parent
+                          >>| Annotated.Class.create
+                          >>| Annotated.Class.attribute
+                                ~resolution
+                                ~name:attribute
+                                ~instantiated:parent
+                                ~transitive:true
+                      | _ ->
+                          None
+                    in
+                    match attribute with
+                    | Some attribute ->
+                        Error.IncompatibleAttributeType {
+                          parent = Attribute.parent attribute;
+                          incompatible_type = {
+                            Error.name = reference;
+                            mismatch =
+                              (Error.create_mismatch
+                                 ~resolution
+                                 ~actual:resolved
+                                 ~actual_expression:expression
+                                 ~expected
+                                 ~covariant:true);
+                            declare_location = instantiate (Attribute.location attribute);
+                          };
+                        }
+                    | _ ->
+                        Error.IncompatibleVariableType {
+                          Error.name = reference;
+                          mismatch =
+                            (Error.create_mismatch
+                               ~resolution
+                               ~actual:resolved
+                               ~actual_expression:expression
+                               ~expected
+                               ~covariant:true);
+                          declare_location = instantiate location;
+                        }
+                  in
+                  emit_error ~state ~location ~kind ~define:define_node
+                else
+                  state
+              in
+              (* Check for missing annotations. *)
+              let error =
+                let insufficiently_annotated, thrown_at_source =
+                  let is_reassignment =
+                    (* Special-casing re-use of typed parameters as attributes *)
+                    match name, Node.value value with
+                    | Name.Attribute {
+                        base = { Node.value = Name (Name.Identifier "self"); _ };
+                        attribute;
+                      },
+                      Name _ ->
+                        let sanitized = Expression.show_sanitized value in
+                        is_immutable &&
+                        not (Type.is_unknown expected) &&
+                        (String.equal attribute sanitized ||
+                         String.equal attribute ("_" ^ sanitized))
+                    | _ ->
+                        false
+                  in
+                  match annotation with
+                  | Some annotation when Type.expression_contains_any annotation ->
+                      original_annotation
+                      >>| Resolution.is_string_to_any_mapping resolution
+                      |> Option.value ~default:false
+                      |> not
+                      |> (fun insufficient -> insufficient, true)
+                  | None when is_immutable && not is_reassignment ->
+                      let is_toplevel =
+                        Define.is_toplevel define ||
+                        Define.is_class_toplevel define ||
+                        Define.is_constructor define
+                      in
+                      let contains_any annotation =
+                        if Resolution.is_string_to_any_mapping resolution annotation then
+                          false
+                        else
+                          Type.contains_any annotation
+                      in
+                      Type.equal expected Type.Top || contains_any expected, is_toplevel
+                  | _ ->
+                      false, false
+                in
+                let actual_annotation, evidence_locations =
+                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipsis then
+                    None, []
+                  else
+                    Some resolved, [instantiate location]
+                in
+                let is_illegal_attribute_annotation
+                    {
+                      Node.value = { AnnotatedClass.Attribute.parent = attribute_parent; _ };
+                      _;
+                    } =
+                  let parent_annotation =
+                    match define_parent with
+                    | None -> Type.Top
+                    | Some reference ->
+                        Type.Primitive (Reference.show reference)
+                  in
+                  explicit && (not (Type.equal parent_annotation attribute_parent))
+                in
+                let parent_class =
+                  match name with
+                  | Name.Attribute { base; _ } ->
+                      let parent = Resolution.resolve resolution base in
+                      Resolution.class_definition resolution parent
+                      >>| Annotated.Class.create
+                  | _ ->
+                      None
+                in
+                match name, parent_class with
+                | Name.Identifier identifier, _ ->
+                    let reference = Reference.create identifier in
+                    if
+                      Resolution.is_global ~reference resolution &&
+                      insufficiently_annotated &&
+                      not is_type_alias
+                    then
+                      let global_location =
+                        Reference.delocalize reference
+                        |> Resolution.global resolution
+                        >>| Node.location
+                        |> Option.value ~default:location
+                      in
+                      Error.create
+                        ~location:global_location
+                        ~kind:(Error.MissingGlobalAnnotation {
+                            Error.name = reference;
+                            annotation = actual_annotation;
+                            given_annotation = Option.some_if is_immutable expected;
+                            evidence_locations;
+                            thrown_at_source;
+                          })
+                        ~define:define_node
+                      |> Option.some
+                    else if
+                      (explicit && insufficiently_annotated) ||
+                      (is_type_alias && Type.expression_contains_any value)
+                    then
+                      let value_annotation = Resolution.parse_annotation resolution value in
+                      Error.create
+                        ~location
+                        ~kind:(Error.ProhibitedAny {
+                            Error.name = reference;
+                            annotation = actual_annotation;
+                            given_annotation = Some value_annotation;
+                            evidence_locations;
+                            thrown_at_source = true;
+                          })
+                        ~define:define_node
+                      |> Option.some_if
+                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
+                    else
+                      None
+                | Name.Attribute { base = { Node.value = Name base; _ }; _ }, None
+                  when Expression.is_simple_name base && insufficiently_annotated ->
+                    (* Module *)
+                    let definition =
+                      Resolution.module_definition
+                        resolution
+                        (Reference.from_name_exn base)
+                    in
+                    if Option.is_some definition then
+                      Error.create
+                        ~location
+                        ~kind:(Error.MissingGlobalAnnotation {
+                            Error.name = reference;
+                            annotation = actual_annotation;
+                            given_annotation = Option.some_if is_immutable expected;
+                            evidence_locations;
+                            thrown_at_source = true;
+                          })
+                        ~define:define_node
+                      |> Option.some
+                    else
+                      Error.create
+                        ~location
+                        ~kind:(Error.ProhibitedAny {
+                            Error.name = reference;
+                            annotation = actual_annotation;
+                            given_annotation = Option.some_if is_immutable expected;
+                            evidence_locations;
+                            thrown_at_source = true;
+                          })
+                        ~define:define_node
+                      |> Option.some_if (not is_type_alias)
+                | Name.Attribute { base; attribute }, Some parent ->
+                    (* Instance *)
+                    let attribute =
+                      Annotated.Class.attribute
+                        ~resolution
+                        ~name:attribute
+                        ~instantiated:(Resolution.resolve resolution base)
+                        ~transitive:true
+                        parent
+                    in
+                    if is_illegal_attribute_annotation attribute then
+                      (* Non-self attributes may not be annotated. *)
+                      Error.create
+                        ~location
+                        ~kind:(Error.IllegalAnnotationTarget target)
+                        ~define:define_node
+                      |> Option.some
+                    else if
+                      Annotated.Class.Attribute.defined attribute && insufficiently_annotated
+                    then
+                       let attribute_location = Annotated.Attribute.location attribute in
+                       Error.create
+                         ~location:attribute_location
+                         ~kind:(Error.MissingAttributeAnnotation {
+                             parent = Annotated.Attribute.parent attribute;
+                             missing_annotation = {
+                               Error.name = reference;
+                               annotation = actual_annotation;
+                               given_annotation = Option.some_if is_immutable expected;
+                               evidence_locations;
+                               thrown_at_source;
+                             };
+                           })
+                         ~define:define_node
+                       |> Option.some
+                    else
+                      Error.create
+                        ~location
+                        ~kind:(Error.ProhibitedAny {
+                            Error.name = reference;
+                            annotation = actual_annotation;
+                            given_annotation = Option.some_if is_immutable expected;
+                            evidence_locations;
+                            thrown_at_source = true;
+                          })
+                        ~define:define_node
+                      |> Option.some_if (insufficiently_annotated && not is_type_alias)
+                | _ ->
+                    Error.create
+                      ~location
+                      ~kind:(Error.IllegalAnnotationTarget target)
+                      ~define:define_node
+                    |> Option.some_if explicit
+              in
+              let state = error >>| emit_raw_error ~state |> Option.value ~default:state in
+              let is_valid_annotation =
+                error
+                >>| Error.kind
+                |> function | Some (Error.IllegalAnnotationTarget _) -> false | _ -> true
+              in
+              (* Propagate annotations. *)
+              let state =
+                let reference = Reference.from_name_exn name in
+                let annotation =
+                  if explicit && is_valid_annotation then
+                    let annotation =
+                      Annotation.create_immutable
+                        ~global:(Resolution.is_global ~reference resolution)
+                        guide
+                    in
+                    if Type.is_concrete resolved && not (Type.is_ellipsis resolved) then
+                      Refinement.refine ~resolution annotation resolved
+                    else
+                      annotation
+                  else
+                    match target_annotation with
+                    | Some annotation when is_immutable ->
+                        Refinement.refine ~resolution annotation guide
+                    | _ ->
+                        Annotation.create guide
+                in
+                let state, annotation =
+                  if not explicit &&
+                     not is_type_alias &&
+                     Type.Variable.contains_escaped_free_variable
+                       (Annotation.annotation annotation)
+                  then
+                    let kind =
+                      Error.IncompleteType {
+                        target = { Node.location; value = target_value };
+                        annotation = resolved;
+                        attempted_action = Naming;
+                      }
+                    in
+                    let converted =
+                      Type.Variable.convert_all_escaped_free_variables_to_anys
+                        (Annotation.annotation annotation)
+                    in
+                    emit_error ~state ~location ~kind ~define:define_node,
+                    { annotation with annotation = converted }
+                  else
+                    state, annotation
+                in
+                let resolution = Resolution.set_local resolution ~reference ~annotation in
+                { state with resolution }
+              in
+              state
           | List elements
           | Tuple elements
             when is_uniform_sequence guide ->
@@ -4706,6 +5065,19 @@ module State = struct
             let consistent_with_boundary = Type.union consistent_with_boundary in
             { consistent_with_boundary; not_consistent_with_boundary }
           in
+          let get_attribute_annotation ~resolution ~parent ~name =
+            parent
+            |> Resolution.class_definition resolution
+            >>| Annotated.Class.create
+            >>| Annotated.Class.attribute
+                  ~resolution
+                  ~name
+                  ~instantiated:parent
+                  ~transitive:true
+            >>= fun attribute ->
+              Option.some_if (Annotated.Attribute.defined attribute) attribute
+            >>| Annotated.Attribute.annotation
+          in
           match Node.value test with
           | False ->
               (* Explicit bottom. *)
@@ -4765,6 +5137,53 @@ module State = struct
               in
               { state with resolution }
 
+          | Call {
+              callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+              arguments = [
+                { Call.Argument.name = None; value = { Node.value = Name name; _ } };
+                { Call.Argument.name = None; value = annotation };
+              ];
+            } when Expression.is_simple_name name ->
+              let reference = Reference.from_name_exn name in
+              let annotation = parse_isinstance_annotation annotation in
+              let updated_annotation =
+                let refinement_unnecessary existing_annotation =
+                  Refinement.less_or_equal
+                    ~resolution
+                    existing_annotation
+                    (Annotation.create annotation)
+                  && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
+                  && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
+                in
+                match Resolution.get_local resolution ~reference with
+                (* Allow Anys [especially from placeholder stubs] to clobber *)
+                | _ when Type.equal annotation Type.Any ->
+                    Annotation.create annotation
+                | Some existing_annotation when refinement_unnecessary existing_annotation ->
+                    existing_annotation
+                (* Clarify Anys if possible *)
+                | Some existing_annotation
+                  when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
+                    Annotation.create annotation
+                | None ->
+                    Annotation.create annotation
+                | Some existing_annotation ->
+                    let { consistent_with_boundary; _ } =
+                      partition (Annotation.annotation existing_annotation) ~boundary:annotation
+                    in
+                    if Type.equal consistent_with_boundary Type.Bottom then
+                      Annotation.create annotation
+                    else
+                      Annotation.create consistent_with_boundary
+              in
+              let resolution =
+                Resolution.set_local
+                  resolution
+                  ~reference
+                  ~annotation:updated_annotation
+              in
+              { state with resolution }
+
           | UnaryOperator {
               UnaryOperator.operator = UnaryOperator.Not;
               operand = {
@@ -4780,6 +5199,20 @@ module State = struct
                           _;
                         };
                       ]);
+                _;
+              };
+            }
+          | UnaryOperator {
+              UnaryOperator.operator = UnaryOperator.Not;
+              operand = {
+                Node.value =
+                  Call {
+                    callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+                    arguments = [
+                      { Call.Argument.name = None; value };
+                      { Call.Argument.name = None; value = annotation_expression };
+                    ];
+                  };
                 _;
               };
             } ->
@@ -4848,6 +5281,8 @@ module State = struct
                     emit_raw_error ~state:{ state with bottom = true } error
                 | _, { Node.value = Access (Access.SimpleAccess access); _ } ->
                     { state with resolution = resolve ~reference:(Reference.from_access access) }
+                | _, { Node.value = Name name; _ } when Expression.is_simple_name name ->
+                    { state with resolution = resolve ~reference:(Reference.from_name_exn name) }
                 | _ ->
                     state
               end
@@ -4867,6 +5302,37 @@ module State = struct
                 ]) ->
               let resolution =
                 let reference = Reference.from_access access in
+                match Resolution.get_local resolution ~reference with
+                | Some {
+                    Annotation.annotation =
+                      (Type.Parametric { name; parameters = [Type.Optional parameter] })
+                      as annotation;
+                    _
+                  } when Resolution.less_or_equal
+                      resolution
+                      ~left:annotation
+                      ~right:(Type.iterable (Type.Optional parameter)) ->
+                    Resolution.set_local
+                      resolution
+                      ~reference
+                      ~annotation:(
+                        Annotation.create
+                          (Type.Parametric {
+                              name;
+                              parameters = [parameter]
+                            })
+                      )
+                | _ ->
+                    resolution
+              in
+              { state with resolution }
+
+          | Call {
+              callee = { Node.value = Name (Name.Identifier "all"); _ };
+              arguments = [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }];
+            } when Expression.is_simple_name name ->
+              let resolution =
+                let reference = Reference.from_name_exn name in
                 match Resolution.get_local resolution ~reference with
                 | Some {
                     Annotation.annotation =
@@ -4934,6 +5400,48 @@ module State = struct
               in
               { state with resolution }
 
+          | Name name when Expression.is_simple_name name ->
+              let reference = Reference.from_name_exn name in
+              let resolution =
+                match Resolution.get_local resolution ~reference, name with
+                | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
+                    Resolution.set_local
+                      resolution
+                      ~reference
+                      ~annotation:(Annotation.create parameter)
+                | _, Name.Attribute { base; attribute } ->
+                    let parent = Resolution.resolve resolution base in
+                    let attribute_annotation =
+                      get_attribute_annotation ~resolution ~parent ~name:attribute
+                    in
+                    begin
+                      match attribute_annotation with
+                      | Some ({
+                          Annotation.annotation = Type.Optional parameter;
+                          mutability = Annotation.Mutable
+                        } as annotation)
+                      | Some ({
+                          Annotation.annotation = _;
+                          mutability = Annotation.Immutable {
+                              Annotation.original = Type.Optional parameter;
+                              _;
+                            };
+                        } as annotation) ->
+                          let refined =
+                            Refinement.refine ~resolution annotation parameter
+                          in
+                          Resolution.set_local
+                            resolution
+                            ~reference
+                            ~annotation:refined
+                      | _ ->
+                          resolution
+                    end
+                | _ ->
+                    resolution
+              in
+              { state with resolution }
+
           | BooleanOperator { BooleanOperator.left; operator; right } ->
               begin
                 let update state expression =
@@ -4982,6 +5490,11 @@ module State = struct
               ComparisonOperator.left;
               operator = ComparisonOperator.IsNot;
               right = { Node.value = Access (SimpleAccess [Access.Identifier "None"]); _ };
+            }
+          | ComparisonOperator {
+              ComparisonOperator.left;
+              operator = ComparisonOperator.IsNot;
+              right = { Node.value = Name (Name.Identifier "None"); _ };
             } ->
               forward_statement ~state ~statement:(Statement.assume left)
 
@@ -5000,6 +5513,46 @@ module State = struct
                         ~resolution
                         (Annotated.Attribute.annotation attribute)
                         (Type.Optional Type.Bottom)
+                  | _ ->
+                      Annotation.create (Type.Optional Type.Bottom)
+                in
+                match Resolution.get_local ~global_fallback:false resolution ~reference with
+                | Some previous ->
+                    if Refinement.less_or_equal ~resolution refined previous then
+                      let resolution =
+                        Resolution.set_local resolution ~reference ~annotation:refined
+                      in
+                      { state with resolution }
+                    else
+                      (* Keeping previous state, since it is more refined. *)
+                      (* TODO: once T38750424 is done, we should really return bottom if
+                         previous is not <= refined and refined is not <= previous, as
+                         this is an obvious contradiction. *)
+                      state
+                | None ->
+                    let resolution =
+                      Resolution.set_local resolution ~reference ~annotation:refined
+                    in
+                    { state with resolution }
+              end
+          | ComparisonOperator {
+              ComparisonOperator.left = { Node.value = Name name; _ };
+              operator = ComparisonOperator.Is;
+              right = { Node.value = Name (Name.Identifier "None"); _ };
+            } when Expression.is_simple_name name ->
+              let reference = Reference.from_name_exn name in
+              begin
+                let refined =
+                  match name with
+                  | Name.Attribute { base; attribute } ->
+                      let parent = Resolution.resolve resolution base in
+                      let attribute_annotation =
+                        get_attribute_annotation ~resolution ~parent ~name:attribute
+                      in
+                      attribute_annotation
+                      >>| (fun annotation ->
+                          Refinement.refine ~resolution annotation (Type.Optional Type.Bottom))
+                      |> Option.value ~default:(Annotation.create (Type.Optional Type.Bottom))
                   | _ ->
                       Annotation.create (Type.Optional Type.Bottom)
                 in
@@ -5051,6 +5604,35 @@ module State = struct
                     state
               else
                 state
+          | ComparisonOperator {
+              ComparisonOperator.left = { Node.value = Name name; _ };
+              operator = ComparisonOperator.In;
+              right;
+            } when Expression.is_simple_name name ->
+              let reference = Reference.from_name_exn name in
+              let { resolved; _ } = forward_expression ~state ~expression:right in
+              let iterable = Resolution.join resolution resolved (Type.iterable Type.Bottom) in
+              if Type.is_iterable iterable then
+                let refined = Annotation.create (Type.single_parameter iterable) in
+                match Resolution.get_local ~global_fallback:false resolution ~reference with
+                | Some previous when not (Annotation.is_immutable previous) ->
+                    if Refinement.less_or_equal ~resolution refined previous then
+                      let resolution =
+                        Resolution.set_local resolution ~reference ~annotation:refined
+                      in
+                      { state with resolution }
+                    else
+                      (* Keeping previous state, since it is more refined. *)
+                      state
+                | None when not (Resolution.is_global resolution ~reference) ->
+                    let resolution =
+                      Resolution.set_local resolution ~reference ~annotation:refined
+                    in
+                    { state with resolution }
+                | _ ->
+                    state
+              else
+                state
           | _ ->
               state
         end
@@ -5074,6 +5656,12 @@ module State = struct
         >>| (fun assertion -> forward_statement ~state ~statement:(Statement.assume assertion))
         |> Option.value ~default:state
 
+    | Expression {
+        Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ };
+        _;
+      } when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->
+        forward_statement ~state ~statement:(Statement.assume test)
+
     | Expression expression ->
         forward_expression ~state ~expression
         |> fun { state; resolved } ->
@@ -5084,18 +5672,23 @@ module State = struct
 
     | Global identifiers ->
         let resolution =
-          let access = Access.create_from_identifiers identifiers in
+          let expression =
+            if convert then
+              Access.create_from_identifiers identifiers
+              |> Access.expression
+            else
+              List.map ~f:(Node.create ~location) identifiers
+              |> Expression.create_name_from_identifiers
+              |> (fun name -> Name name)
+              |> Node.create ~location
+          in
           let annotation =
-            let { resolved; _ } =
-              forward_expression
-                ~state
-                ~expression:(Access.expression access)
-            in
+            let { resolved; _ } = forward_expression ~state ~expression in
             Annotation.create_immutable resolved ~global:true
           in
           Resolution.set_local
             resolution
-            ~reference:(Reference.from_access access)
+            ~reference:(Reference.create_from_list identifiers)
             ~annotation
         in
         { state with resolution }
@@ -5106,27 +5699,81 @@ module State = struct
           | Some from -> [from]
           | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
         in
-        let to_import_error import =
-          let add_import_error errors ~resolution:_ ~resolved:_ ~element ~lead:_ =
-            match element with
-            | AccessState.Attribute { definition = Undefined (Module _); _ } ->
-                Error.create
-                  ~location
-                  ~kind:(Error.UndefinedImport import)
-                  ~define:define_node
-                :: errors
-            | _ ->
-                errors
+        if convert then
+          let to_import_error import =
+            let add_import_error errors ~resolution:_ ~resolved:_ ~element ~lead:_ =
+              match element with
+              | AccessState.Attribute { definition = Undefined (Module _); _ } ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.UndefinedImport import)
+                    ~define:define_node
+                  :: errors
+              | _ ->
+                  errors
+            in
+            forward_access
+              ~f:add_import_error
+              ~resolution
+              ~initial:[]
+              ~should_resolve_exports:false
+              (Reference.access import)
           in
-          forward_access
-            ~f:add_import_error
-            ~resolution
-            ~initial:[]
-            ~should_resolve_exports:false
-            (Reference.access import)
-        in
-        List.concat_map ~f:to_import_error imports
-        |> List.fold ~init:state ~f:(fun state error -> emit_raw_error ~state error)
+          List.concat_map ~f:to_import_error imports
+          |> List.fold ~init:state ~f:(fun state error -> emit_raw_error ~state error)
+        else
+          let add_import_error state import =
+            let annotation =
+              let local_annotation = Resolution.get_local resolution ~reference:import in
+              match local_annotation, Reference.prefix import with
+              | Some annotation, _ ->
+                  Some annotation
+              | None, Some qualifier ->
+                  (* Fallback to use a __getattr__ callable as defined by PEP 484. *)
+                  let getattr =
+                    Resolution.get_local
+                      resolution
+                      ~reference:(Reference.create ~prefix:qualifier "__getattr__")
+                    >>| Annotation.annotation
+                  in
+                  let correct_getattr_arity signature =
+                    Type.Callable.Overload.parameters signature
+                    >>| (fun parameters -> List.length parameters == 1)
+                    |> Option.value ~default:false
+                  in
+                  begin
+                    match getattr with
+                    | Some (Callable { overloads = [signature]; _ })
+                    | Some (Callable { implementation = signature; _ })
+                      when correct_getattr_arity signature ->
+                        Some (
+                          Annotation.create_immutable
+                            ~global:true
+                            ~original:(Some Type.Top)
+                            (Type.Callable.Overload.return_annotation signature)
+                        )
+                    | _ ->
+                        None
+                  end
+              | _ ->
+                  None
+            in
+            let state_with_error =
+              Error.create
+                ~location
+                ~kind:(Error.UndefinedImport import)
+                ~define:define_node
+              |> emit_raw_error ~state
+            in
+            match annotation with
+            | Some annotation when Type.is_undeclared (Annotation.annotation annotation) ->
+                state_with_error
+            | None ->
+                state_with_error
+            | _ ->
+                state
+          in
+          List.fold ~init:state ~f:add_import_error imports
 
     | Raise (Some expression) ->
         forward_expression ~state ~expression
@@ -5564,6 +6211,7 @@ let run
                 State.initial
                   ~configuration
                   ~resolution
+                  ~convert:true
                   define_node
               in
               check ~define:define_node ~initial ~queue

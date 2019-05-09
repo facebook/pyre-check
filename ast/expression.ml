@@ -1452,12 +1452,20 @@ let pp formatter expression =
 let show expression = Format.asprintf "%a" pp expression
 
 
-let show_sanitized { Node.location; value } =
+let rec show_sanitized { Node.location; value } =
   match value with
   | Access (SimpleAccess access) ->
       Access.show_sanitized access
+  | Access (ExpressionAccess { expression; access = [] }) ->
+      Format.asprintf "%a" pp expression
   | Access (ExpressionAccess { expression; access }) ->
       Format.asprintf "%a.%s" pp expression (Access.show_sanitized access)
+  | Name (Name.Identifier identifier) ->
+      Identifier.sanitized identifier
+  | Name (Name.Attribute { base; attribute }) ->
+      Format.asprintf "%s.%s" (show_sanitized base) (Identifier.sanitized attribute)
+  | Call { callee; _ } ->
+      Format.asprintf "%s.(...)" (show_sanitized callee)
   | _ ->
       show { Node.location; value }
 

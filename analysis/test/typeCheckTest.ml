@@ -105,7 +105,7 @@ let test_initial _ =
         Resolution.add_type_variable resolution ~variable
       in
       let resolution = List.fold variables ~init:resolution ~f:add_variable in
-      State.initial ~resolution (+define)
+      State.initial ~convert:true ~resolution (+define)
     in
     assert_state_equal state initial;
     assert_equal
@@ -2310,7 +2310,7 @@ let test_forward_expression _ =
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
   assert_forward
     ~errors:(`Specific [
-        "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[].` is " ^
+        "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is " ^
         "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into " ^
         "an assignment and give it an explicit annotation.";
       ])
@@ -2496,42 +2496,45 @@ let test_forward_statement _ =
       precondition
       statement
       postcondition =
-    let forwarded =
-      let parsed =
-        parse ~convert:true statement
-        |> function
-        | { Source.statements = statement::rest; _ } -> statement::rest
-        | _ -> failwith "unable to parse test"
+    let assertion ~convert =
+      let forwarded =
+        let parsed =
+          parse ~convert statement
+          |> function
+          | { Source.statements = statement::rest; _ } -> statement::rest
+          | _ -> failwith "unable to parse test"
+        in
+        List.fold
+          ~f:(fun state statement -> State.forward_statement ~convert ~state ~statement)
+          ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
+          parsed
       in
-      List.fold
-        ~f:(fun state statement -> State.forward_statement ~convert:true ~state ~statement)
-        ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
-        parsed
-    in
-    let errors =
-      match errors with
-      | `Specific errors ->
-          errors
-      | `Undefined count ->
-          let rec errors sofar count =
-            let error =
-              "Undefined name [18]: Global name `undefined` is not defined, or there is \
-               at least one control flow path that doesn't define `undefined`."
+      let errors =
+        match errors with
+        | `Specific errors ->
+            errors
+        | `Undefined count ->
+            let rec errors sofar count =
+              let error =
+                "Undefined name [18]: Global name `undefined` is not defined, or there is \
+                 at least one control flow path that doesn't define `undefined`."
+              in
+              match count with
+              | 0 -> sofar
+              | count -> errors (error :: sofar) (count - 1)
             in
-            match count with
-            | 0 -> sofar
-            | count -> errors (error :: sofar) (count - 1)
-          in
-          errors [] count
+            errors [] count
+      in
+      assert_state_equal
+        (create ~bottom ~immutables:postcondition_immutables postcondition)
+        forwarded;
+      assert_equal
+        ~cmp:list_orderless_equal
+        ~printer:(String.concat ~sep:"\n")
+        errors
+        (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
     in
-    assert_state_equal
-      (create ~bottom ~immutables:postcondition_immutables postcondition)
-      forwarded;
-    assert_equal
-      ~cmp:list_orderless_equal
-      ~printer:(String.concat ~sep:"\n")
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false))
-      errors
+    assertion ~convert:false
   in
 
   (* Assignments. *)
@@ -2914,7 +2917,6 @@ let test_forward_statement _ =
     ["x", Type.optional (Type.union [Type.integer; Type.string])]
     "assert not isinstance(x, type(None))"
     [
-      "$type", Type.meta Type.none;
       "x", Type.union [Type.integer; Type.string];
     ];
   assert_forward
