@@ -81,26 +81,30 @@ module Record = struct
     type kind =
       | Anonymous
       | Named of Reference.t
+    [@@deriving compare, eq, sexp, show, hash]
 
 
-    and 'annotation implicit_record = {
+    type 'annotation implicit_record = {
       implicit_annotation: 'annotation;
       name: Identifier.t;
     }
+    [@@deriving compare, eq, sexp, show, hash]
 
 
-    and 'annotation parameters =
+    type 'annotation parameters =
       | Defined of ('annotation RecordParameter.t) list
       | Undefined
+    [@@deriving compare, eq, sexp, show, hash]
 
 
-    and 'annotation overload = {
+    type 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation parameters;
     }
+    [@@deriving compare, eq, sexp, show, hash]
 
 
-    and 'annotation record = {
+    type 'annotation record = {
       kind: kind;
       implementation: 'annotation overload;
       overloads: ('annotation overload) list;
