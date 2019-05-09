@@ -2130,46 +2130,59 @@ let test_forward_expression _ =
       ?(errors = `Undefined 0)
       expression
       annotation =
-    let expression =
-      parse expression
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.convert
-      |> function
-      | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
-          expression
-      | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } ->
-          expression
-      | _ ->
-          failwith "Unable to extract expression"
-    in
-    let { State.state = forwarded; resolved } =
-      State.forward_expression
-        ~state:(create precondition)
-        ~expression
-    in
-    let errors =
-      match errors with
-      | `Specific errors ->
-          errors
-      | `Undefined count ->
-          let rec errors sofar count =
-            let error =
-              "Undefined name [18]: Global name `undefined` is not defined, or there is \
-               at least one control flow path that doesn't define `undefined`."
+    let assertion ~convert =
+      let expression =
+        let expression =
+          if convert then
+            parse expression
+            |> Preprocessing.expand_format_string
+            |> Preprocessing.convert
+          else
+            parse expression
+            |> Preprocessing.expand_format_string
+        in
+        expression
+        |> function
+        | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
+            expression
+        | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } ->
+            expression
+        | _ ->
+            failwith "Unable to extract expression"
+      in
+      let { State.state = forwarded; resolved } =
+        State.forward_expression
+          ~convert
+          ~state:(create precondition)
+          ~expression
+      in
+      let errors =
+        match errors with
+        | `Specific errors ->
+            errors
+        | `Undefined count ->
+            let rec errors sofar count =
+              let error =
+                "Undefined name [18]: Global name `undefined` is not defined, or there is \
+                 at least one control flow path that doesn't define `undefined`."
+              in
+              match count with
+              | 0 -> sofar
+              | count -> errors (error :: sofar) (count - 1)
             in
-            match count with
-            | 0 -> sofar
-            | count -> errors (error :: sofar) (count - 1)
-          in
-          errors [] count
+            errors [] count
+      in
+      assert_state_equal (create postcondition) forwarded;
+      assert_equal
+        ~cmp:list_orderless_equal
+        ~printer:(String.concat ~sep:"\n")
+        errors
+        (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
+      assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
     in
-    assert_state_equal (create postcondition) forwarded;
-    assert_equal
-      ~cmp:list_orderless_equal
-      ~printer:(String.concat ~sep:"\n")
-      errors
-      (State.errors forwarded |> List.map ~f:(Error.description ~show_error_traces:false));
-    assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
+    assertion ~convert:true;
+    Type.Variable.Namespace.reset ();
+    assertion ~convert:false
   in
 
   (* Access. *)
@@ -2491,7 +2504,7 @@ let test_forward_statement _ =
         | _ -> failwith "unable to parse test"
       in
       List.fold
-        ~f:(fun state statement -> State.forward_statement ~state ~statement)
+        ~f:(fun state statement -> State.forward_statement ~convert:true ~state ~statement)
         ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
         parsed
     in

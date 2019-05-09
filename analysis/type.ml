@@ -1263,6 +1263,10 @@ let is_unknown annotation =
   exists annotation ~predicate:is_top
 
 
+let is_undeclared annotation =
+  exists annotation ~predicate:(equal undeclared)
+
+
 module Callable = struct
   module Parameter = struct
     include Record.Callable.RecordParameter

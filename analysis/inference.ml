@@ -182,7 +182,7 @@ module State = struct
               match Node.value argument with
               | Access (SimpleAccess value) ->
                   let { resolved; _ } =
-                    TypeCheck.State.forward_expression ~state ~expression:argument
+                    TypeCheck.State.forward_expression ~convert:true ~state ~expression:argument
                   in
                   resolve_assign parameter_annotation resolved
                   >>| (fun refined ->
@@ -274,7 +274,7 @@ module State = struct
                   match value_access with
                   | [Access.Identifier _] ->
                       let { resolved; _ } =
-                        TypeCheck.State.forward_expression ~state ~expression:value
+                        TypeCheck.State.forward_expression ~convert:true ~state ~expression:value
                       in
                       resolve_assign target_annotation resolved
                       >>| (fun refined ->
@@ -317,7 +317,10 @@ module State = struct
               let target_annotations =
                 let resolve expression =
                   let { resolved; _ } =
-                    TypeCheck.State.forward_expression ~state:{ state with resolution } ~expression
+                    TypeCheck.State.forward_expression
+                      ~convert:true
+                      ~state:{ state with resolution }
+                      ~expression
                   in
                   resolved
                 in
@@ -331,6 +334,7 @@ module State = struct
           | _, _ ->
               let { resolved; _ } =
                 TypeCheck.State.forward_expression
+                  ~convert:true
                   ~state:{ state with resolution }
                   ~expression:target
               in

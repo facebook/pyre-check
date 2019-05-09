@@ -190,6 +190,8 @@ val exists: t -> predicate: (t -> bool) -> bool
 
 val is_unknown: t -> bool
 
+val is_undeclared: t -> bool
+
 module Callable : sig
   module Parameter: sig
     include module type of struct include Record.Callable.RecordParameter end

@@ -1061,6 +1061,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           let { TypeCheck.State.state; resolved = annotation; } =
             TypeCheck.State.forward_expression
+              ~convert:true
               ~state
               ~expression
           in
