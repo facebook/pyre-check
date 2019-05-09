@@ -120,48 +120,44 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.is_object primitive) ||
-     String.equal (Reference.show name) "object" then
-    (* Register normal annotations. *)
-    let register_supertype { Expression.Call.Argument.value; _ } =
-      let value = Expression.delocalize value in
-      match Node.value value with
-      | Call _
-      | Name _ ->
-          let supertype, parameters =
-            (* While building environment, allow untracked to parse into primitives *)
-            Resolution.parse_annotation
-              ~allow_untracked:true
-              ~allow_invalid_type_parameters:true
-              resolution
-              value
-            |> Type.split
-          in
-          if not (TypeOrder.contains (module Handler) supertype) &&
-             not (Type.is_top supertype) then
-            Log.log
-              ~section:`Environment
-              "Superclass annotation %a is missing"
-              Type.pp
-              supertype
-          else if Type.is_top supertype then
-            Statistics.event
-              ~name:"superclass of top"
-              ~section:`Environment
-              ~normals:["unresolved name", Expression.show value]
-              ()
-          else
-            connect ~predecessor:primitive ~successor:supertype ~parameters
-      | _ ->
-          ()
-    in
-    let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
-    inferred_base @ bases
-    (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
-    |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
-    |> List.iter ~f:register_supertype
-  else
-    ()
+  (* Register normal annotations. *)
+  let register_supertype { Expression.Call.Argument.value; _ } =
+    let value = Expression.delocalize value in
+    match Node.value value with
+    | Call _
+    | Name _ ->
+        let supertype, parameters =
+          (* While building environment, allow untracked to parse into primitives *)
+          Resolution.parse_annotation
+            ~allow_untracked:true
+            ~allow_invalid_type_parameters:true
+            resolution
+            value
+          |> Type.split
+        in
+        if not (TypeOrder.contains (module Handler) supertype) &&
+           not (Type.is_top supertype) then
+          Log.log
+            ~section:`Environment
+            "Superclass annotation %a is missing"
+            Type.pp
+            supertype
+        else if Type.is_top supertype then
+          Statistics.event
+            ~name:"superclass of top"
+            ~section:`Environment
+            ~normals:["unresolved name", Expression.show value]
+            ()
+        else
+          connect ~predecessor:primitive ~successor:supertype ~parameters
+    | _ ->
+        ()
+  in
+  let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
+  inferred_base @ bases
+  (* Don't register metaclass=abc.ABCMeta, etc. superclasses. *)
+  |> List.filter ~f:(fun { Expression.Call.Argument.name; _ } -> Option.is_none name)
+  |> List.iter ~f:register_supertype
 
 
 let handler
