@@ -3219,7 +3219,7 @@ let test_solve_less_or_equal _ =
       ?(attributes = (fun _ -> None))
       ?constraints
       ?(leave_unbound_in_left = [])
-      ?(postprocess = Type.Variable.mark_all_variables_as_bound ~simulated:false)
+      ?(postprocess = Type.Variable.mark_all_variables_as_bound)
       ?(replace_escaped_variables_with_any = false)
       expected =
     let handler =

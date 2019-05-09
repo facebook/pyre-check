@@ -327,11 +327,11 @@ module Variable : sig
   val is_covariant: t -> bool
   val is_free: t -> bool
   val namespace: t -> namespace: Namespace.t -> t
+  val mark_as_bound: t -> t
   val upper_bound: t -> type_t
 
-  val mark_all_variables_as_bound: ?simulated: bool -> type_t -> type_t
+  val mark_all_variables_as_bound: type_t -> type_t
   val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t
-  val free_all_simulated_bound_variables: type_t -> type_t
   val all_free_variables: type_t -> t list
   val all_variables_are_resolved: type_t -> bool
   val instantiate_all_free_variables: replacement:type_t -> type_t -> type_t

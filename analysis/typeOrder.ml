@@ -2087,29 +2087,59 @@ module OrderImplementation = struct
                 attributes (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
-              let candidate_attributes =
+              let candidate_attributes, transformations =
                 match candidate with
                 | Type.Callable _ as callable ->
-                    [Node.create_with_default_location
-                       {
-                         AnnotatedAttribute.name = "__call__";
-                         parent = callable;
-                         annotation = Annotation.create callable;
-                         value = Node.create_with_default_location (Expression.Ellipsis);
-                         defined = true;
-                         class_attribute = false;
-                         async = false;
-                         initialized = true;
-                         property = false;
-                         final = false;
-                         static = false;
-                       }]
-                    |> Option.some
+                    let attributes =
+                      [Node.create_with_default_location
+                         {
+                           AnnotatedAttribute.name = "__call__";
+                           parent = callable;
+                           annotation = Annotation.create callable;
+                           value = Node.create_with_default_location (Expression.Ellipsis);
+                           defined = true;
+                           class_attribute = false;
+                           async = false;
+                           initialized = true;
+                           property = false;
+                           final = false;
+                           static = false;
+                         }]
+                      |> Option.some
+                    in
+                    attributes, []
                 | _ ->
                     (* We don't return constraints for the candidate's free variables, so we must
                        underapproximate and determine conformance in the worst case *)
-                    Type.Variable.mark_all_variables_as_bound ~simulated:true candidate
-                    |> attributes
+                    let transformations, sanitized_candidate =
+                      let namespace = Type.Variable.Namespace.create_fresh () in
+                      let module SanitizeTransform = Type.Transform.Make(struct
+                          type state = (Type.Variable.t * Type.Variable.t) list
+
+                          let visit_children_before _ _ =
+                            true
+
+                          let visit_children_after =
+                            false
+
+                          let visit sofar = function
+                            | Type.Variable variable when Type.Variable.is_free variable ->
+                                let transformed_variable =
+                                  Type.Variable.namespace variable ~namespace
+                                  |> Type.Variable.mark_as_bound
+                                in
+                                {
+                                  Type.Transform.transformed_annotation =
+                                    Type.Variable transformed_variable;
+                                  new_state = (variable, transformed_variable) :: sofar;
+                                }
+                            | transformed_annotation ->
+                                { Type.Transform.transformed_annotation; new_state = sofar }
+                        end)
+                      in
+                      SanitizeTransform.visit [] candidate
+                    in
+                    attributes sanitized_candidate, transformations
               in
               match candidate_attributes, protocol_attributes with
               | Some all_candidate_attributes, Some all_protocol_attributes ->
@@ -2166,9 +2196,20 @@ module OrderImplementation = struct
                         []
                   in
                   let instantiate_protocol_generics solution =
+                    let desanitize_map = List.Assoc.inverse transformations in
+                    let desanitize =
+                      let constraints = function
+                        | Type.Variable variable ->
+                            List.Assoc.find desanitize_map variable ~equal:Type.Variable.equal
+                            >>| (fun variable -> Type.Variable variable)
+                        | _ ->
+                            None
+                      in
+                      Type.instantiate ~constraints
+                    in
                     protocol_generics
                     >>| List.map ~f:(Type.instantiate ~constraints:(Type.Map.find solution))
-                    >>| List.map ~f:(Type.Variable.free_all_simulated_bound_variables)
+                    >>| List.map ~f:desanitize
                     |> Option.value ~default:[]
                   in
                   Identifier.Map.merge

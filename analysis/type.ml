@@ -20,7 +20,6 @@ module Record = struct
     type state =
       | Free of { escaped: bool }
       | InFunction
-      | InSimulatedCall
     [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -2928,6 +2927,9 @@ module Variable = struct
   let namespace variable ~namespace =
     { variable with namespace }
 
+  let mark_as_bound variable =
+    { variable with state = InFunction }
+
   let upper_bound { constraints; _ } =
     match constraints with
     | Unconstrained ->
@@ -2943,11 +2945,10 @@ module Variable = struct
     | { state = Free { escaped }; _ } -> escaped
     | _ -> false
 
-  let mark_all_variables_as_bound ?(simulated = false) annotation =
-    let state = if simulated then InSimulatedCall else InFunction in
+  let mark_all_variables_as_bound annotation =
     let constraints annotation =
       match annotation with
-      | Variable variable -> Some (Variable { variable with state })
+      | Variable variable -> Some (Variable (mark_as_bound variable))
       | _ -> None
     in
     instantiate annotation ~constraints
@@ -2958,16 +2959,6 @@ module Variable = struct
       match annotation with
       | Variable ({ state = Free _; _ } as variable) ->
           Some (Variable (namespace variable ~namespace:into_namespace))
-      | _ -> None
-    in
-    instantiate annotation ~constraints
-
-
-  let free_all_simulated_bound_variables annotation =
-    let constraints annotation =
-      match annotation with
-      | Variable ({ state = InSimulatedCall;  _ } as variable) ->
-          Some (Variable { variable with state = Free { escaped = false } })
       | _ -> None
     in
     instantiate annotation ~constraints
