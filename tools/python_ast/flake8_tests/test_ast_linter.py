@@ -15,7 +15,7 @@ class ExpectedError(NamedTuple):
 
 class AstVisitorBaseCase(unittest.TestCase):
     def load_checker(self, test_file) -> AstChecker:
-        test_repository = "tools/pyre/python_ast/flake8_tests/mock_repository"
+        test_repository = "tools/pyre/tools/python_ast/flake8_tests/mock_repository"
         test_file = Path(test_repository) / test_file
         source_code = test_file.read_text()
         tree = ast.parse(source_code)

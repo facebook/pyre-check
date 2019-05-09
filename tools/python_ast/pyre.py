@@ -7,8 +7,8 @@ import os
 import subprocess
 from typing import Dict, Mapping  # noqa
 
-from ..client.commands.command import ExitCode
-from ..client.filesystem import find_root
+from ...client.commands.command import ExitCode
+from ...client.filesystem import find_root
 
 
 class PyreServerException(Exception):
