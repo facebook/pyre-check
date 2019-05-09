@@ -138,6 +138,7 @@ type kind =
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
+  | MissingOverloadImplementation of Reference.t
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option

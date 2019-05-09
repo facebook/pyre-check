@@ -159,6 +159,7 @@ type kind =
   | MissingArgument of { callee: Reference.t option; name: Identifier.t }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
+  | MissingOverloadImplementation of Reference.t
   | MissingParameterAnnotation of missing_annotation
   | MissingReturnAnnotation of missing_annotation
   | MutuallyRecursiveTypeVariables of Reference.t option
@@ -236,6 +237,7 @@ let code = function
   | InvalidInheritance _ -> 39
   | InvalidOverride _ -> 40
   | InvalidAssignment _ -> 41
+  | MissingOverloadImplementation _ -> 42
 
 
   (* Additional errors. *)
@@ -268,6 +270,7 @@ let name = function
   | MissingArgument _ -> "Missing argument"
   | MissingAttributeAnnotation _ -> "Missing attribute annotation"
   | MissingGlobalAnnotation _ -> "Missing global annotation"
+  | MissingOverloadImplementation _ -> "Missing overload implementation"
   | MissingParameterAnnotation _ -> "Missing parameter annotation"
   | MissingReturnAnnotation _ -> "Missing return annotation"
   | MutuallyRecursiveTypeVariables _ -> "Mutually recursive type variables"
@@ -979,6 +982,12 @@ let messages ~concise ~signature location kind =
                 pp_reference name
             ]
       end
+  | MissingOverloadImplementation name ->
+      [
+        Format.asprintf
+          "Overloaded function `%a` must have an implementation."
+          pp_reference name
+      ]
   | MissingParameterAnnotation { given_annotation; _ } when concise ->
       if Option.equal Type.equal given_annotation (Some Type.Any) then
         ["Parameter annotation cannot be `Any`."]
@@ -1556,6 +1565,7 @@ let due_to_analysis_limitations { kind; _ } =
   | MissingArgument _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
+  | MissingOverloadImplementation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MutuallyRecursiveTypeVariables _
@@ -1639,6 +1649,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidAssignment _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
+  | MissingOverloadImplementation _
   | MissingParameterAnnotation _
   | MissingReturnAnnotation _
   | MutuallyRecursiveTypeVariables _
@@ -1793,6 +1804,8 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
+    | MissingOverloadImplementation left, MissingOverloadImplementation right ->
+        Reference.equal left right
     | NotCallable left, NotCallable right ->
         Resolution.less_or_equal resolution ~left ~right
     | RedundantCast left, RedundantCast right ->
@@ -1870,6 +1883,7 @@ let less_or_equal ~resolution left right =
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
+    | MissingOverloadImplementation _, _
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
     | MutuallyRecursiveTypeVariables _, _
@@ -1968,6 +1982,9 @@ let join ~resolution left right =
     | MissingGlobalAnnotation left, MissingGlobalAnnotation right
       when Reference.equal_sanitized left.name right.name ->
         MissingGlobalAnnotation (join_missing_annotation left right)
+    | MissingOverloadImplementation left, MissingOverloadImplementation right
+      when Reference.equal left right ->
+        MissingOverloadImplementation left
     | NotCallable left, NotCallable right ->
         NotCallable (Resolution.join resolution left right)
     | ProhibitedAny left, ProhibitedAny right ->
@@ -2151,6 +2168,7 @@ let join ~resolution left right =
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
+    | MissingOverloadImplementation _, _
     | MissingParameterAnnotation _, _
     | MissingReturnAnnotation _, _
     | MutuallyRecursiveTypeVariables _, _
@@ -2230,6 +2248,8 @@ let join_at_source ~resolution errors =
     | { kind = MissingAttributeAnnotation { parent; missing_annotation = { name; _ }; _ }; _ } ->
         Type.show parent ^ Reference.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } ->
+        Reference.show_sanitized name
+    | { kind = MissingOverloadImplementation name; _ } ->
         Reference.show_sanitized name
     | { kind = UndefinedImport name; _ }
     | { kind = UndefinedName name; _ } ->
@@ -2589,6 +2609,8 @@ let dequalify
         MissingGlobalAnnotation {
           immutable_type with  annotation = annotation >>| dequalify;
         }
+    | MissingOverloadImplementation name ->
+        MissingOverloadImplementation name
     | MutuallyRecursiveTypeVariables callee ->
         MutuallyRecursiveTypeVariables callee
     | NotCallable annotation ->

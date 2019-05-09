@@ -604,11 +604,26 @@ module State = struct
       else
         errors
     in
+    let overload_errors errors =
+      if Statement.Define.is_overloaded_method define &&
+         Resolution.undecorated_signature resolution name
+         |> Option.is_none then
+        let error =
+          Error.create
+            ~location
+            ~kind:(Error.MissingOverloadImplementation name)
+            ~define:define_node
+        in
+        error :: errors
+      else
+        errors
+    in
     Set.to_list errors
     |> Error.join_at_define
       ~resolution
     |> Error.deduplicate
     |> class_initialization_errors
+    |> overload_errors
     |> Error.filter ~configuration ~resolution
 
 

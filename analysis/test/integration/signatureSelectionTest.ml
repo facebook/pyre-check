@@ -707,7 +707,10 @@ let test_check_function_overloads _ =
       def herp(x: Foo) -> int:
         return x.derp(5)
     |}
-    [];
+    [
+      "Missing overload implementation [42]: Overloaded function `Foo.derp` \
+       must have an implementation."
+    ];
 
   assert_type_errors
     {|
@@ -724,7 +727,11 @@ let test_check_function_overloads _ =
       def herp(x: Foo) -> int:
         return x.derp(True)
     |}
-    ["Missing argument [20]: Call `Foo.derp` expects argument `y`."];
+    [
+      "Missing overload implementation [42]: Overloaded function `Foo.derp` \
+       must have an implementation.";
+      "Missing argument [20]: Call `Foo.derp` expects argument `y`."
+    ];
 
   assert_type_errors
     {|

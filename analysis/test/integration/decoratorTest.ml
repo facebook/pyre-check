@@ -275,7 +275,10 @@ let test_decorators _ =
       def overloaded() -> int:
         pass
     |}
-    [];
+    [
+      "Missing overload implementation [42]: Overloaded function `overloaded` \
+       must have an implementation."
+    ];
 
   assert_type_errors
     {|
@@ -284,7 +287,10 @@ let test_decorators _ =
       def overloaded() -> int:
         pass
     |}
-    [];
+    [
+      "Missing overload implementation [42]: Overloaded function `overloaded` \
+       must have an implementation."
+    ];
 
   assert_type_errors
     {|
