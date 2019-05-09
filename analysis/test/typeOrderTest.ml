@@ -3105,14 +3105,18 @@ let test_variables _ =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
-    insert order Type.generic;
+    insert order Type.generic_primitive;
     insert order !"A";
     insert order !"B";
-    connect ~parameters:[Type.variable "T"] order ~predecessor:!"A" ~successor:Type.generic;
+    connect
+      order
+      ~parameters:[Type.variable "T"]
+      ~predecessor:!"A"
+      ~successor:Type.generic_primitive;
     connect order ~predecessor:Type.Bottom ~successor:!"A";
     connect order ~predecessor:Type.Bottom ~successor:!"B";
     connect order ~predecessor:!"B" ~successor:Type.Top;
-    connect order ~predecessor:Type.generic ~successor:Type.Top;
+    connect order ~predecessor:Type.generic_primitive ~successor:Type.Top;
     order
   in
   let assert_variables ~expected source =
@@ -3134,7 +3138,7 @@ let test_is_instantiated _ =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
     insert order Type.Top;
-    insert order Type.generic;
+    insert order Type.generic_primitive;
     insert order !"A";
     insert order !"B";
     connect order ~predecessor:Type.Bottom ~successor:!"A";

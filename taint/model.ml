@@ -451,7 +451,7 @@ let create ~resolution ?(verify = true) ~configuration source =
         let call_target = (call_target :> Callable.t) in
         let annotation = Resolution.resolve resolution (Reference.expression ~convert:true name) in
         let () =
-          if Type.equal annotation Type.Top then
+          if Type.is_top annotation then
             raise_invalid_model "Modeled entity is not part of the environment!"
         in
         (* Check model matches callables primary signature. *)
@@ -522,7 +522,7 @@ let get_callsite_model ~resolution ~call_target ~arguments =
       let is_list_argument { Argument.name; value } =
         let annotation = Resolution.resolve resolution value in
         Option.is_none name &&
-        not (Type.equal annotation Type.Bottom) &&
+        not (Type.is_unbound annotation) &&
         not (Type.equal annotation Type.string) &&
         Resolution.less_or_equal
           resolution

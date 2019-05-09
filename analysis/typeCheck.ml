@@ -345,13 +345,13 @@ module State = struct
     let is_aliased_to_any =
       (* Special-case expressions typed as Any to be valid types. *)
       match annotation with
-      | Type.Primitive _ -> Type.equal resolved Type.Any
+      | Type.Primitive _ -> Type.is_any resolved
       | _ -> false
     in
     let check_untracked_annotation errors annotation =
       if Resolution.is_tracked resolution annotation || is_aliased_to_any then
         errors
-      else if not (Type.is_unknown resolved || Type.equal resolved Type.Any) then
+      else if not (Type.is_unknown resolved || Type.is_any resolved) then
         Error.create ~location ~kind:(Error.InvalidType (InvalidType annotation)) ~define :: errors
       else
         Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
@@ -426,7 +426,7 @@ module State = struct
         expression
     in
     let errors =
-      if Type.equal annotation Type.Top then
+      if Type.is_top annotation then
         (* Could not even parse expression. *)
         Error.create
           ~location
@@ -470,7 +470,7 @@ module State = struct
            let location = Attribute.location attribute in
            match Attribute.name attribute with
            | name
-             when not (Type.equal expected Type.Top ||
+             when not (Type.is_top expected ||
                        Attribute.initialized attribute) ->
                let reference =
                  Reference.create_from_list [(Statement.Define.self_identifier define); name]
@@ -507,7 +507,7 @@ module State = struct
                         resolution
                         ~left:actual
                         ~right:expected)
-                     || (Type.equal actual Type.Top))
+                     || (Type.is_top actual))
                  && not final
                  then
                    errors
@@ -1487,7 +1487,7 @@ module State = struct
             (state, annotations)
             { Node.location; value = { Parameter.name; value; annotation } } =
           let add_incompatible_variable_error ~state ~value annotation default =
-            if Type.equal default Type.Any ||
+            if Type.is_any default ||
                Resolution.less_or_equal resolution ~left:default ~right:annotation ||
                Resolution.constraints_solution_exists resolution ~left:default ~right:annotation
             then
@@ -1918,7 +1918,7 @@ module State = struct
                              ~right:actual
                          in
                          try
-                           if not (Type.equal Type.Top expected) && not is_compatible then
+                           if not (Type.is_top expected) && not is_compatible then
                              let error =
                                Error.create
                                  ~location
@@ -2133,7 +2133,7 @@ module State = struct
       in
       let correct_bottom { state; resolved } =
         let resolved =
-          if Type.equal Type.Bottom resolved then
+          if Type.is_unbound resolved then
             Type.variable "_T"
             |> Type.Variable.mark_all_free_variables_as_escaped
           else
@@ -2652,14 +2652,14 @@ module State = struct
           List.fold entries ~f:forward_entry ~init:(Type.Bottom, Type.Bottom, state)
         in
         let key =
-          if List.is_empty keywords && Type.equal Type.Bottom key then
+          if List.is_empty keywords && Type.is_unbound key then
             Type.variable "_KT"
             |> Type.Variable.mark_all_free_variables_as_escaped
           else
             key
         in
         let value =
-          if List.is_empty keywords && Type.equal Type.Bottom value then
+          if List.is_empty keywords && Type.is_unbound value then
             Type.variable "_VT"
             |> Type.Variable.mark_all_free_variables_as_escaped
           else
@@ -3308,12 +3308,12 @@ module State = struct
                         else
                           Type.contains_any annotation
                       in
-                      Type.equal expected Type.Top || contains_any expected, is_toplevel
+                      Type.is_top expected || contains_any expected, is_toplevel
                   | _ ->
                       false, false
                 in
                 let actual_annotation, evidence_locations =
-                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipsis then
+                  if Type.is_top resolved || Type.equal resolved Type.ellipsis then
                     None, []
                   else
                     Some resolved, [instantiate location]
@@ -3711,18 +3711,18 @@ module State = struct
                     ~resolution
                     existing_annotation
                     (Annotation.create annotation)
-                  && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
+                  && not (Type.is_unbound (Annotation.annotation existing_annotation))
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
                 in
                 match Resolution.get_local resolution ~reference with
                 (* Allow Anys [especially from placeholder stubs] to clobber *)
-                | _ when Type.equal annotation Type.Any ->
+                | _ when Type.is_any annotation ->
                     Annotation.create annotation
                 | Some existing_annotation when refinement_unnecessary existing_annotation ->
                     existing_annotation
                 (* Clarify Anys if possible *)
                 | Some existing_annotation
-                  when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
+                  when Type.is_any (Annotation.annotation existing_annotation) ->
                     Annotation.create annotation
                 | None ->
                     Annotation.create annotation
@@ -3730,7 +3730,7 @@ module State = struct
                     let { consistent_with_boundary; _ } =
                       partition (Annotation.annotation existing_annotation) ~boundary:annotation
                     in
-                    if Type.equal consistent_with_boundary Type.Bottom then
+                    if Type.is_unbound consistent_with_boundary then
                       Annotation.create annotation
                     else
                       Annotation.create consistent_with_boundary
@@ -3787,7 +3787,7 @@ module State = struct
                   | expected ->
                       let { resolved; _ } = forward_expression ~state ~expression:value in
                       if
-                        Type.equal resolved Type.Bottom
+                        Type.is_unbound resolved
                         || Type.is_unknown resolved
                         || not (Resolution.less_or_equal resolution ~left:resolved ~right:expected)
                       then

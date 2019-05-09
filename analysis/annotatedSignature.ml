@@ -454,7 +454,7 @@ let select
                         |> add_annotation_error signature_match
                       in
                       let iterable_constraints =
-                        if Type.equal annotation Type.Bottom then
+                        if Type.is_unbound annotation then
                           []
                         else
                           Resolution.solve_less_or_equal
@@ -486,7 +486,7 @@ let select
                           resolved
                       in
                       if Type.is_meta parameter_annotation &&
-                         Type.equal argument_annotation Type.Top then
+                         Type.is_top argument_annotation then
                         Resolution.parse_annotation resolution expression
                         |> Type.meta
                         |> set_constraints_and_reasons

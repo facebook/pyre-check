@@ -59,7 +59,7 @@ module ExpressionVisitor = struct
     let resolve ~expression =
       try
         let annotation = Resolution.resolve resolution expression in
-        if (Type.equal annotation Type.Top) || (Type.is_unbound annotation) then
+        if (Type.is_top annotation) || (Type.is_unbound annotation) then
           None
         else
           Some annotation

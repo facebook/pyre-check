@@ -31,8 +31,8 @@ let refine ~resolution { annotation; mutability } refined =
             |> Option.value ~default:annotation
       in
       let refine =
-        Type.equal refined Type.Top ||
-        (not (Type.equal refined Type.Bottom) &&
+        Type.is_top refined ||
+        (not (Type.is_unbound refined) &&
          Resolution.less_or_equal resolution ~left:refined ~right:original)
       in
       if refine then

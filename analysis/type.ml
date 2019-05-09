@@ -246,6 +246,133 @@ module Cache = struct
     enabled := true
 end
 
+
+let is_any = function
+  | Any -> true
+  | _ -> false
+
+
+let is_async_iterator = function
+  | Parametric { name = "typing.AsyncIterator"; _ } ->
+      true
+  | _ ->
+      false
+
+
+let is_callable = function
+  | Callable _ -> true
+  | _ -> false
+
+
+let is_dictionary ?(with_key = None) = function
+  | Parametric { name = "dict"; parameters } ->
+      begin
+        match with_key, parameters with
+        | Some key, key_parameter :: [_] -> equal key key_parameter
+        | _ -> true
+      end
+  | _ ->
+      false
+
+
+let is_ellipsis = function
+  | Primitive "ellipsis" -> true
+  | _ -> false
+
+
+let is_final = function
+  | Parametric { name = "typing.Final"; _ } -> true
+  | _ -> false
+
+
+let is_generator = function
+  | Parametric { name = ("typing.Generator" | "typing.AsyncGenerator"); _ } ->
+      true
+  | _ ->
+      false
+
+
+let is_generic_primitive = function
+  | Primitive "typing.Generic" ->
+      true
+  | _ ->
+      false
+
+
+let is_iterable = function
+  | Parametric { name = "typing.Iterable"; _ } ->
+      true
+  | _ ->
+      false
+
+
+let is_iterator = function
+  | Parametric { name = "typing.Iterator"; _ } ->
+      true
+  | _ ->
+      false
+
+
+let is_meta = function
+  | Parametric { name = "type"; _ } -> true
+  | _ -> false
+
+
+let is_none = function
+  | Optional Bottom -> true
+  | _ -> false
+
+
+let is_noreturn = function
+  | Primitive "typing.NoReturn" -> true
+  | _ -> false
+
+
+let is_object = function
+  | Primitive "object" -> true
+  | _ -> false
+
+
+let is_optional = function
+  | Optional _ -> true
+  | _ -> false
+
+
+let is_optional_primitive = function
+  | Primitive "typing.Optional" -> true
+  | _ -> false
+
+
+let is_primitive = function
+  | Primitive _ -> true
+  | _ -> false
+
+
+let is_top = function
+  | Top -> true
+  | _ -> false
+
+
+let is_tuple = function
+  | Tuple _ -> true
+  | _ -> false
+
+
+let is_type_alias = function
+  | Primitive "typing.TypeAlias" -> true
+  | _ -> false
+
+
+let is_typed_dictionary = function
+  | TypedDictionary _ -> true
+  | _ -> false
+
+
+let is_unbound = function
+  | Bottom -> true
+  | _ -> false
+
+
 let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"
@@ -331,7 +458,7 @@ let rec pp format annotation =
       let parameters =
         if List.for_all
             parameters
-            ~f:(fun parameter -> equal parameter Bottom || equal parameter Top) then
+            ~f:(fun parameter -> is_unbound parameter || is_top parameter) then
           ""
         else
           List.map parameters ~f:show
@@ -469,7 +596,7 @@ let rec pp_concise format annotation =
       let name = strip_qualification (reverse_substitute name) in
       if List.for_all
           parameters
-          ~f:(fun parameter -> equal parameter Bottom || equal parameter Top)
+          ~f:(fun parameter -> is_unbound parameter || is_top parameter)
       then
         Format.fprintf format "%s[]" name
       else
@@ -576,7 +703,7 @@ let generator ?(async=false) parameter =
     }
 
 
-let generic =
+let generic_primitive =
   Primitive "typing.Generic"
 
 
@@ -725,21 +852,19 @@ let union parameters =
   in
   if List.mem ~equal parameters undeclared then
     Union parameters
-  else if List.mem ~equal parameters Any then
+  else if List.exists ~f:is_any parameters then
     Any
-  else if List.mem ~equal parameters Top then
+  else if List.exists ~f:is_top parameters then
     Top
   else
     let normalize parameters =
-      let parameters = List.filter parameters ~f:(function | Bottom -> false | _ -> true) in
+      let parameters =
+        List.filter parameters ~f:(function parameter -> not (is_unbound parameter))
+      in
       match parameters with
       | [] -> Bottom
       | [parameter] -> parameter
       | parameters -> Union parameters
-    in
-    let is_optional = function
-      | Optional _ -> true
-      | _ -> false
     in
     let extract_optional_parameter = function
       | Optional parameter -> parameter
@@ -747,7 +872,7 @@ let union parameters =
     in
     if (List.exists parameters ~f:is_optional) then
       parameters
-      |> List.filter ~f:(fun parameter -> not (equal none parameter))
+      |> List.filter ~f:(fun parameter -> not (is_none parameter))
       |> List.map ~f:extract_optional_parameter
       |> normalize
       |> (fun union -> Optional union)
@@ -1135,7 +1260,7 @@ let exists annotation ~predicate =
 
 
 let is_unknown annotation =
-  exists annotation ~predicate:(function | Top -> true | _ -> false)
+  exists annotation ~predicate:is_top
 
 
 module Callable = struct
@@ -2468,125 +2593,11 @@ let create ?(convert = false) ~aliases =
     create_logic_new ~use_cache:true ~aliases
 
 let contains_callable annotation =
-  exists annotation ~predicate:(function | Callable _ -> true | _ -> false)
-
-
-let is_callable = function
-  | Callable _ -> true
-  | _ -> false
-
-
-let is_dictionary ?(with_key = None) = function
-  | Parametric { name = "dict"; parameters } ->
-      begin
-        match with_key, parameters with
-        | Some key, key_parameter :: [_] -> equal key key_parameter
-        | _ -> true
-      end
-  | _ ->
-      false
-
-
-let is_ellipsis = function
-  | Primitive "ellipsis" -> true
-  | _ -> false
-
-
-let is_final = function
-  | Parametric { name = "typing.Final"; _ } -> true
-  | _ -> false
-
-
-let is_generator = function
-  | Parametric { name = ("typing.Generator" | "typing.AsyncGenerator"); _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_generic = function
-  | Parametric { name = "typing.Generic"; _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_iterable = function
-  | Parametric { name = "typing.Iterable"; _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_iterator = function
-  | Parametric { name = "typing.Iterator"; _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_async_iterator = function
-  | Parametric { name = "typing.AsyncIterator"; _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_meta = function
-  | Parametric { name = "type"; _ } -> true
-  | _ -> false
-
-
-let is_none = function
-  | Optional Bottom -> true
-  | _ -> false
-
-
-let is_noreturn = function
-  | Primitive "typing.NoReturn" -> true
-  | _ -> false
-
-
-let is_optional = function
-  | Optional _ -> true
-  | _ -> false
-
-
-let is_optional_primitive = function
-  | Primitive "typing.Optional" -> true
-  | _ -> false
-
-
-let is_primitive = function
-  | Primitive _ -> true
-  | _ -> false
-
-
-let is_protocol = function
-  | Parametric { name = "typing.Protocol"; _ } ->
-      true
-  | _ ->
-      false
-
-
-let is_tuple (annotation: t) =
-  match annotation with
-  | Tuple _ -> true
-  | _ -> false
-
-
-let is_typed_dictionary = function
-  | TypedDictionary _ -> true
-  | _ -> false
-
-
-let is_unbound = function
-  | Bottom -> true
-  | _ -> false
+  exists annotation ~predicate:is_callable
 
 
 let contains_any annotation =
-  exists annotation ~predicate:(function | Any -> true | _ -> false)
+  exists annotation ~predicate:is_any
 
 
 module LiteralAnyVisitor = struct
@@ -2625,9 +2636,6 @@ end
 
 (* Check if there is a literal Any provided, not including type aliases to Any. *)
 let expression_contains_any = LiteralAnyVisitor.expression_contains_any
-
-
-let is_type_alias annotation = equal annotation (Primitive "typing.TypeAlias")
 
 
 let is_not_instantiated annotation =
@@ -2724,15 +2732,15 @@ let elements annotation =
   |> List.rev
 
 
-let is_partially_typed annotation =
-  exists annotation ~predicate:(function | Any | Top | Bottom -> true | _ -> false)
-
-
 let is_untyped = function
   | Any
   | Bottom
   | Top -> true
   | _ -> false
+
+
+let is_partially_typed annotation =
+  exists annotation ~predicate:is_untyped
 
 
 let optional_value = function

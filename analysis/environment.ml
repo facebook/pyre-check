@@ -102,7 +102,7 @@ let connect_definition
     let cycle_with_top =
       match predecessor, successor with
       | Type.Top, _ -> true
-      | Type.Any, successor when not (Type.equal successor Type.Top) -> true
+      | Type.Any, successor when not (Type.is_top successor) -> true
       | _ -> false
     in
     if annotations_tracked && not primitive_cycle && not cycle_with_top then
@@ -120,7 +120,7 @@ let connect_definition
     | None ->
         ()
   end;
-  if not (Type.equal primitive Type.object_primitive) ||
+  if not (Type.is_object primitive) ||
      String.equal (Reference.show name) "object" then
     (* Register normal annotations. *)
     let register_supertype { Expression.Call.Argument.value; _ } =
@@ -138,13 +138,13 @@ let connect_definition
             |> Type.split
           in
           if not (TypeOrder.contains (module Handler) supertype) &&
-             not (Type.equal supertype Type.Top) then
+             not (Type.is_top supertype) then
             Log.log
               ~section:`Environment
               "Superclass annotation %a is missing"
               Type.pp
               supertype
-          else if Type.equal supertype Type.Top then
+          else if Type.is_top supertype then
             Statistics.event
               ~name:"superclass of top"
               ~section:`Environment
@@ -491,7 +491,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
                 };
               _;
             } ->
-              if not (Type.equal target_annotation Type.Top) then
+              if not (Type.is_top target_annotation) then
                 { UnresolvedAlias.handle; target; value } :: aliases
               else
                 aliases
@@ -503,7 +503,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
                   });
               _;
             } as value) ->
-              if not (Type.equal target_annotation Type.Top) then
+              if not (Type.is_top target_annotation) then
                 { UnresolvedAlias.handle; target; value } :: aliases
               else
                 aliases
@@ -511,8 +511,8 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
           | Name _, None ->
               let value = Expression.delocalize value in
               let value_annotation = Type.create ~aliases:Handler.aliases value in
-              if not (Type.equal target_annotation Type.Top ||
-                      Type.equal value_annotation Type.Top ||
+              if not (Type.is_top target_annotation ||
+                      Type.is_top value_annotation ||
                       Type.equal value_annotation target_annotation) then
                 { UnresolvedAlias.handle; target; value } :: aliases
               else

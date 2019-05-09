@@ -145,7 +145,7 @@ val ellipsis: t
 val enumeration: t
 val float: t
 val generator: ?async: bool -> t -> t
-val generic: t
+val generic_primitive: t
 val integer: t
 val literal_integer: int -> t
 val iterable: t -> t
@@ -250,28 +250,30 @@ val create
 
 val contains_callable: t -> bool
 
+val is_any: t -> bool
+val is_async_iterator: t -> bool
 val is_callable: t -> bool
 val is_dictionary: ?with_key: t option -> t -> bool
 val is_ellipsis: t -> bool
 val is_final: t -> bool
 val is_generator: t -> bool
-val is_generic: t -> bool
+val is_generic_primitive: t -> bool
 val is_iterable: t -> bool
 val is_iterator: t -> bool
-val is_async_iterator: t -> bool
 val is_meta: t -> bool
 val is_none: t -> bool
 val is_noreturn: t -> bool
+val is_object: t -> bool
 val is_optional: t -> bool
 val is_optional_primitive: t -> bool
 val is_primitive: t -> bool
-val is_protocol: t -> bool
+val is_top: t -> bool
 val is_tuple: t -> bool
+val is_type_alias: t -> bool
 val is_typed_dictionary: t -> bool
 val is_unbound: t -> bool
 val contains_any: t -> bool
 val expression_contains_any: Expression.t -> bool
-val is_type_alias: t -> bool
 
 (* Contains `Bottom` or variables. *)
 val is_not_instantiated: t -> bool

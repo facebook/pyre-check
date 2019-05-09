@@ -397,7 +397,7 @@ let variables (module Handler: Handler) annotation =
          proxying to the Callable instance in the type order here. *)
       Some [Type.Variable (Type.Variable.create ~variance:Covariant "_T_meta")]
   | primitive, _ ->
-      Handler.find (Handler.indices ()) Type.generic
+      Handler.find (Handler.indices ()) Type.generic_primitive
       >>= fun generic_index ->
       Handler.find (Handler.indices ()) primitive
       >>= fun primitive_index ->
@@ -906,7 +906,7 @@ module OrderImplementation = struct
             let right_primitive, right_parameters = Type.split right in
             raise_if_untracked handler left_primitive;
             raise_if_untracked handler right_primitive;
-            let generic_index = Handler.find (Handler.indices ()) Type.generic in
+            let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
             let left_variables = variables handler left in
 
             if Type.equal left_primitive right_primitive then
@@ -1906,7 +1906,7 @@ module OrderImplementation = struct
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
 
-      let generic_index = Handler.find (Handler.indices ()) Type.generic in
+      let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
 
       let worklist = Queue.create () in
       Queue.enqueue
@@ -1948,7 +1948,7 @@ module OrderImplementation = struct
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
 
-      let generic_index = Handler.find (Handler.indices ()) Type.generic in
+      let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
 
       let worklist = Queue.create () in
       Queue.enqueue
@@ -2052,7 +2052,7 @@ module OrderImplementation = struct
         ~candidate
         ~protocol =
       let find_generic_parameters name =
-        let generic_index = Handler.find (Handler.indices ()) Type.generic in
+        let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
         let index = index_of handler (Type.Primitive name) in
         Handler.find (Handler.edges ()) index
         >>= get_generic_parameters ~generic_index
@@ -2081,8 +2081,8 @@ module OrderImplementation = struct
               let protocol_attributes =
                 let is_not_object_or_generic_method
                     { Node.value = {AnnotatedAttribute.parent; _}; _} =
-                  not (Type.equal parent Type.object_primitive) &&
-                  not (Type.equal parent Type.generic)
+                  not (Type.is_object parent) &&
+                  not (Type.is_generic_primitive parent)
                 in
                 attributes (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
@@ -2522,7 +2522,7 @@ module Builder = struct
       (* Special forms *)
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
-      singleton Type.generic;
+      singleton Type.generic_primitive;
       singleton (Type.Primitive "typing.Protocol");
       singleton (Type.Primitive "typing.Callable");
       singleton (Type.Primitive "typing.FrozenSet");
@@ -2579,7 +2579,11 @@ module Builder = struct
     let type_variable = Type.Variable (Type.Variable.create "_T") in
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
-    connect handler ~predecessor:type_builtin ~parameters:[type_variable] ~successor:Type.generic;
+    connect
+      handler
+      ~predecessor:type_builtin
+      ~parameters:[type_variable]
+      ~successor:Type.generic_primitive;
 
     let typed_dictionary = Type.Primitive "TypedDictionary" in
     let non_total_typed_dictionary = Type.Primitive "NonTotalTypedDictionary" in
@@ -2604,7 +2608,7 @@ module Builder = struct
         Type.Variable (Type.Variable.create "_T2");
       ]
       ~predecessor:typing_mapping
-      ~successor:Type.generic;
+      ~successor:Type.generic_primitive;
 
     order
 end

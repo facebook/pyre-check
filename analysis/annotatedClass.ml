@@ -206,11 +206,9 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
       Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     in
     match annotation with
-    | Type.Parametric { parameters; _ }
-      when Type.is_generic annotation ->
+    | Type.Parametric { name = "typing.Generic"; parameters; } ->
         Some parameters
-    | Type.Parametric { parameters; _ }
-      when Type.is_protocol annotation ->
+    | Type.Parametric { name = "typing.Protocol"; parameters } ->
         Some parameters
     | _ ->
         None
@@ -228,7 +226,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
       Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
       |> Type.split
     in
-    Type.equal primitive Type.generic
+    Type.is_generic_primitive primitive
   in
   if List.exists ~f:is_generic bases then
     []

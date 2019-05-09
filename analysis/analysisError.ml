@@ -607,7 +607,7 @@ let messages ~concise ~signature location kind =
       let detail =
         match override with
         | WeakenedPostcondition { actual; expected; due_to_invariance; _ } ->
-            if Type.equal actual Type.Top then
+            if Type.is_top actual then
               Format.asprintf
                 "The overriding %s is not annotated but should return a subtype of `%a`."
                 kind
@@ -826,7 +826,7 @@ let messages ~concise ~signature location kind =
       in
       [Format.asprintf "%s expects argument `%a`." callee pp_identifier name]
   | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
+      if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Attribute annotation cannot be `Any`."]
       else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
         ["Attribute annotation cannot contain `Any`."]
@@ -839,7 +839,7 @@ let messages ~concise ~signature location kind =
           when not (Type.is_concrete annotation) ->
             begin
               match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Any ->
+              | Some given_annotation when Type.is_any given_annotation ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` must have a type other than `Any`."
@@ -877,7 +877,7 @@ let messages ~concise ~signature location kind =
             in
             begin
               match given_annotation with
-              | Some given_annotation when Type.equal given_annotation Type.Any ->
+              | Some given_annotation when Type.is_any given_annotation ->
                   [
                     Format.asprintf
                       "Attribute `%a` of class `%a` has type `%a` but type `Any` is specified."
@@ -914,7 +914,7 @@ let messages ~concise ~signature location kind =
             ]
       end
   | MissingGlobalAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
+      if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Global annotation cannot be `Any`."]
       else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
         ["Global annotation cannot contain `Any`."]
@@ -934,7 +934,7 @@ let messages ~concise ~signature location kind =
           |> String.concat ~sep:", "
         in
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Globally accessible variable `%a` has type `%a` but type `Any` is specified."
@@ -978,7 +978,7 @@ let messages ~concise ~signature location kind =
   | MissingGlobalAnnotation { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Globally accessible variable `%a` must be specified as type other than `Any`."
@@ -1005,7 +1005,7 @@ let messages ~concise ~signature location kind =
           pp_reference name
       ]
   | MissingParameterAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
+      if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Parameter annotation cannot be `Any`."]
       else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
         ["Parameter annotation cannot contain `Any`."]
@@ -1015,7 +1015,7 @@ let messages ~concise ~signature location kind =
     when Type.is_concrete annotation ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Parameter `%a` has type `%a` but type `Any` is specified."
@@ -1041,7 +1041,7 @@ let messages ~concise ~signature location kind =
   | MissingParameterAnnotation { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Parameter `%a` must have a type other than `Any`."
@@ -1061,7 +1061,7 @@ let messages ~concise ~signature location kind =
             ]
       end
   | MissingReturnAnnotation { given_annotation; _ } when concise ->
-      if Option.equal Type.equal given_annotation (Some Type.Any) then
+      if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Return annotation cannot be `Any`."]
       else if given_annotation >>| Type.contains_any |> Option.value ~default:false then
         ["Return annotation cannot contain `Any`."]
@@ -1089,7 +1089,7 @@ let messages ~concise ~signature location kind =
       in
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               (Format.asprintf
                  "Returning `%a` but type `Any` is specified."
@@ -1115,7 +1115,7 @@ let messages ~concise ~signature location kind =
   | MissingReturnAnnotation { given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             ["Return type must be specified as type other than `Any`."]
         | Some given_annotation when Type.contains_any given_annotation ->
             ["Return type must be specified as type that does not contain `Any`."]
@@ -1135,7 +1135,7 @@ let messages ~concise ~signature location kind =
       [ Format.asprintf "`%a` is not a function." pp_type annotation ]
 
   | ProhibitedAny { given_annotation; _ } when concise ->
-      if given_annotation >>| Type.equal Type.Any |> Option.value ~default:false then
+      if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Given annotation cannot be `Any`."]
       else
         ["Given annotation cannot contain `Any`."]
@@ -1143,7 +1143,7 @@ let messages ~concise ~signature location kind =
     when Type.is_concrete annotation ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Expression `%a` has type `%a`; given explicit type cannot be `Any`."
@@ -1161,7 +1161,7 @@ let messages ~concise ~signature location kind =
   | ProhibitedAny { name; given_annotation; _ } ->
       begin
         match given_annotation with
-        | Some given_annotation when Type.equal given_annotation Type.Any ->
+        | Some given_annotation when Type.is_any given_annotation ->
             [
               Format.asprintf
                 "Explicit annotation for `%a` cannot be `Any`."
@@ -1622,7 +1622,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
-      Type.equal actual Type.Any
+      Type.is_any actual
   | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
   | InconsistentOverride
       { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ }); _ }
@@ -2314,7 +2314,7 @@ let filter ~configuration ~resolution errors =
       | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ } ->
           let is_subclass_of_mock annotation =
             try
-              (not (Type.equal annotation Type.Bottom)) &&
+              (not (Type.is_unbound annotation)) &&
               ((Resolution.less_or_equal
                   resolution
                   ~left:annotation
@@ -2526,9 +2526,7 @@ let suppress ~mode ~resolution error =
     | MissingParameterAnnotation { annotation = Some actual; _ }
     | MissingAttributeAnnotation { missing_annotation = { annotation = Some actual; _ }; _ }
     | MissingGlobalAnnotation { annotation = Some actual; _ } ->
-        Type.equal actual Type.Top ||
-        Type.equal actual Type.Any ||
-        Type.equal actual Type.Bottom
+        Type.is_untyped actual
     | _ ->
         true
   in

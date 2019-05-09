@@ -336,9 +336,9 @@ let test_exists _ =
   assert_true
     (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal child));
   assert_true
-    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal Type.Top));
+    (TypeConstraints.exists constraints_with_child ~predicate:Type.is_top);
   assert_false
-    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal Type.Bottom));
+    (TypeConstraints.exists constraints_with_child ~predicate:Type.is_unbound);
   ()
 
 
