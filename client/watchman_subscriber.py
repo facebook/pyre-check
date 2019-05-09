@@ -135,6 +135,7 @@ class WatchmanSubscriber(object):
             pid = os.fork()
             if pid == 0:
                 try:
+                    LOG.propagate = False
                     # Closing the sys.stdout and stderr file descriptors here causes
                     # the program to crash when attempting to log.
                     os.close(sys.stdout.fileno())
