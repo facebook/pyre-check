@@ -560,7 +560,6 @@ let resolve_aliases (module Handler: Handler) alias_entries =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let register_alias (any_changed, unresolved) { AliasEntry.handle; target; value } =
     let target_primitive_name = Reference.show target in
-    let target_primitive = Type.Primitive target_primitive_name in
     let value_annotation =
       match Type.create ~aliases:Handler.aliases value with
       | Type.Variable variable ->
@@ -606,7 +605,7 @@ let resolve_aliases (module Handler: Handler) alias_entries =
       end)
     in
     let all_valid, value_annotation = TrackedTransform.visit true value_annotation in
-    if all_valid && not (TypeOrder.contains order target_primitive) then
+    if all_valid then
       begin
         Handler.register_alias ~handle ~key:target_primitive_name ~data:value_annotation;
         (true, unresolved)

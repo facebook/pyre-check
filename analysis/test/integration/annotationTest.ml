@@ -1323,7 +1323,22 @@ let test_check_aliases _ =
       class C(typing_extensions.Protocol[int]):
         ...
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      class FOO:
+        x: int = 0
+      class BAR:
+        pass
+      FOO = BAR
+      def foo(a: FOO) -> int:
+        return a.x
+      foo(FOO())
+    |}
+    [
+      "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `BAR` has no attribute `x`.";
+    ]
 
 
 let test_final_type _ =
