@@ -1426,6 +1426,9 @@ module State = struct
                   | _ ->
                       false
                 end
+            | Expression.Name (Expression.Name.Attribute { attribute; _ })
+              when String.equal attribute suffix ->
+                true
             | _ -> false
           in
           let is_property_derivative decorator =

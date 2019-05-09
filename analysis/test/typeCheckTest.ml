@@ -75,44 +75,48 @@ let list_orderless_equal left right =
 
 let test_initial _ =
   let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
-    let resolution =
-      parse environment
-      |> (fun source -> source :: (Test.typeshed_stubs ()))
-      |> (fun sources -> Test.resolution ~sources ())
-    in
-    let initial =
-      let define =
-        match parse_single_statement ~convert:true define with
-        | { Node.value = Define define; _ } ->
-            let signature = { define.signature with parent = parent >>| Reference.create } in
-            { define with signature }
-        | _ ->
-            failwith "Unable to parse define."
+    let assertion ~convert =
+      let resolution =
+        parse environment
+        |> (fun source -> source :: (Test.typeshed_stubs ()))
+        |> (fun sources -> Test.resolution ~sources ())
       in
-      let variables =
-        let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
-          match annotation with
-          | None -> []
-          | Some annotation ->
-              let annotation = Resolution.parse_annotation resolution annotation in
-              Type.Variable.all_free_variables annotation
-              |> List.map ~f:(fun variable -> Type.Variable variable)
+      let initial =
+        let define =
+          match parse_single_statement ~convert define with
+          | { Node.value = Define define; _ } ->
+              let signature = { define.signature with parent = parent >>| Reference.create } in
+              { define with signature }
+          | _ ->
+              failwith "Unable to parse define."
         in
-        List.concat_map define.signature.parameters ~f:extract_variables
-        |> List.dedup_and_sort ~compare:Type.compare
+        let variables =
+          let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
+            match annotation with
+            | None -> []
+            | Some annotation ->
+                let annotation = Resolution.parse_annotation resolution annotation in
+                Type.Variable.all_free_variables annotation
+                |> List.map ~f:(fun variable -> Type.Variable variable)
+          in
+          List.concat_map define.signature.parameters ~f:extract_variables
+          |> List.dedup_and_sort ~compare:Type.compare
+        in
+        let add_variable resolution variable =
+          Resolution.add_type_variable resolution ~variable
+        in
+        let resolution = List.fold variables ~init:resolution ~f:add_variable in
+        State.initial ~convert ~resolution (+define)
       in
-      let add_variable resolution variable =
-        Resolution.add_type_variable resolution ~variable
-      in
-      let resolution = List.fold variables ~init:resolution ~f:add_variable in
-      State.initial ~convert:true ~resolution (+define)
+      assert_state_equal state initial;
+      assert_equal
+        ~cmp:(List.equal ~equal:String.equal)
+        ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
+        (List.map (State.errors initial) ~f:(Error.description ~show_error_traces:false))
+        errors
     in
-    assert_state_equal state initial;
-    assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
-      ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements: string list)])
-      (List.map (State.errors initial) ~f:(Error.description ~show_error_traces:false))
-      errors
+    assertion ~convert:true;
+    assertion ~convert:false
   in
 
   assert_initial
