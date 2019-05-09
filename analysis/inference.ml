@@ -27,7 +27,7 @@ module State = struct
       ({
         Node.value = ({ Define.signature = { parameters; parent; _ }; _ } as define)
       ; _ } as define_node) =
-    let state = State.initial ~convert:true ~configuration ~resolution define_node in
+    let state = State.initial ~configuration ~resolution define_node in
     let annotations =
       let reset_parameter
           index
@@ -174,90 +174,64 @@ module State = struct
 
 
     let annotate_call_accesses statement resolution =
-      let propagate resolution access =
-        let infer_annotations resolution arguments { Type.Callable.implementation; _ } =
-          let rec infer_annotations_list parameters arguments resolution =
-            let rec infer_annotation resolution parameter_annotation argument =
-              let state = { state with resolution } in
-              match Node.value argument with
-              | Access (SimpleAccess value) ->
-                  let { resolved; _ } =
-                    TypeCheck.State.forward_expression ~convert:true ~state ~expression:argument
-                  in
-                  resolve_assign parameter_annotation resolved
-                  >>| (fun refined ->
-                      Resolution.set_local
-                        resolution
-                        ~reference:(Reference.from_access value)
-                        ~annotation:(Annotation.create refined))
-                  |> Option.value ~default:resolution
-              | Tuple arguments ->
-                  begin
-                    match parameter_annotation with
-                    | Type.Tuple (Type.Bounded parameter_annotations)
-                      when List.length arguments = List.length parameter_annotations ->
-                        List.fold2_exn
-                          ~init:resolution
-                          ~f:infer_annotation
-                          parameter_annotations
-                          arguments
-                    | _ ->
-                        resolution
-                  end
+      let propagate resolution { Call.callee; arguments } =
+        let { resolved; _ } =
+          TypeCheck.State.forward_expression ~convert:false ~state ~expression:callee
+        in
+        match resolved with
+        | Type.Callable {
+            Type.Callable.implementation = {
+              Type.Callable.parameters = Type.Callable.Defined parameters;
+              _;
+            };
+            _;
+          } ->
+            let rec infer_annotations_list parameters arguments resolution =
+              let rec infer_annotation resolution parameter_annotation argument =
+                let state = { state with resolution } in
+                match Node.value argument with
+                | Name name when Expression.is_simple_name name ->
+                    let reference = Reference.from_name_exn name in
+                    let { resolved; _ } =
+                      TypeCheck.State.forward_expression ~convert:false ~state ~expression:argument
+                    in
+                    resolve_assign parameter_annotation resolved
+                    >>| (fun refined ->
+                        Resolution.set_local
+                          resolution
+                          ~reference
+                          ~annotation:(Annotation.create refined))
+                    |> Option.value ~default:resolution
+                | Tuple arguments ->
+                    begin
+                      match parameter_annotation with
+                      | Type.Tuple (Type.Bounded parameter_annotations)
+                        when List.length arguments = List.length parameter_annotations ->
+                          List.fold2_exn
+                            ~init:resolution
+                            ~f:infer_annotation
+                            parameter_annotations
+                            arguments
+                      | _ ->
+                          resolution
+                    end
+                | _ ->
+                    resolution
+              in
+              match parameters, arguments with
+              | (Type.Callable.Parameter.Named { Type.Callable.Parameter.annotation; _ }) ::
+                parameters,
+                { Call.Argument.value = argument; _ } :: arguments ->
+                  infer_annotation resolution annotation argument
+                  |> infer_annotations_list parameters arguments
               | _ ->
                   resolution
             in
-            match parameters, arguments with
-            | (Type.Callable.Parameter.Named { Type.Callable.Parameter.annotation; _ }) ::
-              parameters,
-              { Argument.value = argument; _ } :: arguments ->
-                infer_annotation resolution annotation argument
-                |> infer_annotations_list parameters arguments
-            | _ ->
-                resolution
-          in
-          match implementation with
-          | { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ->
-              infer_annotations_list parameters arguments resolution
-          | _ ->
-              resolution
-        in
-        let propagate_access type_accumulator ~resolution:_ ~resolved:_ ~element ~lead:_ =
-          match element with
-          | TypeCheck.AccessState.Signature {
-              signature = Annotated.Signature.Found callable;
-              arguments;
-              _;
-            }
-          | Signature {
-              signature =
-                Annotated.Signature.NotFound {
-                  callable;
-                  reason = Some (Annotated.Signature.Mismatch _);
-                  _;
-                };
-              arguments;
-              _;
-            } ->
-              infer_annotations type_accumulator arguments callable
-          | _ ->
-              type_accumulator
-        in
-        let expression, access =
-          match access with
-          | Access.SimpleAccess access ->
-              None, access
-          | Access.ExpressionAccess { expression; access } ->
-              Some expression, access
-        in
-        TypeCheck.State.forward_access
-          ?expression
-          ~resolution
-          ~initial:resolution
-          ~f:propagate_access
-          access
+            infer_annotations_list parameters arguments resolution
+        | _ ->
+            resolution
       in
-      Visit.collect_accesses statement
+      Visit.collect_calls statement
       |> List.map ~f:Node.value
       |> List.fold ~init:resolution ~f:propagate
     in
@@ -269,24 +243,23 @@ module State = struct
           let rec propagate_assign resolution target_annotation value =
             let state = { state with resolution } in
             match Node.value value with
-            | Access (SimpleAccess value_access) ->
+            | Name (Name.Identifier identifier) ->
                 let resolution =
-                  match value_access with
-                  | [Access.Identifier _] ->
-                      let { resolved; _ } =
-                        TypeCheck.State.forward_expression ~convert:true ~state ~expression:value
-                      in
-                      resolve_assign target_annotation resolved
-                      >>| (fun refined ->
-                          Resolution.set_local
-                            resolution
-                            ~reference:(Reference.from_access value_access)
-                            ~annotation:(Annotation.create refined))
-                      |> Option.value ~default:resolution
-                  | _ ->
-                      resolution
+                  let { resolved; _ } =
+                    TypeCheck.State.forward_expression ~convert:false ~state ~expression:value
+                  in
+                  resolve_assign target_annotation resolved
+                  >>| (fun refined ->
+                      Resolution.set_local
+                        resolution
+                        ~reference:(Reference.create identifier)
+                        ~annotation:(Annotation.create refined))
+                  |> Option.value ~default:resolution
                 in
-                (* Optimistic assumption: after seeing x = y, we optimistically retain type of x *)
+                annotate_call_accesses statement resolution
+
+            | Call _
+            | Name _ ->
                 annotate_call_accesses statement resolution
 
             (* Recursively break down tuples such as x : Tuple[int, string] = y, z *)
@@ -318,7 +291,7 @@ module State = struct
                 let resolve expression =
                   let { resolved; _ } =
                     TypeCheck.State.forward_expression
-                      ~convert:true
+                      ~convert:false
                       ~state:{ state with resolution }
                       ~expression
                   in
@@ -334,20 +307,21 @@ module State = struct
           | _, _ ->
               let { resolved; _ } =
                 TypeCheck.State.forward_expression
-                  ~convert:true
+                  ~convert:false
                   ~state:{ state with resolution }
                   ~expression:target
               in
               propagate_assign resolution resolved value)
 
-      | Return { Return.expression = Some { Node.value = Access (SimpleAccess access); _ }; _ } ->
+      | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
+        when Expression.is_simple_name name ->
           let return_annotation =
             Option.value_exn (Resolution.get_local resolution ~reference:return_reference)
             |> Annotation.annotation
           in
           Resolution.set_local
             resolution
-            ~reference:(Reference.from_access access)
+            ~reference:(Reference.from_name_exn name)
             ~annotation:(Annotation.create return_annotation)
 
       | _ ->
@@ -434,7 +408,7 @@ let run
     in
 
     try
-      let cfg = Cfg.create ~convert:true define in
+      let cfg = Cfg.create define in
       let exit =
         backward_fixpoint
           cfg
@@ -566,7 +540,6 @@ let run
   else
     let results =
       source
-      |> Preprocessing.convert
       |> Preprocessing.defines
       |> List.map ~f:check
     in

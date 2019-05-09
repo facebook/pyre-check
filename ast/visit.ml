@@ -343,3 +343,17 @@ let collect_accesses statement =
             None
     end) in
   Collector.collect (Source.create [statement])
+
+
+let collect_calls statement =
+  let open Expression in
+  let module Collector = ExpressionCollector(struct
+      type t = Expression.t Call.t Node.t
+      let predicate expression =
+        match expression with
+        | { Node.location; value = Call call } ->
+            Some { Node.location; value = call }
+        | _ ->
+            None
+    end) in
+  Collector.collect (Source.create [statement])

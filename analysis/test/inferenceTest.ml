@@ -44,7 +44,7 @@ let create
     let signature =
       {
         define.signature
-        with return_annotation = Some (Type.expression ~convert:true expected_return)
+        with return_annotation = Some (Type.expression expected_return)
       }
     in
     +{ define with signature }
@@ -60,7 +60,7 @@ let assert_backward precondition statement postcondition =
       ~pp_diff:(diff ~print:State.pp)
   in
   let parsed =
-    (parse ~convert:true statement)
+    (parse statement)
     |> function
     | { Source.statements = statements; _ } -> statements
   in
@@ -124,7 +124,7 @@ let test_backward _ =
   assert_backward ["x", Type.float] "x = int_to_str(x)" ["x", Type.integer];
   assert_backward ["y", Type.float] "y = int_to_str(x)" ["y", Type.float; "x", Type.integer];
   assert_backward ["y", Type.integer] "y = int_to_str(x)" ["y", Type.integer; "x", Type.integer];
-  assert_backward [] "str_float_to_int(x)" [];
+  assert_backward [] "str_float_to_int(x)" ["x", Type.string];
   assert_backward [] "str_float_to_int(x, 1.0)" ["x", Type.string];
   assert_backward [] "'a'.substr(x)" ["x", Type.integer];
   assert_backward
@@ -151,7 +151,6 @@ let test_backward _ =
 let fixpoint_parse source =
   parse source
   |> Preprocessing.preprocess
-  |> Preprocessing.convert
   |> Preprocessing.defines
   |> List.hd_exn
 
@@ -165,10 +164,9 @@ let test_fixpoint_backward _ =
       ~pp_diff:(diff ~print:Fixpoint.pp)
       expected
       (Inference.backward_fixpoint
-         (Cfg.create ~convert:true define)
+         (Cfg.create define)
          ~initial_forward:
            (State.initial
-              ~convert:true
               ~resolution:(Test.resolution ())
               define_node)
          ~initialize_backward:(Inference.State.initial_backward define_node))
@@ -342,7 +340,6 @@ let assert_infer
   let source =
     parse source
     |> Preprocessing.preprocess
-    |> Preprocessing.convert
   in
   let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
   let environment = Test.environment () in
