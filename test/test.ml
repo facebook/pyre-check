@@ -183,8 +183,7 @@ let parse_list named_sources =
 let parse_single_statement ?(convert = false) ?(preprocess = false) source =
   let source =
     if preprocess then
-      Preprocessing.preprocess (parse source)
-      |> Preprocessing.convert
+      Preprocessing.preprocess (parse ~convert source)
     else
       parse ~convert source
   in

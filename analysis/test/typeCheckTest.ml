@@ -1662,7 +1662,7 @@ let test_forward_access _ =
             Annotated.Signature.actual = Type.literal_string "Blade Runner";
             actual_expression = parse_single_expression ~convert:true "\"Blade Runner\"";
             expected = parse_annotation ~resolution:resolution_with_movie "int";
-            name = (Some "$parameter$year");
+            name = (Some "year");
             position = 1;
           }
           |> Node.create_with_default_location

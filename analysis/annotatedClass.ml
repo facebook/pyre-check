@@ -55,6 +55,13 @@ module AttributeCache = struct
 end
 
 
+type class_data = {
+  instantiated: Type.t;
+  class_attributes: bool;
+  class_definition: t;
+}
+
+
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
     { Node.value = { Class.name = right; _ }; _ } =
@@ -124,6 +131,49 @@ let successors { Node.value = { Class.name; _ }; _ } ~resolution =
 let successors_fold class_node ~resolution ~f ~initial =
   successors class_node ~resolution
   |> List.fold ~init:initial ~f
+
+
+let resolve_class ~resolution annotation =
+  let rec extract ~is_meta original_annotation =
+    let annotation =
+      match original_annotation with
+      | Type.Variable variable -> Type.Variable.upper_bound variable
+      | _ -> original_annotation
+    in
+    match annotation with
+    | Type.Top | Type.Bottom | Type.Any ->
+        Some []
+    | annotation when Type.equal Type.ellipsis annotation ->
+        Some []
+    | Type.Union annotations ->
+        let flatten_optional sofar optional =
+          match sofar, optional with
+          | Some sofar, Some optional -> Some (optional :: sofar)
+          | _ -> None
+        in
+        List.map ~f:(extract ~is_meta) annotations
+        |> List.fold ~init:(Some []) ~f:flatten_optional
+        >>| List.concat
+        >>| List.rev
+    | annotation when Type.is_meta annotation ->
+        Type.single_parameter annotation
+        |> extract ~is_meta:true
+    | _ ->
+        begin
+          match Resolution.class_definition resolution annotation with
+          | Some class_definition ->
+              Some [
+                {
+                  instantiated = original_annotation;
+                  class_attributes = is_meta;
+                  class_definition = create class_definition;
+                }
+              ]
+          | None ->
+              None
+        end
+  in
+  extract ~is_meta:false annotation
 
 
 module Method = struct
@@ -469,18 +519,78 @@ let create_attribute
         annotation
   in
 
+  (* Special cases *)
+  let annotation =
+    match instantiated, attribute_name, annotation with
+    | Some (Type.TypedDictionary { fields; total; _ }),
+      method_name,
+      Some (Type.Callable callable) ->
+        Type.TypedDictionary.special_overloads ~fields ~method_name ~total
+        >>| (fun overloads ->
+              Some (Type.Callable {
+                callable with
+                implementation = { annotation = Type.Top; parameters = Undefined };
+                overloads;
+              }))
+        |> Option.value ~default:annotation
+    | Some (Type.Tuple (Bounded members)),
+      "__getitem__",
+      Some (Type.Callable ({ overloads; _ } as callable)) ->
+        let overload index member =
+          {
+            Type.Callable.annotation = member;
+            parameters = Defined [
+                Named { name = "x"; annotation = Type.literal_integer index; default = false };
+              ];
+          }
+        in
+        let overloads =  (List.mapi ~f:overload members) @ overloads in
+        Some (Type.Callable { callable with overloads })
+    | Some (Type.Primitive name),
+      "__getitem__",
+      Some (Type.Callable ({ kind = Named callable_name; _ } as callable))
+      when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
+        let implementation =
+          let generics =
+            Resolution.class_definition resolution (Type.Primitive name)
+            >>| create
+            >>| generics ~resolution
+            |> Option.value ~default:[]
+          in
+          let parameters =
+            let parameter generic =
+              Type.Callable.Parameter.Named {
+                name = "$";
+                annotation = Type.meta generic;
+                default = false;
+              }
+            in
+            List.map generics ~f:parameter
+          in
+          {
+            Type.Callable.annotation =
+              Type.meta (Type.Parametric { name; parameters = generics });
+            parameters = Defined parameters;
+          }
+        in
+        Some (Type.Callable { callable with implementation; overloads = [] })
+    | _ ->
+        annotation
+  in
+
   let annotation =
     match annotation, value with
     | Some annotation, Some value ->
         Annotation.create_immutable
           ~global:true
+          ~final
           ~original:(Some annotation)
           (if setter then
              (Resolution.parse_annotation resolution value)
            else
              annotation)
     | Some annotation, None ->
-        Annotation.create_immutable ~global:true annotation
+        Annotation.create_immutable ~global:true ~final annotation
     | None, Some value ->
         let literal_value_annotation =
           if setter then
@@ -502,14 +612,16 @@ let create_attribute
           (* Treat literal attributes as having been explicitly annotated. *)
           Annotation.create_immutable
             ~global:true
+            ~final
             literal_value_annotation
         else
           Annotation.create_immutable
             ~global:true
+            ~final
             ~original:(Some Type.Top)
             (Resolution.parse_annotation resolution value)
     | _ ->
-        Annotation.create Type.Top
+        Annotation.create_immutable ~global:true ~final Type.Top
   in
 
   (* Special case properties with type variables. *)
@@ -539,75 +651,9 @@ let create_attribute
       in
       Annotation.annotation annotation
       |> Type.instantiate ~constraints
-      |> Annotation.create_immutable ~global:true ~original:(Some Type.Top)
+      |> Annotation.create_immutable ~global:true ~final
     else
       annotation
-  in
-
-  (* Special cases *)
-  let annotation =
-    match instantiated, attribute_name, annotation with
-    | Some (Type.TypedDictionary { fields; total; _ }),
-      method_name,
-      { annotation = Type.Callable callable; _ } ->
-        Type.TypedDictionary.special_overloads ~fields ~method_name ~total
-        >>| (fun overloads ->
-            {
-              annotation with
-              annotation =
-                Type.Callable {
-                  callable with
-                  implementation = { annotation = Type.Top; parameters = Undefined };
-                  overloads;
-                };
-            })
-        |> Option.value ~default:annotation
-    | Some (Type.Tuple (Bounded members)),
-      "__getitem__",
-      { annotation = Type.Callable ({ overloads; _ } as callable); _ } ->
-        let overload index member =
-          {
-            Type.Callable.annotation = member;
-            parameters = Defined [
-                Named { name = "x"; annotation = Type.literal_integer index; default = false };
-              ];
-          }
-        in
-        let overloads =  (List.mapi ~f:overload members) @ overloads in
-        { annotation with annotation = Type.Callable { callable with overloads } }
-    | Some (Type.Primitive name),
-      "__getitem__",
-      { annotation = Type.Callable ({ kind = Named callable_name; _ } as callable); _ }
-      when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
-        let implementation =
-          let generics =
-            Resolution.class_definition resolution (Type.Primitive name)
-            >>| create
-            >>| generics ~resolution
-            |> Option.value ~default:[]
-          in
-          let parameters =
-            let parameter generic =
-              Type.Callable.Parameter.Named {
-                name = "$";
-                annotation = Type.meta generic;
-                default = false;
-              }
-            in
-            List.map generics ~f:parameter
-          in
-          {
-            Type.Callable.annotation =
-              Type.meta (Type.Parametric { name; parameters = generics });
-            parameters = Defined parameters;
-          }
-        in
-        {
-          annotation with
-          annotation = Type.Callable { callable with implementation; overloads = [] }
-        }
-    | _ ->
-        annotation
   in
 
   let value = Option.value value ~default:(Node.create Ellipsis ~location) in

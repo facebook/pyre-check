@@ -204,7 +204,7 @@ let select
             | [] ->
                 None, (List.rev searched)
             | (Parameter.Named { Parameter.name = parameter_name; _ } as head) :: tail
-              when Identifier.equal parameter_name name ->
+              when Identifier.equal_sanitized parameter_name name ->
                 Some head, (List.rev searched) @ tail
             | (Parameter.Keywords _ as head) :: tail ->
                 let matching, parameters = extract_matching_name (head :: searched) tail in

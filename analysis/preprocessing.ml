@@ -592,11 +592,15 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                         scope
                     in
                     scope,
-                    qualify_name ~qualify_strings:false ~scope (Name (Name.Identifier name))
+                    qualify_name
+                      ~qualify_strings:false
+                      ~location
+                      ~scope
+                      (Name (Name.Identifier name))
                 | Name name ->
                     let name =
                       let qualified =
-                        match qualify_name ~qualify_strings:false ~scope (Name name) with
+                        match qualify_name ~qualify_strings:false ~location ~scope (Name name) with
                         | Name (Name.Identifier name) ->
                             Name (Name.Identifier (Identifier.sanitized name))
                         | qualified ->
@@ -974,6 +978,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
   and qualify_name
       ?(suppress_synthetics = false)
       ~qualify_strings
+      ~location
       ~scope:({ aliases; use_forward_references; _ } as scope) = function
     | Name (Name.Identifier identifier) ->
         begin
@@ -984,11 +989,11 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                  suppress_synthetics then
                 Name (
                   Name.Attribute {
-                    base = Reference.expression qualifier;
+                    base = Reference.expression ~location qualifier;
                     attribute = identifier
                   })
               else
-                Node.value (Reference.expression name)
+                Node.value (Reference.expression ~location name)
           | _ ->
               Name (Name.Identifier identifier)
         end
@@ -1125,7 +1130,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             generators;
           }
       | Name _ ->
-          qualify_name ~qualify_strings ~scope value
+          qualify_name ~qualify_strings ~location ~scope value
       | Set elements ->
           Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | SetComprehension { Comprehension.element; generators } ->

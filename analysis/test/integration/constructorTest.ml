@@ -686,7 +686,6 @@ let test_check_constructors _ =
     [
       "Undefined type [11]: Type `Clss` is not defined.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`.";
-      "Call error [29]: `unknown` is not a function.";
     ];
 
   assert_type_errors ~debug:false

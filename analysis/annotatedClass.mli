@@ -17,6 +17,12 @@ type decorator = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type class_data = {
+  instantiated: Type.t;
+  class_attributes: bool;
+  class_definition: t;
+}
+
 val name_equal: t -> t -> bool
 
 val create: Class.t Node.t -> t
@@ -35,6 +41,8 @@ val successors_fold:
   'b
 
 val metaclass: t -> resolution: Resolution.t -> Type.t
+
+val resolve_class: resolution: Resolution.t -> Type.t -> class_data list option
 
 module Method : sig
   type t

@@ -1359,7 +1359,18 @@ module Class = struct
       match value with
       | { Node.value = Expression.Access (SimpleAccess identifiers); _ } ->
           String.equal "abc.ABCMeta" (Expression.Access.show identifiers)
-      | _ -> false
+      | {
+          Node.value = Name (
+            Name.Attribute {
+              base = { Node.value = Name (Name.Identifier "abc"); _ };
+              attribute = "ABCMeta";
+            }
+          );
+          _;
+        } ->
+          true
+      | _ ->
+          false
     in
     List.exists bases ~f:abstract_metaclass
 

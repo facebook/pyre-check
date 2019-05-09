@@ -449,7 +449,7 @@ let test_concise _ =
     {|
       from a.b import c
     |}
-    ["Undefined import [21]: Could not find `b`."];
+    ["Undefined import [21]: Could not find `a`."];
 
   assert_type_errors ~concise:true
     {|

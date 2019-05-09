@@ -231,12 +231,12 @@ let test_check_click_command _ =
       def main(ctx: click.Context) -> None:
           pass
 
-      @test.command()
+      @main.command()
       @click.pass_context
       def run(ctx: click.Context, x: int) -> None:
           pass
 
-      @test.command()
+      @main.command()
       @click.pass_obj
       def run2(ctx: click.Context) -> None:
           pass

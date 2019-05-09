@@ -2623,16 +2623,26 @@ module LiteralAnyVisitor = struct
       | false, Name name ->
           Reference.from_name name
           >>| Reference.show
-          (* We also want to take into account annotations like `list`, `dict`, etc. *)
-          >>= Hashtbl.find primitive_substitution_map
-          |> Option.value_map ~default:false ~f:contains_any
+          >>| String.equal "typing.Any"
+          |> Option.value ~default:false
       | _, _ ->
           false
   end
   include Visit.Make (Visitor)
 
   let expression_contains_any expression =
-    let state = ref false in
+    let state =
+      (* We also want to take into account annotations like `list`, `dict`, etc. *)
+      match Node.value expression with
+      | Name name when Expression.is_simple_name name ->
+          Reference.from_name_exn name
+          |> Reference.show
+          |> Hashtbl.find primitive_substitution_map
+          |> Option.value_map ~default:false ~f:contains_any
+          |> (fun state -> ref state)
+      | _ ->
+          ref false
+    in
     visit_expression ~state ~visitor:Visitor.expression expression;
     !state
 end

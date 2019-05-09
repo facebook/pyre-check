@@ -77,6 +77,8 @@ let test_check_method_parameters _ =
     [
       "Incompatible parameter type [6]: " ^
       "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
+      "Incompatible parameter type [6]: " ^
+      "Expected `int` for 1st anonymous parameter to call `str.substr` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -934,7 +936,9 @@ let test_check_callable_protocols _ =
         unittest.mock.patch()
         unittest.mock.patch()  # subequent calls should not modify annotation map
     |}
-    [];
+    [
+      "Illegal annotation target [35]: Target `unittest.mock.patch` cannot be annotated.";
+    ];
 
   assert_type_errors
     {|
