@@ -98,7 +98,8 @@ type invalid_assignment_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_type_kind =
-  | Final of Type.t
+  | FinalNested of Type.t
+  | FinalParameter of Identifier.t
   | InvalidType of Type.t
 [@@deriving compare, eq, sexp, show, hash]
 

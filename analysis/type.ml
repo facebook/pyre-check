@@ -2654,6 +2654,7 @@ let contains_literal annotation =
   in
   exists annotation ~predicate
 
+
 let contains_final annotation =
   let predicate = function
     | Parametric { name ="typing.Final"; _ } -> true

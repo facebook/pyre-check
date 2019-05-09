@@ -1536,6 +1536,13 @@ module State = struct
                   })
                 ~define:define_node
           in
+          let add_final_parameter_annotation_error ~state =
+            emit_error
+              ~state
+              ~location
+              ~kind:(Error.InvalidType (FinalParameter name))
+              ~define:define_node
+          in
           let add_variance_error (state, annotation) =
             let state =
               match annotation with
@@ -1643,6 +1650,16 @@ module State = struct
                 in
                 match annotation_and_state, value with
                 | Some (_, annotation), Some value
+                  when Type.contains_final annotation ->
+                    let { resolved = value_annotation; _ } =
+                      forward_expression ~state ~expression:value
+                    in
+                    add_final_parameter_annotation_error ~state,
+                    Annotation.create_immutable
+                      ~global:false
+                      ~original:(Some annotation)
+                      value_annotation
+                | Some (_, annotation), Some value
                   when contains_prohibited_any annotation ->
                     let { resolved = value_annotation; _ } =
                       forward_expression ~state ~expression:value
@@ -1655,6 +1672,10 @@ module State = struct
                       ~global:false
                       ~original:(Some annotation)
                       value_annotation
+                | Some (_, annotation), _
+                  when Type.contains_final annotation ->
+                    add_final_parameter_annotation_error ~state,
+                    Annotation.create_immutable ~global:false annotation
                 | Some (_, annotation), None
                   when contains_prohibited_any annotation ->
                     add_missing_parameter_annotation_error
@@ -3181,7 +3202,7 @@ module State = struct
                       emit_error
                         ~state
                         ~location
-                        ~kind:(Error.InvalidType (Final annotation))
+                        ~kind:(Error.InvalidType (FinalNested annotation))
                         ~define:define_node
                     else
                       state

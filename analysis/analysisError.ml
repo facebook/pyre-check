@@ -122,7 +122,8 @@ type invalid_assignment_kind =
 
 
 type invalid_type_kind =
-  | Final of Type.t
+  | FinalNested of Type.t
+  | FinalParameter of Identifier.t
   | InvalidType of Type.t
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -254,7 +255,7 @@ let code = function
 let name = function
   | AnalysisFailure _ -> "Analysis failure"
   | Deobfuscation _ -> "Deobfuscation"
-  | IllegalAnnotationTarget _ -> "Illegal annotation"
+  | IllegalAnnotationTarget _ -> "Illegal annotation target"
   | ImpossibleIsinstance _ -> "Impossible isinstance check"
   | IncompatibleAttributeType _ -> "Incompatible attribute type"
   | IncompatibleAwaitableType _ -> "Incompatible awaitable type"
@@ -683,21 +684,27 @@ let messages ~concise ~signature location kind =
           pp_identifier name
       ]
   | InvalidType kind ->
-      let post_script, annotation =
-        begin
-          match kind with
-          | Final annotation ->
-              " Final cannot be nested.", annotation
-          | InvalidType annotation ->
-              "", annotation
-        end
-      in
-      [
-        Format.asprintf
-          "Expression `%a` is not a valid type.%s"
-          pp_type annotation
-          post_script
-      ]
+      begin
+        match kind with
+        | FinalNested annotation ->
+            [
+              Format.asprintf
+                "Expression `%a` is not a valid type. Final cannot be nested."
+                pp_type annotation
+            ]
+        | FinalParameter name ->
+            [
+              Format.asprintf
+                "Parameter `%a` cannot be annotated with Final."
+                pp_identifier name
+            ]
+        | InvalidType annotation ->
+            [
+              Format.asprintf
+                "Expression `%a` is not a valid type."
+                pp_type annotation
+            ]
+      end
   | InvalidTypeParameters
       { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual };} ->
       if expected > 0 then
@@ -1554,7 +1561,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ })
   | InvalidArgument (Variable { annotation = actual; _ })
   | InvalidType (InvalidType actual)
-  | InvalidType (Final actual)
+  | InvalidType (FinalNested actual)
   | NotCallable actual
   | ProhibitedAny { given_annotation = Some actual; _ }
   | RedundantCast actual
@@ -1578,6 +1585,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidAssignment _
+  | InvalidType _
   | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
@@ -1759,8 +1767,11 @@ let less_or_equal ~resolution left right =
           | _ ->
               false
         end
+
+    | InvalidType (FinalParameter left), InvalidType (FinalParameter right) ->
+        Identifier.equal left right
     | InvalidType (InvalidType left), InvalidType (InvalidType right)
-    | InvalidType (Final left), InvalidType (Final right) ->
+    | InvalidType (FinalNested left), InvalidType (FinalNested right) ->
         Resolution.less_or_equal resolution ~left ~right
     | InvalidTypeParameters left, InvalidTypeParameters right ->
         Resolution.equal_type_parameters_mismatch left right
@@ -2592,8 +2603,10 @@ let dequalify
         InvalidMethodSignature { kind with annotation = (annotation >>| dequalify) }
     | InvalidType (InvalidType annotation) ->
         InvalidType (InvalidType (dequalify annotation))
-    | InvalidType (Final annotation) ->
-        InvalidType (Final (dequalify annotation))
+    | InvalidType (FinalNested annotation) ->
+        InvalidType (FinalNested (dequalify annotation))
+    | InvalidType (FinalParameter name) ->
+        InvalidType (FinalParameter name)
     | InvalidTypeParameters ({ name ; _ } as invalid_type_parameters) ->
         InvalidTypeParameters
           { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }
