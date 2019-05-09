@@ -54,6 +54,10 @@ provides typed stubs for library functions.
 `extensions`: Consider extensions in this list equivalent to `.py` for type checking.
 Empty string indicates extensionless files.
 
+Configuration options declaring paths (`source_directories`, `binary`, `search_path`,
+and `typeshed`) will expand `~` into your user directory, i.e. `~/typeshed` is
+treated as `/home/username/typeshed`.
+
 
 # Local Configuration
 If you have sub-projects within your project root that you would like to run Pyre on, you
