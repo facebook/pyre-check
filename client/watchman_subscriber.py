@@ -93,7 +93,7 @@ class WatchmanSubscriber(object):
         # Die silently if unable to acquire the lock.
         with acquire_lock(lock_path, blocking=False):
             file_handler = logging.FileHandler(
-                os.path.join(self._base_path, "%s.log" % self._name)
+                os.path.join(self._base_path, "%s.log" % self._name), mode="w"
             )
             file_handler.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
