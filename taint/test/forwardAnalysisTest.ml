@@ -973,7 +973,7 @@ let test_construction _ =
     |}
     {|
       class Data:
-        pass
+        def __init__(self, capture) -> None: ...
 
       def test_capture():
         x = __test_source();

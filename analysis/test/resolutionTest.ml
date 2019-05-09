@@ -139,7 +139,7 @@ let test_resolve_literal _ =
   in
   let assert_resolve_literal source expected =
     let expression =
-      match parse_single_statement ~convert:true source with
+      match parse_single_statement source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
@@ -205,7 +205,7 @@ let test_resolve_mutable_literals _ =
       |> Resolution.parse_annotation resolution
     in
     let expression =
-      match parse_single_statement ~convert:true source with
+      match parse_single_statement source with
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
@@ -295,7 +295,6 @@ let test_function_definitions _ =
       let sources =
         let source (path, content) =
           parse
-            ~convert:false
             ~qualifier:(!&(String.chop_suffix_exn path ~suffix:".py"))
             ~handle:path
             content

@@ -373,14 +373,14 @@ let test_delocalize _ =
 let test_comparison_operator_override _ =
   let assert_override source expected =
     let operator =
-      match parse_single_expression ~convert:true source with
+      match parse_single_expression source with
       | { Node.value = ComparisonOperator operator; _ } -> operator
       | _ -> failwith "Could not parse comparison operator."
     in
     assert_equal
       ~printer:(function | Some expression -> Expression.show expression | _ -> "None")
       ~cmp:(Option.equal Expression.equal)
-      (expected >>| parse_single_expression ~convert:true)
+      (expected >>| parse_single_expression)
       (ComparisonOperator.override operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");

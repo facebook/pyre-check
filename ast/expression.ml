@@ -656,9 +656,12 @@ module ComparisonOperator = struct
     in
     operator
     >>| fun name ->
-    let arguments = [{ Argument.name = None; value = right }] in
-    Access.combine left (Access.call ~arguments ~location ~name ())
-    |> fun access -> Node.create ~location (Access access)
+    let arguments = [{ Call.Argument.name = None; value = right }] in
+    Call {
+      callee = { Node.location; value = Name (Name.Attribute { base = left; attribute = name })};
+      arguments;
+    }
+    |> Node.create ~location
 end
 
 
@@ -678,8 +681,16 @@ module UnaryOperator = struct
       | Not -> None
       | Positive -> Some "__pos__"
     end
-    >>| (fun name -> Access.combine operand (Access.call ~name ~location ()))
-    >>| fun access -> Node.create ~location (Access access)
+    >>| (fun name ->
+      Call {
+        callee = {
+          Node.location;
+          value = Name (Name.Attribute { base = operand; attribute = name });
+        };
+        arguments = [];
+      }
+      |> Node.create ~location
+    )
 end
 
 

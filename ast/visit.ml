@@ -357,3 +357,20 @@ let collect_calls statement =
             None
     end) in
   Collector.collect (Source.create [statement])
+
+
+let collect_names ?(only_simple = false) statement =
+  let open Expression in
+  let module Collector = ExpressionCollector(struct
+      type t = Expression.t Name.t Node.t
+      let predicate expression =
+        match expression with
+        | { Node.location; value = Name name } ->
+            if only_simple && not (Expression.is_simple_name name) then
+              None
+            else
+              Some { Node.location; value = name }
+        | _ ->
+            None
+    end) in
+  Collector.collect (Source.create [statement])

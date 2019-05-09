@@ -430,7 +430,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         parse_and_validate (Reference.access annotation)
         |> Type.primitive_name
-        >>= Handler.class_definition ~convert:true
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
         >>| List.map ~f:to_attribute
@@ -944,7 +944,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         parse_and_validate (Reference.access annotation)
         |> Type.primitive_name
-        >>= Handler.class_definition ~convert:true
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.methods
         >>| List.map ~f:to_method
@@ -1036,7 +1036,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
         |> Type.primitive_name
-        >>= Handler.class_definition ~convert:true
+        >>= Handler.class_definition
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution
         >>| List.map ~f:Annotated.Class.annotation
@@ -1061,9 +1061,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           let { TypeCheck.State.state; resolved = annotation; } =
             TypeCheck.State.forward_expression
-              ~convert:true
               ~state
-              ~expression
+              ~expression:(Expression.convert_to_new expression)
           in
           match TypeCheck.State.errors state with
           | [] ->

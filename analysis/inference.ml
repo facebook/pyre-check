@@ -175,9 +175,7 @@ module State = struct
 
     let annotate_call_accesses statement resolution =
       let propagate resolution { Call.callee; arguments } =
-        let { resolved; _ } =
-          TypeCheck.State.forward_expression ~convert:false ~state ~expression:callee
-        in
+        let { resolved; _ } = TypeCheck.State.forward_expression ~state ~expression:callee in
         match resolved with
         | Type.Callable {
             Type.Callable.implementation = {
@@ -193,7 +191,7 @@ module State = struct
                 | Name name when Expression.is_simple_name name ->
                     let reference = Reference.from_name_exn name in
                     let { resolved; _ } =
-                      TypeCheck.State.forward_expression ~convert:false ~state ~expression:argument
+                      TypeCheck.State.forward_expression ~state ~expression:argument
                     in
                     resolve_assign parameter_annotation resolved
                     >>| (fun refined ->
@@ -246,7 +244,7 @@ module State = struct
             | Name (Name.Identifier identifier) ->
                 let resolution =
                   let { resolved; _ } =
-                    TypeCheck.State.forward_expression ~convert:false ~state ~expression:value
+                    TypeCheck.State.forward_expression ~state ~expression:value
                   in
                   resolve_assign target_annotation resolved
                   >>| (fun refined ->
@@ -291,7 +289,6 @@ module State = struct
                 let resolve expression =
                   let { resolved; _ } =
                     TypeCheck.State.forward_expression
-                      ~convert:false
                       ~state:{ state with resolution }
                       ~expression
                   in
@@ -307,7 +304,6 @@ module State = struct
           | _, _ ->
               let { resolved; _ } =
                 TypeCheck.State.forward_expression
-                  ~convert:false
                   ~state:{ state with resolution }
                   ~expression:target
               in

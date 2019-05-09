@@ -53,8 +53,6 @@ module AccessState: sig
     | Value
   [@@deriving show]
 
-  val redirect: resolution: Resolution.t -> access: Access.t -> Access.general_access * Resolution.t
-
   val resolve_exports: resolution: Resolution.t -> access: Access.t -> Access.t
 end
 
@@ -107,8 +105,7 @@ module State : sig
   val coverage: t -> Coverage.t
 
   val initial
-    :  ?convert: bool
-    -> ?configuration: Configuration.Analysis.t
+    :  ?configuration: Configuration.Analysis.t
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
@@ -120,24 +117,10 @@ module State : sig
     state: t;
     resolved: Type.t;
   }
-  val forward_access
-    :  resolution: Resolution.t
-    -> initial: 'a
-    -> f:('a
-          -> resolution: Resolution.t
-          -> resolved: Annotation.t
-          -> element: AccessState.element
-          -> lead: Access.t
-          -> 'a)
-    -> ?expression: Expression.t
-    -> ?should_resolve_exports: bool
-    -> Expression.t Access.access sexp_list
-    -> 'a
-  val last_element: resolution: Resolution.t -> Access.t -> AccessState.element
 
   val parse_and_check_annotation: ?bind_variables:bool ->  state: t -> Expression.t -> t * Type.t
-  val forward_expression: ?convert:bool -> state: t -> expression: Expression.t -> resolved
-  val forward_statement: ?convert:bool -> state: t -> statement: Statement.t -> t
+  val forward_expression: state: t -> expression: Expression.t -> resolved
+  val forward_statement: state: t -> statement: Statement.t -> t
 
   include Fixpoint.State with type t := t
 end

@@ -247,14 +247,22 @@ let test_type_collection _ =
       |> List.hd_exn
       |> fun access ->
       if String.equal (Access.show access) (Access.show test_access) then
-        let last_element = TypeCheck.State.last_element ~resolution access in
-        match last_element with
-        | Signature {
-            signature =
-              Annotated.Signature.Found
-                { Type.Callable.kind = Type.Callable.Named callable_type; _ };
-            _;
-          } ->
+        let state =
+          TypeCheck.State.create
+            ~define:(Node.create_with_default_location Test.mock_define)
+            ~resolution
+            ()
+        in
+        let expression =
+          Expression.Access (Access.SimpleAccess access)
+          |> Node.create_with_default_location
+          |> Expression.convert_to_new
+        in
+        let { TypeCheck.State.resolved; _ } =
+          TypeCheck.State.forward_expression ~state ~expression
+        in
+        match resolved with
+        | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->
             assert_equal expected_type (Reference.show callable_type)
         | _ ->
             assert false
