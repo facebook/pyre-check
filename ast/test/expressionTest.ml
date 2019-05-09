@@ -549,7 +549,61 @@ let test_convert_accesses _ =
         Identifier "b";
         Call ~+[{ Argument.name = None; value = !"x" }];
       ])
-    )
+    );
+
+  let assert_convert_old_to_new old_access expected =
+    let converted =
+      (Access old_access)
+      |> Node.create_with_default_location
+      |> convert_to_new
+    in
+    assert_equal
+      ~printer:(Expression.show)
+      ~+expected
+      converted
+  in
+  assert_convert_old_to_new
+    (SimpleAccess [Identifier "a"])
+    (Name (Name.Identifier "a"));
+  assert_convert_old_to_new
+    (SimpleAccess [Identifier "a"; Identifier "b"])
+    (Name (
+      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+    ));
+  assert_convert_old_to_new
+    (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"])
+    (Name (Name.Attribute {
+      base = ~+(Name (
+        Name.Attribute {
+          base = ~+(Name (Name.Identifier "a"));
+          attribute = "b";
+      }));
+      attribute = "c";
+    }));
+  assert_convert_old_to_new
+    (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]])
+    (Call {
+      callee = ~+(Name (Name.Identifier "a"));
+      arguments = [{ Call.Argument.name = None; value = !"x" }];
+    });
+  assert_convert_old_to_new
+    (SimpleAccess [
+      Identifier "a";
+      Identifier "b";
+      Call ~+[{ Argument.name = None; value = !"x" }];
+    ])
+    (Call {
+      callee = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+      ));
+      arguments = [{ Call.Argument.name = None; value = !"x" }];
+    });
+  assert_convert_old_to_new
+    (ExpressionAccess { expression = ~+(List []); access = [Identifier "a"; Identifier "b"]})
+    (Name (Name.Attribute {
+      base = ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a" }));
+      attribute = "b";
+    }))
 
 
 let test_create_name _ =

@@ -936,6 +936,180 @@ let rec convert { Node.location; value } =
   { Node.location; value }
 
 
+let rec convert_to_new ({ Node.location; value } as expression) =
+  let rec convert expression access =
+    let convert_arguments { Node.value = arguments; _ } =
+      let convert { Argument.name; value } = { Call.Argument.name; value } in
+      List.map ~f:convert arguments
+    in
+    let convert_generator { Comprehension.target; iterator; conditions; async } =
+      {
+        Comprehension.target = convert_to_new target;
+        iterator = convert_to_new iterator;
+        conditions = List.map ~f:convert_to_new conditions;
+        async;
+      }
+    in
+    let convert_entry { Dictionary.key; value } =
+      { Dictionary.key = convert_to_new key; value = convert_to_new value }
+    in
+    let convert_parameter { Node.value = { Parameter.value; annotation; name }; location } =
+      let value =
+        {
+          Parameter.name;
+          value = value >>| convert_to_new;
+          annotation = annotation >>| convert_to_new;
+        }
+      in
+      { Node.location; value }
+    in
+    match expression, access with
+    | Some { Node.value = expression; location },
+      Access.Identifier identifier :: [] ->
+        Name (Name.Attribute {
+            base = convert_to_new { Node.location; value = expression };
+            attribute = identifier;
+          })
+        |> Node.create ~location
+    | Some { Node.value = expression; location }, Call arguments :: [] ->
+        Call {
+          callee = convert_to_new { Node.location; value = expression };
+          arguments = convert_arguments arguments;
+        }
+        |> Node.create ~location
+    | None, Identifier identifier :: [] ->
+        Name (Name.Identifier identifier)
+        |> Node.create ~location
+    | None, Identifier identifier :: [Identifier base] ->
+        Name (Name.Attribute {
+            base = (Name (Name.Identifier base)) |> Node.create ~location;
+            attribute = identifier;
+          })
+        |> Node.create ~location
+    | None, Call arguments :: [Identifier base] ->
+        Call {
+          callee = convert_to_new { Node.location; value = Name (Name.Identifier base) };
+          arguments = convert_arguments arguments;
+        }
+        |> Node.create ~location
+    | _, Identifier identifier :: access ->
+        Name (Name.Attribute {
+            base = convert expression access;
+            attribute = identifier;
+          })
+        |> Node.create ~location
+    | _, Call arguments :: access ->
+          Call {
+            callee = convert expression access;
+            arguments = convert_arguments arguments;
+          }
+        |> Node.create ~location
+    | Some { Node.value = Await expression; location }, [] ->
+        Await (convert_to_new expression)
+        |> Node.create ~location
+    | Some { Node.value = BooleanOperator { BooleanOperator.left; right; operator }; location },
+      [] ->
+        BooleanOperator {
+          BooleanOperator.left = convert_to_new left;
+          right = convert_to_new right;
+          operator
+        } |> Node.create ~location
+    | Some {
+        Node.value = ComparisonOperator { ComparisonOperator.left; right; operator };
+        location;
+      },
+      [] ->
+        ComparisonOperator {
+          ComparisonOperator.left = convert_to_new left;
+          right = convert_to_new right;
+          operator
+        } |> Node.create ~location
+    | Some { Node.value = Dictionary { Dictionary.entries; keywords }; location }, [] ->
+        Dictionary {
+          Dictionary.entries = List.map ~f:convert_entry entries;
+          keywords = List.map ~f:convert_to_new keywords;
+        } |> Node.create ~location
+    | Some { Node.value = DictionaryComprehension { Comprehension.element; generators }; location },
+      [] ->
+        DictionaryComprehension {
+          Comprehension.element = convert_entry element;
+          generators = List.map ~f:convert_generator generators
+        } |> Node.create ~location
+    | Some { Node.value = Generator { Comprehension.element; generators }; location }, [] ->
+        Generator {
+          Comprehension.element = convert_to_new element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Node.create ~location
+    | Some { Node.value = Lambda { Lambda.parameters; body }; location }, [] ->
+        Lambda {
+          Lambda.parameters = List.map ~f:convert_parameter parameters;
+          body = convert_to_new body;
+        } |> Node.create ~location
+    | Some { Node.value = List elements; location }, [] ->
+        List (List.map ~f:convert_to_new elements)
+        |> Node.create ~location
+    | Some { Node.value = ListComprehension { Comprehension.element; generators }; location },
+      [] ->
+        ListComprehension {
+          Comprehension.element = convert_to_new element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Node.create ~location
+    | Some { Node.value = Set elements; location }, [] ->
+        Set (List.map ~f:convert_to_new elements)
+        |> Node.create ~location
+    | Some { Node.value = SetComprehension { Comprehension.element; generators }; location }, [] ->
+        SetComprehension {
+          Comprehension.element = convert_to_new element;
+          generators = List.map ~f:convert_generator generators;
+        } |> Node.create ~location
+    | Some { Node.value = Starred (Starred.Once expression); location }, [] ->
+        Starred (Starred.Once (convert_to_new expression))
+        |> Node.create ~location
+    | Some { Node.value = Starred (Starred.Twice expression); location }, [] ->
+        Starred (Starred.Twice (convert_to_new expression))
+        |> Node.create ~location
+    | Some { Node.value = String { StringLiteral.value; kind }; location }, [] ->
+        let kind =
+          match kind with
+          | StringLiteral.Format expressions ->
+              StringLiteral.Format (List.map expressions ~f:convert_to_new)
+          | _ ->
+              kind
+        in
+        String { StringLiteral.value; kind }
+        |> Node.create ~location
+    | Some { Node.value = Ternary { Ternary.target; test; alternative }; location }, [] ->
+        Ternary {
+          Ternary.target = convert_to_new target;
+          test = convert_to_new test;
+          alternative = convert_to_new alternative;
+        } |> Node.create ~location
+    | Some { Node.value = Tuple elements; location }, [] ->
+        Tuple (List.map ~f:convert_to_new elements)
+        |> Node.create ~location
+    | Some { Node.value = UnaryOperator { UnaryOperator.operand; operator }; location }, [] ->
+        UnaryOperator {
+          UnaryOperator.operand = convert_to_new operand;
+          operator;
+        } |> Node.create ~location
+    | Some { Node.value = Yield expression; location }, [] ->
+        Yield (expression >>| convert_to_new)
+        |> Node.create ~location
+    | Some expression, _ ->
+        expression
+    | _ ->
+        Name (Name.Identifier "")
+        |> Node.create ~location
+  in
+  match value with
+  | Access (SimpleAccess access) ->
+      convert None (List.rev access)
+  | Access (ExpressionAccess { expression; access }) ->
+      convert (Some expression) (List.rev access)
+  | _ ->
+      convert (Some expression) []
+
+
 let create_name_from_identifiers identifiers =
   let rec create = function
     | [] ->
