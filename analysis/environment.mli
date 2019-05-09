@@ -70,11 +70,6 @@ module type Handler = sig
   module TypeOrderHandler: TypeOrder.Handler
 end
 
-module AliasEntry: sig
-  type t = { handle: File.Handle.t; target: Reference.t; value: Expression.expression_t }
-  [@@deriving sexp, compare, hash, show]
-end
-
 (** Provides a default in-process environment handler constructed from an
     [Environment.t]. Use [Environment_service.handler] if interfacing from outside
     [Analysis]. *)
@@ -96,16 +91,6 @@ val register_class_definitions
   :  (module Handler)
   -> Source.t
   -> Type.Set.t
-
-val collect_aliases
-  : (module Handler)
-  -> Source.t
-  -> AliasEntry.t list
-
-val resolve_aliases
-  : (module Handler)
-  -> AliasEntry.t list
-  -> unit
 
 val register_aliases
   :  (module Handler)

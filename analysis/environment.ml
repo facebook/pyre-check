@@ -68,9 +68,18 @@ module type Handler = sig
 end
 
 
-module AliasEntry = struct
+module UnresolvedAlias = struct
   type t = { handle: File.Handle.t; target: Reference.t; value: Expression.expression_t }
-  [@@deriving sexp, compare, hash, show]
+  [@@deriving sexp, compare, hash]
+end
+
+
+module ResolvedAlias = struct
+  type t = { handle: File.Handle.t; name: Type.primitive; annotation: Type.t }
+  [@@deriving sexp, compare, hash]
+
+  let register (module Handler: Handler) { handle; name; annotation } =
+    Handler.register_alias ~handle ~key:name ~data:annotation
 end
 
 
@@ -483,7 +492,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
               _;
             } ->
               if not (Type.equal target_annotation Type.Top) then
-                { AliasEntry.handle; target; value } :: aliases
+                { UnresolvedAlias.handle; target; value } :: aliases
               else
                 aliases
           | _, Some ({
@@ -495,7 +504,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
               _;
             } as value) ->
               if not (Type.equal target_annotation Type.Top) then
-                { AliasEntry.handle; target; value } :: aliases
+                { UnresolvedAlias.handle; target; value } :: aliases
               else
                 aliases
           | Call _, None
@@ -505,7 +514,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
               if not (Type.equal target_annotation Type.Top ||
                       Type.equal value_annotation Type.Top ||
                       Type.equal value_annotation target_annotation) then
-                { AliasEntry.handle; target; value } :: aliases
+                { UnresolvedAlias.handle; target; value } :: aliases
               else
                 aliases
           | _ ->
@@ -544,7 +553,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
               []
           | _ ->
               [{
-                AliasEntry.handle;
+                UnresolvedAlias.handle;
                 target = qualified_name;
                 value = Reference.expression original_name
               }]
@@ -556,87 +565,84 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
   List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
 
 
-let resolve_aliases (module Handler: Handler) alias_entries =
+let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; value } =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  let register_alias (any_changed, unresolved) { AliasEntry.handle; target; value } =
-    let target_primitive_name = Reference.show target in
-    let value_annotation =
-      match Type.create ~aliases:Handler.aliases value with
-      | Type.Variable variable ->
-          Type.Variable { variable with variable = Reference.show target }
-      | annotation ->
-          annotation
-    in
-    let module TrackedTransform = Type.Transform.Make(struct
-        type state = bool
+  let target_primitive_name = Reference.show target in
+  let value_annotation =
+    match Type.create ~aliases:Handler.aliases value with
+    | Type.Variable variable ->
+        Type.Variable { variable with variable = Reference.show target }
+    | annotation ->
+        annotation
+  in
+  let module TrackedTransform = Type.Transform.Make(struct
+      type state = bool
 
-        let visit_children_before _ = function
-          | Type.Optional Bottom -> false
-          | _ -> true
+      let visit_children_before _ = function
+        | Type.Optional Bottom -> false
+        | _ -> true
 
-        let visit_children_after = false
+      let visit_children_after = false
 
-        let visit sofar annotation =
-          let new_state, transformed_annotation =
-            match annotation with
-            | Type.Parametric { name = primitive; _ }
-            | Primitive primitive ->
-                let reference =
-                  match Node.value (Type.expression (Type.Primitive primitive)) with
-                  | Expression.Name name when Expression.is_simple_name name ->
-                      Reference.from_name_exn name
-                  | _ ->
-                      Reference.create "typing.Any"
-                in
-                let module_definition = Handler.module_definition in
-                if Module.from_empty_stub ~reference ~module_definition then
-                  sofar, Type.Any
-                else if TypeOrder.contains order (Primitive primitive) then
-                  sofar, annotation
-                else
-                  false, annotation
-            | Bottom
-            | Top ->
-                false, annotation
-            | _ ->
+      let visit sofar annotation =
+        let new_state, transformed_annotation =
+          match annotation with
+          | Type.Parametric { name = primitive; _ }
+          | Primitive primitive ->
+              let reference =
+                match Node.value (Type.expression (Type.Primitive primitive)) with
+                | Expression.Name name when Expression.is_simple_name name ->
+                    Reference.from_name_exn name
+                | _ ->
+                    Reference.create "typing.Any"
+              in
+              let module_definition = Handler.module_definition in
+              if Module.from_empty_stub ~reference ~module_definition then
+                sofar, Type.Any
+              else if TypeOrder.contains order (Primitive primitive) then
                 sofar, annotation
-          in
-          { Type.Transform.transformed_annotation; new_state }
-      end)
-    in
-    let all_valid, value_annotation = TrackedTransform.visit true value_annotation in
-    if all_valid then
-      begin
-        Handler.register_alias ~handle ~key:target_primitive_name ~data:value_annotation;
-        (true, unresolved)
-      end
-    else
-      (any_changed, { AliasEntry.handle; target; value } :: unresolved)
-  in
-  let rec fixpoint unresolved =
-    if List.is_empty unresolved then
-      ()
-    else
-      let (any_changed, unresolved) = List.fold ~init:(false, []) ~f:register_alias unresolved in
-      if any_changed then
-        fixpoint unresolved
-      else
-        let show_unresolved { AliasEntry.handle; target; value } =
-          Log.debug
-            "Unresolved alias %a:%a <- %a"
-            File.Handle.pp handle
-            Reference.pp target
-            Expression.pp value
+              else
+                false, annotation
+          | Bottom
+          | Top ->
+              false, annotation
+          | _ ->
+              sofar, annotation
         in
-        List.iter ~f:show_unresolved unresolved
+        { Type.Transform.transformed_annotation; new_state }
+    end)
   in
-  fixpoint alias_entries
+  let all_valid, annotation = TrackedTransform.visit true value_annotation in
+  if all_valid then
+    Some { ResolvedAlias.handle; name = target_primitive_name; annotation = annotation }
+  else
+    None
+
+
+let resolve_aliases (module Handler: Handler) =
+  List.partition_map ~f:(fun unresolved ->
+      match resolve_alias (module Handler) unresolved with
+      | Some resolved -> `Fst resolved
+      | None -> `Snd unresolved
+    )
 
 
 let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
+  let register_aliases unresolved =
+    let rec fixpoint unresolved =
+      if not (List.is_empty unresolved) then
+        begin
+          let (resolved, unresolved) = resolve_aliases (module Handler) unresolved in
+          List.iter resolved ~f:(ResolvedAlias.register (module Handler));
+          if not (List.is_empty resolved) then
+            fixpoint unresolved;
+        end
+    in
+    fixpoint unresolved
+  in
   List.concat_map ~f:(collect_aliases (module Handler)) sources
-  |> resolve_aliases (module Handler);
+  |> register_aliases;
   Type.Cache.enable ()
 
 
