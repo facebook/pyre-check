@@ -24,7 +24,9 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")
-    @patch("os.path.expanduser", side_effect=lambda path: path.replace("~", "/home/user"))
+    @patch(
+        "os.path.expanduser", side_effect=lambda path: path.replace("~", "/home/user")
+    )
     @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("hashlib.sha1")
@@ -185,10 +187,13 @@ class ConfigurationTest(unittest.TestCase):
 
         json_load.side_effect = [
             {
-                "search_path": ["~/simple", {"root": "~/simple", "subdirectory": "subdir"}],
+                "search_path": [
+                    "~/simple",
+                    {"root": "~/simple", "subdirectory": "subdir"},
+                ],
                 "typeshed": "~/typeshed",
                 "source_directories": ["a", "~/b"],
-                "binary": "~/bin"
+                "binary": "~/bin",
             },
             {},
         ]

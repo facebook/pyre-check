@@ -20,7 +20,6 @@ from . import (
 )
 from .exceptions import EnvironmentException
 
-
 LOG = logging.getLogger(__name__)
 
 
