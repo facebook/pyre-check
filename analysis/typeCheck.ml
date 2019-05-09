@@ -2400,7 +2400,7 @@ module State = struct
           else
             state, resolved_base
         in
-        let { state = updated_state; resolved } =
+        let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
           let suppressed =
             let rec suppressed lead = function
               | head :: tail ->
@@ -2552,10 +2552,18 @@ module State = struct
                 in
                 { state; resolved }
         in
-        if Set.is_empty base_errors then
-          { state = updated_state; resolved }
+        let should_terminate error =
+          let open Error in
+          match kind error with
+          | UndefinedAttribute _
+          | UndefinedName _ -> true
+          | _ -> false
+        in
+        if Set.is_empty (Set.filter ~f:should_terminate base_errors) then
+          let errors = Set.union updated_errors base_errors in
+          { state = { updated_state with errors }; resolved }
         else
-          (* Do not throw more errors if base already contains error. *)
+          (* Do not throw more errors if base already contains terminating error. *)
           let errors = Set.union errors base_errors in
           { state = { state with errors }; resolved }
 

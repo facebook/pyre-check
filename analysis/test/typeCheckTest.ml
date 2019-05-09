@@ -390,6 +390,7 @@ let test_resolve_exports _ =
     "qualifier.foo.foo"
     "qualifier.foo.foo"
 
+
 let assert_resolved sources expression expected =
   let resolution =
     AnnotatedTest.populate_with_sources (sources @ typeshed_stubs ())
@@ -570,6 +571,7 @@ let test_forward_expression _ =
       ?(precondition = [])
       ?(postcondition = [])
       ?(errors = `Undefined 0)
+      ?(environment = "")
       expression
       annotation =
     let expression =
@@ -586,9 +588,14 @@ let test_forward_expression _ =
       | _ ->
           failwith "Unable to extract expression"
     in
+    let resolution =
+      parse environment
+      |> (fun source -> source :: (Test.typeshed_stubs ()))
+      |> (fun sources -> Test.resolution ~sources ())
+    in
     let { State.state = forwarded; resolved } =
       State.forward_expression
-        ~state:(create precondition)
+        ~state:(create ~resolution precondition)
         ~expression
     in
     let errors =
@@ -607,7 +614,7 @@ let test_forward_expression _ =
           in
           errors [] count
     in
-    assert_state_equal (create postcondition) forwarded;
+    assert_state_equal (create ~resolution postcondition) forwarded;
     assert_equal
       ~cmp:list_orderless_equal
       ~printer:(String.concat ~sep:"\n")
@@ -631,6 +638,24 @@ let test_forward_expression _ =
       ])
     "x.add_key('string')"
     Type.none;
+  assert_forward
+    ~precondition:["unknown", Type.Top]
+    ~postcondition:["unknown", Type.Top]
+    ~environment:(
+      {|
+        class Foo:
+          def __init__(self) -> None:
+            self.attribute: int = 1
+        def foo(x: int) -> typing.Optional[Foo]: ...
+      |}
+    )
+    ~errors:(`Specific [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `unknown`.";
+      "Undefined attribute [16]: Optional type has no attribute `attribute`."
+    ])
+    "foo(unknown).attribute"
+    Type.Top;
 
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
