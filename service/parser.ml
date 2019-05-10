@@ -405,22 +405,24 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     Statistics.performance ~name:"stubs parsed" ~timer ();
     parsed
   in
-  let known_stubs =
-    let add_to_known_stubs sofar handle =
-      match Ast.SharedMemory.Sources.get handle with
-      | Some { Ast.Source.qualifier; handle; _ } ->
-          if Set.mem sofar qualifier then
-            Statistics.event
-              ~name:"interfering stub"
-              ~normals:["handle", File.Handle.show handle]
-              ();
-          Set.add sofar qualifier
-      | _ ->
-          sofar
-    in
-    List.fold stubs ~init:Reference.Set.empty ~f:add_to_known_stubs
-  in
   let sources =
+    let known_stubs =
+      let stub_set = Reference.Hash_set.create () in
+      let add_to_known_stubs handle =
+        match Ast.SharedMemory.Sources.get handle with
+        | Some { Ast.Source.qualifier; handle; _ } ->
+            if Hash_set.mem stub_set qualifier then
+              Statistics.event
+                ~name:"interfering stub"
+                ~normals:["handle", File.Handle.show handle]
+                ();
+            Hash_set.add stub_set qualifier
+        | _ ->
+            ()
+      in
+      List.iter stubs ~f:add_to_known_stubs;
+      stub_set
+    in
     let filter path =
       let relative =
         Path.get_relative_to_root
@@ -432,7 +434,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
       match relative with
       | Some handle ->
           String.equal handle "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
-          not (Set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
+          not (Hash_set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
       | _ ->
           true
     in
