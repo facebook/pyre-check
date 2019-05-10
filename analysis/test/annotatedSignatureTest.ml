@@ -126,11 +126,18 @@ let test_select _ =
           in
           NotFound { callable; reason }
       | `NotFoundMissingArgument name ->
-          NotFound { callable; reason = Some (MissingArgument name) }
+          NotFound { callable; reason = Some (MissingArgument (Named name)) }
+      | `NotFoundMissingAnonymousArgument index ->
+          NotFound { callable; reason = Some (MissingArgument (Anonymous index)) }
       | `NotFoundMissingArgumentWithClosest (closest, name) ->
           NotFound {
             callable = parse_callable closest;
-            reason = Some (MissingArgument name);
+            reason = Some (MissingArgument (Named name));
+          }
+      | `NotFoundMissingAnonymousArgumentWithClosest (closest, index) ->
+          NotFound {
+            callable = parse_callable closest;
+            reason = Some (MissingArgument (Anonymous index));
           }
       | `NotFoundTooManyArguments (expected, provided) ->
           NotFound {
@@ -193,7 +200,7 @@ let test_select _ =
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
 
-  assert_select "[[int], int]" "()" (`NotFoundMissingArgument "$0");
+  assert_select "[[int], int]" "()" (`NotFoundMissingAnonymousArgument 0);
   assert_select "[[], int]" "(1)" (`NotFoundTooManyArguments (0, 1));
 
   assert_select "[[int], int]" "(1)" (`Found "[[int], int]");
@@ -348,8 +355,8 @@ let test_select _ =
         "str",
         Type.Callable.create
           ~parameters:(Type.Callable.Defined [
-              Type.Callable.Parameter.Named {
-                Type.Callable.Parameter.name = "$0";
+              Type.Callable.Parameter.Anonymous {
+                index = 0;
                 annotation = Type.Any;
                 default = false;
               }])
@@ -528,8 +535,8 @@ let test_select _ =
     "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0)"
     (* Ambiguous, pick the first one. *)
-    (`NotFoundMissingArgumentWithClosest
-       ("[[int, int, str], int]", "$1"));
+    (`NotFoundMissingAnonymousArgumentWithClosest
+       ("[[int, int, str], int]", 1));
 
   assert_select
     ~allow_undefined:true
@@ -565,16 +572,16 @@ let test_select _ =
     "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0, 'string')"
     (* Clear winner. *)
-    (`NotFoundMissingArgumentWithClosest
+    (`NotFoundMissingAnonymousArgumentWithClosest
        ("[[int, str, str], int]",
-        "$2"));
+        2));
 
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
-    (`NotFoundMissingArgumentWithClosest
-       ("[[int, str, bool], int]", "$2"));
+    (`NotFoundMissingAnonymousArgumentWithClosest
+       ("[[int, str, bool], int]", 2));
 
   (* Match not found in overloads: error against implementation if it exists. *)
   assert_select

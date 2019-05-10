@@ -69,6 +69,9 @@ let decorate
         | Defined parameters ->
             let convert parameter =
               match parameter with
+              | Type.Callable.Parameter.Anonymous { annotation; _ } ->
+                  (* This means it will be read back in as an anonymous *)
+                  Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"__" ()
               | Type.Callable.Parameter.Named { name; annotation; _ } ->
                   Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
               | Type.Callable.Parameter.Variable { name; annotation; _ } ->

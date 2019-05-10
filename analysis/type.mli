@@ -49,6 +49,7 @@ module Record : sig
       }
 
       and 'annotation t =
+        | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -205,10 +206,8 @@ module Callable : sig
     module Map : Core.Map.S with type Key.t = parameter
 
     val create: ?annotation:type_t -> ?default: bool -> Identifier.t -> type_t t
-    val name: parameter -> Identifier.t
     val annotation: parameter -> type_t
     val default: parameter -> bool
-    val is_anonymous: parameter -> bool
 
     val names_compatible: parameter -> parameter -> bool
   end

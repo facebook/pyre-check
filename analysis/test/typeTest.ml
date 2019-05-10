@@ -283,13 +283,13 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Named {
-                Parameter.name = "$0";
+              Parameter.Anonymous {
+                index = 0;
                 annotation = Type.integer;
                 default = false;
               };
-              Parameter.Named {
-                Parameter.name = "$1";
+              Parameter.Anonymous {
+                index = 1;
                 annotation = Type.string;
                 default = false;
               };
@@ -305,8 +305,8 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Named {
-                Parameter.name = "$0";
+              Parameter.Anonymous {
+                index = 0;
                 annotation = Type.integer;
                 default = false;
               };
@@ -337,8 +337,8 @@ let test_create _ =
         implementation = {
           annotation = Type.integer;
           parameters = Defined [
-              Parameter.Named {
-                Parameter.name = "$0";
+              Parameter.Anonymous {
+                index = 0;
                 annotation = Type.integer;
                 default = false;
               };
@@ -491,19 +491,19 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:(Type.Callable.Defined [
            Parameter.Named {
-             Parameter.name = "$0";
+             Parameter.name = "__0";
              annotation = Type.integer;
              default = false;
            };
            Parameter.Named {
-             Parameter.name = "$1";
+             Parameter.name = "__1";
              annotation = Type.string;
              default = false;
            };
          ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Named($0, int), Named($1, str)], int))";
+    "typing.Callable.__getitem__(([Named(__0, int), Named(__1, str)], int))";
   assert_expression
     (Type.Callable.create
        ~parameters:(Type.Callable.Defined [

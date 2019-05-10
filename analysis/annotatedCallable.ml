@@ -106,11 +106,11 @@ let create ~parent ~name overloads =
   | Some parent ->
       let { Type.Callable.kind; implementation; overloads; implicit } =
         match implementation with
-        | { parameters = Defined (self_parameter :: _); _ } ->
+        | { parameters = Defined (Named { name; annotation; _ } :: _); _ } ->
             let callable =
               let implicit = {
                 implicit_annotation = parent;
-                name = Type.Callable.Parameter.name self_parameter;
+                name;
               }
               in
               { callable with implicit = Some implicit }
@@ -118,7 +118,7 @@ let create ~parent ~name overloads =
             let constraints =
               TypeOrder.diff_variables
                 Type.Map.empty
-                (Parameter.annotation self_parameter)
+                annotation
                 parent
             in
             let instantiated =

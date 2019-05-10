@@ -28,11 +28,17 @@ type invalid_argument = {
 [@@deriving eq, show, compare]
 
 
+type missing_argument =
+  | Named of Identifier.t
+  | Anonymous of int
+[@@deriving eq, show, compare, sexp, hash]
+
+
 type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
-  | MissingArgument of Identifier.t
+  | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
@@ -167,6 +173,7 @@ let select
       | _, [] ->
           (* Positional argument; parameters empty *)
           { signature_match with reasons = arity_mismatch ~arguments reasons }
+      | [], (Parameter.Anonymous { default = true; _ } as parameter) :: parameters_tail
       | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
           let argument_mapping = update_mapping parameter Default in
@@ -271,10 +278,10 @@ let select
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
       | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
-        (Parameter.Variable _ as parameter) :: parameters_tail ->
+        (Parameter.Variable { name; _ }  as parameter) :: parameters_tail ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
-            if String.equal (Identifier.sanitized (Parameter.name parameter)) "*" then
+            if String.equal (Identifier.sanitized name) "" then
               let reasons =
                 arity_mismatch
                   reasons
@@ -343,24 +350,22 @@ let select
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _; } as signature_match) =
-      let (parameter_name, parameter_annotation) =
-        match key with
-        | Parameter.Named { Parameter.name; annotation; _ }
-        | Parameter.Variable { Parameter.name; annotation; _ }
-        | Parameter.Keywords { Parameter.name; annotation; _ } ->
-            name, annotation
-      in
+      let parameter_annotation = Parameter.annotation key in
       match key, data with
       | Parameter.Variable _, []
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and
              keyword arguments. *)
           signature_match
-      | _, [] ->
+      | Parameter.Named { name; _ }, [] ->
           (* Parameter was not matched *)
-          let reasons = { reasons with arity = (MissingArgument parameter_name) :: arity } in
+          let reasons = { reasons with arity = (MissingArgument (Named name)) :: arity } in
           { signature_match with reasons }
-      | _, arguments ->
+      | Parameter.Anonymous { index; _ }, [] ->
+          (* Parameter was not matched *)
+          let reasons = { reasons with arity = (MissingArgument (Anonymous index)) :: arity } in
+          { signature_match with reasons }
+      | _, arguments->
           let rec set_constraints_and_reasons
               ~resolution
               ~position

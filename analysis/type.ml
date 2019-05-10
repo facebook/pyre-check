@@ -71,6 +71,7 @@ module Record = struct
 
 
       type 'annotation t =
+        | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
@@ -403,19 +404,18 @@ let rec pp format annotation =
               "..."
           | Defined parameters ->
               let parameter = function
+                | Parameter.Anonymous { default; annotation; _ } ->
+                    Format.asprintf
+                      "%a%s"
+                      pp annotation
+                      (if default then ", default" else "")
                 | Parameter.Named { Parameter.name; annotation; default } ->
                     let name = Identifier.sanitized name in
-                    if String.is_prefix ~prefix:"$" name then
-                      Format.asprintf
-                        "%a%s"
-                        pp annotation
-                        (if default then ", default" else "")
-                    else
-                      Format.asprintf
-                        "Named(%s, %a%s)"
-                        name
-                        pp annotation
-                        (if default then ", default" else "")
+                    Format.asprintf
+                      "Named(%s, %a%s)"
+                      name
+                      pp annotation
+                      (if default then ", default" else "")
                 | Parameter.Variable { Parameter.name; annotation; _ } ->
                     Format.asprintf
                       "Variable(%s, %a)"
@@ -567,6 +567,7 @@ let rec pp_concise format annotation =
               "..."
           | Defined parameters ->
               let parameter = function
+                | Parameter.Anonymous { annotation; _ }
                 | Parameter.Named { Parameter.annotation; _ } ->
                     Format.asprintf "%a" pp_concise annotation
                 | Parameter.Variable { Parameter.annotation; _ } ->
@@ -939,16 +940,13 @@ let rec expression ?(convert = false) annotation =
             match parameters with
             | Defined parameters ->
                 let convert_parameter parameter =
-                  let call ?(default = false) name argument annotation =
+                  let call ?(default = false) ?name kind annotation =
                     let arguments =
                       let annotation =
-                        annotation
-                        >>| (fun annotation ->
-                            [{
-                              Call.Argument.name = None;
-                              value = expression ~convert annotation;
-                            }])
-                        |> Option.value ~default:[]
+                        [{
+                          Call.Argument.name = None;
+                          value = expression ~convert annotation;
+                        }]
                       in
                       let default =
                         if default then
@@ -959,25 +957,33 @@ let rec expression ?(convert = false) annotation =
                         else
                           []
                       in
-                      [{
-                        Call.Argument.name = None;
-                        value = Node.create ~location (create_name argument);
-                      }]
-                      @ annotation @ default
+                      let name =
+                        name
+                        >>| (fun name ->
+
+                            [{
+                              Call.Argument.name = None;
+                              value = Node.create ~location (create_name name);
+                            }])
+                        |> Option.value ~default:[]
+                      in
+                      name @ annotation @ default
                     in
                     Call {
-                      callee = Node.create ~location (Name (Name.Identifier name));
+                      callee = Node.create ~location (Name (Name.Identifier kind));
                       arguments;
                     }
                     |> Node.create ~location
                   in
                   match parameter with
+                  | Parameter.Anonymous { annotation; default; _ } ->
+                      call ~default "Anonymous" annotation
                   | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                      call "Keywords" name (Some annotation)
+                      call ~name "Keywords" annotation
                   | Parameter.Named { Parameter.name; annotation; default } ->
-                      call "Named" ~default name (Some annotation)
+                      call ~default ~name "Named" annotation
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
-                      call "Variable" name (Some annotation)
+                      call ~name "Variable" annotation
                 in
                 List (List.map ~f:convert_parameter parameters)
                 |> Node.create ~location
@@ -1157,6 +1163,9 @@ module Transform = struct
                       RecordParameter.Variable (visit_named named)
                   | RecordParameter.Keywords named ->
                       RecordParameter.Keywords (visit_named named)
+                  | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
+                      RecordParameter.Anonymous
+                        { anonymous with annotation = visit_annotation annotation ~state }
                 in
                 match parameter with
                 | Defined defined ->
@@ -1288,13 +1297,8 @@ module Callable = struct
       | "*" -> Variable named
       | _ -> Named named
 
-    let name = function
-      | Named { name; _ } -> name
-      | Variable { name; _ } -> ("*" ^ name)
-      | Keywords { name; _ } -> ("**" ^ name)
-
-
     let annotation = function
+      | Anonymous { annotation; _ }
       | Named { annotation; _ }
       | Variable { annotation; _ }
       | Keywords { annotation; _ } ->
@@ -1302,33 +1306,26 @@ module Callable = struct
 
 
     let default = function
+      | Anonymous { default; _ }
       | Named { default; _ }
       | Variable { default; _ }
       | Keywords { default; _ } ->
           default
 
 
-    let is_anonymous = function
-      | Named { name; _ } when String.is_prefix ~prefix:"$" name ->
-          true
-      | _ ->
-          false
-
-
     let names_compatible left right =
       match left, right with
+      | _, Anonymous _
+      | Anonymous _, _ ->
+          true
       | Named { name = left; _ }, Named { name = right; _ }
       | Variable { name = left; _ }, Variable { name = right; _ }
       | Keywords { name = left; _ }, Keywords { name = right; _ } ->
           let left = Identifier.sanitized left in
           let right = Identifier.sanitized right in
-          if String.is_prefix ~prefix:"$" left ||
-             String.is_prefix ~prefix:"$" right then
-            true
-          else
-            let left = Identifier.remove_leading_underscores left in
-            let right = Identifier.remove_leading_underscores right in
-            Identifier.equal left right
+          let left = Identifier.remove_leading_underscores left in
+          let right = Identifier.remove_leading_underscores right in
+          Identifier.equal left right
       | _ ->
           false
   end
@@ -1661,6 +1658,26 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                                 ~f:(fun { Argument.value; _ } -> value)
                             in
                             match name, arguments with
+                            | "Anonymous",
+                              annotation
+                              :: tail ->
+                                let default =
+                                  match tail with
+                                  | [{
+                                      Node.value =
+                                        Access
+                                          (SimpleAccess [Access.Identifier "default"]);
+                                      _;
+                                    }] ->
+                                      true
+                                  | _ ->
+                                      false
+                                in
+                                Parameter.Anonymous {
+                                  index;
+                                  annotation = create_logic ~use_cache ~aliases annotation;
+                                  default;
+                                }
                             | "Named",
                               { Node.value = Access (SimpleAccess [Access.Identifier name]); _ }
                               :: annotation
@@ -1709,15 +1726,15 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                                   default = false;
                                 }
                             | _ ->
-                                Parameter.Named {
-                                  Parameter.name = "$" ^ Int.to_string index;
+                                Parameter.Anonymous {
+                                  index;
                                   annotation = Top;
                                   default = false;
                                 }
                           end
                       | _ ->
-                          Parameter.Named {
-                            Parameter.name = "$" ^ Int.to_string index;
+                          Parameter.Anonymous {
+                            index;
                             annotation = create_logic ~use_cache ~aliases parameter;
                             default = false;
                           }
@@ -2180,6 +2197,20 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
                                 ~f:(fun { Call.Argument.value; _ } -> Node.value value)
                             in
                             match name, arguments with
+                            | "Anonymous",
+                              annotation
+                              :: tail ->
+                                let default =
+                                  match tail with
+                                  | [Name (Name.Identifier "default")] -> true
+                                  | _ -> false
+                                in
+                                Parameter.Anonymous {
+                                  index;
+                                  annotation =
+                                    create_logic (Node.create_with_default_location annotation);
+                                  default;
+                                }
                             | "Named", Name (Name.Identifier name) :: annotation :: tail ->
                                 let default =
                                   match tail with
@@ -2219,15 +2250,15 @@ let rec create_logic_new ?(use_cache=true) ~aliases { Node.value = expression; _
                                   default = false;
                                 }
                             | _ ->
-                                Parameter.Named {
-                                  Parameter.name = "$" ^ Int.to_string index;
+                                Parameter.Anonymous {
+                                  index;
                                   annotation = Top;
                                   default = false;
                                 }
                           end
                       | _ ->
-                          Parameter.Named {
-                            Parameter.name = "$" ^ Int.to_string index;
+                          Parameter.Anonymous {
+                            index;
                             annotation = create_logic parameter;
                             default = false;
                           }

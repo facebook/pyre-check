@@ -501,6 +501,22 @@ module OrderImplementation = struct
         try
           let rec solve_parameters left right constraints =
             match left, right with
+            | Parameter.Anonymous _ :: _, Parameter.Named _ :: _ ->
+                []
+            | Parameter.Anonymous { annotation = left_annotation; _ }
+              :: left_parameters,
+              Parameter.Anonymous { annotation = right_annotation; _ }
+              :: right_parameters
+            | Parameter.Named { annotation = left_annotation; _ }
+              :: left_parameters,
+              Parameter.Anonymous { annotation = right_annotation; _ }
+              :: right_parameters ->
+                solve_less_or_equal_safe
+                  order
+                  ~constraints
+                  ~left:right_annotation
+                  ~right:left_annotation
+                |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
             | Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
               :: left_parameters,
               Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
@@ -525,9 +541,8 @@ module OrderImplementation = struct
 
             | Parameter.Variable { Parameter.annotation = left_annotation; _ }
               :: _,
-              (Parameter.Named { Parameter.annotation = right_annotation; _ } as right)
-              :: right_parameters
-              when Parameter.is_anonymous right ->
+              Parameter.Anonymous { annotation = right_annotation; _ }
+              :: right_parameters ->
                 solve_less_or_equal_safe
                   order
                   ~constraints
@@ -1274,16 +1289,31 @@ module OrderImplementation = struct
                   match sofar with
                   | Some sofar ->
                       let joined =
-                        let join_names left right =
-                          if String.is_prefix ~prefix:"$" left then
-                            left
-                          else if String.is_prefix ~prefix:"$" right then
-                            right
-                          else
-                            left
-                        in
                         if Type.Callable.Parameter.names_compatible left right then
                           match left, right with
+                          | Parameter.Anonymous left, Parameter.Anonymous right
+                            when left.default = right.default ->
+                              Some
+                                (Parameter.Anonymous {
+                                    left with
+                                    annotation =
+                                      parameter_join
+                                        order
+                                        left.annotation
+                                        right.annotation;
+                                  })
+                          | Parameter.Anonymous anonymous, Parameter.Named named
+                          | Parameter.Named named, Parameter.Anonymous anonymous
+                            when named.default = anonymous.default ->
+                              Some
+                                (Parameter.Anonymous {
+                                    anonymous with
+                                    annotation =
+                                      parameter_join
+                                        order
+                                        named.annotation
+                                        anonymous.annotation;
+                                  })
                           | Parameter.Named left, Parameter.Named right
                             when left.Parameter.default = right.Parameter.default ->
                               Some
@@ -1294,7 +1324,6 @@ module OrderImplementation = struct
                                         order
                                         left.Parameter.annotation
                                         right.Parameter.annotation;
-                                    name = join_names left.Parameter.name right.Parameter.name;
                                   })
                           | Parameter.Variable left, Parameter.Variable right ->
                               Some
@@ -1305,7 +1334,6 @@ module OrderImplementation = struct
                                         order
                                         left.Parameter.annotation
                                         right.Parameter.annotation;
-                                    name = join_names left.Parameter.name right.Parameter.name;
                                   })
                           | Parameter.Keywords left, Parameter.Keywords right ->
                               Some
@@ -1316,7 +1344,6 @@ module OrderImplementation = struct
                                         order
                                         left.Parameter.annotation
                                         right.Parameter.annotation;
-                                    name = join_names left.Parameter.name right.Parameter.name;
                                   })
                           | _ ->
                               None

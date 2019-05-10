@@ -1233,43 +1233,30 @@ module State = struct
                  let overriding_parameters =
                    Method.create ~define ~parent:(Annotated.Class.annotation definition)
                    |> Method.parameter_annotations ~resolution
-                 in
-                 let parameters =
-                   let name_anonymous_parameter index = function
-                     | Type.Callable.Parameter.Named ({
-                         Type.Callable.Parameter.name;
-                         _;
-                       } as parameter) ->
-                         if String.is_prefix ~prefix:"$" (Identifier.sanitized name) then
-                           match List.nth overriding_parameters index with
-                           | Some (name, _) ->
-                               Type.Callable.Parameter.Named { parameter with name }
-                           | _ ->
-                               Type.Callable.Parameter.Named parameter
-                         else
-                           Type.Callable.Parameter.Named parameter
-                     | parameter ->
-                         parameter
-                   in
-                   Type.Callable.Overload.parameters implementation
-                   |> Option.value ~default:[]
-                   |> List.mapi ~f:name_anonymous_parameter
-                 in
-                 let overriding_parameters =
-                   let remove_unused_parameter_denotation ~key ~data map =
-                     String.Map.set map ~key:(Identifier.remove_leading_underscores key) ~data
-                   in
-                   overriding_parameters
-                   |> Identifier.Map.of_alist_exn
-                   |> Map.fold ~init:String.Map.empty ~f:remove_unused_parameter_denotation
+                   |> List.map ~f:(fun (name, annotation) ->
+                       Identifier.remove_leading_underscores name, annotation)
                  in
                  let check_parameter errors overridden_parameter =
                    let expected = Type.Callable.Parameter.annotation overridden_parameter in
-                   let name =
-                     Type.Callable.Parameter.name overridden_parameter
-                     |> Identifier.remove_leading_underscores
+                   let name, found =
+                     let find_by_name name =
+                       name, List.Assoc.find overriding_parameters name ~equal:Identifier.equal
+                     in
+                     match overridden_parameter with
+                     | Type.Callable.Parameter.Anonymous { index; _ }  ->
+                         Printf.sprintf "$%d" index,
+                         List.nth overriding_parameters index
+                         >>| snd
+                     | Named { name; _ } ->
+                         find_by_name (Identifier.remove_leading_underscores name)
+                     | Variable { name; _ } ->
+                         (* TODO(T44178876): This should just search for other Variable *)
+                         find_by_name ("*" ^ name)
+                     | Keywords { name; _ }  ->
+                         (* TODO(T44178876): This should just search for other Keywords *)
+                         find_by_name ("**" ^ name)
                    in
-                   match Map.find overriding_parameters name with
+                   match found with
                    | Some actual ->
                        begin
                          let is_compatible =
@@ -1313,13 +1300,13 @@ module State = struct
                    | None ->
                        let has_keyword_and_anonymous_starred_parameters =
                          let starred =
-                           let collect_starred_parameters ~key ~data:_ starred =
+                           let collect_starred_parameters starred (key, _) =
                              if String.is_prefix key ~prefix:"*" then
                                key :: starred
                              else
                                starred
                            in
-                           Map.fold ~f:collect_starred_parameters ~init:[] overriding_parameters
+                           List.fold ~f:collect_starred_parameters ~init:[] overriding_parameters
                          in
                          let count_stars parameter =
                            parameter
@@ -1351,7 +1338,8 @@ module State = struct
                          in
                          Set.add errors error
                  in
-                 parameters
+                 Type.Callable.Overload.parameters implementation
+                 |> Option.value ~default:[]
                  |> List.fold ~init:errors ~f:check_parameter
              | _ ->
                  errors)
@@ -1927,10 +1915,10 @@ module State = struct
                     ~location
                     ~kind
                     ~define
-              | MissingArgument name ->
+              | MissingArgument parameter ->
                   Error.create
                     ~location
-                    ~kind:(Error.MissingArgument { callee; name })
+                    ~kind:(Error.MissingArgument { callee; parameter })
                     ~define
               | MutuallyRecursiveTypeVariables ->
                   Error.create

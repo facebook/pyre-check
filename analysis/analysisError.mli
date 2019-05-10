@@ -143,7 +143,10 @@ type kind =
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
   | InvalidAssignment of invalid_assignment_kind
-  | MissingArgument of { callee: Reference.t option; name: Identifier.t }
+  | MissingArgument of {
+      callee: Reference.t option;
+      parameter: AnnotatedSignature.missing_argument;
+    }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t

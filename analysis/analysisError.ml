@@ -168,7 +168,10 @@ type kind =
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
   | InvalidAssignment of invalid_assignment_kind
-  | MissingArgument of { callee: Reference.t option; name: Identifier.t }
+  | MissingArgument of {
+      callee: Reference.t option;
+      parameter: AnnotatedSignature.missing_argument;
+    }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t
@@ -836,9 +839,11 @@ let messages ~concise ~signature location kind =
                 pp_identifier class_variable
             ]
       end
-  | MissingArgument { name; _ } when concise ->
+  | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
-  | MissingArgument { callee; name } ->
+  | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
+      [Format.asprintf "Argument `%d` expected." index]
+  | MissingArgument { callee; parameter } ->
       let callee =
         match callee with
         | Some name ->
@@ -846,7 +851,14 @@ let messages ~concise ~signature location kind =
         | _ ->
             "Anonymous call"
       in
-      [Format.asprintf "%s expects argument `%a`." callee pp_identifier name]
+      let parameter =
+        match parameter with
+        | Anonymous index ->
+            Printf.sprintf "%d" index
+        | Named name ->
+            Format.asprintf "%a" pp_identifier name
+      in
+      [Format.asprintf "%s expects argument `%s`." callee parameter]
   | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Attribute annotation cannot be `Any`."]
@@ -1853,9 +1865,14 @@ let less_or_equal ~resolution left right =
           | _, _ ->
               false
         end
-    | MissingArgument left, MissingArgument right ->
-        Option.equal Reference.equal_sanitized left.callee right.callee &&
-        Identifier.equal_sanitized left.name right.name
+    | MissingArgument { callee = left_callee; parameter = Named left_name },
+      MissingArgument { callee = right_callee; parameter = Named right_name } ->
+        Option.equal Reference.equal_sanitized left_callee right_callee &&
+        Identifier.equal_sanitized left_name right_name
+    | MissingArgument { callee = left_callee; parameter = Anonymous left_index },
+      MissingArgument { callee = right_callee; parameter = Anonymous right_index } ->
+        Option.equal Reference.equal_sanitized left_callee right_callee &&
+        left_index = right_index
     | ProhibitedAny left, ProhibitedAny right
     | MissingParameterAnnotation left, MissingParameterAnnotation right
     | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -2029,10 +2046,16 @@ let join ~resolution left right =
     | InvalidTypeParameters left, InvalidTypeParameters right
       when Resolution.equal_type_parameters_mismatch left right ->
         InvalidTypeParameters left
-    | MissingArgument left, MissingArgument right
-      when Option.equal Reference.equal_sanitized left.callee right.callee &&
-           Identifier.equal_sanitized left.name right.name ->
-        MissingArgument left
+    | MissingArgument { callee = left_callee; parameter = Named left_name },
+      MissingArgument { callee = right_callee; parameter = Named right_name }
+      when Option.equal Reference.equal_sanitized left_callee right_callee &&
+           Identifier.equal_sanitized left_name right_name ->
+        left.kind
+    | MissingArgument { callee = left_callee; parameter = Anonymous left_index },
+      MissingArgument { callee = right_callee; parameter = Anonymous right_index }
+      when Option.equal Reference.equal_sanitized left_callee right_callee &&
+           left_index = right_index ->
+        left.kind
     | MissingParameterAnnotation left, MissingParameterAnnotation right
       when Reference.equal_sanitized left.name right.name ->
         MissingParameterAnnotation (join_missing_annotation left right)

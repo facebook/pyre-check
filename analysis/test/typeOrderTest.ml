@@ -1281,12 +1281,12 @@ let test_less_or_equal _ =
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+       ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
+       ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
        ~right:"typing.Callable[[Named(arg, int)], int]");
   assert_false
     (less_or_equal
@@ -1296,12 +1296,12 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[T_int_bool], T_int_bool]"
+       ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
        ~right:"typing.Callable[[Named(arg, int)], int]");
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[T_int_bool], T_int_bool]"
+       ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
        ~right:"typing.Callable[[Named(arg, str)], str]");
   (* Callables with overloads *)
   assert_true

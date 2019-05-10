@@ -22,11 +22,16 @@ type invalid_argument = {
 }
 [@@deriving eq, show, compare]
 
+type missing_argument =
+  | Named of Identifier.t
+  | Anonymous of int
+[@@deriving eq, show, compare, sexp, hash]
+
 type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
-  | MissingArgument of Identifier.t
+  | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
