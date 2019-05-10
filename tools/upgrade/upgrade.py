@@ -17,8 +17,8 @@ import traceback
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
-from .commands import ExitCode
-from .filesystem import get_filesystem
+from ...client.commands import ExitCode
+from ...client.filesystem import get_filesystem
 
 
 LOG = logging.getLogger(__name__)

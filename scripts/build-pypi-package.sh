@@ -29,7 +29,7 @@ die() {
 }
 error_trap () {
   die "Command '${BASH_COMMAND}' failed at ${BASH_SOURCE[0]}:${BASH_LINENO[0]}"
-  
+
 }
 
 trap error_trap ERR
@@ -103,6 +103,7 @@ echo "Using build root: ${BUILD_ROOT}"
 mkdir "${MODULE_NAME}"
 # i.e. copy all *.py files from all directories, except "tests"
 rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../client/" "${BUILD_ROOT}/${MODULE_NAME}"
+rsync -avm --filter='- tests/' --filter='+ */' --filter='-! *.py' "${SCRIPTS_DIRECTORY}/../tools/upgrade/" "${BUILD_ROOT}/${MODULE_NAME}"
 # copy *.py and requirements.txt files from sapp, exclude everything else
 rsync -avm --filter='- tests/' --filter='+ */' --filter='+ *.py' \
   --filter='+ *requirements.txt' --filter='- *' "${SAPP_DIRECTORY}" \
