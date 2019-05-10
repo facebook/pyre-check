@@ -380,6 +380,7 @@ let test_check_user_decorators _ =
       reveal_type(f)
     |}
     [
+      "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
       "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`.";
     ];
 
@@ -423,6 +424,8 @@ let test_check_user_decorators _ =
       reveal_type(am_i_async)
     |}
     [
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+       contain `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
     ]

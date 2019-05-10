@@ -535,7 +535,7 @@ let test_check_attributes _ =
     {|
       class Foo:
         attribute: int = 1
-        def __getattr__(self, attribute) -> str: ...
+        def __getattr__(self, attribute: object) -> str: ...
         def foo(self) -> int:
           return self.undefined
         def bar(self) -> int:
@@ -778,7 +778,7 @@ let test_check_attributes _ =
         def x(self) -> int: ...
         @x.setter
         def x(self, value: typing.Optional[int]) -> None: ...
-        @$local_file$__property__
+        @__property__
         def y(self) -> int: ...
       def bar() -> int:
         foo = Foo()

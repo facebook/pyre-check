@@ -11,14 +11,16 @@ let test_check_unbounded_variables _ =
   assert_type_errors
     {|
       T = typing.TypeVar('T')
-      def expects_any(input) -> None: ...
+      def expects_any(input: object) -> None: ...
       def expects_string(inut: str) -> None: ...
       def foo(input: T) -> None:
         expects_any(input)
         expects_string(input)
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`."];
+    [
+      "Incompatible parameter type [6]: " ^
+      "Expected `str` for 1st anonymous parameter to call `expects_string` but got `Variable[T]`.";
+    ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -110,6 +112,8 @@ let test_check_unbounded_variables _ =
         generic(overloaded, [1], [7])
     |}
     [
+      "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
+       implementation.";
       "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[int, str]`.";
       "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[bool, float]`.";
       "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[float, bool]`.";

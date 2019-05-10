@@ -832,6 +832,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
+      ~qualifier:(Reference.create "asyncio.coroutines")
+      ~handle:"asyncio/coroutines.pyi"
+      {|
+        def coroutine(f: typing.Any) -> typing.Any: ...
+      |}
+    |> Preprocessing.preprocess;
+    parse
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
       {|

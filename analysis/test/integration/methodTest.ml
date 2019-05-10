@@ -327,15 +327,14 @@ let test_check_behavioral_subtyping _ =
     |}
     [];
 
-  (* TODO(T29679691): We should also warn when parameter annotations are missing. *)
   assert_type_errors
     {|
       class Foo():
-        def foo(input: int) -> int: ...
+        def foo(self, input: int) -> int: ...
       class Bar(Foo):
-        def foo(input) -> int: ...
+        def foo(self, input) -> int: ...
     |}
-    [];
+    ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
 
   assert_type_errors
     {|
@@ -387,10 +386,10 @@ let test_check_behavioral_subtyping _ =
     {|
       class Foo():
         @contextlib.contextmanager
-        def foo() -> typing.Generator[int, None, None]: ...
+        def foo(self) -> typing.Generator[int, None, None]: ...
       class Bar():
         @contextlib.contextmanager
-        def foo() -> typing.Generator[int, None, None]: ...
+        def foo(self) -> typing.Generator[int, None, None]: ...
     |}
     [];
 
@@ -409,9 +408,9 @@ let test_check_behavioral_subtyping _ =
   assert_type_errors
     {|
       class Foo():
-        def foo(self, a) -> None: ...
+        def foo(self, a: int) -> None: ...
       class Bar(Foo):
-        def foo(self, ) -> None: pass
+        def foo(self) -> None: pass
     |}
     [
       "Inconsistent override [14]: `Bar.foo` overrides method defined in `Foo` inconsistently. " ^
@@ -440,7 +439,7 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def foo(self, a: int) -> None: pass
     |}
-    [];
+    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
   assert_type_errors
     {|
       class Foo():
@@ -623,7 +622,7 @@ let test_check_behavioral_subtyping _ =
       class Foo():
         def __eq__(self, o: object) -> bool: ...
       class Bar(Foo):
-        def __eq__(self, other) -> bool: ...
+        def __eq__(self, other: int) -> bool: ...
     |}
     [];
 
@@ -1387,7 +1386,7 @@ let test_check_in _ =
   assert_type_errors
     {|
       class WeirdIterator:
-        def __eq__(self, other) -> str:
+        def __eq__(self, other: object) -> str:
           ...
         def __iter__(self) -> typing.Iterator[WeirdIterator]:
           ...

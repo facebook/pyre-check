@@ -249,7 +249,7 @@ let test_check_generic_protocols _ =
     {|
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
-        def foo() -> T: ...
+        def foo(self) -> T: ...
 
       class Alpha():
         def foo(self) -> int:
@@ -267,7 +267,7 @@ let test_check_generic_protocols _ =
     {|
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
-        def foo() -> T: ...
+        def foo(self) -> T: ...
 
       class Alpha():
         def foo(self) -> int:
@@ -288,7 +288,7 @@ let test_check_generic_protocols _ =
     {|
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
-        def foo() -> T: ...
+        def foo(self) -> T: ...
 
       class Alpha():
         def foo(self) -> int:
@@ -309,7 +309,7 @@ let test_check_generic_protocols _ =
     {|
       T = typing.TypeVar("T", int, str)
       class P(typing.Protocol[T]):
-        def foo() -> T: ...
+        def foo(self) -> T: ...
 
       class Alpha():
         def foo(self) -> bool:
@@ -339,7 +339,7 @@ let test_check_generic_implementors _ =
   assert_type_errors
     {|
       class P(typing.Protocol):
-        def foo() -> typing.Union[int, str]: ...
+        def foo(self) -> typing.Union[int, str]: ...
 
       T = typing.TypeVar("T", bound=typing.Union[int, str])
       class Alpha(typing.Generic[T]):
@@ -361,7 +361,7 @@ let test_check_generic_implementors _ =
     {|
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
-      def foo() -> T1: ...
+      def foo(self) -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
     class Alpha(typing.Generic[T]):
@@ -383,7 +383,7 @@ let test_check_generic_implementors _ =
     {|
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
-      def foo() -> T1: ...
+      def foo(self) -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
     class Alpha(typing.Generic[T]):
@@ -408,7 +408,7 @@ let test_check_generic_implementors _ =
     {|
     T1 = typing.TypeVar("T1")
     class P(typing.Protocol[T1]):
-      def foo() -> T1: ...
+      def foo(self) -> T1: ...
 
     T = typing.TypeVar("T", bound=typing.Union[int, str])
     class Alpha(typing.Generic[T]):
@@ -430,7 +430,7 @@ let test_check_generic_implementors _ =
   assert_type_errors
     {|
       class P(typing.Protocol):
-        def foo() -> int: ...
+        def foo(self) -> int: ...
 
       T = typing.TypeVar("T")
       class Alpha(typing.Generic[T]):

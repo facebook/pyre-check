@@ -477,7 +477,7 @@ module State = struct
         >>| List.concat
         |> Option.value ~default:errors
       in
-      if Define.is_constructor define then
+      if Define.is_constructor define && not (Define.is_stub define) then
         let base_errors = check_bases define in
         List.append base_errors (check_attributes_initialized define)
       else if Define.is_class_toplevel define then
@@ -4186,8 +4186,7 @@ module State = struct
             schedule
               ~variables
               ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
-        | Define ({ Define.signature = { parameters; _ }; _ } as define)
-          when not (Define.is_stub define) ->
+        | Define ({ Define.signature = { parameters; _ }; _ } as define) ->
             let variables =
               let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
                 match annotation with
@@ -4498,7 +4497,10 @@ let run
                   ~resolution
                   define_node
               in
-              check ~define:define_node ~initial ~queue
+              if Define.is_stub define then
+                { errors = State.errors initial; coverage = Coverage.create () }
+              else
+                check ~define:define_node ~initial ~queue
             with
             | TypeOrder.Untracked annotation ->
                 Statistics.event

@@ -764,9 +764,9 @@ let test_check_function_overloads _ =
 
   assert_type_errors
     {|
-      @overload
+      @typing.overload
       def derp(x: int) -> int: ...
-      @overload
+      @typing.overload
       def derp(x: str) -> str: ...
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
@@ -782,14 +782,16 @@ let test_check_function_overloads _ =
     {|
       from typing import overload
 
-      @overload
+      @typing.overload
       def derp(x: int) -> int: ...
-      @overload
+      @typing.overload
       def derp(x: str) -> str: ...
 
       reveal_type(derp)
     |}
     [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an \
+       implementation.";
       "Revealed type [-1]: Revealed type for `derp` is " ^
       "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
     ];
@@ -799,22 +801,24 @@ let test_check_function_overloads _ =
     {|
       from typing import overload
 
-      @overload
+      @typing.overload
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
-      @overload
+      @typing.overload
       def derp(x: str) -> str: ...
 
       reveal_type(derp)
     |}
     [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an \
+       implementation.";
       "Revealed type [-1]: Revealed type for `derp` is " ^
       "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
     ];
 
   assert_type_errors
     {|
-      @overload
+      @typing.overload
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
       def derp(): ...
@@ -833,15 +837,18 @@ let test_check_constructor_overloads _ =
       from typing import overload
 
       class Class:
-        @overload
+        @typing.overload
         def __init__(self, i: int) -> None: ...
-        @overload
+        @typing.overload
         def __init__(self, s: str) -> None: ...
       def construct() -> None:
         Class(1)
         Class('asdf')
     |}
-    []
+    [
+      "Missing overload implementation [42]: Overloaded function `Class.__init__` must have \
+       an implementation.";
+    ]
 
 
 let test_check_variable_arguments _ =
@@ -1162,9 +1169,9 @@ let test_check_literals _ =
       from typing import overload
       from typing_extensions import Literal
       import typing_extensions
-      @overload
+      @typing.overload
       def foo(x: typing_extensions.Literal["give_me_int", "also_give_me_int"]) -> int: ...
-      @overload
+      @typing.overload
       def foo(x: Literal["give_me_str"]) -> str: ...
       def foo(x: str) -> typing.Union[int, str, bool]:
         if x == "give_me_int":

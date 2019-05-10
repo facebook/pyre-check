@@ -166,7 +166,10 @@ let test_check_undefined_type _ =
       def foo() -> Foo["Herp"]:
         return 1
     |}
-    ["Undefined type [11]: Type `Herp` is not defined."];
+    [
+      "Missing parameter annotation [2]: Parameter `other` has no type specified.";
+      "Undefined type [11]: Type `Herp` is not defined.";
+    ];
 
   (* Attributes *)
   assert_type_errors

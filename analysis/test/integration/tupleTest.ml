@@ -211,6 +211,9 @@ let test_check_tuple _ =
         a = d.a + d.d
     |}
     [
+      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `c` must have a type other than `Any`.";
       "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
@@ -226,6 +229,9 @@ let test_check_tuple _ =
         x, y, z, other = t
     |}
     [
+      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `c` must have a type other than `Any`.";
       "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
       "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
@@ -239,7 +245,10 @@ let test_check_tuple _ =
       def foo() -> None:
         T(a=2)
     |}
-    ["Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified."];
+    [
+      "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
+    ];
   assert_type_errors
     {|
       T = typing.NamedTuple('T', [('a', str), ('b', int)])
