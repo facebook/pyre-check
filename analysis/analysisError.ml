@@ -1372,11 +1372,29 @@ let messages ~concise ~signature location kind =
            start_line
            pp_type actual)
       ]
+  | AbstractClassInstantiation { class_name; _ } when concise ->
+      [
+        Format.asprintf
+          "`%a` contains unimplemented abstract methods."
+          pp_reference class_name
+      ]
   | AbstractClassInstantiation { class_name; method_names } ->
       let method_names =
         List.map method_names ~f:(fun name -> Format.asprintf "`%s`" name)
       in
-      let method_pluralization, verb_pluralization  =
+      let method_message =
+        if (List.length method_names) > 3 then
+          let method_names, not_shown =
+            List.split_n method_names 3
+          in
+          Format.asprintf
+            "%a and %d others"
+            pp_identifier (String.concat ~sep:", " method_names)
+            (List.length not_shown)
+        else
+          String.concat ~sep:", " method_names
+      in
+      let method_pluralization, verb_pluralization =
         begin
           match method_names with
           | [_] -> "method", "is"
@@ -1385,10 +1403,10 @@ let messages ~concise ~signature location kind =
       in
       [
         Format.asprintf
-          "Cannot instantiate class `%a` because %s %a %s not implemented."
+          "Cannot instantiate class `%a` because %s %s %s not implemented."
           pp_reference class_name
           method_pluralization
-          pp_identifier (String.concat ~sep:", " method_names)
+          method_message
           verb_pluralization
       ]
   | UnusedIgnore codes ->

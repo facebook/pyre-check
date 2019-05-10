@@ -482,7 +482,20 @@ let test_concise _ =
       b = Base()
       b.y = 12 # error
     |}
-    ["Invalid assignment [41]: Assigning to class variable through instance."]
+    ["Invalid assignment [41]: Assigning to class variable through instance."];
+
+  assert_type_errors ~concise:true
+    {|
+        from abc import abstractmethod, ABCMeta
+        class Foo(metaclass=ABCMeta):
+          @abstractmethod
+          def bar(self) -> None:
+            pass
+        def foo() -> None:
+          Foo()
+        |}
+
+    ["Abstract class instantiation [38]: `Foo` contains unimplemented abstract methods."]
 
 
 let () =

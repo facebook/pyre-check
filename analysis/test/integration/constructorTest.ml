@@ -523,6 +523,35 @@ let test_check_constructors _ =
 
   assert_type_errors
     {|
+      from abc import abstractmethod, ABCMeta
+      class A(metaclass=ABCMeta):
+          @abstractmethod
+          def a(self) -> None:
+              pass
+          @abstractmethod
+          def b(self) -> None:
+              pass
+          @abstractmethod
+          def c(self) -> None:
+              pass
+          @abstractmethod
+          def d(self) -> None:
+              pass
+          @abstractmethod
+          def e(self) -> None:
+              pass
+          @abstractmethod
+          def f(self) -> None:
+              pass
+      A()
+    |}
+    [
+      "Abstract class instantiation [38]: Cannot instantiate class `A` because methods \
+       `a`, `b`, `c` and 3 others are not implemented."
+    ];
+
+  assert_type_errors
+    {|
       from abc import abstractmethod
       class Foo():
         @abstractmethod
