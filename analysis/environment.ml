@@ -571,8 +571,9 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
     | annotation ->
         annotation
   in
+  let dependencies = String.Hash_set.create () in
   let module TrackedTransform = Type.Transform.Make(struct
-      type state = bool
+      type state = unit
 
       let visit_children_before _ = function
         | Type.Optional Bottom -> false
@@ -580,7 +581,7 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
 
       let visit_children_after = false
 
-      let visit sofar annotation =
+      let visit _ annotation =
         let new_state, transformed_annotation =
           match annotation with
           | Type.Parametric { name = primitive; _ }
@@ -594,45 +595,61 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
               in
               let module_definition = Handler.module_definition in
               if Module.from_empty_stub ~reference ~module_definition then
-                sofar, Type.Any
+                (), Type.Any
               else if TypeOrder.contains order (Primitive primitive) then
-                sofar, annotation
+                (), annotation
               else
-                false, annotation
+                let _ = Hash_set.add dependencies primitive in
+                (), annotation
           | _ ->
-              sofar, annotation
+              (), annotation
         in
         { Type.Transform.transformed_annotation; new_state }
     end)
   in
-  let all_valid, annotation = TrackedTransform.visit true value_annotation in
-  if all_valid then
-    Some { ResolvedAlias.handle; name = target_primitive_name; annotation = annotation }
+  let _, annotation = TrackedTransform.visit () value_annotation in
+  if Hash_set.is_empty dependencies then
+    Result.Ok { ResolvedAlias.handle; name = target_primitive_name; annotation = annotation }
   else
-    None
-
-
-let resolve_aliases (module Handler: Handler) =
-  List.partition_map ~f:(fun unresolved ->
-      match resolve_alias (module Handler) unresolved with
-      | Some resolved -> `Fst resolved
-      | None -> `Snd unresolved
-    )
+    Result.Error (Hash_set.to_list dependencies)
 
 
 let register_aliases (module Handler: Handler) sources =
   Type.Cache.disable ();
   let register_aliases unresolved =
-    let rec fixpoint unresolved =
-      if not (List.is_empty unresolved) then
-        begin
-          let (resolved, unresolved) = resolve_aliases (module Handler) unresolved in
-          List.iter resolved ~f:(ResolvedAlias.register (module Handler));
-          if not (List.is_empty resolved) then
-            fixpoint unresolved;
-        end
+    let resolution_dependency = String.Table.create () in
+    let worklist = Queue.create () in
+    Queue.enqueue_all worklist unresolved;
+
+    let rec fixpoint () =
+      match Queue.dequeue worklist with
+      | None -> ()
+      | Some unresolved ->
+          let _ =
+            match resolve_alias (module Handler) unresolved with
+            | Result.Error dependencies ->
+                let add_dependency =
+                  let update_dependency = function
+                    | None ->
+                        [unresolved]
+                    | Some entries ->
+                        unresolved :: entries
+                  in
+                  String.Table.update resolution_dependency ~f:update_dependency
+                in
+                List.iter dependencies ~f:add_dependency
+            | Result.Ok ({ ResolvedAlias.name; _ } as resolved) ->
+                ResolvedAlias.register (module Handler) resolved;
+                match Hashtbl.find resolution_dependency name with
+                | Some entries ->
+                    Queue.enqueue_all worklist entries;
+                    Hashtbl.remove resolution_dependency name
+                | None ->
+                    ()
+          in
+          fixpoint ()
     in
-    fixpoint unresolved
+    fixpoint ()
   in
   List.concat_map ~f:(collect_aliases (module Handler)) sources
   |> register_aliases;
