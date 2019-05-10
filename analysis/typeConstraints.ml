@@ -50,32 +50,37 @@ let exists constraints ~predicate =
 
 
 module Solution = struct
-  type t = Type.t Type.Map.t
+  type t = Type.t VariableMap.t
 
   let equal =
-    Type.Map.equal Type.equal
+    VariableMap.equal Type.equal
 
   let show solution =
-    let show_line ~key ~data accumulator =
-      Format.sprintf "%s -> %s" (Type.show key) (Type.show data) :: accumulator
+    let show_line ~key:{ Type.Variable.variable; _ } ~data accumulator =
+      Format.sprintf "%s -> %s" variable (Type.show data) :: accumulator
     in
-    Map.fold solution ~init:[] ~f:show_line
+    VariableMap.fold solution ~init:[] ~f:show_line
     |> List.rev
     |> String.concat ~sep:"\n"
     |> Format.sprintf "{%s}"
 
   let empty =
-    Type.Map.empty
+    VariableMap.empty
 
   let instantiate solution =
-    Type.instantiate ~constraints:(Type.Map.find solution) ~widen:false
+    let constraints = function
+      | Type.Variable variable ->
+          VariableMap.find solution variable
+      | _ ->
+          None
+    in
+    Type.instantiate ~constraints ~widen:false
 
-  let instantiate_single_variable solution variable =
-    Type.Map.find solution (Type.Variable variable)
+  let instantiate_single_variable =
+    VariableMap.find
 
-  let create alist =
-    List.map alist ~f:(fun (variable, result) -> Type.Variable variable, result)
-    |> Type.Map.of_alist_exn
+  let create =
+    VariableMap.of_alist_exn
 end
 
 
@@ -196,7 +201,7 @@ module OrderedConstraints(Order: OrderType) = struct
   let merge_solution constraints solution =
     let instantiate_interval ~key ~data:{upper_bound; lower_bound} =
       let smart_instantiate annotation =
-        let instantiated = Type.instantiate ~constraints:(Type.Map.find solution) annotation in
+        let instantiated = Solution.instantiate solution annotation in
         Option.some_if (not (Type.equal instantiated (Type.Variable key))) instantiated
       in
       let upper_bound = smart_instantiate upper_bound in
@@ -232,7 +237,7 @@ module OrderedConstraints(Order: OrderType) = struct
         let add_actualized_interval partial_solution =
           let { Type.Variable.constraints = exogenous_constraint; _ } = variable in
           Interval.actualize interval ~order ~exogenous_constraint
-          >>| (fun data -> Type.Map.set partial_solution ~key:(Type.Variable variable) ~data)
+          >>| (fun data -> VariableMap.set partial_solution ~key:variable ~data)
         in
         partial_solution
         >>= add_actualized_interval
@@ -252,7 +257,7 @@ module OrderedConstraints(Order: OrderType) = struct
         ~init:(Some partial_solution)
       >>= handle_dependent_constraints
     in
-    build_solution ~remaining_constraints:constraints ~partial_solution:Type.Map.empty
+    build_solution ~remaining_constraints:constraints ~partial_solution:VariableMap.empty
 
   let extract_partial_solution constraints ~order ~variables =
     let extracted_constraints, remaining_constraints =
