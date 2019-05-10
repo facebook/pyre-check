@@ -36,8 +36,26 @@ let test_check_implementation _ =
       def foo() -> None:
           pass
     |}
-    []
+    [];
 
+  assert_type_errors
+    {|
+      from typing import overload
+      @overload
+      def foo(x:int) -> bool:
+          pass
+
+      @overload
+      def foo(x:str) -> int:
+          pass
+
+      def foo(x:str) -> float:
+          return 1
+    |}
+    [
+      "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
+       incompatible with the return type of the implementation (`float`)."
+    ]
 
 let () =
   "method">:::[

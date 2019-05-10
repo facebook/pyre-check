@@ -503,20 +503,60 @@ module State = struct
         errors
     in
     let overload_errors errors =
-      let annotation = Resolution.get_local resolution ~reference:name in
-      match annotation with
-      | Some { annotation = Type.Callable { implementation; _ }; _ }
-        when Statement.Define.is_overloaded_method define &&
-             Type.Callable.Overload.is_undefined implementation ->
-          let error =
-            Error.create
-              ~location
-              ~kind:(Error.MissingOverloadImplementation name)
-              ~define:define_node
-          in
-          error :: errors
-      | _ ->
-          errors
+      let annotation =
+        Resolution.get_local resolution ~reference:name
+      in
+      let check_implementation errors =
+        match annotation with
+        | Some { annotation = Type.Callable { implementation; _ }; _ }
+          when Statement.Define.is_overloaded_method define &&
+               Type.Callable.Overload.is_undefined implementation ->
+            let error =
+              Error.create
+                ~location
+                ~kind:(Error.MissingOverloadImplementation name)
+                ~define:define_node
+            in
+            error :: errors
+        | _ ->
+            errors
+      in
+      let check_compatible_return_types errors =
+        match annotation with
+        | Some {
+            annotation = Type.Callable {
+                overloads;
+                implementation = { annotation = implementation_annotation; _ };
+                _
+              };
+            _
+          } when not (Statement.Define.is_overloaded_method define) ->
+            List.fold ~init:errors ~f:(fun sofar { annotation; _ } ->
+                if Resolution.is_consistent_with
+                    resolution
+                    annotation
+                    implementation_annotation
+                    ~expression:None
+                then
+                  sofar
+                else
+                  let error =
+                    Error.create
+                      ~location
+                      ~kind:(Error.IncompatibleOverload {
+                          implementation_annotation;
+                          overload_annotation = annotation;
+                          name;
+                        })
+                      ~define:define_node
+                  in
+                  error :: sofar
+              ) overloads
+        | _ ->
+            errors
+      in
+      check_implementation errors
+      |> check_compatible_return_types
     in
     Set.to_list errors
     |> Error.join_at_define

@@ -143,6 +143,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompatibleOverload of {
+      implementation_annotation: Type.t;
+      name: Reference.t;
+      overload_annotation: Type.t;
+    }
   | IncompleteType of {
       target: Expression.t;
       annotation: Type.t;
@@ -245,7 +250,7 @@ let code = function
   | InvalidOverride _ -> 40
   | InvalidAssignment _ -> 41
   | MissingOverloadImplementation _ -> 42
-
+  | IncompatibleOverload _ -> 43
 
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
@@ -264,6 +269,7 @@ let name = function
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
+  | IncompatibleOverload _ -> "Incompatible overload"
   | IncompleteType _ -> "Incomplete Type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
@@ -463,6 +469,15 @@ let messages ~concise ~signature location kind =
            "Expected an awaitable but got `%a`."
            pp_type actual
         );
+      ]
+  | IncompatibleOverload { implementation_annotation; name; overload_annotation; } ->
+      [
+        Format.asprintf
+          "The return type of overloaded function `%a` (`%a`) \
+           is incompatible with the return type of the implementation (`%a`)."
+          pp_reference name
+          pp_type overload_annotation
+          pp_type implementation_annotation
       ]
   | IncompatibleParameterType {
       name;
@@ -1586,6 +1601,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidOverride _
   | InvalidAssignment _
   | InvalidType _
+  | IncompatibleOverload _
   | IncompleteType _
   | MissingArgument _
   | MissingAttributeAnnotation _
@@ -1663,6 +1679,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride _
+  | IncompatibleOverload _
   | IncompleteType _
   | InvalidMethodSignature _
   | InvalidType _
@@ -1724,6 +1741,10 @@ let less_or_equal ~resolution left right =
         Resolution.less_or_equal resolution ~left ~right
     | IncompatibleReturnType left, IncompatibleReturnType right ->
         less_or_equal_mismatch left.mismatch right.mismatch
+    | IncompatibleOverload left, IncompatibleOverload right ->
+        Type.equal left.implementation_annotation right.implementation_annotation &&
+        Type.equal left.overload_annotation right.overload_annotation &&
+        Reference.equal left.name right.name
     | IncompleteType
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
@@ -1897,6 +1918,7 @@ let less_or_equal ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompatibleOverload _, _
     | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
@@ -2182,6 +2204,7 @@ let join ~resolution left right =
     | IncompatibleConstructorAnnotation _, _
     | IncompatibleParameterType _, _
     | IncompatibleReturnType _, _
+    | IncompatibleOverload _, _
     | IncompleteType _, _
     | IncompatibleVariableType _, _
     | InconsistentOverride _, _
@@ -2593,6 +2616,12 @@ let dequalify
         IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
+    | IncompatibleOverload { implementation_annotation; name; overload_annotation; } ->
+        IncompatibleOverload {
+          implementation_annotation = dequalify implementation_annotation;
+          name;
+          overload_annotation = dequalify overload_annotation;
+        }
     | IncompleteType { target; annotation; attempted_action } ->
         IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->

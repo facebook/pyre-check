@@ -118,6 +118,11 @@ type kind =
     }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
+  | IncompatibleOverload of {
+      implementation_annotation: Type.t;
+      name: Reference.t;
+      overload_annotation: Type.t;
+    }
   | IncompleteType of {
       target: Expression.t;
       annotation: Type.t;
