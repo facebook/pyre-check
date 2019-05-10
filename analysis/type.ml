@@ -1289,13 +1289,18 @@ module Callable = struct
         let t_of_sexp = t_of_sexp type_t_of_sexp
       end)
 
-    let create ?(annotation=Any) ?(default=false) name =
+    let create ?(annotation=Any) ?(default=false) name index =
       let star, name = Identifier.split_star name in
-      let named = { name; annotation; default } in
       match star with
-      | "**" -> Keywords named
-      | "*" -> Variable named
-      | _ -> Named named
+      | "**" -> Keywords { name; annotation; default = false }
+      | "*" -> Variable { name; annotation; default = false }
+      | _ ->
+          let sanitized = Identifier.sanitized name in
+          if String.is_prefix sanitized ~prefix:"__" &&
+             not (String.is_suffix sanitized ~suffix:"__") then
+            Parameter.Anonymous { index; annotation; default }
+          else
+            Parameter.Named { name; annotation; default }
 
     let annotation = function
       | Anonymous { annotation; _ }

@@ -291,6 +291,9 @@ let test_create _ =
   assert_callable
     "def foo(a: int = 1) -> str: ..."
     ~expected:"typing.Callable('foo')[[Named(a, int, default)], str]";
+  assert_callable
+    "def foo(__a: int, _b: str) -> str: ..."
+    ~expected:"typing.Callable('foo')[[int, Named(_b, str)], str]";
 
   assert_callable
     "def foo(a, *args, **kwargs) -> str: ..."

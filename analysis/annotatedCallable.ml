@@ -59,24 +59,17 @@ let create_overload
     ~resolution
     ~define:({ Define.signature = { parameters; _ }; _ } as define) =
   let open Type.Callable in
-  let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
+  let parameter index { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
     let annotation =
       annotation
       >>| Resolution.parse_annotation resolution
       |> Option.value ~default:Type.Top
     in
-    let star, name = Identifier.split_star name in
-    match star with
-    | "**" ->
-        Parameter.Keywords { Parameter.name; annotation; default = false }
-    | "*" ->
-        Parameter.Variable { Parameter.name; annotation; default = false }
-    | _ ->
-        Parameter.Named { Parameter.name; annotation; default = Option.is_some value }
+    Type.Callable.Parameter.create name index ~annotation ~default:(Option.is_some value)
   in
   {
     annotation = return_annotation ~define ~resolution;
-    parameters = Defined (List.map parameters ~f:parameter);
+    parameters = Defined (List.mapi parameters ~f:parameter);
   }
 
 

@@ -241,6 +241,48 @@ let test_check_protocol _ =
 
     |}
     [];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def foo(self, param: int) -> int: ...
+
+      class Alpha:
+        def foo(self, mismatch: int) -> int:
+          return 9
+
+      def foo(p: P) -> int:
+        return p.foo(1)
+
+      def bar(a: Alpha) -> None:
+        foo(a)
+
+    |}
+    [
+      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
+      "but got `Alpha`.";
+    ];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def foo(self, __dunder: int) -> int: ...
+
+      class Alpha:
+        def foo(self, x: int) -> int:
+          return 9
+
+      class Beta:
+        def foo(self, y: int) -> int:
+          return 9
+
+      def foo(p: P) -> int:
+        return p.foo(1)
+
+      def bar(a: Alpha, b: Beta) -> None:
+        foo(a)
+        foo(b)
+
+    |}
+    [];
   ()
 
 
@@ -533,6 +575,19 @@ let test_callback_protocols _ =
       "to call `takesPGeneric` but got " ^
       "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
     ];
+
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def __call__(self, __dunder: int) -> bool: ...
+      def parameterMismatch(x: int) -> bool:
+        return True
+      def takesP(f: P) -> bool:
+        return f(1)
+      def foo() -> None:
+        takesP(parameterMismatch)
+    |}
+    [];
   ()
 
 

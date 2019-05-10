@@ -2385,12 +2385,12 @@ module State = struct
            to write a function that take in callables with literal return types.  If you really want
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
-        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+        let create_parameter index { Node.value = { Parameter.name; value; _ }; _ } =
           let default = Option.is_some value in
-          Type.Callable.Parameter.create ~default name
+          Type.Callable.Parameter.create ~default name index
         in
         let parameters =
-          List.map parameters ~f:create_parameter
+          List.mapi parameters ~f:create_parameter
           |> fun parameters -> Type.Callable.Defined parameters
         in
         {

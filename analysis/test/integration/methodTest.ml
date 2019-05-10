@@ -1510,6 +1510,37 @@ let test_check_decorators _ =
     []
 
 
+let test_enforce_dunder_params _ =
+  assert_type_errors
+    {|
+      def foo(__f: str) -> int:
+        return 1
+
+      def bar() -> None:
+        foo("A")
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(__f: str) -> int:
+        return 1
+
+      def bar() -> None:
+        foo(__f="A")
+    |}
+    ["Unexpected keyword [28]: Unexpected keyword argument `__f` to call `foo`."];
+  assert_type_errors
+    {|
+      def foo(__f__: str) -> int:
+        return 1
+
+      def bar() -> None:
+        foo(__f__="A")
+    |}
+    [];
+  ()
+
+
 let () =
   "method">:::[
     "check_method_returns">::test_check_method_returns;
@@ -1528,5 +1559,6 @@ let () =
     "check_in">::test_check_in;
     "check_enter">::test_check_enter;
     "check_decorators">::test_check_decorators;
+    "enforce_dunder_params">::test_enforce_dunder_params;
   ]
   |> Test.run
