@@ -314,7 +314,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
   | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
       (* TODO(T42259381) This special case is only necessary because constructor calls attributes
          with an "instantiated" type of a bare parametric, which will fill with Anys *)
-      Type.Map.empty
+      TypeConstraints.Solution.empty
   | _ ->
       Resolution.solve_less_or_equal
         resolution
@@ -324,7 +324,7 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
       |> List.filter_map ~f:(Resolution.solve_constraints resolution)
       |> List.hd
       (* TODO(T39598018): error in this case somehow, something must be wrong *)
-      |> Option.value ~default:Type.Map.empty
+      |> Option.value ~default:TypeConstraints.Solution.empty
 
 
 let superclasses definition ~resolution =
@@ -777,14 +777,17 @@ let attribute_table
         Attribute.parent attribute
         |> Resolution.class_definition resolution
         >>| (fun target ->
-            let constraints =
+            let solution =
               constraints
                 ~target
                 ~instantiated
                 ~resolution
                 definition
             in
-            Attribute.instantiate ~constraints:(Type.Map.find constraints) attribute)
+            Attribute.instantiate
+              ~constraints:(fun annotation ->
+                  Some (TypeConstraints.Solution.instantiate solution annotation))
+              attribute)
       in
       Option.iter original_instantiated
         ~f:(fun instantiated -> Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
@@ -1074,9 +1077,10 @@ let overrides definition ~resolution ~name =
     if Attribute.defined potential_override then
       annotation definition
       |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
-      |> (fun constraints ->
+      |> (fun solution ->
           Attribute.instantiate
-            ~constraints:(Type.Map.find constraints)
+            ~constraints:(fun annotation ->
+                Some (TypeConstraints.Solution.instantiate solution annotation))
             potential_override)
       |> Option.some
     else

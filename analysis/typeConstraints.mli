@@ -8,10 +8,20 @@ type t
 
 val empty: t
 
-type solution = Type.t Type.Map.t
-
 (* Checks a predicate against all of the bounds accumulated in a set of constraints *)
 val exists: t -> predicate: (Type.t -> bool) -> bool
+
+module Solution : sig
+  type t
+  [@@deriving eq]
+  val empty: t
+  val instantiate: t -> Type.t -> Type.t
+  val instantiate_single_variable: t -> Type.Variable.t -> Type.t option
+
+  (* For testing *)
+  val create: (Type.Variable.t * Type.t) list -> t
+  val show: t -> string
+end
 
 module type OrderedConstraintsType = sig
   (* This module defines a system to construct and solve a set of constraints on type variables.
@@ -22,14 +32,14 @@ module type OrderedConstraintsType = sig
   type order
   val add_lower_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
   val add_upper_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
-  val solve: t -> order: order -> solution option
+  val solve: t -> order: order -> Solution.t option
   (* This solves the constraints for the given variables, and then substitutes those solution in
      for those variables in the constraints for the remaining constraints. *)
   val extract_partial_solution
     :  t
     -> order: order
     -> variables: Type.Variable.t list
-    -> (t * solution) option
+    -> (t * Solution.t) option
 end
 
 module type OrderType = sig

@@ -3220,7 +3220,6 @@ let test_solve_less_or_equal _ =
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.Variable.mark_all_variables_as_bound)
-      ?(replace_escaped_variables_with_any = false)
       expected =
     let handler =
       let constructor instantiated =
@@ -3242,6 +3241,11 @@ let test_solve_less_or_equal _ =
       |> parse_single_expression
       |> Resolution.parse_annotation resolution
     in
+    let parse_variable variable =
+      match parse_annotation variable with
+      | Type.Variable variable -> variable
+      | _ -> failwith "not a variable"
+    in
     let left =
       let constraints annotation =
         match annotation with
@@ -3257,11 +3261,11 @@ let test_solve_less_or_equal _ =
     let expected =
       let parse_pairs =
         List.map
-          ~f:(fun (key, value) -> (parse_annotation key, parse_annotation value |> postprocess))
+          ~f:(fun (key, value) -> (parse_variable key, parse_annotation value |> postprocess))
       in
       expected
       |> List.map ~f:parse_pairs
-      |> List.map ~f:Type.Map.of_alist_exn
+      |> List.map ~f:TypeConstraints.Solution.create
     in
     let constraints =
       let add_bounds sofar (key, (lower_bound, upper_bound)) =
@@ -3293,35 +3297,23 @@ let test_solve_less_or_equal _ =
       |> Option.value ~default:TypeConstraints.empty
     in
     let list_of_maps_compare left right =
-      let and_map_equal sofar left right  = sofar && (Type.Map.equal Type.equal left right) in
+      let and_map_equal sofar left right  = sofar && (TypeConstraints.Solution.equal left right) in
       match List.fold2 left right ~init:true ~f:and_map_equal with
       | List.Or_unequal_lengths.Ok comparison -> comparison
       | List.Or_unequal_lengths.Unequal_lengths -> false
     in
     let list_of_map_print map =
-      let show_line ~key ~data accumulator =
-        (Format.sprintf "%s -> %s" (Type.show key) (Type.show data)) :: accumulator
-      in
       map
-      |> List.map ~f:(Map.fold ~init:[] ~f:show_line)
-      |> List.map ~f:(String.concat ~sep:", ")
-      |> List.map ~f:(Printf.sprintf "[%s]")
+      |> List.map ~f:TypeConstraints.Solution.show
       |> String.concat ~sep:";\n"
       |> Printf.sprintf "{\n%s\n}"
-    in
-    let replace =
-      if replace_escaped_variables_with_any then
-        Type.Map.map ~f:Type.Variable.convert_all_escaped_free_variables_to_anys
-      else
-        Fn.id
     in
     assert_equal
       ~cmp:list_of_maps_compare
       ~printer:list_of_map_print
       expected
       (solve_less_or_equal handler ~constraints ~left ~right
-       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler)
-       |> List.map ~f:replace)
+       |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
   in
   assert_solve ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
   assert_solve ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
@@ -3457,12 +3449,6 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[int], int]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     [["T_Unconstrained", "int"]];
-  assert_solve
-    ~leave_unbound_in_left:["T"]
-    ~replace_escaped_variables_with_any:true
-    ~left:"typing.Callable[[Named(a, T, default)], G_invariant[T]]"
-    ~right:"typing.Callable[[], T_Unconstrained]"
-    [["T_Unconstrained", "G_invariant[typing.Any]"]];
   assert_solve
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
@@ -4025,6 +4011,74 @@ let test_disconnect_successors _ =
   ()
 
 
+let test_mark_escaped_as_escaped _ =
+  let resolution =
+    let configuration = Configuration.Analysis.create () in
+    let populate source =
+      let environment =
+        let environment = Environment.Builder.create () in
+        Test.populate
+          ~configuration
+          (Environment.handler environment)
+          (parse source :: typeshed_stubs ());
+        environment
+      in
+      Environment.handler environment
+    in
+    populate
+      {|
+        T = typing.TypeVar('T')
+        class G_invariant(typing.Generic[T]):
+          pass
+      |}
+    |> fun environment -> TypeCheck.resolution environment ()
+  in
+  let left =
+    let variable = Type.variable "T" in
+    let parameters =
+      Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:variable ~default:true "a"]
+    in
+    Type.Callable.create
+      ~annotation:(Type.parametric "G_invariant" [variable])
+      ~parameters
+      ()
+  in
+  let right =
+    let variable = Type.variable "T_Unconstrained" in
+    Type.Callable.create
+      ~annotation:variable
+      ~parameters:(Type.Callable.Defined [])
+      ()
+  in
+  let result =
+    let handler =
+      {
+        handler = Resolution.order resolution;
+        constructor = (fun _ -> None);
+        attributes = (fun _ -> None);
+        is_protocol = (fun _ -> false);
+        any_is_bottom = false;
+        protocol_assumptions = ProtocolAssumptions.empty;
+      }
+    in
+    let constraints = TypeConstraints.empty in
+    (solve_less_or_equal handler ~constraints ~left ~right
+     |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
+  in
+  match result with
+  | [result] ->
+      let instantiated =
+        TypeConstraints.Solution.instantiate result (Type.variable "T_Unconstrained")
+      in
+      assert_equal
+        ~printer:Type.show
+        ~cmp:Type.equal
+        (Type.Variable.convert_all_escaped_free_variables_to_anys instantiated)
+        (Type.parametric "G_invariant" [Type.Any])
+  | _ ->
+      assert_failure "wrong number of solutions"
+
+
 let () =
   "order">:::[
     "backedges">::test_backedges;
@@ -4051,5 +4105,6 @@ let () =
     "solve_less_or_equal">::test_solve_less_or_equal;
     "is_consistent_with">::test_is_consistent_with;
     "instantiate_protocol_parameters">::test_instantiate_protocol_parameters;
+    "marks_escaped_as_escaped">::test_mark_escaped_as_escaped;
   ]
   |> Test.run

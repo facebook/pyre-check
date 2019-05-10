@@ -132,12 +132,12 @@ val solve_less_or_equal
   -> right: Type.t
   -> TypeConstraints.t list
 val constraints_solution_exists: left: Type.t -> right: Type.t -> t -> bool
-val solve_constraints: t -> TypeConstraints.t -> Type.t Type.Map.t option
+val solve_constraints: t -> TypeConstraints.t -> TypeConstraints.Solution.t option
 val partial_solve_constraints
   :  t
   -> TypeConstraints.t
   -> variables: Type.Variable.t list
-  -> (TypeConstraints.t * TypeConstraints.solution) option
+  -> (TypeConstraints.t * TypeConstraints.Solution.t) option
 
 module Cache : sig
   val clear: unit -> unit

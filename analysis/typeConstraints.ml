@@ -42,9 +42,6 @@ let show annotation =
 let empty = VariableMap.empty
 
 
-type solution = Type.t Type.Map.t
-
-
 let exists constraints ~predicate =
   let exists_in_interval_bounds { upper_bound; lower_bound } =
     Type.exists upper_bound ~predicate || Type.exists lower_bound ~predicate
@@ -52,16 +49,47 @@ let exists constraints ~predicate =
   VariableMap.exists constraints ~f:exists_in_interval_bounds
 
 
+module Solution = struct
+  type t = Type.t Type.Map.t
+
+  let equal =
+    Type.Map.equal Type.equal
+
+  let show solution =
+    let show_line ~key ~data accumulator =
+      Format.sprintf "%s -> %s" (Type.show key) (Type.show data) :: accumulator
+    in
+    Map.fold solution ~init:[] ~f:show_line
+    |> List.rev
+    |> String.concat ~sep:"\n"
+    |> Format.sprintf "{%s}"
+
+  let empty =
+    Type.Map.empty
+
+  let instantiate solution =
+    Type.instantiate ~constraints:(Type.Map.find solution) ~widen:false
+
+  let instantiate_single_variable solution variable =
+    Type.Map.find solution (Type.Variable variable)
+
+  let create alist =
+    List.map alist ~f:(fun (variable, result) -> Type.Variable variable, result)
+    |> Type.Map.of_alist_exn
+end
+
+
+
 module type OrderedConstraintsType = sig
   type order
   val add_lower_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
   val add_upper_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
-  val solve: t -> order: order -> solution option
+  val solve: t -> order: order -> Solution.t option
   val extract_partial_solution
     :  t
     -> order: order
     -> variables: Type.Variable.t list
-    -> (t * solution) option
+    -> (t * Solution.t) option
 end
 
 

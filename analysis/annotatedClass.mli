@@ -80,7 +80,7 @@ val constraints
   -> t
   -> instantiated: Type.t
   -> resolution: Resolution.t
-  -> Type.t Type.Map.t
+  -> TypeConstraints.Solution.t
 
 val superclasses
   :  t

@@ -134,20 +134,14 @@ let test_add_bound _ =
 
 let optional_map_compare left right =
   match left, right with
-  | Some left, Some right -> Type.Map.equal Type.equal left right
+  | Some left, Some right -> TypeConstraints.Solution.equal left right
   | None, None -> true
   | _ , _ -> false
 
 
 let optional_map_print map =
-  let show_line ~key ~data accumulator =
-    Format.sprintf "%s -> %s" (Type.show key) (Type.show data) :: accumulator
-  in
   map
-  >>| Map.fold ~init:[] ~f:show_line
-  >>| List.rev
-  >>| String.concat ~sep:"\n"
-  >>| Format.sprintf "{%s}"
+  >>| TypeConstraints.Solution.show
   |> Option.value ~default:"None"
 
 
@@ -158,8 +152,8 @@ let expect_sequence_solution bounds expected =
   in
   let expected =
     expected
-    >>| List.map ~f:(fun (variable, solution) -> Type.Variable variable, solution)
-    >>| Type.Map.of_alist_exn
+    >>| List.map ~f:(fun (variable, solution) -> variable, solution)
+    >>| TypeConstraints.Solution.create
   in
   assert_equal
     ~cmp:optional_map_compare
@@ -272,8 +266,8 @@ let test_partial_solution _ =
     in
     let parse expected =
       expected
-      >>| List.map ~f:(fun (variable, solution) -> Type.Variable variable, solution)
-      >>| Type.Map.of_alist_exn
+      >>| List.map ~f:(fun (variable, solution) -> variable, solution)
+      >>| TypeConstraints.Solution.create
     in
     let double_compare (left_first, left_second) (right_first, right_second) =
       optional_map_compare left_first right_first &&

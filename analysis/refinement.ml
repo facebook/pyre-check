@@ -27,7 +27,7 @@ let refine ~resolution { annotation; mutability } refined =
               ~right:original
             |> List.filter_map ~f:(Resolution.solve_constraints resolution)
             |> List.hd
-            >>| (fun solution -> Type.instantiate refined ~constraints:(Type.Map.find solution))
+            >>| (fun solution -> TypeConstraints.Solution.instantiate solution refined)
             |> Option.value ~default:annotation
       in
       let refine =

@@ -453,6 +453,7 @@ let select
                         |> (fun error -> InvalidVariableArgument error)
                         |> add_annotation_error signature_match
                       in
+                      let iterable_variable = Type.Variable.create "$_T" in
                       let iterable_constraints =
                         if Type.is_unbound annotation then
                           []
@@ -461,7 +462,7 @@ let select
                             resolution
                             ~constraints:TypeConstraints.empty
                             ~left:annotation
-                            ~right:(Type.iterable (Type.variable "$_T"))
+                            ~right:(Type.iterable (Type.Variable iterable_variable))
                       in
                       begin
                         match iterable_constraints with
@@ -469,7 +470,10 @@ let select
                             signature_with_error
                         | iterable_constraint :: _ ->
                             Resolution.solve_constraints resolution iterable_constraint
-                            >>= (fun solution -> Map.find solution (Type.variable "$_T"))
+                            >>= (fun solution ->
+                                TypeConstraints.Solution.instantiate_single_variable
+                                  solution
+                                  iterable_variable)
                             >>| set_constraints_and_reasons
                             |> Option.value ~default:signature_with_error
                       end
@@ -618,9 +622,9 @@ let select
               ~f:(Resolution.partial_solve_constraints ~variables resolution)
             |> List.map ~f:snd
             |> List.hd
-            |> Option.value ~default:Type.Map.empty
+            |> Option.value ~default:TypeConstraints.Solution.empty
           in
-          Type.instantiate annotation ~widen:false ~constraints:(Map.find solution)
+          TypeConstraints.Solution.instantiate solution annotation
           |> Type.Variable.mark_all_free_variables_as_escaped
           (* We need to do transformations of the form Union[T_escaped, int] => int in order to
              properly handle some typeshed stubs which only sometimes bind type variables and

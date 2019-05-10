@@ -253,12 +253,10 @@ let apply_decorators
                     ~right:parameter_annotation
                   |> List.filter_map ~f:(Resolution.solve_constraints resolution)
                   |> List.hd
-                  |> function
-                  | Some constraints ->
-                      Type.instantiate return_annotation ~constraints:(Map.find constraints)
-                  | None ->
-                      (* If we failed, just default to the old annotation. *)
-                      annotation
+                  >>| (fun solution ->
+                      TypeConstraints.Solution.instantiate solution return_annotation)
+                  (* If we failed, just default to the old annotation. *)
+                  |> Option.value ~default:annotation
                 in
                 begin
                   match decorated_annotation with

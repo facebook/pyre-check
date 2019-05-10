@@ -610,7 +610,7 @@ module OrderImplementation = struct
         in
         let instantiate_return (external_constraints, partial_solution) =
           let instantiated_return =
-            Type.instantiate overload.annotation ~constraints:(Type.Map.find partial_solution)
+            TypeConstraints.Solution.instantiate partial_solution overload.annotation
             |> Type.Variable.mark_all_free_variables_as_escaped ~specific:namespaced_variables
           in
           instantiated_return, external_constraints
@@ -2208,7 +2208,7 @@ module OrderImplementation = struct
                       Type.instantiate ~constraints
                     in
                     protocol_generics
-                    >>| List.map ~f:(Type.instantiate ~constraints:(Type.Map.find solution))
+                    >>| List.map ~f:(TypeConstraints.Solution.instantiate solution)
                     >>| List.map ~f:desanitize
                     |> Option.value ~default:[]
                   in
