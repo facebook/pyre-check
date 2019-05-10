@@ -260,8 +260,11 @@ let handler
           ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
           keys
       in
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
-      |> purge_table_given_keys class_definitions;
+      let class_keys =
+        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+      in
+      purge_table_given_keys class_definitions class_keys;
+      purge_table_given_keys class_metadata class_keys;
       List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
       |> purge_table_given_keys aliases;
       let global_keys =

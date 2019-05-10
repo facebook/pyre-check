@@ -251,6 +251,38 @@ let test_populate context =
   assert_successors "a.C" ["a.D"; "object"]
 
 
+let test_purge context =
+  let directory = bracket_tmpdir context in
+  let configuration = {
+    mock_configuration with Configuration.Analysis.local_root = Path.create_absolute directory;
+  }
+  in
+  Service.Parser.parse_sources
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~preprocessing_state:None
+    ~files:[
+      File.create
+        ~content:(
+          {|
+            class D: pass
+            class C(D): pass
+          |}
+          |> Test.trim_extra_indentation)
+        (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py");
+    ]
+  |> ignore;
+
+  Service.Environment.populate_shared_memory
+    ~configuration
+    ~scheduler:(Scheduler.mock ())
+    ~stubs:[]
+    ~sources:[File.Handle.create "a.py"];
+  assert_is_some (Handler.class_metadata "a.D");
+  Handler.purge [File.Handle.create "a.py"];
+  assert_is_none (Handler.class_metadata "a.D")
+
+
 let () =
   "environment">:::[
     "alias_keys">::test_alias_keys;
@@ -262,5 +294,6 @@ let () =
     "normalize">::test_normalize;
     "register_modules">::test_register_modules;
     "populate">::test_populate;
+    "purge">::test_purge;
   ]
   |> Test.run

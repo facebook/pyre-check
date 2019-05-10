@@ -492,8 +492,14 @@ module SharedHandler: Analysis.Environment.Handler = struct
     |> List.map ~f:(fun name -> Type.Primitive name)
     |> TypeOrder.disconnect_successors (module TypeOrderHandler);
 
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
-    |> fun keys -> ClassDefinitions.remove_batch (ClassDefinitions.KeySet.of_list keys);
+    let class_keys =
+      List.concat_map
+        ~f:(fun handle -> DependencyHandler.get_class_keys ~handle)
+        handles
+      |> ClassDefinitions.KeySet.of_list
+    in
+    ClassDefinitions.remove_batch class_keys;
+    ClassMetadata.remove_batch class_keys;
 
     List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
     |> fun keys -> Aliases.remove_batch (Aliases.KeySet.of_list keys);
