@@ -9,5 +9,6 @@ license: "MIT"
 build: ["dune" "build" "-p" name]
 depends: [
   "core"
+  "conf-sqlite3"
   "str"
 ]
