@@ -1099,7 +1099,7 @@ let test_filter _ =
   in
   (* Suppress stub errors. *)
   let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in
-  assert_filtered ~location:stub (undefined_attribute (Type.Primitive "Foo"));
+  assert_unfiltered ~location:stub (undefined_attribute (Type.Primitive "Foo"));
   assert_unfiltered
     ~location:Location.Instantiated.any
     (undefined_attribute (Type.Primitive "Foo"));

@@ -174,7 +174,7 @@ let check
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler: Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~stubs ~sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources in
+  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:(stubs @ sources) in
 
   (* Log coverage results *)
   let path_to_files =
