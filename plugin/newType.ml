@@ -22,9 +22,9 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                 Call {
                   callee = {
                     Node.value = Name (Name.Attribute {
-                      base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "NewType";
-                    });
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "NewType";
+                      });
                     _;
                   };
                   arguments = [
@@ -37,7 +37,8 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                       _;
                     };
                     {
-                      Call.Argument.value = ({ Node.value = (Name _); _ } as base);
+                      (* TODO (T44209017): Error on invalid annotation expression *)
+                      Call.Argument.value = base;
                       _;
                     } as base_argument;
                   ];

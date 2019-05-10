@@ -29,6 +29,24 @@ let test_transform_ast _ =
         def qualifier.T.__init__(self, input: int):
           pass
     |};
+  assert_expand
+    {|
+      T = typing.NewType('T', typing.List[int])
+    |}
+    {|
+      class qualifier.T(typing.List[int]):
+        def qualifier.T.__init__(self, input: typing.List[int]):
+          pass
+    |};
+  assert_expand
+    {|
+      T = typing.NewType('T', typing.Dict[str, typing.List[int]])
+    |}
+    {|
+      class qualifier.T(typing.Dict[str, typing.List[int]]):
+        def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]):
+          pass
+    |};
 
   (* Don't transform non-toplevel statements. *)
   assert_expand
