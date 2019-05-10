@@ -267,7 +267,6 @@ def run_integration_test(repository_path) -> int:
 
         if discrepancies:
             LOG.error("Pyre rage:")
-            # pyre-ignore[6]: TextIO is not inferred to implement the _Writer protocol
             print(repository.run_pyre("rage"), file=sys.stderr)
             LOG.error("Found discrepancies between incremental and complete checks!")
             for revision, (actual_error, expected_error) in discrepancies.items():
