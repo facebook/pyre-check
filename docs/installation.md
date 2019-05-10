@@ -39,7 +39,7 @@ package management systems. Please follow their instructions for your particular
 Once you have Opam on your system, switch to a current compiler with
 
 ```bash
-$ opam switch 4.06.0
+$ opam switch 4.07.1
 ```
 
 This will compile the compiler from scratch and is likely going to take some time on your system.
