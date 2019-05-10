@@ -10,9 +10,14 @@ open Pyre
 open Test
 
 
-let assert_errors ?filter_directories ~root ~files errors =
+let assert_errors ?filter_directories ?search_path ~root ~files errors =
   let configuration =
-    Configuration.Analysis.create ?filter_directories ~project_root:root ~local_root:root ()
+    Configuration.Analysis.create
+      ?filter_directories
+      ?search_path
+      ~project_root:root
+      ~local_root:root
+      ()
   in
   let scheduler = Scheduler.mock () in
   let add_file file =
@@ -120,6 +125,20 @@ let test_filter_directories context =
     ~root
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~files
+    ["Incompatible return type [7]: Expected `C` but got `D`."];
+
+  (* The structure:
+     /root/check <- pyre is meant to analyze here
+     /root/check/search <- this is added to the search path, handles are relative to here instead
+                           of check. The practical case here is resource_cache/typeshed. *)
+  assert_errors
+    ~root
+    ~search_path:[Path.SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
+    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
+    ~files:[
+      File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
+      File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py");
+    ]
     ["Incompatible return type [7]: Expected `C` but got `D`."]
 
 

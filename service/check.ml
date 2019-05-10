@@ -27,6 +27,7 @@ let analyze_sources
     ~scheduler
     ~configuration:({
         Configuration.Analysis.project_root;
+        local_root;
         filter_directories;
         _;
       } as configuration)
@@ -50,6 +51,12 @@ let analyze_sources
       let path = File.Handle.to_path ~configuration handle in
       match path with
       | Some path ->
+          (* Only analyze handles which live directly under the source root - in case we have
+             a search path or typeshed under the source root, we don't want to analyze them
+             since they're not part of a user's project. *)
+          Path.equal
+            path
+            (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle)) &&
           Path.directory_contains path ~follow_symlinks:true ~directory:project_root &&
           filter_by_directories path
       | _ ->
