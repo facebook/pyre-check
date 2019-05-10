@@ -676,10 +676,6 @@ let dictionary ~key ~value =
   }
 
 
-let ellipsis =
-  Primitive "ellipsis"
-
-
 let enumeration =
   Primitive "enum.Enum"
 

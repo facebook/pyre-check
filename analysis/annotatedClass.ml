@@ -143,8 +143,6 @@ let resolve_class ~resolution annotation =
     match annotation with
     | Type.Top | Type.Bottom | Type.Any ->
         Some []
-    | annotation when Type.equal Type.ellipsis annotation ->
-        Some []
     | Type.Union annotations ->
         let flatten_optional sofar optional =
           match sofar, optional with

@@ -747,8 +747,8 @@ let test_check_immutable_annotations _ =
         constant = 1
     |}
     [
-      "Missing global annotation [5]: Globally accessible variable `constant` " ^
-      "has type `int` but type `Any` is specified."
+      "Missing global annotation [5]: Globally accessible variable `constant` must be specified as \
+       type other than `Any`.";
     ];
 
   assert_type_errors
@@ -1008,8 +1008,8 @@ let test_check_immutable_annotations _ =
       "but type `Any` is specified.";
       "Missing global annotation [5]: Globally accessible variable `z` must be specified " ^
       "as type that does not contain `Any`.";
-      "Missing global annotation [5]: Globally accessible variable `a` has type `int` " ^
-      "but type `Any` is specified.";
+      "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
+       other than `Any`.";
     ];
 
   assert_type_errors

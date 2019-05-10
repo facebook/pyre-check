@@ -187,10 +187,7 @@ let test_check_method_parameters _ =
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x
     |}
-    [
-      "Incompatible variable type [9]: x is declared to have type \
-       `typing.Optional[typing.Set[int]]` but is used as type `ellipsis`.";
-    ]
+    []
 
 
 let test_check_abstract_methods _ =

@@ -754,7 +754,7 @@ let test_forward_expression _ =
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   (* Ellipsis. *)
-  assert_forward "..." Type.ellipsis;
+  assert_forward "..." Type.Any;
 
   (* False literal. *)
   assert_forward "False" (Type.Literal (Type.Boolean false));
@@ -1046,10 +1046,10 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific ["Undefined type [11]: Type `Derp` is not defined."])
-    ~postcondition_immutables:["x", (false, Type.Top)]
+    ~postcondition_immutables:["x", (false, Type.Any)]
     []
     "x: Derp"
-    ["x", Type.Top];
+    ["x", Type.Any];
 
   assert_forward
     ~errors:

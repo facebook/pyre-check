@@ -1417,23 +1417,23 @@ module State = struct
               {
                 Node.location;
                 value = Call {
-                  callee = {
-                    Node.location;
-                    value = Name (Name.Attribute { base = iterator; attribute = "__aiter__" });
+                    callee = {
+                      Node.location;
+                      value = Name (Name.Attribute { base = iterator; attribute = "__aiter__" });
+                    };
+                    arguments = [];
                   };
-                  arguments = [];
-                };
               }
             in
             {
               Node.location;
               value = Call {
-                callee = {
-                  Node.location;
-                  value = Name (Name.Attribute { base = aiter; attribute = "__anext__" });
+                  callee = {
+                    Node.location;
+                    value = Name (Name.Attribute { base = aiter; attribute = "__anext__" });
+                  };
+                  arguments = [];
                 };
-                arguments = [];
-              };
             }
             |> (fun target -> Node.create ~location (Await target))
           else
@@ -1441,23 +1441,23 @@ module State = struct
               {
                 Node.location;
                 value = Call {
-                  callee = {
-                    Node.location;
-                    value = Name (Name.Attribute { base = iterator; attribute = "__iter__" });
+                    callee = {
+                      Node.location;
+                      value = Name (Name.Attribute { base = iterator; attribute = "__iter__" });
+                    };
+                    arguments = [];
                   };
-                  arguments = [];
-                };
               }
             in
             {
               Node.location;
               value = Call {
-                callee = {
-                  Node.location;
-                  value = Name (Name.Attribute { base = iter; attribute = "__next__" });
+                  callee = {
+                    Node.location;
+                    value = Name (Name.Attribute { base = iter; attribute = "__next__" });
+                  };
+                  arguments = [];
                 };
-                arguments = [];
-              };
             }
         in
         Assign { Assign.target; annotation = None; value; parent = None }
@@ -1748,7 +1748,7 @@ module State = struct
                     let arguments = [{ Argument.value = base; name = None }] in
                     backup_name
                     >>= (fun name ->
-                          find_method ~parent:(Resolution.resolve resolution value) ~name)
+                        find_method ~parent:(Resolution.resolve resolution value) ~name)
                     >>| (fun callable ->
                         Annotated.Signature.select ~arguments ~resolution ~callable)
                     |> Option.value ~default:signature
@@ -1788,7 +1788,7 @@ module State = struct
                   |> Annotated.Class.create
                   |> Annotated.Class.successors ~resolution
                   |> List.filter_map
-                      ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
+                    ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
                   |> (List.cons definition)
                   |> List.rev
                   |> List.fold ~init:String.Set.empty ~f:gather_abstract_methods
@@ -2042,13 +2042,13 @@ module State = struct
         (* Resolve `super()` calls. *)
         let superclass =
           Resolution.parent resolution
-           >>| (fun parent -> Type.Primitive (Reference.show parent))
-           >>= Resolution.class_metadata resolution
-           >>| (fun { Resolution.successors; _ } -> successors)
-           >>| List.filter
-                ~f:(fun name -> Option.is_some
-                  (Resolution.class_definition resolution (Type.Primitive name)))
-           >>= List.hd
+          >>| (fun parent -> Type.Primitive (Reference.show parent))
+          >>= Resolution.class_metadata resolution
+          >>| (fun { Resolution.successors; _ } -> successors)
+          >>| List.filter
+            ~f:(fun name -> Option.is_some
+                   (Resolution.class_definition resolution (Type.Primitive name)))
+          >>= List.hd
         in
         begin
           match superclass with
@@ -2104,10 +2104,10 @@ module State = struct
         callee = {
           Node.location;
           value = Name (
-            Name.Attribute {
-              base = { Node.value = Name (Name.Identifier "typing"); _ };
-              attribute = "cast";
-          });
+              Name.Attribute {
+                base = { Node.value = Name (Name.Identifier "typing"); _ };
+                attribute = "cast";
+              });
         };
         arguments = [
           { Call.Argument.value = cast_annotation; _ };
@@ -2221,56 +2221,56 @@ module State = struct
           in
           let { Node.location; _ } = left in
           if has_method "__contains__" iterator then
-              {
-                Node.location;
-                value = Call {
+            {
+              Node.location;
+              value = Call {
                   callee = {
                     Node.location;
                     value = Name (Name.Attribute { base = right; attribute = "__contains__" });
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
-              }
+            }
           else if has_method "__iter__" iterator then
-              let iter =
-                {
-                  Node.location;
-                  value = Call {
+            let iter =
+              {
+                Node.location;
+                value = Call {
                     callee = {
                       Node.location;
                       value = Name (Name.Attribute { base = right; attribute = "__iter__" });
                     };
                     arguments = [];
                   };
-                }
-              in
-              let next =
-                {
-                  Node.location;
-                  value = Call {
+              }
+            in
+            let next =
+              {
+                Node.location;
+                value = Call {
                     callee = {
                       Node.location;
                       value = Name (Name.Attribute { base = iter; attribute = "__next__" });
                     };
                     arguments = [];
                   };
-                }
-              in
-              {
-                Node.location;
-                value = Call {
+              }
+            in
+            {
+              Node.location;
+              value = Call {
                   callee = {
                     Node.location;
                     value = Name (Name.Attribute { base = next; attribute = "__eq__" });
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
-              }
+            }
           else
-              let getitem =
-                {
-                  Node.location;
-                  value = Call {
+            let getitem =
+              {
+                Node.location;
+                value = Call {
                     callee = {
                       Node.location;
                       value = Name (Name.Attribute { base = right; attribute = "__getitem__" });
@@ -2282,18 +2282,18 @@ module State = struct
                       }
                     ];
                   };
-                }
-              in
-              {
-                Node.location;
-                value = Call {
+              }
+            in
+            {
+              Node.location;
+              value = Call {
                   callee = {
                     Node.location;
                     value = Name (Name.Attribute { base = getitem; attribute = "__eq__" });
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
-              }
+            }
         in
         forward_expression ~state ~expression:modified_call
 
@@ -2359,7 +2359,7 @@ module State = struct
         { state = { state with resolution }; resolved = Type.dictionary ~key ~value }
 
     | Ellipsis ->
-        { state; resolved = Type.ellipsis }
+        { state; resolved = Type.Any }
 
     | False ->
         { state; resolved = Type.Literal (Type.Boolean false) }
@@ -2513,7 +2513,7 @@ module State = struct
             | Some (head :: tail) ->
                 let name = attribute in
                 let find_attribute
-                  { Annotated.Class.instantiated; class_attributes; class_definition } =
+                    { Annotated.Class.instantiated; class_attributes; class_definition } =
                   let attribute =
                     Annotated.Class.attribute
                       class_definition
@@ -2865,7 +2865,7 @@ module State = struct
           (* This is the annotation determining how we recursively break up the assignment. *)
           match original_annotation with
           | Some annotation when not (Type.is_unknown annotation) -> annotation
-          | _ -> if Type.equal Type.ellipsis resolved then Type.Top else resolved
+          | _ -> resolved
         in
         let explicit = Option.is_some annotation in
         let rec forward_assign
@@ -2988,11 +2988,11 @@ module State = struct
                     let attribute =
                       parent_class
                       >>| Annotated.Class.attribute
-                            ~resolution
-                            ~name:attribute
-                            ~instantiated:parent
-                            ~transitive:true
-                            ~class_attributes
+                        ~resolution
+                        ~name:attribute
+                        ~instantiated:parent
+                        ~transitive:true
+                        ~class_attributes
                       >>| (fun annotated -> annotated, attribute)
                     in
                     reference, attribute, Some resolved
@@ -3038,7 +3038,7 @@ module State = struct
                             ~kind:(Error.InvalidAssignment (Final reference))
                             ~define:define_node
                       | _ ->
-                        state
+                          state
                     in
                     let check_assign_class_variable_on_instance state =
                       match resolved_base, attribute with
@@ -3049,7 +3049,7 @@ module State = struct
                               Annotated.Attribute.class_attribute = true;
                               name = class_variable;
                               _;
-                          };
+                            };
                             _;
                           },
                           _
@@ -3128,12 +3128,19 @@ module State = struct
                   compatible
                 in
                 let is_incompatible =
-                   is_immutable &&
-                   not (Type.equal resolved Type.ellipsis) &&
-                   not (Resolution.constraints_solution_exists
-                          resolution ~left:resolved ~right:expected) &&
-                   not is_typed_dictionary_initialization &&
-                   not is_valid_enumeration_assignment
+                  let expression_is_ellipses =
+                    match expression with
+                    | Some { Node.value = Expression.Ellipsis; _ } ->
+                        true
+                    | _ ->
+                        false
+                  in
+                  is_immutable &&
+                  not expression_is_ellipses &&
+                  not (Resolution.constraints_solution_exists
+                         resolution ~left:resolved ~right:expected) &&
+                  not is_typed_dictionary_initialization &&
+                  not is_valid_enumeration_assignment
                 in
                 let open Annotated in
                 match attribute, reference with
@@ -3212,7 +3219,7 @@ module State = struct
                       false, false
                 in
                 let actual_annotation, evidence_locations =
-                  if Type.equal resolved Type.Top || Type.equal resolved Type.ellipsis then
+                  if Type.equal resolved Type.Top then
                     None, []
                   else
                     Some resolved, [instantiate location]
@@ -3276,7 +3283,7 @@ module State = struct
                           })
                         ~define:define_node
                       |> Option.some_if
-                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
+                        (not (Resolution.is_string_to_any_mapping resolution value_annotation))
                     else if is_type_alias && Type.expression_contains_any value then
                       let value_annotation = Resolution.parse_annotation resolution value in
                       Error.create
@@ -3290,7 +3297,7 @@ module State = struct
                           })
                         ~define:define_node
                       |> Option.some_if
-                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
+                        (not (Resolution.is_string_to_any_mapping resolution value_annotation))
                     else
                       None
                 | Name.Attribute { base = { Node.value = Name base; _ }; attribute }, None
@@ -3349,21 +3356,21 @@ module State = struct
                     else if
                       Annotated.Class.Attribute.defined attribute && insufficiently_annotated
                     then
-                       let attribute_location = Annotated.Attribute.location attribute in
-                       Error.create
-                         ~location:attribute_location
-                         ~kind:(Error.MissingAttributeAnnotation {
-                             parent = Annotated.Attribute.parent attribute;
-                             missing_annotation = {
-                               Error.name = reference;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source;
-                             };
-                           })
-                         ~define:define_node
-                       |> Option.some
+                      let attribute_location = Annotated.Attribute.location attribute in
+                      Error.create
+                        ~location:attribute_location
+                        ~kind:(Error.MissingAttributeAnnotation {
+                            parent = Annotated.Attribute.parent attribute;
+                            missing_annotation = {
+                              Error.name = reference;
+                              annotation = actual_annotation;
+                              given_annotation = Option.some_if is_immutable expected;
+                              evidence_locations;
+                              thrown_at_source;
+                            };
+                          })
+                        ~define:define_node
+                      |> Option.some
                     else if insufficiently_annotated && explicit && not is_type_alias then
                       Error.create
                         ~location
@@ -3638,12 +3645,12 @@ module State = struct
             |> Resolution.class_definition resolution
             >>| Annotated.Class.create
             >>| Annotated.Class.attribute
-                  ~resolution
-                  ~name
-                  ~instantiated:parent
-                  ~transitive:true
+              ~resolution
+              ~name
+              ~instantiated:parent
+              ~transitive:true
             >>= fun attribute ->
-              Option.some_if (Annotated.Attribute.defined attribute) attribute
+            Option.some_if (Annotated.Attribute.defined attribute) attribute
             >>| Annotated.Attribute.annotation
           in
           match Node.value test with
@@ -3667,7 +3674,6 @@ module State = struct
                     existing_annotation
                     (Annotation.create annotation)
                   && not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom)
-                  && not (Type.equal (Annotation.annotation existing_annotation) Type.ellipsis)
                 in
                 match Resolution.get_local resolution ~reference with
                 (* Allow Anys [especially from placeholder stubs] to clobber *)
@@ -3833,12 +3839,12 @@ module State = struct
                           mutability = Annotation.Mutable
                         } as annotation)
                       | Some ({
-                          Annotation.annotation = _;
-                          mutability = Annotation.Immutable {
-                              Annotation.original = Type.Optional parameter;
-                              _;
-                            };
-                        } as annotation) ->
+                            Annotation.annotation = _;
+                            mutability = Annotation.Immutable {
+                                Annotation.original = Type.Optional parameter;
+                                _;
+                              };
+                          } as annotation) ->
                           let refined =
                             Refinement.refine ~resolution annotation parameter
                           in

@@ -145,7 +145,6 @@ val bool: t
 val bytes: t
 val complex: t
 val dictionary: key: t -> value: t -> t
-val ellipsis: t
 val enumeration: t
 val float: t
 val generator: ?async: bool -> t -> t

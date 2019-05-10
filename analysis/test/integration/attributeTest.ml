@@ -178,9 +178,10 @@ let test_check_attributes _ =
         bar: typing.Any
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has no type specified.";
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "type `typing.Any` but is never initialized."
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+       than `Any`.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
     ];
 
   assert_type_errors
@@ -203,11 +204,11 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type " ^
-      "`Any` is specified.";
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "type `typing.Any` but is never initialized.";
-      "Incompatible return type [7]: Expected `int` but got `str`."
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+       than `Any`.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
     ];
 
   (* Annotations containing `Any` in strict are not permitted. *)
@@ -221,10 +222,10 @@ let test_check_attributes _ =
           return self.bar
     |}
     [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type " ^
-      "`typing.Union[int, str]` but type `Any` is specified.";
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "type `typing.Any` but is never initialized.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+       than `Any`.";
+      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
+       `typing.Any` but is never initialized.";
     ];
 
   (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
@@ -858,8 +859,8 @@ let test_check_missing_attribute _ =
         Foo.a = 1
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
+       `Any`.";
       "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have " ^
       "type `typing.Any` but is never initialized."
     ];
@@ -882,8 +883,8 @@ let test_check_missing_attribute _ =
         return Foo().a
     |}
     [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
+       `Any`.";
       "Incompatible return type [7]: Expected `bool` but got `typing.Any`."
     ];
 

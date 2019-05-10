@@ -388,7 +388,7 @@ let test_check_return_control_flow _ =
       def i() -> str:
         return ...
     |}
-    ["Incompatible return type [7]: Expected `str` but got `ellipsis`."];
+    [];
 
   assert_type_errors
     {|

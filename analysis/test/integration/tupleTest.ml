@@ -214,9 +214,12 @@ let test_check_tuple _ =
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `c` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+       `Any`.";
+      "Missing attribute annotation [4]: Attribute `b` of class `T` must have a type other than \
+       `Any`.";
+      "Missing attribute annotation [4]: Attribute `c` of class `T` must have a type other than \
+       `Any`.";
       "Undefined attribute [16]: `T` has no attribute `d`.";
     ];
 
@@ -232,9 +235,12 @@ let test_check_tuple _ =
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `b` must have a type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `c` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `b` of class `T` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `c` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+       `Any`.";
+      "Missing attribute annotation [4]: Attribute `b` of class `T` must have a type other than \
+       `Any`.";
+      "Missing attribute annotation [4]: Attribute `c` of class `T` must have a type other than \
+       `Any`.";
       "Unable to unpack [23]: Unable to unpack 3 values, 2 were expected.";
       "Unable to unpack [23]: Unable to unpack 3 values, 4 were expected.";
     ];
@@ -247,7 +253,8 @@ let test_check_tuple _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `T` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `T` must have a type other than \
+       `Any`.";
     ];
   assert_type_errors
     {|
