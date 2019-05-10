@@ -761,30 +761,29 @@ let test_check_function_overloads _ =
         return x.derp(5)
     |}
     [];
-
   assert_type_errors
     {|
       @typing.overload
       def derp(x: int) -> int: ...
       @typing.overload
       def derp(x: str) -> str: ...
-      def derp(x: int) -> int: ...
-      def derp(x: str) -> str: ...
 
       reveal_type(derp)
     |}
     [
+      "Missing overload implementation [42]: Overloaded function `derp` must have an \
+       implementation.";
       "Revealed type [-1]: Revealed type for `derp` is " ^
-      "`typing.Callable(derp)[[Named(x, str)], str][[[Named(x, int)], int][[Named(x, str)], str]]`."
+      "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`."
     ];
 
   assert_type_errors
     {|
       from typing import overload
 
-      @typing.overload
+      @overload
       def derp(x: int) -> int: ...
-      @typing.overload
+      @overload
       def derp(x: str) -> str: ...
 
       reveal_type(derp)
@@ -803,7 +802,6 @@ let test_check_function_overloads _ =
 
       @typing.overload
       def derp(x: int) -> int: ...
-      def derp(x: str) -> str: ...
       @typing.overload
       def derp(x: str) -> str: ...
 
