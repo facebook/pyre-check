@@ -63,9 +63,8 @@ let populate
   in
   Handler.transaction ~f:populate ();
   let register_undecorated_functions sources =
-    let register source =
-      Preprocessing.convert source
-      |> Environment.register_undecorated_functions (module Handler) resolution
+    let register =
+      Environment.register_undecorated_functions (module Handler) resolution
     in
     List.iter sources ~f:register
   in
