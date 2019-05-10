@@ -599,9 +599,6 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
                 sofar, annotation
               else
                 false, annotation
-          | Bottom
-          | Top ->
-              false, annotation
           | _ ->
               sofar, annotation
         in
