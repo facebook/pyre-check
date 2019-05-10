@@ -3,9 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-export OCAMLFIND_IGNORE_DUPS_IN=$(dir $(OCAML_TOPLEVEL_PATH))ocaml/compiler-libs
-export MACOSX_DEPLOYMENT_TARGET=10.11
-
 .PHONY: all
 all: configure dev
 
