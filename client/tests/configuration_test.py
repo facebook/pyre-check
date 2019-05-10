@@ -24,6 +24,9 @@ class ConfigurationTest(unittest.TestCase):
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.path.isdir", return_value=True)
     @patch("os.path.exists")
+    @patch(
+        "os.path.expanduser", side_effect=lambda path: path.replace("~", "/home/user")
+    )
     @patch("os.access", return_value=True)
     @patch("builtins.open")
     @patch("hashlib.sha1")
@@ -38,6 +41,7 @@ class ConfigurationTest(unittest.TestCase):
         sha1,
         builtins_open,
         access,
+        _expanduser,
         exists,
         isdir,
         _abspath,
@@ -180,6 +184,26 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.file_hash, "HASH")
+
+        json_load.side_effect = [
+            {
+                "search_path": [
+                    "~/simple",
+                    {"root": "~/simple", "subdirectory": "subdir"},
+                ],
+                "typeshed": "~/typeshed",
+                "source_directories": ["a", "~/b"],
+                "binary": "~/bin",
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(
+            configuration.search_path, ["/home/user/simple", "/home/user/simple$subdir"]
+        )
+        self.assertEqual(configuration.typeshed, "/home/user/typeshed")
+        self.assertEqual(configuration.source_directories, ["a", "/home/user/b"])
+        self.assertEqual(configuration.binary, "/home/user/bin")
 
         # Test loading of additional directories in the search path
         # via environment $PYTHONPATH.
