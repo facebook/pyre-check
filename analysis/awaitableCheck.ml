@@ -91,7 +91,19 @@ module State (Context: Context) = struct
     join previous next
 
 
-  let rec forward_expression
+  let rec forward_generator
+      { unawaited }
+      { Expression.Comprehension.target = _; iterator; conditions; async = _ } =
+    let { unawaited } =
+      List.fold
+        conditions
+        ~f:(fun state expression -> { unawaited = forward_expression ~state ~expression })
+        ~init:{ unawaited }
+    in
+    { unawaited = forward_expression ~state:{ unawaited } ~expression:iterator }
+
+
+  and forward_expression
       ~state:{ unawaited }
       ~expression:{ Node.value; _ } =
     let open Expression in
@@ -146,7 +158,21 @@ module State (Context: Context) = struct
         forward_expression ~state:{ unawaited } ~expression
     | Yield None ->
         unawaited
-
+    | Generator { Expression.Comprehension.element; generators }
+    | ListComprehension { Expression.Comprehension.element; generators }
+    | SetComprehension { Expression.Comprehension.element; generators } ->
+        let state = List.fold generators ~init:{ unawaited } ~f:forward_generator in
+        forward_expression ~state ~expression:element
+    | DictionaryComprehension {
+        Expression.Comprehension.element = {
+          Expression.Dictionary.key;
+          value;
+        };
+        generators;
+      } ->
+        let state = List.fold generators ~init:{ unawaited } ~f:forward_generator in
+        let unawaited = forward_expression ~state ~expression:key in
+        forward_expression ~state:{ unawaited } ~expression:value
     (* Base cases. *)
     | Complex _
     | False
@@ -156,12 +182,6 @@ module State (Context: Context) = struct
     | True
     | Name _
     | Ellipsis ->
-        unawaited
-    (* Unimplemented. *)
-    | DictionaryComprehension _
-    | Generator _
-    | ListComprehension _
-    | SetComprehension _ ->
         unawaited
 
 

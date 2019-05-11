@@ -271,6 +271,43 @@ let test_forward _ =
     |}
     [];
 
+  (* Comprehensions. *)
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      [i for i in await awaited]
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      [(await awaited) for i in [1, 2, 3]]
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      {(await awaited) for i in [1, 2, 3]}
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      {i: (await awaited) for i in [1, 2, 3]}
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      awaited = awaitable()
+      ((await awaited) for i in [1, 2, 3])
+    |}
+    [];
+
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
@@ -279,15 +316,7 @@ let test_forward _ =
         awaited = awaitable()
         return awaited, 1
     |}
-    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
-
-  assert_awaitable_errors
-    {|
-      def awaitable() -> typing.Awaitable[int]: ...
-      awaited = awaitable()
-      [i for i in await awaited]
-    |}
-    ["Unawaited awaitable [101]: `awaited` is never awaited."]
+    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."]
 
 
 let test_state _ =
