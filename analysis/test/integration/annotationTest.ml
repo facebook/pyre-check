@@ -450,33 +450,7 @@ let test_check_illegal_annotation_target _ =
     [
       "Illegal annotation target [35]: Target `Foo.a` cannot be annotated.";
       "Revealed type [-1]: Revealed type for `Foo.a` is `int`.";
-    ];
-  assert_type_errors
-    {|
-      from typing import List, Final
-      x: List[Final[int]] = []
-    |}
-    [
-      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. \
-       Final cannot be nested."
-    ];
-  assert_type_errors
-    {|
-      from typing import Final
-
-      class A:
-          def foo(self, x: Final[int]) -> None:
-              pass
-    |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
-  assert_type_errors
-    {|
-      from typing import Final
-
-      def foo(x: Final[int]) -> None:
-          pass
-    |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
+    ]
 
 
 let test_check_missing_type_parameters _ =

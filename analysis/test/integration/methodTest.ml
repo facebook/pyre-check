@@ -683,19 +683,8 @@ let test_check_behavioral_subtyping _ =
       class Bar(Foo):
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
-    [];
-  assert_type_errors
-    {|
-      from typing import final
-      class Foo:
-        @final
-        def bar(self) -> None:
-          pass
-      class Bar(Foo):
-        def bar(self) -> None:
-          pass
-    |}
-    ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."]
+    []
+
 
 
 let test_check_nested_class_inheritance _ =
@@ -1488,28 +1477,6 @@ let test_check_enter _ =
      "Expected `str` for 1st anonymous parameter to call `expect_string` but got `int`."]
 
 
-let test_check_decorators _ =
-  assert_type_errors
-    {|
-      from typing import final
-
-      @final
-      def foo() -> None:
-        pass
-    |}
-    ["Invalid inheritance [39]: `typing.final` cannot be used with non-method functions."];
-  assert_type_errors
-    {|
-      from typing import final
-
-      class A:
-        @final
-        def foo(self) -> None:
-          pass
-    |}
-    []
-
-
 let test_enforce_dunder_params _ =
   assert_type_errors
     {|
@@ -1558,7 +1525,6 @@ let () =
     "check_static">::test_check_static;
     "check_in">::test_check_in;
     "check_enter">::test_check_enter;
-    "check_decorators">::test_check_decorators;
     "enforce_dunder_params">::test_enforce_dunder_params;
   ]
   |> Test.run

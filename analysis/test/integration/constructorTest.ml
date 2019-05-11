@@ -403,16 +403,6 @@ let test_check_init _ =
      "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`."];
   assert_type_errors
     {|
-      from typing import final
-      @final
-      class A:
-          pass
-      class B(A):
-          pass
-    |}
-    ["Invalid inheritance [39]: Cannot inherit from final class `A`."];
-  assert_type_errors
-    {|
       class A:
         foo:int = 3
       class B(A):
@@ -760,19 +750,7 @@ let test_check_constructors _ =
     [
       "Incompatible parameter type [6]: Expected `typing.Callable[[str], Class]` for 1st anonymous \
        parameter to call `foo` but got `typing.Type[Class]`.";
-    ];
-  assert_type_errors
-    {|
-      from typing import Final
-      class A:
-        x: Final[int] = 0
-      class B(A):
-        x = 200
-    |}
-    [
-      "Invalid assignment [41]: Cannot reassign final attribute `x`."
     ]
-
 
 
 let test_infer_constructor_attributes _ =

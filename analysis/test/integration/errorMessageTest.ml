@@ -224,25 +224,6 @@ let test_concise _ =
     |}
     ["Illegal annotation target [35]: Target cannot be annotated."];
 
-  assert_type_errors ~concise:true
-    {|
-      from typing import List, Final
-      x: List[Final[int]] = []
-    |}
-    [
-      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. \
-       Final cannot be nested."
-    ];
-
-  assert_type_errors ~concise:true
-    {|
-      from typing import Final, List
-      class A:
-          def foo(self, x:Final[int]) -> None:
-              pass
-    |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
-
   (* Impossible Isinstance *)
   assert_type_errors ~concise:true
     {|

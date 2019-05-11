@@ -23,6 +23,7 @@
   decoratorTest
   enumerationTest
   errorMessageTest
+  finalTest
   formatStringTest
   generatorTest
   globalTest
