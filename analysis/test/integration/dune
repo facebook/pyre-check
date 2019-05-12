@@ -13,6 +13,7 @@
  (names
   annotationTest
   assertTest
+  assertIsNotNoneTest
   assignTest
   asyncTest
   attributeTest

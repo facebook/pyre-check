@@ -1039,6 +1039,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         __global_sink: Any = ...
       |}
     |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "unittest")
+      ~handle:"unittest.pyi"
+      {|
+        class TestCase:
+            def assertIsNotNone(self, x:Any) -> Bool:
+              ...
+      |}
+    |> Preprocessing.preprocess;
   ]
 
 
