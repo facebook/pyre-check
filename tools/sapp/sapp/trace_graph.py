@@ -33,40 +33,39 @@ class TraceGraph(object):
 
         # Create a mapping of (caller_id, caller_port) to the corresponding
         # trace frame's id.
-        self._trace_frames_map: DefaultDict[  # pyre-ignore: T41307149
-            Tuple[int, str], Set[int]
-        ] = defaultdict(set)
+        self._trace_frames_map: DefaultDict[Tuple[int, str], Set[int]] = defaultdict(
+            set
+        )
 
         # Similar to _trace_frames_map, but maps the reverse direction
         # of the trace graph, i.e. (callee_id, callee_port) to the
         # trace_frame_id.
-        self._trace_frames_rev_map: DefaultDict[  # pyre-ignore: T41307149
+        self._trace_frames_rev_map: DefaultDict[
             Tuple[int, str], Set[int]
         ] = defaultdict(set)
 
         self._trace_frames: Dict[int, TraceFrame] = {}
 
         self._shared_texts: Dict[int, SharedText] = {}
-        # pyre-fixme[8]: Attribute has type `DefaultDict[SharedTextKind, Dict[str, in...
         self._shared_text_lookup: (
             DefaultDict[SharedTextKind, Dict[str, int]]
         ) = defaultdict(dict)
 
-        self._trace_frame_leaf_assoc: DefaultDict[  # pyre-ignore: T41307149
+        self._trace_frame_leaf_assoc: DefaultDict[
             int, Set[Tuple[int, int]]
         ] = defaultdict(set)
 
-        self._trace_frame_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
+        self._trace_frame_issue_instance_assoc: DefaultDict[
             int, Set[int]
         ] = defaultdict(set)
-        self._issue_instance_trace_frame_assoc: DefaultDict[  # pyre-ignore: T41307149
+        self._issue_instance_trace_frame_assoc: DefaultDict[
             int, Set[int]
         ] = defaultdict(set)
 
-        self._issue_instance_shared_text_assoc: DefaultDict[  # pyre-ignore: T41307149
+        self._issue_instance_shared_text_assoc: DefaultDict[
             int, Set[int]
         ] = defaultdict(set)
-        self._shared_text_issue_instance_assoc: DefaultDict[  # pyre-ignore: T41307149
+        self._shared_text_issue_instance_assoc: DefaultDict[
             int, Set[int]
         ] = defaultdict(set)
 

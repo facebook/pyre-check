@@ -222,6 +222,8 @@ details              show additional information about the current trace frame
         else:
             self.current_run_id = int(latest_run_id)
 
+        # pyre-fixme[7]: Expected `Dict[str, Callable[..., Any]]` but got `Dict[str,
+        #  Union[Callable[..., Any], TraceKind]]`.
         return self.scope_vars
 
     def help(self, object=None):
@@ -962,7 +964,6 @@ details              show additional information about the current trace frame
             self.frames(callers=callable, kind=TraceKind.PRECONDITION, limit=limit)
 
     def warning(self, message: str) -> None:
-        # pyre-fixme[6]: Expected `Optional[_Writer]` for 2nd param but got `TextIO`.
         print(message, file=sys.stderr)
 
     def _get_trace_frame_branches(
@@ -1006,7 +1007,6 @@ details              show additional information about the current trace frame
     ) -> Dict[Tuple[str, str], List[TraceFrameQueryResult]]:
         """Buckets together trace frames that have the same caller:caller_port.
         """
-        # pyre-fixme[9]: caller_buckets has type `DefaultDict[Tuple[str, str], List[T...
         caller_buckets: DefaultDict[
             Tuple[str, str], List[TraceFrameQueryResult]
         ] = defaultdict(list)
