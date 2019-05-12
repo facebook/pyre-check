@@ -67,6 +67,28 @@ module PublishDiagnostics = struct
     with
     | Unix.Unix_error _ ->
         failed_response
+
+
+  let clear_diagnostics_for_uri ~uri =
+    {
+      jsonrpc = "2.0";
+      method_ = "textDocument/publishDiagnostics";
+      parameters = Some {
+          PublishDiagnosticsParameters.uri;
+          diagnostics = [];
+        };
+    }
+
+
+  let uri { parameters; _ } =
+    match parameters with
+    | Some {
+        PublishDiagnosticsParameters.uri;
+        _;
+      } ->
+        uri
+    | None ->
+        failwith "Malformed request"
 end
 
 

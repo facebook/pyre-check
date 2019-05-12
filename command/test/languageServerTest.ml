@@ -1042,6 +1042,29 @@ let test_request_parser context =
     )
 
 
+let test_publish_diagnostics _ =
+  let assert_json_equal ~expected ~actual =
+    assert_equal
+      ~printer:Yojson.Safe.pretty_to_string
+      (Yojson.Safe.from_string expected)
+      (PublishDiagnostics.to_yojson actual)
+  in
+  assert_json_equal
+    ~expected:{|
+     {
+       "jsonrpc": "2.0",
+       "method": "textDocument/publishDiagnostics",
+       "params": { "uri": "file:///data/users/user/root/b.py", "diagnostics": [] }
+     }
+    |}
+    ~actual:(
+      PublishDiagnostics.clear_diagnostics_for_uri ~uri:"file:///data/users/user/root/b.py"
+    );
+  assert_equal
+    "uri"
+    (PublishDiagnostics.uri (PublishDiagnostics.clear_diagnostics_for_uri ~uri:"uri"))
+
+
 let () =
   "language_server">:::
   [
@@ -1058,5 +1081,6 @@ let () =
     "show_message_notification">::test_show_message_notification;
     "did_save_notification">::test_did_save_notification;
     "request_parser">::test_request_parser;
+    "publish_diagnostics">::test_publish_diagnostics;
   ]
   |> Test.run

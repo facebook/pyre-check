@@ -15,7 +15,8 @@ type reason = string
 type exit_code = int
 exception ClientExit of reason * exit_code
 
-let communicate server_socket =
+
+let communicate server_socket all_uris =
   let display_nuclide_message message =
     ShowMessage.create LanguageServer.Types.ShowMessageParameters.InfoMessage message
     |> ShowMessage.to_yojson
@@ -59,14 +60,33 @@ let communicate server_socket =
       let process_server_socket () =
         match Socket.read socket with
         | Protocol.LanguageServerProtocolResponse response ->
+            begin
+              try
+                let response =
+                  response
+                  |> Yojson.Safe.from_string
+                  |> PublishDiagnostics.of_yojson
+                in
+                match response with
+                | Result.Ok diagnostics ->
+                    Hash_set.add all_uris (PublishDiagnostics.uri diagnostics)
+                | _ ->
+                    ()
+              with
+              | Yojson.Json_error _
+              | Failure _ ->
+                  ()
+            end;
             LanguageServer.Protocol.write_message
               Out_channel.stdout
-              (Yojson.Safe.from_string response)
+              (Yojson.Safe.from_string response);
+            ()
         | Protocol.ClientExitResponse Protocol.Persistent ->
             Log.info "Received stop request, exiting.";
             Unix.close server_socket;
             raise (ClientExit ("explicit stop request", 0))
-        | _ -> ()
+        | _ ->
+            ()
       in
       let process_stdin_socket () =
         (LanguageServer.Protocol.read_message In_channel.stdin
@@ -87,7 +107,7 @@ let communicate server_socket =
     in
     begin
       try
-        List.iter ~f:process_socket read
+        List.iter read ~f:process_socket
       with Unix.Unix_error (error, name, parameters) ->
         Log.log_unix_error (error, name, parameters);
         Unix.close server_socket;
@@ -109,6 +129,7 @@ let run_command expected_version log_identifier local_root () =
       ?expected_version
       ()
   in
+
   (fun () ->
      (* Log stderr to file *)
      let log_path =
@@ -123,7 +144,15 @@ let run_command expected_version log_identifier local_root () =
      let log_path = Log.rotate log_path in
      Format.pp_set_formatter_out_channel Format.err_formatter (Out_channel.create log_path);
      Version.log_version_banner ();
-
+     let clear_diagnostics all_uris =
+       let clear_diagnostics uri =
+         PublishDiagnostics.clear_diagnostics_for_uri ~uri
+         |> PublishDiagnostics.to_yojson
+         |> LanguageServer.Protocol.write_message Out_channel.stdout
+       in
+       Hash_set.iter all_uris ~f:clear_diagnostics;
+     in
+     let all_uris = String.Hash_set.create () in
      try
        let server_socket =
          let server_socket =
@@ -156,7 +185,7 @@ let run_command expected_version log_identifier local_root () =
          end;
          server_socket
        in
-       communicate server_socket
+       communicate server_socket all_uris
      with
      | ClientExit (reason, exit_code) ->
          Statistics.event
@@ -165,9 +194,11 @@ let run_command expected_version log_identifier local_root () =
            ~integers:["exit code", exit_code]
            ~normals:["reason", reason]
            ();
+         clear_diagnostics all_uris;
          exit exit_code
      | uncaught_exception ->
          Statistics.log_exception uncaught_exception ~fatal:true ~origin:"persistent";
+         clear_diagnostics all_uris;
          raise uncaught_exception)
   |> Scheduler.run_process ~configuration
 

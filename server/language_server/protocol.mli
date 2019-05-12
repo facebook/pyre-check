@@ -17,7 +17,7 @@ module TextDocumentDefinitionRequest
 (** PublishDiagnostics notification, method="textDocument/publishDiagnostics" *)
 module PublishDiagnostics : sig
   type t
-  [@@deriving to_yojson]
+  [@@deriving yojson]
 
   (** Turn a type check error into a PublishDiagnostics notification *)
   val of_errors
@@ -25,6 +25,11 @@ module PublishDiagnostics : sig
     -> File.Handle.t
     -> TypeCheck.Error.t list
     -> t Or_error.t
+
+  (** Clear diagnostics for the given URI. *)
+  val clear_diagnostics_for_uri: uri: string -> t
+
+  val uri: t -> string
 end
 
 (** DidSaveTextDocument notification, method="textDocument/didSave" *)
