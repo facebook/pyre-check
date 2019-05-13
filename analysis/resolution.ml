@@ -294,6 +294,21 @@ let function_definitions resolution reference =
       result
 
 
+let is_suppressed_module resolution reference =
+  let is_suppressed (suppressed, lead) identifier =
+    let reference = Reference.create ~prefix:lead identifier in
+    if suppressed then
+      suppressed, reference
+    else
+      module_definition resolution reference
+      >>| Module.empty_stub
+      |> Option.value ~default:false
+      |> fun suppressed -> (suppressed, reference)
+  in
+  List.fold ~f:is_suppressed ~init:(false, Reference.empty) (Reference.as_list reference)
+  |> fst
+
+
 let undecorated_signature { undecorated_signature; _ }  =
   undecorated_signature
 
@@ -361,6 +376,7 @@ let meet resolution =
 let widen resolution =
   full_order resolution
   |> TypeOrder.widen
+
 
 let is_instantiated { order; _ } =
   TypeOrder.is_instantiated order

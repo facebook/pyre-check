@@ -1606,11 +1606,7 @@ module State = struct
       | None ->
           begin
             match Resolution.module_definition resolution reference with
-            | Some definition when Module.empty_stub definition ->
-                { state; resolved = Type.Top }
-            | Some _ ->
-                { state; resolved = Type.Top }
-            | None ->
+            | None when not (Resolution.is_suppressed_module resolution reference) ->
                 let state =
                   match Reference.prefix reference with
                   | Some qualifier when not (Reference.is_empty qualifier) ->
@@ -1627,6 +1623,8 @@ module State = struct
                       Error.create ~location ~kind:(Error.UndefinedName reference) ~define
                       |> emit_raw_error ~state
                 in
+                { state; resolved = Type.Top }
+            | _ ->
                 { state; resolved = Type.Top }
           end
     in
@@ -2461,33 +2459,12 @@ module State = struct
           else
             state, resolved_base
         in
+        let is_suppressed =
+          reference
+          >>| Resolution.is_suppressed_module resolution
+          |> Option.value ~default:false
+        in
         let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
-          let suppressed =
-            let rec suppressed lead = function
-              | head :: tail ->
-                  begin
-                    let lead = lead @ [head] in
-                    let definition =
-                      Resolution.module_definition
-                        resolution
-                        (Reference.create_from_list lead)
-                    in
-                    match definition with
-                    | Some definition when Module.empty_stub definition -> true
-                    | _ -> suppressed lead tail
-                  end
-              | [] ->
-                  false
-            in
-            match Node.value base with
-            | Name name ->
-                Reference.from_name name
-                >>| Reference.as_list
-                >>| suppressed []
-                |> Option.value ~default:false
-            | _ ->
-                false
-          in
           if Type.is_undeclared resolved_base then
             let state =
               reference
@@ -2496,7 +2473,7 @@ module State = struct
               |> Option.value ~default:state
             in
             { state; resolved = resolved_base }
-          else if suppressed then
+          else if is_suppressed then
             { state; resolved = Type.Top }
           else if Type.equal resolved_base Type.Top then
             (* Global or local. *)
@@ -4041,14 +4018,14 @@ module State = struct
           | None -> List.map imports ~f:(fun { Import.name; _ } -> name)
         in
         let add_import_error state import =
-          let error, _, _ =
-            let check_import (error, suppressed, lead) import =
+          let error, _ =
+            let check_import (error, lead) import =
               let import = lead @ [import] in
               let reference = Reference.create_from_list import in
               match error with
               | Some error ->
-                  Some error, suppressed, import
-              | None when not suppressed ->
+                  Some error, import
+              | None ->
                   let error =
                     Error.create
                       ~location
@@ -4057,25 +4034,20 @@ module State = struct
                   in
                   let local = Resolution.get_local resolution ~reference in
                   let module_definition = Resolution.module_definition resolution reference in
-                  let suppressed =
-                    module_definition
-                    >>| Module.empty_stub
-                    |> Option.value ~default:false
-                  in
                   if Option.is_some local || Option.is_some module_definition then
-                    None, suppressed, import
+                    None, import
                   else
-                    Some error, suppressed, import
-              | _ ->
-                  None, suppressed, import
+                    Some error, import
             in
-            List.fold ~f:check_import ~init:(None, false, []) (Reference.as_list import)
+            List.fold ~f:check_import ~init:(None, []) (Reference.as_list import)
           in
           error
           >>| emit_raw_error ~state
           |> Option.value ~default:state
         in
-        List.fold ~init:state ~f:add_import_error imports
+        imports
+        |> List.filter ~f:(fun import -> not (Resolution.is_suppressed_module resolution import))
+        |> List.fold ~init:state ~f:add_import_error
 
     | Raise (Some expression) ->
         forward_expression ~state ~expression
