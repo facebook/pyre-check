@@ -40,7 +40,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                         Define.signature = {
                           name = Reference.create ~prefix:parent name;
                           parameters =
-                            Parameter.create ~name:"self" ()
+                            Parameter.create ~location ~name:"self" ()
                             :: parameters;
                           decorators = [];
                           docstring = None;
@@ -85,7 +85,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                   let rec override_existing_parameters unchecked_parameters =
                                     match unchecked_parameters with
                                     | [] ->
-                                        [Parameter.create ~name ~annotation ?value ()]
+                                        [Parameter.create ~location ~name ~annotation ?value ()]
                                     | {
                                       Node.value = {
                                         Parameter.name = old_name; value = old_value; _
@@ -96,7 +96,8 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                                         let value =
                                           if Option.is_some value then value else old_value
                                         in
-                                        Parameter.create ~name ~annotation ?value () :: tail
+                                        Parameter.create ~location ~name ~annotation ?value ()
+                                        :: tail
                                     | head :: tail ->
                                         head :: override_existing_parameters tail
                                   in
@@ -149,7 +150,7 @@ let transform_environment ~options (module Handler: Handler) resolution source =
                       then
                         create_method
                           ~name
-                          ~parameters:[Parameter.create ~name:"o" ~annotation ()]
+                          ~parameters:[Parameter.create ~location ~name:"o" ~annotation ()]
                           ~return_annotation:"bool"
                         :: methods
                       else

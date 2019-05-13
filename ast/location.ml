@@ -14,8 +14,10 @@ type position = {
 [@@deriving compare, eq, sexp, hash, to_yojson]
 
 
+(* These are not filtered: our backend is broken if any locations appear in errors. *)
 let any_position =
   { line = -1; column = -1 }
+
 
 (* We explicitly do not analyze expressions/statements at synthetic positions. *)
 let synthetic_position =
@@ -24,6 +26,7 @@ let synthetic_position =
 
 let show_position { line; column } =
   Format.sprintf "%d:%d" line column
+
 
 let pp_position format { line; column } =
   Format.fprintf format "%d:%d" line column
@@ -39,7 +42,6 @@ type 'path location = {
 
 let show pp_path { path; start; stop } =
   Format.asprintf "%a:%d:%d-%d:%d" pp_path path start.line start.column stop.line stop.column
-
 
 
 module Reference = struct
@@ -115,6 +117,7 @@ module Reference = struct
   let any =
     { path = -1; start = any_position; stop = any_position }
 
+
   let synthetic =
     { path = -1; start = synthetic_position; stop = synthetic_position }
 end
@@ -163,6 +166,7 @@ module Instantiated = struct
 
   let any =
     { path = "*"; start = any_position; stop = any_position }
+
 
   let synthetic =
     { path = "*"; start = synthetic_position; stop = synthetic_position }

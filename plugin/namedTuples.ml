@@ -135,7 +135,7 @@ let transform_ast ({ Source.statements; _ } as source) =
             | Some { Node.value = Ellipsis; _ } -> None
             | _ -> value
           in
-          Parameter.create ?value ~annotation ~name:("$parameter$" ^ name) ()
+          Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
         in
         self_parameter :: List.map attributes ~f:to_parameter
       in

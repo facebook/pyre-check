@@ -122,19 +122,19 @@ let from_name_exn name =
   | None -> failwith "Cannot convert expression with non-identifiers to reference."
 
 
-let name reference =
+let name ?(location = Location.Reference.any) reference =
   let rec create = function
     | [] ->
         failwith "Reference cannot be empty."
     | identifier :: [] ->
         Name (Name.Identifier identifier)
-        |> Node.create_with_default_location
+        |> Node.create ~location
     | identifier :: rest ->
         Name (Name.Attribute {
             base = create rest;
             attribute = identifier;
           })
-        |> Node.create_with_default_location
+        |> Node.create ~location
   in
   match create (List.rev reference) with
   | { Node.value = Name name; _ } -> name
@@ -146,7 +146,7 @@ let expression ?(convert = false) ?(location = Location.Reference.any) reference
     access reference
     |> Access.expression ~location
   else
-    name reference
+    name ~location reference
     |> (fun name -> Name name)
     |> Node.create ~location
 

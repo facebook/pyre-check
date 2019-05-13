@@ -536,6 +536,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   in
                   scope, List.rev reversed_elements
                 in
+                let location = Node.location target in
                 match Node.value target with
                 | Tuple elements ->
                     let scope, elements = qualify_targets scope elements in
@@ -547,9 +548,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     let sanitized = Identifier.sanitized name in
                     let qualified =
                       let qualifier =
-                        Node.create
-                          ~location:(Node.location target)
-                          (Name (Reference.name qualifier))
+                        Node.create ~location (Name (Reference.name ~location qualifier))
                       in
                       Name.Attribute { base = qualifier; attribute = sanitized }
                     in
@@ -625,7 +624,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                                 })
                           | _ -> failwith "Impossible."
                         in
-                        combine (Name (Reference.name qualifier)) qualified
+                        combine (Name (Reference.name ~location qualifier)) qualified
                       else
                         qualified
                     in
