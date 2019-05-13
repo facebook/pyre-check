@@ -8,7 +8,7 @@
 import textwrap
 import unittest
 from typing import IO, Any, Callable, Dict
-from unittest.mock import call, mock_open, patch
+from unittest.mock import MagicMock, call, mock_open, patch
 
 from .. import generate_taint_models
 
@@ -172,8 +172,39 @@ class FixmeAllTest(unittest.TestCase):
                 ),
             }
         )
-        models = generate_taint_models._get_exit_nodes("urls.py")
+        arguments = MagicMock()
+        arguments.urls_path = "urls.py"
+        models = generate_taint_models._get_exit_nodes(arguments)
         self.assertSetEqual(
             models,
             {"def module.view.function(request) -> TaintSink[ReturnedToUser]: ..."},
+        )
+
+    @patch("builtins.open")
+    @patch("os.path.exists", return_value=True)
+    def test_get_REST_api_sources(
+        self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
+    ) -> None:
+        open.side_effect = _open_implementation(
+            {
+                "urls.py": """url(r"derp", "module.view.function")""",
+                "module/view.py": textwrap.dedent(
+                    """
+                    def function(request: derp.HttpRequest, other: int) -> HttpResponse:
+                        pass
+                    def unrelated() -> None: pass
+                """
+                ),
+            }
+        )
+        arguments = MagicMock()
+        arguments.urls_path = "urls.py"
+        arguments.whitelisted_classes = "HttpRequest"
+        models = generate_taint_models._get_REST_api_sources(arguments)
+        self.assertSetEqual(
+            models,
+            {
+                "def module.view.function(request, other: "
+                "TaintSource[UserControlled]): ..."
+            },
         )

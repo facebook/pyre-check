@@ -152,24 +152,43 @@ def _file_exists(path: str) -> str:
     return path
 
 
-def _get_exit_nodes(urls_path: str) -> Set[str]:
+def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
     exit_nodes: Set[str] = set()
 
     def callback(function: str, definition: FunctionDefinition) -> None:
-        arguments = ", ".join([argument.arg for argument in definition.args.args])
-        exit_nodes.add(f"def {function}({arguments}) -> TaintSink[ReturnedToUser]: ...")
+        modified_arguments = ", ".join(
+            [argument.arg for argument in definition.args.args]
+        )
+        exit_nodes.add(
+            f"def {function}({modified_arguments}) -> TaintSink[ReturnedToUser]: ..."
+        )
 
-    _visit_views(urls_path, callback)
+    _visit_views(arguments.urls_path, callback)
     return exit_nodes
 
 
-def _get_REST_api_sources(urls_path: str) -> Set[str]:
+def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
     sources: Set[str] = set()
-    # TODO(T40359712): add implementation
+
+    def callback(function: str, definition: FunctionDefinition) -> None:
+        def annotated_argument(argument: _ast.arg) -> str:
+            annotation = argument.annotation
+            if annotation and isinstance(annotation, ast.Name):
+                if annotation.id not in arguments.whitelisted_class:
+                    return argument.arg + ": TaintSource[UserControlled]"
+
+            return argument.arg
+
+        modified_arguments = ", ".join(
+            [annotated_argument(argument) for argument in definition.args.args]
+        )
+        sources.add(f"def {function}({modified_arguments}): ...")
+
+    _visit_views(arguments.urls_path, callback)
     return sources
 
 
-MODES: Mapping[str, Callable[[str], Set[str]]] = {
+MODES: Mapping[str, Callable[[argparse.Namespace], Set[str]]] = {
     "get_exit_nodes": _get_exit_nodes,
     "get_REST_api_sources": _get_REST_api_sources,
 }
@@ -180,11 +199,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "urls_path", type=_file_exists, help="Path to django `urls.py` file"
     )
+    parser.add_argument("--whitelisted-class", action="append")
     parser.add_argument("--mode", action="append", choices=MODES.keys())
     arguments: argparse.Namespace = parser.parse_args()
 
     if not arguments.mode:
         arguments.mode = MODES.keys()
+
+    if not arguments.whitelisted_class:
+        arguments.whitelisted_class = ["HttpRequest"]
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
@@ -196,6 +219,6 @@ if __name__ == "__main__":
 
     models: Set[str] = set()
     for mode in arguments.mode:
-        models = models.union(MODES[mode](arguments.urls_path))
+        models = models.union(MODES[mode](arguments))
 
     print("\n".join(models))
