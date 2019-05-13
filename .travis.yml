@@ -17,5 +17,5 @@ jobs:
       install: scripts/travis_install_build_dependencies.sh
       script: ./scripts/setup.sh --local
     - name: "Build and run tests for sapp"
-      install: pip install -r sapp/requirements.txt
-      script: cd sapp && python3 setup.py test
+      install: pip install -r tools/sapp/requirements.txt
+      script: cd tools/sapp && python3 setup.py test
