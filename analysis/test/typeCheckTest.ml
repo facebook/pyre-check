@@ -623,40 +623,6 @@ let test_forward_expression _ =
     assert_equal ~cmp:Type.equal ~printer:Type.show annotation resolved;
   in
 
-  (* Access. *)
-  assert_forward
-    ~precondition:["x", Type.integer]
-    ~postcondition:["x", Type.integer]
-    "x"
-    Type.integer;
-  assert_forward
-    ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
-    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
-    ~errors:(`Specific [
-        "Incompatible parameter type [6]: "^
-        "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
-      ])
-    "x.add_key('string')"
-    Type.none;
-  assert_forward
-    ~precondition:["unknown", Type.Top]
-    ~postcondition:["unknown", Type.Top]
-    ~environment:(
-      {|
-        class Foo:
-          def __init__(self) -> None:
-            self.attribute: int = 1
-        def foo(x: int) -> typing.Optional[Foo]: ...
-      |}
-    )
-    ~errors:(`Specific [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
-      "but got `unknown`.";
-      "Undefined attribute [16]: Optional type has no attribute `attribute`."
-    ])
-    "foo(unknown).attribute"
-    Type.Top;
-
   (* Await. *)
   assert_forward "await awaitable_int()" Type.integer;
   assert_forward
@@ -685,6 +651,44 @@ let test_forward_expression _ =
   assert_optional_forward "x and 1" (Type.optional Type.integer);
   assert_optional_forward "1 and x" (Type.optional Type.integer);
   assert_optional_forward "x and x" (Type.optional Type.integer);
+
+  (* Call *)
+  assert_forward
+    ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
+    ~postcondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
+    ~errors:(`Specific [
+        "Incompatible parameter type [6]: "^
+        "Expected `int` for 1st anonymous parameter to call `dict.add_key` but got `str`.";
+      ])
+    "x.add_key('string')"
+    Type.none;
+  assert_forward
+    ~precondition:["unknown", Type.Top]
+    ~postcondition:["unknown", Type.Top]
+    ~environment:(
+      {|
+        class Foo:
+          def __init__(self) -> None:
+            self.attribute: int = 1
+        def foo(x: int) -> typing.Optional[Foo]: ...
+      |}
+    )
+    ~errors:(`Specific [
+      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` " ^
+      "but got `unknown`.";
+      "Undefined attribute [16]: Optional type has no attribute `attribute`."
+    ])
+    "foo(unknown).attribute"
+    Type.Top;
+  assert_forward
+    ~precondition:["undefined", Type.Union[Type.integer; Type.undeclared]]
+    ~postcondition:["undefined", Type.Union[Type.integer; Type.undeclared]]
+    ~errors:(`Specific [
+      "Undefined name [18]: Global name `undefined` is not defined, or there is at least one " ^
+      "control flow path that doesn't define `undefined`."
+    ])
+    "undefined()"
+    Type.Top;
 
   (* Comparison operator. *)
   assert_forward "1 < 2" Type.bool;
@@ -871,6 +875,13 @@ let test_forward_expression _ =
       ])
     "[x]"
     (Type.list Type.undeclared);
+
+  (* Name. *)
+  assert_forward
+    ~precondition:["x", Type.integer]
+    ~postcondition:["x", Type.integer]
+    "x"
+    Type.integer;
 
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);

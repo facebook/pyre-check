@@ -1961,6 +1961,13 @@ module State = struct
         resolved = Resolution.join resolution left.resolved right.resolved;
       }
     in
+    let is_terminating_error error =
+      let open Error in
+      match kind error with
+      | UndefinedAttribute _
+      | UndefinedName _ -> true
+      | _ -> false
+    in
     match value with
     | Access _ ->
         (* Deprecated *)
@@ -2200,8 +2207,22 @@ module State = struct
           forward_expression ~state:{ state with resolution } ~expression:callee in
         forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
     | Call { callee; arguments } ->
-        let { state; resolved = resolved_callee } = forward_expression ~state ~expression:callee in
-        forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+        let { state = { errors = callee_errors; _ }; resolved = resolved_callee } =
+          forward_expression ~state:{ state with errors = Error.Set.empty } ~expression:callee
+        in
+        let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
+          forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+        in
+        if Set.is_empty (Set.filter ~f:is_terminating_error callee_errors) then
+          let errors = Set.union updated_errors callee_errors in
+          { state = { updated_state with errors }; resolved }
+        else
+          (* Do not throw more errors if callee already contains terminating error. *)
+          let errors =
+            let { errors = existing_errors; _ } = state in
+            Set.union existing_errors callee_errors
+          in
+          { state = { state with errors }; resolved }
 
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
@@ -2592,14 +2613,7 @@ module State = struct
                 in
                 { state; resolved }
         in
-        let should_terminate error =
-          let open Error in
-          match kind error with
-          | UndefinedAttribute _
-          | UndefinedName _ -> true
-          | _ -> false
-        in
-        if Set.is_empty (Set.filter ~f:should_terminate base_errors) then
+        if Set.is_empty (Set.filter ~f:is_terminating_error base_errors) then
           let errors = Set.union updated_errors base_errors in
           { state = { updated_state with errors }; resolved }
         else
