@@ -543,6 +543,7 @@ def main():
     start = time.time()
     stubs = []
     error_message = ""
+    configuration = None
     try:
         exit_code = ExitCode.SUCCESS
         analysis_directory = None
