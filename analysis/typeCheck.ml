@@ -2446,11 +2446,6 @@ module State = struct
           else
             state, resolved_base
         in
-        let is_suppressed =
-          reference
-          >>| Resolution.is_suppressed_module resolution
-          |> Option.value ~default:false
-        in
         let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
           if Type.is_undeclared resolved_base then
             let state =
@@ -2460,8 +2455,6 @@ module State = struct
               |> Option.value ~default:state
             in
             { state; resolved = resolved_base }
-          else if is_suppressed then
-            { state; resolved = Type.Top }
           else if Type.equal resolved_base Type.Top then
             (* Global or local. *)
             reference
