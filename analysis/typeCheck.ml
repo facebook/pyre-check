@@ -1515,49 +1515,36 @@ module State = struct
     in
     let forward_reference ~state reference =
       let reference =
-        (* Resolve exports. *)
-        let exported =
-          (* Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-          let widening_threshold = 25 in
-          let rec resolve_exports_fixpoint ~reference ~visited ~count =
-            if Set.mem visited reference || count > widening_threshold then
-              reference
-            else
-              let rec resolve_exports ~lead ~tail =
-                match tail with
-                | head :: tail ->
-                    Resolution.module_definition resolution (Reference.create_from_list lead)
-                    >>| (fun definition ->
-                        match Module.aliased_export definition (Reference.create head) with
-                        | Some export ->
-                            Reference.combine export (Reference.create_from_list tail)
-                        | _ ->
-                            resolve_exports ~lead:(lead @ [head]) ~tail)
-                    |> Option.value ~default:reference
-                | _ ->
-                    reference
-              in
-              match Reference.as_list reference with
+        (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
+        let widening_threshold = 25 in
+        let rec resolve_exports_fixpoint ~reference ~visited ~count =
+          if Set.mem visited reference || count > widening_threshold then
+            reference
+          else
+            let rec resolve_exports ~lead ~tail =
+              match tail with
               | head :: tail ->
-                  resolve_exports_fixpoint
-                    ~reference:(resolve_exports ~lead:[head] ~tail)
-                    ~visited:(Set.add visited reference)
-                    ~count:(count + 1)
+                  Resolution.module_definition resolution (Reference.create_from_list lead)
+                  >>| (fun definition ->
+                      match Module.aliased_export definition (Reference.create head) with
+                      | Some export ->
+                          Reference.combine export (Reference.create_from_list tail)
+                      | _ ->
+                          resolve_exports ~lead:(lead @ [head]) ~tail)
+                  |> Option.value ~default:reference
               | _ ->
                   reference
-          in
-          resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+            in
+            match Reference.as_list reference with
+            | head :: tail ->
+                resolve_exports_fixpoint
+                  ~reference:(resolve_exports ~lead:[head] ~tail)
+                  ~visited:(Set.add visited reference)
+                  ~count:(count + 1)
+            | _ ->
+                reference
         in
-        (* Sanity check that resolved exports map to existing modules. *)
-        let exported_is_valid_module =
-          Reference.prefix exported
-          >>= Resolution.module_definition resolution
-          |> Option.is_some
-        in
-        if not exported_is_valid_module then
-          reference
-        else
-          exported
+        resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
       in
       let annotation =
         let local_annotation = Resolution.get_local resolution ~reference in

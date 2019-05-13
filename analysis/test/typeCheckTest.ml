@@ -388,7 +388,14 @@ let test_resolve_exports _ =
       "qualifier.foo", "foo = 1";
     ]
     "qualifier.foo.foo"
-    "qualifier.foo.foo"
+    "qualifier.foo.foo";
+  assert_resolve
+    ~sources:[
+      "placeholder", "# pyre-placeholder-stub";
+      "a", "from placeholder.nonexistent import foo";
+    ]
+    "a.foo"
+    "placeholder.nonexistent.foo"
 
 
 let assert_resolved sources expression expected =
