@@ -172,7 +172,14 @@ def errors_from_run(_arguments) -> List[Dict[str, Any]]:
 
 def _get_lint_status() -> int:
     lint_status = subprocess.call(
-        ["arc", "lint", "--never-apply-patches", "--output", "none"]
+        [
+            "arc",
+            "lint",
+            "--never-apply-patches",
+            "--enforce-lint-clean",
+            "--output",
+            "none",
+        ]
     )
     return lint_status
 

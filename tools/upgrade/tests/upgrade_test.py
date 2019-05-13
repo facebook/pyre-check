@@ -213,7 +213,16 @@ class FixmeAllTest(unittest.TestCase):
         run_global_version_update.assert_not_called()
         fix.called_once_with(arguments, upgrade.sort_errors(errors))
         calls = [
-            call(["arc", "lint", "--never-apply-patches", "--output", "none"]),
+            call(
+                [
+                    "arc",
+                    "lint",
+                    "--never-apply-patches",
+                    "--enforce-lint-clean",
+                    "--output",
+                    "none",
+                ]
+            ),
             call().__bool__(),
             call(["arc", "lint", "--apply-patches", "--output", "none"]),
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
@@ -498,7 +507,16 @@ class FixmeTest(unittest.TestCase):
             ]
             path_write_text.assert_has_calls(calls)
             calls = [
-                call(["arc", "lint", "--never-apply-patches", "--output", "none"]),
+                call(
+                    [
+                        "arc",
+                        "lint",
+                        "--never-apply-patches",
+                        "--enforce-lint-clean",
+                        "--output",
+                        "none",
+                    ]
+                ),
                 call().__bool__(),
                 call(["arc", "lint", "--apply-patches", "--output", "none"]),
             ]
