@@ -10,7 +10,7 @@ import ast
 import functools
 import logging
 import os
-from typing import Callable, Mapping, Optional, Set, Union
+from typing import Callable, Dict, Mapping, Optional, Set, Union
 
 import _ast
 
@@ -45,12 +45,18 @@ def _load_function_definition(function: str) -> Optional[FunctionDefinition]:
     split = function.split(".")
     assert len(split) > 1, "Got unqualified or builtin function"
     module = ".".join(split[:-1])
+    parent = None
     name = split[-1]
 
     module_path = _find_module(module)
     if not module_path:
-        LOG.warning(f"Could not find module for `{function}`.")
-        return None
+        module = ".".join(split[:-2])
+        parent = split[-2]
+        module_path = _find_module(module)
+
+        if not module_path:
+            LOG.warning(f"Could not find module for `{function}`.")
+            return None
 
     tree = _load_module_ast(module_path)
     if not tree:
@@ -59,7 +65,21 @@ def _load_function_definition(function: str) -> Optional[FunctionDefinition]:
     if not isinstance(tree, ast.Module):
         return
 
-    for statement in tree.body:
+    statements = tree.body
+    if parent:
+        found_class = False
+        for statement in statements:
+            if not isinstance(statement, ast.ClassDef):
+                continue
+            if statement.name == parent:
+                found_class = True
+                statements = statement.body
+                break
+        if not found_class:
+            LOG.warning(f"Could not find class `{parent}` in `{module}`.")
+            return
+
+    for statement in statements:
         if not isinstance(statement, ast.FunctionDef) and not isinstance(
             statement, ast.AsyncFunctionDef
         ):
@@ -76,17 +96,31 @@ def _visit_views(
     functions: Set[str] = set()
 
     class UrlVisitor(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self._aliases: Dict[str, str] = {}
+
+        def _add_function(self, argument: ast.AST, base: str = "") -> None:
+            if isinstance(argument, ast.Str):
+                function = argument.s if base == "" else base + "." + argument.s
+                functions.add(function)
+
+            elif isinstance(argument, ast.Attribute):
+                value = argument.value
+                if not isinstance(value, ast.Name):
+                    return
+                name = value.id
+                if name in self._aliases:
+                    functions.add(f"{self._aliases[name]}.{argument.attr}")
+                else:
+                    functions.add(name)
+
         def _handle_url(self, call: _ast.Call) -> None:
             arguments = call.args
             if len(arguments) < 2:
                 return
             argument = arguments[1]
 
-            if isinstance(argument, ast.Str):
-                function = argument.s
-                functions.add(function)
-
-            elif isinstance(argument, ast.Call):
+            if isinstance(argument, ast.Call):
                 name = argument.func
                 if not isinstance(name, ast.Name) or name.id != "include":
                     return
@@ -98,6 +132,8 @@ def _visit_views(
                     return
                 include = argument.s
                 _visit_views(_find_module(include), callback)
+            else:
+                self._add_function(argument)
 
         def _handle_patterns(self, call: _ast.Call) -> None:
             arguments = call.args
@@ -115,12 +151,19 @@ def _visit_views(
                 elements = argument.elts
                 if len(elements) != 2:
                     continue
-                target = elements[1]
-                if not isinstance(target, ast.Str):
-                    continue
+                self._add_function(elements[1], base)
 
-                function = target.s if base == "" else base + "." + target.s
-                functions.add(function)
+        def visit_ImportFrom(self, import_from: _ast.ImportFrom) -> None:
+            for name in import_from.names:
+                if not isinstance(name, ast.alias):
+                    continue
+                if name.asname is not None:
+                    # Not yet supported.
+                    continue
+                module = import_from.module
+                if not module:
+                    continue
+                self._aliases[name.name] = f"{module}.{name.name}"
 
         def visit_Call(self, call: _ast.Call) -> None:
             name = call.func

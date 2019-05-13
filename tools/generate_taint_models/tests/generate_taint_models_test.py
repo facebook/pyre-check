@@ -43,6 +43,25 @@ class FixmeAllTest(unittest.TestCase):
             generate_taint_models._visit_views("urls.py", lambda *_: None)
             load_function_definition.assert_called_once_with("some.view")
 
+        # Simple `url()` call to method.
+        with patch(
+            "tools.pyre.tools.generate_taint_models.generate_taint_models."
+            "_load_function_definition"
+        ) as load_function_definition:
+            open.side_effect = _open_implementation(
+                {
+                    "urls.py": textwrap.dedent(
+                        """
+                        from module.view import Class
+                        url(r"^p-ng/?$", Class.method)
+                        """
+                    )
+                }
+            )
+            # pyre-ignore
+            generate_taint_models._visit_views("urls.py", lambda *_: None)
+            load_function_definition.assert_called_once_with("module.view.Class.method")
+
         # Multiple `url()` calls.
         with patch(
             "tools.pyre.tools.generate_taint_models.generate_taint_models."
@@ -92,10 +111,12 @@ class FixmeAllTest(unittest.TestCase):
                 {
                     "urls.py": textwrap.dedent(
                         """
+                        from module import Class
                         patterns(
                             "base",
                             (r"derp", "first_view"),
                             (r"derp", "second_view"),
+                            (r"derp", Class.method)
                         )
                         patterns("", (r"derp", "absolute.module.path"))
                     """
@@ -118,6 +139,10 @@ class FixmeAllTest(unittest.TestCase):
     def test_load_function_definition(
         self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
     ) -> None:
+        def _os_path_exists_implementation(path: str) -> bool:
+            return path in ["urls.py", "module.py"]
+
+        os_path_exists.side_effect = _os_path_exists_implementation
         open.side_effect = _open_implementation(
             {
                 "module.py": textwrap.dedent(
@@ -130,8 +155,10 @@ class FixmeAllTest(unittest.TestCase):
                     def nesting():
                         def nested():
                             pass
-
-                """
+                    class Class:
+                        def method(self):
+                            pass
+                    """
                 )
             }
         )
@@ -154,6 +181,13 @@ class FixmeAllTest(unittest.TestCase):
             "module.nesting.nested"
         )
         self.assertIsNone(definition)
+
+        definition = generate_taint_models._load_function_definition(
+            "module.Class.method"
+        )
+        self.assertIsNotNone(definition)
+        # pyre-ignore
+        self.assertEqual(definition.name, "method")
 
     @patch("builtins.open")
     @patch("os.path.exists", return_value=True)
