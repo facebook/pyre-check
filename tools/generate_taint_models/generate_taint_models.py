@@ -99,10 +99,23 @@ def _visit_views(
         def __init__(self) -> None:
             self._aliases: Dict[str, str] = {}
 
-        def _add_function(self, argument: ast.AST, base: str = "") -> None:
+        def _handle_view(self, argument: ast.AST, base: str = "") -> None:
             if isinstance(argument, ast.Str):
                 function = argument.s if base == "" else base + "." + argument.s
                 functions.add(function)
+
+            elif isinstance(argument, ast.Call):
+                name = argument.func
+                if not isinstance(name, ast.Name) or name.id != "include":
+                    return
+                arguments = argument.args
+                if len(arguments) < 1:
+                    return
+                argument = arguments[0]
+                if not isinstance(argument, ast.Str):
+                    return
+                include = argument.s
+                _visit_views(_find_module(include), callback)
 
             elif isinstance(argument, ast.Attribute):
                 value = argument.value
@@ -118,22 +131,7 @@ def _visit_views(
             arguments = call.args
             if len(arguments) < 2:
                 return
-            argument = arguments[1]
-
-            if isinstance(argument, ast.Call):
-                name = argument.func
-                if not isinstance(name, ast.Name) or name.id != "include":
-                    return
-                arguments = argument.args
-                if len(arguments) < 1:
-                    return
-                argument = arguments[0]
-                if not isinstance(argument, ast.Str):
-                    return
-                include = argument.s
-                _visit_views(_find_module(include), callback)
-            else:
-                self._add_function(argument)
+            self._handle_view(arguments[1])
 
         def _handle_patterns(self, call: _ast.Call) -> None:
             arguments = call.args
@@ -151,7 +149,7 @@ def _visit_views(
                 elements = argument.elts
                 if len(elements) != 2:
                     continue
-                self._add_function(elements[1], base)
+                self._handle_view(elements[1], base)
 
         def visit_ImportFrom(self, import_from: _ast.ImportFrom) -> None:
             for name in import_from.names:

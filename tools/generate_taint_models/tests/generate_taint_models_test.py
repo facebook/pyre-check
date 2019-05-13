@@ -73,7 +73,7 @@ class FixmeAllTest(unittest.TestCase):
                         """
                         url(r"^p-ng/?$", "some.view")
                         url(r"^p-ng/?$", "some.other.view")
-                    """
+                        """
                     )
                 }
             )
@@ -94,7 +94,7 @@ class FixmeAllTest(unittest.TestCase):
                     "indirect/urls.py": textwrap.dedent(
                         """
                         url(r"^p-ng/?$", "indirect.view")
-                    """
+                        """
                     ),
                 }
             )
@@ -116,11 +116,17 @@ class FixmeAllTest(unittest.TestCase):
                             "base",
                             (r"derp", "first_view"),
                             (r"derp", "second_view"),
-                            (r"derp", Class.method)
+                            (r"derp", Class.method),
+                            (r"derp", include("indirect.urls"))
                         )
                         patterns("", (r"derp", "absolute.module.path"))
-                    """
-                    )
+                        """
+                    ),
+                    "indirect/urls.py": textwrap.dedent(
+                        """
+                        url(r"derp", "indirect.view.function")
+                        """
+                    ),
                 }
             )
             # pyre-ignore
@@ -130,6 +136,7 @@ class FixmeAllTest(unittest.TestCase):
                     call("base.first_view"),
                     call("base.second_view"),
                     call("absolute.module.path"),
+                    call("indirect.view.function"),
                 ],
                 any_order=True,
             )
