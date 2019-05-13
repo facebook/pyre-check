@@ -20,6 +20,7 @@ type class_metadata = {
   is_test: bool;
   is_final: bool;
 }
+[@@deriving eq]
 
 
 type generic_type_problems =

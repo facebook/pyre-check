@@ -168,35 +168,40 @@ let test_parse_query context =
   assert_parses "decode_ocaml_values()" (DecodeOcamlValues []);
   assert_parses
     "decode_ocaml_values(('first_key', 'first_value'))"
-    (DecodeOcamlValues [{
-         TypeQuery.serialized_key = "first_key";
-         serialized_value = "first_value";
-       }]);
-  assert_parses
-    "decode_ocaml_values(('first_key', 'first_value'), ('second_key', 'second_value'))"
     (DecodeOcamlValues [
-        {
-          TypeQuery.serialized_key = "first_key";
+        TypeQuery.SerializedValue {
+          serialized_key = "first_key";
           serialized_value = "first_value";
         };
-        {
-          TypeQuery.serialized_key = "second_key";
-          serialized_value = "second_value";
+      ]);
+  assert_parses
+    "decode_ocaml_values(('first_key', 'first_value'), \
+     ('second_key', 'second_value', 'third_value'))"
+    (DecodeOcamlValues [
+        TypeQuery.SerializedValue {
+          serialized_key = "first_key";
+          serialized_value = "first_value";
+        };
+        TypeQuery.SerializedPair {
+          serialized_key = "second_key";
+          first_serialized_value = "second_value";
+          second_serialized_value = "third_value";
         };
       ]);
   assert_fails_to_parse "decode_ocaml_values('a', 'b')";
 
-  let file = Test.write_file ("decode.me", "key,value\nsecond_key,second_value") in
+  let file = Test.write_file ("decode.me", "key,value\nsecond_key,second_value,third_value") in
   assert_parses
     (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute (File.path file)))
     (DecodeOcamlValues [
-        {
-          TypeQuery.serialized_key = "key";
+        TypeQuery.SerializedValue {
+          serialized_key = "key";
           serialized_value = "value";
         };
-        {
-          TypeQuery.serialized_key = "second_key";
-          serialized_value = "second_value";
+        TypeQuery.SerializedPair {
+          serialized_key = "second_key";
+          first_serialized_value = "second_value";
+          second_serialized_value = "third_value";
         };
       ])
 
@@ -215,18 +220,27 @@ let test_to_yojson _ =
     (TypeQuery.Response
        (TypeQuery.Decoded {
            decoded = [
-             {
+             TypeQuery.DecodedValue {
                serialized_key = "first_encoded";
                kind = "Type";
                actual_key = "first";
                actual_value = Some "int";
              };
-             {
+             TypeQuery.DecodedValue {
                serialized_key = "first_encoded";
                kind = "Type";
                actual_key = "first";
                actual_value = Some "str";
              };
+             TypeQuery.DecodedPair {
+               serialized_key = "first_encoded";
+               kind = "Type";
+               actual_key = "first";
+               first_value = Some "str";
+               second_value = Some "int";
+               equal = false;
+             };
+
            ];
            undecodable_keys = ["no"];
          }))
@@ -245,6 +259,14 @@ let test_to_yojson _ =
              "kind": "Type",
              "key": "first",
              "value": "str"
+           },
+           {
+             "serialized_key": "first_encoded",
+             "kind": "Type",
+             "key": "first",
+             "equal": false,
+             "value": "str",
+             "value": "int"
            }
          ],
          "undecodable_keys": [ "no" ]

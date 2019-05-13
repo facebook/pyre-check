@@ -29,10 +29,16 @@ type client =
 
 
 module TypeQuery = struct
-  type serialized_ocaml_value = {
-    serialized_key: string;
-    serialized_value: string;
-  }
+  type serialized_ocaml_value =
+    | SerializedValue of {
+        serialized_key: string;
+        serialized_value: string;
+      }
+    | SerializedPair of {
+        serialized_key: string;
+        first_serialized_value: string;
+        second_serialized_value: string;
+      }
   [@@deriving eq, show, to_yojson]
 
   type request =
@@ -109,12 +115,21 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
-  type decoded_value = {
-    serialized_key: string;
-    kind: string;
-    actual_key: string;
-    actual_value: string option;
-  }
+  type decoded_value =
+    | DecodedValue of {
+        serialized_key: string;
+        kind: string;
+        actual_key: string;
+        actual_value: string option;
+      }
+    | DecodedPair of {
+        serialized_key: string;
+        kind: string;
+        actual_key: string;
+        first_value: string option;
+        second_value: string option;
+        equal: bool;
+      }
   [@@deriving eq, show, to_yojson]
 
   type decoded = {
@@ -162,19 +177,51 @@ module TypeQuery = struct
     | CoverageAtLocations annotations ->
         `Assoc ["types", `List (List.map annotations ~f:coverage_at_location_to_yojson)]
     | Decoded { decoded; undecodable_keys } ->
-        let to_json { serialized_key; kind; actual_key; actual_value } =
-          let value =
-            match actual_value with
-            | Some actual_value ->
-                ["value", `String actual_value]
-            | None ->
-                []
-          in
-          `Assoc ([
-              "serialized_key", `String serialized_key;
-              "kind", `String kind;
-              "key", `String actual_key;
-            ] @ value)
+        let to_json decoded =
+          match decoded with
+          | DecodedValue { serialized_key; kind; actual_key; actual_value } ->
+              let value =
+                match actual_value with
+                | Some actual_value ->
+                    ["value", `String actual_value]
+                | None ->
+                    []
+              in
+              `Assoc ([
+                  "serialized_key", `String serialized_key;
+                  "kind", `String kind;
+                  "key", `String actual_key;
+                ] @ value)
+          | DecodedPair {
+              serialized_key;
+              kind;
+              actual_key;
+              first_value;
+              second_value;
+              equal;
+            } ->
+              let first_value =
+                match first_value with
+                | Some first_value ->
+                    ["value", `String first_value]
+                | None ->
+                    []
+              in
+              let second_value =
+                match second_value with
+                | Some second_value ->
+                    ["value", `String second_value]
+                | None ->
+                    []
+              in
+              `Assoc ([
+                  "serialized_key", `String serialized_key;
+                  "kind", `String kind;
+                  "key", `String actual_key;
+                  "equal", `Bool equal;
+                ]
+                  @ first_value
+                  @ second_value)
         in
         `Assoc [
           "decoded", `List (List.map decoded ~f:to_json);

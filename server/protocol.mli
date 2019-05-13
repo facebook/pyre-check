@@ -27,10 +27,16 @@ type client =
 
 
 module TypeQuery: sig
-  type serialized_ocaml_value = {
-    serialized_key: string;
-    serialized_value: string;
-  }
+  type serialized_ocaml_value =
+    | SerializedValue of {
+        serialized_key: string;
+        serialized_value: string;
+      }
+    | SerializedPair of {
+        serialized_key: string;
+        first_serialized_value: string;
+        second_serialized_value: string;
+      }
   [@@deriving eq, show, to_yojson]
 
   type request =
@@ -101,12 +107,21 @@ module TypeQuery: sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type decoded_value = {
-    serialized_key: string;
-    kind: string;
-    actual_key: string;
-    actual_value: string option;
-  }
+  type decoded_value =
+    | DecodedValue of {
+        serialized_key: string;
+        kind: string;
+        actual_key: string;
+        actual_value: string option;
+      }
+    | DecodedPair of {
+        serialized_key: string;
+        kind: string;
+        actual_key: string;
+        first_value: string option;
+        second_value: string option;
+        equal: bool;
+      }
   [@@deriving eq, show, to_yojson]
 
   type decoded = {

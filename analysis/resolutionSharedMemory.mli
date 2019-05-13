@@ -15,9 +15,10 @@ type annotation_map = {
   precondition: Annotation.t Reference.Map.Tree.t;
   postcondition: Annotation.t Reference.Map.Tree.t;
 }
+[@@deriving eq]
 
 type annotations = annotation_map Int.Map.Tree.t
-[@@deriving show]
+[@@deriving eq, show]
 
 
 module TypeAnnotationsValue: sig

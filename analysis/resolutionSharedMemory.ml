@@ -14,9 +14,11 @@ type annotation_map = {
   precondition: Annotation.t Reference.Map.Tree.t;
   postcondition: Annotation.t Reference.Map.Tree.t;
 }
+[@@deriving eq]
 
 type annotations =
   annotation_map Int.Map.Tree.t
+[@@deriving eq]
 
 
 let pp_annotations formatter map =

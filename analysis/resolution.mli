@@ -15,6 +15,7 @@ type class_metadata = {
   is_test: bool;
   is_final: bool;
 }
+[@@deriving eq]
 
 type t
 [@@deriving show]

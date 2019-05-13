@@ -548,296 +548,347 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
 
     | TypeQuery.DecodeOcamlValues values ->
-        let build_response
-            { TypeQuery.decoded; undecodable_keys }
-            { TypeQuery.serialized_key; serialized_value } =
-          let decode_value serialized_key value =
-            let decode index =
-              let annotation =
-                Handler.TypeOrderHandler.find
-                  (Handler.TypeOrderHandler.annotations ())
-                  index
-              in
-              match annotation with
-              | None ->
-                  Format.sprintf "Undecodable(%d)" index
-              | Some annotation ->
-                  Type.show annotation
+        let open Service.EnvironmentSharedMemory in
+        let decode key value =
+          let key, value = Base64.decode key, Base64.decode value in
+          match key, value with
+          | Ok key, Ok value ->
+              begin
+                match Memory.decode ~key ~value with
+                | Ok decoded ->
+                    Some decoded
+                | _ ->
+                    None
+              end
+          | _ ->
+              None
+        in
+        let serialize_decoded decoded =
+          let decode index =
+            let annotation =
+              Handler.TypeOrderHandler.find
+                (Handler.TypeOrderHandler.annotations ())
+                index
             in
-            let decode_target { TypeOrder.Target.target; parameters } =
-              Format.sprintf
-                "%s[%s]"
-                (decode target)
-                (List.map parameters ~f:Type.show
-                 |> String.concat ~sep:", ")
-            in
-            let key, value = Base64.decode serialized_key, Base64.decode value in
-            match key, value with
-            | Ok key, Ok value ->
-                let open Service.EnvironmentSharedMemory in
-                begin
-                  match Memory.decode ~key ~value with
-                  | Ok (ClassDefinitions.Decoded (key, value)) ->
-                      let value =
-                        match value with
-                        | Some { Node.value = definition; _ } ->
-                            `Assoc [
-                              "class_definition", `String (Ast.Statement.Class.show definition);
-                            ]
-                            |> Yojson.to_string
-                            |> Option.some
-                        | None ->
-                            None
-                      in
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = ClassValue.description;
-                        actual_key = key;
-                        actual_value = value;
-                      }
-                  | Ok (ClassMetadata.Decoded (key, value)) ->
-                      let value =
-                        match value with
-                        | Some { Resolution.successors; is_test; is_final; } ->
-                            `Assoc [
-                              "successors",
-                              `String (List.to_string ~f:Type.show_primitive successors);
-                              "is_test",
-                              `Bool is_test;
-                              "is_final",
-                              `Bool is_final;
-                            ]
-                            |> Yojson.to_string
-                            |> Option.some
-                        | None ->
-                            None
-                      in
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = ClassMetadataValue.description;
-                        actual_key = key;
-                        actual_value = value;
-                      }
-                  | Ok (Aliases.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = AliasValue.description;
-                        actual_key = key;
-                        actual_value = value >>| Type.show;
-                      }
-                  | Ok (Globals.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = GlobalValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| Node.value
-                          >>| Annotation.sexp_of_t
-                          >>| Sexp.to_string;
-                      }
-                  | Ok (UndecoratedFunctions.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = UndecoratedFunctionValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| Type.Callable.show_overload Type.pp;
-                      }
-                  | Ok (Dependents.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = DependentValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| Reference.Set.Tree.to_list
-                          >>| List.to_string ~f:Reference.show;
-                      }
-                  | Ok (FunctionKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = FunctionKeyValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:Reference.show;
-                      }
-                  | Ok (ClassKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = ClassKeyValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:Fn.id;
-                      }
-                  | Ok (GlobalKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = GlobalKeyValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:Reference.show;
-                      }
-                  | Ok (AliasKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = AliasKeyValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:ident;
-                      }
-                  | Ok (DependentKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = DependentKeyValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:Reference.show;
-                      }
-                  | Ok (OrderIndices.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = OrderIndexValue.description;
-                        actual_key = key;
-                        actual_value =
-                          value
-                          >>| Int.to_string;
-                      }
-                  | Ok (OrderAnnotations.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = OrderAnnotationValue.description;
-                        actual_key = Int.to_string key;
-                        actual_value =
-                          value
-                          >>| Type.show;
-                      }
-                  | Ok (OrderEdges.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = EdgeValue.description;
-                        actual_key = decode key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:decode_target;
-                      }
-                  | Ok (OrderBackedges.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = BackedgeValue.description;
-                        actual_key = decode key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:decode_target;
-                      }
-                  | Ok (OrderKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = OrderKeyValue.description;
-                        actual_key = Int.to_string key;
-                        actual_value =
-                          value
-                          >>| List.to_string ~f:decode
-                      }
-
-                  | Ok (Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.SymlinksToPaths.SymlinkSource.description;
-                        actual_key = key;
-                        actual_value =
-                          value
-                          >>| Path.show
-                      }
-
-                  | Ok (Ast.SharedMemory.Sources.Sources.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.Sources.SourceValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| Source.show
-                      }
-
-                  | Ok (Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.Sources.HandleValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| File.Handle.show
-                      }
-
-                  | Ok (Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.HandleKeys.HandleKeysValue.description;
-                        actual_key = Int.to_string key;
-                        actual_value =
-                          value
-                          >>| File.Handle.Set.Tree.sexp_of_t
-                          >>| Sexp.to_string
-                      }
-
-                  | Ok (Ast.SharedMemory.Modules.Modules.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.Modules.ModuleValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| Module.sexp_of_t
-                          >>| Sexp.to_string
-                      }
-
-                  | Ok (Ast.SharedMemory.Handles.Paths.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Ast.SharedMemory.Handles.PathValue.description;
-                        actual_key = Int.to_string key;
-                        actual_value = value;
-                      }
-
-                  | Ok (Coverage.SharedMemory.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = Coverage.CoverageValue.description;
-                        actual_key = File.Handle.show key;
-                        actual_value =
-                          value
-                          >>| Coverage.show;
-                      }
-                  | Ok (ResolutionSharedMemory.Decoded (key, value)) ->
-                      Some {
-                        TypeQuery.serialized_key;
-                        kind = ResolutionSharedMemory.TypeAnnotationsValue.description;
-                        actual_key = Reference.show key;
-                        actual_value =
-                          value
-                          >>| ResolutionSharedMemory.show_annotations;
-                      }
-                  | Ok _ ->
-                      None
-
-                  | Error _ ->
-                      None
-                end
-            | _ ->
-                None
+            match annotation with
+            | None ->
+                Format.sprintf "Undecodable(%d)" index
+            | Some annotation ->
+                Type.show annotation
           in
-          match decode_value serialized_key serialized_value with
-          | Some decoded_value ->
-              { TypeQuery.decoded = decoded_value :: decoded; undecodable_keys }
-          | None ->
-              { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
+          let decode_target { TypeOrder.Target.target; parameters } =
+            Format.sprintf
+              "%s[%s]"
+              (decode target)
+              (List.map parameters ~f:Type.show
+               |> String.concat ~sep:", ")
+          in
+          match decoded with
+          | (ClassDefinitions.Decoded (key, value)) ->
+              let value =
+                match value with
+                | Some { Node.value = definition; _ } ->
+                    `Assoc [
+                      "class_definition", `String (Ast.Statement.Class.show definition);
+                    ]
+                    |> Yojson.to_string
+                    |> Option.some
+                | None ->
+                    None
+              in
+              Some (ClassValue.description, key, value)
+          | (ClassMetadata.Decoded (key, value)) ->
+              let value =
+                match value with
+                | Some { Resolution.successors; is_test; is_final; } ->
+                    `Assoc [
+                      "successors",
+                      `String (List.to_string ~f:Type.show_primitive successors);
+                      "is_test",
+                      `Bool is_test;
+                      "is_final",
+                      `Bool is_final;
+                    ]
+                    |> Yojson.to_string
+                    |> Option.some
+                | None ->
+                    None
+              in
+              Some (ClassMetadataValue.description, key, value)
+          | (Aliases.Decoded (key, value)) ->
+              Some (AliasValue.description, key, value >>| Type.show)
+          | (Globals.Decoded (key, value)) ->
+              let value =
+                value
+                >>| Node.value
+                >>| Annotation.sexp_of_t
+                >>| Sexp.to_string
+              in
+              Some (GlobalValue.description, Reference.show key, value)
+          | (UndecoratedFunctions.Decoded (key, value)) ->
+              Some (
+                UndecoratedFunctionValue.description,
+                Reference.show key,
+                value
+                >>| Type.Callable.show_overload Type.pp
+              )
+          | (Dependents.Decoded (key, value)) ->
+              Some (
+                DependentValue.description,
+                Reference.show key,
+                value
+                >>| Reference.Set.Tree.to_list
+                >>| List.to_string ~f:Reference.show
+              )
+          | (FunctionKeys.Decoded (key, value)) ->
+              Some (
+                FunctionKeyValue.description,
+                File.Handle.show key,
+                value
+                >>| List.to_string ~f:Reference.show
+              )
+
+          | (ClassKeys.Decoded (key, value)) ->
+              Some (
+                ClassKeyValue.description,
+                File.Handle.show key,
+                value
+                >>| List.to_string ~f:Fn.id
+              )
+          | (GlobalKeys.Decoded (key, value)) ->
+              Some (
+                GlobalKeyValue.description,
+                File.Handle.show key,
+                value
+                >>| List.to_string ~f:Reference.show
+              )
+          | (AliasKeys.Decoded (key, value)) ->
+              Some (
+                AliasKeyValue.description,
+                File.Handle.show key,
+                value
+                >>| List.to_string ~f:ident
+              )
+          | (DependentKeys.Decoded (key, value)) ->
+              Some (
+                DependentKeyValue.description,
+                File.Handle.show key,
+                value
+                >>| List.to_string ~f:Reference.show
+              )
+          | (OrderIndices.Decoded (key, value)) ->
+              Some (
+                OrderIndexValue.description,
+                key,
+                value
+                >>| Int.to_string
+              )
+          | (OrderAnnotations.Decoded (key, value)) ->
+              Some (
+                OrderAnnotationValue.description,
+                Int.to_string key,
+                value
+                >>| Type.show
+              )
+          | (OrderEdges.Decoded (key, value)) ->
+              Some (
+                EdgeValue.description,
+                decode key,
+                value
+                >>| List.to_string ~f:decode_target
+              )
+          | (OrderBackedges.Decoded (key, value)) ->
+              Some (
+                BackedgeValue.description,
+                decode key,
+                value
+                >>| List.to_string ~f:decode_target
+              )
+          | (OrderKeys.Decoded (key, value)) ->
+              Some (
+                OrderKeyValue.description,
+                Int.to_string key,
+                value
+                >>| List.to_string ~f:decode
+              )
+          | (Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.SymlinksToPaths.SymlinkSource.description,
+                key,
+                value >>| Path.show
+              )
+          | (Ast.SharedMemory.Sources.Sources.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.Sources.SourceValue.description,
+                File.Handle.show key,
+                value >>| Source.show
+              )
+          | (Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.Sources.HandleValue.description,
+                Reference.show key,
+                value >>| File.Handle.show
+              )
+          | (Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.HandleKeys.HandleKeysValue.description,
+                Int.to_string key,
+                value
+                >>| File.Handle.Set.Tree.sexp_of_t
+                >>| Sexp.to_string
+              )
+          | (Ast.SharedMemory.Modules.Modules.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.Modules.ModuleValue.description,
+                Reference.show key,
+                value
+                >>| Module.sexp_of_t
+                >>| Sexp.to_string
+              )
+          | (Ast.SharedMemory.Handles.Paths.Decoded (key, value)) ->
+              Some (
+                Ast.SharedMemory.Handles.PathValue.description,
+                Int.to_string key,
+                value
+              )
+          | (Coverage.SharedMemory.Decoded (key, value)) ->
+              Some (
+                Coverage.CoverageValue.description,
+                File.Handle.show key,
+                value
+                >>| Coverage.show
+              )
+          | (ResolutionSharedMemory.Decoded (key, value)) ->
+              Some (
+                ResolutionSharedMemory.TypeAnnotationsValue.description,
+                Reference.show key,
+                value
+                >>| ResolutionSharedMemory.show_annotations
+              )
+          | _ ->
+              None
+        in
+        let build_response { TypeQuery.decoded; undecodable_keys } = function
+          | TypeQuery.SerializedValue { serialized_key; serialized_value } ->
+              begin
+                let serialized =
+                  decode serialized_key serialized_value
+                  >>= serialize_decoded
+                in
+                match serialized with
+                | Some (kind, key, value) ->
+                    let decoded_value =
+                      TypeQuery.DecodedValue {
+                        serialized_key;
+                        kind;
+                        actual_key = key;
+                        actual_value = value;
+                      }
+                    in
+                    { TypeQuery.decoded = decoded_value :: decoded; undecodable_keys }
+                | None ->
+                    { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
+              end
+          | TypeQuery.SerializedPair {
+              serialized_key;
+              first_serialized_value;
+              second_serialized_value;
+            }
+            ->
+              let first_decoded = decode serialized_key first_serialized_value in
+              let second_decoded = decode serialized_key second_serialized_value in
+              begin
+                match first_decoded, second_decoded with
+                | Some first, Some second ->
+                    let equal =
+                      match first, second with
+                      | (ClassDefinitions.Decoded (_, first),
+                         ClassDefinitions.Decoded (_, second)) ->
+                          Option.equal (Node.equal Statement.Class.equal) first second
+                      | (ClassMetadata.Decoded (_, first)), (ClassMetadata.Decoded (_, second)) ->
+                          Option.equal Resolution.equal_class_metadata first second
+                      | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
+                          Option.equal Type.equal first second
+                      | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
+                          Option.equal
+                            Annotation.equal
+                            (first >>| Node.value)
+                            (second >>| Node.value)
+                      | UndecoratedFunctions.Decoded (_, first),
+                        UndecoratedFunctions.Decoded (_, second) ->
+                          Option.equal (Type.Callable.equal_overload Type.equal) first second
+                      | Dependents.Decoded (_, first), Dependents.Decoded (_, second) ->
+                          Option.equal Reference.Set.Tree.equal first second
+                      | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Reference.equal) first second
+                      | ClassKeys.Decoded (_, first), ClassKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Identifier.equal) first second
+                      | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Reference.equal) first second
+                      | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Identifier.equal) first second
+                      | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Reference.equal) first second
+                      | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
+                          Option.equal Int.equal first second
+                      | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
+                          Option.equal Type.equal first second
+                      | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
+                      | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
+                      | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
+                          Option.equal (List.equal ~equal:Int.equal) first second
+                      | Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, first),
+                        Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, second) ->
+                          Option.equal Path.equal first second
+                      | Ast.SharedMemory.Sources.Sources.Decoded (_, first),
+                        Ast.SharedMemory.Sources.Sources.Decoded (_, second) ->
+                          Option.equal Source.equal first second
+                      | Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (_, first),
+                        Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (_, second) ->
+                          Option.equal File.Handle.equal first second
+                      | Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, first),
+                        Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, second) ->
+                          Option.equal File.Handle.Set.Tree.equal first second
+                      | Ast.SharedMemory.Modules.Modules.Decoded (_, first),
+                        Ast.SharedMemory.Modules.Modules.Decoded (_, second) ->
+                          Option.equal Module.equal first second
+                      | Ast.SharedMemory.Handles.Paths.Decoded (_, first),
+                        Ast.SharedMemory.Handles.Paths.Decoded (_, second) ->
+                          Option.equal String.equal first second
+                      | Coverage.SharedMemory.Decoded (_, first),
+                        Coverage.SharedMemory.Decoded (_, second) ->
+                          Option.equal Coverage.equal first second
+                      | ResolutionSharedMemory.Decoded (_, first),
+                        ResolutionSharedMemory.Decoded (_, second) ->
+                          Option.equal (ResolutionSharedMemory.equal_annotations) first second
+                      | _ ->
+                          false
+                    in
+                    begin
+                      match serialize_decoded first, serialize_decoded second with
+                      | Some (kind, key, first_value), Some (_, _, second_value)  ->
+                          let value =
+                            TypeQuery.DecodedPair {
+                              serialized_key;
+                              kind;
+                              actual_key = key;
+                              first_value;
+                              second_value;
+                              equal;
+                            }
+                          in
+                          { TypeQuery.decoded = value :: decoded; undecodable_keys }
+                      | _ ->
+                          {
+                            TypeQuery.decoded;
+                            undecodable_keys = serialized_key :: undecodable_keys;
+                          }
+                    end
+                | _ ->
+                    { TypeQuery.decoded; undecodable_keys = serialized_key :: undecodable_keys }
+              end
         in
         let decoded =
           List.fold
@@ -846,7 +897,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
-
     | TypeQuery.DumpDependencies file ->
         let () =
           try

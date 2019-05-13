@@ -135,15 +135,27 @@ let parse_query
             Request.TypeQueryRequest (Attributes (reference name))
         | "compute_hashes_to_keys", [] ->
             Request.TypeQueryRequest ComputeHashesToKeys
-        | "decode_ocaml_values", pairs ->
-            let pair_of_strings = function
+        | "decode_ocaml_values", values ->
+            let parse_values_to_decode = function
               | {
                 Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
                 _;
               } ->
-                  {
+                  SerializedValue {
                     serialized_key = string_of_expression serialized_key;
                     serialized_value = string_of_expression serialized_value;
+                  }
+              | {
+                Argument.value = {
+                  Node.value = Tuple [serialized_key; first_value; second_value];
+                  _;
+                };
+                _;
+              } ->
+                  SerializedPair {
+                    serialized_key = string_of_expression serialized_key;
+                    first_serialized_value = string_of_expression first_value;
+                    second_serialized_value = string_of_expression second_value;
                   }
               | { Argument.value; _ } ->
                   raise
@@ -152,7 +164,7 @@ let parse_query
                           "expected pair of strings, got `%s`"
                           (Expression.show value)))
             in
-            Request.TypeQueryRequest (DecodeOcamlValues (List.map pairs ~f:pair_of_strings))
+            Request.TypeQueryRequest (DecodeOcamlValues (List.map values ~f:parse_values_to_decode))
         | "decode_ocaml_values_from_file", [path] ->
             let lines =
               let format line =
@@ -160,8 +172,16 @@ let parse_query
                 |> String.split ~on:','
                 |> function
                 | [serialized_key; serialized_value] ->
-                    Some { serialized_key; serialized_value }
-                | _ -> None
+                    Some (SerializedValue { serialized_key; serialized_value })
+                | [serialized_key; first_serialized_value; second_serialized_value] ->
+                    Some
+                      (SerializedPair {
+                          serialized_key;
+                          first_serialized_value;
+                          second_serialized_value;
+                        })
+                | _ ->
+                    None
               in
               string path
               |> Path.create_absolute
