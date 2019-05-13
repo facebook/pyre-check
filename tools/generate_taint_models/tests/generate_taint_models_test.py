@@ -154,3 +154,26 @@ class FixmeAllTest(unittest.TestCase):
             "module.nesting.nested"
         )
         self.assertIsNone(definition)
+
+    @patch("builtins.open")
+    @patch("os.path.exists", return_value=True)
+    def test_get_exit_nodes(
+        self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
+    ) -> None:
+        open.side_effect = _open_implementation(
+            {
+                "urls.py": """url(r"derp", "module.view.function")""",
+                "module/view.py": textwrap.dedent(
+                    """
+                    def function(request: HttpRequest) -> HttpResponse:
+                        pass
+                    def unrelated() -> None: pass
+                """
+                ),
+            }
+        )
+        models = generate_taint_models._get_exit_nodes("urls.py")
+        self.assertSetEqual(
+            models,
+            {"def module.view.function(request) -> TaintSink[ReturnedToUser]: ..."},
+        )

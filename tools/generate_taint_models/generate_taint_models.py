@@ -154,10 +154,10 @@ def _file_exists(path: str) -> str:
 
 def _get_exit_nodes(urls_path: str) -> Set[str]:
     exit_nodes: Set[str] = set()
-    # TODO(T40359712): add implementation
 
     def callback(function: str, definition: FunctionDefinition) -> None:
-        LOG.info(f"Exit node: {function}:\n{ast.dump(definition)}")
+        arguments = ", ".join([argument.arg for argument in definition.args.args])
+        exit_nodes.add(f"def {function}({arguments}) -> TaintSink[ReturnedToUser]: ...")
 
     _visit_views(urls_path, callback)
     return exit_nodes
