@@ -228,10 +228,17 @@ class FixmeAllTest(unittest.TestCase):
     ) -> None:
         open.side_effect = _open_implementation(
             {
-                "urls.py": """url(r"derp", "module.view.function")""",
+                "urls.py": textwrap.dedent(
+                    """
+                    url(r"derp", "module.view.function")
+                    url(r"derp", "module.view.unannotated")
+                    """
+                ),
                 "module/view.py": textwrap.dedent(
                     """
                     def function(request: derp.HttpRequest, other: int) -> HttpResponse:
+                        pass
+                    def unannotated(request, other):
                         pass
                     def unrelated() -> None: pass
                 """
@@ -240,12 +247,15 @@ class FixmeAllTest(unittest.TestCase):
         )
         arguments = MagicMock()
         arguments.urls_path = "urls.py"
-        arguments.whitelisted_classes = "HttpRequest"
+        arguments.whitelisted_class = ["HttpRequest"]
         models = generate_taint_models._get_REST_api_sources(arguments)
         self.assertSetEqual(
             models,
             {
                 "def module.view.function(request, other: "
-                "TaintSource[UserControlled]): ..."
+                "TaintSource[UserControlled]): ...",
+                "def module.view.unannotated("
+                "request: TaintSource[UserControlled], "
+                "other: TaintSource[UserControlled]): ...",
             },
         )

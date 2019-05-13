@@ -214,11 +214,14 @@ def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
     def callback(function: str, definition: FunctionDefinition) -> None:
         def annotated_argument(argument: _ast.arg) -> str:
             annotation = argument.annotation
-            if annotation and isinstance(annotation, ast.Name):
-                if annotation.id not in arguments.whitelisted_class:
-                    return argument.arg + ": TaintSource[UserControlled]"
-
-            return argument.arg
+            whitelisted = annotation and any(
+                element in ast.dump(annotation)
+                for element in arguments.whitelisted_class
+            )
+            if whitelisted:
+                return argument.arg
+            else:
+                return argument.arg + ": TaintSource[UserControlled]"
 
         modified_arguments = ", ".join(
             [annotated_argument(argument) for argument in definition.args.args]
