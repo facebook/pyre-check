@@ -696,6 +696,39 @@ let test_forward_expression _ =
     ])
     "undefined()"
     Type.Top;
+  assert_forward
+    ~precondition:["foo_instance", Type.Primitive "Foo"]
+    ~postcondition:["foo_instance", Type.Primitive "Foo"]
+    ~environment:(
+      {|
+        class Foo:
+          def __init__(self) -> None:
+            self.attribute: int = 1
+        def foo(x: typing.Any) -> Foo: ...
+      |}
+    )
+    ~errors:(`Specific [
+      "Undefined attribute [16]: `Foo` has no attribute `unknown`."
+    ])
+    "foo(foo_instance.unknown).attribute"
+    Type.integer;
+  assert_forward
+    ~precondition:["foo_instance", Type.Primitive "Foo"]
+    ~postcondition:["foo_instance", Type.Primitive "Foo"]
+    ~environment:(
+      {|
+        class Foo:
+          def __init__(self) -> None:
+            self.attribute: int = 1
+        def foo(x: typing.Any) -> Foo: ...
+      |}
+    )
+    ~errors:(`Specific [
+      "Undefined attribute [16]: `Foo` has no attribute `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `another_unknown`."
+    ])
+    "foo(foo_instance.unknown).another_unknown"
+    Type.Top;
 
   (* Comparison operator. *)
   assert_forward "1 < 2" Type.bool;

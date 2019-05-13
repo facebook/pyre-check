@@ -2198,7 +2198,9 @@ module State = struct
         let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
           forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
         in
-        if Set.is_empty (Set.filter ~f:is_terminating_error callee_errors) then
+        if Set.is_empty (Set.filter ~f:is_terminating_error callee_errors) ||
+           not (Type.is_top resolved_callee || Type.is_undeclared resolved_callee)
+        then
           let errors = Set.union updated_errors callee_errors in
           { state = { updated_state with errors }; resolved }
         else
@@ -2570,7 +2572,9 @@ module State = struct
                 in
                 { state; resolved }
         in
-        if Set.is_empty (Set.filter ~f:is_terminating_error base_errors) then
+        if Set.is_empty (Set.filter ~f:is_terminating_error base_errors) ||
+           not (Type.is_top resolved_base || Type.is_undeclared resolved_base)
+        then
           let errors = Set.union updated_errors base_errors in
           { state = { updated_state with errors }; resolved }
         else
