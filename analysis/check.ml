@@ -25,6 +25,7 @@ let checks: (module Signature) String.Map.t =
     [
       "awaitable", (module AwaitableCheck);
       "deobfuscation", (module DeobfuscationCheck);
+      "immutable_collection", (module ImmutableCollectionCheck);
       "inference", (module Inference);
       "typeCheck", (module TypeCheck);
     ]
