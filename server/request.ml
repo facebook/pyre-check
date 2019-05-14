@@ -398,14 +398,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     let resolution = TypeCheck.resolution environment () in
-    let parse_and_validate access =
+    let parse_and_validate expression =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
-        Expression.Access.expression access
-        |> Resolution.parse_annotation
+        Resolution.parse_annotation
           ~allow_untracked:true
           ~allow_invalid_type_parameters:true
           resolution
+          expression
       in
       if TypeOrder.is_instantiated order annotation then
         let mismatches, _ = Resolution.check_invalid_type_parameters resolution annotation in
@@ -428,7 +428,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             annotation;
           }
         in
-        parse_and_validate (Reference.access annotation)
+        parse_and_validate (Reference.expression annotation)
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
@@ -992,7 +992,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let return_annotation = return_annotation ~resolution annotated_method in
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
-        parse_and_validate (Reference.access annotation)
+        parse_and_validate (Reference.expression annotation)
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
@@ -1096,7 +1096,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             TypeQuery.Error
               (Format.sprintf
                  "No class definition found for %s"
-                 (Expression.Access.show annotation)))
+                 (Expression.show annotation)))
 
     | TypeQuery.Type expression ->
         begin
@@ -1112,7 +1112,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let { TypeCheck.State.state; resolved = annotation; } =
             TypeCheck.State.forward_expression
               ~state
-              ~expression:(Expression.convert_to_new expression)
+              ~expression
           in
           match TypeCheck.State.errors state with
           | [] ->

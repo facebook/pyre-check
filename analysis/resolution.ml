@@ -579,17 +579,6 @@ let rec resolve_literal resolution expression =
     >>| List.is_empty
     |> Option.value ~default:false
   in
-  let rec has_identifier_base name =
-    match Node.value name with
-    | Call { callee; _ } ->
-        has_identifier_base callee
-    | Name (Name.Attribute { base; _ }) ->
-        has_identifier_base base
-    | Name (Name.Identifier _ ) ->
-        true
-    | _ ->
-        false
-  in
   match Node.value expression with
   | Await expression ->
       resolve_literal resolution expression
@@ -613,7 +602,7 @@ let rec resolve_literal resolution expression =
         Type.Top
 
   | Call _
-  | Name _ when has_identifier_base expression ->
+  | Name _ when Expression.has_identifier_base expression ->
       let class_type = parse_annotation resolution expression in
       (* None is a special type that doesn't have a constructor. *)
       if Type.is_none class_type then

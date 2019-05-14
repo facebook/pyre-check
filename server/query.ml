@@ -61,6 +61,10 @@ let help () =
   in
   let path = Path.current_working_directory () in
   let file = File.create path in
+  let empty =
+    Name (Name.Identifier "")
+    |> Node.create_with_default_location
+  in
   List.filter_map ~f:help [
     Attributes (Reference.create "");
     ComputeHashesToKeys;
@@ -68,16 +72,16 @@ let help () =
     DecodeOcamlValues [];
     DumpDependencies file;
     DumpMemoryToSqlite path;
-    IsCompatibleWith (Access.create "", Access.create "");
-    Join (Access.create "", Access.create "");
-    LessOrEqual (Access.create "", Access.create "");
-    Meet (Access.create "", Access.create "");
+    IsCompatibleWith (empty, empty);
+    Join (empty, empty);
+    LessOrEqual (empty, empty);
+    Meet (empty, empty);
     Methods (Reference.create "");
-    NormalizeType (Access.create "");
+    NormalizeType (empty);
     PathOfModule (Reference.create "");
     SaveServerState path;
     Signature (Reference.create "");
-    Superclasses (Access.create "");
+    Superclasses (empty);
     Type (Node.create_with_default_location Expression.True);
     TypeAtPosition {
       file;
@@ -102,21 +106,17 @@ let parse_query
         };
       _;
     }] ->
-      let arguments =
-        let convert_argument { Call.Argument.name; value } =
-          { Argument.name; value = convert value }
-        in
-        List.map ~f:convert_argument arguments
-      in
-      let expression { Argument.value; _ } = value in
+      let expression { Call.Argument.value; _ } = value in
       let access = function
-        | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } -> access
+        | { Call.Argument.value; _ } when Expression.has_identifier_base value ->
+            value
         | _ -> raise (InvalidQuery "expected access")
       in
       let reference = function
-        | { Argument.value = { Node.value = Access (SimpleAccess access); _ }; _ } ->
-            Reference.from_access access
-        | _ -> raise (InvalidQuery "expected access")
+        | { Call.Argument.value = { Node.value = Name name; _ }; _ }
+          when Expression.is_simple_name name ->
+            Reference.from_name_exn name
+        | _ -> raise (InvalidQuery "expected reference")
       in
       let string_of_expression = function
         | { Node.value = String { StringLiteral.value; kind = StringLiteral.String }; _ } ->
@@ -138,26 +138,29 @@ let parse_query
         | "decode_ocaml_values", values ->
             let parse_values_to_decode = function
               | {
-                Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
-                _;
-              } ->
+                  Call.Argument.value = {
+                    Node.value = Tuple [serialized_key; serialized_value];
+                    _;
+                  };
+                  _;
+                } ->
                   SerializedValue {
                     serialized_key = string_of_expression serialized_key;
                     serialized_value = string_of_expression serialized_value;
                   }
               | {
-                Argument.value = {
-                  Node.value = Tuple [serialized_key; first_value; second_value];
+                  Call.Argument.value = {
+                    Node.value = Tuple [serialized_key; first_value; second_value];
+                    _;
+                  };
                   _;
-                };
-                _;
-              } ->
+                } ->
                   SerializedPair {
                     serialized_key = string_of_expression serialized_key;
                     first_serialized_value = string_of_expression first_value;
                     second_serialized_value = string_of_expression second_value;
                   }
-              | { Argument.value; _ } ->
+              | { Call.Argument.value; _ } ->
                   raise
                     (InvalidQuery
                        (Format.sprintf
@@ -248,8 +251,8 @@ let parse_query
         | "type_at_position",
           [
             path;
-            { Argument.value = { Node.value = Integer line; _ }; _ };
-            { Argument.value = { Node.value = Integer column; _ }; _ };
+            { Call.Argument.value = { Node.value = Integer line; _ }; _ };
+            { Call.Argument.value = { Node.value = Integer column; _ }; _ };
           ] ->
             let file =
               Path.create_relative ~root ~relative:(string path)

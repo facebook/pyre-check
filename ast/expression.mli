@@ -331,6 +331,8 @@ val name_to_identifiers: expression_t Name.t -> (Identifier.t list) option
 
 val is_simple_name: expression_t Name.t -> bool
 
+val has_identifier_base: t -> bool
+
 val delocalize: t -> t
 
 val delocalize_qualified: t -> t

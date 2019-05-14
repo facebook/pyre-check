@@ -8,7 +8,6 @@ open Core
 open Ast
 open Analysis
 open Pyre
-open Expression
 
 module DefinitionRequest: sig
   type t = {
@@ -46,16 +45,16 @@ module TypeQuery: sig
     | DecodeOcamlValues of serialized_ocaml_value list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
-    | IsCompatibleWith of Access.t * Access.t
-    | Join of Access.t * Access.t
-    | LessOrEqual of Access.t * Access.t
-    | Meet of Access.t * Access.t
+    | IsCompatibleWith of Expression.t * Expression.t
+    | Join of Expression.t * Expression.t
+    | LessOrEqual of Expression.t * Expression.t
+    | Meet of Expression.t * Expression.t
     | Methods of Reference.t
-    | NormalizeType of Access.t
+    | NormalizeType of Expression.t
     | PathOfModule of Reference.t
     | SaveServerState of Path.t
     | Signature of Reference.t
-    | Superclasses of Access.t
+    | Superclasses of Expression.t
     | Type of Expression.t
     | TypeAtPosition of {
         file: File.t;
