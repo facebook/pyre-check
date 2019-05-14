@@ -175,7 +175,7 @@ def _visit_views(
             for argument in call_arguments[1:]:
                 if isinstance(argument, ast.Tuple):
                     elements = argument.elts
-                    if len(elements) != 2:
+                    if len(elements) < 2:
                         continue
                     self._handle_view(elements[1], base)
                 elif isinstance(argument, ast.Call):

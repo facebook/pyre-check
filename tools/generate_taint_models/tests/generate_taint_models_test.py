@@ -133,7 +133,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
                         patterns(
                             "base",
                             (r"derp", "first_view"),
-                            (r"derp", "second_view"),
+                            (r"derp", "second_view", { "extra": "information"}),
                             (r"derp", Class.method),
                             (r"derp", include("indirect.urls")),
                             url(r"derp", "from_url")
