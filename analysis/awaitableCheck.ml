@@ -108,10 +108,8 @@ module State (Context: Context) = struct
       ~expression:{ Node.value; _ } =
     let open Expression in
     match value with
-    | Access _ ->
-        unawaited
-    | Await { Node.value = Access (SimpleAccess access); _ } ->
-        Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+    | Await { Node.value = Name name; _ } when Expression.is_simple_name name ->
+        Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
     | Await _ ->
         unawaited
     | BooleanOperator { BooleanOperator.left; right; _ } ->
@@ -174,6 +172,7 @@ module State (Context: Context) = struct
         let unawaited = forward_expression ~state ~expression:key in
         forward_expression ~state:{ unawaited } ~expression:value
     (* Base cases. *)
+    | Access _
     | Complex _
     | False
     | Float _
@@ -207,23 +206,23 @@ module State (Context: Context) = struct
       in
       let forward_return ~unawaited ~expression =
         match Node.value expression with
-        | Expression.Access (SimpleAccess access) ->
-            Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+        | Expression.Name name when Expression.is_simple_name name ->
+            Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
         | _ ->
             unawaited
       in
       match value with
       | Assert { Assert.test; _ } ->
           forward_expression ~state ~expression:test
-      | Assign { target = { Node.value = Access (SimpleAccess access); location }; value; _ }
-        when is_awaitable value ->
-          Map.set unawaited ~key:(Reference.from_access access) ~data:(Unawaited location)
+      | Assign { target = { Node.value = Name name; location }; value; _ }
+        when Expression.is_simple_name name && is_awaitable value ->
+          Map.set unawaited ~key:(Reference.from_name_exn name) ~data:(Unawaited location)
 
       | Assign {
-          value = { Node.value = Await { Node.value = Access (SimpleAccess access); _ }; _ };
-          _
-        } ->
-          Map.set unawaited ~key:(Reference.from_access access) ~data:Awaited
+          value = { Node.value = Await { Node.value = Name name; _ }; _ };
+          _;
+        } when Expression.is_simple_name name ->
+          Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
       | Delete expression
       | Expression expression ->
           forward_expression ~state ~expression
@@ -289,14 +288,13 @@ let run ~configuration:_ ~environment ~source =
     let module State = State(Context) in
     let module Fixpoint = Fixpoint.Make(State) in
     Fixpoint.forward
-      ~cfg:(Cfg.create ~convert:true (Node.value define))
+      ~cfg:(Cfg.create (Node.value define))
       ~initial:State.initial
     |> Fixpoint.exit
     >>| State.errors
     |> Option.value ~default:[]
   in
   source
-  |> Preprocessing.convert
   |> Preprocessing.defines ~include_toplevels:true
   |> List.map ~f:check
   |> List.concat
