@@ -436,7 +436,7 @@ let test_query context =
     serialized
     |> (fun literal -> String (StringLiteral.create literal))
     |> Node.create_with_default_location
-    |> Type.create ~convert:true ~aliases:(fun _ -> None)
+    |> Type.create ~aliases:(fun _ -> None)
   in
   let create_location ~path start_line start_column stop_line stop_column =
     let start = { Location.line = start_line; column = start_column } in

@@ -19,13 +19,6 @@ let test_create _ =
       ~printer:Type.show
       ~cmp:Type.equal
       annotation
-      (Type.create ~convert:true ~aliases (parse_single_expression ~convert:true source));
-
-    (* Test creation from new AST. *)
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
-      annotation
       (Type.create ~aliases (parse_single_expression source))
   in
 

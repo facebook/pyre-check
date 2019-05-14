@@ -950,7 +950,9 @@ let rec convert { Node.location; value } =
 let rec convert_to_new ({ Node.location; value } as expression) =
   let rec convert expression access =
     let convert_arguments { Node.value = arguments; _ } =
-      let convert { Argument.name; value } = { Call.Argument.name; value } in
+      let convert { Argument.name; value } =
+        { Call.Argument.name; value = convert_to_new value }
+      in
       List.map ~f:convert arguments
     in
     let convert_generator { Comprehension.target; iterator; conditions; async } =
@@ -1025,6 +1027,11 @@ let rec convert_to_new ({ Node.location; value } as expression) =
           right = convert_to_new right;
           operator
         } |> Node.create ~location
+    | Some { Node.value = Call { callee; arguments }; location }, [] ->
+        Call {
+          callee = convert_to_new callee;
+          arguments;
+        } |> Node.create ~location
     | Some {
         Node.value = ComparisonOperator { ComparisonOperator.left; right; operator };
         location;
@@ -1065,6 +1072,11 @@ let rec convert_to_new ({ Node.location; value } as expression) =
           Comprehension.element = convert_to_new element;
           generators = List.map ~f:convert_generator generators;
         } |> Node.create ~location
+    | Some { Node.value = Name (Name.Attribute { base; attribute }); location }, [] ->
+        Name (Name.Attribute {
+          base = convert_to_new base;
+          attribute;
+        }) |> Node.create ~location
     | Some { Node.value = Set elements; location }, [] ->
         Set (List.map ~f:convert_to_new elements)
         |> Node.create ~location
