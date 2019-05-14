@@ -921,13 +921,13 @@ let rec fallback_attribute ~resolution ~name
             let arguments =
               let self_argument =
                 {
-                  Argument.name = None;
+                  Call.Argument.name = None;
                   value = Reference.expression ~convert:true ~location class_name
                 }
               in
               let name_argument =
                 {
-                  Argument.name = None;
+                  Call.Argument.name = None;
                   value = { Node.location; value = Expression.String (StringLiteral.create name) }
                 }
               in

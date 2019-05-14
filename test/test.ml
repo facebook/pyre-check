@@ -217,6 +217,12 @@ let parse_single_expression ?(convert = false) ?(preprocess = false) source =
   | _ -> failwith "Could not parse single expression."
 
 
+let parse_single_call ?(preprocess = false) source =
+  match parse_single_expression ~preprocess source with
+  | { Node.value = Expression.Call call; _ } -> call
+  | _ -> failwith "Could not parse single call"
+
+
 let parse_single_access ?(convert = false) ?(preprocess = false) source =
   match parse_single_expression ~convert ~preprocess source with
   | { Node.value = Expression.Access (Expression.Access.SimpleAccess access); _ } -> access

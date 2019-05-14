@@ -66,7 +66,7 @@ type t =
 
 
 type argument =
-  | Argument of { argument: Argument.t; position: int }
+  | Argument of { argument: Expression.t Call.Argument.t; position: int }
   | Default
 
 
@@ -127,7 +127,7 @@ let select
         | Defined all_parameters ->
             let matched_keyword_arguments =
               let is_keyword_argument = function
-                | { Argument.name = Some _; _ } -> true
+                | { Call.Argument.name = Some _; _ } -> true
                 | _ -> false
               in
               List.filter ~f:is_keyword_argument all_arguments
@@ -155,18 +155,20 @@ let select
           (* Both empty *)
           signature_match
       | Argument {
-          argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
           _;
         } :: arguments_tail,
         []
       | Argument {
-          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;
         } :: arguments_tail,
         [] ->
           (* Starred or double starred arguments; parameters empty *)
           consume ~arguments:arguments_tail ~parameters signature_match
-      | Argument { argument = { Argument.name = Some { Node.value = name; _ }; _ }; _ } :: _, [] ->
+      | Argument {
+          argument = { Call.Argument.name = Some { Node.value = name; _ }; _ }; _
+        } :: _, [] ->
           (* Named argument; parameters empty *)
           let reasons = { reasons with arity = (UnexpectedKeyword name) :: arity } in
           { signature_match with reasons }
@@ -192,7 +194,9 @@ let select
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | Argument ({ argument = { Argument.name = Some _; _ }; _ } as argument) :: arguments_tail,
+      | Argument ({
+          argument = { Call.Argument.name = Some _; _ }; _ } as argument
+        ) :: arguments_tail,
         ((Parameter.Keywords _) as parameter) :: _ ->
           (* Labeled argument, keywords parameter *)
           let argument_mapping = update_mapping parameter (Argument argument) in
@@ -201,7 +205,7 @@ let select
             ~parameters
             { signature_match with argument_mapping }
       | Argument ({
-          argument = { Argument.name = Some { Node.value = name; _ }; _ };
+          argument = { Call.Argument.name = Some { Node.value = name; _ }; _ };
           _;
         } as argument) :: arguments_tail,
         parameters ->
@@ -233,13 +237,13 @@ let select
             ~parameters:remaining_parameters
             { signature_match with argument_mapping; reasons }
       | Argument ({
-          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;
         } as argument)
         :: arguments_tail,
         (Parameter.Keywords _ as parameter) :: _
       | Argument ({
-            argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+            argument = { Call.Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
             _;
           } as argument)
         :: arguments_tail,
@@ -251,7 +255,7 @@ let select
             ~parameters
             { signature_match with argument_mapping }
       | Argument {
-          argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
           _;
         } :: _,
         Parameter.Keywords _ :: parameters_tail ->
@@ -260,7 +264,7 @@ let select
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | Argument { argument = { Argument.name = None; _ }; _ } :: _,
+      | Argument { argument = { Call.Argument.name = None; _ }; _ } :: _,
         Parameter.Keywords _ :: parameters_tail ->
           (* Unlabeled argument, double starred parameter *)
           consume
@@ -268,7 +272,7 @@ let select
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
       | Argument {
-          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;
         } :: _,
         Parameter.Variable _ :: parameters_tail ->
@@ -277,7 +281,7 @@ let select
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
+      | Argument ({ argument = { Call.Argument.name = None; _ }; _ } as argument) :: arguments_tail,
         (Parameter.Variable { name; _ }  as parameter) :: parameters_tail ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
@@ -301,12 +305,12 @@ let select
             ~parameters
             signature_match
       | Argument ({
-          argument = { Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
+          argument = { Call.Argument.value = { Node.value = Starred (Starred.Twice _); _ }; _ };
           _;
         } as argument) :: _,
         parameter :: parameters_tail
       | Argument ({
-            argument = { Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
+            argument = { Call.Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ };
             _;
           } as argument) :: _,
         parameter :: parameters_tail ->
@@ -316,7 +320,7 @@ let select
             ~arguments
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
-      | Argument ({ argument = { Argument.name = None; _ }; _ } as argument) :: arguments_tail,
+      | Argument ({ argument = { Call.Argument.name = None; _ }; _ } as argument) :: arguments_tail,
         parameter :: parameters_tail ->
           (* Unlabeled argument, parameter *)
           let argument_mapping = update_mapping parameter (Argument argument) in
@@ -334,7 +338,7 @@ let select
             Argument { argument; position = index + 1 }
           in
           let is_labeled = function
-            | Argument { argument = { Argument.name = Some _; _ }; _ } -> true
+            | Argument { argument = { Call.Argument.name = Some _; _ }; _ } -> true
             | _ -> false
           in
           let labeled_arguments, unlabeled_arguments =
@@ -369,7 +373,7 @@ let select
           let rec set_constraints_and_reasons
               ~resolution
               ~position
-              ~argument:{ Argument.name; value = ({ Node.location; _ } as actual_expression) }
+              ~argument:{ Call.Argument.name; value = ({ Node.location; _ } as actual_expression) }
               ~argument_annotation
               ({ constraints_set; reasons = { annotation; _ }; _; } as signature_match) =
             let reasons_with_mismatch =
@@ -431,7 +435,10 @@ let select
                 begin
                   match argument with
                   | {
-                    Argument.value = { Node.value = Starred (Starred.Twice expression); location };
+                      Call.Argument.value = {
+                        Node.value = Starred (Starred.Twice expression);
+                        location
+                    };
                     _;
                   } ->
                       let annotation = Resolution.resolve resolution expression in
@@ -448,7 +455,10 @@ let select
                         |> (fun error -> InvalidKeywordArgument error)
                         |> add_annotation_error signature_match
                   | {
-                    Argument.value = { Node.value = Starred (Starred.Once expression); location };
+                      Call.Argument.value = {
+                        Node.value = Starred (Starred.Once expression);
+                        location
+                    };
                     _;
                   } ->
                       let annotation = Resolution.resolve resolution expression in
@@ -482,7 +492,7 @@ let select
                             >>| set_constraints_and_reasons
                             |> Option.value ~default:signature_with_error
                       end
-                  | { Argument.value = expression; _ } ->
+                  | { Call.Argument.value = expression; _ } ->
                       let resolved = Resolution.resolve resolution expression in
                       let argument_annotation =
                         if Type.Variable.all_variables_are_resolved parameter_annotation then

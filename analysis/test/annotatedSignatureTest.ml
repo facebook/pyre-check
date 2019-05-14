@@ -8,7 +8,7 @@ open OUnit2
 
 open Ast
 open Analysis
-open Statement
+open Expression
 open Pyre
 
 open Test
@@ -97,10 +97,8 @@ let test_select _ =
     let callable = parse_callable callable in
     Type.Variable.Namespace.reset ();
     let signature =
-      let arguments =
-        match parse_single_access ~convert:true (Format.asprintf "call%s" arguments) with
-        | [Access.Identifier _; Access.Call { Node.value = arguments; _ }] -> arguments
-        | _ -> failwith "Could not parse call"
+      let { Call.arguments; _ } =
+        parse_single_call (Format.asprintf "call%s" arguments)
       in
       Signature.select ~arguments ~resolution ~callable
     in
@@ -157,7 +155,7 @@ let test_select _ =
             reason = Some (UnexpectedKeyword name);
           }
       | `NotFoundMismatch (actual, actual_expression, expected, name, position) ->
-          let actual_expression = parse_single_expression ~convert:true actual_expression in
+          let actual_expression = parse_single_expression actual_expression in
           let reason =
             { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location
@@ -166,7 +164,7 @@ let test_select _ =
           NotFound { callable; reason }
       | `NotFoundMismatchWithClosest (closest, actual, actual_expression, expected, name, position)
         ->
-          let actual_expression = parse_single_expression ~convert:true actual_expression in
+          let actual_expression = parse_single_expression actual_expression in
           let reason =
             { actual; actual_expression; expected; name; position }
             |> Node.create_with_default_location
@@ -325,14 +323,15 @@ let test_select _ =
     (`Found "[[int], int]");
   assert_select
     "[[int], int]" "(*a)"
-    (`NotFoundInvalidVariableArgument (!"a", Type.Top));
+    (`NotFoundInvalidVariableArgument (+Name (Name.Identifier "a"), Type.Top));
   assert_select
     "[[int], int]" "(**a)"
-    (`NotFoundInvalidKeywordArgument (!"a", Type.Top));
+    (`NotFoundInvalidKeywordArgument (+Name (Name.Identifier "a"), Type.Top));
   assert_select
     "[[int], int]" "(**int_to_int_dictionary)"
     (`NotFoundInvalidKeywordArgument
-       (!"int_to_int_dictionary", Type.dictionary ~key:Type.integer ~value:Type.integer));
+       (+Name (Name.Identifier "int_to_int_dictionary"),
+         Type.dictionary ~key:Type.integer ~value:Type.integer));
   assert_select
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"

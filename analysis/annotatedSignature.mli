@@ -51,6 +51,6 @@ type t =
 
 val select
   :  resolution: Resolution.t
-  -> arguments: Argument.t list
+  -> arguments: Expression.t Call.Argument.t list
   -> callable: Type.Callable.t
   -> t

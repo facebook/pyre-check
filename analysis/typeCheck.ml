@@ -1616,14 +1616,8 @@ module State = struct
           end
     in
     let forward_callable ~state ~callee ~resolved ~arguments =
-      let arguments =
-        let convert { Call.Argument.value; name } =
-          { Argument.value; name }
-        in
-        List.map ~f:convert arguments
-      in
       let state =
-        let forward_argument state { Argument.value; _ } =
+        let forward_argument state { Call.Argument.value; _ } =
           forward_expression ~state ~expression:value
           |> fun { state; _ } -> state
         in
@@ -1698,7 +1692,7 @@ module State = struct
                 match Node.value callee, callable, arguments with
                 | Name (Name.Attribute { base; _ }),
                   { Type.Callable.kind = Type.Callable.Named name; _ },
-                  [{ Argument.value; _ }] ->
+                  [{ Call.Argument.value; _ }] ->
                     let backup = function
                       (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
                       | "__add__" -> Some "__radd__"
@@ -1718,7 +1712,7 @@ module State = struct
                       | _ -> None
                     in
                     let backup_name = backup (Reference.last name) in
-                    let arguments = [{ Argument.value = base; name = None }] in
+                    let arguments = [{ Call.Argument.value = base; name = None }] in
                     backup_name
                     >>= (fun name ->
                         find_method ~parent:(Resolution.resolve resolution value) ~name)
