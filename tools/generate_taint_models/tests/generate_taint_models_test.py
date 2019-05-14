@@ -25,7 +25,7 @@ def _open_implementation(path_to_content: Dict[str, str]) -> Callable[[str, str]
     return _open_implementation
 
 
-class FixmeAllTest(unittest.TestCase):
+class GenerateTaintModelsTest(unittest.TestCase):
     @patch("builtins.open")
     @patch("os.path.exists", return_value=True)
     def test_visit_views(
