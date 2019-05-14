@@ -574,36 +574,23 @@ let is_invariance_mismatch resolution ~left ~right =
    literals and annotations found in the resolution map, without resolving expressions. *)
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
-  let expression = Expression.convert expression in
+  let is_concrete_constructable class_type =
+    generics resolution class_type
+    >>| List.is_empty
+    |> Option.value ~default:false
+  in
+  let rec has_identifier_base name =
+    match Node.value name with
+    | Call { callee; _ } ->
+        has_identifier_base callee
+    | Name (Name.Attribute { base; _ }) ->
+        has_identifier_base base
+    | Name (Name.Identifier _ ) ->
+        true
+    | _ ->
+        false
+  in
   match Node.value expression with
-  | Access (SimpleAccess access) ->
-      begin
-        let is_concrete_constructable class_type =
-          generics resolution class_type
-          >>| List.is_empty
-          |> Option.value ~default:false
-        in
-        match Expression.Access.name_and_arguments ~call:access with
-        | Some { Expression.Access.callee; _ } ->
-            let class_type =
-              Expression.Access.create callee
-              |> Expression.Access.expression
-              |> parse_annotation resolution
-            in
-            if is_concrete_constructable class_type then
-              class_type
-            else
-              Type.Top
-        | None ->
-            let class_type = parse_annotation resolution expression in
-            (* None is a special type that doesn't have a constructor. *)
-            if Type.is_none class_type then
-              Type.none
-            else if is_concrete_constructable class_type then
-              Type.meta class_type
-            else
-              Type.Top
-      end
   | Await expression ->
       resolve_literal resolution expression
       |> Type.awaitable_value
@@ -616,6 +603,25 @@ let rec resolve_literal resolution expression =
           (resolve_literal resolution right)
       in
       if Type.is_concrete annotation then annotation else Type.Any
+
+  | Call { callee = ({ Node.value = Name name; _ } as callee); _ }
+    when Expression.is_simple_name name ->
+      let class_type = parse_annotation resolution callee in
+      if is_concrete_constructable class_type then
+        class_type
+      else
+        Type.Top
+
+  | Call _
+  | Name _ when has_identifier_base expression ->
+      let class_type = parse_annotation resolution expression in
+      (* None is a special type that doesn't have a constructor. *)
+      if Type.is_none class_type then
+        Type.none
+      else if is_concrete_constructable class_type then
+        Type.meta class_type
+      else
+        Type.Top
 
   | Complex _ ->
       Type.complex
