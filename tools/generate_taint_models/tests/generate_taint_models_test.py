@@ -31,6 +31,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
     def test_visit_views(
         self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
     ) -> None:
+        arguments = MagicMock()
+        arguments.as_view_base = []
+
         # Simple `url()` call.
         with patch(
             "tools.pyre.tools.generate_taint_models.generate_taint_models."
@@ -39,9 +42,8 @@ class GenerateTaintModelsTest(unittest.TestCase):
             open.side_effect = _open_implementation(
                 {"urls.py": """url(r"^p-ng/?$", "some.view")"""}
             )
-            # pyre-ignore
-            generate_taint_models._visit_views("urls.py", lambda *_: None)
-            load_function_definition.assert_called_once_with("some.view")
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            load_function_definition.assert_called_once_with(arguments, "some.view")
 
         # Simple `url()` call to method.
         with patch(
@@ -58,9 +60,10 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     )
                 }
             )
-            # pyre-ignore
-            generate_taint_models._visit_views("urls.py", lambda *_: None)
-            load_function_definition.assert_called_once_with("module.view.Class.method")
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            load_function_definition.assert_called_once_with(
+                arguments, "module.view.Class.method"
+            )
 
         # Multiple `url()` calls.
         with patch(
@@ -77,10 +80,10 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     )
                 }
             )
-            # pyre-ignore
-            generate_taint_models._visit_views("urls.py", lambda *_: None)
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
             load_function_definition.assert_has_calls(
-                [call("some.view"), call("some.other.view")], any_order=True
+                [call(arguments, "some.view"), call(arguments, "some.other.view")],
+                any_order=True,
             )
 
         # Simple `include()` call.
@@ -98,9 +101,8 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     ),
                 }
             )
-            # pyre-ignore
-            generate_taint_models._visit_views("urls.py", lambda *_: None)
-            load_function_definition.assert_called_once_with("indirect.view")
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            load_function_definition.assert_called_once_with(arguments, "indirect.view")
 
         # Patterns.
         with patch(
@@ -129,14 +131,13 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     ),
                 }
             )
-            # pyre-ignore
-            generate_taint_models._visit_views("urls.py", lambda *_: None)
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
             load_function_definition.assert_has_calls(
                 [
-                    call("base.first_view"),
-                    call("base.second_view"),
-                    call("absolute.module.path"),
-                    call("indirect.view.function"),
+                    call(arguments, "base.first_view"),
+                    call(arguments, "base.second_view"),
+                    call(arguments, "absolute.module.path"),
+                    call(arguments, "indirect.view.function"),
                 ],
                 any_order=True,
             )
@@ -146,6 +147,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
     def test_load_function_definition(
         self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
     ) -> None:
+        arguments = MagicMock()
+        arguments.as_view_base = ["BaseView"]
+
         def _os_path_exists_implementation(path: str) -> bool:
             return path in ["urls.py", "module.py"]
 
@@ -165,36 +169,54 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     class Class:
                         def method(self):
                             pass
+                    class View(BaseView):
+                        pass
                     """
                 )
             }
         )
-        definition = generate_taint_models._load_function_definition("module.unknown")
+        definition = generate_taint_models._load_function_definition(
+            arguments, "module.unknown"
+        )
         self.assertIsNone(definition)
 
-        definition = generate_taint_models._load_function_definition("module.function")
+        definition = generate_taint_models._load_function_definition(
+            arguments, "module.function"
+        )
         self.assertIsNotNone(definition)
         # pyre-ignore
         self.assertEqual(definition.name, "function")
 
         definition = generate_taint_models._load_function_definition(
-            "module.async_function"
+            arguments, "module.async_function"
         )
         self.assertIsNotNone(definition)
         # pyre-ignore
         self.assertEqual(definition.name, "async_function")
 
         definition = generate_taint_models._load_function_definition(
-            "module.nesting.nested"
+            arguments, "module.nesting.nested"
         )
         self.assertIsNone(definition)
 
         definition = generate_taint_models._load_function_definition(
-            "module.Class.method"
+            arguments, "module.Class.method"
         )
         self.assertIsNotNone(definition)
         # pyre-ignore
         self.assertEqual(definition.name, "method")
+
+        definition = generate_taint_models._load_function_definition(
+            arguments, "module.View.as_view"
+        )
+        self.assertIsNotNone(definition)
+        # pyre-ignore
+        self.assertEqual(definition.name, "as_view")
+
+        definition = generate_taint_models._load_function_definition(
+            arguments, "module.View.other"
+        )
+        self.assertIsNone(definition)
 
     @patch("builtins.open")
     @patch("os.path.exists", return_value=True)

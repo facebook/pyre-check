@@ -41,11 +41,14 @@ def _load_module_ast(module_path: str) -> Optional[ast.AST]:
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 
 
-def _load_function_definition(function: str) -> Optional[FunctionDefinition]:
+def _load_function_definition(
+    arguments: argparse.Namespace, function: str
+) -> Optional[FunctionDefinition]:
     split = function.split(".")
     assert len(split) > 1, "Got unqualified or builtin function"
     module = ".".join(split[:-1])
     parent = None
+    base = None
     name = split[-1]
 
     module_path = _find_module(module)
@@ -71,10 +74,24 @@ def _load_function_definition(function: str) -> Optional[FunctionDefinition]:
         for statement in statements:
             if not isinstance(statement, ast.ClassDef):
                 continue
-            if statement.name == parent:
-                found_class = True
-                statements = statement.body
-                break
+
+            if statement.name != parent:
+                continue
+
+            name = function.split(".")[-1]
+            if name in ["as_view", "async_as_view"]:
+                for base in statement.bases:
+                    if not isinstance(base, ast.Name):
+                        continue
+                    if base.id in arguments.as_view_base:
+                        # pyre-ignore
+                        return ast.parse(
+                            f"def {name}(cls, request: HttpRequest): pass"
+                        ).body[0]
+
+            found_class = True
+            statements = statement.body
+            break
         if not found_class:
             LOG.warning(f"Could not find class `{parent}` in `{module}`.")
             return
@@ -91,7 +108,9 @@ def _load_function_definition(function: str) -> Optional[FunctionDefinition]:
 
 
 def _visit_views(
-    urls_path: Optional[str], callback: Callable[[str, FunctionDefinition], None]
+    arguments: argparse.Namespace,
+    urls_path: Optional[str],
+    callback: Callable[[str, FunctionDefinition], None],
 ) -> None:
     functions: Set[str] = set()
 
@@ -108,14 +127,14 @@ def _visit_views(
                 name = argument.func
                 if not isinstance(name, ast.Name) or name.id != "include":
                     return
-                arguments = argument.args
-                if len(arguments) < 1:
+                call_arguments = argument.args
+                if len(call_arguments) < 1:
                     return
-                argument = arguments[0]
+                argument = call_arguments[0]
                 if not isinstance(argument, ast.Str):
                     return
                 include = argument.s
-                _visit_views(_find_module(include), callback)
+                _visit_views(arguments, _find_module(include), callback)
 
             elif isinstance(argument, ast.Attribute):
                 value = argument.value
@@ -128,22 +147,22 @@ def _visit_views(
                     functions.add(name)
 
         def _handle_url(self, call: _ast.Call) -> None:
-            arguments = call.args
-            if len(arguments) < 2:
+            call_arguments = call.args
+            if len(call_arguments) < 2:
                 return
-            self._handle_view(arguments[1])
+            self._handle_view(call_arguments[1])
 
         def _handle_patterns(self, call: _ast.Call) -> None:
-            arguments = call.args
-            if len(arguments) < 1:
+            call_arguments = call.args
+            if len(call_arguments) < 1:
                 return
 
-            base = arguments[0]
+            base = call_arguments[0]
             if not isinstance(base, ast.Str):
                 return
             base = base.s
 
-            for argument in arguments[1:]:
+            for argument in call_arguments[1:]:
                 if not isinstance(argument, ast.Tuple):
                     continue
                 elements = argument.elts
@@ -180,7 +199,7 @@ def _visit_views(
         UrlVisitor().visit(ast.parse(file.read()))
 
     for function in functions:
-        definition = _load_function_definition(function)
+        definition = _load_function_definition(arguments, function)
         if not definition:
             LOG.warning(f"Unable to find definition for {function}.")
         else:
@@ -204,7 +223,7 @@ def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
             f"def {function}({modified_arguments}) -> TaintSink[ReturnedToUser]: ..."
         )
 
-    _visit_views(arguments.urls_path, callback)
+    _visit_views(arguments, arguments.urls_path, callback)
     return exit_nodes
 
 
@@ -228,7 +247,7 @@ def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
         )
         sources.add(f"def {function}({modified_arguments}): ...")
 
-    _visit_views(arguments.urls_path, callback)
+    _visit_views(arguments, arguments.urls_path, callback)
     return sources
 
 
@@ -244,6 +263,8 @@ if __name__ == "__main__":
         "urls_path", type=_file_exists, help="Path to django `urls.py` file"
     )
     parser.add_argument("--whitelisted-class", action="append")
+    parser.add_argument("--as-view-base", action="append")
+
     parser.add_argument("--mode", action="append", choices=MODES.keys())
     arguments: argparse.Namespace = parser.parse_args()
 
