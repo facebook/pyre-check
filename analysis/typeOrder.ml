@@ -49,24 +49,6 @@ module Target = struct
 end
 
 
-module Edge = struct
-  type t = {
-    source: Type.t;
-    target: Type.t;
-    parameters: Type.t list;
-  }
-  [@@deriving compare, eq, sexp, show]
-
-
-  module Set = Set.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
-end
-
-
 (* `edges` mapping from type index to a set of targets.
    `indices` mapping from annotation to its vertex index.
    `annotations` inverse of `indices`. *)

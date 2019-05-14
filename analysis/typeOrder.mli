@@ -20,17 +20,6 @@ module Target: sig
   module Set: Set.S with type Elt.t = t
 end
 
-module Edge : sig
-  type t = {
-    source: Type.t;
-    target: Type.t;
-    parameters: Type.t list;
-  }
-  [@@deriving compare, eq, sexp, show]
-
-  module Set: Set.S with type Elt.t = t
-end
-
 type t = {
   edges: (Target.t list) Int.Table.t;
   backedges: (Target.t list) Int.Table.t;
