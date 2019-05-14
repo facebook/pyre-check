@@ -118,6 +118,20 @@ def _visit_views(
         def __init__(self) -> None:
             self._aliases: Dict[str, str] = {}
 
+        def _resolve_name(self, name: Union[ast.Name, ast.Attribute]) -> str:
+            if isinstance(name, ast.Name):
+                name = name.id
+                if name in self._aliases:
+                    return self._aliases[name]
+                else:
+                    return name
+            elif isinstance(name, ast.Attribute):
+                value = name.value
+                if isinstance(value, ast.Name) or isinstance(value, ast.Attribute):
+                    return f"{self._resolve_name(value)}.{name.attr}"
+                else:
+                    raise ValueError("Trying to resolve expression.")
+
         def _handle_view(self, argument: ast.AST, base: str = "") -> None:
             if isinstance(argument, ast.Str):
                 function = argument.s if base == "" else base + "." + argument.s
@@ -136,15 +150,8 @@ def _visit_views(
                 include = argument.s
                 _visit_views(arguments, _find_module(include), callback)
 
-            elif isinstance(argument, ast.Attribute):
-                value = argument.value
-                if not isinstance(value, ast.Name):
-                    return
-                name = value.id
-                if name in self._aliases:
-                    functions.add(f"{self._aliases[name]}.{argument.attr}")
-                else:
-                    functions.add(name)
+            elif isinstance(argument, ast.Attribute) or isinstance(argument, ast.Name):
+                functions.add(self._resolve_name(argument))
 
         def _handle_url(self, call: _ast.Call, base: str = "") -> None:
             call_arguments = call.args

@@ -40,10 +40,23 @@ class GenerateTaintModelsTest(unittest.TestCase):
             "_load_function_definition"
         ) as load_function_definition:
             open.side_effect = _open_implementation(
-                {"urls.py": """url(r"^p-ng/?$", "some.view")"""}
+                {
+                    "urls.py": textwrap.dedent(
+                        """
+                        url(r"^p-ng/?$", "module.views.function")
+                        url(r"^p-ng/?$", module.views.imported)
+                        """
+                    )
+                }
             )
             generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
-            load_function_definition.assert_called_once_with(arguments, "some.view")
+            load_function_definition.assert_has_calls(
+                [
+                    call(arguments, "module.views.function"),
+                    call(arguments, "module.views.imported"),
+                ],
+                any_order=True,
+            )
 
         # Simple `url()` call to method.
         with patch(
