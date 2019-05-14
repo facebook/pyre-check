@@ -262,7 +262,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     """
                     def function(request: derp.HttpRequest, other: int) -> HttpResponse:
                         pass
-                    def unannotated(request, other):
+                    def unannotated(request, other, *starred):
                         pass
                     def unrelated() -> None: pass
                 """
@@ -280,6 +280,6 @@ class GenerateTaintModelsTest(unittest.TestCase):
                 "TaintSource[UserControlled]): ...",
                 "def module.view.unannotated("
                 "request: TaintSource[UserControlled], "
-                "other: TaintSource[UserControlled]): ...",
+                "other: TaintSource[UserControlled], *starred): ...",
             },
         )

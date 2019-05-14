@@ -245,9 +245,18 @@ def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
             else:
                 return argument.arg + ": TaintSource[UserControlled]"
 
+        call_arguments = definition.args
+
         modified_arguments = ", ".join(
-            [annotated_argument(argument) for argument in definition.args.args]
+            [annotated_argument(argument) for argument in call_arguments.args]
         )
+        variable = call_arguments.vararg
+        if variable:
+            modified_arguments += f", *{variable.arg}"
+        keywords = call_arguments.kwarg
+        if keywords:
+            modified_arguments += f", **{keywords.arg}"
+
         sources.add(f"def {function}({modified_arguments}): ...")
 
     _visit_views(arguments, arguments.urls_path, callback)
