@@ -45,7 +45,7 @@ def _load_function_definition(
     arguments: argparse.Namespace, function: str
 ) -> Optional[FunctionDefinition]:
     split = function.split(".")
-    assert len(split) > 1, "Got unqualified or builtin function"
+    assert len(split) > 1, f"Got unqualified or builtin function `{function}`"
     module = ".".join(split[:-1])
     parent = None
     base = None
@@ -113,6 +113,9 @@ def _visit_views(
     callback: Callable[[str, FunctionDefinition], None],
 ) -> None:
     functions: Set[str] = set()
+
+    if not urls_path:
+        return
 
     class UrlVisitor(ast.NodeVisitor):
         def __init__(self) -> None:
@@ -192,6 +195,16 @@ def _visit_views(
                     continue
                 self._aliases[name.name] = f"{module}.{name.name}"
 
+        def visit_FunctionDef(self, definition: _ast.FunctionDef) -> None:
+            name = definition.name
+            module = urls_path.replace("/", ".")[:-3]
+            self._aliases[name] = f"{module}.{name}"
+
+        def visit_AsyncFunctionDef(self, definition: _ast.AsyncFunctionDef) -> None:
+            name = definition.name
+            module = urls_path.replace("/", ".")[:-3]
+            self._aliases[name] = f"{module}.{name}"
+
         def visit_Call(self, call: _ast.Call) -> None:
             name = call.func
             if not isinstance(name, ast.Name):
@@ -200,9 +213,6 @@ def _visit_views(
                 self._handle_url(call)
             elif name.id == "patterns":
                 self._handle_patterns(call)
-
-    if not urls_path:
-        return
 
     LOG.info(f"Reading urls from `{urls_path}`...")
     with open(urls_path, "r") as file:
