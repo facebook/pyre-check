@@ -43,7 +43,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
                 {
                     "urls.py": textwrap.dedent(
                         """
-                        def local(request): pass
+                        async def local(request): pass
 
                         url(r"^p-ng/?$", "module.views.function")
                         url(r"^p-ng/?$", module.views.imported)
