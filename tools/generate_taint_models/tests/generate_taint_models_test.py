@@ -119,7 +119,8 @@ class GenerateTaintModelsTest(unittest.TestCase):
                             (r"derp", "first_view"),
                             (r"derp", "second_view"),
                             (r"derp", Class.method),
-                            (r"derp", include("indirect.urls"))
+                            (r"derp", include("indirect.urls")),
+                            url(r"derp", "from_url")
                         )
                         patterns("", (r"derp", "absolute.module.path"))
                         """
@@ -138,6 +139,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     call(arguments, "base.second_view"),
                     call(arguments, "absolute.module.path"),
                     call(arguments, "indirect.view.function"),
+                    call(arguments, "base.from_url"),
                 ],
                 any_order=True,
             )

@@ -146,11 +146,11 @@ def _visit_views(
                 else:
                     functions.add(name)
 
-        def _handle_url(self, call: _ast.Call) -> None:
+        def _handle_url(self, call: _ast.Call, base: str = "") -> None:
             call_arguments = call.args
             if len(call_arguments) < 2:
                 return
-            self._handle_view(call_arguments[1])
+            self._handle_view(call_arguments[1], base)
 
         def _handle_patterns(self, call: _ast.Call) -> None:
             call_arguments = call.args
@@ -163,12 +163,15 @@ def _visit_views(
             base = base.s
 
             for argument in call_arguments[1:]:
-                if not isinstance(argument, ast.Tuple):
-                    continue
-                elements = argument.elts
-                if len(elements) != 2:
-                    continue
-                self._handle_view(elements[1], base)
+                if isinstance(argument, ast.Tuple):
+                    elements = argument.elts
+                    if len(elements) != 2:
+                        continue
+                    self._handle_view(elements[1], base)
+                elif isinstance(argument, ast.Call):
+                    name = argument.func
+                    if isinstance(name, ast.Name) and name.id == "url":
+                        self._handle_url(argument, base)
 
         def visit_ImportFrom(self, import_from: _ast.ImportFrom) -> None:
             for name in import_from.names:
