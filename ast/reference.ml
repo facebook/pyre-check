@@ -125,7 +125,8 @@ let from_name_exn name =
 let name ?(location = Location.Reference.any) reference =
   let rec create = function
     | [] ->
-        failwith "Reference cannot be empty."
+        Name (Name.Identifier "")
+        |> Node.create ~location
     | identifier :: [] ->
         Name (Name.Identifier identifier)
         |> Node.create ~location

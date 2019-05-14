@@ -535,7 +535,7 @@ let parse_annotation
 
 
 let parse_reference ?(allow_untracked=false) resolution reference =
-  Reference.expression ~convert:true reference
+  Reference.expression reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
