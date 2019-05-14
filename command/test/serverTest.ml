@@ -1635,13 +1635,20 @@ let test_incremental_typecheck context =
       (File.Handle.Set.Tree.singleton (File.Handle.create (relativize stub_path)));
 
   in
+  let source = "def foo() -> int: return \"\"" in
   assert_response
     ~request:(
       Request.TypeCheckRequest
-        [file ~local_root ~content:"def foo() -> int: return \"\"" stub_path])
-    (* We don't error on stub files. *)
-    (Protocol.TypeCheckResponse []);
-
+        [file ~local_root ~content:source stub_path])
+    (* We also error on stub files. *)
+    (Protocol.TypeCheckResponse (
+        CommandTest.associate_errors_and_filenames
+          (make_errors
+             ~local_root
+             ~handle:(relativize stub_path)
+             ~qualifier:(Source.qualifier ~handle:(File.Handle.create (relativize stub_path)))
+             source
+          )));
   let () =
     let file = file ~local_root ~content:"def foo() -> int: return 1" path in
     assert_response

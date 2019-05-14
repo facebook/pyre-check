@@ -1499,27 +1499,19 @@ let process_type_check_files
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 
   (* Compute new set of errors. *)
-  let handle file =
-    try
-      Some (File.handle ~configuration file)
-    with File.NonexistentHandle _ ->
-      None
-  in
-  let new_source_handles = List.filter_map ~f:handle check in
-
-  (* Clear all type resolution info from shared memory for all affected sources. *)
-  ResolutionSharedMemory.remove new_source_handles;
-  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list new_source_handles);
+ (* Clear all type resolution info from shared memory for all affected sources. *)
+  ResolutionSharedMemory.remove repopulate_handles;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulate_handles);
 
   let new_errors =
     Service.Check.analyze_sources
       ~scheduler
       ~configuration
       ~environment
-      ~handles:new_source_handles
+      ~handles:repopulate_handles
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) (removed_handles @ new_source_handles);
+  List.iter ~f:(Hashtbl.remove errors) (removed_handles @ repopulate_handles);
   (* Associate the new errors with new files *)
   List.iter
     new_errors
