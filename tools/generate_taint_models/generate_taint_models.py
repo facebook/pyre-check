@@ -310,6 +310,7 @@ if __name__ == "__main__":
     )
 
     os.chdir(os.path.dirname(arguments.urls_path))
+    arguments.urls_path = os.path.basename(arguments.urls_path)
 
     models: Set[str] = set()
     for mode in arguments.mode:
