@@ -23,6 +23,7 @@ let run
     additional_checks
     sequential
     filter_directories
+    ignore_all_errors
     number_of_workers
     log_identifier
     logger
@@ -37,6 +38,12 @@ let run
   try
     let filter_directories =
       filter_directories
+      >>| String.split_on_chars ~on:[';']
+      >>| List.map ~f:String.strip
+      >>| List.map ~f:Path.create_absolute
+    in
+    let ignore_all_errors =
+      ignore_all_errors
       >>| String.split_on_chars ~on:[';']
       >>| List.map ~f:String.strip
       >>| List.map ~f:Path.create_absolute
@@ -58,6 +65,7 @@ let run
         ~additional_checks
         ~parallel:(not sequential)
         ?filter_directories
+        ?ignore_all_errors
         ~number_of_workers
         ~search_path:(List.map search_path ~f:Path.SearchPath.create)
         ?typeshed:(typeshed >>| Path.create_absolute)

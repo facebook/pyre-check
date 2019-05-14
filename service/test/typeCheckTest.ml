@@ -10,10 +10,11 @@ open Pyre
 open Test
 
 
-let assert_errors ?filter_directories ?search_path ~root ~files errors =
+let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~files errors =
   let configuration =
     Configuration.Analysis.create
       ?filter_directories
+      ?ignore_all_errors
       ?search_path
       ~project_root:root
       ~local_root:root
@@ -139,7 +140,15 @@ let test_filter_directories context =
       File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
       File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py");
     ]
-    ["Incompatible return type [7]: Expected `C` but got `D`."]
+    ["Incompatible return type [7]: Expected `C` but got `D`."];
+  assert_errors
+    ~root
+    ~filter_directories:[Path.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/ignore"]
+    ~files:[
+      File.create ~content (Path.create_relative ~root ~relative:"check/ignore/file.py");
+    ]
+    []
 
 
 let () =

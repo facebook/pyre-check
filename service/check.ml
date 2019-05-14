@@ -29,6 +29,7 @@ let analyze_sources
         Configuration.Analysis.project_root;
         local_root;
         filter_directories;
+        ignore_all_errors;
         _;
       } as configuration)
     ~environment
@@ -39,13 +40,21 @@ let analyze_sources
   let timer = Timer.start () in
   let handles =
     let filter_by_directories handle =
-      match filter_directories with
-      | None ->
-          true
-      | Some filter_directories ->
-          List.exists
-            filter_directories
-            ~f:(fun directory -> Path.directory_contains ~follow_symlinks:true ~directory handle)
+      let directory_contains directory =
+        Path.directory_contains ~follow_symlinks:true ~directory handle
+      in
+      let should_keep =
+        filter_directories
+        >>| List.exists ~f:directory_contains
+        |> Option.value ~default:true
+      in
+      if should_keep then
+        (* If ignore_all_errors is None, default to not filtering. *)
+        ignore_all_errors
+        >>| (fun directories -> not (List.exists directories ~f:directory_contains))
+        |> Option.value ~default:true
+      else
+        false
     in
     let filter_by_root handle =
       let path = File.Handle.to_path ~configuration handle in

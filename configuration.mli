@@ -14,6 +14,7 @@ module Analysis: sig
     configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
+    ignore_all_errors: (Path.t list) option;
     number_of_workers: int;
     local_root: Path.t;
     sections: string list;
@@ -43,6 +44,7 @@ module Analysis: sig
     -> ?configuration_file_hash: string
     -> ?parallel: bool
     -> ?filter_directories: Path.t list
+    -> ?ignore_all_errors: Path.t list
     -> ?number_of_workers: int
     -> ?local_root: Path.t
     -> ?sections: string list

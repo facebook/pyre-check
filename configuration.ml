@@ -17,6 +17,7 @@ module Analysis = struct
     configuration_file_hash: string option;
     parallel: bool;
     filter_directories: (Path.t list) option;
+    ignore_all_errors: (Path.t list) option;
     number_of_workers: int;
     local_root: Path.t;
     sections: string list;
@@ -57,6 +58,7 @@ module Analysis = struct
       ?configuration_file_hash
       ?(parallel = true)
       ?filter_directories
+      ?ignore_all_errors
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
       ?(sections = [])
@@ -84,6 +86,7 @@ module Analysis = struct
       configuration_file_hash;
       parallel;
       filter_directories;
+      ignore_all_errors;
       number_of_workers;
       local_root;
       sections;

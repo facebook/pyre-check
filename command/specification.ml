@@ -39,6 +39,11 @@ let base_command_line_arguments =
       ~doc:"DIRECTORY1;... Only report errors for files \
             under one of the semicolon-separated filter directories."
     +> flag
+      "-ignore-all-errors"
+      (optional string)
+      ~doc:"DIRECTORY1;... Ignore all errors originating from \
+            under one of the semicolon-separated directories."
+    +> flag
       "-workers"
       (optional_with_default 4 int)
       ~doc:"WORKERS Number of workers to use in parallel processing."
