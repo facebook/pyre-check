@@ -93,3 +93,15 @@ let decorate
         Some (Type.expression annotation)
       in
       { define with Define.signature = { signature with Define.parameters; return_annotation } }
+
+
+let is_constructor definition ~resolution =
+  match parent_definition definition ~resolution with
+  | Some parent_class ->
+      let in_test =
+        let superclasses = Class.superclasses ~resolution parent_class in
+        List.exists ~f:Class.is_unit_test (parent_class :: superclasses)
+      in
+      Define.is_constructor ~in_test definition
+  | None ->
+      false

@@ -489,7 +489,8 @@ module State = struct
               |> Option.value ~default:""
             in
             Resolution.class_definition resolution (Type.Primitive name)
-            >>| (fun { Node.value = definition; _ } -> Class.constructors definition)
+            >>| Annotated.Class.create
+            >>| Annotated.Class.constructors ~resolution
             >>| List.is_empty
             |> Option.value ~default:false
           in

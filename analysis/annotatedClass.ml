@@ -133,6 +133,10 @@ let successors_fold class_node ~resolution ~f ~initial =
   |> List.fold ~init:initial ~f
 
 
+let is_unit_test { Node.value; _ } =
+  Class.is_unit_test value
+
+
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
     let annotation =
@@ -1039,6 +1043,14 @@ let constructor definition ~instantiated ~resolution =
       Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
   | _ ->
       signature
+
+
+let constructors definition ~resolution =
+  let in_test =
+    let superclasses = superclasses ~resolution definition in
+    List.exists ~f:is_unit_test (definition :: superclasses)
+  in
+  Class.constructors ~in_test (Node.value definition)
 
 
 let overrides definition ~resolution ~name =

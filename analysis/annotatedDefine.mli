@@ -27,3 +27,5 @@ val parameter_annotations
 val parent_definition: t -> resolution: Resolution.t -> Class.t option
 
 val decorate: t -> resolution: Resolution.t -> t
+
+val is_constructor: t -> resolution: Resolution.t -> bool

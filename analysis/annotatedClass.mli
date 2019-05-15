@@ -39,6 +39,7 @@ val successors_fold:
   f:('b -> string -> 'b) ->
   initial:'b ->
   'b
+val is_unit_test: t -> bool
 
 val metaclass: t -> resolution: Resolution.t -> Type.t
 
@@ -132,6 +133,8 @@ val attribute
 val fallback_attribute: resolution: Resolution.t -> name: Identifier.t -> t -> Attribute.t option
 
 val constructor: t -> instantiated:Type.t -> resolution: Resolution.t -> Type.t
+
+val constructors: t -> resolution: Resolution.t -> Define.t list
 
 val overrides: t -> resolution: Resolution.t -> name: Identifier.t -> Attribute.t option
 

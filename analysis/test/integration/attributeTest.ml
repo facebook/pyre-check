@@ -523,6 +523,16 @@ let test_check_attributes _ =
 
   assert_type_errors
     {|
+      class unittest.case.TestCase: ...
+      class Foo(unittest.case.TestCase):
+        x: int
+        def setUp(self) -> None:
+          self.x = 1
+    |}
+    [];
+
+  assert_type_errors
+    {|
       class Foo:
         def __init__(self) -> None:
           self.attribute: int = 1
