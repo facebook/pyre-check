@@ -203,7 +203,7 @@ module Define : sig
     [@@deriving compare, eq, sexp, show, hash]
 
     val create_toplevel: qualifier: Reference.t option -> t
-    val create_class_toplevel: qualifier: Reference.t -> t
+    val create_class_toplevel: parent: Reference.t -> t
     val unqualified_name: t -> Identifier.t
     val self_identifier: t -> Identifier.t
     val is_method: t -> bool
@@ -225,7 +225,7 @@ module Define : sig
   end
 
   val create_toplevel: qualifier: Reference.t option -> statements: statement_t list -> t
-  val create_class_toplevel: qualifier: Reference.t -> statements: statement_t list -> t
+  val create_class_toplevel: parent: Reference.t -> statements: statement_t list -> t
 
   val unqualified_name: t -> Identifier.t
   val self_identifier: t -> Identifier.t

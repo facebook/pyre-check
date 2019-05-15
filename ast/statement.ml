@@ -295,15 +295,15 @@ module Define = struct
       }
 
 
-    let create_class_toplevel ~qualifier =
+    let create_class_toplevel ~parent =
       {
-        name = Reference.create ~prefix:qualifier "$class_toplevel";
+        name = Reference.create ~prefix:parent "$class_toplevel";
         parameters = [];
         decorators = [];
         docstring = None;
         return_annotation = None;
         async = false;
-        parent = Some qualifier;
+        parent = Some parent;
       }
 
 
@@ -414,9 +414,9 @@ module Define = struct
     }
 
 
-  let create_class_toplevel ~qualifier ~statements =
+  let create_class_toplevel ~parent ~statements =
     {
-      signature = Signature.create_class_toplevel ~qualifier;
+      signature = Signature.create_class_toplevel ~parent;
       body = statements;
     }
 

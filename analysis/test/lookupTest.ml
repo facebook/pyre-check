@@ -251,10 +251,10 @@ let test_lookup_identifier_accesses _ =
     ~lookup
     [
       "3:13-3:15/typing_extensions.Literal[12]";
-      "3:4-3:5/int";
       (* `x` at 3:4-3:5 expands to `test.A.x`. This is the annotation
          for the `test.A` prefix. *)
       "3:4-3:5/typing.Type[test.A]";
+      "3:4-3:5/typing_extensions.Literal[12]";
       "3:7-3:10/typing.Type[int]";
       "4:17-4:21/test.A";
       "4:23-4:24/int";
@@ -361,8 +361,8 @@ let test_lookup_multiline_accesses _ =
       "2:13-2:17/None";
       "3:7-5:14/bool";
       "9:13-9:15/typing_extensions.Literal[12]";
-      "9:4-9:5/int";
       "9:4-9:5/typing.Type[test.A]";
+      "9:4-9:5/typing_extensions.Literal[12]";
       "9:7-9:10/typing.Type[int]";
     ];
   assert_annotation

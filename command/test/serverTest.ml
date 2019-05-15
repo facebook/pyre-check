@@ -855,7 +855,7 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-              annotation = Type.integer
+              annotation = Type.literal_integer 1
             };
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;

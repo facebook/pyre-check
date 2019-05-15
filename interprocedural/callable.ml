@@ -147,7 +147,17 @@ let get_definition ~resolution = function
       (Reference.create name)
       |> Resolution.function_definitions resolution
       >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
-  | `Method { class_name; method_name; } ->
+  | `Method { class_name; method_name } when String.equal method_name "$class_toplevel" ->
+      Type.Primitive class_name
+      |> (fun annotation -> Resolution.class_definition resolution ~convert:true annotation)
+      |> (function
+          | Some { Node.location; value = { Class.name; body; _ }; _ } ->
+              Define.create_class_toplevel ~parent:name ~statements:body
+              |> Node.create ~location
+              |> Option.some
+          | None ->
+              None)
+  | `Method { class_name; method_name } ->
       Type.Primitive class_name
       |> Resolution.class_definition ~convert:true resolution
       >>| Node.value

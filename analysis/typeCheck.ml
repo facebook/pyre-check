@@ -4153,7 +4153,7 @@ module State = struct
             in
             schedule
               ~variables
-              ~define:(Define.create_class_toplevel ~qualifier:name ~statements:body)
+              ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
         | Define ({ Define.signature = { parameters; _ }; _ } as define) ->
             let variables =
               let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =

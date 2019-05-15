@@ -1713,6 +1713,20 @@ let test_defines _ =
       body;
     }
   in
+  let create_class_toplevel ~parent ~body =
+    {
+      Define.signature = {
+        name = !&(parent ^ ".$class_toplevel");
+        parameters = [];
+        decorators = [];
+        docstring = None;
+        return_annotation = None;
+        async = false;
+        parent = Some (Reference.create parent);
+      };
+      body;
+    }
+  in
 
   let define = create_define "foo" in
   assert_defines
@@ -1766,18 +1780,24 @@ let test_defines _ =
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in
   let define_bar = create_define "bar" in
+  let body = [+Define define_foo; +Define define_bar] in
   let parent =
     {
       Statement.Class.name = !&"Foo";
       bases = [];
-      body = [+Define define_foo; +Define define_bar];
+      body;
       decorators = [];
       docstring = None;
     }
   in
   assert_defines
     [+Class parent]
-    [create_toplevel [+Class parent]; define_bar; define_foo]
+    [
+      create_toplevel [+Class parent];
+      create_class_toplevel ~parent:"Foo" ~body;
+      define_bar;
+      define_foo;
+    ]
 
 
 let test_classes _ =

@@ -219,7 +219,7 @@ let test_type_collection _ =
       |> Preprocessing.defines ~include_toplevels:true
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
-    let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 1 in
+    let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
       ResolutionSharedMemory.get name
       |> (fun value -> Option.value_exn value)
