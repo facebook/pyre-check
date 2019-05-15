@@ -220,7 +220,7 @@ let computation_thread request_queue configuration state =
           let state = { state with last_request_time = Unix.time () } in
           let (origin, request) = Squeue.pop request_queue in
           let process_request ~socket ~state =
-            Log.log ~section:`Server "Processing request %a" Protocol.Request.pp request;
+            Log.info "Processing request %a" Protocol.Request.pp request;
             Request.process ~socket ~state ~configuration ~request
           in
           handle_request state ~origin ~process:process_request
