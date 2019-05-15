@@ -201,9 +201,10 @@ module Make (Transformer : Transformer) = struct
                   generators
                   ~f:(transform_generator ~transform_expression);
             }
-        | Name expression ->
-            (* TODO: T37313693 *)
-            Name expression
+        | Name (Name.Identifier _ ) ->
+            value
+        | Name (Name.Attribute { base; attribute }) ->
+            Name (Name.Attribute { base = transform_expression base; attribute })
         | Set elements ->
             Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->
