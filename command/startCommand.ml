@@ -563,6 +563,7 @@ let run_start_command
     save_state_to
     changed_files_path
     saved_state_project
+    saved_state_metadata
     configuration_file_hash
     store_type_check_resolution
     verbose
@@ -636,7 +637,12 @@ let run_start_command
     | Some path, _ ->
         Some (Configuration.Server.Save path)
     | None, Some project_name ->
-        Some (Configuration.Server.Load (Configuration.Server.LoadFromProject project_name))
+        Some
+          (Configuration.Server.Load
+             (Configuration.Server.LoadFromProject {
+                 project_name;
+                 metadata = saved_state_metadata;
+               }))
     | None, None ->
         match load_state_from, changed_files_path with
         | Some shared_memory_path, Some changed_files_path ->
@@ -698,6 +704,10 @@ let command =
         "-saved-state-project"
         (optional string)
         ~doc:"Pyre will attempt to fetch the project's saved state from the project name."
+      +> flag
+        "-saved-state-metadata"
+        (optional string)
+        ~doc:"The metadata to search for the project with, if any."
       +> flag
         "-configuration-file-hash"
         (optional string)

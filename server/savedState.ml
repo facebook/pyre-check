@@ -67,7 +67,7 @@ let load
         in
         shared_memory_path, files
 
-    | Some (Load (LoadFromProject project_name)) ->
+    | Some (Load (LoadFromProject { project_name; _ })) ->
         if Option.is_none expected_version then
           begin
             Log.warning "An expected version must be passed in in order to load from saved states.";

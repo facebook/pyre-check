@@ -159,7 +159,7 @@ module Server = struct
 
   type load =
     | LoadFromFiles of load_parameters
-    | LoadFromProject of string
+    | LoadFromProject of { project_name: string; metadata: string option }
 
   type saved_state_action =
     | Save of string

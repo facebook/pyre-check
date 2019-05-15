@@ -60,8 +60,8 @@ let sample
           | Some
               (Configuration.Server.Load
                  (Configuration.Server.LoadFromProject
-                    name)) ->
-              ["saved_state_project", name]
+                    { project_name; _ })) ->
+              ["saved_state_project", project_name]
           | Some (Configuration.Server.Save project) ->
               ["save_state_to", project]
           | None ->
