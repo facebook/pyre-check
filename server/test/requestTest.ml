@@ -47,11 +47,15 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
   }
 
 
-let initialize sources =
+let initialize ?configuration sources =
   let configuration =
-    Configuration.Analysis.create
-      ~project_root:(Path.current_working_directory ())
-      ()
+    match configuration with
+    | Some configuration ->
+        configuration
+    | None ->
+        Configuration.Analysis.create
+          ~project_root:(Path.current_working_directory ())
+          ()
   in
   let state =
     let files = List.map sources ~f:write_file in
@@ -340,10 +344,17 @@ let test_process_type_check_request context =
       ~expected_errors
       ?(expected_deferred_state = [])
       ?temporary_directory
+      ?(incremental_transitive_dependencies = false)
       () =
     let assert_response _ =
       let actual_errors, actual_deferred_state =
-        let configuration, state = initialize sources in
+        let configuration =
+          Configuration.Analysis.create
+            ~project_root:(Path.current_working_directory ())
+            ~incremental_transitive_dependencies
+            ()
+        in
+        let configuration, state = initialize ~configuration sources in
         let check = List.map check ~f:write_file in
         Request.process_type_check_request ~state ~configuration ~files:check
         |> function
@@ -442,6 +453,7 @@ let test_process_type_check_request context =
     ();
   (* Indirect dependency. *)
   assert_response
+    ~incremental_transitive_dependencies:true
     ~sources:[
       "library.py", "def function() -> int: ...";
       "client.py",
@@ -453,7 +465,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_state:["client.py"]
+    ~expected_deferred_state:["client.py"; "indirect.py"]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
@@ -471,6 +483,17 @@ let test_process_type_check_request context =
     ~check:["a.py", "var = 1337"]
     ~expected_errors:["a.py", []]
     ~expected_deferred_state:["b.py"]
+    ();
+  assert_response
+    ~incremental_transitive_dependencies:true
+    ~sources:[
+      "a.py", "var = 42";
+      "b.py", "from a import *";
+      "c.py", "from b import *";
+    ]
+    ~check:["a.py", "var = 1337"]
+    ~expected_errors:["a.py", []]
+    ~expected_deferred_state:["b.py"; "c.py"]
     ();
   assert_response
     ~sources:[

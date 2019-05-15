@@ -246,7 +246,11 @@ def main() -> int:
             "even if analysis is still in progress."
         ),
     )
-
+    incremental.add_argument(
+        "--transitive",
+        action="store_true",
+        help="Calculate transitive dependencies of changed files.",
+    )
     rage = parsed_commands.add_parser(
         commands.Rage.NAME,
         epilog="""
@@ -381,6 +385,7 @@ def main() -> int:
         if shutil.which("watchman"):
             arguments.command = commands.Incremental
             arguments.nonblocking = False
+            arguments.transitive = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
             LOG.warning(

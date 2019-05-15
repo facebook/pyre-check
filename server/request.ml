@@ -1209,7 +1209,7 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
 
 let compute_dependencies
     ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
-    ~configuration
+    ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
     files =
   let timer = Timer.start () in
   let handle file =
@@ -1283,7 +1283,13 @@ let compute_dependencies
         List.filter handles ~f:signature_hash_changed
         |> List.map ~f:(fun handle -> Source.qualifier ~handle)
       in
-      Dependencies.of_list
+      let get_dependencies =
+        if incremental_transitive_dependencies then
+          Dependencies.transitive_of_list
+        else
+          Dependencies.of_list
+      in
+      get_dependencies
         ~get_dependencies:Handler.dependencies
         ~modules
       |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get

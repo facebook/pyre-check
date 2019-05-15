@@ -103,6 +103,40 @@ class IncrementalTest(unittest.TestCase):
             Monitor.assert_not_called()
             file_monitor_instance.daemonize.assert_not_called()
 
+        Monitor.reset_mock()
+        Monitor.is_alive.return_value = True
+        file_monitor_instance.reset_mock()
+        with patch.object(commands.Command, "_call_client") as call_client, patch(
+            "json.loads", return_value=[]
+        ):
+            transitive_arguments = mock_arguments()
+            transitive_arguments.transitive = True
+            command = incremental.Incremental(
+                transitive_arguments, configuration, analysis_directory
+            )
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "parser",
+                    "-project-root",
+                    ".",
+                    "-typeshed",
+                    "stub",
+                    "-expected-binary-version",
+                    "hash",
+                    "-search-path",
+                    "path1,path2",
+                    "-transitive",
+                ],
+            )
+
+            command.run()
+            call_client.assert_called_once_with(command=commands.Incremental.NAME)
+            Monitor.is_alive.assert_called_once_with(".")
+            Monitor.assert_not_called()
+            file_monitor_instance.daemonize.assert_not_called()
+
         commands_Command_state.return_value = commands.command.State.DEAD
         Monitor.reset_mock()
         file_monitor_instance.reset_mock()

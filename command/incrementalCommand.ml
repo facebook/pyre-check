@@ -11,6 +11,7 @@ open Server
 
 let run
     nonblocking
+    transitive
     verbose
     expected_version
     sections
@@ -73,6 +74,7 @@ let run
         ~excludes
         ~extensions
         ~local_root:(Path.create_absolute local_root)
+        ~incremental_transitive_dependencies:transitive
         ()
     in
     (fun () ->
@@ -125,5 +127,9 @@ let command =
         no_arg
         ~doc:("Ask the server to return partial results immediately, " ^
               "even if analysis is still in progress.")
+      +> flag
+        "-transitive"
+        no_arg
+        ~doc:("Calculate dependencies of changed files transitively.")
       ++ Specification.base_command_line_arguments)
     run

@@ -61,6 +61,7 @@ def mock_arguments(
     arguments.terminal = terminal
     arguments.verbose = False
     arguments.nonblocking = False
+    arguments.transitive = False
     arguments.store_type_check_resolution = store_type_check_resolution
     return arguments
 

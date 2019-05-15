@@ -33,6 +33,7 @@ module Analysis: sig
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
+    incremental_transitive_dependencies: bool;
   }
   [@@deriving show, eq]
 
@@ -63,6 +64,7 @@ module Analysis: sig
     -> ?excludes: string list
     -> ?extensions: string list
     -> ?store_type_check_resolution: bool
+    -> ?incremental_transitive_dependencies: bool
     -> unit
     -> t
 
