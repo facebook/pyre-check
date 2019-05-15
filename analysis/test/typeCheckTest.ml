@@ -388,7 +388,7 @@ let test_resolve_exports _ =
       "qualifier.foo", "foo = 1";
     ]
     "qualifier.foo.foo"
-    "foo.foo.foo";
+    "qualifier.foo.foo";
   assert_resolve
     ~sources:[
       "placeholder", "# pyre-placeholder-stub";

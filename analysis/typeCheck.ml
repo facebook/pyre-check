@@ -662,10 +662,14 @@ module State = struct
         in
         match Reference.as_list reference with
         | head :: tail ->
-            resolve_exports_fixpoint
-              ~reference:(resolve_exports ~lead:[head] ~tail)
-              ~visited:(Set.add visited reference)
-              ~count:(count + 1)
+            let exported_reference = resolve_exports ~lead:[head] ~tail in
+            if Reference.is_strict_prefix ~prefix:reference exported_reference then
+              reference
+            else
+              resolve_exports_fixpoint
+                ~reference:exported_reference
+                ~visited:(Set.add visited reference)
+                ~count:(count + 1)
         | _ ->
             reference
     in

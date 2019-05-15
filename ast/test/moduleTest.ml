@@ -114,7 +114,7 @@ let test_aliased_export _ =
   assert_aliased_exports
     ~qualifier:(Reference.create "some.module")
     "from some.module.other import other as other"
-    ["other", "other.other"];
+    ["other", "some.module.other.other"];
 
 
   assert_aliased_exports
