@@ -338,7 +338,7 @@ and step = {
 
 
 let test_resolve_exports _ =
-  let assert_resolve ~sources access expected_access =
+  let assert_resolve ~sources name expected =
     let resolution =
       let sources =
         let to_source (qualifier, source) =
@@ -353,14 +353,14 @@ let test_resolve_exports _ =
       AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
       |> (fun environment -> TypeCheck.resolution environment ())
     in
-    let access =
-      parse_single_access ~convert:true access
-      |> (fun access -> AccessState.resolve_exports ~resolution ~access)
+    let reference =
+      State.resolve_exports ~resolution (Reference.create name)
     in
     assert_equal
-      ~printer:Access.show
-      ~cmp:Access.equal access
-      (parse_single_access ~convert:true expected_access)
+      ~printer:Reference.show
+      ~cmp:Reference.equal
+      (Reference.create expected)
+      reference
   in
   assert_resolve
     ~sources:[]
@@ -388,7 +388,7 @@ let test_resolve_exports _ =
       "qualifier.foo", "foo = 1";
     ]
     "qualifier.foo.foo"
-    "qualifier.foo.foo";
+    "foo.foo.foo";
   assert_resolve
     ~sources:[
       "placeholder", "# pyre-placeholder-stub";

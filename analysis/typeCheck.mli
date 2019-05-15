@@ -9,53 +9,6 @@ open Ast
 open Statement
 
 module Error = AnalysisError
-module AccessState: sig
-  (* Keep track of objects whose type might be determined later on or that might serve as implicit
-     argument to a call. *)
-  type target = {
-    reference: Reference.t;
-    annotation: Type.t;
-  }
-
-  type found_origin =
-    | Instance of Annotated.Attribute.t
-    | Module of Reference.t
-  [@@deriving show]
-
-  type undefined_origin =
-    | Instance of { attribute: Annotated.Attribute.t; instantiated_target: Type.t }
-    | Module of Reference.t
-    | TypeWithoutClass of Type.t
-  [@@deriving show]
-
-  type definition =
-    | Defined of found_origin
-    | Undefined of undefined_origin
-  [@@deriving show]
-
-  type accesses_incomplete_type = { target: Expression.t; annotation: Type.t }
-  [@@deriving show]
-
-  type element =
-    | Signature of {
-        signature: AnnotatedSignature.t;
-        callees: Type.Callable.t list;
-        arguments: Argument.t list;
-        accesses_incomplete_type: accesses_incomplete_type option;
-      }
-    | Attribute of {
-        attribute: Identifier.t;
-        definition: definition;
-        accesses_incomplete_type: accesses_incomplete_type option;
-        parent_annotation: Type.t option;
-      }
-    | NotCallable of Type.t
-    | Value
-  [@@deriving show]
-
-  val resolve_exports: resolution: Resolution.t -> access: Access.t -> Access.t
-end
-
 
 module State : sig
   (* Keep track of nested functions to analyze and their initial states. *)
@@ -111,6 +64,8 @@ module State : sig
     -> t
 
   val widening_threshold: int
+
+  val resolve_exports: resolution: Resolution.t -> Reference.t -> Reference.t
 
   (* Visible for testing. *)
   type resolved = {

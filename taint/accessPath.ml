@@ -333,8 +333,15 @@ let split_root ~resolution = function
 
 let resolve_exports ~resolution = function
   | Access.SimpleAccess access ->
-      let access = TypeCheck.AccessState.resolve_exports ~resolution ~access in
-      Access.SimpleAccess access
+      let simple_prefix, suffix =
+        List.split_while ~f:(function | Access.Identifier _ -> true | _ -> false) access
+      in
+      let prefix =
+        Reference.from_access simple_prefix
+        |> TypeCheck.State.resolve_exports ~resolution
+        |> Reference.access
+      in
+      Access.SimpleAccess (prefix @ suffix)
   | expression ->
       expression
 
