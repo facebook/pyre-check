@@ -4,8 +4,7 @@
     LICENSE file in the root directory of this source tree. *)
 
 
-val find_sources: ?filter: (string -> bool) -> Configuration.Analysis.t -> Pyre.Path.t list
-val find_stubs: configuration: Configuration.Analysis.t -> Pyre.Path.t list
+val find_stubs_and_sources: Configuration.Analysis.t -> Pyre.Path.t list * Pyre.Path.t list
 
 type parse_sources_result = {
   parsed: File.Handle.t list;

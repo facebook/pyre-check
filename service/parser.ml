@@ -239,119 +239,95 @@ let log_parse_errors ~syntax_error ~system_error ~description =
 
 
 let find_stubs
-    ~configuration:(
-    { Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration) =
-  let paths =
-    let stubs =
-      let typeshed_directories =
-        let list_subdirectories typeshed_path =
-          let root = Path.absolute typeshed_path in
-          let is_directory path =
-            match Core.Sys.is_directory path with
-            | `Yes -> true
-            | _ -> false
-          in
-          if is_directory root then
-            match Core.Sys.ls_dir root with
-            | entries ->
-                let select_directories sofar path =
-                  if is_directory (root ^/ path) &&
-                     not (String.equal path "tests") &&
-                     not (String.is_prefix path ~prefix:".")
-                  then
-                    (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))
-                    :: sofar
-                  else
-                    sofar
-                in
-                List.fold ~init:[] ~f:select_directories entries
-            | exception Sys_error _ ->
-                Log.error "Could not list typeshed directory: `%s`" root;
-                []
-          else
-            begin
-              Log.info "Not a typeshed directory: `%s`" root;
+    ({ Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration) =
+  let stubs =
+    let typeshed_directories =
+      let list_subdirectories typeshed_path =
+        let root = Path.absolute typeshed_path in
+        let is_directory path =
+          match Core.Sys.is_directory path with
+          | `Yes -> true
+          | _ -> false
+        in
+        if is_directory root then
+          match Core.Sys.ls_dir root with
+          | entries ->
+              let select_directories sofar path =
+                if is_directory (root ^/ path) &&
+                   not (String.equal path "tests") &&
+                   not (String.is_prefix path ~prefix:".")
+                then
+                  (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))
+                  :: sofar
+                else
+                  sofar
+              in
+              List.fold ~init:[] ~f:select_directories entries
+          | exception Sys_error _ ->
+              Log.error "Could not list typeshed directory: `%s`" root;
               []
-            end
-        in
-        Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
+        else
+          begin
+            Log.info "Not a typeshed directory: `%s`" root;
+            []
+          end
       in
-      let stubs root =
-        let search_root = Path.SearchPath.to_path root in
-        Log.info "Finding type stubs in `%a`..." Path.pp search_root;
-        let directory_filter path =
-          let is_python_2_directory path =
-            String.is_suffix ~suffix:"/2" path ||
-            String.is_suffix ~suffix:"/2.7" path
-          in
-          not (is_python_2_directory path) &&
-          not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
-        in
-        let file_filter path =
-          String.is_suffix path ~suffix:".pyi" &&
-          not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
-        in
-        (* The typeshed resource cache and the search path might live under the local root.
-           If that's the case, we should make sure that we don't add these stubs when analyzing the
-           local root, as that would clobber the order. The method of solving this is by only adding
-           handles that correspond directly to the root. *)
-        let keep path =
-          let reconstructed =
-            File.create path
-            |> File.handle ~configuration
-            |> File.Handle.show
-            |> fun relative -> Path.create_relative ~root:(Path.SearchPath.get_root root) ~relative
-          in
-          Path.equal reconstructed path
-        in
-        Path.list ~file_filter ~directory_filter ~root:(search_root) ()
-        |> List.filter ~f:keep
-      in
-      List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
+      Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
     in
-    let modules =
-      let modules root =
-        Log.info "Finding external sources in `%a`..." Path.pp root;
-        let directory_filter path =
-          not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+    let stubs root =
+      let search_root = Path.SearchPath.to_path root in
+      Log.info "Finding type stubs in `%a`..." Path.pp search_root;
+      let directory_filter path =
+        let is_python_2_directory path =
+          String.is_suffix ~suffix:"/2" path ||
+          String.is_suffix ~suffix:"/2.7" path
         in
-        let file_filter path =
-          String.is_suffix ~suffix:".py" path &&
-          not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
-        in
-        Path.list ~file_filter ~directory_filter ~root ()
+        not (is_python_2_directory path) &&
+        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
-      search_path
-      |> List.map ~f:Path.SearchPath.to_path
-      |> List.map ~f:modules
-    in
-
-    stubs @ modules
-  in
-  let _, paths =
-    (* If two stub directories contain the same stub, prefer the one that
-       appears earlier in the search path. *)
-    let filter_interfering_stubs (qualifiers, all_paths) paths =
-      let add (qualifiers, all_paths) path =
-        let handle =
+      let file_filter path =
+        String.is_suffix path ~suffix:".pyi" &&
+        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+      in
+      (* The typeshed resource cache and the search path might live under the local root.
+         If that's the case, we should make sure that we don't add these stubs when analyzing the
+         local root, as that would clobber the order. The method of solving this is by only adding
+         handles that correspond directly to the root. *)
+      let keep path =
+        let reconstructed =
           File.create path
           |> File.handle ~configuration
+          |> File.Handle.show
+          |> fun relative -> Path.create_relative ~root:(Path.SearchPath.get_root root) ~relative
         in
-        let qualifier = Ast.Source.qualifier ~handle in
-        if Set.mem qualifiers qualifier then
-          qualifiers, all_paths
-        else
-          Set.add qualifiers qualifier, path :: all_paths
+        Path.equal reconstructed path
       in
-      List.fold ~f:add ~init:(qualifiers, all_paths) paths
+      Path.list ~file_filter ~directory_filter ~root:(search_root) ()
+      |> List.filter ~f:keep
     in
-    List.fold ~f:filter_interfering_stubs ~init:(Reference.Set.empty, []) paths
+    List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
   in
-  paths
+  let modules =
+    let modules root =
+      Log.info "Finding external sources in `%a`..." Path.pp root;
+      let directory_filter path =
+        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+      in
+      let file_filter path =
+        String.is_suffix ~suffix:".py" path &&
+        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+      in
+      Path.list ~file_filter ~directory_filter ~root ()
+    in
+    search_path
+    |> List.map ~f:Path.SearchPath.to_path
+    |> List.map ~f:modules
+  in
+  List.append stubs modules
+  |> List.concat
 
 
 let find_sources
-    ?(filter = fun _ -> true)
     { Configuration.Analysis.local_root; excludes; extensions; _ } =
   let directory_filter path =
     not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
@@ -366,10 +342,34 @@ let find_sources
       |> Option.value ~default:""
     in
     List.exists ~f:(String.equal extension) valid_suffixes &&
-    not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)) &&
-    filter path
+    not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
   in
   Path.list ~file_filter ~directory_filter ~root:local_root ()
+
+
+let find_stubs_and_sources configuration =
+  (* If two directories contain the same source file:
+     - Prefer external sources over internal sources
+     - Prefer the one that appears earlier in the search path. *)
+  let filter_interfering_sources ~configuration (stubs: Path.t list) (sources: Path.t list) =
+    let qualifiers = Reference.Hash_set.create () in
+    let keep path =
+      let handle =
+        File.create path
+        |> File.handle ~configuration
+      in
+      let qualifier = Ast.Source.qualifier ~handle in
+      match Hash_set.strict_add qualifiers qualifier with
+      | Result.Ok () -> true
+      | Result.Error _ -> false
+    in
+    let stubs = List.filter ~f:keep stubs in
+    let sources = List.filter ~f:keep sources in
+    stubs, sources
+  in
+  let stubs = find_stubs configuration in
+  let sources = find_sources configuration in
+  filter_interfering_sources ~configuration stubs sources
 
 
 type result = {
@@ -379,9 +379,9 @@ type result = {
 
 
 let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration) =
+  let stub_paths, source_paths = find_stubs_and_sources configuration in
   let stubs =
     let timer = Timer.start () in
-    let stub_paths = find_stubs ~configuration in
     Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
     let { parsed; syntax_error; system_error }  =
       let preprocessing_state =
@@ -406,47 +406,14 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     parsed
   in
   let sources =
-    let known_stubs =
-      let stub_set = Reference.Hash_set.create () in
-      let add_to_known_stubs handle =
-        match Ast.SharedMemory.Sources.get handle with
-        | Some { Ast.Source.qualifier; handle; _ } ->
-            if Hash_set.mem stub_set qualifier then
-              Statistics.event
-                ~name:"interfering stub"
-                ~normals:["handle", File.Handle.show handle]
-                ();
-            Hash_set.add stub_set qualifier
-        | _ ->
-            ()
-      in
-      List.iter stubs ~f:add_to_known_stubs;
-      stub_set
-    in
-    let filter path =
-      let relative =
-        Path.get_relative_to_root
-          ~root:local_root
-          (* We want to filter based on the path of the symlink instead of the path the
-             symlink points to. *)
-          ~path:(Path.create_absolute ~follow_symbolic_links:false path)
-      in
-      match relative with
-      | Some handle ->
-          String.equal handle "__init__.py" ||  (* Analyze top-level `__init__.py`. *)
-          not (Hash_set.mem known_stubs (Source.qualifier ~handle:(File.Handle.create handle)))
-      | _ ->
-          true
-    in
     let timer = Timer.start () in
-    let paths = find_sources configuration ~filter in
-    Log.info "Parsing %d sources in `%a`..." (List.length paths) Path.pp local_root;
+    Log.info "Parsing %d sources in `%a`..." (List.length source_paths) Path.pp local_root;
     let { parsed; syntax_error; system_error }  =
       parse_sources
         ~preprocessing_state:None
         ~configuration
         ~scheduler
-        ~files:(List.map ~f:File.create paths)
+        ~files:(List.map ~f:File.create source_paths)
     in
     log_parse_errors ~syntax_error ~system_error ~description:"file";
     Statistics.performance ~name:"sources parsed" ~timer ();

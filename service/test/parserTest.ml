@@ -91,8 +91,8 @@ let test_parse_stubs_modules_list _ =
 let test_find_stubs context =
   let assert_stubs configuration expected =
     let handles =
-      Service.Parser.find_stubs
-        ~configuration
+      Service.Parser.find_stubs_and_sources configuration
+      |> fst
       |> List.map ~f:File.create
       |> List.map ~f:(File.handle ~configuration)
       |> List.map ~f:File.Handle.show
@@ -167,11 +167,10 @@ let test_find_sources context =
     write_file module_root "a.pyi";
 
     write_file local_root "ttypes.py";
-    write_file local_root "ttypes.pyi";
     write_file local_root "dir/legit.py";
     write_file local_root "excluded.py";
     write_file local_root "nested/excluded.py";
-    write_file local_root "a.cconf";
+    write_file local_root "c.cconf";
     write_file local_root "nested/a.cconf";
     write_file local_root "a.jpg";
     write_file local_root "nested/a.jpg";
@@ -185,7 +184,8 @@ let test_find_sources context =
         ~search_path:[Path.SearchPath.Root module_root]
         ()
     in
-    Service.Parser.find_sources configuration
+    Service.Parser.find_stubs_and_sources configuration
+    |> snd
     |> List.map ~f:File.create
     |> List.map ~f:(File.handle ~configuration)
     |> List.map ~f:File.Handle.show
@@ -194,7 +194,46 @@ let test_find_sources context =
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.cconf"; "a.py"; "b.py"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
+    ["c.cconf"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
+    handles
+
+
+let test_external_sources context =
+  let handles =
+    let root = Path.create_absolute (bracket_tmpdir context) in
+    let create_path name =
+      let path_name = (Path.absolute root) ^ name in
+      Sys_utils.mkdir_no_fail path_name;
+      Path.create_absolute path_name
+    in
+    let local_root = create_path "/local" in
+    let external_root = create_path "/external" in
+    let write_file root relative =
+      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      |> File.write
+    in
+    (* local a.py should be shadowed by external a.py *)
+    write_file local_root "a.py";
+    write_file local_root "b.py";
+    write_file external_root "a.py";
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[Path.SearchPath.Root external_root]
+        ()
+    in
+    Service.Parser.find_stubs_and_sources configuration
+    |> snd
+    |> List.map ~f:File.create
+    |> List.map ~f:(File.handle ~configuration)
+    |> List.map ~f:File.Handle.show
+    |> List.sort ~compare:String.compare
+  in
+  assert_equal
+    ~cmp:(List.equal ~equal:String.equal)
+    ~printer:(String.concat ~sep:", ")
+    ["b.py"]
     handles
 
 
@@ -212,8 +251,9 @@ let test_parse_typeshed context =
     write_file typeshed_root "tests/d.pyi";
     write_file typeshed_root ".skipme/e.pyi";
 
-    Service.Parser.find_stubs
-      ~configuration:(Configuration.Analysis.create ~local_root ~typeshed:typeshed_root ())
+    Service.Parser.find_stubs_and_sources
+      (Configuration.Analysis.create ~local_root ~typeshed:typeshed_root ())
+    |> fst
     |> List.filter_map ~f:Path.relative
     |> List.sort ~compare:String.compare
   in
@@ -464,6 +504,7 @@ let () =
     "parse_stubs_modules_list">::test_parse_stubs_modules_list;
     "find_stubs">::test_find_stubs;
     "find_sources">::test_find_sources;
+    "external_sources">::test_external_sources;
     "parse_typeshed">::test_parse_typeshed;
     "parse_source">::test_parse_source;
     "parse_sources">::test_parse_sources;

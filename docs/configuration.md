@@ -40,9 +40,12 @@ binary in a CI setting.
 The statistics contain information about Pyre's performance as well as information about
 the project's type coverage.
 
-`search_path`: List of paths to stubs and external modules to include in the typing
-environment. For example, typeshed third-party modules. Pyre will use those paths to
-build up the typing environment but will *not* check files found in the search path.
+`search_path`: List of paths to stubs and external modules to include in the
+typing environment. For example, typeshed third-party modules. Pyre will use
+those paths to build up the typing environment but will *not* check files found
+in the search path. Note that if the same file is found both in
+`source_directories` and `search_path`, then `search_path` takes precendence and
+the file will treated as external modules (which, again, will *not* be analyzed).
 
 `typeshed`: Path to the [Typeshed](https://github.com/python/typeshed) standard library, which
 provides typed stubs for library functions.
