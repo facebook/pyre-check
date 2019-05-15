@@ -1,0 +1,21 @@
+# RCE sinks
+def eval(source: TaintSink[RemoteCodeExecution], globals, locals): ...
+def importlib.import_module(name: TaintSink[RemoteCodeExecution], package=...): ...
+def __import__(
+  name: TaintSink[RemoteCodeExecution],
+  globals=...,
+  locals=...,
+  fromlist=...,
+  level=...,
+): ...
+def pickle.loads(
+  bytes_object: TaintSink[RemoteCodeExecution],
+  *,
+  fix_imports=...,
+  encoding=...,
+  errors=...,
+): ...
+def yaml.load(
+  stream: TaintSink[RemoteCodeExecution],
+  Loader=...,
+): ...

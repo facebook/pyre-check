@@ -1,0 +1,14 @@
+[
+  {
+    "code": 5001,
+    "column": 5,
+    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "define": "integration_test.top_level.$toplevel",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "inference": null,
+    "line": 9,
+    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "name": "Possible shell injection",
+    "path": "integration_test/top_level.py"
+  }
+]

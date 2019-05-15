@@ -1,0 +1,7 @@
+{
+  "source_directories": ["."],
+  "binary": ".overridden",
+  "typeshed": "../typeshed",
+  "search_path": [".."],
+  "taint_models_path": "../taint"
+}
