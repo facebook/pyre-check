@@ -173,51 +173,6 @@ let test_rce_sink _ =
     ]
 
 
-let test_hardcoded_rce_sink _ =
-  assert_taint
-    {|
-      def test_hardcoded_rce_sink(input):
-        subprocess.call(input, shell=True)
-
-      def test_hardcoded_rce_sink_with_shell_false_explicit(input):
-        subprocess.call(input, shell=False)
-
-      def test_hardcoded_rce_sink_with_shell_false_implicit(input):
-        subprocess.call(input, shell=False)
-
-      def test_hardcoded_rce_sink_with_string_argument(input: str):
-        subprocess.check_call(input, shell=True)
-
-      def test_hardcoded_rce_sink_with_list_literal():
-        subprocess.call([], shell=True)
-
-      def test_hardcoded_rce_sink_with_list_argument(input: typing.List[str]):
-        subprocess.call(input, shell=True)
-    |}
-    [
-      outcome
-        ~kind:`Function
-        ~sink_parameters:[{ name = "input"; sinks = [Sinks.RemoteCodeExecution] }]
-        "qualifier.test_hardcoded_rce_sink";
-      outcome
-        ~kind:`Function
-        "qualifier.test_hardcoded_rce_sink_with_shell_false_explicit";
-      outcome
-        ~kind:`Function
-        "qualifier.test_hardcoded_rce_sink_with_shell_false_implicit";
-      outcome
-        ~kind:`Function
-        ~sink_parameters:[{ name = "input"; sinks = [Sinks.RemoteCodeExecution] }]
-        "qualifier.test_hardcoded_rce_sink_with_string_argument";
-      outcome
-        ~kind:`Function
-        "qualifier.test_hardcoded_rce_sink_with_list_literal";
-      outcome
-        ~kind:`Function
-        "qualifier.test_hardcoded_rce_sink_with_list_argument";
-    ]
-
-
 let test_rce_and_test_sink _ =
   assert_taint
     {|
@@ -1637,7 +1592,6 @@ let () =
     "plus_taint_in_taint_out">::test_plus_taint_in_taint_out;
     "concatenate_taint_in_taint_out">::test_concatenate_taint_in_taint_out;
     "rce_sink">::test_rce_sink;
-    "hardcoded_rce_sink">::test_hardcoded_rce_sink;
     "test_sink">::test_sink;
     "rce_and_test_sink">::test_rce_and_test_sink;
     "test_call_tito">::test_call_taint_in_taint_out;

@@ -113,7 +113,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution arguments state call_taint call_targets =
       let analyze_call_target (call_target, _implicit) =
-        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
+        let taint_model = Model.get_callsite_model ~call_target in
         let collapsed_call_taint = BackwardState.Tree.collapse call_taint in
         if not taint_model.is_obscure then
           let { TaintResult.backward; _ } = taint_model.model in

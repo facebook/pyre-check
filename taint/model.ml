@@ -490,96 +490,21 @@ let create ~resolution ?(verify = true) ~configuration source =
   List.map signatures ~f:create_model
 
 
-let subprocess_calls =
-  String.Set.of_list [
-    "subprocess.run";
-    "subprocess.call";
-    "subprocess.check_call";
-    "subprocess.check_output";
-  ]
-
-
-let model_cache =
-  String.Table.create ()
-
-
-let get_callsite_model ~resolution ~call_target ~arguments =
-  let open Pyre in
+let get_callsite_model ~call_target =
   let call_target = (call_target :> Callable.t) in
-  let subprocess_model =
-    let shell_set_to_true ~arguments =
-      let shell_set_to_true argument =
-        match argument with
-        | {
-          Argument.name = Some { Node.value = shell; _ };
-          value = { Node.value = True; _ };
-        } when shell = "$parameter$shell" -> true
-        | _ -> false
-      in
-      List.exists arguments ~f:shell_set_to_true
-    in
-    let called_with_list =
-      let is_list_argument { Argument.name; value } =
-        let annotation = Resolution.resolve resolution value in
-        Option.is_none name &&
-        not (Type.is_unbound annotation) &&
-        not (Type.equal annotation Type.string) &&
-        Resolution.less_or_equal
-          resolution
-          ~left:annotation
-          ~right:(Type.list Type.string)
-
-      in
-      List.hd arguments
-      >>| is_list_argument
-      |> (Option.value ~default:true)
-    in
-    let target = Callable.external_target_name call_target in
-    if (not called_with_list) &&
-       String.Set.mem subprocess_calls target &&
-       shell_set_to_true ~arguments then
-      match Hashtbl.find model_cache target with
-      | Some model ->
-          Some model
-      | None ->
-          let { model; _ } =
-            let model_source =
-              Format.asprintf
-                "def %s(command: TaintSink[RemoteCodeExecution], shell): ..."
-                target
-            in
-            create ~verify:false ~resolution ~configuration:(Configuration.get ()) model_source
-            |> List.hd_exn
-          in
-          let result = {
-            call_target;
-            model;
-            is_obscure = false;
-          }
-          in
-          Hashtbl.set model_cache ~key:target ~data:result;
-          Some result
-    else
-      None
-  in
-
-  match subprocess_model with
-  | Some model ->
-      model
+  match Interprocedural.Fixpoint.get_model call_target with
   | None ->
-      match Interprocedural.Fixpoint.get_model call_target with
-      | None ->
-          { is_obscure = true; call_target; model = TaintResult.empty_model }
-      | Some model ->
-          let strip_for_call_site model =
-            model
-          in
-          let taint_model =
-            Interprocedural.Result.get_model TaintResult.kind model
-            |> Option.value ~default:TaintResult.empty_model
-            |> strip_for_call_site
-          in
-          { is_obscure = model.is_obscure; call_target; model = taint_model }
+      { is_obscure = true; call_target; model = TaintResult.empty_model }
+  | Some model ->
+      let strip_for_call_site model =
+        model
+      in
+      let taint_model =
+        Interprocedural.Result.get_model TaintResult.kind model
+        |> Option.value ~default:TaintResult.empty_model
+        |> strip_for_call_site
+      in
+      { is_obscure = model.is_obscure; call_target; model = taint_model }
 
 
 let get_global_model ~resolution ~expression =
@@ -602,7 +527,7 @@ let get_global_model ~resolution ~expression =
           >>| Callable.create_object
       | _ ->
           None)
-  >>| (fun call_target -> get_callsite_model ~resolution ~call_target ~arguments:[])
+  >>| (fun call_target -> get_callsite_model ~call_target)
 
 
 let parse ~resolution ~source ~configuration models =

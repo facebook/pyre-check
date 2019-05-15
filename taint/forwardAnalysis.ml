@@ -142,7 +142,7 @@ module AnalysisInstance(FunctionContext: FUNCTION_CONTEXT) = struct
 
     and apply_call_targets ~resolution call_location arguments state call_targets =
       let apply_call_target (call_target, _implicit) =
-        let taint_model = Model.get_callsite_model ~resolution ~call_target ~arguments in
+        let taint_model = Model.get_callsite_model ~call_target in
         if not taint_model.is_obscure then
           let { TaintResult.forward; backward; _ } = taint_model.model in
           let sink_argument_matches =

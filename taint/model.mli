@@ -5,7 +5,6 @@
 
 open Ast
 open Analysis
-open Expression
 open Interprocedural
 
 
@@ -19,9 +18,7 @@ type t = {
 exception InvalidModel of string
 
 val get_callsite_model
-  :  resolution: Resolution.t
-  -> call_target: [<Callable.t]
-  -> arguments: Argument.t list
+  :  call_target: [<Callable.t]
   -> t
 
 val get_global_model
