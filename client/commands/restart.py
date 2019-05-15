@@ -20,6 +20,7 @@ class Restart(Command):
         Stop(self._arguments, self._configuration, self._analysis_directory).run()
         # Force the incremental run to be blocking.
         self._arguments.nonblocking = False
+        self._arguments.transitive = False
         Incremental(
             self._arguments, self._configuration, self._analysis_directory
         ).run()
