@@ -77,9 +77,12 @@ binary in a CI setting.</p>
 <p><code>logger</code>: If set, Pyre will invoke the binary passing it statistics in JSON format.
 The statistics contain information about Pyre's performance as well as information about
 the project's type coverage.</p>
-<p><code>search_path</code>: List of paths to stubs and external modules to include in the typing
-environment. For example, typeshed third-party modules. Pyre will use those paths to
-build up the typing environment but will <em>not</em> check files found in the search path.</p>
+<p><code>search_path</code>: List of paths to stubs and external modules to include in the
+typing environment. For example, typeshed third-party modules. Pyre will use
+those paths to build up the typing environment but will <em>not</em> check files found
+in the search path. Note that if the same file is found both in
+<code>source_directories</code> and <code>search_path</code>, then <code>search_path</code> takes precendence and
+the file will treated as external modules (which, again, will <em>not</em> be analyzed).</p>
 <p><code>typeshed</code>: Path to the <a href="https://github.com/python/typeshed">Typeshed</a> standard library, which
 provides typed stubs for library functions.</p>
 <p><code>workers</code>: Number of workers to spawn for multiprocessing.</p>
