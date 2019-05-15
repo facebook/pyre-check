@@ -717,27 +717,7 @@ let attribute_table
         |> fun attribute_map ->
         Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
       in
-      let superclass_definitions =
-        let superclasses = superclasses ~resolution definition in
-        let is_int_enum =
-          let bases = bases definition in
-          let is_int_enum { Expression.Call.Argument.value; _ } =
-            Resolution.parse_annotation resolution value
-            |> Type.equal (Type.Primitive "enum.IntEnum")
-          in
-          List.exists bases ~f:is_int_enum
-        in
-        if is_int_enum then
-          (* TODO(T43355738): We need this hard coding because int adheres to a generic protocol,
-             so we incorrectly assume that `IntEnum.__getitem__` corresponds to
-             `typing.Generic.__getitem__`. Remove this hard coding once lazy protocols are in. *)
-          let not_generic { Node.value = { Class.name; _ }; _ } =
-            name <> Reference.create "typing.Generic"
-          in
-          List.filter superclasses ~f:not_generic
-        else
-          superclasses
-      in
+      let superclass_definitions = superclasses ~resolution definition in
       let in_test =
         List.exists
           (definition :: superclass_definitions)
