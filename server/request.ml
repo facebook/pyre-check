@@ -1283,7 +1283,7 @@ let compute_dependencies
         List.filter handles ~f:signature_hash_changed
         |> List.map ~f:(fun handle -> Source.qualifier ~handle)
       in
-      Dependencies.transitive_of_list
+      Dependencies.of_list
         ~get_dependencies:Handler.dependencies
         ~modules
       |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get

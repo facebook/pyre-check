@@ -453,7 +453,7 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["library.py", []]
-    ~expected_deferred_state:["client.py"; "indirect.py"]
+    ~expected_deferred_state:["client.py"]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
@@ -470,7 +470,7 @@ let test_process_type_check_request context =
     ]
     ~check:["a.py", "var = 1337"]
     ~expected_errors:["a.py", []]
-    ~expected_deferred_state:["b.py"; "c.py"]
+    ~expected_deferred_state:["b.py"]
     ();
   assert_response
     ~sources:[
@@ -490,7 +490,7 @@ let test_process_type_check_request context =
     ]
     ~check:["a.py", "var = ''"]
     ~expected_errors:["a.py", []]
-    ~expected_deferred_state:["b.py"; "c.py"]
+    ~expected_deferred_state:["b.py"]
     ();
   assert_response
     ~sources:[]
