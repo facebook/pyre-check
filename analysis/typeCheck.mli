@@ -11,6 +11,17 @@ open Statement
 module Error = AnalysisError
 
 module State : sig
+  module ErrorKey: sig
+    type t = {
+      location: Location.Instantiated.t;
+      kind: int;
+    }
+    [@@deriving compare, sexp]
+
+    module Map: Map.S with type Key.t = t
+    val add_error: errors: Error.t Map.t -> Error.t -> Error.t Map.t
+  end
+
   (* Keep track of nested functions to analyze and their initial states. *)
   type nested_define
 
@@ -37,7 +48,7 @@ module State : sig
   and t = {
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
-    errors: Error.Set.t;
+    errors: Error.t ErrorKey.Map.t;
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;

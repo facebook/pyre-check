@@ -1997,12 +1997,15 @@ let less_or_equal ~resolution left right =
 
 let join ~resolution left right =
   let join_mismatch left right =
-    {
-      expected = Resolution.join resolution left.expected right.expected;
-      actual = Resolution.join resolution left.actual right.actual;
-      actual_expressions = left.actual_expressions @ right.actual_expressions;
-      due_to_invariance = left.due_to_invariance || right.due_to_invariance;
-    }
+    if List.equal ~equal:Expression.equal left.actual_expressions right.actual_expressions then
+      Some {
+        expected = Resolution.join resolution left.expected right.expected;
+        actual = Resolution.join resolution left.actual right.actual;
+        actual_expressions = left.actual_expressions;
+        due_to_invariance = left.due_to_invariance || right.due_to_invariance;
+      }
+    else
+      None
   in
   let join_missing_annotation
       (left: missing_annotation)  (* Ohcaml... *)
@@ -2093,43 +2096,64 @@ let join ~resolution left right =
       when Option.equal Identifier.equal_sanitized left.name right.name &&
            left.position = right.position &&
            Option.equal Reference.equal_sanitized left.callee right.callee ->
-        IncompatibleParameterType {
-          left with mismatch = join_mismatch left.mismatch right.mismatch
-        }
+        begin
+          match join_mismatch left.mismatch right.mismatch with
+          | Some mismatch ->
+              IncompatibleParameterType { left with mismatch }
+          | None ->
+              Top
+        end
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
         IncompatibleConstructorAnnotation (Resolution.join resolution left right)
     | IncompatibleReturnType left, IncompatibleReturnType right ->
-        IncompatibleReturnType {
-          mismatch = join_mismatch left.mismatch right.mismatch;
-          is_implicit = left.is_implicit && right.is_implicit;
-          is_unimplemented = left.is_unimplemented && right.is_unimplemented
-        }
+        begin
+          match join_mismatch left.mismatch right.mismatch with
+          | Some mismatch ->
+              IncompatibleReturnType {
+                mismatch;
+                is_implicit = left.is_implicit && right.is_implicit;
+                is_unimplemented = left.is_unimplemented && right.is_unimplemented
+              }
+
+          | None ->
+              Top
+        end
     | IncompatibleAttributeType left, IncompatibleAttributeType right
       when Type.equal left.parent right.parent &&
            Reference.equal left.incompatible_type.name right.incompatible_type.name ->
-        IncompatibleAttributeType {
-          parent = left.parent;
-          incompatible_type = {
-            left.incompatible_type with
-            mismatch =
-              join_mismatch
-                left.incompatible_type.mismatch
-                right.incompatible_type.mismatch;
-          };
-        }
+        begin
+          match join_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch with
+          | Some mismatch ->
+              IncompatibleAttributeType {
+                parent = left.parent;
+                incompatible_type = { left.incompatible_type with mismatch };
+              }
+          | None ->
+              Top
+        end
     | IncompatibleVariableType left, IncompatibleVariableType right
       when Reference.equal left.name right.name ->
-        IncompatibleVariableType { left with mismatch = join_mismatch left.mismatch right.mismatch }
+        begin
+          match join_mismatch left.mismatch right.mismatch with
+          | Some mismatch ->
+              IncompatibleVariableType { left with mismatch }
+          | None ->
+              Top
+        end
     | InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
       InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) ->
         begin
           match left_issue, right_issue with
           | Found left_mismatch, Found right_mismatch ->
-              InconsistentOverride {
-                left with
-                override =
-                  StrengthenedPrecondition (Found (join_mismatch left_mismatch right_mismatch))
-              }
+              begin
+                match join_mismatch left_mismatch right_mismatch with
+                | Some mismatch ->
+                    InconsistentOverride {
+                      left with override = StrengthenedPrecondition (Found mismatch);
+                    }
+                | None ->
+                    Top
+              end
           | NotFound _, _ ->
               InconsistentOverride left
           | _, NotFound _ ->
@@ -2137,9 +2161,15 @@ let join ~resolution left right =
         end
     | InconsistentOverride ({ override = WeakenedPostcondition left_mismatch; _ } as left),
       InconsistentOverride { override = WeakenedPostcondition right_mismatch; _ } ->
-        InconsistentOverride {
-          left with override = WeakenedPostcondition (join_mismatch left_mismatch right_mismatch);
-        }
+        begin
+          match join_mismatch left_mismatch right_mismatch with
+          | Some mismatch ->
+              InconsistentOverride {
+                left with override = WeakenedPostcondition mismatch;
+              }
+          | None ->
+              Top
+        end
     | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
       when Expression.equal left.expression right.expression ->
         InvalidArgument (
@@ -2152,6 +2182,9 @@ let join ~resolution left right =
           Variable {
             left with annotation = Resolution.join resolution left.annotation right.annotation
           })
+    | InvalidAssignment left, InvalidAssignment right
+      when equal_invalid_assignment_kind left right ->
+        InvalidAssignment left
     | InvalidMethodSignature left, InvalidMethodSignature right
       when Identifier.equal left.name right.name ->
         InvalidMethodSignature {
@@ -2177,7 +2210,13 @@ let join ~resolution left right =
         TooManyArguments left
     | UninitializedAttribute left, UninitializedAttribute right
       when String.equal left.name right.name && Type.equal left.parent right.parent ->
-        UninitializedAttribute { left with mismatch = join_mismatch left.mismatch right.mismatch }
+        begin
+          match join_mismatch left.mismatch right.mismatch with
+          | Some mismatch ->
+              UninitializedAttribute { left with mismatch }
+          | None ->
+              Top
+        end
     | UnawaitedAwaitable left, UnawaitedAwaitable right when Reference.equal_sanitized left right ->
         UnawaitedAwaitable left
     | UndefinedAttribute { origin = Class left; attribute = left_attribute },

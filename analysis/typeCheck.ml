@@ -13,7 +13,6 @@ open Statement
 
 module Error = AnalysisError
 
-
 module State = struct
   type nested_define_state = {
     nested_resolution: Resolution.t;
@@ -25,13 +24,32 @@ module State = struct
     initial: nested_define_state;
   }
 
+  module ErrorKey = struct
+    type t = {
+      location: Location.Instantiated.t;
+      kind: int;
+    }
+    [@@deriving compare, sexp]
+
+    module Map = Map.Make(struct
+        type nonrec t = t
+        let compare = compare
+        let sexp_of_t = sexp_of_t
+        let t_of_sexp = t_of_sexp
+      end)
+
+    let add_error ~errors ({ Error.location; _ } as error) =
+      Map.set errors ~key:{ location; kind = Error.code error } ~data:error
+  end
+
+
   type partitioned =
     { consistent_with_boundary: Type.t; not_consistent_with_boundary: Type.t option }
 
   and t = {
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
-    errors: Error.Set.t;
+    errors: Error.t ErrorKey.Map.t;
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
@@ -85,7 +103,7 @@ module State = struct
           (Error.location error)
           (Error.description error ~show_error_traces:true)
       in
-      List.map (Set.to_list errors) ~f:error_to_string
+      List.map (Map.data errors) ~f:error_to_string
       |> String.concat ~sep:"\n"
     in
     Format.fprintf
@@ -126,7 +144,7 @@ module State = struct
     {
       configuration;
       resolution;
-      errors = Error.Set.empty;
+      errors = ErrorKey.Map.empty;
       define;
       nested_defines = Location.Reference.Map.empty;
       bottom;
@@ -141,7 +159,7 @@ module State = struct
         ~location
         ~kind:(Error.InvalidTypeParameters mismatch)
         ~define
-      |> Set.add errors
+      |> ErrorKey.add_error ~errors
     in
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
@@ -215,7 +233,10 @@ module State = struct
       add_invalid_type_parameters_errors annotation ~resolution ~location ~define ~errors
     else
       let errors =
-        List.fold critical_errors ~init:errors ~f:(fun errors error -> Set.add errors error)
+        List.fold
+          critical_errors
+          ~init:errors
+          ~f:(fun errors error -> ErrorKey.add_error ~errors error)
       in
       errors, Type.Top
 
@@ -238,7 +259,7 @@ module State = struct
           ~location
           ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
           ~define
-        |> Set.add errors
+        |> ErrorKey.add_error ~errors
       else
         errors
     in
@@ -467,7 +488,7 @@ module State = struct
       check_implementation errors
       |> check_compatible_return_types
     in
-    Set.to_list errors
+    Map.data errors
     |> Error.join_at_define
       ~resolution
     |> Error.deduplicate
@@ -503,7 +524,15 @@ module State = struct
         | _ ->
             false
       in
-      Set.is_subset left.errors ~of_:right.errors &&
+      let left_errors =
+        Map.data left.errors
+        |> Error.Set.of_list
+      in
+      let right_errors =
+        Map.data right.errors
+        |> Error.Set.of_list
+      in
+      Set.is_subset left_errors ~of_:right_errors &&
       Map.fold
         ~init:true
         ~f:(entry_less_or_equal right.nested_defines (fun _ _ -> true))
@@ -560,11 +589,14 @@ module State = struct
         in
         Resolution.with_annotations left_resolution ~annotations
       in
+      let combine_errors ~key:_ left_error right_error =
+        Error.join ~resolution:left.resolution left_error right_error
+      in
       {
         left with
-        errors = Set.union left.errors right.errors;
+        errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
         nested_defines =
-          Map.merge ~f:join_nested_defines left.nested_defines right.nested_defines;
+          Map.merge left.nested_defines right.nested_defines ~f:join_nested_defines;
         resolution = join_resolutions left.resolution right.resolution;
       }
 
@@ -620,9 +652,15 @@ module State = struct
           previous.resolution_fixpoint
           next.resolution_fixpoint
       in
+      let combine_errors ~key:_ left_error right_error =
+        if iteration > widening_threshold then
+          { left_error with Error.kind = Error.Top }
+        else
+          Error.join ~resolution:previous.resolution left_error right_error
+      in
       {
         previous with
-        errors = Set.union previous.errors next.errors;
+        errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
         nested_defines =
           Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
@@ -630,8 +668,15 @@ module State = struct
       }
 
 
-  let emit_raw_error ~state:({ errors; _ } as state) error =
-    { state with errors = Set.add errors error }
+  let emit_raw_error ~state:({ errors; resolution; _ } as state) ({ Error.location; _ } as error) =
+    let error =
+      match Map.find errors { ErrorKey.location; kind = Error.code error } with
+      | Some other_error ->
+          Error.join ~resolution error other_error
+      | None ->
+          error
+    in
+    { state with errors = ErrorKey.add_error ~errors error }
 
 
   let emit_error ~state ~location ~kind ~define =
@@ -1102,7 +1147,7 @@ module State = struct
                      ~location
                      ~kind:(Error.InvalidOverride ({ parent; decorator = Final }))
                      ~define:define_node
-                 in Set.add errors error
+                 in ErrorKey.add_error ~errors error
                else errors
              in
 
@@ -1126,7 +1171,7 @@ module State = struct
                      ~kind:(Error.InvalidOverride ({ parent; decorator }))
                      ~define:define_node
                  in
-                 Set.add errors error
+                 ErrorKey.add_error ~errors error
                else
                  errors
              in
@@ -1170,7 +1215,7 @@ module State = struct
                            })
                          ~define:define_node
                      in
-                     Set.add errors error
+                     ErrorKey.add_error ~errors error
                    else
                      errors
                  in
@@ -1236,7 +1281,7 @@ module State = struct
                                    })
                                  ~define:define_node
                              in
-                             Set.add errors error
+                             ErrorKey.add_error ~errors error
                            else
                              errors
                          with TypeOrder.Untracked _ ->
@@ -1282,7 +1327,7 @@ module State = struct
                                })
                              ~define:define_node
                          in
-                         Set.add errors error
+                         ErrorKey.add_error ~errors error
                  in
                  Type.Callable.Overload.parameters implementation
                  |> Option.value ~default:[]
@@ -1400,7 +1445,7 @@ module State = struct
       let state =
         let { errors; _ } = state in
         let ({ errors = iterator_errors; _ } as state) =
-          forward_statement ~state:{ state with errors = Error.Set.empty } ~statement:iterator
+          forward_statement ~state:{ state with errors = ErrorKey.Map.empty } ~statement:iterator
         in
         (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
            temporarily minting a variable in a new scope and old annotations should be ignored. *)
@@ -1409,8 +1454,12 @@ module State = struct
             | { Error.kind = Error.IncompatibleVariableType _; _ } -> false
             | _ -> true
           in
-          Set.filter ~f:(is_not_assignment_error) iterator_errors
-          |> Set.union errors
+          Map.filter ~f:(is_not_assignment_error) iterator_errors
+          |> fun iterator_errors ->
+          Map.merge_skewed
+            ~combine:(fun ~key:_ left right -> Error.join ~resolution left right)
+            iterator_errors
+            errors
         in
         { state with errors = errors }
       in
@@ -2041,7 +2090,7 @@ module State = struct
            imprecise (doesn't correctly declare the arguments as a recursive tuple. *)
         let state =
           let { state; _ } = forward_expression ~state ~expression in
-          let previous_errors = Set.length state.errors in
+          let previous_errors = Map.length state.errors in
           let state, annotations =
             let rec collect_types (state, collected) = function
               | { Node.value = Tuple annotations; _ } ->
@@ -2065,7 +2114,7 @@ module State = struct
             in
             collect_types (state, []) annotations
           in
-          if Set.length state.errors > previous_errors then
+          if Map.length state.errors > previous_errors then
             state
           else
             let add_incompatible_non_meta_error state (non_meta, location) =
@@ -2102,21 +2151,28 @@ module State = struct
         forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
     | Call { callee; arguments } ->
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee } =
-          forward_expression ~state:{ state with errors = Error.Set.empty } ~expression:callee
+          forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:callee
         in
         let { state = ({ errors = updated_errors; _ } as updated_state); resolved } =
           forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
         in
-        if Set.is_empty (Set.filter ~f:is_terminating_error callee_errors) ||
+        if Map.is_empty (Map.filter ~f:is_terminating_error callee_errors) ||
            not (Type.is_top resolved_callee || Type.is_undeclared resolved_callee)
         then
-          let errors = Set.union updated_errors callee_errors in
+          let errors =
+            Map.merge_skewed
+              ~combine:(fun ~key:_ left right -> Error.join ~resolution left right)
+              callee_errors
+              updated_errors
+          in
           { state = { updated_state with errors }; resolved }
         else
           (* Do not throw more errors if callee already contains terminating error. *)
           let errors =
-            let { errors = existing_errors; _ } = state in
-            Set.union existing_errors callee_errors
+            Map.fold
+              callee_errors
+              ~init:state.errors
+              ~f:(fun ~key:_ ~data errors -> ErrorKey.add_error ~errors data)
           in
           { state = { state with errors }; resolved }
 
@@ -2339,7 +2395,7 @@ module State = struct
     | Name ((Name.Attribute { base; attribute }) as name) ->
         let reference = Reference.from_name name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base } =
-          forward_expression ~state:{ state with errors = Error.Set.empty } ~expression:base
+          forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:base
         in
         let ({ errors; _ } as state), resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
@@ -2481,14 +2537,24 @@ module State = struct
                 in
                 { state; resolved }
         in
-        if Set.is_empty (Set.filter ~f:is_terminating_error base_errors) ||
+        if Map.is_empty (Map.filter ~f:is_terminating_error base_errors) ||
            not (Type.is_top resolved_base || Type.is_undeclared resolved_base)
         then
-          let errors = Set.union updated_errors base_errors in
+          let errors =
+            Map.fold
+              base_errors
+              ~init:updated_errors
+              ~f:(fun ~key:_ ~data errors -> ErrorKey.add_error ~errors data)
+          in
           { state = { updated_state with errors }; resolved }
         else
           (* Do not throw more errors if base already contains terminating error. *)
-          let errors = Set.union errors base_errors in
+          let errors =
+            Map.fold
+              base_errors
+              ~init:errors
+              ~f:(fun ~key:_ ~data errors -> ErrorKey.add_error ~errors data)
+          in
           { state = { state with errors }; resolved }
 
     | Set elements ->
@@ -2892,10 +2958,10 @@ module State = struct
                 | _ ->
                     let { state = { errors; _ }; resolved } =
                       forward_expression
-                        ~state:{ state with errors = Error.Set.empty }
+                        ~state:{ state with errors = ErrorKey.Map.empty }
                         ~expression:target
                     in
-                    if Error.Set.is_empty errors then
+                    if Map.is_empty errors then
                       Annotation.create_immutable ~global:true resolved
                     else
                       Annotation.create Type.Top
@@ -4149,7 +4215,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     in
     {
       State.configuration = Configuration.Analysis.create ();
-      errors = Error.Set.empty;
+      errors = State.ErrorKey.Map.empty;
       define =
         Define.create_toplevel ~qualifier:None ~statements:[]
         |> Node.create_with_default_location;

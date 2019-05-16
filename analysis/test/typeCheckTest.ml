@@ -262,7 +262,7 @@ let test_check_annotation _ =
     in
     let state = create ~resolution [] in
     let { State.errors; _ }, _ = State.parse_and_check_annotation ~state !expression in
-    let errors = List.map ~f:(Error.description ~show_error_traces:false) (Set.to_list errors) in
+    let errors = List.map ~f:(Error.description ~show_error_traces:false) (Map.data errors) in
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:"\n")
@@ -1161,8 +1161,8 @@ let test_forward_statement _ =
   assert_forward
     ~errors:
       (`Specific [
-          "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
           "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
+          "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
         ])
     []
     "(x, y), z = 1"

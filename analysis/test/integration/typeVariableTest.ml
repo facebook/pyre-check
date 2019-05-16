@@ -545,9 +545,10 @@ let test_unbound_variables _ =
           pass
     |}
     [
-      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is incomplete, " ^
-      "so attribute `__iter__` cannot be accessed. Separate the expression into an assignment " ^
-      "and give it an explicit annotation.";
+      "Incomplete Type [37]: Type `typing.Union[typing.List[Variable[_T]], \
+       typing.List[Variable[_T]]]` inferred for `[]` is incomplete, \
+       so attribute `__iter__` cannot be accessed. Separate the expression into an assignment \
+       and give it an explicit annotation.";
     ];
   assert_type_errors
     {|

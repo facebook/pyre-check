@@ -53,6 +53,7 @@ let test_check_undefined_type _ =
         return x
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
+  (* TODO(T44482498): Fix our locations for types to throw twice for Herp. *)
   assert_default_type_errors
     {|
       def foo(x: typing.Union[Derp, Herp]) -> typing.List[Herp]:
@@ -60,7 +61,6 @@ let test_check_undefined_type _ =
     |}
     [
       "Undefined type [11]: Type `Derp` is not defined.";
-      "Undefined type [11]: Type `Herp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined.";
     ];
   assert_default_type_errors
@@ -90,6 +90,7 @@ let test_check_undefined_type _ =
         pass
     |}
     ["Undefined type [11]: Type `Optional` is not defined."];
+  (* TODO(T44482498): We should error on both Optional and Any. *)
   assert_default_type_errors
     {|
       def foo(x: Optional[Any]) -> None:
@@ -97,7 +98,6 @@ let test_check_undefined_type _ =
     |}
     [
       "Undefined type [11]: Type `Any` is not defined.";
-      "Undefined type [11]: Type `Optional` is not defined.";
     ];
   assert_default_type_errors
     {|
