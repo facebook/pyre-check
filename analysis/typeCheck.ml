@@ -420,13 +420,23 @@ module State = struct
         | Some { annotation = Type.Callable { implementation; _ }; _ }
           when Statement.Define.is_overloaded_method define &&
                Type.Callable.Overload.is_undefined implementation ->
-            let error =
-              Error.create
-                ~location
-                ~kind:(Error.MissingOverloadImplementation name)
-                ~define:define_node
+            let is_stub_file =
+              Location.instantiate
+                ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
+                location
+              |> Location.path
+              |> String.is_suffix ~suffix:".pyi"
             in
-            error :: errors
+            if not is_stub_file then
+              let error =
+                Error.create
+                  ~location
+                  ~kind:(Error.MissingOverloadImplementation name)
+                  ~define:define_node
+              in
+              error :: errors
+            else
+              errors
         | _ ->
             errors
       in

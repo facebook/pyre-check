@@ -27,6 +27,20 @@ let test_check_implementation _ =
     ];
 
   assert_type_errors
+    ~handle:"stub.pyi"
+    {|
+      from typing import overload
+      @overload
+      def foo() -> None:
+          pass
+
+      @overload
+      def foo() -> None:
+          pass
+    |}
+    [];
+
+  assert_type_errors
     {|
       from typing import overload
       @overload
