@@ -236,9 +236,18 @@ def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
     exit_nodes: Set[str] = set()
 
     def callback(function: str, definition: FunctionDefinition) -> None:
+        call_arguments = definition.args
         modified_arguments = ", ".join(
-            [argument.arg for argument in definition.args.args]
+            [argument.arg for argument in call_arguments.args]
         )
+
+        variable = call_arguments.vararg
+        if variable:
+            modified_arguments += f", *{variable.arg}"
+        keywords = call_arguments.kwarg
+        if keywords:
+            modified_arguments += f", **{keywords.arg}"
+
         exit_nodes.add(
             f"def {function}({modified_arguments}) -> TaintSink[ReturnedToUser]: ..."
         )

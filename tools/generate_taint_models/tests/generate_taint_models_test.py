@@ -246,7 +246,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
                 "urls.py": """url(r"derp", "module.view.function")""",
                 "module/view.py": textwrap.dedent(
                     """
-                    def function(request: HttpRequest) -> HttpResponse:
+                    def function(request: HttpRequest, **kwargs) -> HttpResponse:
                         pass
                     def unrelated() -> None: pass
                 """
@@ -258,7 +258,10 @@ class GenerateTaintModelsTest(unittest.TestCase):
         models = generate_taint_models._get_exit_nodes(arguments)
         self.assertSetEqual(
             models,
-            {"def module.view.function(request) -> TaintSink[ReturnedToUser]: ..."},
+            {
+                "def module.view.function(request, **kwargs)"
+                " -> TaintSink[ReturnedToUser]: ..."
+            },
         )
 
     @patch("builtins.open")
