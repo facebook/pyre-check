@@ -9,7 +9,6 @@ open IntegrationTest
 
 
 let test_check_implementation _ =
-
   assert_type_errors
     {|
       from typing import overload
@@ -26,7 +25,7 @@ let test_check_implementation _ =
        must have an implementation."
     ];
 
-  assert_type_errors
+  assert_default_type_errors
     ~handle:"stub.pyi"
     {|
       from typing import overload

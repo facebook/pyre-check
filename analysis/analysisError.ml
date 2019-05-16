@@ -2526,6 +2526,19 @@ let filter ~configuration ~resolution errors =
       | _ ->
           false
     in
+    let is_stub_error { kind; location; _ } =
+      let is_stub_path () =
+        Location.path location
+        |> String.is_suffix ~suffix:".pyi"
+      in
+      match kind with
+      | UninitializedAttribute _
+      | MissingOverloadImplementation _ ->
+          is_stub_path ()
+      | _ ->
+          false
+    in
+    is_stub_error error ||
     is_mock_error error ||
     is_unimplemented_return_error error ||
     is_builtin_import_error error ||

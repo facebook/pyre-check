@@ -875,6 +875,14 @@ let test_check_missing_attribute _ =
       "type `typing.Any` but is never initialized."
     ];
 
+  assert_default_type_errors
+    ~handle:"stub.pyi"
+    {|
+        class Foo:
+          a: int
+    |}
+    [];
+
   assert_type_errors
     {|
         class Foo:
