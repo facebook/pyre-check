@@ -123,8 +123,8 @@ let test_check_tuple _ =
         return x + y + z
     |}
     [
-      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
       "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
+      "Unable to unpack [23]: Unable to unpack `int` into 2 values.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
     ];
 

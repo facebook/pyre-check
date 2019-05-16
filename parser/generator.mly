@@ -1482,10 +1482,11 @@ test_list:
           }
         else
           head
-      | head::_, _ ->
+      | (head :: _ as items), _ ->
+          let last = List.last_exn items in
           {
-            Node.location = head.Node.location;
-            value = Tuple (fst items);
+            Node.location = { head.Node.location with Location.stop = Node.stop last };
+            value = Tuple items;
           }
       | _ -> raise (ParserError "invalid atom")
     }

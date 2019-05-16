@@ -4294,6 +4294,21 @@ let test_multiline_strings_positions _ =
   test_one "\"\"\"\nAAA \\\nBBB\n\"\"\"\npass"
 
 
+let test_tuple_location _ =
+  let parsed_source = parse_single_statement "(1, 2) = a" in
+  match parsed_source with
+  | { Node.value = Statement.Assign { target = { Node.location; _ }; _ }; _ } ->
+      let expected_location = {
+        Ast.Location.path = Location.path location;
+        start = { Ast.Location.line = 1; column = 1 };
+        stop = { Ast.Location.line = 1; column = 5 };
+      }
+      in
+      assert_equal ~cmp:Location.equal ~printer:Location.show expected_location location
+  | _ ->
+      assert_unreached ()
+
+
 let test_global _ =
   assert_parsed_equal "global a" [+Global ["a"]];
   assert_parsed_equal
@@ -4895,6 +4910,7 @@ let () =
     "comparison">::test_comparison;
     "call">::test_call;
     "call_arguments_location">::test_call_arguments_location;
+    "tuple_location">::test_tuple_location;
     "string">::test_string;
     "class">::test_class;
     "return">::test_return;
