@@ -323,6 +323,11 @@ def main() -> int:
         action="store_true",
         help="Do not spawn a watchman client in the background.",
     )
+    start.add_argument(
+        "--transitive",
+        action="store_true",
+        help="Calculate transitive dependencies of changed files.",
+    )
     start.set_defaults(command=commands.Start)
 
     stop = parsed_commands.add_parser(
@@ -346,6 +351,11 @@ def main() -> int:
         "--no-watchman",
         action="store_true",
         help="Do not spawn a watchman client in the background.",
+    )
+    restart.add_argument(
+        "--transitive",
+        action="store_true",
+        help="Calculate transitive dependencies of changed files.",
     )
     restart.set_defaults(command=commands.Restart)
 
