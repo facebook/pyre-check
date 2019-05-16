@@ -1082,6 +1082,7 @@ class TraceFrame(Base, PrepareMixin, RecordMixin):  # noqa
 
     __table_args__ = (
         Index("ix_traceframe_run_caller_port", "run_id", "caller_id", "caller_port"),
+        Index("ix_traceframe_run_callee_port", "run_id", "callee_id", "callee_port"),
     )
 
     id: DBID = Column(BIGDBIDType, nullable=False, primary_key=True)
