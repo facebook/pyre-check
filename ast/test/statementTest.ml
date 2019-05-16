@@ -280,6 +280,7 @@ let test_attributes _ =
       ?(toplevel = true)
       ?(final = false)
       ?(static = false)
+      ?(location = Location.Reference.any)
       ~name
       ~annotation
       ?defines
@@ -298,7 +299,7 @@ let test_attributes _ =
       final;
       static;
     }
-    |> Node.create_with_default_location
+    |> Node.create ~location
   in
   (* Test define field assigns. *)
   let assert_implicit_attributes source expected =
@@ -498,7 +499,18 @@ let test_attributes _ =
       expected =
     let assertion ~convert =
       let expected =
-        let attribute (name, annotation, value, setter, number_of_defines) =
+        let attribute (name, location, annotation, value, setter, number_of_defines) =
+          let location =
+            match location with
+            | None ->
+                None
+            | Some ((start_line, start_column), (stop_line, stop_column)) ->
+                Some {
+                  Location.path = String.hash "test.py";
+                  start = { Location.line = start_line; column = start_column };
+                  stop = { Location.line = stop_line; column = stop_column };
+                }
+          in
           let defines =
             if number_of_defines > 0 then
               let define = {
@@ -521,6 +533,7 @@ let test_attributes _ =
           create_attribute
             ~name
             ~annotation:(annotation >>| Type.expression ~convert)
+            ?location
             ?defines
             ~value:(value >>| parse_single_expression ~convert)
             ~setter
@@ -532,14 +545,18 @@ let test_attributes _ =
         List.map attributes ~f:Attribute.show
         |> String.concat ~sep:"\n\n"
       in
-      let equal { Node.value = left; _ } { Node.value = right; _ } =
+      let equal
+          { Node.value = left; location = left_location }
+          { Node.value = right; location = right_location } =
         let open Attribute in
         left.async = right.async &&
         left.setter = right.setter &&
         String.equal left.name right.name &&
         Option.equal Expression.equal left.annotation right.annotation &&
         Option.equal Expression.equal left.value right.value &&
-        Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
+        Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length) &&
+        (Location.equal left_location Location.Reference.any ||
+         Location.equal left_location right_location)
       in
       assert_equal
         ~cmp:(List.equal ~equal)
@@ -553,8 +570,8 @@ let test_attributes _ =
     assertion ~convert:true;
     assertion ~convert:false
   in
-  let attribute ~name ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
-    name, annotation, value, setter, number_of_defines
+  let attribute ~name ?location ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
+    name, location, annotation, value, setter, number_of_defines
   in
   assert_attributes
     {|
@@ -669,8 +686,8 @@ let test_attributes _ =
         Foo.a, Foo.b = 1, 2
      |}
     [
-      "a", None, Some "1", false, 0;
-      "b", None, Some "2", false, 0;
+      "a", None, None, Some "1", false, 0;
+      "b", None, None, Some "2", false, 0;
     ];
   assert_attributes
     {|
@@ -678,8 +695,8 @@ let test_attributes _ =
         Foo.a, Foo.b = list(range(2))
     |}
     [
-      "a", None, Some "list(range(2))[0]", false, 0;
-      "b", None, Some "list(range(2))[1]", false, 0;
+      "a", None, None, Some "list(range(2))[0]", false, 0;
+      "b", None, None, Some "list(range(2))[1]", false, 0;
     ];
 
   (* Implicit attributes in tests. *)
@@ -727,6 +744,16 @@ let test_attributes _ =
     [
       attribute ~name:"identifier" ();
       attribute ~name:"name" ();
+    ];
+
+  assert_attributes
+    {|
+      class Foo:
+        Foo.x, Foo.y = 1, 2
+    |}
+    [
+      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
+      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" ();
     ]
 
 

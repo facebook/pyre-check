@@ -919,7 +919,7 @@ module Class = struct
           value = { Node.value = Tuple values; _ };
           _;
         } ->
-          let add_attribute map target value =
+          let add_attribute map ({ Node.location; _ } as target) value =
             Attribute.name ~parent:name target
             |> function
             | Some name ->
@@ -934,10 +934,10 @@ module Class = struct
             map
       | Assign {
           Assign.target = { Node.value = Tuple targets; _ };
-          value = { Node.location; _ } as value;
+          value;
           _;
         } ->
-          let add_attribute index map target =
+          let add_attribute index map ({ Node.location; _ } as target) =
             Attribute.name ~parent:name target
             |> function
             | Some name ->
