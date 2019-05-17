@@ -114,22 +114,30 @@ let load
       ~get_old_link_path:(fun path -> Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
     |> List.map ~f:File.create
   in
-  Log.info "Reanalyzing %d files which have been modified." (List.length changed_files);
   let errors =
     EnvironmentSharedMemory.ServerErrors.find_unsafe "errors"
     |> File.Handle.Table.of_alist_exn
   in
-  {
-    State.deferred_state = State.Deferred.of_list changed_files;
-    environment;
-    errors;
-    scheduler;
-    lock;
-    last_request_time = Unix.time ();
-    last_integrity_check = Unix.time ();
-    connections;
-    lookups = String.Table.create ();
-  }
+  let state =
+    {
+      State.deferred_state = File.Set.empty;
+      environment;
+      errors;
+      scheduler;
+      lock;
+      last_request_time = Unix.time ();
+      last_integrity_check = Unix.time ();
+      connections;
+      lookups = String.Table.create ();
+    }
+  in
+  let changed_files =
+    Set.union
+      (Dependencies.compute_dependencies ~state ~configuration changed_files)
+      (File.Set.of_list changed_files)
+  in
+  Log.info "Reanalyzing %d files which may have been affected." (Set.length changed_files);
+  { state with State.deferred_state = changed_files }
 
 
 let save ~configuration ~errors ~saved_state_path =
