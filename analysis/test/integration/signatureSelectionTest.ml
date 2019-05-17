@@ -451,7 +451,7 @@ let test_check_function_parameters _ =
         b = a.get("key", set())
     |}
     [
-      "Incomplete Type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for " ^
+      "Incomplete type [37]: Type `typing.Dict[str, typing.Set[Variable[_T]]]` inferred for " ^
       "`a` is incomplete, add an explicit annotation.";
     ];
 

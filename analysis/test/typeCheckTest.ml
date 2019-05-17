@@ -810,7 +810,7 @@ let test_forward_expression _ =
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
   assert_forward
     ~errors:(`Specific [
-        "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is " ^
+        "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `[]` is " ^
         "incomplete, so attribute `__iter__` cannot be accessed. Separate the expression into " ^
         "an assignment and give it an explicit annotation.";
       ])

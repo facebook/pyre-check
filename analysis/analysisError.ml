@@ -273,7 +273,7 @@ let name = function
   | IncompatibleVariableType _ -> "Incompatible variable type"
   | InconsistentOverride _ -> "Inconsistent override"
   | IncompatibleOverload _ -> "Incompatible overload"
-  | IncompleteType _ -> "Incomplete Type"
+  | IncompleteType _ -> "Incomplete type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidType _ -> "Invalid type"

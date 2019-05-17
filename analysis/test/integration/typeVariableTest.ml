@@ -342,7 +342,7 @@ let test_unbound_variables _ =
         x = []
     |}
     [
-      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, " ^
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `x` is incomplete, " ^
       "add an explicit annotation.";
     ];
   assert_type_errors
@@ -413,7 +413,7 @@ let test_unbound_variables _ =
       def foo() -> None:
         x = bar([])
     |}
-    ["Incomplete Type [37]: Type inferred for `x` is incomplete, add an explicit annotation."];
+    ["Incomplete type [37]: Type inferred for `x` is incomplete, add an explicit annotation."];
   assert_type_errors
     {|
       T_Explicit = typing.TypeVar("T_Explicit", int, str)
@@ -436,7 +436,7 @@ let test_unbound_variables _ =
         return g
     |}
     [
-      "Incomplete Type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `g` is " ^
+      "Incomplete type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `g` is " ^
       "incomplete, add an explicit annotation.";
       "Revealed type [-1]: Revealed type for `g` is `G[typing.Any]`.";
       "Incompatible return type [7]: Expected `G[int]` but got `G[typing.Any]`.";
@@ -534,7 +534,7 @@ let test_unbound_variables _ =
         return G().foo()
     |}
     [
-      "Incomplete Type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `G.(...)` " ^
+      "Incomplete type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `G.(...)` " ^
       "is incomplete, so attribute `foo` cannot be accessed. Separate the expression into an " ^
       "assignment and give it an explicit annotation.";
     ];
@@ -545,7 +545,7 @@ let test_unbound_variables _ =
           pass
     |}
     [
-      "Incomplete Type [37]: Type `typing.Union[typing.List[Variable[_T]], \
+      "Incomplete type [37]: Type `typing.Union[typing.List[Variable[_T]], \
        typing.List[Variable[_T]]]` inferred for `[]` is incomplete, \
        so attribute `__iter__` cannot be accessed. Separate the expression into an assignment \
        and give it an explicit annotation.";
@@ -718,7 +718,7 @@ let test_distinguish _ =
          x = bar(foo, foo)
     |}
     [
-      "Incomplete Type [37]: Type `typing.Tuple[Variable[T1], Variable[T1]]` inferred for `x" ^
+      "Incomplete type [37]: Type `typing.Tuple[Variable[T1], Variable[T1]]` inferred for `x" ^
       "` is incomplete, add an explicit annotation.";
     ];
   assert_type_errors

@@ -373,7 +373,7 @@ let test_check_globals _ =
     [
       "Missing global annotation [5]: Globally accessible variable `x` has type " ^
       "`typing.Optional[str]` but no type is specified.";
-      "Incomplete Type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, " ^
+      "Incomplete type [37]: Type `typing.List[Variable[_T]]` inferred for `y` is incomplete, " ^
       "add an explicit annotation.";
       "Missing global annotation [5]: Globally accessible variable `y` has no type specified.";
       "Incompatible return type [7]: Expected `typing.List[int]` but got " ^
