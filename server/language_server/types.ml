@@ -241,6 +241,24 @@ module DidChangeTextDocumentParameters = struct
 end
 
 
+module CodeActionParameters = struct
+  module CodeActionContext = struct
+    type t = {
+      diagnostics: Diagnostic.t list [@default []];
+    }
+    [@@deriving yojson]
+  end
+
+
+  type t = {
+    textDocument: TextDocumentIdentifier.t;
+    range: Range.t;
+    context: CodeActionContext.t;
+  }
+  [@@deriving yojson]
+end
+
+
 module ShowMessageParameters = struct
   type messageType =
     | ErrorMessage
@@ -405,6 +423,44 @@ module ExecuteCommandOptions = struct
 end
 
 
+module CodeActionOptions = struct
+  type t = {
+    codeActionKinds: string list
+        [@key "codeActionKind"]
+  }
+  [@@deriving yojson]
+end
+
+
+module TextEdit = struct
+  type t = {
+    range: Range.t
+        [@key "range"];
+    newText: string
+        [@key "newText"];
+  }
+  [@@deriving yojson]
+end
+
+
+module CodeAction = struct
+  type t = {
+    title: string
+        [@key "title"];
+    kind: string option
+        [@key "kind"]
+        [@default None];
+    diagnostics: Diagnostic.t list option
+        [@key "diagnostics"]
+        [@default None];
+    command: ExecuteCommandOptions.t option
+        [@key "command"]
+        [@default None];
+  }
+  [@@deriving yojson]
+end
+
+
 module ServerCapabilities = struct
   module type S = sig
     type t = {
@@ -417,7 +473,7 @@ module ServerCapabilities = struct
       document_highlight_provider: bool option;
       document_symbol_provider: bool option;
       workspace_symbol_provider: bool option;
-      code_action_provider: bool option;
+      code_action_provider: CodeActionOptions.t option;
       code_lens_provider: CodeLensOptions.t option;
       document_formatting_provider: bool option;
       document_range_formatting_provider: bool option;
@@ -429,7 +485,7 @@ module ServerCapabilities = struct
       rage_provider: bool option;
     }
     and experimental
-    [@@deriving yojson]
+  [@@deriving yojson]
   end
 
   module Make (AnyExperimental: ToAny): S
@@ -462,7 +518,7 @@ module ServerCapabilities = struct
       workspace_symbol_provider: bool option
           [@key "workspaceSymbolProvider"]
           [@default None];
-      code_action_provider: bool option
+      code_action_provider: CodeActionOptions.t option
           [@key "codeActionProvider"]
           [@default None];
       code_lens_provider: CodeLensOptions.t option
@@ -690,7 +746,7 @@ module ClientCapabilities = struct
       window: WindowClientCapabilities.t option;
     }
     and experimental
-    [@@deriving of_yojson]
+  [@@deriving of_yojson]
   end
 
   module Make (AnyExperimental: OfAny): S
@@ -730,7 +786,7 @@ module RequestMessage = struct
       parameters: parameters option;
     }
     and parameters
-    [@@deriving of_yojson]
+  [@@deriving of_yojson]
   end
 
   module Make (AnyParameters: OfAny): S
@@ -762,7 +818,7 @@ module ResponseError = struct
       data: data option
     }
     and data
-    [@@deriving yojson]
+  [@@deriving yojson]
   end
 
   module Make (AnyData: ToAny): S with type data = AnyData.t = struct
@@ -791,7 +847,7 @@ module ResponseMessage = struct
     }
     and result
     and error
-    [@@deriving yojson]
+  [@@deriving yojson]
   end
 
   (** A response message is parameterized by a result which can be [Any] option,
@@ -826,7 +882,7 @@ module NotificationMessage = struct
       parameters: parameters option;
     }
     and parameters
-    [@@deriving yojson]
+  [@@deriving yojson]
   end
 
   module Make (AnyParameters: ToAny): S
@@ -912,6 +968,9 @@ end
 
 
 module TextDocumentDefinitionRequest = RequestMessage.Make(TextDocumentPositionParameters)
+
+
+module CodeActionRequest = RequestMessage.Make(CodeActionParameters)
 
 
 module RageRequest = struct
@@ -1029,6 +1088,8 @@ module RageResponse = struct
 
   include ResponseMessage.Make (RageResult) (RageError)
 end
+
+
 (** Notifications *)
 
 

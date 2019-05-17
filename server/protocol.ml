@@ -278,6 +278,7 @@ module Request = struct
     | OpenDocument of File.t
     | CloseDocument of File.t
     | SaveDocument of File.t
+    | CodeActionRequest of File.t
   [@@deriving eq, show]
 
 
@@ -311,6 +312,7 @@ module Request = struct
     | OpenDocument _ -> "OpenDocument"
     | CloseDocument _ -> "CloseDocument"
     | SaveDocument _ -> "SaveDocument"
+    | CodeActionRequest _ -> "CodeAction"
 end
 
 

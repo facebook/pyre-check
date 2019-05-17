@@ -463,6 +463,7 @@ let test_initialize_response _ =
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
+            "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
             "hoverProvider": true,
             "rageProvider": true,
@@ -486,6 +487,7 @@ let test_initialize_response _ =
         "jsonrpc": "2.0",
         "result": {
           "capabilities": {
+            "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
             "hoverProvider": true,
             "rageProvider": true,

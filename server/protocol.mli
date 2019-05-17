@@ -183,6 +183,7 @@ module Request : sig
     | OpenDocument of File.t
     | CloseDocument of File.t
     | SaveDocument of File.t
+    | CodeActionRequest of File.t
   [@@deriving eq, show]
 
   type origin =

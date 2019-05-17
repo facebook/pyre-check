@@ -183,6 +183,29 @@ let parse_lsp ~configuration ~request =
               Log.log ~section:`Server "Error: %s" yojson_error;
               None
         end
+    | "textDocument/codeAction" ->
+        begin
+          match CodeActionRequest.of_yojson request with
+          | Ok {
+              CodeActionRequest.parameters = Some {
+                  CodeActionParameters.textDocument = {
+                    TextDocumentIdentifier.uri;
+                    _;
+                  };
+                  _;
+                };
+              _;
+            } ->
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              CodeActionRequest file
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
+        end
 
     | "updateFiles" ->
         begin
@@ -1611,6 +1634,9 @@ let rec process
             |> Option.some
           in
           { state; response }
+
+      | CodeActionRequest _ ->
+          { state; response = None }
 
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)

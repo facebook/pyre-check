@@ -24,6 +24,8 @@ end
 
 module InitializeRequest = Types.InitializeRequest
 
+module CodeActionOptions = Types.CodeActionOptions
+
 module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 
 module PublishDiagnostics = struct
@@ -159,7 +161,9 @@ module InitializeResponse = struct
               document_highlight_provider = None;
               document_symbol_provider = None;
               workspace_symbol_provider = None;
-              code_action_provider = None;
+              code_action_provider = Some {
+                  codeActionKinds = ["refactor.rewrite"]
+                };
               code_lens_provider = None;
               document_formatting_provider = None;
               document_range_formatting_provider = None;
