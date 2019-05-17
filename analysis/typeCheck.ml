@@ -120,11 +120,6 @@ module State = struct
     Format.asprintf "%a" pp state
 
 
-  let equal_nested_define left right =
-    (* Ignore initial state. *)
-    Define.equal left.nested right.nested
-
-
   and equal left right =
     (* Ignore errors in unit tests. *)
     Map.equal

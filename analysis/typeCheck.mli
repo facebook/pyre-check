@@ -11,49 +11,7 @@ open Statement
 module Error = AnalysisError
 
 module State : sig
-  module ErrorKey: sig
-    type t = {
-      location: Location.Instantiated.t;
-      kind: int;
-    }
-    [@@deriving compare, sexp]
-
-    module Map: Map.S with type Key.t = t
-    val add_error: errors: Error.t Map.t -> Error.t -> Error.t Map.t
-  end
-
-  (* Keep track of nested functions to analyze and their initial states. *)
-  type nested_define
-
-  (* `configuration` provides access to global options.
-
-     `resolution` provides access to the local and global type environment.
-
-     `errors` is a map from locations to errors. We assume there can be only
-     one error per location.
-
-     `define` is the function we're currently checking.
-
-     `nested_defines` keeps track of entry points and states for nested function definitions.
-
-     `bottom` indicates whether the state is reachable.
-
-     The order is defined by values of the map, i.e.
-     left <= right <=>
-        keys(left) \subset \keys(right) \and
-        \forall key \in keys(left): left(key) <= right(key)
-
-     The join takes the union of keys and does an element-wise join on the
-     values. *)
-  and t = {
-    configuration: Configuration.Analysis.t;
-    resolution: Resolution.t;
-    errors: Error.t ErrorKey.Map.t;
-    define: Define.t Node.t;
-    nested_defines: nested_define Location.Reference.Map.t;
-    bottom: bool;
-    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
-  }
+  type t
   [@@deriving eq]
 
   val create
@@ -74,8 +32,6 @@ module State : sig
     -> Define.t Node.t
     -> t
 
-  val widening_threshold: int
-
   val resolve_exports: resolution: Resolution.t -> Reference.t -> Reference.t
 
   (* Visible for testing. *)
@@ -90,8 +46,6 @@ module State : sig
 
   include Fixpoint.State with type t := t
 end
-
-module Fixpoint : Fixpoint.Fixpoint with type state := State.t
 
 val resolution
   :  (module Environment.Handler)
