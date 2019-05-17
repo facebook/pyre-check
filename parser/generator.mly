@@ -295,7 +295,6 @@
 %right OR
 %right AND
 %left NOT
-%left IS
 %left BAR
 %left HAT
 %left AMPERSAND
@@ -891,25 +890,6 @@ identifier:
   | position = ASYNC {
       Location.create ~start:(fst position) ~stop:(snd position),
       "async"
-    }
-  ;
-
-simple_access:
-  | identifiers = separated_nonempty_list(DOT, identifier) {
-      let location =
-        let (start, _) = List.hd_exn identifiers in
-        let (stop, _) = List.last_exn identifiers in
-        { start with Location.stop = stop.Location.stop } in
-      let rec create = function
-        | [] -> failwith "Identifiers must be nonempty list."
-        | identifier :: [] ->
-            Name (Name.Identifier (snd identifier))
-            |> Node.create ~location:(fst identifier)
-        | identifier :: prefix ->
-            Name (Name.Attribute { base = create prefix; attribute = (snd identifier) })
-            |> Node.create ~location(fst identifier)
-      in
-      location, create (List.rev identifiers)
     }
   ;
 
