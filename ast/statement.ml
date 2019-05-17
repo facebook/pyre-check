@@ -390,6 +390,10 @@ module Define = struct
       has_decorator signature ((unqualified_name signature) ^ ".setter")
 
 
+    let is_property signature  =
+      has_decorator signature "property"
+
+
     let is_untyped { return_annotation; _ } =
       Option.is_none return_annotation
 
@@ -479,6 +483,10 @@ module Define = struct
 
   let is_property_setter { signature; _ } =
     Signature.is_property_setter signature
+
+
+  let is_property { signature; _ } =
+    Signature.is_property signature
 
 
   let is_untyped { signature; _ } =

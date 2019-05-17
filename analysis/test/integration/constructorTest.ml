@@ -635,6 +635,21 @@ let test_check_constructors _ =
       "Abstract class instantiation [38]: Cannot instantiate class `C` \
        because method `h` is not implemented.";
     ];
+  assert_type_errors
+    {|
+      from abc import ABCMeta, abstractmethod
+
+      class A(ABCMeta):
+          @property
+          @abstractmethod
+          def foo(self) -> int:
+              pass
+
+      class B(A):
+          foo:int = 1
+      B()
+    |}
+    [];
 
   (* Explicit call. *)
   assert_type_errors

@@ -217,6 +217,7 @@ module Define : sig
     val is_dunder_method: t -> bool
     val is_constructor: ?in_test: bool -> t -> bool
     val is_property_setter: t -> bool
+    val is_property: t -> bool
     val is_untyped: t -> bool
     val is_toplevel: t -> bool
     val is_class_toplevel: t -> bool
@@ -241,6 +242,7 @@ module Define : sig
   val is_dunder_method: t -> bool
   val is_constructor: ?in_test: bool -> t -> bool
   val is_property_setter: t -> bool
+  val is_property: t -> bool
   val is_untyped: t -> bool
   val is_stub: t -> bool
 

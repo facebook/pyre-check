@@ -1703,6 +1703,8 @@ module State = struct
                 let sofar =
                   if Statement.Class.is_abstract class_definition then
                     abstract_methods
+                    |> List.filter ~f:(fun method_definition ->
+                        not (Statement.Define.is_property method_definition))
                     |> List.map ~f:Statement.Define.unqualified_name
                     |> List.fold ~init:sofar ~f:Set.add
                   else
