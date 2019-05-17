@@ -54,6 +54,7 @@ let populate
       ~bottom:Type.Bottom
       ~top:Type.object_primitive
       all_annotations;
+    TypeOrder.sort_bottom_edges (module Handler.TypeOrderHandler) ~bottom:Type.Bottom;
     List.iter all_annotations
       ~f:(fun annotation ->
           match Type.primitive_name annotation with

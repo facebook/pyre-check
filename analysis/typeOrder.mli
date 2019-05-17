@@ -151,8 +151,8 @@ val connect_annotations_to_top
   :  (module Handler)
   -> top: Type.t
   -> Type.t list
-
   -> unit
+val sort_bottom_edges: (module Handler) -> bottom: Type.t -> unit
 
 val check_integrity: (module Handler) -> unit
 

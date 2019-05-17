@@ -2851,7 +2851,8 @@ let test_connect_annotations_to_top _ =
     connect order ~predecessor:!"0" ~successor:!"2";
     connect order ~predecessor:!"0" ~successor:!"1";
     connect_annotations_to_top order ~top:!"3" [!"0"; !"1"; !"2"; !"3"];
-    order in
+    order
+  in
 
   assert_equal
     (least_upper_bound order !"1" !"2")
@@ -2862,6 +2863,44 @@ let test_connect_annotations_to_top _ =
     (greatest_lower_bound order !"1" !"3")
     [!"1"]
 
+
+let test_sort_bottom_edges _ =
+  (* Partial partial order:
+      0 - 2
+      |
+      1   3 *)
+  let (module Handler: Handler) =
+    let order = Builder.create () |> TypeOrder.handler in
+    insert order Type.Bottom;
+    insert order Type.Top;
+    insert order !"0";
+    insert order !"1";
+    insert order !"2";
+    insert order !"3";
+    connect order ~predecessor:Type.Bottom ~successor:!"0";
+    connect order ~predecessor:Type.Bottom ~successor:!"2";
+    connect order ~predecessor:Type.Bottom ~successor:!"3";
+    connect order ~predecessor:Type.Bottom ~successor:!"1";
+    connect order ~predecessor:!"0" ~successor:Type.Top;
+    connect order ~predecessor:!"3" ~successor:Type.Top;
+    connect order ~predecessor:!"2" ~successor:Type.Top;
+    connect order ~predecessor:!"1" ~successor:Type.Top;
+    order in
+  let assert_bottom_edges expected =
+    let bottom_edges =
+      Handler.find_unsafe
+        (Handler.edges ())
+        (Handler.find_unsafe (Handler.indices ()) Type.Bottom)
+      |> List.map
+        ~f:(fun { Target.target; _ } -> Handler.find_unsafe (Handler.annotations ()) target)
+      |> List.map ~f:Type.show
+    in
+    assert_equal ~printer:(List.to_string ~f:ident) expected bottom_edges
+  in
+  assert_bottom_edges ["1"; "3"; "2"; "0"];
+  (* We sort by target, which is not necessarily alphabetical. *)
+  TypeOrder.sort_bottom_edges (module Handler) ~bottom:Type.Bottom;
+  assert_bottom_edges ["1"; "2"; "3"; "0"]
 
 let test_backedges _ =
   let (module Handler: TypeOrder.Handler) =
@@ -4100,6 +4139,7 @@ let () =
     "meet">::test_meet;
     "method_resolution_order_linearize">::test_method_resolution_order_linearize;
     "remove_extra_edges">::test_remove_extra_edges;
+    "sort_bottom_edges">::test_sort_bottom_edges;
     "successors">::test_successors;
     "to_dot">::test_to_dot;
     "normalize">::test_normalize;

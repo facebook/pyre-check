@@ -2419,6 +2419,18 @@ let connect_annotations_to_top
   List.iter ~f:connect_to_top annotations
 
 
+let sort_bottom_edges (module Handler: Handler) ~bottom =
+  let bottom_index = Handler.find_unsafe (Handler.indices ()) bottom in
+  match Handler.find (Handler.edges ()) bottom_index with
+  | None ->
+      ()
+  | Some edges ->
+      Handler.set
+        (Handler.edges ())
+        ~key:bottom_index
+        ~data:(List.rev (List.sort edges ~compare:Target.compare))
+
+
 let check_integrity (module Handler: Handler) =
   (* Check `Top` and `Bottom`. *)
   let contains annotation = Handler.contains (Handler.indices ()) annotation in
@@ -2544,6 +2556,7 @@ let to_dot (module Handler: Handler) =
   List.iter ~f:add_edges indices;
   Buffer.add_string buffer "}";
   Buffer.contents buffer
+
 
 
 module Builder = struct
