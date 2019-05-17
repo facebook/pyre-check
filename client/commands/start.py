@@ -131,6 +131,10 @@ class Start(Reporting):
             flags.extend(["-save-initial-state-to", self._save_initial_state_to])
         if self._saved_state_project:
             flags.extend(["-saved-state-project", self._saved_state_project])
+            local_configuration_root = self._configuration.local_configuration_root
+            if local_configuration_root is not None:
+                relative = os.path.relpath(local_configuration_root)
+                flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
         if self._configuration_file_hash:
             flags.extend(["-configuration-file-hash", self._configuration_file_hash])
         if (

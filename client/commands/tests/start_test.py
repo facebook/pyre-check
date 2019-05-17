@@ -5,6 +5,7 @@
 
 import errno
 import fcntl
+import os
 import unittest
 from unittest.mock import MagicMock, call, mock_open, patch
 
@@ -464,6 +465,35 @@ class StartTest(unittest.TestCase):
                 "-project-root",
                 ".",
                 "-store-type-check-resolution",
+                "-workers",
+                "5",
+                "-typeshed",
+                "stub",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2",
+            ],
+        )
+
+        arguments = mock_arguments(saved_state_project="pyre/saved_state")
+        configuration = mock_configuration()
+        configuration.local_configuration_root = os.path.join(
+            os.getcwd(), "first/second"
+        )
+        configuration.version_hash = "hash"
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-saved-state-project",
+                "pyre/saved_state",
+                "-saved-state-metadata",
+                "first$second",
                 "-workers",
                 "5",
                 "-typeshed",

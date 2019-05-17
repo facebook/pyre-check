@@ -77,6 +77,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.typeshed = "stub"
     configuration.version_hash = version_hash
     configuration.file_hash = file_hash
+    configuration.local_configuration_root = None
     return configuration
 
 
