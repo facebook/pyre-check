@@ -1050,7 +1050,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~handle:"unittest.pyi"
       {|
         class TestCase:
-            def assertIsNotNone(self, x:Any) -> Bool:
+            def assertIsNotNone(self, x: Any) -> Bool:
+              ...
+            def assertTrue(self, x: Any) -> Bool:
+              ...
+            def assertFalse(self, x: Any) -> Bool:
               ...
       |}
     |> Preprocessing.preprocess;

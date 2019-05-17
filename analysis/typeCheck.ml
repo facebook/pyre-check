@@ -2142,12 +2142,24 @@ module State = struct
         { state; resolved = Type.bool }
     | Call {
         callee = {
-          Node.value = Name (Name.Attribute { attribute = "assertIsNotNone"; _ });
+          Node.value = Name (Name.Attribute { attribute = ("assertIsNotNone" | "assertTrue"); _ });
           _
         } as callee;
         arguments = [{ Call.Argument.value = expression; _ };] as arguments;
       } ->
         let { resolution; _ } = forward_statement ~state ~statement:(Statement.assume expression) in
+        let { state; resolved = resolved_callee } =
+          forward_expression ~state:{ state with resolution } ~expression:callee in
+        forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+    | Call {
+        callee = {
+          Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ });
+          _
+        } as callee;
+        arguments = [{ Call.Argument.value = expression; _}] as arguments;
+      } ->
+        let { resolution; _ } =
+          forward_statement ~state ~statement:(Statement.assume (Expression.negate expression)) in
         let { state; resolved = resolved_callee } =
           forward_expression ~state:{ state with resolution } ~expression:callee in
         forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
