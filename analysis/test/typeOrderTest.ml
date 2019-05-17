@@ -3116,7 +3116,7 @@ let test_normalize _ =
   assert_normalize
     ~edges:[Type.Bottom, !"A"; Type.Bottom, !"B"; !"other", !"A"; !"other", !"B"]
     ~expected_edges:[
-      Type.Bottom, [!"A"; !"B"];
+      Type.Bottom, [!"B"; !"A"];
       !"other", [!"B"; !"A"];
     ]
     ~expected_backedges:[
