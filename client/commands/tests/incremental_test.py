@@ -5,7 +5,7 @@
 
 import subprocess
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
 
 from ... import commands
 from ...commands import stop  # noqa
@@ -14,7 +14,11 @@ from ...filesystem import AnalysisDirectory, SharedAnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
+_typeshed_search_path = "{}.typeshed_search_path".format(commands.incremental.__name__)
+
+
 class IncrementalTest(unittest.TestCase):
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(incremental, "Monitor")
     @patch.object(commands.Command, "_state")
     @patch.object(incremental, "Start")
@@ -52,12 +56,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -87,12 +89,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                     "-nonblocking",
                 ],
             )
@@ -121,12 +121,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                     "-transitive",
                 ],
             )
@@ -151,12 +149,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -183,12 +179,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -214,12 +208,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     ".",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -267,12 +259,10 @@ class IncrementalTest(unittest.TestCase):
                     "parser",
                     "-project-root",
                     "/",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 

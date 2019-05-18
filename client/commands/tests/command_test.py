@@ -5,7 +5,8 @@
 
 import io
 import unittest
-from unittest.mock import MagicMock, mock_open, patch
+from typing import List
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import EnvironmentException  # noqa
 from ... import commands  # noqa
@@ -146,21 +147,29 @@ class CommandTest(unittest.TestCase):
             ],
         )
 
-    def test_profiling(self) -> None:
-        arguments = mock_arguments()
-        arguments.enable_profiling = True
-        configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(".")
+    @patch("os.path.isdir", Mock(return_value=True))
+    @patch("os.listdir")
+    def test_profiling(self, os_listdir) -> None:
+        # Mock typeshed file hierarchy
+        def mock_listdir(path: str) -> List[str]:
+            if path == "root/stdlib":
+                return ["2.7", "2", "2and3", "3.5", "3.6", "3.7", "3"]
+            elif path == "root/third_party":
+                return ["3", "3.5", "2", "2and3"]
+            else:
+                raise RuntimeError("Path not expected by mock listdir")
 
-        command = commands.Command(arguments, configuration, analysis_directory)
+        os_listdir.side_effect = mock_listdir
         self.assertEqual(
-            command._flags(),
+            commands.typeshed_search_path("root"),
             [
-                "-logging-sections",
-                "parser",
-                "-profiling-output",
-                ".pyre/profiling.log",
-                "-project-root",
-                ".",
+                "root/stdlib/3.7",
+                "root/stdlib/3.6",
+                "root/stdlib/3.5",
+                "root/stdlib/3",
+                "root/stdlib/2and3",
+                "root/third_party/3.5",
+                "root/third_party/3",
+                "root/third_party/2and3",
             ],
         )

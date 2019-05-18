@@ -25,4 +25,5 @@ from .command import (  # noqa; noqa; noqa
     ClientException as ClientException,
     Command as Command,
     ExitCode as ExitCode,
+    typeshed_search_path as typeshed_search_path,
 )

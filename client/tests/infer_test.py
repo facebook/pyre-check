@@ -6,9 +6,9 @@
 import sys
 import textwrap
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
-from .. import commands, configuration, log
+from .. import commands, configuration, infer, log
 from ..error import Error
 from ..filesystem import AnalysisDirectory
 from ..infer import (
@@ -20,6 +20,9 @@ from ..infer import (
     dequalify,
     main,
 )
+
+
+_typeshed_search_path = "{}.typeshed_search_path".format(infer.__name__)
 
 
 def build_json(inference):
@@ -527,6 +530,7 @@ def mock_configuration() -> MagicMock:
 
 class InferTest(unittest.TestCase):
     @patch("json.loads", return_value=[])
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(self, directories_to_analyze, json_loads) -> None:
         arguments = mock_arguments()
@@ -545,10 +549,8 @@ class InferTest(unittest.TestCase):
                     "-project-root",
                     ".",
                     "-infer",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -565,10 +567,8 @@ class InferTest(unittest.TestCase):
                     "-project-root",
                     ".",
                     "-infer",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                     "-recursive-infer",
                 ],
             )

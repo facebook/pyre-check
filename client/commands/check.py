@@ -8,7 +8,7 @@ from typing import List
 
 from ..buck_project_builder import BuilderException
 from ..buck_project_builder.parser import ParserException
-from .command import ExitCode
+from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -27,15 +27,10 @@ class Check(Reporting):
         filter_directories = self._get_directories_to_analyze()
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-        flags.extend(
-            [
-                "-workers",
-                str(self._number_of_workers),
-                "-typeshed",
-                self._configuration.typeshed,
-            ]
+        flags.extend(["-workers", str(self._number_of_workers)])
+        search_path = self._configuration.search_path + typeshed_search_path(
+            self._configuration.typeshed
         )
-        search_path = self._configuration.search_path
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         excludes = self._configuration.excludes

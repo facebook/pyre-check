@@ -7,15 +7,19 @@ import errno
 import fcntl
 import os
 import unittest
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 from ... import commands, monitor, project_files_monitor  # noqa
 from ...filesystem import AnalysisDirectory, acquire_lock  # noqa
 from .command_test import mock_arguments, mock_configuration
 
 
+_typeshed_search_path = "{}.typeshed_search_path".format(commands.start.__name__)
+
+
 class StartTest(unittest.TestCase):
     @patch("fcntl.lockf")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     @patch.object(monitor.Monitor, "daemonize")
     def test_start(self, _daemonize, get_directories_to_analyze, lock_file) -> None:
@@ -42,12 +46,10 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -70,12 +72,10 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -112,12 +112,10 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -145,12 +143,10 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             with self.assertRaises(OSError):
@@ -184,12 +180,10 @@ class StartTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -197,6 +191,7 @@ class StartTest(unittest.TestCase):
             prepare.assert_called_once_with()
             Monitor.assert_not_called()
 
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_start_flags(self, get_directories_to_analyze):
         # Check start with watchman.
@@ -212,12 +207,10 @@ class StartTest(unittest.TestCase):
                 ".",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
 
@@ -234,12 +227,10 @@ class StartTest(unittest.TestCase):
                 "-terminal",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
 
@@ -260,12 +251,10 @@ class StartTest(unittest.TestCase):
                     "a;b",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -288,12 +277,10 @@ class StartTest(unittest.TestCase):
                     "ABCD",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-expected-binary-version",
                     "hash",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
 
@@ -312,12 +299,10 @@ class StartTest(unittest.TestCase):
                 "/tmp",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
 
@@ -340,12 +325,10 @@ class StartTest(unittest.TestCase):
                 "/tmp/changed_files",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
         # Both changed-files-path and load-initial-state-from must be not-None.
@@ -360,12 +343,10 @@ class StartTest(unittest.TestCase):
                 ".",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
         # Check load-initial-state-from.
@@ -380,12 +361,10 @@ class StartTest(unittest.TestCase):
                 ".",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
         # Check --saved-state-project.
@@ -402,12 +381,10 @@ class StartTest(unittest.TestCase):
                 "pyre/saved_state",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
         # Check --no-saved-state.
@@ -424,12 +401,10 @@ class StartTest(unittest.TestCase):
                 ".",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
 
@@ -447,12 +422,10 @@ class StartTest(unittest.TestCase):
                 ".",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
         arguments = mock_arguments(store_type_check_resolution=True)
@@ -467,12 +440,10 @@ class StartTest(unittest.TestCase):
                 "-store-type-check-resolution",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )
 
@@ -496,11 +467,9 @@ class StartTest(unittest.TestCase):
                 "first$second",
                 "-workers",
                 "5",
-                "-typeshed",
-                "stub",
                 "-expected-binary-version",
                 "hash",
                 "-search-path",
-                "path1,path2",
+                "path1,path2,path3",
             ],
         )

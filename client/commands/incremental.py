@@ -11,7 +11,7 @@ import sys
 from typing import IO, List, cast
 
 from ..project_files_monitor import Monitor, MonitorException
-from .command import ClientException, ExitCode, State
+from .command import ClientException, ExitCode, State, typeshed_search_path
 from .reporting import Reporting
 from .start import Start
 
@@ -64,16 +64,11 @@ class Incremental(Reporting):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
-        flags.extend(
-            [
-                "-typeshed",
-                self._configuration.typeshed,
-                "-expected-binary-version",
-                self._configuration.version_hash,
-            ]
-        )
+        flags.extend(["-expected-binary-version", self._configuration.version_hash])
 
-        search_path = self._configuration.search_path
+        search_path = self._configuration.search_path + typeshed_search_path(
+            self._configuration.typeshed
+        )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

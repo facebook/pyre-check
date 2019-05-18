@@ -31,7 +31,7 @@ from . import (
 )
 from .buck_project_builder import BuilderException
 from .buck_project_builder.parser import ParserException
-from .commands import ExitCode
+from .commands import ExitCode, typeshed_search_path
 from .configuration import Configuration
 from .filesystem import AnalysisDirectory, SharedAnalysisDirectory
 
@@ -410,8 +410,10 @@ class Infer(commands.Reporting):
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
-        flags.extend(["-infer", "-typeshed", self._configuration.typeshed])
-        search_path = self._configuration.search_path
+        flags.extend(["-infer"])
+        search_path = self._configuration.search_path + typeshed_search_path(
+            self._configuration.typeshed
+        )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
         if self._recursive:

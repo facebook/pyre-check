@@ -11,7 +11,7 @@ from typing import List, Optional
 from .. import filesystem, monitor, project_files_monitor
 from ..buck_project_builder import BuilderException
 from ..buck_project_builder.parser import ParserException
-from .command import ExitCode
+from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
 
@@ -167,13 +167,13 @@ class Start(Reporting):
             [
                 "-workers",
                 str(self._number_of_workers),
-                "-typeshed",
-                self._configuration.typeshed,
                 "-expected-binary-version",
                 self._configuration.version_hash,
             ]
         )
-        search_path = self._configuration.search_path
+        search_path = self._configuration.search_path + typeshed_search_path(
+            self._configuration.typeshed
+        )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
 

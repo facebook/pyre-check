@@ -4,16 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from ... import commands  # noqa
 from ...filesystem import AnalysisDirectory
 from .command_test import mock_arguments, mock_configuration
 
 
+_typeshed_search_path = "{}.typeshed_search_path".format(commands.check.__name__)
+
+
 class CheckTest(unittest.TestCase):
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check(self, get_directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
@@ -34,10 +38,8 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -57,6 +59,7 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_sequential_check(
         self, directories_to_analyze, realpath, check_output
@@ -81,10 +84,8 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -92,6 +93,7 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(
         commands.Reporting, "_get_directories_to_analyze", return_value=set(["a", "b"])
     )
@@ -120,10 +122,8 @@ class CheckTest(unittest.TestCase):
                     "a;b",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -131,6 +131,7 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_dumb_terminal(
         self, directories_to_analyze, realpath, check_output
@@ -154,10 +155,8 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             exit_code = command.run().exit_code()
@@ -166,6 +165,7 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_hide_parse_errors(
         self, directories_to_analyze, realpath, check_output
@@ -187,10 +187,8 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
@@ -198,6 +196,7 @@ class CheckTest(unittest.TestCase):
 
     @patch("subprocess.check_output")
     @patch("os.path.realpath")
+    @patch(_typeshed_search_path, Mock(return_value=["path3"]))
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_check_strict(self, directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
@@ -220,10 +219,8 @@ class CheckTest(unittest.TestCase):
                     ".",
                     "-workers",
                     "5",
-                    "-typeshed",
-                    "stub",
                     "-search-path",
-                    "path1,path2",
+                    "path1,path2,path3",
                 ],
             )
             command.run()
