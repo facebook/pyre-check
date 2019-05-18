@@ -13,6 +13,44 @@ open Statement
 
 module Error = AnalysisError
 
+
+let resolve_exports ~resolution reference =
+  (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
+  let widening_threshold = 25 in
+  let rec resolve_exports_fixpoint ~reference ~visited ~count =
+    if Set.mem visited reference || count > widening_threshold then
+      reference
+    else
+      let rec resolve_exports ~lead ~tail =
+        match tail with
+        | head :: tail ->
+            Resolution.module_definition resolution (Reference.create_from_list lead)
+            >>| (fun definition ->
+                match Module.aliased_export definition (Reference.create head) with
+                | Some export ->
+                    Reference.combine export (Reference.create_from_list tail)
+                | _ ->
+                    resolve_exports ~lead:(lead @ [head]) ~tail)
+            |> Option.value ~default:reference
+        | _ ->
+            reference
+      in
+      match Reference.as_list reference with
+      | head :: tail ->
+          let exported_reference = resolve_exports ~lead:[head] ~tail in
+          if Reference.is_strict_prefix ~prefix:reference exported_reference then
+            reference
+          else
+            resolve_exports_fixpoint
+              ~reference:exported_reference
+              ~visited:(Set.add visited reference)
+              ~count:(count + 1)
+      | _ ->
+          reference
+  in
+  resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
 module State = struct
   type nested_define_state = {
     nested_resolution: Resolution.t;
@@ -681,42 +719,6 @@ module State = struct
     Error.create ~location ~kind ~define
     |> emit_raw_error ~state
 
-
-  let resolve_exports ~resolution reference =
-    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-    let widening_threshold = 25 in
-    let rec resolve_exports_fixpoint ~reference ~visited ~count =
-      if Set.mem visited reference || count > widening_threshold then
-        reference
-      else
-        let rec resolve_exports ~lead ~tail =
-          match tail with
-          | head :: tail ->
-              Resolution.module_definition resolution (Reference.create_from_list lead)
-              >>| (fun definition ->
-                  match Module.aliased_export definition (Reference.create head) with
-                  | Some export ->
-                      Reference.combine export (Reference.create_from_list tail)
-                  | _ ->
-                      resolve_exports ~lead:(lead @ [head]) ~tail)
-              |> Option.value ~default:reference
-          | _ ->
-              reference
-        in
-        match Reference.as_list reference with
-        | head :: tail ->
-            let exported_reference = resolve_exports ~lead:[head] ~tail in
-            if Reference.is_strict_prefix ~prefix:reference exported_reference then
-              reference
-            else
-              resolve_exports_fixpoint
-                ~reference:exported_reference
-                ~visited:(Set.add visited reference)
-                ~count:(count + 1)
-        | _ ->
-            reference
-    in
-    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
 
 
   type resolved = {

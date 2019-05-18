@@ -338,7 +338,7 @@ let resolve_exports ~resolution = function
       in
       let prefix =
         Reference.from_access simple_prefix
-        |> TypeCheck.State.resolve_exports ~resolution
+        |> TypeCheck.resolve_exports ~resolution
         |> Reference.access
       in
       Access.SimpleAccess (prefix @ suffix)

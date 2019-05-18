@@ -358,7 +358,7 @@ let test_resolve_exports _ =
       |> (fun environment -> TypeCheck.resolution environment ())
     in
     let reference =
-      State.resolve_exports ~resolution (Reference.create name)
+      resolve_exports ~resolution (Reference.create name)
     in
     assert_equal
       ~printer:Reference.show

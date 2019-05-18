@@ -10,6 +10,9 @@ open Statement
 
 module Error = AnalysisError
 
+
+val resolve_exports: resolution: Resolution.t -> Reference.t -> Reference.t
+
 module State : sig
   type t
   [@@deriving eq]
@@ -31,8 +34,6 @@ module State : sig
     -> resolution: Resolution.t
     -> Define.t Node.t
     -> t
-
-  val resolve_exports: resolution: Resolution.t -> Reference.t -> Reference.t
 
   (* Visible for testing. *)
   type resolved = {
