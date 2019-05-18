@@ -51,7 +51,47 @@ let resolve_exports ~resolution reference =
   resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
 
 
-module State = struct
+module type Context = sig
+  val define: Define.t Node.t
+end
+
+
+module type Signature = sig
+  type t
+  [@@deriving eq]
+
+  val create
+    :  ?configuration: Configuration.Analysis.t
+    -> ?bottom: bool
+    -> resolution: Resolution.t
+    -> ?resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
+    -> unit
+    -> t
+
+  val errors: t -> Error.t list
+  val coverage: t -> Coverage.t
+
+  val initial
+    :  ?configuration: Configuration.Analysis.t
+    -> resolution: Resolution.t
+    -> unit
+    -> t
+
+  (* Visible for testing. *)
+  type resolved = {
+    state: t;
+    resolved: Type.t;
+  }
+
+  val parse_and_check_annotation: ?bind_variables:bool ->  state: t -> Expression.t -> t * Type.t
+  val forward_expression: state: t -> expression: Expression.t -> resolved
+  val forward_statement: state: t -> statement: Statement.t -> t
+
+  include Fixpoint.State with type t := t
+end
+
+
+module State(Context: Context) = struct
   type nested_define_state = {
     nested_resolution: Resolution.t;
     nested_bottom: bool;
@@ -88,7 +128,6 @@ module State = struct
     configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
     errors: Error.t ErrorKey.Map.t;
-    define: Define.t Node.t;
     check_return: bool;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
@@ -105,12 +144,15 @@ module State = struct
       {
         resolution;
         errors;
-        define = { Node.value = define; _ };
         nested_defines;
         bottom;
         _;
       } =
-    let expected = Annotated.Callable.return_annotation ~define ~resolution in
+    let expected =
+      Annotated.Callable.return_annotation
+        ~define:(Node.value Context.define)
+        ~resolution
+    in
     let nested_defines =
       let nested_define_to_string nested_define =
         Format.asprintf
@@ -172,14 +214,12 @@ module State = struct
       ?(configuration = Configuration.Analysis.create ())
       ?(bottom = false)
       ~resolution
-      ~define
       ?(resolution_fixpoint = Int.Map.Tree.empty)
       () =
     {
       configuration;
       resolution;
       errors = ErrorKey.Map.empty;
-      define;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom;
@@ -187,13 +227,13 @@ module State = struct
     }
 
 
-  let add_invalid_type_parameters_errors ~resolution ~location ~define ~errors annotation =
+  let add_invalid_type_parameters_errors ~resolution ~location ~errors annotation =
     let mismatches, annotation = Resolution.check_invalid_type_parameters resolution annotation in
     let add_error errors mismatch =
       Error.create
         ~location
         ~kind:(Error.InvalidTypeParameters mismatch)
-        ~define
+        ~define:Context.define
       |> ErrorKey.add_error ~errors
     in
     List.fold mismatches ~f:add_error ~init:errors, annotation
@@ -201,9 +241,9 @@ module State = struct
 
   let parse_and_check_annotation
       ?(bind_variables = true)
-      ~state:({ errors; define; resolution; _ } as state)
+      ~state:({ errors; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
-    let check_and_correct_annotation ~resolution ~location ~define ~annotation ~resolved errors =
+    let check_and_correct_annotation ~resolution ~location ~annotation ~resolved errors =
       let is_aliased_to_any =
         (* Special-case expressions typed as Any to be valid types. *)
         match annotation with
@@ -217,18 +257,19 @@ module State = struct
           Error.create
             ~location
             ~kind:(Error.InvalidType (InvalidType annotation))
-            ~define
+            ~define:Context.define
           :: errors
         else
-          Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
+          Error.create ~location ~kind:(Error.UndefinedType annotation) ~define:Context.define
+          :: errors
       in
       let check_invalid_variables resolution errors variable =
         if not (Resolution.type_variable_exists resolution ~variable) then
           let error =
             let origin =
-              if Define.is_toplevel (Node.value define) then
+              if Define.is_toplevel (Node.value Context.define) then
                 Error.Toplevel
-              else if Define.is_class_toplevel (Node.value define) then
+              else if Define.is_class_toplevel (Node.value Context.define) then
                 Error.ClassToplevel
               else
                 Error.Define
@@ -236,7 +277,7 @@ module State = struct
             Error.create
               ~location
               ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
-              ~define
+              ~define:Context.define
           in
           error :: errors
         else
@@ -273,7 +314,7 @@ module State = struct
               ~init:errors)
       in
       if List.is_empty critical_errors then
-        add_invalid_type_parameters_errors annotation ~resolution ~location ~define ~errors
+        add_invalid_type_parameters_errors annotation ~resolution ~location ~errors
       else
         let errors =
           List.fold
@@ -296,14 +337,14 @@ module State = struct
         Error.create
           ~location
           ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
-          ~define
+          ~define:Context.define
         |> ErrorKey.add_error ~errors
       else
         errors
     in
     let resolved = Resolution.resolve resolution expression in
     let errors, annotation =
-      check_and_correct_annotation errors ~resolution ~location ~define ~annotation ~resolved
+      check_and_correct_annotation errors ~resolution ~location ~annotation ~resolved
     in
     let annotation =
       if bind_variables then Type.Variable.mark_all_variables_as_bound annotation else annotation
@@ -311,22 +352,18 @@ module State = struct
     { state with errors }, annotation
 
 
-  let errors
-      {
-        configuration;
-        resolution;
-        errors;
-        define = ({
-            Node.value = { Define.signature = { name; _ }; _ } as define;
-            location;
-          } as define_node);
-        _;
-      } =
+  let errors { configuration; resolution; errors; _ } =
+    let {
+      Node.value = { Define.signature = { name; _ }; _ } as define;
+      location;
+    } =
+      Context.define
+    in
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init.
          This must happen after typechecking is finished to access the annotations
          added to resolution. *)
-      let check_attributes_initialized define =
+      let check_attributes_initialized () =
         let open Annotated in
         (Define.parent_definition ~resolution (Define.create define)
          >>| fun definition ->
@@ -358,7 +395,7 @@ module State = struct
                            due_to_invariance = false;
                          };
                        })
-                     ~define:define_node
+                     ~define:Context.define
                  in
                  error :: errors
            | name ->
@@ -398,7 +435,7 @@ module State = struct
                                 ~covariant:false)
                        }
                    in
-                   (Error.create ~location ~kind ~define:define_node) :: errors
+                   (Error.create ~location ~kind ~define:Context.define) :: errors
                in
                Class.overrides ~resolution ~name definition
                >>| check_override
@@ -412,7 +449,7 @@ module State = struct
            definition)
         |> Option.value ~default:errors
       in
-      let check_bases define =
+      let check_bases () =
         let open Annotated in
         let is_final { Call.Argument.name; value } =
           let add_error { Resolution.is_final; _ } =
@@ -423,7 +460,7 @@ module State = struct
                   ~kind:(
                     Error.InvalidInheritance (Class (Expression.show value))
                   )
-                  ~define:define_node
+                  ~define:Context.define
               in
               error :: errors
             else
@@ -445,8 +482,8 @@ module State = struct
         |> Option.value ~default:errors
       in
       if Define.is_constructor define && not (Define.is_stub define) then
-        let base_errors = check_bases define in
-        List.append base_errors (check_attributes_initialized define)
+        let base_errors = check_bases () in
+        List.append base_errors (check_attributes_initialized ())
       else if Define.is_class_toplevel define then
         begin
           let no_explicit_class_constructor =
@@ -462,8 +499,8 @@ module State = struct
             |> Option.value ~default:false
           in
           if no_explicit_class_constructor then
-            let base_errors = check_bases define in
-            List.append base_errors (check_attributes_initialized define)
+            let base_errors = check_bases () in
+            List.append base_errors (check_attributes_initialized ())
           else
             errors
         end
@@ -483,7 +520,7 @@ module State = struct
               Error.create
                 ~location
                 ~kind:(Error.MissingOverloadImplementation name)
-                ~define:define_node
+                ~define:Context.define
             in
             error :: errors
         | _ ->
@@ -516,7 +553,7 @@ module State = struct
                           overload_annotation = annotation;
                           name;
                         })
-                      ~define:define_node
+                      ~define:Context.define
                   in
                   error :: sofar
               ) overloads
@@ -717,8 +754,8 @@ module State = struct
     { state with errors = ErrorKey.add_error ~errors error }
 
 
-  let emit_error ~state ~location ~kind ~define =
-    Error.create ~location ~kind ~define
+  let emit_error ~state ~location ~kind =
+    Error.create ~location ~kind ~define:Context.define
     |> emit_raw_error ~state
 
 
@@ -731,12 +768,16 @@ module State = struct
   let rec initial
       ?(configuration = Configuration.Analysis.create ())
       ~resolution
-      ({
-        Node.location;
-        value = ({
-            Define.signature = { name; parent; parameters; return_annotation; decorators; _ }
-          ; _ } as define)
-      } as define_node) =
+      () =
+    let {
+      Node.location;
+      value = {
+        Define.signature = { name; parent; parameters; return_annotation; decorators; _ };
+        _;
+      } as define;
+    } =
+      Context.define
+    in
     let check_decorators state =
       let check_final_decorator state =
         if Option.is_none parent && (Define.is_final_method define) then
@@ -744,7 +785,6 @@ module State = struct
             ~state
             ~location
             ~kind:(Error.InvalidInheritance (NonMethodFunction "typing.final"))
-            ~define:define_node
         else
           state
       in
@@ -787,7 +827,6 @@ module State = struct
                 ~state
                 ~location
                 ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Return })
-                ~define:define_node
           | _ ->
               state
         in
@@ -837,7 +876,6 @@ module State = struct
                         ~covariant:true;
                     declare_location = instantiate location;
                   })
-                ~define:define_node
           in
           let add_missing_parameter_annotation_error ~state ~given_annotation annotation =
             let name = name |> Identifier.sanitized in
@@ -859,14 +897,12 @@ module State = struct
                     evidence_locations = [];
                     thrown_at_source = true;
                   })
-                ~define:define_node
           in
           let add_final_parameter_annotation_error ~state =
             emit_error
               ~state
               ~location
               ~kind:(Error.InvalidType (FinalParameter name))
-              ~define:define_node
           in
           let add_variance_error (state, annotation) =
             let state =
@@ -878,7 +914,6 @@ module State = struct
                     ~state
                     ~location
                     ~kind:(Error.InvalidTypeVariance { annotation; origin = Error.Parameter })
-                    ~define:define_node
               | _ ->
                   state
             in
@@ -950,7 +985,7 @@ module State = struct
                         in
                         match kind with
                         | Some kind ->
-                            emit_error ~state ~location ~kind ~define:define_node
+                            emit_error ~state ~location ~kind
                         | None ->
                             state
                       in
@@ -1071,7 +1106,6 @@ module State = struct
                 ~state
                 ~location
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
-                ~define:define_node
             in
             state, (Resolution.annotations resolution)
         | _ ->
@@ -1139,7 +1173,7 @@ module State = struct
                    Error.create
                      ~location
                      ~kind:(Error.InvalidOverride ({ parent; decorator = Final }))
-                     ~define:define_node
+                     ~define:Context.define
                  in ErrorKey.add_error ~errors error
                else errors
              in
@@ -1162,7 +1196,7 @@ module State = struct
                    Error.create
                      ~location
                      ~kind:(Error.InvalidOverride ({ parent; decorator }))
-                     ~define:define_node
+                     ~define:Context.define
                  in
                  ErrorKey.add_error ~errors error
                else
@@ -1206,7 +1240,7 @@ module State = struct
                                     ~expected
                                     ~covariant:false)
                            })
-                         ~define:define_node
+                         ~define:Context.define
                      in
                      ErrorKey.add_error ~errors error
                    else
@@ -1272,7 +1306,7 @@ module State = struct
                                                ~expected
                                                ~covariant:false));
                                    })
-                                 ~define:define_node
+                                 ~define:Context.define
                              in
                              ErrorKey.add_error ~errors error
                            else
@@ -1318,7 +1352,7 @@ module State = struct
                                      Error.NotFound (Identifier.sanitized name)
                                    );
                                })
-                             ~define:define_node
+                             ~define:Context.define
                          in
                          ErrorKey.add_error ~errors error
                  in
@@ -1348,14 +1382,12 @@ module State = struct
                 ~state
                 ~location
                 ~kind:(Error.IncompatibleConstructorAnnotation annotation)
-                ~define:define_node
         | _ ->
             state
     in
     create
       ~configuration
       ~resolution:(Resolution.with_parent resolution ~parent)
-      ~define:define_node
       ()
     |> check_decorators
     |> check_return_annotation
@@ -1366,7 +1398,7 @@ module State = struct
 
 
   and forward_expression
-      ~state:({ resolution; define; _ } as state)
+      ~state:({ resolution; _ } as state)
       ~expression:{ Node.location; value } =
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
       let { state; resolved = key_resolved } = forward_expression ~state ~expression:key in
@@ -1542,7 +1574,7 @@ module State = struct
       | Some annotation when Type.is_undeclared (Annotation.annotation annotation) ->
           let state =
             Error.UndefinedName reference
-            |> (fun kind -> emit_error ~state ~location ~kind ~define)
+            |> (fun kind -> emit_error ~state ~location ~kind)
           in
           { state; resolved = Annotation.annotation annotation }
       | Some annotation ->
@@ -1559,12 +1591,15 @@ module State = struct
                           attribute = Reference.last reference;
                           origin = Error.Module qualifier
                         }
-                        |> (fun kind -> Error.create ~location ~kind ~define)
+                        |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                         |> emit_raw_error ~state
                       else
                         state
                   | _ ->
-                      Error.create ~location ~kind:(Error.UndefinedName reference) ~define
+                      Error.create
+                        ~location
+                        ~kind:(Error.UndefinedName reference)
+                        ~define:Context.define
                       |> emit_raw_error ~state
                 in
                 { state; resolved = Type.Top }
@@ -1790,7 +1825,7 @@ module State = struct
                   let kind =
                     Error.InvalidArgument (Error.Keyword { expression; annotation })
                   in
-                  Error.create ~location ~kind ~define
+                  Error.create ~location ~kind ~define:Context.define
               | InvalidVariableArgument {
                   Node.location;
                   value = { expression; annotation }
@@ -1798,7 +1833,7 @@ module State = struct
                   let kind =
                     Error.InvalidArgument (Error.Variable { expression; annotation })
                   in
-                  Error.create ~location ~kind ~define
+                  Error.create ~location ~kind ~define:Context.define
               | Mismatch mismatch ->
                   let
                     { Annotated.Signature.actual; actual_expression; expected; name; position } =
@@ -1852,32 +1887,32 @@ module State = struct
                   Error.create
                     ~location
                     ~kind
-                    ~define
+                    ~define:Context.define
               | MissingArgument parameter ->
                   Error.create
                     ~location
                     ~kind:(Error.MissingArgument { callee; parameter })
-                    ~define
+                    ~define:Context.define
               | MutuallyRecursiveTypeVariables ->
                   Error.create
                     ~location
                     ~kind:(Error.MutuallyRecursiveTypeVariables callee)
-                    ~define
+                    ~define:Context.define
               | TooManyArguments { expected; provided } ->
                   Error.create
                     ~location
                     ~kind:(Error.TooManyArguments { callee; expected; provided })
-                    ~define
+                    ~define:Context.define
               | UnexpectedKeyword name ->
                   Error.create
                     ~location
                     ~kind:(Error.UnexpectedKeyword { callee; name })
-                    ~define
+                    ~define:Context.define
               | AbstractClassInstantiation { class_name; method_names } ->
                   Error.create
                     ~location
                     ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
-                    ~define
+                    ~define:Context.define
             in
             emit_raw_error ~state error
           in
@@ -1888,7 +1923,7 @@ module State = struct
               state
             else
               Error.NotCallable resolved
-              |> (fun kind -> Error.create ~location ~kind ~define)
+              |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
               |> emit_raw_error ~state
           in
           { state; resolved = Type.Top }
@@ -1925,7 +1960,6 @@ module State = struct
               ~state
               ~location
               ~kind:(Error.IncompatibleAwaitableType resolved)
-              ~define
           else
             state
         in
@@ -2029,7 +2063,6 @@ module State = struct
             ~state
             ~location
             ~kind:(Error.RevealedType { expression = value; annotation })
-            ~define
         in
         { state; resolved = Type.none }
 
@@ -2062,13 +2095,11 @@ module State = struct
                   evidence_locations = [];
                   thrown_at_source = true;
                 })
-              ~define
           else if Type.equal cast_annotation resolved then
             emit_error
               ~state
               ~location
               ~kind:(Error.RedundantCast resolved)
-              ~define
           else
             state
         in
@@ -2126,7 +2157,6 @@ module State = struct
                       expected = Type.meta Type.Any;
                       due_to_invariance = false;
                     }})
-                ~define
             in
             List.find annotations ~f:(fun (annotation, _) -> not (Type.is_meta annotation))
             >>| add_incompatible_non_meta_error state
@@ -2412,7 +2442,7 @@ module State = struct
                 annotation = resolved_base;
                 attempted_action = Error.AttributeAccess attribute;
               }
-              |> (fun kind -> Error.create ~location ~kind ~define)
+              |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
               |> emit_raw_error ~state
             in
             state,
@@ -2425,7 +2455,7 @@ module State = struct
             let state =
               reference
               >>| (fun reference -> Error.UndefinedName reference)
-              >>| (fun kind -> emit_error ~state ~location ~kind ~define)
+              >>| (fun kind -> emit_error ~state ~location ~kind)
               |> Option.value ~default:state
             in
             { state; resolved = resolved_base }
@@ -2454,7 +2484,7 @@ module State = struct
                     attribute;
                     origin = Error.Class { annotation = resolved_base; class_attribute = false };
                   }
-                  |> (fun kind -> Error.create ~location ~kind ~define)
+                  |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                   |> emit_raw_error ~state
                 in
                 { state; resolved = Type.Top }
@@ -2504,7 +2534,7 @@ module State = struct
                   match reference, definition with
                   | Some reference, (_, Some target) when Type.equal Type.undeclared target ->
                       Error.UndefinedName reference
-                      |> (fun kind -> Error.create ~location ~kind ~define)
+                      |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                       |> emit_raw_error ~state
                   | _, (attribute, Some target) ->
                       Error.UndefinedAttribute {
@@ -2515,7 +2545,7 @@ module State = struct
                             class_attribute = Annotated.Attribute.class_attribute attribute;
                           };
                       }
-                      |> (fun kind -> Error.create ~location ~kind ~define)
+                      |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                       |> emit_raw_error ~state
                   | _ ->
                       state
@@ -2654,19 +2684,24 @@ module State = struct
   and forward_statement
       ~state:({
           resolution;
-          define = ({
-              Node.location = define_location;
-              value = { Define.signature = {
-                  async;
-                  parent = define_parent;
-                  return_annotation = return_annotation_expression;
-                  _;
-                }; body } as define;
-            } as define_node);
           check_return;
           _;
         } as state)
       ~statement:{ Node.location; value } =
+    let {
+      Node.location = define_location;
+      value = {
+        Define.signature = {
+          async;
+          parent = define_parent;
+          return_annotation = return_annotation_expression;
+          _;
+        };
+        body;
+      } as define;
+    } =
+      Context.define
+    in
     let instantiate location =
       Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
     in
@@ -2726,7 +2761,6 @@ module State = struct
                        is_implicit;
                        is_unimplemented = check_unimplemented body
                      })
-            ~define:define_node
         else
           state
       in
@@ -2753,7 +2787,6 @@ module State = struct
                 evidence_locations = [instantiate location];
                 thrown_at_source = true;
               })
-            ~define:define_node
         else
           state
       in
@@ -2810,7 +2843,6 @@ module State = struct
               add_invalid_type_parameters_errors
                 ~resolution
                 ~location
-                ~define:define_node
                 ~errors:state.errors
                 parsed
             in
@@ -2981,7 +3013,7 @@ module State = struct
                     let check_global_final_reassignment state =
                       if Annotation.is_final target_annotation then
                         let kind = Error.InvalidAssignment (Final reference) in
-                        emit_error ~state ~location ~kind ~define:define_node
+                        emit_error ~state ~location ~kind
                       else
                         state
                     in
@@ -2993,7 +3025,6 @@ module State = struct
                             ~state
                             ~location
                             ~kind:(Error.InvalidAssignment (Final reference))
-                            ~define:define_node
                       | _ ->
                           state
                     in
@@ -3017,7 +3048,6 @@ module State = struct
                             ~kind:
                               (Error.InvalidAssignment
                                  (ClassVariable { class_name = Type.show parent; class_variable }))
-                            ~define:define_node
                       | _ ->
                           state
                     in
@@ -3029,7 +3059,6 @@ module State = struct
                               ~state
                               ~location
                               ~kind:(Error.InvalidType (FinalNested annotation))
-                              ~define:define_node
                           else
                             state
                         ) |> Option.value ~default:state
@@ -3116,7 +3145,7 @@ module State = struct
                         declare_location = instantiate (Attribute.location attribute);
                       };
                     }
-                    |> (fun kind -> emit_error ~state ~location ~kind ~define:define_node)
+                    |> (fun kind -> emit_error ~state ~location ~kind)
                 | _, Some reference when is_incompatible ->
                     Error.IncompatibleVariableType {
                       Error.name = reference;
@@ -3129,7 +3158,7 @@ module State = struct
                            ~covariant:true);
                       declare_location = instantiate location;
                     }
-                    |> (fun kind -> emit_error ~state ~location ~kind ~define:define_node)
+                    |> (fun kind -> emit_error ~state ~location ~kind)
                 | _ ->
                     state
               in
@@ -3225,7 +3254,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else if explicit && insufficiently_annotated then
                       let value_annotation = Resolution.parse_annotation resolution value in
@@ -3238,7 +3267,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source = true;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some_if
                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
                     else if is_type_alias && Type.expression_contains_any value then
@@ -3252,7 +3281,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source = true;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some_if
                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
                     else
@@ -3272,7 +3301,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source = true;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else if explicit && not is_type_alias then
                       Error.create
@@ -3284,7 +3313,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source = true;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else
                       None
@@ -3308,7 +3337,7 @@ module State = struct
                       Error.create
                         ~location
                         ~kind:(Error.IllegalAnnotationTarget target)
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else if
                       Annotated.Class.Attribute.defined attribute && insufficiently_annotated
@@ -3326,7 +3355,7 @@ module State = struct
                               thrown_at_source;
                             };
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else if insufficiently_annotated && explicit && not is_type_alias then
                       Error.create
@@ -3338,7 +3367,7 @@ module State = struct
                             evidence_locations;
                             thrown_at_source = true;
                           })
-                        ~define:define_node
+                        ~define:Context.define
                       |> Option.some
                     else
                       None
@@ -3346,7 +3375,7 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.IllegalAnnotationTarget target)
-                      ~define:define_node
+                      ~define:Context.define
                     |> Option.some_if explicit
               in
               let state = error >>| emit_raw_error ~state |> Option.value ~default:state in
@@ -3393,7 +3422,7 @@ module State = struct
                           Type.Variable.convert_all_escaped_free_variables_to_anys
                             (Annotation.annotation annotation)
                         in
-                        emit_error ~state ~location ~kind ~define:define_node,
+                        emit_error ~state ~location ~kind,
                         { annotation with annotation = converted }
                       else
                         state, annotation
@@ -3485,7 +3514,6 @@ module State = struct
                           expected_count = List.length assignees;
                           unpack_problem = CountMismatch (List.length annotations);
                         })
-                      ~define:define_node
                   in
                   state, List.map assignees ~f:(fun _ -> Type.Top)
                 else
@@ -3519,7 +3547,7 @@ module State = struct
                         unpack_problem = UnacceptableType guide;
                       })
               in
-              let state = emit_error ~state ~location ~kind ~define:define_node in
+              let state = emit_error ~state ~location ~kind in
               List.fold
                 elements
                 ~init:state
@@ -3536,7 +3564,6 @@ module State = struct
                   ~state
                   ~location
                   ~kind:(Error.IllegalAnnotationTarget target)
-                  ~define:define_node
               else
                 state
         in
@@ -3697,7 +3724,7 @@ module State = struct
                                  due_to_invariance = false;
                                }
                              })
-                           ~define:define_node)
+                           ~define:Context.define)
                   | expected ->
                       let { resolved; _ } = forward_expression ~state ~expression:value in
                       if
@@ -3720,7 +3747,7 @@ module State = struct
                                       ~covariant:true);
                                  expression = value;
                                })
-                             ~define:define_node)
+                             ~define:Context.define)
                 in
                 let resolve ~reference =
                   match Resolution.get_local resolution ~reference with
@@ -3998,7 +4025,7 @@ module State = struct
                     Error.create
                       ~location
                       ~kind:(Error.UndefinedImport reference)
-                      ~define:define_node
+                      ~define:Context.define
                   in
                   let local = Resolution.get_local resolution ~reference in
                   let module_definition = Resolution.module_definition resolution reference in
@@ -4110,10 +4137,7 @@ module State = struct
                 }
             | None ->
                 let ({ resolution = initial_resolution; _ }) =
-                  initial
-                    ~configuration
-                    ~resolution
-                    (Node.create define ~location)
+                  initial ~configuration ~resolution ()
                 in
                 let nested_resolution =
                   let update ~key ~data initial_resolution =
@@ -4191,9 +4215,6 @@ module State = struct
 end
 
 
-module Fixpoint = Fixpoint.Make(State)
-
-
 type result = {
   errors: Error.t list;
   coverage: Coverage.t;
@@ -4201,6 +4222,11 @@ type result = {
 
 
 let resolution (module Handler: Environment.Handler) ?(annotations = Reference.Map.empty) () =
+  let define =
+    Define.create_toplevel ~qualifier:None ~statements:[]
+    |> Node.create_with_default_location;
+  in
+  let module State = State(struct let define = define end) in
   let aliases = Handler.aliases in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -4225,9 +4251,6 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     {
       State.configuration = Configuration.Analysis.create ();
       errors = State.ErrorKey.Map.empty;
-      define =
-        Define.create_toplevel ~qualifier:None ~statements:[]
-        |> Node.create_with_default_location;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
@@ -4338,87 +4361,7 @@ let run
       ~local_strict
       ~declare
   in
-
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
-  let check
-      ~define:{ Node.value = ({ Define.signature = { name; parent; _ }; _ } as define); _ }
-      ~initial
-      ~queue =
-    Log.log ~section:`Check "Checking %a" Reference.pp name;
-    let dump = Define.dump define in
-
-    if dump then
-      begin
-        Log.dump
-          "Checking `%s`..."
-          (Log.Color.yellow (Reference.show name));
-        Log.dump "AST:\n%a" Define.pp define;
-      end;
-
-    let dump_cfg cfg fixpoint =
-      let precondition table id =
-        match Hashtbl.find table id with
-        | Some { State.resolution; _ } ->
-            let stringify ~key ~data label =
-              let annotation_string =
-                Type.show (Annotation.annotation data)
-                |> String.strip ~drop:(Char.equal '`')
-              in
-              label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
-            in
-            Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
-        | None -> ""
-      in
-      if Define.dump_cfg define then
-        begin
-          let name =
-            match parent with
-            | Some parent -> Reference.combine parent name
-            | None -> name
-          in
-          Path.create_relative
-            ~root:(Configuration.Analysis.pyre_root configuration)
-            ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
-          |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
-          |> File.write
-        end
-    in
-    let exit =
-      let cfg = Cfg.create define in
-      let fixpoint = Fixpoint.forward ~cfg ~initial in
-      dump_cfg cfg fixpoint;
-      Fixpoint.exit fixpoint
-    in
-    if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
-
-    (* Write fixpoint type resolutions to shared memory *)
-    let dump_resolutions { State.resolution_fixpoint; _ } =
-      if configuration.store_type_check_resolution then
-        ResolutionSharedMemory.add ~handle name resolution_fixpoint
-    in
-    exit
-    >>| dump_resolutions
-    |> ignore;
-
-    (* Schedule nested functions for analysis. *)
-    exit
-    >>| State.nested_defines
-    >>| List.iter ~f:(Queue.enqueue queue)
-    |> ignore;
-
-    let errors =
-      exit
-      >>| State.errors
-      |> Option.value ~default:[]
-    in
-    let coverage =
-      exit
-      >>| State.coverage
-      |> Option.value ~default:(Coverage.create ())
-    in
-    { errors; coverage }
-  in
-
   let results =
     let queue =
       let queue = Queue.create () in
@@ -4449,13 +4392,91 @@ let run
           resolution
         ) ->
           let result =
-            try
-              let initial =
-                State.initial
-                  ~configuration
-                  ~resolution
-                  define_node
+            let module State = State(struct let define = define_node end) in
+            let module Fixpoint = Fixpoint.Make(State) in
+            let check
+                ~define:{
+                Node.value = ({ Define.signature = { name; parent; _ }; _ } as define);
+                _;
+              }
+                ~initial
+                ~queue =
+              Log.log ~section:`Check "Checking %a" Reference.pp name;
+              let dump = Define.dump define in
+
+              if dump then
+                begin
+                  Log.dump
+                    "Checking `%s`..."
+                    (Log.Color.yellow (Reference.show name));
+                  Log.dump "AST:\n%a" Define.pp define;
+                end;
+
+              let dump_cfg cfg fixpoint =
+                let precondition table id =
+                  match Hashtbl.find table id with
+                  | Some { State.resolution; _ } ->
+                      let stringify ~key ~data label =
+                        let annotation_string =
+                          Type.show (Annotation.annotation data)
+                          |> String.strip ~drop:(Char.equal '`')
+                        in
+                        label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
+                      in
+                      Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
+                  | None -> ""
+                in
+                if Define.dump_cfg define then
+                  begin
+                    let name =
+                      match parent with
+                      | Some parent -> Reference.combine parent name
+                      | None -> name
+                    in
+                    Path.create_relative
+                      ~root:(Configuration.Analysis.pyre_root configuration)
+                      ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
+                    |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
+                    |> File.write
+                  end
               in
+              let exit =
+                let cfg = Cfg.create define in
+                let fixpoint = Fixpoint.forward ~cfg ~initial in
+                dump_cfg cfg fixpoint;
+                Fixpoint.exit fixpoint
+              in
+              if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+
+              (* Write fixpoint type resolutions to shared memory *)
+              let dump_resolutions { State.resolution_fixpoint; _ } =
+                if configuration.store_type_check_resolution then
+                  ResolutionSharedMemory.add ~handle name resolution_fixpoint
+              in
+              exit
+              >>| dump_resolutions
+              |> ignore;
+
+              (* Schedule nested functions for analysis. *)
+              exit
+              >>| State.nested_defines
+              >>| List.iter ~f:(Queue.enqueue queue)
+              |> ignore;
+
+              let errors =
+                exit
+                >>| State.errors
+                |> Option.value ~default:[]
+              in
+              let coverage =
+                exit
+                >>| State.coverage
+                |> Option.value ~default:(Coverage.create ())
+              in
+              { errors; coverage }
+            in
+            try
+              let initial = State.initial ~configuration ~resolution () in
               if Define.is_stub define then
                 { errors = State.errors initial; coverage = Coverage.create () }
               else

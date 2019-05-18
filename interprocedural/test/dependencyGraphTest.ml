@@ -247,19 +247,15 @@ let test_type_collection _ =
       |> List.hd_exn
       |> fun access ->
       if String.equal (Access.show access) (Access.show test_access) then
-        let state =
-          TypeCheck.State.create
-            ~define:(Node.create_with_default_location Test.mock_define)
-            ~resolution
-            ()
-        in
+        let module State = TypeCheck.State(struct let define = +Test.mock_define end) in
+        let state = State.create ~resolution () in
         let expression =
           Expression.Access (Access.SimpleAccess access)
           |> Node.create_with_default_location
           |> Expression.convert_to_new
         in
-        let { TypeCheck.State.resolved; _ } =
-          TypeCheck.State.forward_expression ~state ~expression
+        let { State.resolved; _ } =
+          State.forward_expression ~state ~expression
         in
         match resolved with
         | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->

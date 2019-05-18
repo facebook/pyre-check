@@ -13,7 +13,11 @@ module Error = AnalysisError
 
 val resolve_exports: resolution: Resolution.t -> Reference.t -> Reference.t
 
-module State : sig
+module type Context = sig
+  val define: Define.t Node.t
+end
+
+module type Signature = sig
   type t
   [@@deriving eq]
 
@@ -21,7 +25,6 @@ module State : sig
     :  ?configuration: Configuration.Analysis.t
     -> ?bottom: bool
     -> resolution: Resolution.t
-    -> define: Statement.Define.t Node.t
     -> ?resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
     -> unit
     -> t
@@ -32,7 +35,7 @@ module State : sig
   val initial
     :  ?configuration: Configuration.Analysis.t
     -> resolution: Resolution.t
-    -> Define.t Node.t
+    -> unit
     -> t
 
   (* Visible for testing. *)
@@ -47,6 +50,8 @@ module State : sig
 
   include Fixpoint.State with type t := t
 end
+
+module State(Context: Context): Signature
 
 val resolution
   :  (module Environment.Handler)

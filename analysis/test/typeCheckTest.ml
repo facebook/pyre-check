@@ -9,7 +9,6 @@ open OUnit2
 open Ast
 open Analysis
 open Pyre
-open Statement
 open TypeCheck
 
 
@@ -19,51 +18,36 @@ open Test
 let resolution = Test.resolution ()
 
 
-let create
-    ?(bottom = false)
-    ?(define = Test.mock_define)
-    ?expected_return
-    ?(resolution = Test.resolution ())
-    ?(immutables = [])
-    annotations =
-  let resolution =
-    let annotations =
-      let immutables = String.Map.of_alist_exn immutables in
-      let annotify (name, annotation) =
-        let annotation =
-          let create annotation =
-            match Map.find immutables name with
-            | Some (global, original) ->
-                Annotation.create_immutable ~original:(Some original) ~global annotation
-            | _ ->
-                Annotation.create annotation
+module Create(Context: TypeCheck.Context) = struct
+  let create
+      ?(bottom = false)
+      ?(resolution = Test.resolution ())
+      ?(immutables = [])
+      annotations =
+    let module State = State(Context) in
+    let resolution =
+      let annotations =
+        let immutables = String.Map.of_alist_exn immutables in
+        let annotify (name, annotation) =
+          let annotation =
+            let create annotation =
+              match Map.find immutables name with
+              | Some (global, original) ->
+                  Annotation.create_immutable ~original:(Some original) ~global annotation
+              | _ ->
+                  Annotation.create annotation
+            in
+            create annotation
           in
-          create annotation
+          !&name, annotation
         in
-        !&name, annotation
+        List.map annotations ~f:annotify
+        |> Reference.Map.of_alist_exn
       in
-      List.map annotations ~f:annotify
-      |> Reference.Map.of_alist_exn
+      Resolution.with_annotations resolution ~annotations
     in
-    Resolution.with_annotations resolution ~annotations
-  in
-  let signature =
-    {
-      define.signature with
-      return_annotation = expected_return >>| Type.expression;
-    }
-  in
-  let define =
-    +{ define with signature }
-  in
-  State.create ~bottom ~resolution ~define ()
-
-
-let assert_state_equal =
-  assert_equal
-    ~cmp:State.equal
-    ~printer:(Format.asprintf "%a" State.pp)
-    ~pp_diff:(diff ~print:State.pp)
+    State.create ~bottom ~resolution ()
+end
 
 
 let list_orderless_equal left right =
@@ -74,21 +58,39 @@ let list_orderless_equal left right =
 
 
 let test_initial _ =
-  let assert_initial ?parent ?(errors = []) ?(environment = "") define state =
+  let assert_initial
+      ?parent
+      ?(errors = [])
+      ?(environment = "")
+      ?(immutables = [])
+      ~annotations
+      define =
+    let define =
+      match parse_single_statement define with
+      | { Node.value = Define ({ signature; _ } as define); _ } ->
+          let signature =
+            { signature with parent = parent >>| Reference.create }
+          in
+          { define with signature }
+      | _ ->
+          failwith "Unable to parse define."
+    in
+    let module Context = struct let define = +define end in
+    let module Create = Create(Context) in
+    let state = Create.create ~immutables annotations in
+    let module State = State(Context) in
+    let assert_state_equal =
+      assert_equal
+        ~cmp:State.equal
+        ~printer:(Format.asprintf "%a" State.pp)
+        ~pp_diff:(diff ~print:State.pp)
+    in
     let resolution =
       parse environment
       |> (fun source -> source :: (Test.typeshed_stubs ()))
       |> (fun sources -> Test.resolution ~sources ())
     in
     let initial =
-      let define =
-        match parse_single_statement define with
-        | { Node.value = Define define; _ } ->
-            let signature = { define.signature with parent = parent >>| Reference.create } in
-            { define with signature }
-        | _ ->
-            failwith "Unable to parse define."
-      in
       let variables =
         let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
           match annotation with
@@ -105,7 +107,7 @@ let test_initial _ =
         Resolution.add_type_variable resolution ~variable
       in
       let resolution = List.fold variables ~init:resolution ~f:add_variable in
-      State.initial ~resolution (+define)
+      State.initial ~resolution ()
     in
     assert_state_equal state initial;
     assert_equal
@@ -117,73 +119,79 @@ let test_initial _ =
 
   assert_initial
     "def foo(x: int): ..."
-    (create ~immutables:["x", (false, Type.integer)] ["x", Type.integer]);
+    ~immutables:["x", (false, Type.integer)]
+    ~annotations:["x", Type.integer];
 
   assert_initial
+    "def foo(x: int = 1.0): ..."
     ~errors:[
       "Incompatible variable type [9]: x is declared to have type `int` but is used as type " ^
       "`float`.";
     ]
-    "def foo(x: int = 1.0): ..."
-    (create ~immutables:["x", (false, Type.integer)] ["x", Type.integer]);
+    ~immutables:["x", (false, Type.integer)]
+    ~annotations:["x", Type.integer];
 
   assert_initial
     ~errors:[
       "Missing parameter annotation [2]: Parameter `x` has type `float` but no type is specified.";
     ]
-    "def foo(x = 1.0): ..."
-    (create ["x", Type.float]);
+    ~annotations:["x", Type.float]
+    "def foo(x = 1.0): ...";
 
   assert_initial
     "def foo(x: int) -> int: ..."
-    (create
-       ~immutables:["x", (false, Type.integer)]
-       ~expected_return:Type.integer ["x", Type.integer]);
+    ~immutables:["x", (false, Type.integer)]
+    ~annotations:["x", Type.integer];
 
   assert_initial
     "def foo(x: float, y: str): ..."
-    (create
-       ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
-       ["x", Type.float; "y", Type.string]);
+    ~immutables:["x", (false, Type.float); "y", (false, Type.string)]
+    ~annotations:["x", Type.float; "y", Type.string];
 
   assert_initial
-    ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
     "def foo(x): ..."
-    (create ["x", Type.Any]);
+    ~errors:["Missing parameter annotation [2]: Parameter `x` has no type specified."]
+    ~annotations:["x", Type.Any];
   assert_initial
-    ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
     "def foo(x: typing.Any): ..."
-    (create ~immutables:["x", (false, Type.Any)] ["x", Type.Any]);
+    ~errors:["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+    ~immutables:["x", (false, Type.Any)]
+    ~annotations:["x", Type.Any];
   assert_initial
     ~parent:"Foo"
-    ~errors:[]
     ~environment:"class Foo: ..."
     "def __eq__(self, other: object): ..."
-    (create
-       ~immutables:["other", (false, Type.object_primitive)]
-       ["self", Type.Primitive "Foo"; "other", Type.object_primitive]);
+    ~errors:[]
+    ~immutables:["other", (false, Type.object_primitive)]
+    ~annotations:["self", Type.Primitive "Foo"; "other", Type.object_primitive];
 
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
     "def foo(self): ..."
-    (create ["self", Type.Primitive "Foo"]);
+    ~annotations:["self", Type.Primitive "Foo"];
   assert_initial
     ~parent:"Foo"
     ~environment:"class Foo: ..."
-    ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
     "@staticmethod\ndef foo(a): ..."
-    (create ["a", Type.Any]);
+    ~errors:["Missing parameter annotation [2]: Parameter `a` has no type specified."]
+    ~annotations:["a", Type.Any];
 
   assert_initial
     ~environment:"T = typing.TypeVar('T')"
     "def foo(x: T): ..."
-    (create
-       ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
-       ["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")])
+    ~immutables:["x", (false, Type.Variable.mark_all_variables_as_bound (Type.variable "T"))]
+    ~annotations:["x", Type.Variable.mark_all_variables_as_bound (Type.variable "T")]
 
 
 let test_less_or_equal _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+
   (* <= *)
   assert_true (State.less_or_equal ~left:(create []) ~right:(create []));
   assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
@@ -205,6 +213,19 @@ let test_less_or_equal _ =
 
 
 let test_join _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+  let assert_state_equal =
+    assert_equal
+      ~cmp:State.equal
+      ~printer:(Format.asprintf "%a" State.pp)
+      ~pp_diff:(diff ~print:State.pp)
+  in
+
   (* <= *)
   assert_state_equal (State.join (create []) (create [])) (create []);
   assert_state_equal
@@ -240,6 +261,19 @@ let test_join _ =
 
 
 let test_widen _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+  let assert_state_equal =
+    assert_equal
+      ~cmp:State.equal
+      ~printer:(Format.asprintf "%a" State.pp)
+      ~pp_diff:(diff ~print:State.pp)
+  in
+
   let widening_threshold = 10 in
   assert_state_equal
     (State.widen
@@ -256,6 +290,13 @@ let test_widen _ =
 
 
 let test_check_annotation _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+
   let assert_check_annotation source expression descriptions =
     let resolution =
       Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) ()
@@ -403,16 +444,17 @@ let test_resolve_exports _ =
 
 
 let assert_resolved sources expression expected =
+  let module State = State(struct let define = +Test.mock_define end) in
   let resolution =
     AnnotatedTest.populate_with_sources (sources @ typeshed_stubs ())
     |> fun environment -> TypeCheck.resolution environment ()
   in
   let resolved =
     let state =
-      State.create ~define:(Node.create_with_default_location Test.mock_define) ~resolution ()
+      State.create ~resolution ()
     in
-    let { TypeCheck.State.resolved; _ } =
-      TypeCheck.State.forward_expression ~state ~expression:(parse_single_expression expression)
+    let { State.resolved; _ } =
+      State.forward_expression ~state ~expression:(parse_single_expression expression)
     in
     resolved
   in
@@ -578,6 +620,19 @@ type parameter_kind =
 
 
 let test_forward_expression _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+  let assert_state_equal =
+    assert_equal
+      ~cmp:State.equal
+      ~printer:(Format.asprintf "%a" State.pp)
+      ~pp_diff:(diff ~print:State.pp)
+  in
+
   let assert_forward
       ?(precondition = [])
       ?(postcondition = [])
@@ -1001,12 +1056,33 @@ let test_forward_statement _ =
   let assert_forward
       ?(precondition_immutables = [])
       ?(postcondition_immutables = [])
-      ?expected_return
       ?(errors = `Undefined 0)
       ?(bottom = false)
+      ?expected_return
       precondition
       statement
       postcondition =
+    let define =
+      let annotation =
+        expected_return
+        >>| Format.asprintf " -> %a" Type.pp
+        |> Option.value ~default:""
+      in
+      Format.asprintf "def foo()%s: ..." annotation
+      |> parse_single_statement
+      |> function
+      | { Node.value = Define define; _ } -> define
+      | _ -> failwith "Unable to parse define."
+    in
+    let module Context = struct let define = +define end in
+    let module Create = Create(Context) in
+    let module State = State(Context) in
+    let assert_state_equal =
+      assert_equal
+        ~cmp:State.equal
+        ~printer:(Format.asprintf "%a" State.pp)
+        ~pp_diff:(diff ~print:State.pp)
+    in
     let forwarded =
       let parsed =
         parse statement
@@ -1016,7 +1092,7 @@ let test_forward_statement _ =
       in
       List.fold
         ~f:(fun state statement -> State.forward_statement ~state ~statement)
-        ~init:(create ?expected_return ~immutables:precondition_immutables precondition)
+        ~init:(Create.create ~immutables:precondition_immutables precondition)
         parsed
     in
     let errors =
@@ -1036,7 +1112,7 @@ let test_forward_statement _ =
           errors [] count
     in
     assert_state_equal
-      (create ~bottom ~immutables:postcondition_immutables postcondition)
+      (Create.create ~bottom ~immutables:postcondition_immutables postcondition)
       forwarded;
     assert_equal
       ~cmp:list_orderless_equal
@@ -1502,6 +1578,19 @@ let test_forward_statement _ =
 
 
 let test_forward _ =
+  let module Context = struct let define = +Test.mock_define end in
+  let create =
+    let module Create = Create(Context) in
+    Create.create
+  in
+  let module State = State(Context) in
+  let assert_state_equal =
+    assert_equal
+      ~cmp:State.equal
+      ~printer:(Format.asprintf "%a" State.pp)
+      ~pp_diff:(diff ~print:State.pp)
+  in
+
   let assert_forward
       ?(precondition_bottom = false)
       ?(postcondition_bottom = false)
@@ -1563,14 +1652,6 @@ let test_coverage _ =
           x = y
         else:
           x = 1
-    |}
-    { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 };
-
-  assert_coverage
-    {|
-      def foo(y) -> int:
-        x = returns_undefined()
-        return x
     |}
     { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
 

@@ -1124,21 +1124,20 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
 
     | TypeQuery.Type expression ->
         begin
-          let state =
-            let define =
-              Statement.Define.create_toplevel
-                ~qualifier:None
-                ~statements:[]
-              |> Node.create_with_default_location
-            in
-            TypeCheck.State.create ~resolution ~define ()
+          let define =
+            Statement.Define.create_toplevel
+              ~qualifier:None
+              ~statements:[]
+            |> Node.create_with_default_location
           in
-          let { TypeCheck.State.state; resolved = annotation; } =
-            TypeCheck.State.forward_expression
+          let module State = TypeCheck.State(struct let define = define end) in
+          let state = State.create ~resolution () in
+          let { State.state; resolved = annotation; } =
+            State.forward_expression
               ~state
               ~expression
           in
-          match TypeCheck.State.errors state with
+          match State.errors state with
           | [] ->
               TypeQuery.Response (TypeQuery.Type annotation)
           | errors ->
