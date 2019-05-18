@@ -14,16 +14,6 @@ module Error = AnalysisError
 
 
 module State = struct
-  type nested_define_state = {
-    nested_resolution: Resolution.t;
-    nested_bottom: bool;
-  }
-
-  type nested_define = {
-    nested: Define.t;
-    initial: nested_define_state;
-  }
-
   module ErrorKey = struct
     type t = {
       location: Location.Instantiated.t;
@@ -51,13 +41,8 @@ module State = struct
     resolution: Resolution.t;
     errors: Error.t ErrorKey.Map.t;
     define: Define.t Node.t;
-    nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
   }
-
-
-  let pp_nested_define format { nested = { Define.signature = { name; _ }; _ }; _ } =
-    Format.fprintf format "%a" Reference.pp name
 
 
   let pp
@@ -66,22 +51,10 @@ module State = struct
         resolution;
         errors;
         define = { Node.value = define; _ };
-        nested_defines;
         bottom;
         _;
       } =
     let expected = Annotated.Callable.return_annotation ~define ~resolution in
-    let nested_defines =
-      let nested_define_to_string nested_define =
-        Format.asprintf
-          "    %a"
-          pp_nested_define
-          nested_define
-      in
-      Map.data nested_defines
-      |> List.map ~f:nested_define_to_string
-      |> String.concat ~sep:"\n"
-    in
     let annotations =
       let annotation_to_string (name, annotation) =
         Format.asprintf
@@ -98,8 +71,7 @@ module State = struct
       let error_to_string error =
         Format.asprintf
           "    %a -> %s"
-          Location.Instantiated.pp
-          (Error.location error)
+          Location.Instantiated.pp (Error.location error)
           (Error.description error ~show_error_traces:true)
       in
       List.map (Map.data errors) ~f:error_to_string
@@ -107,10 +79,9 @@ module State = struct
     in
     Format.fprintf
       format
-      "  Bottom: %b\n  Expected return: %a\n  Nested defines:\n%s\n  Types:\n%s\n  Errors:\n%s\n"
+      "  Bottom: %b\n  Expected return: %a\n  Types:\n%s\n  Errors:\n%s\n"
       bottom
       Type.pp expected
-      nested_defines
       annotations
       errors
 
@@ -139,7 +110,6 @@ module State = struct
       resolution;
       errors = ErrorKey.Map.empty;
       define;
-      nested_defines = Location.Reference.Map.empty;
       bottom;
     }
 
@@ -520,31 +490,10 @@ module State = struct
       Set.is_subset left_errors ~of_:right_errors &&
       Map.fold
         ~init:true
-        ~f:(entry_less_or_equal right.nested_defines (fun _ _ -> true))
-        left.nested_defines &&
-      Map.fold
-        ~init:true
         ~f:(entry_less_or_equal
               (Resolution.annotations right.resolution)
               (Refinement.less_or_equal ~resolution))
         (Resolution.annotations left.resolution)
-
-
-  let join_resolutions left_resolution right_resolution =
-    let merge_annotations ~key:_ = function
-      | `Both (left, right) ->
-          Some (Refinement.join ~resolution:left_resolution left right)
-      | `Left _
-      | `Right _ ->
-          Some (Annotation.create Type.Top)
-    in
-    let annotations =
-      Map.merge
-        ~f:merge_annotations
-        (Resolution.annotations left_resolution)
-        (Resolution.annotations right_resolution)
-    in
-    Resolution.with_annotations left_resolution ~annotations
 
 
   let join left right =
@@ -553,11 +502,6 @@ module State = struct
     else if right.bottom then
       left
     else
-      let join_nested_defines ~key:_ = function
-        | `Left nested_define
-        | `Right nested_define
-        | `Both (_, nested_define) -> Some nested_define
-      in
       let join_resolutions left_resolution right_resolution =
         let merge_annotations ~key:_ = function
           | `Both (left, right) ->
@@ -580,8 +524,6 @@ module State = struct
       {
         left with
         errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
-        nested_defines =
-          Map.merge left.nested_defines right.nested_defines ~f:join_nested_defines;
         resolution = join_resolutions left.resolution right.resolution;
       }
 
@@ -595,11 +537,6 @@ module State = struct
     else if next.bottom then
       previous
     else
-      let join_nested_defines ~key:_ = function
-        | `Left nested_define
-        | `Right nested_define
-        | `Both (_, nested_define) -> Some nested_define
-      in
       let widen_annotations ~key annotation =
         match annotation with
         | `Both (previous, next) ->
@@ -636,8 +573,6 @@ module State = struct
       {
         previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
-        nested_defines =
-          Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
       }
 
@@ -4044,93 +3979,12 @@ module State = struct
         state
 
 
-  let forward
-      ?key:_
-      ({
-        resolution;
-        nested_defines;
-        bottom;
-        configuration;
-        _;
-      } as state)
-      ~statement:({ Node.location; _ } as statement) =
+  let forward ?key:_ ({ bottom; _ } as state) ~statement =
     let state =
       if bottom then
         state
       else
         forward_statement ~state ~statement
-    in
-    let state =
-      let nested_defines =
-        let schedule ~variables ~define =
-          let update = function
-            | Some ({ initial = { nested_resolution; nested_bottom }; _ } as nested) ->
-                let resolution, bottom =
-                  if nested_bottom then
-                    state.resolution, state.bottom
-                  else if state.bottom then
-                    nested_resolution, nested_bottom
-                  else
-                    join_resolutions nested_resolution state.resolution, false
-                in
-                Some {
-                  nested with
-                  initial = { nested_resolution = resolution; nested_bottom = bottom };
-                }
-            | None ->
-                let ({ resolution = initial_resolution; _ }) =
-                  initial
-                    ~configuration
-                    ~resolution
-                    (Node.create define ~location)
-                in
-                let nested_resolution =
-                  let update ~key ~data initial_resolution =
-                    Resolution.set_local initial_resolution ~reference:key ~annotation:data
-                  in
-                  let add_variable resolution variable =
-                    Resolution.add_type_variable resolution ~variable
-                  in
-                  Resolution.annotations resolution
-                  |> Map.fold ~init:initial_resolution ~f:update
-                  |> fun resolution -> List.fold variables ~init:resolution ~f:add_variable
-
-                in
-                Some {
-                  nested = define;
-                  initial = { nested_resolution; nested_bottom = false };
-                }
-          in
-          Map.change ~f:update nested_defines location
-        in
-        match Node.value statement with
-        | Class ({ Class.name; body; _ } as definition) ->
-            let variables =
-              (Node.create ~location definition)
-              |> Annotated.Class.create
-              |> Annotated.Class.generics ~resolution
-            in
-            schedule
-              ~variables
-              ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
-        | Define ({ Define.signature = { parameters; _ }; _ } as define) ->
-            let variables =
-              let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
-                match annotation with
-                | None -> []
-                | Some annotation ->
-                    let annotation = Resolution.parse_annotation resolution annotation in
-                    Type.Variable.all_free_variables annotation
-                    |> List.map ~f:(fun variable -> Type.Variable variable)
-              in
-              List.concat_map parameters ~f:extract_variables
-              |> List.dedup_and_sort ~compare:Type.compare
-            in
-            schedule ~variables ~define
-        | _ ->
-            nested_defines
-      in
-      { state with nested_defines }
     in
 
     state
