@@ -159,87 +159,90 @@ module State = struct
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
 
-  let check_and_correct_annotation ~resolution ~location ~define ~annotation ~resolved errors =
-    let is_aliased_to_any =
-      (* Special-case expressions typed as Any to be valid types. *)
-      match annotation with
-      | Type.Primitive _ -> Type.is_any resolved
-      | _ -> false
-    in
-    let check_untracked_annotation errors annotation =
-      if Resolution.is_tracked resolution annotation || is_aliased_to_any then
-        errors
-      else if not (Type.is_unknown resolved || Type.is_any resolved) then
-        Error.create ~location ~kind:(Error.InvalidType (InvalidType annotation)) ~define :: errors
-      else
-        Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
-    in
-    let check_invalid_variables resolution errors variable =
-      if not (Resolution.type_variable_exists resolution ~variable) then
-        let error =
-          let origin =
-            if Define.is_toplevel (Node.value define) then
-              Error.Toplevel
-            else if Define.is_class_toplevel (Node.value define) then
-              Error.ClassToplevel
-            else
-              Error.Define
-          in
-          Error.create
-            ~location
-            ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
-            ~define
-        in
-        error :: errors
-      else
-        errors
-    in
-    let resolution =
-      match annotation with
-      | Type.Callable {
-          Type.Callable.implementation = {
-            Type.Callable.parameters = Type.Callable.Defined parameters;
-            _;
-          };
-          _;
-        } ->
-          let parameters =
-            List.map parameters ~f:Type.Callable.Parameter.annotation
-            |> List.concat_map ~f:Type.Variable.all_free_variables
-            |> List.map ~f:(fun variable -> Type.Variable variable)
-          in
-          List.fold
-            parameters
-            ~f:(fun resolution variable -> Resolution.add_type_variable resolution ~variable)
-            ~init:resolution
-      | _ ->
-          resolution
-    in
-    let critical_errors =
-      List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
-      |> (fun errors ->
-          Type.Variable.all_free_variables annotation
-          |> List.map ~f:(fun variable -> Type.Variable variable)
-          |> List.fold
-            ~f:(check_invalid_variables resolution)
-            ~init:errors)
-    in
-    if List.is_empty critical_errors then
-      add_invalid_type_parameters_errors annotation ~resolution ~location ~define ~errors
-    else
-      let errors =
-        List.fold
-          critical_errors
-          ~init:errors
-          ~f:(fun errors error -> ErrorKey.add_error ~errors error)
-      in
-      errors, Type.Top
-
-
   let parse_and_check_annotation
       ?(bind_variables = true)
       ~state:({ errors; define; resolution; _ } as state)
       ({ Node.location; _ } as expression) =
+    let check_and_correct_annotation ~resolution ~location ~define ~annotation ~resolved errors =
+      let is_aliased_to_any =
+        (* Special-case expressions typed as Any to be valid types. *)
+        match annotation with
+        | Type.Primitive _ -> Type.is_any resolved
+        | _ -> false
+      in
+      let check_untracked_annotation errors annotation =
+        if Resolution.is_tracked resolution annotation || is_aliased_to_any then
+          errors
+        else if not (Type.is_unknown resolved || Type.is_any resolved) then
+          Error.create
+            ~location
+            ~kind:(Error.InvalidType (InvalidType annotation))
+            ~define
+          :: errors
+        else
+          Error.create ~location ~kind:(Error.UndefinedType annotation) ~define :: errors
+      in
+      let check_invalid_variables resolution errors variable =
+        if not (Resolution.type_variable_exists resolution ~variable) then
+          let error =
+            let origin =
+              if Define.is_toplevel (Node.value define) then
+                Error.Toplevel
+              else if Define.is_class_toplevel (Node.value define) then
+                Error.ClassToplevel
+              else
+                Error.Define
+            in
+            Error.create
+              ~location
+              ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
+              ~define
+          in
+          error :: errors
+        else
+          errors
+      in
+      let resolution =
+        match annotation with
+        | Type.Callable {
+            Type.Callable.implementation = {
+              Type.Callable.parameters = Type.Callable.Defined parameters;
+              _;
+            };
+            _;
+          } ->
+            let parameters =
+              List.map parameters ~f:Type.Callable.Parameter.annotation
+              |> List.concat_map ~f:Type.Variable.all_free_variables
+              |> List.map ~f:(fun variable -> Type.Variable variable)
+            in
+            List.fold
+              parameters
+              ~f:(fun resolution variable -> Resolution.add_type_variable resolution ~variable)
+              ~init:resolution
+        | _ ->
+            resolution
+      in
+      let critical_errors =
+        List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
+        |> (fun errors ->
+            Type.Variable.all_free_variables annotation
+            |> List.map ~f:(fun variable -> Type.Variable variable)
+            |> List.fold
+              ~f:(check_invalid_variables resolution)
+              ~init:errors)
+      in
+      if List.is_empty critical_errors then
+        add_invalid_type_parameters_errors annotation ~resolution ~location ~define ~errors
+      else
+        let errors =
+          List.fold
+            critical_errors
+            ~init:errors
+            ~f:(fun errors error -> ErrorKey.add_error ~errors error)
+        in
+        errors, Type.Top
+    in
     let annotation =
       Resolution.parse_annotation
         ~allow_untracked:true
