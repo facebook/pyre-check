@@ -53,7 +53,6 @@ module State = struct
     define: Define.t Node.t;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
-    resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
   }
 
 
@@ -134,7 +133,6 @@ module State = struct
       ?(bottom = false)
       ~resolution
       ~define
-      ?(resolution_fixpoint = Int.Map.Tree.empty)
       () =
     {
       configuration;
@@ -143,7 +141,6 @@ module State = struct
       define;
       nested_defines = Location.Reference.Map.empty;
       bottom;
-      resolution_fixpoint;
     }
 
 
@@ -630,16 +627,6 @@ module State = struct
           (Resolution.annotations previous.resolution)
           (Resolution.annotations next.resolution)
       in
-      let join_resolution_fixpoints ~key:_ = function
-        | `Left next_resolution
-        | `Right next_resolution
-        | `Both (_, next_resolution) -> Some next_resolution
-      in
-      let resolution_fixpoint = Int.Map.Tree.merge
-          ~f:join_resolution_fixpoints
-          previous.resolution_fixpoint
-          next.resolution_fixpoint
-      in
       let combine_errors ~key:_ left_error right_error =
         if iteration > widening_threshold then
           { left_error with Error.kind = Error.Top }
@@ -652,7 +639,6 @@ module State = struct
         nested_defines =
           Map.merge ~f:join_nested_defines previous.nested_defines next.nested_defines;
         resolution = Resolution.with_annotations resolution ~annotations;
-        resolution_fixpoint
       }
 
 
@@ -800,7 +786,7 @@ module State = struct
       >>| update_define
       |> Option.value ~default:state
     in
-    let check_parameter_annotations ({ resolution; resolution_fixpoint; _ } as state) =
+    let check_parameter_annotations ({ resolution; _ } as state) =
       let state, annotations =
         let check_parameter
             index
@@ -1076,16 +1062,7 @@ module State = struct
               parameters
       in
       let resolution = Resolution.with_annotations resolution ~annotations in
-      let resolution_fixpoint =
-        let precondition = Reference.Map.Tree.empty in
-        let postcondition =
-          Resolution.annotations resolution
-          |> Reference.Map.to_tree
-        in
-        let key = ([%hash: int * int] (Cfg.entry_index, 0)) in
-        Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
-      in
-      { state with resolution; resolution_fixpoint }
+      { state with resolution }
     in
     let check_base_annotations state =
       if Define.is_class_toplevel define then
@@ -4068,10 +4045,9 @@ module State = struct
 
 
   let forward
-      ?key
+      ?key:_
       ({
         resolution;
-        resolution_fixpoint;
         nested_defines;
         bottom;
         configuration;
@@ -4155,25 +4131,6 @@ module State = struct
             nested_defines
       in
       { state with nested_defines }
-    in
-
-    let state =
-      let resolution_fixpoint =
-        match key, state with
-        | Some key, { resolution = post_resolution; _ } ->
-            let precondition =
-              Resolution.annotations resolution
-              |> Reference.Map.to_tree
-            in
-            let postcondition =
-              Resolution.annotations post_resolution
-              |> Reference.Map.to_tree
-            in
-            Int.Map.Tree.set resolution_fixpoint ~key ~data:{ precondition; postcondition }
-        | None, _ ->
-            resolution_fixpoint
-      in
-      { state with resolution_fixpoint }
     in
 
     state

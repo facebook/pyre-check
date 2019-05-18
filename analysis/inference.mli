@@ -3,8 +3,6 @@
     This source code is licensed under the MIT license found in the
     LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 open Ast
 open Statement
 
@@ -20,7 +18,6 @@ module State : sig
     -> ?bottom: bool
     -> resolution: Resolution.t
     -> define: Statement.Define.t Node.t
-    -> ?resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
     -> unit
     -> t
   val initial
