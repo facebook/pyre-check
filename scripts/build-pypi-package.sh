@@ -89,7 +89,7 @@ done
 # Create build tree.
 SCRIPTS_DIRECTORY="$(dirname "$("${READLINK}" -f "$0")")"
 # sapp directory is either beside or inside pyre-check directory
-SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../sapp/"
+SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../tools/sapp/"
 if [[ ! -d "${SAPP_DIRECTORY}" ]]; then
   SAPP_DIRECTORY="${SCRIPTS_DIRECTORY}/../../sapp/"
 fi
