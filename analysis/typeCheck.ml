@@ -89,6 +89,7 @@ module State = struct
     resolution: Resolution.t;
     errors: Error.t ErrorKey.Map.t;
     define: Define.t Node.t;
+    check_return: bool;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
     resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
@@ -179,6 +180,7 @@ module State = struct
       resolution;
       errors = ErrorKey.Map.empty;
       define;
+      check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom;
       resolution_fixpoint;
@@ -792,19 +794,10 @@ module State = struct
         state, annotation
       in
       let update_define (state, annotation) =
-        let updated_define =
-          if Type.is_unknown annotation then
-            let signature =
-              {
-                define.signature
-                with return_annotation = Some (Type.expression annotation)
-              }
-            in
-            { define with signature }
-          else
-            define
-        in
-        { state with define = { define_node with Node.value = updated_define } }
+        if Type.is_unknown annotation then
+          { state with check_return = false }
+        else
+          state
       in
       return_annotation
       >>| parse_and_check_annotation ~state
@@ -2670,6 +2663,7 @@ module State = struct
                   _;
                 }; body } as define;
             } as define_node);
+          check_return;
           _;
         } as state)
       ~statement:{ Node.location; value } =
@@ -2698,7 +2692,8 @@ module State = struct
           ~expected:return_annotation
       in
       let check_incompatible_return state =
-        if not (Resolution.constraints_solution_exists
+        if check_return &&
+           not (Resolution.constraints_solution_exists
                   resolution ~left:actual ~right:return_annotation) &&
            not (Define.is_abstract_method define) &&
            not (Define.is_overloaded_method define) &&
@@ -4233,6 +4228,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
       define =
         Define.create_toplevel ~qualifier:None ~statements:[]
         |> Node.create_with_default_location;
+      check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
       resolution_fixpoint = Int.Map.Tree.empty;
