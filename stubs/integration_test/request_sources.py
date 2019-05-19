@@ -7,12 +7,12 @@ from django.http import HttpRequest, HttpResponse
 
 
 def test_index(request: HttpRequest):
-    eval(request.GET['bad'])
+    eval(request.GET["bad"])
 
 
 def test_get(request: HttpRequest):
-    eval(request.GET.get('bad'))
+    eval(request.GET.get("bad"))
 
 
 def test_getlist(request: HttpRequest):
-    eval(request.GET.getlist('bad'))
+    eval(request.GET.getlist("bad"))

@@ -8,8 +8,9 @@ from ig_nodeapi.privacy.access import Access
 
 
 def test_to_response(request: HttpRequest):
-    source = request.GET['bad']
+    source = request.GET["bad"]
     return HttpResponse(content=source)
+
 
 def test_vc_to_exit_node():
     source = Access.VIEW_BLOCKED_USER
