@@ -993,7 +993,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               ~statements:[]
             |> Node.create_with_default_location
           in
-          let module State = TypeCheck.State(struct let define = define end) in
+          let module State =
+            TypeCheck.State(struct
+              let configuration = configuration
+              let define = define
+            end)
+          in
           let state = State.create ~resolution () in
           let { State.state; resolved = annotation; } =
             State.forward_expression

@@ -75,7 +75,12 @@ let test_initial _ =
       | _ ->
           failwith "Unable to parse define."
     in
-    let module Context = struct let define = +define end in
+    let module Context =
+      (struct
+        let configuration = Test.mock_configuration
+        let define = +define
+      end)
+    in
     let module Create = Create(Context) in
     let state = Create.create ~immutables annotations in
     let module State = State(Context) in
@@ -185,7 +190,12 @@ let test_initial _ =
 
 
 let test_less_or_equal _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create
@@ -213,7 +223,12 @@ let test_less_or_equal _ =
 
 
 let test_join _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create
@@ -261,7 +276,12 @@ let test_join _ =
 
 
 let test_widen _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create
@@ -290,7 +310,12 @@ let test_widen _ =
 
 
 let test_check_annotation _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create
@@ -444,7 +469,12 @@ let test_resolve_exports _ =
 
 
 let assert_resolved sources expression expected =
-  let module State = State(struct let define = +Test.mock_define end) in
+  let module State =
+    State(struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let resolution =
     AnnotatedTest.populate_with_sources (sources @ typeshed_stubs ())
     |> fun environment -> TypeCheck.resolution environment ()
@@ -620,7 +650,12 @@ type parameter_kind =
 
 
 let test_forward_expression _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create
@@ -1074,7 +1109,12 @@ let test_forward_statement _ =
       | { Node.value = Define define; _ } -> define
       | _ -> failwith "Unable to parse define."
     in
-    let module Context = struct let define = +define end in
+    let module Context =
+      (struct
+        let configuration = Test.mock_configuration
+        let define = +define
+      end)
+    in
     let module Create = Create(Context) in
     let module State = State(Context) in
     let assert_state_equal =
@@ -1578,7 +1618,12 @@ let test_forward_statement _ =
 
 
 let test_forward _ =
-  let module Context = struct let define = +Test.mock_define end in
+  let module Context =
+    (struct
+      let configuration = Test.mock_configuration
+      let define = +Test.mock_define
+    end)
+  in
   let create =
     let module Create = Create(Context) in
     Create.create

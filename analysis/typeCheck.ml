@@ -52,6 +52,7 @@ let resolve_exports ~resolution reference =
 
 
 module type Context = sig
+  val configuration: Configuration.Analysis.t
   val define: Define.t Node.t
 end
 
@@ -61,8 +62,7 @@ module type Signature = sig
   [@@deriving eq]
 
   val create
-    :  ?configuration: Configuration.Analysis.t
-    -> ?bottom: bool
+    :  ?bottom: bool
     -> resolution: Resolution.t
     -> ?resolution_fixpoint: ResolutionSharedMemory.annotation_map Int.Map.Tree.t
     -> unit
@@ -71,11 +71,7 @@ module type Signature = sig
   val errors: t -> Error.t list
   val coverage: t -> Coverage.t
 
-  val initial
-    :  ?configuration: Configuration.Analysis.t
-    -> resolution: Resolution.t
-    -> unit
-    -> t
+  val initial: resolution: Resolution.t -> unit -> t
 
   (* Visible for testing. *)
   type resolved = {
@@ -125,7 +121,6 @@ module State(Context: Context) = struct
     { consistent_with_boundary: Type.t; not_consistent_with_boundary: Type.t option }
 
   and t = {
-    configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
     errors: Error.t ErrorKey.Map.t;
     check_return: bool;
@@ -211,13 +206,11 @@ module State(Context: Context) = struct
 
 
   let create
-      ?(configuration = Configuration.Analysis.create ())
       ?(bottom = false)
       ~resolution
       ?(resolution_fixpoint = Int.Map.Tree.empty)
       () =
     {
-      configuration;
       resolution;
       errors = ErrorKey.Map.empty;
       check_return = true;
@@ -352,7 +345,7 @@ module State(Context: Context) = struct
     { state with errors }, annotation
 
 
-  let errors { configuration; resolution; errors; _ } =
+  let errors { resolution; errors; _ } =
     let {
       Node.value = { Define.signature = { name; _ }; _ } as define;
       location;
@@ -569,7 +562,7 @@ module State(Context: Context) = struct
     |> Error.deduplicate
     |> class_initialization_errors
     |> overload_errors
-    |> Error.filter ~configuration ~resolution
+    |> Error.filter ~configuration:Context.configuration ~resolution
 
 
   let coverage { resolution; _ } =
@@ -766,7 +759,6 @@ module State(Context: Context) = struct
   }
 
   let rec initial
-      ?(configuration = Configuration.Analysis.create ())
       ~resolution
       () =
     let {
@@ -1385,10 +1377,7 @@ module State(Context: Context) = struct
         | _ ->
             state
     in
-    create
-      ~configuration
-      ~resolution:(Resolution.with_parent resolution ~parent)
-      ()
+    create ~resolution:(Resolution.with_parent resolution ~parent) ()
     |> check_decorators
     |> check_return_annotation
     |> check_parameter_annotations
@@ -4119,7 +4108,6 @@ module State(Context: Context) = struct
         resolution_fixpoint;
         nested_defines;
         bottom;
-        configuration;
         _;
       } as state)
       ~statement:({ Node.location; _ } as statement) =
@@ -4148,7 +4136,7 @@ module State(Context: Context) = struct
                 }
             | None ->
                 let ({ resolution = initial_resolution; _ }) =
-                  initial ~configuration ~resolution ()
+                  initial ~resolution ()
                 in
                 let nested_resolution =
                   let update ~key ~data initial_resolution =
@@ -4237,7 +4225,12 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
     Define.create_toplevel ~qualifier:None ~statements:[]
     |> Node.create_with_default_location;
   in
-  let module State = State(struct let define = define end) in
+  let module State =
+    State(struct
+      let configuration = Configuration.Analysis.create ()
+      let define = define
+    end)
+  in
   let aliases = Handler.aliases in
 
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
@@ -4260,8 +4253,7 @@ let resolution (module Handler: Environment.Handler) ?(annotations = Reference.M
         ()
     in
     {
-      State.configuration = Configuration.Analysis.create ();
-      errors = State.ErrorKey.Map.empty;
+      State.errors = State.ErrorKey.Map.empty;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
@@ -4403,7 +4395,13 @@ let run
           resolution
         ) ->
           let result =
-            let module State = State(struct let define = define_node end) in
+            let module Context =
+              (struct
+                let configuration = configuration
+                let define = define_node
+              end)
+            in
+            let module State = State(Context) in
             let module Fixpoint = Fixpoint.Make(State) in
             let check
                 ~define:{
@@ -4487,7 +4485,7 @@ let run
               { errors; coverage }
             in
             try
-              let initial = State.initial ~configuration ~resolution () in
+              let initial = State.initial ~resolution () in
               if Define.is_stub define then
                 { errors = State.errors initial; coverage = Coverage.create () }
               else

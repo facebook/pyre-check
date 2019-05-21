@@ -247,7 +247,12 @@ let test_type_collection _ =
       |> List.hd_exn
       |> fun access ->
       if String.equal (Access.show access) (Access.show test_access) then
-        let module State = TypeCheck.State(struct let define = +Test.mock_define end) in
+        let module State =
+          TypeCheck.State(struct
+            let configuration = configuration
+            let define = +Test.mock_define
+          end)
+        in
         let state = State.create ~resolution () in
         let expression =
           Expression.Access (Access.SimpleAccess access)
