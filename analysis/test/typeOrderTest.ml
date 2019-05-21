@@ -571,6 +571,22 @@ let default =
     ~predecessor:!"OverSpecifiedDict"
     ~successor:!"dict"
     ~parameters:[!"int"; !"int"; !"str"];
+
+  insert order !"GenericContainer";
+  connect
+    order
+    ~predecessor:!"GenericContainer"
+    ~successor:!"typing.Generic"
+    ~parameters:[variable; other_variable];
+  connect order ~predecessor:!"GenericContainer" ~successor:Type.Any;
+  insert order !"NonGenericContainerChild";
+  connect
+    order
+    ~predecessor:!"NonGenericContainerChild"
+    ~successor:!"GenericContainer"
+    ~parameters:[!"int"; !"str"];
+  connect order ~predecessor:Type.Bottom ~successor:!"NonGenericContainerChild";
+
   order
 
 
@@ -2771,6 +2787,19 @@ let test_instantiate_parameters _ =
        order
        ~source:!"OverSpecifiedDict"
        ~target:!"dict")
+    (Some [Type.Any; Type.Any]);
+  (* Don't do a search when starting from bottom *)
+  assert_equal
+    (instantiate_successors_parameters
+       order
+       ~source:!"NonGenericContainerChild"
+       ~target:!"GenericContainer")
+    (Some [Type.integer; Type.string]);
+  assert_equal
+    (instantiate_successors_parameters
+       order
+       ~source:Type.Bottom
+       ~target:!"GenericContainer")
     (Some [Type.Any; Type.Any]);
   ()
 

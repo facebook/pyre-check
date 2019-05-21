@@ -1892,51 +1892,58 @@ module OrderImplementation = struct
         ({ handler = ((module Handler: Handler) as handler); _ } as order)
         ~source
         ~target =
-      let primitive, parameters = Type.split source in
-      let parameters =
-        match primitive with
-        | Type.Primitive "tuple" ->
-            (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-            [List.fold ~init:Type.Bottom ~f:(join order) parameters]
-            |> List.map ~f:Type.weaken_literals
-        | _ ->
-            parameters
-      in
-
-      raise_if_untracked handler primitive;
       raise_if_untracked handler target;
-
       let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
+      match source with
+      | Type.Bottom ->
+          index_of handler target
+          |> Handler.find (Handler.edges ())
+          >>= get_generic_parameters ~generic_index
+          >>| List.map ~f:(fun _ -> Type.Any)
+      | _ ->
+          let primitive, parameters = Type.split source in
+          let parameters =
+            match primitive with
+            | Type.Primitive "tuple" ->
+                (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+                [List.fold ~init:Type.Bottom ~f:(join order) parameters]
+                |> List.map ~f:Type.weaken_literals
+            | _ ->
+                parameters
+          in
 
-      let worklist = Queue.create () in
-      Queue.enqueue
-        worklist
-        { Target.target = index_of handler primitive; parameters };
-      let rec iterate worklist =
-        match Queue.dequeue worklist with
-        | Some { Target.target = target_index; parameters } ->
-            let instantiated_successors =
-              Handler.find (Handler.edges ()) target_index
-              >>| get_instantiated_successors ~generic_index ~parameters
-            in
-            if target_index = index_of handler target then
-              match target with
-              | Type.Primitive "typing.Callable" ->
-                  Some parameters
-              | _ ->
-                  instantiated_successors
-                  >>= get_generic_parameters ~generic_index
-            else
-              begin
-                instantiated_successors
-                >>| List.iter ~f:(Queue.enqueue worklist)
-                |> ignore;
-                iterate worklist
-              end
-        | None ->
-            None
-      in
-      iterate worklist
+          raise_if_untracked handler primitive;
+
+
+          let worklist = Queue.create () in
+          Queue.enqueue
+            worklist
+            { Target.target = index_of handler primitive; parameters };
+          let rec iterate worklist =
+            match Queue.dequeue worklist with
+            | Some { Target.target = target_index; parameters } ->
+                let instantiated_successors =
+                  Handler.find (Handler.edges ()) target_index
+                  >>| get_instantiated_successors ~generic_index ~parameters
+                in
+                if target_index = index_of handler target then
+                  match target with
+                  | Type.Primitive "typing.Callable" ->
+                      Some parameters
+                  | _ ->
+                      instantiated_successors
+                      >>= get_generic_parameters ~generic_index
+                else
+                  begin
+                    instantiated_successors
+                    >>| List.iter ~f:(Queue.enqueue worklist)
+                    |> ignore;
+                    iterate worklist
+                  end
+            | None ->
+                None
+          in
+          iterate worklist
 
 
     and instantiate_predecessors_parameters
