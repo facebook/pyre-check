@@ -467,6 +467,22 @@ let test_register_aliases _ =
       "F", "int";
       "G", "G";
     ];
+  assert_resolved
+    [
+      parse
+        ~qualifier:(!&"a")
+        {|
+          class Foo: ...
+        |};
+      parse
+        ~qualifier:(!&"b")
+        {|
+          import a
+        |};
+    ]
+    [
+      "b.a.Foo", "a.Foo";
+    ];
   ()
 
 

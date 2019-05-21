@@ -529,14 +529,17 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
         (* Don't register x.* as an alias when a user writes `from x import *`. *)
         aliases
     | Import {
-        Import.from = Some from;
+        Import.from;
         imports;
       } ->
         let from =
-          match Reference.show from with
-          | "future.builtins"
-          | "builtins" -> Reference.empty
-          | _ -> from
+          match from >>| Reference.show with
+          | None
+          | Some "future.builtins"
+          | Some "builtins" ->
+              Reference.empty
+          | Some from ->
+              Reference.create from
         in
         let import_to_alias { Import.name; alias } =
           let qualified_name =
@@ -599,7 +602,10 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
               let module_definition = Handler.module_definition in
               if Module.from_empty_stub ~reference ~module_definition then
                 (), Type.Any
-              else if TypeOrder.contains order (Primitive primitive) then
+              else if
+                TypeOrder.contains order (Primitive primitive) ||
+                Handler.is_module (Reference.create primitive)
+              then
                 (), annotation
               else
                 let _ = Hash_set.add dependencies primitive in
