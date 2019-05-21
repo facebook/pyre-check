@@ -45,7 +45,7 @@ let recheck
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   Resolution.Cache.clear ();
-  let removed_handles, update_environment_with, check =
+  let recheck, removed_handles =
     let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with
       | exception (File.NonexistentHandle _) ->
@@ -74,13 +74,7 @@ let recheck
                 file :: updated, removed
           end
     in
-    let update_environment_with, removed_handles =
-      List.fold files ~f:update_handle_state ~init:([], [])
-    in
-    let check = List.filter update_environment_with ~f:(fun file -> not (File.is_stub file)) in
-    removed_handles,
-    update_environment_with,
-    check
+    List.fold files ~f:update_handle_state ~init:([], [])
   in
   if not (List.is_empty removed_handles) then
     List.map removed_handles ~f:File.Handle.show
@@ -88,13 +82,13 @@ let recheck
     |> Log.info "Removing type information for `%s`";
 
   let (module Handler: Environment.Handler) = environment in
-  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length check > 5) in
+  let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck > 5) in
 
   (* Compute requests we do not serve immediately. *)
   let deferred_state =
     if should_analyze_dependencies then
       ServerDependencies.compute_dependencies
-        update_environment_with
+        recheck
         ~state
         ~configuration
       |> fun files -> Deferred.add deferred_state ~files
@@ -118,13 +112,13 @@ let recheck
     Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
-      List.filter_map update_environment_with ~f:find_target
+      List.filter_map recheck ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-    let handles = List.filter_map update_environment_with ~f:handle in
+    let handles = List.filter_map recheck ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
-    List.iter update_environment_with ~f:(LookupCache.evict ~state ~configuration);
+    List.iter recheck ~f:(LookupCache.evict ~state ~configuration);
     Statistics.performance
       ~name:"purged old environment"
       ~timer
@@ -140,7 +134,7 @@ let recheck
         |> Path.absolute
         |> String.is_suffix ~suffix:".pyi"
       in
-      List.partition_tf ~f:is_stub update_environment_with
+      List.partition_tf ~f:is_stub recheck
     in
     Log.info "Parsing %d updated stubs..." (List.length stubs);
     let {
@@ -245,7 +239,7 @@ let recheck
                (Path.absolute (File.path file));
              None
          )
-      check
+      recheck
     |> Option.some
   in
   { state with deferred_state },

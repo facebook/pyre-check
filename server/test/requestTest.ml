@@ -522,7 +522,8 @@ let test_process_type_check_request context =
       "a.pyi", "def foo() -> int: ...";
     ]
     (* No errors due to getting shadowed by the stub. *)
-    ~expected_errors:["a.py", []]
+    (* TODO(T44669208): We should not get any results for a.py here. *)
+    ~expected_errors:["a.py", []; "a.pyi", []]
     ~expected_deferred_state:[]
     ();
 

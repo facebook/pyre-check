@@ -1628,7 +1628,7 @@ let test_incremental_typecheck context =
     assert_response
       ~handle:(relativize stub_path)
       ~request:(Request.TypeCheckRequest [stub_file])
-      (Protocol.TypeCheckResponse []);
+      (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename stub_path), []]);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
