@@ -449,6 +449,7 @@ def main():
         "--hide-parse-errors",
         action="store_true",
         help="Display detailed information about parse errors",
+        default="true",
     )
     parser.add_argument(
         "--show-parse-errors",
