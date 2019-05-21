@@ -21,30 +21,7 @@ type lookups_cache_entry = {
   source: string;
 }
 
-module Deferred = struct
-  type t = File.Set.t
-
-  let of_list files = File.Set.of_list files
-
-  let add files_to_analyze ~files =
-    Set.union files_to_analyze files
-
-  let take_n files_to_analyze ~elements =
-    let taken, remaining =
-      File.Set.to_list files_to_analyze
-      |> (fun to_analyze -> List.split_n to_analyze elements)
-    in
-    taken, File.Set.of_list remaining
-
-  let is_empty files_to_analyze =
-    File.Set.is_empty files_to_analyze
-
-  let length files_to_analyze =
-    File.Set.length files_to_analyze
-end
-
 type t = {
-  deferred_state: Deferred.t;
   environment: (module Analysis.Environment.Handler);
   errors: (Error.t list) File.Handle.Table.t;
   lookups: lookups_cache_entry String.Table.t;

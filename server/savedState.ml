@@ -120,8 +120,7 @@ let load
   in
   let state =
     {
-      State.deferred_state = File.Set.empty;
-      environment;
+      State.environment;
       errors;
       scheduler;
       lock;
@@ -131,13 +130,11 @@ let load
       lookups = String.Table.create ();
     }
   in
-  let changed_files =
-    Set.union
-      (Dependencies.compute_dependencies ~state ~configuration changed_files)
-      (File.Set.of_list changed_files)
+  Log.info "Reanalyzing %d files and their dependencies." (List.length changed_files);
+  let state, _ =
+    IncrementalCheck.recheck ~state ~configuration ~files:changed_files
   in
-  Log.info "Reanalyzing %d files which may have been affected." (Set.length changed_files);
-  { state with State.deferred_state = changed_files }
+  state
 
 
 let save ~configuration ~errors ~saved_state_path =

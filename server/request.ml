@@ -11,7 +11,6 @@ open Analysis
 open Network
 
 open State
-open Configuration.Analysis
 open Configuration.Server
 open Protocol
 open Request
@@ -231,13 +230,11 @@ let parse_lsp ~configuration ~request =
           | Ok {
               LanguageServer.Types.DisplayTypeErrors.parameters = Some {
                   files;
-                  flush;
-                  _
                 };
               _
             } ->
               let files = List.map files ~f:string_path_to_file in
-              Some (DisplayTypeErrors { files; flush })
+              Some (DisplayTypeErrors files)
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -1086,58 +1083,12 @@ let process_type_check_request
     ~configuration
     ~files =
   let state, response =
-    IncrementalCheck.recheck ~state ~configuration ~files ~should_analyze_dependencies:true
+    IncrementalCheck.recheck ~state ~configuration ~files
   in
   { state; response = Some (TypeCheckResponse response) }
 
-let process_deferred_state
-    ~state:({ State.deferred_state; _ } as state)
-    ~configuration:({ number_of_workers; _ } as configuration)
-    ~flush =
-  (* The chunk size is an heuristic - the attempt is to have a request that can be completed
-     in a few seconds. *)
-  SharedMem.collect `aggressive;
-  let current_batch, remaining =
-    if flush then
-      File.Set.to_list deferred_state, File.Set.empty
-    else
-      Deferred.take_n ~elements:number_of_workers deferred_state
-  in
-  if List.length current_batch > 0 then
-    begin
-      let remaining_message =
-        let length = Deferred.length remaining in
-        if length <> 0 then
-          Format.sprintf ", %d remaining." length
-        else
-          "."
-      in
-      Log.info
-        "Processing %d deferred requests%s"
-        (List.length current_batch)
-        remaining_message;
-      let state = { state with deferred_state = remaining } in
-      let state, response =
-        IncrementalCheck.recheck
-          ~state
-          ~configuration
-          ~files:current_batch
-          ~should_analyze_dependencies:false
-      in
-      { state; response = Some (TypeCheckResponse response) }
-    end
-  else
-    { state; response = None }
 
-
-let process_display_type_errors_request ~state ~configuration ~files ~flush =
-  let state =
-    if flush then
-      let { state; _ } = process_deferred_state ~state ~configuration ~flush:true in
-      state
-    else
-      state
-  in
+let process_display_type_errors_request ~state ~configuration ~files =
   let errors =
     let { errors; _ } = state in
     match files with
@@ -1209,8 +1160,8 @@ let rec process
       | TypeQueryRequest request ->
           process_type_query_request ~state ~configuration ~request
 
-      | DisplayTypeErrors { files; flush } ->
-          process_display_type_errors_request ~state ~configuration ~files ~flush
+      | DisplayTypeErrors files ->
+          process_display_type_errors_request ~state ~configuration ~files
 
       | StopRequest ->
           Socket.write socket StopResponse;

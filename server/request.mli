@@ -20,27 +20,25 @@ val process_client_shutdown_request
   :  state: State.t
   -> id: LanguageServer.Types.RequestId.t
   -> response
+
 val process_type_query_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t
   -> request: Protocol.TypeQuery.request
   -> response
+
 val process_display_type_errors_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t
   -> files: File.t list
-  -> flush: bool
   -> response
+
 val process_type_check_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t
   -> files: File.t list
   -> response
-val process_deferred_state
-  :  state: State.t
-  -> configuration: Configuration.Analysis.t
-  -> flush: bool
-  -> response
+
 val process_get_definition_request
   :  state: State.t
   -> configuration: Configuration.Analysis.t

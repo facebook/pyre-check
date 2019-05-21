@@ -15,6 +15,7 @@ open Configuration.Analysis
 open Pyre
 
 type errors = (File.Handle.t * State.Error.t list) list
+[@@deriving show]
 
 let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
   let initial_files = Option.value ~default:(Hashtbl.keys errors) checked_files in
@@ -36,11 +37,9 @@ let recheck
         State.environment;
         errors;
         scheduler;
-        deferred_state;
         _ } as state)
     ~configuration:({ debug; _ } as configuration)
-    ~files
-    ~should_analyze_dependencies =
+    ~files =
 
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
@@ -84,16 +83,12 @@ let recheck
   let (module Handler: Environment.Handler) = environment in
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck > 5) in
 
-  (* Compute requests we do not serve immediately. *)
-  let deferred_state =
-    if should_analyze_dependencies then
-      ServerDependencies.compute_dependencies
-        recheck
-        ~state
-        ~configuration
-      |> fun files -> Deferred.add deferred_state ~files
-    else
-      deferred_state
+  (* Also recheck dependencies of the changed files. *)
+  let recheck =
+    Set.union
+      (File.Set.of_list recheck)
+      (ServerDependencies.compute_dependencies recheck ~state ~configuration)
+    |> Set.to_list
   in
 
   (* Repopulate the environment. *)
@@ -242,5 +237,5 @@ let recheck
       recheck
     |> Option.some
   in
-  { state with deferred_state },
+  state,
   build_file_to_error_map ~checked_files ~state new_errors

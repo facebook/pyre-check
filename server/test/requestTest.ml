@@ -30,8 +30,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
   in
   add_defaults_to_environment ~configuration environment;
   {
-    State.deferred_state = State.Deferred.of_list [];
-    environment;
+    State.environment;
     errors;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
@@ -97,48 +96,6 @@ let initialize ?configuration sources =
     mock_server_state ~sources:(List.map sources ~f:source) ()
   in
   configuration, state
-
-
-let test_deferred_take_n _ =
-  let assert_take to_analyze number ~expected =
-    let to_analyze =
-      let to_file relative =
-        Path.create_relative ~root:(Path.current_working_directory ()) ~relative
-        |> File.create
-      in
-      to_analyze
-      |> List.map ~f:to_file
-      |> File.Set.of_list
-    in
-    let taken, remaining = Server.State.Deferred.take_n to_analyze ~elements:number in
-    assert_equal ~cmp:File.Set.equal to_analyze (Set.union (File.Set.of_list taken) remaining);
-    assert_equal (List.length taken) expected;
-    assert_equal (Set.length remaining) (Set.length to_analyze - expected)
-  in
-  assert_take ["a.py"; "b.py"; "c.py"] ~expected:3 3;
-  assert_take ["a.py"; "b.py"; "c.py"] ~expected:2 2;
-  assert_take ["a.py"; "b.py"; "c.py"] ~expected:3 4;
-  assert_take ["a.py"; "a.py"; "b.py"] ~expected:2 3
-
-
-let test_deferred_add _ =
-  let assert_add ~initial ~files ~expected =
-    let to_file_set paths =
-      let to_file relative =
-        Path.create_relative ~root:(Path.current_working_directory ()) ~relative
-        |> File.create
-      in
-      List.map paths ~f:to_file
-      |> File.Set.of_list
-    in
-    assert_equal
-      ~cmp:File.Set.equal
-      (to_file_set expected)
-      (Server.State.Deferred.add (to_file_set initial) ~files:(to_file_set files))
-  in
-  assert_add ~initial:["b.py"] ~files:["a.py"] ~expected:["a.py"; "b.py"];
-  assert_add ~initial:["a.py"; "b.py"] ~files:["a.py"] ~expected:["a.py"; "b.py"];
-  assert_add ~initial:["a.py"; "b.py"] ~files:["a.py"; "c.py"] ~expected:["a.py"; "b.py"; "c.py"]
 
 
 let test_generate_lsp_response _ =
@@ -299,7 +256,7 @@ let test_process_display_type_errors_request _ =
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
       in
       let files = List.map paths ~f:File.create in
-      Request.process_display_type_errors_request ~state ~configuration ~files ~flush:false
+      Request.process_display_type_errors_request ~state ~configuration ~files
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."
@@ -342,12 +299,11 @@ let test_process_type_check_request context =
       ?(sources = [])
       ~check
       ~expected_errors
-      ?(expected_deferred_state = [])
       ?temporary_directory
       ?(incremental_transitive_dependencies = false)
       () =
     let assert_response _ =
-      let actual_errors, actual_deferred_state =
+      let actual_errors =
         let configuration =
           Configuration.Analysis.create
             ~project_root:(Path.current_working_directory ())
@@ -360,26 +316,13 @@ let test_process_type_check_request context =
         |> function
         | {
           Request.response = Some (Protocol.TypeCheckResponse response);
-          state = { State.deferred_state; _ };
+          _;
         } ->
-            let deferred =
-              let show_file file =
-                File.handle file ~configuration
-                |> File.Handle.show
-              in
-              File.Set.to_list deferred_state
-              |> List.map ~f:show_file
-            in
-            response, deferred
+            response
         | _ ->
             failwith "Unexpected response."
       in
       assert_errors_equal ~actual_errors ~expected_errors;
-      assert_equal
-        ~cmp:(List.equal ~equal:String.equal)
-        ~printer:(String.concat ~sep:"\n")
-        expected_deferred_state
-        actual_deferred_state
     in
     let temporary_directory = match temporary_directory with
       | Some temporary_directory -> temporary_directory
@@ -428,7 +371,6 @@ let test_process_type_check_request context =
     ]
     ~check:["library.py", "def function() -> int: ..."]  (* Unchanged. *)
     ~expected_errors:["library.py", []]
-    ~expected_deferred_state:[]
     ();
   (* Single dependency. *)
   assert_response
@@ -437,8 +379,7 @@ let test_process_type_check_request context =
       "client.py", "from library import function";
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_state:["client.py"]
+    ~expected_errors:["client.py", []; "library.py", []]
     ();
   (* Multiple depedencies. *)
   assert_response
@@ -448,8 +389,7 @@ let test_process_type_check_request context =
       "other.py", "from library import function";
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_state:["client.py"; "other.py"]
+    ~expected_errors:["client.py", []; "library.py", []; "other.py", []]
     ();
   (* Indirect dependency. *)
   assert_response
@@ -464,8 +404,7 @@ let test_process_type_check_request context =
       "indirect.py", "from client import function"
     ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["library.py", []]
-    ~expected_deferred_state:["client.py"; "indirect.py"]
+    ~expected_errors:["client.py", []; "indirect.py", []; "library.py", []]
     ();
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
@@ -481,8 +420,7 @@ let test_process_type_check_request context =
       "c.py", "from b import *";
     ]
     ~check:["a.py", "var = 1337"]
-    ~expected_errors:["a.py", []]
-    ~expected_deferred_state:["b.py"]
+    ~expected_errors:["a.py", []; "b.py", []]
     ();
   assert_response
     ~incremental_transitive_dependencies:true
@@ -492,8 +430,7 @@ let test_process_type_check_request context =
       "c.py", "from b import *";
     ]
     ~check:["a.py", "var = 1337"]
-    ~expected_errors:["a.py", []]
-    ~expected_deferred_state:["b.py"; "c.py"]
+    ~expected_errors:["a.py", []; "b.py", []; "c.py", []]
     ();
   assert_response
     ~sources:[
@@ -503,7 +440,6 @@ let test_process_type_check_request context =
     ]
     ~check:["b.py", "from a import *"]
     ~expected_errors:["b.py", []]
-    ~expected_deferred_state:[]
     ();
   assert_response
     ~sources:[
@@ -512,8 +448,7 @@ let test_process_type_check_request context =
       "c.py", "from b import *";
     ]
     ~check:["a.py", "var = ''"]
-    ~expected_errors:["a.py", []]
-    ~expected_deferred_state:["b.py"]
+    ~expected_errors:["a.py", []; "b.py", []]
     ();
   assert_response
     ~sources:[]
@@ -524,7 +459,6 @@ let test_process_type_check_request context =
     (* No errors due to getting shadowed by the stub. *)
     (* TODO(T44669208): We should not get any results for a.py here. *)
     ~expected_errors:["a.py", []; "a.pyi", []]
-    ~expected_deferred_state:[]
     ();
 
 
@@ -547,62 +481,6 @@ let test_process_type_check_request context =
       File.create (Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py");
       ]
   |> ignore
-
-let test_process_deferred_state context =
-  let test_with_number_of_dependents dependents_number =
-    let assert_response_size
-        ~sources
-        ~check
-        ~dependents_number
-        () =
-      let assert_response_size _ =
-        let configuration, state = initialize sources in
-        let state =
-          let files = List.map check ~f:write_file in
-          Request.process_type_check_request ~state ~configuration ~files
-          |> fun { state; _ } ->
-          state
-        in
-        assert_equal
-          ~printer:(Int.to_string)
-          dependents_number
-          (State.Deferred.length state.deferred_state);
-
-        (* Test a second iteration. *)
-        let { Request.state = state; _ } =
-          Request.process_deferred_state ~state ~configuration ~flush:false
-        in
-        let analyzed_size = Int.min dependents_number configuration.number_of_workers in
-        let expected_remaining_size = dependents_number - analyzed_size in
-        assert_equal
-          ~printer:(Int.to_string)
-          expected_remaining_size
-          (State.Deferred.length state.deferred_state);
-        ()
-      in
-      OUnit2.with_bracket_chdir context (OUnit2.bracket_tmpdir context) assert_response_size
-    in
-    let sources =
-      let main = "a.py", "var = 42" in
-      let dependents =
-        List.init
-          dependents_number
-          ~f:(fun id -> Format.sprintf "dependent-%d.py" id, "from a import var")
-      in
-      main :: dependents
-    in
-    assert_response_size
-      ~sources
-      ~check:["a.py", "var = 3.14"]
-      ~dependents_number
-      ()
-  in
-  test_with_number_of_dependents 1;
-  test_with_number_of_dependents 10;
-  test_with_number_of_dependents 20;
-  test_with_number_of_dependents 55;
-  test_with_number_of_dependents 100;
-  test_with_number_of_dependents 121
 
 
 let test_process_get_definition_request context =
@@ -735,9 +613,6 @@ let () =
     "process_type_query_request">::test_process_type_query_request;
     "process_display_type_errors_request">::test_process_display_type_errors_request;
     "process_type_check_request">::test_process_type_check_request;
-    "process_deferred_state">::test_process_deferred_state;
     "process_get_definition_request">::test_process_get_definition_request;
-    "deferred_take_n">::test_deferred_take_n;
-    "deferred_add">::test_deferred_add;
   ]
   |> Test.run

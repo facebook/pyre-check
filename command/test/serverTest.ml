@@ -273,8 +273,7 @@ let mock_server_state
   let environment = Environment.handler initial_environment in
   add_defaults_to_environment ~configuration environment;
   {
-    State.deferred_state = State.Deferred.of_list [];
-    environment;
+    State.environment;
     errors;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
@@ -407,13 +406,7 @@ let test_protocol_type_check context =
   assert_response
     ~local_root
     ~source
-    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
-    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)));
-
-  assert_response
-    ~local_root
-    ~source
-    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
+    ~request:(Protocol.Request.DisplayTypeErrors [])
     (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
 
 
@@ -1649,22 +1642,10 @@ let test_incremental_typecheck context =
              ~qualifier:(Source.qualifier ~handle:(File.Handle.create (relativize stub_path)))
              source
           )));
-  let () =
-    let file = file ~local_root ~content:"def foo() -> int: return 1" path in
-    assert_response
-      ~request:(Request.TypeCheckRequest [file])
-      (Protocol.TypeCheckResponse [File.Handle.create handle, []])
-  in
-
-  let state = mock_server_state ~local_root (File.Handle.Table.create ()) in
+  let file = file ~local_root ~content:"def foo() -> int: return 1" path in
   assert_response
-    ~state
-    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
-    (Protocol.TypeCheckResponse []);
-  assert_response
-    ~state:{ state with deferred_state = State.Deferred.of_list files }
-    ~request:(Protocol.Request.DisplayTypeErrors { files = []; flush = true })
-    (Protocol.TypeCheckResponse errors)
+    ~request:(Request.TypeCheckRequest [file])
+    (Protocol.TypeCheckResponse [File.Handle.create handle, []])
 
 
 let test_protocol_language_server_protocol context =
@@ -1780,10 +1761,6 @@ let test_incremental_dependencies context =
     let environment_handler = Environment.handler environment in
     add_defaults_to_environment ~configuration environment_handler;
     Test.populate ~configuration environment_handler sources;
-    let expected_errors = [
-      File.Handle.create "b.py", [];
-    ]
-    in
     let initial_state =
       mock_server_state
         ~local_root
@@ -1797,17 +1774,8 @@ let test_incremental_dependencies context =
         ~configuration:(CommandTest.mock_server_configuration ~local_root ())
         ~request
     in
-    let { Request.state; response } =
+    let { Request.response; _ } =
       process (Protocol.Request.TypeCheckRequest [file ~local_root "b.py"])
-    in
-    assert_equal (Some (Protocol.TypeCheckResponse expected_errors)) response;
-    assert_equal
-      ~printer:(List.to_string ~f:File.show)
-      [file ~local_root "a.py"]
-      (File.Set.to_list state.State.deferred_state);
-    let { Request.state; response } =
-      process
-        (Protocol.Request.TypeCheckRequest [file ~local_root "a.py"; file ~local_root "b.py"])
     in
     let printer = function
       | None -> "None"
@@ -1815,15 +1783,23 @@ let test_incremental_dependencies context =
     in
     assert_equal
       ~printer
+      (Some
+         (Protocol.TypeCheckResponse [
+             File.Handle.create "a.py", [];
+             File.Handle.create "b.py", [];
+           ]))
+      response;
+    let { Request.response; _ } =
+      process
+        (Protocol.Request.TypeCheckRequest [file ~local_root "a.py"; file ~local_root "b.py"])
+    in
+    assert_equal
+      ~printer
       (Some (Protocol.TypeCheckResponse [
            File.Handle.create "a.py", [];
            File.Handle.create "b.py", [];
          ]))
-      response;
-    assert_equal
-      ~printer:(List.to_string ~f:(File.show))
-      []
-      (File.Set.to_list state.State.deferred_state)
+      response
   in
   let finally () =
     Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]

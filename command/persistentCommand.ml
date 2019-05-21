@@ -44,7 +44,7 @@ let communicate server_socket all_uris =
 
   Statistics.event ~flush:true ~name:"persistent_client_launch" ();
   (* Get all initial errors *)
-  Socket.write server_socket (Protocol.Request.DisplayTypeErrors { files = []; flush = true });
+  Socket.write server_socket (Protocol.Request.DisplayTypeErrors []);
 
   let rec listen server_socket () =
     let read =

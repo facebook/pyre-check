@@ -10,7 +10,7 @@ open Server
 
 
 let run
-    nonblocking
+    _
     transitive
     verbose
     expected_version
@@ -87,7 +87,7 @@ let run
 
        Socket.write
          socket
-         (Protocol.Request.DisplayTypeErrors { files = []; flush = not nonblocking });
+         (Protocol.Request.DisplayTypeErrors []);
 
        let response_json =
          match Socket.read socket with

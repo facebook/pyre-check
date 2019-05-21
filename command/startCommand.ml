@@ -161,13 +161,8 @@ let computation_thread request_queue configuration state =
           raise uncaught_exception
     in
     let state =
-      match Squeue.length request_queue, State.Deferred.is_empty state.deferred_state with
-      | 0, false ->
-          let process_state ~socket:_ ~state =
-            Request.process_deferred_state ~state ~configuration:analysis_configuration ~flush:false
-          in
-          handle_request state ~origin:Protocol.Request.Background ~process:process_state
-      | 0, true ->
+      match Squeue.length request_queue with
+      | 0 ->
           (* Stop if the server is idle. *)
           let current_time = Unix.time () in
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in

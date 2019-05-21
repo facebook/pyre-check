@@ -173,7 +173,7 @@ module Request : sig
     | ClientConnectionRequest of client
     | ClientExitRequest of client
     | RageRequest of LanguageServer.Types.RequestId.t
-    | DisplayTypeErrors of { files: File.t list; flush: bool }
+    | DisplayTypeErrors of File.t list
     | TypeCheckRequest of File.t list
     | TypeQueryRequest of TypeQuery.request
     | StopRequest

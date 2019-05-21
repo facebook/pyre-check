@@ -975,7 +975,6 @@ let test_request_parser context =
       method_ = "displayTypeErrors";
       parameters = Some {
           LanguageServer.Types.DisplayTypeErrorsParameters.files = [absolute; symlink_source; stub];
-          flush = false;
         }
     }
     |> LanguageServer.Types.DisplayTypeErrors.to_yojson
@@ -1036,10 +1035,7 @@ let test_request_parser context =
     display_type_errors_message
     (
       Some (
-        Protocol.Request.DisplayTypeErrors {
-          files = [absolute_file; linked_file; stub_file];
-          flush = false;
-        }
+        Protocol.Request.DisplayTypeErrors [absolute_file; linked_file; stub_file]
       )
     )
 

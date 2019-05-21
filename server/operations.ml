@@ -115,7 +115,6 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
     table
   in
   {
-    deferred_state = Deferred.of_list [];
     environment;
     errors;
     scheduler;

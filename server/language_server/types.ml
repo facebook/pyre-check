@@ -307,8 +307,6 @@ module DisplayTypeErrorsParameters = struct
   type t = {
     files: string list
         [@default []];
-    flush: bool
-        [@default false];
   }
   [@@deriving yojson]
 end
