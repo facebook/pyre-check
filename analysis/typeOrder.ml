@@ -2111,6 +2111,7 @@ module OrderImplementation = struct
                            property = false;
                            final = false;
                            static = false;
+                           frozen = false;
                          }]
                       |> Option.some
                     in

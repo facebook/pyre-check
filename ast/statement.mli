@@ -185,6 +185,7 @@ module Attribute : sig
     toplevel: bool;
     final: bool;
     static: bool;
+    frozen: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -272,6 +273,8 @@ module Class : sig
   val constructors: ?in_test: bool -> t -> Define.t list
   val defines: t -> Define.t list
   val find_define: t -> method_name:Identifier.t -> Define.t Node.t option
+
+  val is_frozen: t -> bool
 
   val implicit_attributes
     :  ?in_test: bool

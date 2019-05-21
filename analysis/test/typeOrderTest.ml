@@ -36,6 +36,7 @@ let parse_attributes ~parse_annotation ~class_name =
       property = false;
       final = false;
       static = false;
+      frozen = false;
     } |> Ast.Node.create_with_default_location
   in
   List.map ~f:parse_attribute

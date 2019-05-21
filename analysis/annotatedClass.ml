@@ -431,6 +431,7 @@ let create_attribute
         toplevel;
         final;
         static;
+        frozen;
       };
     } =
   let class_annotation = annotation parent in
@@ -529,7 +530,7 @@ let create_attribute
       Some (Type.Callable callable) ->
         Type.TypedDictionary.special_overloads ~fields ~method_name ~total
         >>| (fun overloads ->
-              Some (Type.Callable {
+            Some (Type.Callable {
                 callable with
                 implementation = { annotation = Type.Top; parameters = Undefined };
                 overloads;
@@ -674,6 +675,7 @@ let create_attribute
       property;
       final;
       static;
+      frozen;
     };
 
   }
@@ -844,6 +846,7 @@ let attribute
             toplevel = true;
             final = false;
             static = false;
+            frozen = false;
           }
         }
 
@@ -943,6 +946,7 @@ let rec fallback_attribute ~resolution ~name
                      toplevel = true;
                      final = false;
                      static = false;
+                     frozen = false;
                    };
                  })
         | _ ->

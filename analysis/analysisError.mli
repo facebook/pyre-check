@@ -95,6 +95,7 @@ type invalid_assignment_kind =
       class_variable: Identifier.t;
       class_name: Identifier.t;
     }
+  | ReadOnly of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type invalid_type_kind =

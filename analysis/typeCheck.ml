@@ -3063,10 +3063,21 @@ module State(Context: Context) = struct
                             state
                         ) |> Option.value ~default:state
                     in
+                    let check_is_readonly_property state =
+                      match attribute with
+                      | Some ({ Node.value = { Annotated.Attribute.frozen = true; _ }; _ }, _)
+                        when Option.is_none original_annotation ->
+                          emit_error
+                            ~state
+                            ~location
+                            ~kind:(Error.InvalidAssignment (ReadOnly reference))
+                      | _ -> state
+                    in
                     check_global_final_reassignment state
                     |> check_class_final_reassignment
                     |> check_assign_class_variable_on_instance
                     |> check_final_is_outermost_qualifier
+                    |> check_is_readonly_property
                 | _ ->
                     state
               in

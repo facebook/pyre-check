@@ -118,6 +118,7 @@ type invalid_assignment_kind =
       class_variable: Identifier.t;
       class_name: Identifier.t;
     }
+  | ReadOnly of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -837,6 +838,12 @@ let messages ~concise ~signature location kind =
                  did you mean to assign to `%a.%a` instead?"
                 pp_identifier class_name
                 pp_identifier class_variable
+            ]
+        | ReadOnly name ->
+            [
+              Format.asprintf
+                "`%a` cannot be reassigned. It is a read-only property."
+                pp_reference name
             ]
       end
   | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
@@ -1857,6 +1864,7 @@ let less_or_equal ~resolution left right =
     | InvalidAssignment left, InvalidAssignment right ->
         begin
           match left, right with
+          | ReadOnly left, ReadOnly right
           | Final left, Final right ->
               Reference.equal left right
           | ClassVariable left, ClassVariable right ->

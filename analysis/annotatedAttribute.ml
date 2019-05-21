@@ -20,6 +20,7 @@ type attribute = {
   property: bool;
   final: bool;
   static: bool;
+  frozen: bool;
 }
 [@@deriving eq, show]
 

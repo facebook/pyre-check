@@ -213,6 +213,7 @@ module Attribute = struct
     toplevel: bool;
     final: bool;
     static: bool;
+    frozen: bool;
   }
   [@@deriving compare, eq, sexp, show, hash]
 
@@ -233,6 +234,7 @@ module Attribute = struct
       ?defines
       ?(final = false)
       ?(static = false)
+      ?(frozen = false)
       ~name
       () =
     {
@@ -247,6 +249,7 @@ module Attribute = struct
       toplevel;
       final;
       static;
+      frozen;
     }
     |> Node.create ~location
 
@@ -508,7 +511,7 @@ module Define = struct
   let contains_call { body; _ } name =
     let matches = function
       | {
-          Node.value = Expression {
+        Node.value = Expression {
             Node.value =
               Expression.Access
                 (SimpleAccess [
@@ -521,18 +524,18 @@ module Define = struct
       } when String.equal identifier name ->
           true
       | {
-          Node.value = Expression {
+        Node.value = Expression {
             Node.value = Expression.Call {
-              callee = {
-                Node.value = Expression.Name (Expression.Name.Identifier identifier);
+                callee = {
+                  Node.value = Expression.Name (Expression.Name.Identifier identifier);
+                  _;
+                };
                 _;
               };
-              _;
-            };
             _;
           };
-          _;
-        } when String.equal identifier name ->
+        _;
+      } when String.equal identifier name ->
           true
       | _ ->
           false
@@ -561,9 +564,9 @@ module Define = struct
       ({ body; signature = { parameters; _ } } as define)
       ?(convert = false)
       ~definition:{
-        Record.Class.body = definition_body;
-        _;
-      } : Attribute.t Identifier.SerializableMap.t =
+      Record.Class.body = definition_body;
+      _;
+    } : Attribute.t Identifier.SerializableMap.t =
     let convert_generated_ast = convert in
     let open Expression in
     let parameter_annotations =
@@ -581,18 +584,18 @@ module Define = struct
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
             | {
-                Node.value = Access (
+              Node.value = Access (
                   SimpleAccess ((Access.Identifier self) :: [Access.Identifier name]));
-                _;
-              }
+              _;
+            }
             | {
-                Node.value = Name (
+              Node.value = Name (
                   Name.Attribute {
                     base = { Node.value = Name (Name.Identifier self); _ };
                     attribute = name;
                   });
-                _;
-              } when Identifier.equal self (self_identifier define) ->
+              _;
+            } when Identifier.equal self (self_identifier define) ->
                 let attribute =
                   Attribute.create ~primitive:true ~toplevel ~location ~name ?annotation ~value ()
                 in
@@ -623,12 +626,12 @@ module Define = struct
                     None,
                     {
                       Node.value = Name (
-                        Name.Attribute {
-                          base = { Node.value = Name (Name.Identifier _ ); _ };
-                          attribute = target;
-                        });
-                        _;
-                      },
+                          Name.Attribute {
+                            base = { Node.value = Name (Name.Identifier _ ); _ };
+                            attribute = target;
+                          });
+                      _;
+                    },
                     { Node.value = Name (Name.Identifier value); _ }
                     when is_reassignment target value ->
                       Identifier.SerializableMap.find_opt value parameter_annotations
@@ -683,31 +686,31 @@ module Define = struct
                   }
                 else
                   Some {
-                   Node.location;
-                   value =
-                    Call {
-                      callee = {
-                        Node.location;
-                        value = Name (
-                          Name.Attribute {
-                            base = {
-                              Node.location;
-                              value = Name (
-                                Name.Attribute {
-                                  base = {
-                                    Node.location;
-                                    value = Name (Name.Identifier "typing")
-                                  };
-                                  attribute = "Union"
-                                }
-                              );
-                            };
-                            attribute = "__getitem__";
-                          }
-                        );
+                    Node.location;
+                    value =
+                      Call {
+                        callee = {
+                          Node.location;
+                          value = Name (
+                              Name.Attribute {
+                                base = {
+                                  Node.location;
+                                  value = Name (
+                                      Name.Attribute {
+                                        base = {
+                                          Node.location;
+                                          value = Name (Name.Identifier "typing")
+                                        };
+                                        attribute = "Union"
+                                      }
+                                    );
+                                };
+                                attribute = "__getitem__";
+                              }
+                            );
+                        };
+                        arguments = [{ Call.Argument.name = None; value = argument_value }]
                       };
-                      arguments = [{ Call.Argument.name = None; value = argument_value }]
-                    };
                   }
           in
           { Node.location; value = { attribute with Attribute.annotation }}
@@ -741,16 +744,16 @@ module Define = struct
           }
         | Expression {
             Node.value = Call {
-              callee = {
-                Node.value = Name (
-                  Name.Attribute {
-                    base = { Node.value = Name (Name.Identifier self); _ };
-                    attribute = name;
-                  });
+                callee = {
+                  Node.value = Name (
+                      Name.Attribute {
+                        base = { Node.value = Name (Name.Identifier self); _ };
+                        attribute = name;
+                      });
+                  _;
+                };
                 _;
               };
-              _;
-            };
             _;
           } when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
@@ -785,8 +788,8 @@ module Define = struct
 
 
   let property_attribute
-    ~location
-    ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define) =
+      ~location
+      ({ signature = { name; return_annotation; parameters; parent; _ }; _ } as define) =
     let attribute ?(setter = false) annotation =
       parent
       >>= (fun parent -> Attribute.name ~parent (Reference.expression ~location name))
@@ -826,19 +829,19 @@ module Define = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute {
-                          base = {
-                            Node.location;
-                            value = Name (
-                              Name.Attribute {
-                                base = { Node.location; value = Name (Name.Identifier "typing") };
-                                attribute = "ClassVar";
-                              }
-                            );
-                          };
-                          attribute = "__getitem__";
-                        }
-                      );
+                          Name.Attribute {
+                            base = {
+                              Node.location;
+                              value = Name (
+                                  Name.Attribute {
+                                    base = { Node.location; value = Name (Name.Identifier "typing") };
+                                    attribute = "ClassVar";
+                                  }
+                                );
+                            };
+                            attribute = "__getitem__";
+                          }
+                        );
                     };
                     arguments = [{ Call.Argument.name = None; value = name }];
                   };
@@ -917,7 +920,35 @@ module Class = struct
     List.filter_map ~f:is_define body |> List.hd
 
 
-  let explicitly_assigned_attributes { Record.Class.name; body; _ } =
+  let is_frozen { decorators; _ } =
+    let is_frozen_dataclass decorator =
+      match decorator with
+      | { Node.value = Expression.Call {
+          callee = {
+            Node.value = Name (Name.Attribute {
+                base = { value = Name (Name.Identifier "dataclasses"); _ };
+                attribute = "dataclass" });
+            _ };
+          arguments };
+          _ } ->
+          let has_frozen_argument Expression.Call.Argument.{ name; value } =
+            begin
+              match name, value with
+              | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
+                  String.equal "frozen" (Identifier.sanitized value)
+              | _, _ ->
+                  false
+            end
+          in
+          List.exists arguments ~f:has_frozen_argument
+      | _ ->
+          false
+    in
+    List.exists decorators ~f:is_frozen_dataclass
+
+
+
+  let explicitly_assigned_attributes ({ Record.Class.name; body; _ } as definition) =
     let assigned_attributes map { Node.location; value } =
       let open Expression in
       match value with
@@ -966,14 +997,14 @@ module Class = struct
                       Some {
                         value
                         with Node.value = Call {
-                          callee = {
-                            Node.location;
-                            value = Name (
-                              Name.Attribute { base = value; attribute = "__getitem__" }
-                            );
-                          };
-                          arguments = [{ Call.Argument.name = None; value = index }]
-                        }
+                            callee = {
+                              Node.location;
+                              value = Name (
+                                  Name.Attribute { base = value; attribute = "__getitem__" }
+                                );
+                            };
+                            arguments = [{ Call.Argument.name = None; value = index }]
+                          }
                       }
                   | _ ->
                       None
@@ -991,8 +1022,9 @@ module Class = struct
             Attribute.name ~parent:name target
             |> function
             | Some name  ->
+                let frozen = is_frozen definition in
                 let attribute =
-                  Attribute.create ~primitive:true ~location ~name ?annotation ~value ()
+                  Attribute.create ~primitive:true ~location ~name ?annotation ~frozen ~value ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute
             | _ ->
@@ -1140,51 +1172,51 @@ module Class = struct
                   {
                     Node.location;
                     value = Call {
-                      callee = {
-                        Node.location;
-                        value = Name (
-                          Name.Attribute {
-                            base = {
-                              Node.location;
-                              value = Name (
-                                Name.Attribute {
-                                  base = { Node.location; value = Name (Name.Identifier "typing") };
-                                  attribute = "Type";
-                                }
-                              );
-                            };
-                            attribute = "__getitem__";
-                          }
-                        );
+                        callee = {
+                          Node.location;
+                          value = Name (
+                              Name.Attribute {
+                                base = {
+                                  Node.location;
+                                  value = Name (
+                                      Name.Attribute {
+                                        base = { Node.location; value = Name (Name.Identifier "typing") };
+                                        attribute = "Type";
+                                      }
+                                    );
+                                };
+                                attribute = "__getitem__";
+                              }
+                            );
+                        };
+                        arguments = [
+                          { Call.Argument.name = None; value = Reference.expression name }
+                        ];
                       };
-                      arguments = [
-                        { Call.Argument.name = None; value = Reference.expression name }
-                      ];
-                    };
                   }
                 in
                 {
                   Node.location;
                   value = Call {
-                    callee = {
-                      Node.location;
-                      value = Name (
-                        Name.Attribute {
-                          base = {
-                            Node.location;
-                            value = Name (
-                              Name.Attribute {
-                                base = { Node.location; value = Name (Name.Identifier "typing") };
-                                attribute = "ClassVar";
-                              }
-                            );
-                          };
-                          attribute = "__getitem__";
-                        }
-                      );
+                      callee = {
+                        Node.location;
+                        value = Name (
+                            Name.Attribute {
+                              base = {
+                                Node.location;
+                                value = Name (
+                                    Name.Attribute {
+                                      base = { Node.location; value = Name (Name.Identifier "typing") };
+                                      attribute = "ClassVar";
+                                    }
+                                  );
+                              };
+                              attribute = "__getitem__";
+                            }
+                          );
+                      };
+                      arguments = [{ Call.Argument.name = None; value = meta_annotation }];
                     };
-                    arguments = [{ Call.Argument.name = None; value = meta_annotation }];
-                  };
                 }
             in
             let attribute_name = Reference.last name in
@@ -1261,8 +1293,8 @@ module Class = struct
       in
       explicit_attributes
       |> Identifier.SerializableMap.merge
-          merge
-          (implicit_attributes ~in_test ~convert definition)
+        merge
+        (implicit_attributes ~in_test ~convert definition)
 
 
   let update
@@ -1362,20 +1394,21 @@ module Class = struct
   let is_final definition =
     has_decorator definition "typing.final"
 
+
   let is_abstract { bases; _ } =
     let abstract_metaclass { Expression.Call.Argument.value; _ } =
       match value with
       | { Node.value = Expression.Access (SimpleAccess identifiers); _ } ->
           String.equal "abc.ABCMeta" (Expression.Access.show identifiers)
       | {
-          Node.value = Name (
+        Node.value = Name (
             Name.Attribute {
               base = { Node.value = Name (Name.Identifier "abc"); _ };
               attribute = "ABCMeta";
             }
           );
-          _;
-        } ->
+        _;
+      } ->
           true
       | _ ->
           false
@@ -1402,21 +1435,21 @@ module For = struct
             callee = {
               Node.location;
               value = Name (Name.Attribute {
-                base = {
-                  Node.location;
-                  value = Call {
-                    callee = {
-                      Node.location;
-                      value = Name (Name.Attribute {
-                        base;
-                        attribute = iterator;
-                      });
-                    };
-                    arguments = [];
+                  base = {
+                    Node.location;
+                    value = Call {
+                        callee = {
+                          Node.location;
+                          value = Name (Name.Attribute {
+                              base;
+                              attribute = iterator;
+                            });
+                        };
+                        arguments = [];
+                      };
                   };
-                };
-                attribute = next;
-              });
+                  attribute = next;
+                });
             };
             arguments = [];
           }
@@ -1461,17 +1494,17 @@ module With = struct
            {
              Node.location;
              value = Call {
-               callee = {
-                 Node.location;
-                 value = Name (
-                   Name.Attribute {
-                     base = expression;
-                     attribute = call_name;
-                   }
-                 );
+                 callee = {
+                   Node.location;
+                   value = Name (
+                       Name.Attribute {
+                         base = expression;
+                         attribute = call_name;
+                       }
+                     );
+                 };
+                 arguments = [];
                };
-               arguments = [];
-             };
            }
          in
          if async then
@@ -1521,12 +1554,12 @@ module Try = struct
               Assert.test = {
                 Node.location;
                 value = Call {
-                  callee = { Node.location; value = Name (Name.Identifier "isinstance") };
-                  arguments = [
-                    { Call.Argument.name = None; value = target };
-                    { Call.Argument.name = None; value = annotation };
-                  ];
-                };
+                    callee = { Node.location; value = Name (Name.Identifier "isinstance") };
+                    arguments = [
+                      { Call.Argument.name = None; value = target };
+                      { Call.Argument.name = None; value = annotation };
+                    ];
+                  };
               };
               message = None;
               origin = Assert.Assertion
@@ -1543,27 +1576,27 @@ module Try = struct
           {
             Node.location;
             value = Call {
-              callee = {
-                Node.location;
-                value = Name (
-                  Name.Attribute {
-                    base = {
-                      Node.location;
-                      value = Name (
-                        Name.Attribute {
-                          base = { Node.location; value = Name (Name.Identifier "typing") };
-                          attribute = "Union";
-                        }
-                      );
-                    };
-                    attribute = "__getitem__";
-                  }
-                );
+                callee = {
+                  Node.location;
+                  value = Name (
+                      Name.Attribute {
+                        base = {
+                          Node.location;
+                          value = Name (
+                              Name.Attribute {
+                                base = { Node.location; value = Name (Name.Identifier "typing") };
+                                attribute = "Union";
+                              }
+                            );
+                        };
+                        attribute = "__getitem__";
+                      }
+                    );
+                };
+                arguments = [
+                  { Call.Argument.name = None; value = { Node.location; value = Tuple values} }
+                ];
               };
-              arguments = [
-                { Call.Argument.name = None; value = { Node.location; value = Tuple values} }
-              ];
-            };
           }
         in
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation

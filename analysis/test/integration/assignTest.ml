@@ -136,7 +136,17 @@ let test_check_assign _ =
       x = Base
       x.y = 100
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from dataclasses import dataclass
+      @dataclass(frozen=True)
+      class A:
+          foo:int = 1
+      a = A()
+      a.foo = 2
+    |}
+    ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."]
 
 
 let () =

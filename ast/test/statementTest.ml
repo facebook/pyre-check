@@ -281,6 +281,7 @@ let test_attributes _ =
       ?(final = false)
       ?(static = false)
       ?(location = Location.Reference.any)
+      ?(frozen = false)
       ~name
       ~annotation
       ?defines
@@ -298,6 +299,7 @@ let test_attributes _ =
       toplevel;
       final;
       static;
+      frozen;
     }
     |> Node.create ~location
   in
