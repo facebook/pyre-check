@@ -86,6 +86,7 @@ val global: t -> Reference.t -> global option
 val module_definition: t -> Reference.t -> Module.t option
 val class_definition: ?convert: bool -> t -> Type.t -> (Class.t Node.t) option
 val class_metadata: t -> Type.t -> class_metadata option
+val is_protocol: t -> Type.t -> bool
 
 module FunctionDefinitionsCache : sig
   val enable: unit -> unit

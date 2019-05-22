@@ -283,6 +283,24 @@ let test_check_protocol _ =
 
     |}
     [];
+  assert_type_errors
+    ~debug:false
+    {|
+      class P(typing.Protocol):
+        def foo(self) -> int: ...
+
+      class Alpha:
+        def foo(self) -> typing.Any:
+          return 9
+
+      def foo(p: P) -> int:
+        return p.foo()
+
+      def bar(a: Alpha) -> None:
+        foo(a)
+
+    |}
+    [];
   ()
 
 

@@ -1706,7 +1706,9 @@ let due_to_mismatch_with_any resolution { kind; _ } =
         in
         List.fold expressions ~init:true ~f:check_consistent
       in
-      (Type.contains_any actual || Type.contains_any expected) && consistent ()
+      (Type.contains_any actual ||
+       Type.contains_any expected ||
+       Resolution.is_protocol resolution expected) && consistent ()
   | InvalidArgument (Keyword { annotation = actual; _ }) ->
       is_consistent_with
         ~actual
