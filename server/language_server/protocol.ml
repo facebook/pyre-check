@@ -100,7 +100,7 @@ module ApplyWorkspaceEdit = struct
   let create ~id edit =
     {
       jsonrpc = "2.0";
-      method_ =  "workspace/applyEdit";
+      method_ = "workspace/applyEdit";
       id;
       parameters = Some { edit };
     }

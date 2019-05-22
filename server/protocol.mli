@@ -187,10 +187,10 @@ module Request : sig
         id: LanguageServer.Types.RequestId.t;
         uri: LanguageServer.Types.DocumentUri.t;
         diagnostics: LanguageServer.Types.Diagnostic.t list;
+        file: File.t;
       }
     | ExecuteCommandRequest of {
         id: LanguageServer.Types.RequestId.t;
-        command: string;
         arguments: LanguageServer.Types.CommandArguments.t list;
       }
   [@@deriving eq, show]

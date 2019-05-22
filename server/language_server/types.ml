@@ -433,17 +433,6 @@ module DocumentLinkOptions = struct
 end
 
 
-(* This will conflict with the already existing Command.Spec *)
-module Command_ = struct
-  type t = {
-    title: string;
-    command: string;
-    arguments: CommandArguments.t list;
-  }
-  [@@deriving yojson]
-end
-
-
 module ExecuteCommandOptions = struct
   type t = {
     commands: string list
@@ -469,7 +458,7 @@ module TextEdit = struct
     newText: string
         [@key "newText"];
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 end
 
 
@@ -478,7 +467,7 @@ module WorkspaceEditChanges = struct
     uri: DocumentUri.t;
     textEdit: TextEdit.t list;
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 
 
   let to_yojson : t -> Yojson.Safe.json =
@@ -487,14 +476,24 @@ module WorkspaceEditChanges = struct
        let edits = List.map edits ~f:TextEdit.to_yojson in
        `Assoc [uri, `List edits]
     )
-
 end
 
 
 module WorkspaceEdit = struct
   type t = {
     changes: WorkspaceEditChanges.t option
-        [@key "changes"];
+        [@default None];
+  }
+  [@@deriving yojson, eq, show]
+end
+
+
+(* This will conflict with the already existing Command.Spec *)
+module Command_ = struct
+  type t = {
+    title: string;
+    command: string;
+    arguments: CommandArguments.t list;
   }
   [@@deriving yojson]
 end

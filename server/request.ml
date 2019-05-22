@@ -197,7 +197,10 @@ let parse_lsp ~configuration ~request =
               id;
               _;
             } ->
-              Some (CodeActionRequest { id; uri; diagnostics })
+              uri_to_path ~uri
+              >>| File.create
+              >>| fun file ->
+              CodeActionRequest { id; uri; diagnostics; file }
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -209,13 +212,13 @@ let parse_lsp ~configuration ~request =
           match ExecuteCommandRequest.of_yojson request with
           | Ok {
               ExecuteCommandRequest.parameters = Some {
-                  ExecuteCommandParameters.command;
-                  arguments;
+                  ExecuteCommandParameters.arguments;
+                  _
                 };
               id;
               _
             } ->
-              Some (ExecuteCommandRequest { id; command; arguments; })
+              Some (ExecuteCommandRequest { id; arguments; })
           | Ok _ ->
               None
           | Error yojson_error ->
@@ -284,6 +287,78 @@ type response = {
   state: State.t;
   response: Protocol.response option;
 }
+
+
+module AnnotationEdit = struct
+
+  type t = {
+    new_text: string;
+    position: LanguageServer.Types.Position.t;
+  }
+
+
+  let range { position; _ } =
+    { LanguageServer.Types.Range.start = position; end_ = position }
+
+
+  let new_text { new_text; _ } =
+    new_text
+
+
+  let create_location ~error ~file LanguageServer.Types.Position.{ line = start_line; _ } =
+    let token =
+      match Error.kind error with
+      | Error.MissingReturnAnnotation _  ->
+          Some "):"
+      | Error.MissingGlobalAnnotation { name; _ } ->
+          Some (Format.asprintf "%a" Reference.pp_sanitized name)
+      | _ ->
+          None
+    in
+    let get_position lines token =
+      List.findi lines ~f:(fun _ line -> Option.is_some (String.substr_index line ~pattern:token))
+      >>| (fun (index, line) ->
+          Some LanguageServer.Types.Position.{
+              line = (index + start_line);
+              character = (String.substr_index_exn line ~pattern:token) + 1;
+            })
+      |> Option.value ~default:None
+    in
+    let lines = File.lines file in
+    match token, lines with
+    | Some token, Some lines ->
+        let _, lines = List.split_n lines start_line in
+        get_position lines token
+    | _, _ ->
+        None
+
+
+  let create
+      ~file
+      ~error
+      ({ LanguageServer.Types.Diagnostic.range = { start; _ }; message = _; _ }) =
+    error
+    >>| (fun error ->
+        let  new_text =
+          match Error.kind error with
+          | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
+              Some (" -> " ^ (Type.show (Type.weaken_literals annotation)))
+          | Error.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
+              Some (": " ^ (Type.show (Type.weaken_literals annotation)))
+          | _ ->
+              None
+        in
+        let position = create_location ~error ~file start in
+        match position, new_text with
+        | Some position, Some new_text ->
+            Some {
+              new_text;
+              position;
+            }
+        | _, _  ->
+            None
+      ) |> Option.value ~default:None
+end
 
 
 let process_client_shutdown_request ~state ~id =
@@ -1099,6 +1174,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   { state; response = Some (TypeQueryResponse response) }
 
 
+
 let process_type_check_request
     ~state
     ~configuration
@@ -1152,7 +1228,7 @@ let process_get_definition_request
 
 let rec process
     ~socket
-    ~state:({ State.environment; lock; connections; _ } as state)
+    ~state:({ State.environment; lock; connections; errors; _ } as state)
     ~configuration:({
         configuration;
         _;
@@ -1242,31 +1318,54 @@ let rec process
           in
           { state; response }
 
-      | CodeActionRequest { id; diagnostics; uri; _ } ->
+      | CodeActionRequest { id; diagnostics; uri; file; } ->
+          let is_range_equal_location
+              { LanguageServer.Types.Range.start = range_start; end_ }
+              { Location.start = location_start; stop; _ } =
+            let compare_position
+                { LanguageServer.Types.Position.line = range_line; character }
+                { Location.line = location_line; column } =
+              Int.equal (range_line + 1) location_line && Int.equal character column
+            in
+            compare_position range_start location_start &&
+            compare_position end_ stop
+          in
           let response =
             let open LanguageServer.Protocol in
+            let errors file =
+              try
+                File.handle ~configuration file
+                |> Hashtbl.find errors
+                |> Option.value ~default:[]
+              with (File.NonexistentHandle _) ->
+                []
+            in
             let code_actions =
-              List.map diagnostics ~f:(fun ({ range = { start; _ }; _ } as diagnostic) ->
-                  let range  =
-                    { LanguageServer.Types.Range.start = start ; end_ = start }
-                  in
-                  let arguments = [{
-                      LanguageServer.Types.CommandArguments.range = range;
-                      newText = "-> int";
-                      uri;
-                    }]
-                  in
-                  LanguageServer.Types.CodeAction.{
-                    diagnostics = Some [diagnostic];
-                    command = Some {
-                        title = "Fix it";
-                        command = "add_annotation";
-                        arguments;
-                      };
-                    title = "Add missing annotation";
-                    kind = Some "refactor.rewrite";
-                  }
-                )
+              diagnostics
+              |> List.filter_map
+                ~f:(fun (LanguageServer.Types.Diagnostic.{ range; _ } as diagnostic) ->
+                    let error = List.find
+                        (errors file)
+                        ~f:(fun { location; _ } -> is_range_equal_location range location)
+                    in
+                    AnnotationEdit.create ~file ~error diagnostic
+                    >>| (fun edit ->
+                        Some {
+                          LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
+                          command = Some {
+                              title = "Fix it";
+                              command = "add_annotation";
+                              arguments = [{
+                                  range = AnnotationEdit.range edit;
+                                  newText = AnnotationEdit.new_text edit;
+                                  uri;
+                                }]
+                            };
+                          title = "Add annotation";
+                          kind = Some "refactor.rewrite";
+                        })
+                    |> Option.value ~default:None
+                  )
             in
             CodeActionResponse.create ~id ~code_actions
             |> CodeActionResponse.to_yojson
@@ -1276,17 +1375,14 @@ let rec process
           in
           { state; response }
 
-      | ExecuteCommandRequest { arguments; id; _} ->
+      | ExecuteCommandRequest { arguments; id; } ->
           let response =
             List.hd arguments
             >>| (fun { uri; newText; range } ->
                 let edit = {
                   LanguageServer.Types.WorkspaceEdit.changes = Some {
-                      LanguageServer.Types.WorkspaceEditChanges.uri;
-                      textEdit = [{
-                          LanguageServer.Types.TextEdit.newText;
-                          range;
-                        }];
+                      uri;
+                      textEdit = [{ newText; range }];
                     }
                 }
                 in
