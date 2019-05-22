@@ -1508,9 +1508,10 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                               | Primitive name ->
                                   parametric name parameters
                               | Parametric { name; _ } ->
-                                  (* Ignore parameters for now. *)
+                                  (* TODO(T44787675): Implement actual generic aliases *)
                                   parametric name parameters
                               | Union elements ->
+                                  (* TODO(T44787675): Implement actual generic aliases *)
                                   let replace_parameters = function
                                     | Parametric { name; _ } -> parametric name parameters
                                     | annotation -> annotation

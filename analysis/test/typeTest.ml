@@ -156,7 +156,7 @@ let test_create _ =
   assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
   assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.Primitive "Aliased"]);
   assert_alias "Alias[int]" (Type.parametric "Aliased" [Type.integer]);
-  (* TODO(T30095392): we're blindly stripping away the first type parameter of `Future`. *)
+  (* TODO(T44787675): Implement actual generic aliases *)
   assert_alias
     "_Future[int]"
     (Type.union [Type.parametric "Future" [Type.integer]; Type.awaitable Type.integer]);
