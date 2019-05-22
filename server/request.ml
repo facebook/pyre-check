@@ -191,21 +191,19 @@ let parse_lsp ~configuration ~request =
                     TextDocumentIdentifier.uri;
                     _;
                   };
+                  context = { diagnostics; _ };
                   _;
                 };
+              id;
               _;
             } ->
-              uri_to_path ~uri
-              >>| File.create
-              >>| fun file ->
-              CodeActionRequest file
+              Some (CodeActionRequest { id; uri; diagnostics })
           | Ok _ ->
               None
           | Error yojson_error ->
               Log.log ~section:`Server "Error: %s" yojson_error;
               None
         end
-
     | "updateFiles" ->
         begin
           match UpdateFiles.of_yojson request with
@@ -1226,8 +1224,26 @@ let rec process
           in
           { state; response }
 
-      | CodeActionRequest _ ->
-          { state; response = None }
+      | CodeActionRequest { id; diagnostics; _ } ->
+          let response =
+            let open LanguageServer.Protocol in
+            let code_actions =
+              List.map diagnostics ~f:(fun diagnostic ->
+                  LanguageServer.Types.CodeAction.{
+                    diagnostics = Some [diagnostic];
+                    command = Some { title = "Fix Annotation"; command = "add_annotation" };
+                    title = "Add missing annotation";
+                    kind = Some "refactor.rewrite";
+                  }
+                )
+            in
+            CodeActionResponse.create ~id ~code_actions
+            |> CodeActionResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> (fun response -> LanguageServerProtocolResponse response)
+            |> Option.some
+          in
+          { state; response }
 
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)

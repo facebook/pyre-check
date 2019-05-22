@@ -58,7 +58,7 @@ end
 
 module DocumentUri = struct
   type t = string
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 end
 
 
@@ -69,7 +69,7 @@ module Position = struct
     character: int
         [@key "character"];
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 end
 
 
@@ -80,7 +80,7 @@ module Range = struct
     end_: Position.t
         [@key "end"];
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 end
 
 
@@ -112,6 +112,7 @@ module DiagnosticSeverity = struct
     | Warning
     | Information
     | Hint
+  [@@deriving eq, show]
 
   let to_yojson : t -> Yojson.Safe.json = function
     | Error -> `Int 1
@@ -144,7 +145,7 @@ module Diagnostic = struct
     message: string
         [@key "message"];
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 end
 
 
@@ -412,9 +413,19 @@ module DocumentLinkOptions = struct
 end
 
 
+(* This will conflict with the already existing Command.Spec *)
+module Command_ = struct
+  type t = {
+    title: string;
+    command: string;
+  }
+  [@@deriving yojson]
+end
+
+
 module ExecuteCommandOptions = struct
   type t = {
-    commands: string list
+    commands: Command_.t list
         [@key "commands"];
   }
   [@@deriving yojson]
@@ -441,6 +452,39 @@ module TextEdit = struct
 end
 
 
+module TextDocumentEdit = struct
+  type t = {
+    textDocument: TextDocumentIdentifier.t
+        [@key "textDocument"];
+    edits: TextEdit.t
+        [@key "edits"];
+  }
+  [@@deriving yojson]
+end
+
+
+module WorkspaceEditChanges = struct
+  type t = {
+    uri: DocumentUri.t;
+    textEdit: TextEdit.t;
+  }
+  [@@deriving yojson]
+
+  let to_yojson : t -> Yojson.Safe.json =
+    (fun { uri; textEdit } -> `Assoc [uri, TextEdit.to_yojson textEdit])
+
+end
+
+
+module WorkspaceEdit = struct
+  type t = {
+    changes: WorkspaceEditChanges.t
+        [@key "changes"];
+  }
+  [@@deriving yojson]
+end
+
+
 module CodeAction = struct
   type t = {
     title: string
@@ -451,7 +495,7 @@ module CodeAction = struct
     diagnostics: Diagnostic.t list option
         [@key "diagnostics"]
         [@default None];
-    command: ExecuteCommandOptions.t option
+    command: Command_.t option
         [@key "command"]
         [@default None];
   }
@@ -1067,6 +1111,19 @@ module HoverResponse = struct
 
 
   include ResponseMessage.Make (HoverResult) (HoverError)
+end
+
+
+module CodeActionResponse = struct
+  module CodeActionResult = struct
+    type t = CodeAction.t list
+    [@@deriving yojson]
+  end
+
+
+  module CodeActionError = ResponseError.Make(Null)
+
+  include ResponseMessage.Make(CodeActionResult) (CodeActionError)
 end
 
 

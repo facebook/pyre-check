@@ -278,7 +278,11 @@ module Request = struct
     | OpenDocument of File.t
     | CloseDocument of File.t
     | SaveDocument of File.t
-    | CodeActionRequest of File.t
+    | CodeActionRequest of  {
+        id: LanguageServer.Types.RequestId.t;
+        uri: LanguageServer.Types.DocumentUri.t;
+        diagnostics: LanguageServer.Types.Diagnostic.t list;
+      }
   [@@deriving eq, show]
 
 

@@ -88,6 +88,17 @@ module HoverResponse : sig
   val create: id: Types.RequestId.t -> result: hover_result option -> t
 end
 
+module CodeActionResponse : sig
+  type t
+  [@@deriving to_yojson]
+
+  val create:
+    id: Types.RequestId.t ->
+    code_actions: Types.CodeAction.t list ->
+    t
+
+end
+
 module RageResponse : sig
   type t
   [@@deriving to_yojson]

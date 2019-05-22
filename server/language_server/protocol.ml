@@ -241,6 +241,20 @@ module HoverResponse = struct
 end
 
 
+module CodeActionResponse = struct
+  include Types.CodeActionResponse
+
+  let create ~id ~code_actions =
+    {
+      jsonrpc = "2.0";
+      id;
+      result = Some code_actions;
+      error = None;
+    }
+
+end
+
+
 module RageResponse = struct
   include Types.RageResponse
 
