@@ -143,7 +143,8 @@ my_list = to_seconds(my_list) # Type checks!
 Here are some immutable variants for commonly used containers:
 
 ```
-typing.List → typing.Iterable
+typing.List → typing.Sequence (if you need random access via my_list[id])
+typing.List → typing.Iterable (if you're just iterating over the list in a loop and want to support sets as well)
 typing.Dict → typing.Mapping
 typing.Set → typing.AbstractSet
 ```
