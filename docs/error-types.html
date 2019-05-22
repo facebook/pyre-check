@@ -150,9 +150,10 @@ my_list = to_seconds(my_list) #<span class="hljs-built_in"> Type </span>checks!
 </code></pre>
 <p><code>typing.Iterable</code> is an immutable variant for lists that allows accessing the list without modifying it. Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
 Here are some immutable variants for commonly used containers:</p>
-<pre><code class="hljs">typing<span class="hljs-selector-class">.List</span> → typing<span class="hljs-selector-class">.Iterable</span>
-typing<span class="hljs-selector-class">.Dict</span> → typing<span class="hljs-selector-class">.Mapping</span>
-typing<span class="hljs-selector-class">.Set</span> → typing<span class="hljs-selector-class">.AbstractSet</span>
+<pre><code class="hljs">typing.List → typing.Sequence (<span class="hljs-keyword">if</span> you need random access via my_list[<span class="hljs-built_in">id</span>])
+typing.List → typing.Iterable (<span class="hljs-keyword">if</span> you're just iterating <span class="hljs-keyword">over</span> <span class="hljs-keyword">the</span> <span class="hljs-built_in">list</span> <span class="hljs-keyword">in</span> a loop <span class="hljs-keyword">and</span> want <span class="hljs-keyword">to</span> support sets <span class="hljs-keyword">as</span> well)
+typing.Dict → typing.Mapping
+typing.Set → typing.AbstractSet
 </code></pre>
 <p>Invariance, combined with type inference, comes with a few gotchas. When you write an expression, Pyre infers the most precise type possible. For instance, Pyre infers the <code>List[int]</code> type for <code>[1, 2]</code>, even though <code>List[float]</code> would be a perfectly valid type here. This can cause issues, as in the following example:</p>
 <pre><code class="hljs"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">zeroes</span><span class="hljs-params">(number_of_elements: int)</span> -&gt; List[float]:</span>
