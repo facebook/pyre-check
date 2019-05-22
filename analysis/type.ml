@@ -1810,15 +1810,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
               callee = {
                 Node.value = Name (
                     Name.Attribute {
-                      base = {
-                        Node.value = Name (
-                            Name.Attribute {
-                              base = { Node.value = Name (Name.Identifier "pyre_check") ; _ };
-                              attribute = "extensions";
-                            }
-                          );
-                        _;
-                      };
+                      base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
                       attribute = "IntVar";
                     });
                 _;

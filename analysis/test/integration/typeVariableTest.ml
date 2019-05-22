@@ -736,8 +736,8 @@ let test_distinguish _ =
 let test_integer_variables _ =
   assert_type_errors
     {|
-      T = pyre_check.extensions.IntVar("T")
-      X = pyre_check.extensions.IntVar("X")
+      T = typing_extensions.IntVar("T")
+      X = typing_extensions.IntVar("X")
       def baz(x: X) -> X:
         return x
       def bop(x: int) -> None:
@@ -754,7 +754,7 @@ let test_integer_variables _ =
     ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
   assert_type_errors
     {|
-      X = pyre_check.extensions.IntVar("X")
+      X = typing_extensions.IntVar("X")
       def baz(x: X) -> X:
         return x
       def bar(y: int) -> None:
