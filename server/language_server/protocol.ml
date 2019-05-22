@@ -94,6 +94,19 @@ module PublishDiagnostics = struct
 end
 
 
+module ApplyWorkspaceEdit = struct
+  include Types.ApplyWorkspaceEdit
+
+  let create ~id edit =
+    {
+      jsonrpc = "2.0";
+      method_ =  "workspace/applyEdit";
+      id;
+      parameters = Some { edit };
+    }
+end
+
+
 module DidSaveTextDocument = struct
   include Types.DidSaveTextDocument
 
@@ -170,7 +183,9 @@ module InitializeResponse = struct
               document_on_type_formatting_provider = None;
               rename_provider = None;
               document_link_provider = None;
-              execute_command_provider = None;
+              execute_command_provider = Some ExecuteCommandOptions.{
+                  commands = ["add_annotation"]
+                };
               experimental = None;
               rage_provider = Some true;
             });

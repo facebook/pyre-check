@@ -283,6 +283,11 @@ module Request = struct
         uri: LanguageServer.Types.DocumentUri.t;
         diagnostics: LanguageServer.Types.Diagnostic.t list;
       }
+    | ExecuteCommandRequest of {
+        id: LanguageServer.Types.RequestId.t;
+        command: string;
+        arguments: LanguageServer.Types.CommandArguments.t list;
+      }
   [@@deriving eq, show]
 
 
@@ -317,6 +322,7 @@ module Request = struct
     | CloseDocument _ -> "CloseDocument"
     | SaveDocument _ -> "SaveDocument"
     | CodeActionRequest _ -> "CodeAction"
+    | ExecuteCommandRequest _ -> "ExecuteCommandRequest"
 end
 
 

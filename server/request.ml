@@ -204,6 +204,24 @@ let parse_lsp ~configuration ~request =
               Log.log ~section:`Server "Error: %s" yojson_error;
               None
         end
+    | "workspace/executeCommand" ->
+        begin
+          match ExecuteCommandRequest.of_yojson request with
+          | Ok {
+              ExecuteCommandRequest.parameters = Some {
+                  ExecuteCommandParameters.command;
+                  arguments;
+                };
+              id;
+              _
+            } ->
+              Some (ExecuteCommandRequest { id; command; arguments; })
+          | Ok _ ->
+              None
+          | Error yojson_error ->
+              Log.log ~section:`Server "Error: %s" yojson_error;
+              None
+        end
     | "updateFiles" ->
         begin
           match UpdateFiles.of_yojson request with
@@ -1224,14 +1242,27 @@ let rec process
           in
           { state; response }
 
-      | CodeActionRequest { id; diagnostics; _ } ->
+      | CodeActionRequest { id; diagnostics; uri; _ } ->
           let response =
             let open LanguageServer.Protocol in
             let code_actions =
-              List.map diagnostics ~f:(fun diagnostic ->
+              List.map diagnostics ~f:(fun ({ range = { start; _ }; _ } as diagnostic) ->
+                  let range  =
+                    { LanguageServer.Types.Range.start = start ; end_ = start }
+                  in
+                  let arguments = [{
+                      LanguageServer.Types.CommandArguments.range = range;
+                      newText = "-> int";
+                      uri;
+                    }]
+                  in
                   LanguageServer.Types.CodeAction.{
                     diagnostics = Some [diagnostic];
-                    command = Some { title = "Fix Annotation"; command = "add_annotation" };
+                    command = Some {
+                        title = "Fix it";
+                        command = "add_annotation";
+                        arguments;
+                      };
                     title = "Add missing annotation";
                     kind = Some "refactor.rewrite";
                   }
@@ -1242,6 +1273,29 @@ let rec process
             |> Yojson.Safe.to_string
             |> (fun response -> LanguageServerProtocolResponse response)
             |> Option.some
+          in
+          { state; response }
+
+      | ExecuteCommandRequest { arguments; id; _} ->
+          let response =
+            List.hd arguments
+            >>| (fun { uri; newText; range } ->
+                let edit = {
+                  LanguageServer.Types.WorkspaceEdit.changes = Some {
+                      LanguageServer.Types.WorkspaceEditChanges.uri;
+                      textEdit = [{
+                          LanguageServer.Types.TextEdit.newText;
+                          range;
+                        }];
+                    }
+                }
+                in
+                LanguageServer.Protocol.ApplyWorkspaceEdit.create ~id edit
+                |> LanguageServer.Protocol.ApplyWorkspaceEdit.to_yojson
+                |> Yojson.Safe.to_string
+                |> (fun response -> LanguageServerProtocolResponse response)
+                |> Option.some)
+            |> Option.value ~default:None
           in
           { state; response }
 

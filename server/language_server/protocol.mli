@@ -42,6 +42,13 @@ module DidSaveTextDocument : sig
   val create: ?root: Path.t -> string -> string option -> t Or_error.t
 end
 
+module ApplyWorkspaceEdit : sig
+  type t
+  [@@deriving to_yojson]
+
+  val create: id: Types.RequestId.t -> Types.WorkspaceEdit.t -> t
+end
+
 module ShowMessage : sig
   type t
   [@@deriving to_yojson]

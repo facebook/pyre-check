@@ -260,6 +260,26 @@ module CodeActionParameters = struct
 end
 
 
+module CommandArguments = struct
+  type t = {
+    uri: DocumentUri.t;
+    range: Range.t;
+    newText: string;
+  }
+  [@@deriving yojson, eq, show]
+end
+
+
+module ExecuteCommandParameters = struct
+
+  type t = {
+    command: string;
+    arguments: CommandArguments.t list;
+  }
+  [@@deriving yojson]
+end
+
+
 module ShowMessageParameters = struct
   type messageType =
     | ErrorMessage
@@ -418,6 +438,7 @@ module Command_ = struct
   type t = {
     title: string;
     command: string;
+    arguments: CommandArguments.t list;
   }
   [@@deriving yojson]
 end
@@ -425,7 +446,7 @@ end
 
 module ExecuteCommandOptions = struct
   type t = {
-    commands: Command_.t list
+    commands: string list
         [@key "commands"];
   }
   [@@deriving yojson]
@@ -452,33 +473,27 @@ module TextEdit = struct
 end
 
 
-module TextDocumentEdit = struct
-  type t = {
-    textDocument: TextDocumentIdentifier.t
-        [@key "textDocument"];
-    edits: TextEdit.t
-        [@key "edits"];
-  }
-  [@@deriving yojson]
-end
-
-
 module WorkspaceEditChanges = struct
   type t = {
     uri: DocumentUri.t;
-    textEdit: TextEdit.t;
+    textEdit: TextEdit.t list;
   }
   [@@deriving yojson]
 
+
   let to_yojson : t -> Yojson.Safe.json =
-    (fun { uri; textEdit } -> `Assoc [uri, TextEdit.to_yojson textEdit])
+    (fun { uri; textEdit = edits } ->
+       let open Core in
+       let edits = List.map edits ~f:TextEdit.to_yojson in
+       `Assoc [uri, `List edits]
+    )
 
 end
 
 
 module WorkspaceEdit = struct
   type t = {
-    changes: WorkspaceEditChanges.t
+    changes: WorkspaceEditChanges.t option
         [@key "changes"];
   }
   [@@deriving yojson]
@@ -944,6 +959,37 @@ module NotificationMessage = struct
 end
 
 
+module EditMessage = struct
+  module type S = sig
+    type t = {
+      jsonrpc: string;
+      method_: string;
+      parameters: parameters option;
+      id: RequestId.t;
+    }
+    and parameters
+  [@@deriving yojson]
+  end
+
+  module Make (AnyParameters: ToAny): S
+    with type parameters = AnyParameters.t = struct
+    type t = {
+      jsonrpc: string
+          [@key "jsonrpc"];
+      method_: string
+          [@key "method"];
+      parameters: parameters option
+          [@key "params"]
+          [@default None];
+      id: RequestId.t
+          [@key "id"];
+    }
+    and parameters = AnyParameters.t
+    [@@deriving yojson]
+  end
+end
+
+
 (** Requests *)
 
 
@@ -1013,6 +1059,9 @@ module TextDocumentDefinitionRequest = RequestMessage.Make(TextDocumentPositionP
 
 
 module CodeActionRequest = RequestMessage.Make(CodeActionParameters)
+
+
+module ExecuteCommandRequest = RequestMessage.Make(ExecuteCommandParameters)
 
 
 module RageRequest = struct
@@ -1145,11 +1194,20 @@ module RageResponse = struct
 end
 
 
+module ApplyWorkspaceEditParameters = struct
+  type t = { edit: WorkspaceEdit.t; }
+  [@@deriving yojson]
+end
+
+
 (** Notifications *)
 
 
 (** A PublishDiagnostics Notification *)
 module PublishDiagnostics = NotificationMessage.Make(PublishDiagnosticsParameters)
+
+
+module ApplyWorkspaceEdit = EditMessage.Make(ApplyWorkspaceEditParameters)
 
 
 (** Namespaces *)

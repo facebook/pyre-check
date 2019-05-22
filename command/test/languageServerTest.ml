@@ -465,6 +465,7 @@ let test_initialize_response _ =
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
+            "executeCommandProvider": { "commands": [ "add_annotation" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
@@ -489,6 +490,7 @@ let test_initialize_response _ =
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
             "definitionProvider": true,
+            "executeCommandProvider": { "commands": [ "add_annotation" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
