@@ -4480,7 +4480,7 @@ let run
               ~reference:name
               ~name
               ~location:(Error.location error |> Location.reference)
-              ~annotation
+              ~annotation:annotation
         | _ ->
             changed, globals_added_sofar
       in
@@ -4517,6 +4517,8 @@ let run
       |> List.concat
       |> Error.join_at_source ~resolution
       |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
+      |> List.map ~f:((fun ({ Error.kind; _ } as error) ->
+          { error with kind = (Error.weaken_literals kind) }))
       |> List.sort ~compare:Error.compare
     in
 

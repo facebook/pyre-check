@@ -181,6 +181,7 @@ type kind =
 include BaseError.Error with type kind := kind
 module Set: Set.S with type Elt.t = t
 
+val weaken_literals: kind -> kind
 val due_to_analysis_limitations: t -> bool
 val due_to_mismatch_with_any: Resolution.t -> t -> bool
 
