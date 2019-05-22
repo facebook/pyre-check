@@ -126,6 +126,7 @@ type invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
   | InvalidType of Type.t
+  | NestedTypeVariables of Type.Variable.t
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -722,6 +723,13 @@ let messages ~concise ~signature location kind =
               Format.asprintf
                 "Expression `%a` is not a valid type."
                 pp_type annotation
+            ]
+        | NestedTypeVariables variable ->
+            [
+              Format.asprintf
+                "Expression `%a` is not a valid type. Type variables cannot contain other type \
+                 variables in their constraints."
+                pp_type (Type.Variable variable)
             ]
       end
   | InvalidTypeParameters
@@ -2735,6 +2743,8 @@ let dequalify
         InvalidType (FinalNested (dequalify annotation))
     | InvalidType (FinalParameter name) ->
         InvalidType (FinalParameter name)
+    | InvalidType (NestedTypeVariables variable) ->
+        InvalidType (NestedTypeVariables (Type.Variable.dequalify dequalify_map variable))
     | InvalidTypeParameters ({ name ; _ } as invalid_type_parameters) ->
         InvalidTypeParameters
           { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }

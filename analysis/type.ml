@@ -2365,6 +2365,24 @@ let assume_any = function
   | Top -> Any
   | annotation -> annotation
 
+
+let dequalify_identifier map identifier =
+  let rec fold accumulator reference =
+    if Reference.Map.mem map reference then
+      Reference.combine
+        (Reference.Map.find_exn map reference)
+        (Reference.create_from_list accumulator)
+    else
+      match Reference.prefix reference with
+      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
+      | None -> Reference.create_from_list accumulator
+  in
+  identifier
+  |> Reference.create
+  |> fold []
+  |> Reference.show
+
+
 module Variable = struct
   module Namespace = struct
     include Record.Variable.RecordNamespace
@@ -2415,6 +2433,25 @@ module Variable = struct
   let is_escaped_and_free = function
     | { state = Free { escaped }; _ } -> escaped
     | _ -> false
+
+  let contains_subvariable { constraints; _ } =
+    let is_variable = function
+      | Variable _ -> true
+      | _ -> false
+    in
+    let contains_variable = exists ~predicate:is_variable in
+    match constraints with
+    | Unconstrained ->
+        false
+    | Bound bound ->
+        contains_variable bound
+    | Explicit explicits ->
+        List.exists explicits ~f:contains_variable
+    | LiteralIntegers ->
+        false
+
+  let dequalify dequalify_map ({ variable; _ } as annotation) =
+    { annotation with variable = dequalify_identifier dequalify_map variable }
 
   let mark_all_variables_as_bound annotation =
     let constraints annotation =
@@ -2570,23 +2607,6 @@ let is_concrete annotation =
   in
   fst (ConcreteTransform.visit true annotation) &&
   not (Variable.contains_escaped_free_variable annotation)
-
-
-let dequalify_identifier map identifier =
-  let rec fold accumulator reference =
-    if Reference.Map.mem map reference then
-      Reference.combine
-        (Reference.Map.find_exn map reference)
-        (Reference.create_from_list accumulator)
-    else
-      match Reference.prefix reference with
-      | Some prefix -> fold (Reference.last reference :: accumulator) prefix
-      | None -> Reference.create_from_list accumulator
-  in
-  identifier
-  |> Reference.create
-  |> fold []
-  |> Reference.show
 
 
 let rec dequalify map annotation =

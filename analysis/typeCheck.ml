@@ -2835,6 +2835,17 @@ module State(Context: Context) = struct
                 ~errors:state.errors
                 parsed
             in
+            let errors =
+              match parsed with
+              | Variable variable when Type.Variable.contains_subvariable variable ->
+                  Error.create
+                    ~location
+                    ~kind:(AnalysisError.InvalidType (AnalysisError.NestedTypeVariables variable))
+                    ~define:Context.define
+                  |> ErrorKey.add_error ~errors
+              | _ ->
+                  errors
+            in
             { state with resolution; errors }, resolved
           else
             new_state, resolved

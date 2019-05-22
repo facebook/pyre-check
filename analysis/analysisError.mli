@@ -102,6 +102,7 @@ type invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
   | InvalidType of Type.t
+  | NestedTypeVariables of Type.Variable.t
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =

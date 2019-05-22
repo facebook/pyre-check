@@ -767,6 +767,19 @@ let test_integer_variables _ =
   ()
 
 
+let test_nested_variable_error _ =
+  assert_type_errors
+    {|
+      T1 = typing.TypeVar("T1")
+      T2 = typing.TypeVar("T2", typing.List[T1], typing.Dict[str, T1])
+    |}
+    [
+      "Invalid type [31]: Expression `Variable[T2 <: [typing.List[Variable[T1]], " ^
+      "typing.Dict[str, Variable[T1]]]]` is not a valid type. Type variables cannot contain " ^
+      "other type variables in their constraints.";
+    ];
+  ()
+
 
 let () =
   "typeVariable">:::[
@@ -775,5 +788,6 @@ let () =
     "unbound_variables">::test_unbound_variables;
     "distinguish">::test_distinguish;
     "integer_variables">::test_integer_variables;
+    "nested_variable_error">::test_nested_variable_error;
   ]
   |> Test.run

@@ -330,6 +330,8 @@ module Variable : sig
   val namespace: t -> namespace: Namespace.t -> t
   val mark_as_bound: t -> t
   val upper_bound: t -> type_t
+  val dequalify: Reference.t Reference.Map.t -> t -> t
+  val contains_subvariable: t -> bool
 
   val mark_all_variables_as_bound: type_t -> type_t
   val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t
