@@ -2698,14 +2698,9 @@ let test_call _ =
 
 let test_call_arguments_location _ =
   let source_code = "fun(1, second = 2)" in
-  let statement = parse_single_statement ~convert:true source_code in
+  let statement = parse_single_statement source_code in
   let arguments =
-    let collect_arguments accumulator access =
-      match access with
-      | Access.Call { Node.value = arguments; _ } -> arguments :: accumulator
-      | _ -> accumulator
-    in
-    let print_argument { Argument.name; value } =
+    let print_argument { Call.Argument.name; value } =
       Format.asprintf
         "name=%s value=%a"
         (Option.map name ~f:(fun { Node.value; location } ->
@@ -2715,14 +2710,9 @@ let test_call_arguments_location _ =
          |> Option.value ~default:"(none)")
         Expression.pp value
     in
-    Visit.collect_accesses statement
+    Visit.collect_calls statement
     |> List.map ~f:Node.value
-    |> List.filter_map
-      ~f:(function
-          | Access.SimpleAccess access -> Some access
-          | _ -> None)
-    |> List.hd_exn
-    |> List.fold ~init:[] ~f:collect_arguments
+    |> List.map ~f:(fun { Call.arguments; _ } -> arguments)
     |> List.concat
     |> List.map ~f:print_argument
   in
@@ -4223,7 +4213,7 @@ let test_import _ =
 
 let test_end_position _ =
   let source_code = "def a():\n    return None" in
-  let statement = parse_single_statement ~convert:true source_code in
+  let statement = parse_single_statement source_code in
   let location = statement.Node.location in
   let expected_location = {
     Location.path = String.hash "test.py";
@@ -4258,7 +4248,7 @@ let assert_statement_location
 
 let test_string_locations _ =
   let test_one source_code ~start ~stop =
-    let statement = parse_single_statement ~convert:true source_code in
+    let statement = parse_single_statement source_code in
     assert_statement_location ~statement ~start ~stop
   in
 
@@ -4270,7 +4260,7 @@ let test_string_locations _ =
 
 let test_multiline_strings_positions _ =
   let test_one source_code =
-    let statement = parse_last_statement ~convert:true source_code in
+    let statement = parse_last_statement source_code in
     assert_statement_location ~statement ~start:(5, 0) ~stop:(5, 4)
   in
 
