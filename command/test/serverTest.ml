@@ -740,7 +740,11 @@ let test_query context =
           ([
             (3, 12, 3, 13, Type.literal_integer 1);
             (3, 15, 3, 16, Type.literal_integer 2);
-            (3, 6, 3, 7, Type.list Type.integer);
+            (3, 11, 3, 17, Type.list Type.integer);
+            (3, 6, 3, 7,
+              parse_callable
+                ~name:(Reference.create "list.__iter__")
+                "typing.Callable[[], typing.Iterator[int]]");
             (4, 3, 4, 4, Type.literal_integer 1);
             (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
@@ -848,10 +852,6 @@ let test_query context =
           [
             {
               Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-              annotation = Type.literal_integer 1
-            };
-            {
-              Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
               annotation = parse_annotation "typing.Type[Foo]"
             };
             {
@@ -871,9 +871,13 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ([
-            (2, 4, 2, 5, Type.list Type.integer);
+            (2, 4, 2, 5,
+              parse_callable
+                ~name:(Reference.create "list.__iter__")
+                "typing.Callable[[], typing.Iterator[int]]");
             (2, 13, 2, 14, Type.literal_integer 2);
             (2, 10, 2, 11, Type.literal_integer 1);
+            (2, 9, 2, 15, Type.list Type.integer)
           ] |> create_types_at_locations)
        ));
 

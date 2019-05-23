@@ -16,15 +16,10 @@ type connections = {
   file_notifiers: Socket.t list;
 }
 
-type lookups_cache_entry = {
-  table: Analysis.Lookup.t;
-  source: string;
-}
-
 type t = {
   environment: (module Analysis.Environment.Handler);
   errors: (Error.t list) File.Handle.Table.t;
-  lookups: lookups_cache_entry String.Table.t;
+  lookups: Analysis.Lookup.t String.Table.t;
   scheduler: Scheduler.t;
   lock: Mutex.t;
   last_integrity_check: float;

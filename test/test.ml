@@ -223,9 +223,16 @@ let parse_single_call ?(preprocess = false) source =
   | _ -> failwith "Could not parse single call"
 
 
-let parse_callable ?(aliases = fun _ -> None) callable =
-  parse_single_expression callable
-  |> Type.create ~aliases
+let parse_callable ?name ?(aliases = fun _ -> None) callable =
+  let callable =
+    parse_single_expression callable
+    |> Type.create ~aliases
+  in
+  match name, callable with
+  | Some name, Type.Callable callable ->
+    Type.Callable { callable with Type.Callable.kind = Named name }
+  | _ ->
+      callable
 
 
 let diff ~print format (left, right) =

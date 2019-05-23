@@ -21,20 +21,15 @@ let handle ~configuration file =
     None
 
 
-let get_by_handle ~state:{ lookups; environment; _ } ~file ~handle =
+let get_by_handle ~state:{ lookups; environment; _ } ~handle =
   let cache_read = String.Table.find lookups (File.Handle.show handle) in
   match cache_read with
   | Some _ ->
       cache_read
   | None ->
       let lookup =
-        let content =
-          File.content file
-          |> Option.value ~default:""
-        in
         Ast.SharedMemory.Sources.get handle
         >>| Lookup.create_of_source environment
-        >>| fun table -> { table; source = content }
       in
       lookup
       >>| (fun lookup -> String.Table.set lookups ~key:(File.Handle.show handle) ~data:lookup)
@@ -72,9 +67,8 @@ let find_annotation ~state ~configuration ~file ~position =
   let find_annotation_by_handle handle =
     let timer = Timer.start () in
     let annotation =
-      get_by_handle ~state ~file ~handle
-      >>= fun { table; source } ->
-      Lookup.get_annotation table ~position ~source
+      get_by_handle ~state ~handle
+      >>= Lookup.get_annotation ~position
     in
     let normals =
       annotation
@@ -101,8 +95,8 @@ let find_all_annotations ~state ~configuration ~file =
   let find_annotation_by_handle handle =
     let timer = Timer.start () in
     let annotations =
-      get_by_handle ~state ~file ~handle
-      >>| (fun { table; _ } -> Lookup.get_all_annotations table)
+      get_by_handle ~state ~handle
+      >>| Lookup.get_all_annotations
       |> Option.value ~default:[]
     in
     let integers = ["annotation list size", List.length annotations] in
@@ -123,9 +117,8 @@ let find_definition ~state ~configuration file position =
   let find_definition_by_handle handle =
     let timer = Timer.start () in
     let definition =
-      get_by_handle ~state ~file ~handle
-      >>= fun { table; source } ->
-      Lookup.get_definition table ~position ~source
+      get_by_handle ~state ~handle
+      >>= Lookup.get_definition ~position
     in
     let normals =
       definition

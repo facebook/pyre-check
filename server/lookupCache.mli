@@ -7,9 +7,8 @@ open Ast
 
 val get_by_handle
   :  state: State.t
-  -> file: File.t
   -> handle: File.Handle.t
-  -> State.lookups_cache_entry option
+  -> Analysis.Lookup.t option
 
 val evict
   :  state: State.t
