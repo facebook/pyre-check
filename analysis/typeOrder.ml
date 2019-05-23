@@ -1970,6 +1970,7 @@ module OrderImplementation = struct
               begin
                 Handler.find (Handler.backedges ()) target_index
                 >>| get_instantiated_predecessors handler ~generic_index ~parameters
+                >>| List.sort ~compare:Target.compare
                 >>| List.iter ~f:(Queue.enqueue worklist)
                 |> ignore;
                 iterate worklist

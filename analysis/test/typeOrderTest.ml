@@ -2685,6 +2685,67 @@ let test_meet _ =
     "B[float, float]"
     "A[int, int]"
     "B[int, float]";
+
+  let make_potentially_inconsistent_order ~x_before_y =
+    (* Corresponds to
+       T = typing.TypeVar("T")
+       T1 = typing.TypeVar("T1")
+       class B(typing.Generic[T, T1]): pass
+       class A(typing.Generic[T]): pass
+       class X(B[T, str]): pass
+       class Y(B[int, str]): pass
+       class M(A[T], X[T], Y[T]): pass *)
+
+    let order = Builder.create () |> TypeOrder.handler in
+
+    insert order !"A";
+    insert order !"B";
+    insert order !"X";
+    insert order !"Y";
+    insert order !"M";
+    insert order Type.generic_primitive;
+    insert order Type.string;
+    insert order Type.integer;
+
+    let variable = Type.Variable (Type.Variable.create "T") in
+    let variable2 = Type.Variable (Type.Variable.create "T2") in
+
+    connect order ~predecessor:!"M" ~successor:Type.generic_primitive ~parameters:[variable];
+    connect order ~predecessor:!"M" ~successor:!"A" ~parameters:[variable];
+    connect order ~predecessor:!"M" ~successor:!"X" ~parameters:[variable];
+    connect order ~predecessor:!"M" ~successor:!"Y" ~parameters:[variable];
+
+    connect order ~predecessor:!"A" ~successor:Type.generic_primitive ~parameters:[variable];
+
+    let connect_x () =
+      connect order ~predecessor:!"X" ~successor:Type.generic_primitive ~parameters:[variable];
+      connect order ~predecessor:!"X" ~successor:!"B" ~parameters:[variable; Type.string]
+    in
+
+    if x_before_y then connect_x ();
+
+    connect order ~predecessor:!"Y" ~successor:Type.generic_primitive ~parameters:[variable];
+    connect order ~predecessor:!"Y" ~successor:!"B" ~parameters:[Type.integer; variable];
+
+    if not x_before_y then connect_x ();
+
+    connect
+      order
+      ~predecessor:!"B"
+      ~successor:Type.generic_primitive
+      ~parameters:[variable; variable2];
+    order
+  in
+  assert_meet
+    ~order:(make_potentially_inconsistent_order ~x_before_y:true)
+    "B[int, str]"
+    "A[str]"
+    "M[str]";
+  assert_meet
+    ~order:(make_potentially_inconsistent_order ~x_before_y:false)
+    "B[int, str]"
+    "A[str]"
+    "M[str]";
   ()
 
 
