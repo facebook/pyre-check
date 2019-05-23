@@ -90,6 +90,8 @@ def download_and_extract_zip_file(url: str, output_directory: str) -> None:
             "It comes from an untrusted location.".format(url)
         )
     with urllib.request.urlopen(url) as response:
+        # pyre-fixme[29]: `Union[Callable[[Optional[int]], bytes], Callable[[int],
+        #  bytes]]` is not a function.
         buffer = io.BytesIO(response.read())
         with zipfile.ZipFile(buffer) as zip_file:
             zip_file.extractall(output_directory)

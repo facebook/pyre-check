@@ -202,14 +202,12 @@ class GenerateTaintModelsTest(unittest.TestCase):
             arguments, "module.function"
         )
         self.assertIsNotNone(definition)
-        # pyre-ignore
         self.assertEqual(definition.name, "function")
 
         definition = generate_taint_models._load_function_definition(
             arguments, "module.async_function"
         )
         self.assertIsNotNone(definition)
-        # pyre-ignore
         self.assertEqual(definition.name, "async_function")
 
         definition = generate_taint_models._load_function_definition(
@@ -221,14 +219,12 @@ class GenerateTaintModelsTest(unittest.TestCase):
             arguments, "module.Class.method"
         )
         self.assertIsNotNone(definition)
-        # pyre-ignore
         self.assertEqual(definition.name, "method")
 
         definition = generate_taint_models._load_function_definition(
             arguments, "module.View.as_view"
         )
         self.assertIsNotNone(definition)
-        # pyre-ignore
         self.assertEqual(definition.name, "as_view")
 
         definition = generate_taint_models._load_function_definition(

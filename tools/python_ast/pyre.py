@@ -66,6 +66,7 @@ class AddTypes(ast.NodeTransformer):
             if location in self._annotation_lookup:
                 annotation = self._annotation_lookup[location].annotation
             node.type = annotation
+            # pyre-fixme[41]: Assigning to class variable through instance.
             node._attributes = node._attributes + ("type",)
         super(AddTypes, self).generic_visit(node)
         return node
