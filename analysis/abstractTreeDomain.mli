@@ -70,14 +70,17 @@ module Make (Config: CONFIG) (Element: AbstractDomain.S) () : sig
     -> t
     -> t
 
-  (* Compute minimum path length to non-bottom element. *)
+  (** Compute minimum path length to non-bottom element. *)
   val min_depth: t -> int
-  (* Compute maximum path length to non-bottom element. *)
+
+  (** Compute maximum path length to non-bottom element. *)
   val max_depth: t -> int
 
   val collapse: t -> Element.t
+
   (** Collapse all distinct indices into AnyIndex *)
   val collapse_tree_indices: t -> t
+
   (** Removes all subtrees after *)
   val cut_tree_after: depth:int -> t -> t
 
