@@ -1117,4 +1117,4 @@ let inferred_callable_type definition ~resolution =
       List.map explicit_callables ~f:(fun (_, is_overload, callable) -> (is_overload, callable))
     in
     let callable = Callable.create ~parent:(Some parent) ~name explicit_callables in
-    Some (Type.Callable callable)
+    Some callable

@@ -431,12 +431,64 @@ let test_check_user_decorators _ =
     ]
 
 
+let test_check_callable_class_decorators _ =
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class synchronize:
+        def __call__(
+           self,
+           coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
+        ) -> typing.Callable[..., T]: ...
+
+      @synchronize
+      async def am_i_async(x: int) -> str:
+        return str(x)
+      reveal_type(am_i_async)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+       contain `Any`.";
+      "Revealed type [-1]: Revealed type for `am_i_async` is \
+       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
+    ];
+
+  (* We don't support overloaded callable classes. *)
+  assert_type_errors
+    {|
+      T = typing.TypeVar("T")
+      class synchronize:
+        @typing.overload
+        def __call__(
+           self,
+           coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
+        ) -> typing.Callable[..., T]: ...
+        @typing.overload
+        def __call__(self, coro: int) -> int: ...
+        def __call__(self, coro: typing.Any) -> typing.Any: ...
+      @synchronize
+      async def am_i_async(x: int) -> str:
+        return str(x)
+      reveal_type(am_i_async)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+       contain `Any`.";
+      "Missing parameter annotation [2]: Parameter `coro` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `am_i_async` is \
+       `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
+       str]]`.";
+    ]
+
+
+
 let () =
   "decorator">:::[
     "check_contextmanager">::test_check_contextmanager;
     "check_asynccontextmanager">::test_check_asynccontextmanager;
     "check_click_command">::test_check_click_command;
     "check_user_decorators">::test_check_user_decorators;
+    "check_callable_class_decorators">::test_check_callable_class_decorators;
     "decorators">::test_decorators;
   ]
   |> Test.run

@@ -116,7 +116,7 @@ let connect_definition
         connect
           ~predecessor:primitive
           ~successor:(Type.Primitive "typing.Callable")
-          ~parameters:[callable]
+          ~parameters:[Type.Callable callable]
     | None ->
         ()
   end;
@@ -172,7 +172,6 @@ let handler
       undecorated_functions;
     } =
   let (module DependencyHandler: Dependencies.Handler) = Dependencies.handler dependencies in
-
   (module struct
     module TypeOrderHandler = (val TypeOrder.handler order: TypeOrder.Handler)
     module DependencyHandler = DependencyHandler
@@ -679,12 +678,22 @@ let register_undecorated_functions
         true
 
       let statement _ _ statement =
-        match statement with
-        | {
-          Node.value =
-            Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define);
-          _;
-        } ->
+        match Node.value statement with
+        | Class definition ->
+            let annotation =
+              AnnotatedClass.create { Node.value = definition; location = Node.location statement }
+              |> AnnotatedClass.inferred_callable_type ~resolution
+            in
+            begin
+              match annotation with
+              | Some { Type.Callable.implementation; overloads = []; _ } ->
+                  Handler.register_undecorated_function
+                    ~reference:(definition.Class.name)
+                    ~annotation:implementation
+              | _ ->
+                  ()
+            end
+        | Define ({ Define.signature = { Statement.Define.name; _ }; _ } as define) ->
             if Define.is_overloaded_method define then
               ()
             else

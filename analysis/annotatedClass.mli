@@ -140,7 +140,7 @@ val overrides: t -> resolution: Resolution.t -> name: Identifier.t -> Attribute.
 
 val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Identifier.t -> bool
 
-val inferred_callable_type: t -> resolution: Resolution.t -> Type.t option
+val inferred_callable_type: t -> resolution: Resolution.t -> Type.Callable.t option
 
 module AttributeCache: sig
   val clear: unit -> unit
