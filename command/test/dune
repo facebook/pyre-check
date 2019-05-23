@@ -13,7 +13,6 @@
 
 (tests
  (names
-  codexGeneratorTest
   languageServerTest
   persistentClientTest
   serverProtocolTest

@@ -1,6 +1,5 @@
 (tests
  (names
-  codexTest
   expressionTest
   identifierTest
   moduleTest

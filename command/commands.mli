@@ -6,7 +6,6 @@
 (** Exports Pyre commands exposed in command line interface *)
 module Analyze = AnalyzeCommand
 module Check = CheckCommand
-module CodexGenerator = CodexGeneratorCommand
 module Incremental = IncrementalCommand
 module Persistent = PersistentCommand
 module Query = QueryCommand

@@ -11,7 +11,6 @@ open Commands
 let commands = [
   "analyze", Analyze.command;
   "check", Check.check_command;
-  "codex", CodexGenerator.command;
   "query", Query.command;
   "rage", Rage.command;
   "incremental", Incremental.command;
