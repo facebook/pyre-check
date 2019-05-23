@@ -26,8 +26,7 @@ type analyze_source_results = {
 let analyze_sources
     ~scheduler
     ~configuration:({
-        Configuration.Analysis.project_root;
-        local_root;
+        Configuration.Analysis.local_root;
         filter_directories;
         ignore_all_errors;
         _;
@@ -66,7 +65,6 @@ let analyze_sources
           Path.equal
             path
             (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle)) &&
-          Path.directory_contains path ~follow_symlinks:true ~directory:project_root &&
           filter_by_directories path
       | _ ->
           false
