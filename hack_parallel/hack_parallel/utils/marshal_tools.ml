@@ -48,14 +48,17 @@ type remote_exception_data = {
 }
 
 let preamble_start_sentinel = '\142'
+
 (** Size in bytes. *)
 let preamble_core_size = 4
+
 let expected_preamble_size = preamble_core_size + 1
+
 (** Payload size in bytes = 2^31 - 1. *)
 let maximum_payload_size = (1 lsl (preamble_core_size * 8)) - 1
 
 let get_preamble_core (size : int) =
-  (** We limit payload size to 2^31 - 1 bytes. *)
+  (* We limit payload size to 2^31 - 1 bytes. *)
   if size >= maximum_payload_size then
     raise Payload_Size_Too_Large_Exception;
   let rec loop i (remainder: int) acc =
@@ -106,7 +109,7 @@ let from_fd_with_preamble fd =
   let preamble = Bytes.create expected_preamble_size in
   let bytes_read = Unix.read fd preamble 0 expected_preamble_size in
   if (bytes_read = 0)
-  (** Unix manpage for read says 0 bytes read indicates end of file. *)
+  (* Unix manpage for read says 0 bytes read indicates end of file. *)
   then raise End_of_file
   else if (bytes_read <> expected_preamble_size) then
     (Printf.eprintf "Error, only read %d bytes for preamble.\n" bytes_read;

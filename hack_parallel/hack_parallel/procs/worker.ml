@@ -76,7 +76,7 @@ type t = {
   id: int; (* Simple id for the worker. This is not the worker pid: on
               Windows, we spawn a new worker for each job. *)
 
-  (** The call wrapper will wrap any workload sent to the worker (via "call"
+  (* The call wrapper will wrap any workload sent to the worker (via "call"
    * below) before invoking the workload.
    *
    * That is, when calling the worker with workload `f x`, it will be wrapped

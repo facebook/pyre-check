@@ -1,0 +1,2 @@
+# This file contains a toplevel directive, which ocamlformat does not like
+hack_parallel/scripts/gen_build_id.ml

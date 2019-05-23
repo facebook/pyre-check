@@ -121,12 +121,9 @@ module type Access = sig
   type keytrace = string list
 
   type access_failure =
-    (** You can't access keys on a non-object JSON thing. *)
-    | Not_an_object of keytrace
-    (** The key is missing. *)
-    | Missing_key_error of string * keytrace
-    (** The key has the wrong type. *)
-    | Wrong_type_error of keytrace * json_type
+    | Not_an_object of keytrace (** You can't access keys on a non-object JSON thing. *)
+    | Missing_key_error of string * keytrace (** The key is missing. *)
+    | Wrong_type_error of keytrace * json_type (** The key has the wrong type. *)
 
   (** Our type for the result monad. It isn't just the json because it tracks
    * a history of the keys traversed to arrive at the current point. This helps

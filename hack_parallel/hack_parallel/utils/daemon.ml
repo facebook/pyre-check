@@ -26,8 +26,8 @@ let to_channel :
   'a out_channel -> ?flags:Marshal.extern_flags list -> ?flush:bool ->
   'a -> unit =
   fun oc ?(flags = []) ?flush:(should_flush=true) v ->
-    Marshal.to_channel oc v flags;
-    if should_flush then flush oc
+  Marshal.to_channel oc v flags;
+  if should_flush then flush oc
 
 let from_channel : ?timeout:Timeout.t -> 'a in_channel -> 'a = fun ?timeout ic ->
   Timeout.input_value ?timeout ic
@@ -177,7 +177,7 @@ let setup_channels channel_mode =
       (parent_in, child_out), (child_in, parent_out)
   | `socket ->
       let parent_fd, child_fd = Unix.socketpair Unix.PF_UNIX Unix.SOCK_STREAM 0 in
-      (** FD's on sockets are bi-directional. *)
+      (* FD's on sockets are bi-directional. *)
       (parent_fd, child_fd), (child_fd, parent_fd)
 
 let make_pipe (descr_in, descr_out)  =
@@ -191,7 +191,7 @@ let close_pipe channel_mode (ch_in, ch_out) =
       Timeout.close_in ch_in;
       close_out ch_out
   | `socket ->
-      (** the in and out FD's are the same. Close only once. *)
+      (* the in and out FD's are the same. Close only once. *)
       Timeout.close_in ch_in
 
 (* This only works on Unix, and should be avoided as far as possible. Use
@@ -248,7 +248,7 @@ let spawn
        Unix.close child_in;
        Unix.close child_out;
    | `socket ->
-       (** the in and out FD's are the same. Close only once. *)
+       (* the in and out FD's are the same. Close only once. *)
        Unix.close child_in);
   if stdin <> Unix.stdin then Unix.close stdin;
   if stdout <> Unix.stdout then Unix.close stdout;

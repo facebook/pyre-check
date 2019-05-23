@@ -5,7 +5,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the "hack" directory of this source tree.
  *
- *)
+*)
 
 open Hack_core
 
@@ -546,8 +546,8 @@ end = struct
      *    No local changes and key has an associated value in previous stack
      *  *Error*:
      *    This means an exception will occur
-     **)
-    (**
+     *
+     *
      * Transitions table:
      *   Remove  -> *Error*
      *   Replace -> Remove
