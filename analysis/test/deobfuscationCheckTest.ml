@@ -26,7 +26,7 @@ let assert_deobfuscation source expected =
   assert_equal
     ~cmp:Source.equal
     ~printer:Source.show
-    (parse ~convert:true ~qualifier expected)
+    (parse ~qualifier expected)
     actual
 
 
@@ -96,8 +96,7 @@ let test_forward _ =
     {|
       a = 1
       a = foo()
-      b = a
-      b
+      a
     |};
   assert_deobfuscation
     {|

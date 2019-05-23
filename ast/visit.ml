@@ -374,3 +374,17 @@ let collect_names ?(only_simple = false) statement =
             None
     end) in
   Collector.collect (Source.create [statement])
+
+
+let collect_base_identifiers statement =
+  let open Expression in
+  let module Collector = ExpressionCollector(struct
+      type t = Identifier.t Node.t
+      let predicate expression =
+        match expression with
+        | { Node.location; value = Name (Name.Identifier identifier) } ->
+            Some { Node.location; value = identifier }
+        | _ ->
+            None
+    end) in
+  Collector.collect (Source.create [statement])

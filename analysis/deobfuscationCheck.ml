@@ -54,21 +54,21 @@ module ConstantPropagationState(Context: Context) = struct
 
 
   and t = {
-    constants: constant Access.Map.t;
+    constants: constant Reference.Map.t;
     define: Define.t;
     nested_defines: t NestedDefines.t;
   }
 
 
   let show { constants; _ } =
-    let print_entry (access, constant) =
+    let print_entry (reference, constant) =
       let pp_constant format = function
         | Constant expression -> Format.fprintf format "Constant %a" Expression.pp expression
         | Top -> Format.fprintf format "Top"
       in
       Format.asprintf
         "%a -> %a"
-        Access.pp access
+        Reference.pp reference
         pp_constant constant
     in
     Map.to_alist constants
@@ -84,7 +84,7 @@ module ConstantPropagationState(Context: Context) = struct
     let constants =
       match state with
       | Some { constants; _ } -> constants
-      | _ -> Access.Map.empty
+      | _ -> Reference.Map.empty
     in
     { constants; define; nested_defines = NestedDefines.initial }
 
@@ -146,34 +146,29 @@ module ConstantPropagationState(Context: Context) = struct
 
             let expression _ expression =
               match Node.value expression with
-              | Access (SimpleAccess access) ->
-                  begin
-                    let rec transform ~lead ~tail =
-                      match tail with
-                      | head :: tail ->
-                          begin
-                            let lead = lead @ [head] in
-                            match Map.find constants lead with
-                            | Some (Constant { Node.value = Access (SimpleAccess access); _ }) ->
-                                Access (SimpleAccess (access @ tail))
-                            | Some (Constant expression) ->
-                                begin
-                                  match tail with
-                                  | [] ->
-                                      Node.value expression
-                                  | tail ->
-                                      Access.combine expression tail
-                                      |> fun access -> Access access
-                                end
-                            | _ ->
-                                transform ~lead ~tail
-                          end
+              | Name name when Expression.is_simple_name name ->
+                  let rec transform { Node.value; location } =
+                    let get_constant location reference =
+                      match Map.find constants reference with
+                      | Some (Constant expression) ->
+                          { expression with Node.location }, true
                       | _ ->
-                          Access (SimpleAccess lead)
+                          Node.create ~location (Name (Reference.name ~location reference)), false
                     in
-                    let value = transform ~lead:[] ~tail:access in
-                    Node.create value ~location:(Node.location expression)
-                  end
+                    match value with
+                    | Name (Name.Identifier identifier) ->
+                        get_constant location (Reference.create identifier)
+                    | Name ((Name.Attribute { base; attribute }) as name) ->
+                        let base, transformed = transform base in
+                        if transformed then
+                          Node.create ~location (Name (Name.Attribute { base; attribute })),
+                          transformed
+                        else
+                          get_constant location (Reference.from_name_exn name)
+                    | _ ->
+                        { Node.value; location }, false
+                  in
+                  transform expression |> fst
               | _ ->
                   expression
 
@@ -228,15 +223,15 @@ module ConstantPropagationState(Context: Context) = struct
     let constants =
       match Node.value transformed with
       | Assign {
-          target = { Node.value = Access (SimpleAccess access); _ };
+          target = { Node.value = Name name; _ };
           value = expression;
           _;
-        }  ->
+        } when Expression.is_simple_name name ->
           let propagate =
             let is_literal =
               match Node.value expression with
               | Integer _ | String _ | True | False
-              | Access (SimpleAccess [Access.Identifier "None"]) -> true
+              | Name (Name.Identifier "None") -> true
               | _ -> false
             in
             let is_callable =
@@ -245,17 +240,16 @@ module ConstantPropagationState(Context: Context) = struct
             in
             let is_global_constant =
               match Node.value expression with
-              | Access (SimpleAccess access) ->
-                  Str.string_match (Str.regexp ".*\\.[A-Z_0-9]+$") (Access.show access) 0
-              | _ ->
-                  false
+              | Name name -> Expression.is_simple_name name
+              | _ -> false
             in
             is_literal || is_callable || is_global_constant
           in
+          let reference = Reference.from_name_exn name in
           if propagate then
-            Map.set constants ~key:access ~data:(Constant expression)
+            Map.set constants ~key:reference ~data:(Constant expression)
           else
-            Map.remove constants access
+            Map.remove constants reference
       | _ ->
           constants
     in
@@ -272,7 +266,7 @@ end
 
 module UnusedStoreState (Context: Context) = struct
   type t = {
-    unused: Location.Reference.Set.t Access.Map.t;
+    unused: Location.Reference.Set.t Identifier.Map.t;
     define: Define.t;
     nested_defines: t NestedDefines.t;
   }
@@ -280,7 +274,6 @@ module UnusedStoreState (Context: Context) = struct
 
   let show { unused; _ } =
     Map.keys unused
-    |> List.map ~f:Access.show
     |> String.concat ~sep:", "
 
 
@@ -289,7 +282,7 @@ module UnusedStoreState (Context: Context) = struct
 
 
   let initial ~state:_ ~define =
-    { unused = Access.Map.empty; define; nested_defines = NestedDefines.initial }
+    { unused = Identifier.Map.empty; define; nested_defines = NestedDefines.initial }
 
 
   let nested_defines { nested_defines; _ } =
@@ -297,8 +290,8 @@ module UnusedStoreState (Context: Context) = struct
 
 
   let less_or_equal ~left:{ unused = left; _ } ~right:{ unused = right; _ } =
-    let less_or_equal (access, location) =
-      match location, Map.find right access with
+    let less_or_equal (reference, location) =
+      match location, Map.find right reference with
       | left, Some right -> Set.is_subset left ~of_:right
       | _ -> false
     in
@@ -325,32 +318,30 @@ module UnusedStoreState (Context: Context) = struct
       ~statement:({ Node.location; value } as statement) =
     (* Remove used accesses from transformation map. *)
     let unused =
-      let used_accesses =
-        Visit.collect_accesses statement
+      let used_names =
+        Visit.collect_base_identifiers statement
         |> List.map ~f:Node.value
-        |> List.filter_map
-          ~f:(function | Access.SimpleAccess (head :: _) -> Some [head] | _ -> None)
       in
       let used_locations =
-        used_accesses
+        used_names
         |> List.filter_map ~f:(Map.find unused)
         |> List.fold ~f:Set.union ~init:Location.Reference.Set.empty
         |> Set.to_list
       in
       List.iter used_locations ~f:(Hashtbl.remove Context.transformations);
-      List.fold used_accesses ~f:Map.remove ~init:unused
+      List.fold used_names ~f:Map.remove ~init:unused
     in
 
     (* Add assignments to transformation map. *)
     let unused =
       match value with
-      | Assign { target = { Node.value = Access (SimpleAccess access); _ }; _ }  ->
+      | Assign { target = { Node.value = Name (Name.Identifier identifier); _ }; _ }  ->
           let update = function
             | Some existing -> Set.add existing location
             | None -> Location.Reference.Set.of_list [location]
           in
           Hashtbl.set Context.transformations ~key:location ~data:[];
-          Map.update unused access ~f:update
+          Map.update unused identifier ~f:update
       | _ ->
           unused
     in
@@ -384,7 +375,7 @@ module Scheduler (State: State) (Context: Context) = struct
 
     let rec run ~state ~define =
       Fixpoint.forward
-        ~cfg:(Cfg.create ~convert:true define)
+        ~cfg:(Cfg.create define)
         ~initial:(State.initial ~state ~define)
       |> Fixpoint.exit
       >>| (fun state ->
@@ -432,7 +423,6 @@ let run
       let transformations = Location.Reference.Table.create ()
     end)
   in
-  let source = Preprocessing.convert source in
 
   (* Constant propagation. *)
   let source =
@@ -490,19 +480,23 @@ let run
       identifier
     in
     let replacements = String.Table.create () in
-    let sanitize_access access =
-      match List.rev access with
-      | Access.Identifier identifier :: tail
+    let sanitize_name simple_name =
+      let replace identifier =
+        let replacement = generate_identifier () in
+        Hashtbl.set replacements ~key:identifier ~data:replacement;
+        replacement
+      in
+      match simple_name with
+      | Name.Identifier identifier
         when String.length (Identifier.sanitized identifier) > 15 ->
-          let identifier =
-            let replacement = generate_identifier () in
-            Hashtbl.set replacements ~key:identifier ~data:replacement;
-            replacement
-          in
-          Access.Identifier identifier :: tail
-          |> List.rev
-      | _ ->
-          access
+          let replacement = replace identifier in
+          Name.Identifier replacement
+      | Name.Attribute { base; attribute = identifier; }
+        when String.length (Identifier.sanitized identifier) > 15 ->
+          let replacement = replace identifier in
+          Name.Attribute { base; attribute = replacement }
+      | name ->
+          name
     in
     let sanitize_reference reference =
       let last = Reference.last reference in
@@ -562,14 +556,32 @@ let run
                         let expression _ expression =
                           let value =
                             match Node.value expression with
-                            | Access (SimpleAccess access) ->
-                                let element = function
-                                  | Access.Identifier name when Hash_set.mem names name ->
-                                      Access.Identifier (scope_name name)
-                                  | element ->
-                                      element
+                            | Name name when Expression.is_simple_name name ->
+                                let rec convert name =
+                                  let convert_identifier identifier =
+                                    if Hash_set.mem names identifier then
+                                      scope_name identifier
+                                    else
+                                      identifier
+                                  in
+                                  match name with
+                                  | Name.Identifier identifier ->
+                                      Name.Identifier (convert_identifier identifier)
+                                  | Name.Attribute {
+                                      base = { Node.location; value = Name name };
+                                      attribute;
+                                    } ->
+                                      Name.Attribute {
+                                        base = { Node.location; value = Name (convert name) };
+                                        attribute = convert_identifier attribute;
+                                      }
+                                  | Name.Attribute { base; attribute } ->
+                                      Name.Attribute {
+                                        base;
+                                        attribute = convert_identifier attribute;
+                                      }
                                 in
-                                Access (SimpleAccess (List.map access ~f:element))
+                                Name (convert name)
                             | value ->
                                 value
                           in
@@ -601,12 +613,10 @@ let run
                     { define.signature with name = sanitize_reference name; parameters }
                   in
                   Define { signature; body }
-              | For ({
-                  For.target = { Node.value = Access (SimpleAccess access); _ } as target;
-                  _;
-                } as block) ->
+              | For ({ For.target = { Node.value = Name name; _ } as target; _ } as block)
+                when Expression.is_simple_name name ->
                   let target =
-                    { target with Node.value = Access (SimpleAccess (sanitize_access access)) }
+                    { target with Node.value = Name (sanitize_name name) }
                   in
                   For { block with For.target }
               | Global globals ->
@@ -627,25 +637,29 @@ let run
           true
 
         let expression _ expression =
-          let value =
-            match Node.value expression with
-            | Access (SimpleAccess access) ->
-                let sanitize = function
-                  | Access.Identifier identifier ->
-                      let identifier =
-                        match Hashtbl.find replacements identifier with
-                        | Some replacement -> replacement
-                        | None -> identifier
-                      in
-                      Access.Identifier identifier
-                  | access ->
-                      access
+          let rec sanitize { Node.location; value } =
+            match value with
+            | Name (Name.Attribute { base; attribute }) ->
+                let base = sanitize base in
+                let value =
+                  match Hashtbl.find replacements attribute with
+                  | Some replacement -> Name (Name.Attribute { base; attribute = replacement })
+                  | None -> Name (Name.Attribute { base; attribute })
                 in
-                Access (SimpleAccess (List.map access ~f:sanitize))
-            | value ->
-                value
+                { Node.location; value }
+            | Name (Name.Identifier identifier) ->
+                let value =
+                  match Hashtbl.find replacements identifier with
+                  | Some replacement -> Name (Name.Identifier replacement)
+                  | None -> Name (Name.Identifier identifier)
+                in
+                { Node.location; value }
+            | Call { callee; arguments } ->
+                { Node.location; value = Call { callee = sanitize callee; arguments } }
+            | _ ->
+                { Node.location; value }
           in
-          { expression with Node.value }
+          sanitize expression
 
         let transform_children _ _ =
           true
@@ -657,8 +671,8 @@ let run
               | Assign ({ target; _; } as assign) ->
                   let rec sanitize_target target =
                     match target with
-                    | { Node.value = Access (SimpleAccess access); _ } as target ->
-                        { target with Node.value = Access (SimpleAccess (sanitize_access access)) }
+                    | { Node.value = Name name; _ } as target when Expression.is_simple_name name ->
+                        { target with Node.value = Name (sanitize_name name) }
                     | { Node.value = Tuple targets; _ } as tuple ->
                         { tuple with Node.value = Tuple (List.map targets ~f:sanitize_target) }
                     | _ ->
@@ -685,37 +699,35 @@ let run
       Transform.Make(struct
         type t = unit
 
-        let dequalify_access access =
-          let sanitized = Access.sanitized access in
-          let qualifier = Reference.access qualifier in
-          let has_qualifier_as_prefix =
-            List.is_prefix
-              sanitized
-              ~prefix:qualifier
-              ~equal:(Access.equal_access Expression.equal)
-          in
-          if has_qualifier_as_prefix then
-            List.drop sanitized (List.length qualifier)
-          else
-            sanitized
-
         let dequalify_reference reference =
-          let sanitized = Reference.sanitized reference in
-          if Reference.is_strict_prefix ~prefix:qualifier sanitized then
-            Reference.drop_prefix ~prefix:qualifier sanitized
+          if Reference.is_strict_prefix ~prefix:qualifier reference then
+            Reference.drop_prefix ~prefix:qualifier reference
           else
-            sanitized
+            reference
 
         let transform_expression_children _ _ =
           true
 
         let expression _ expression =
-          let value =
-            match Node.value expression with
-            | Access (SimpleAccess access) -> Access (SimpleAccess (dequalify_access access))
-            | value -> value
+          let rec dequalify { Node.location; value } =
+            match value with
+            | Name name when Expression.is_simple_name name ->
+                Reference.from_name_exn name
+                |> dequalify_reference
+                |> Reference.name ~location
+                |> fun name -> Name name
+                |> Node.create ~location
+            | Name (Name.Attribute { base; attribute }) ->
+                Name (Name.Attribute { base = dequalify base; attribute })
+                |> Node.create ~location
+            | Call { callee; arguments } ->
+                Call { callee = dequalify callee; arguments }
+                |> Node.create ~location
+            | _ ->
+                { Node.value; location }
           in
-          { expression with Node.value }
+          Expression.sanitized expression
+          |> dequalify
 
         let transform_children _ _ =
           true

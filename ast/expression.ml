@@ -1194,6 +1194,31 @@ let rec has_identifier_base expression =
       false
 
 
+let rec sanitized ({ Node.value; location } as expression) =
+  match value with
+  | Name (Name.Identifier identifier) ->
+      Name (Name.Identifier (Identifier.sanitized identifier))
+      |> Node.create ~location
+  | Name (Name.Attribute { base; attribute }) ->
+      Name (Name.Attribute { base = sanitized base; attribute = Identifier.sanitized attribute })
+      |> Node.create ~location
+  | Call { callee; arguments } ->
+      let sanitize_argument ({ Call.Argument.name; _ } as argument) =
+        let name =
+          match name with
+          | Some { Node.value; location } ->
+              Some { Node.value = Identifier.sanitized value; location }
+          | None ->
+              None
+        in
+        { argument with Call.Argument.name }
+      in
+      Call { callee = sanitized callee; arguments = List.map ~f:sanitize_argument arguments }
+      |> Node.create ~location
+  | _ ->
+      expression
+
+
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     let delocalize_element = function
