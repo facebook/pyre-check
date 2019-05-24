@@ -16,10 +16,12 @@ module Solution : sig
   [@@deriving eq]
   val empty: t
   val instantiate: t -> Type.t -> Type.t
-  val instantiate_single_variable: t -> Type.Variable.t -> Type.t option
+  val instantiate_single_variable: t -> Type.Variable.Unary.t -> Type.t option
 
   (* For testing *)
-  val create: (Type.Variable.t * Type.t) list -> t
+  val create
+    :  (Type.Variable.Unary.t * Type.t) list
+    -> t
   val show: t -> string
 end
 
@@ -30,8 +32,18 @@ module type OrderedConstraintsType = sig
      The solve system can handle chained constraints of the form X =<= F(Y) && Y =<= T, but declines
      to solve cyclic ones, e.g. X =<= Y, Y =<= X. *)
   type order
-  val add_lower_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
-  val add_upper_bound: t -> order: order -> variable: Type.Variable.t -> bound: Type.t -> t option
+  val add_lower_bound
+    :  t
+    -> order: order
+    -> variable: Type.Variable.Unary.t
+    -> bound: Type.t
+    -> t option
+  val add_upper_bound
+    :  t
+    -> order: order
+    -> variable: Type.Variable.Unary.t
+    -> bound: Type.t
+    -> t option
   val solve: t -> order: order -> Solution.t option
   (* This solves the constraints for the given variables, and then substitutes those solution in
      for those variables in the constraints for the remaining constraints. *)

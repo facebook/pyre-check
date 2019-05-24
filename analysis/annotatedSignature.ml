@@ -435,9 +435,9 @@ let select
                 begin
                   match argument with
                   | {
-                      Call.Argument.value = {
-                        Node.value = Starred (Starred.Twice expression);
-                        location
+                    Call.Argument.value = {
+                      Node.value = Starred (Starred.Twice expression);
+                      location
                     };
                     _;
                   } ->
@@ -455,9 +455,9 @@ let select
                         |> (fun error -> InvalidKeywordArgument error)
                         |> add_annotation_error signature_match
                   | {
-                      Call.Argument.value = {
-                        Node.value = Starred (Starred.Once expression);
-                        location
+                    Call.Argument.value = {
+                      Node.value = Starred (Starred.Once expression);
+                      location
                     };
                     _;
                   } ->
@@ -468,7 +468,7 @@ let select
                         |> (fun error -> InvalidVariableArgument error)
                         |> add_annotation_error signature_match
                       in
-                      let iterable_variable = Type.Variable.create "$_T" in
+                      let iterable_variable = Type.Variable.Unary.create "$_T" in
                       let iterable_constraints =
                         if Type.is_unbound annotation then
                           []

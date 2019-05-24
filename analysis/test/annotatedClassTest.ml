@@ -1003,7 +1003,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_V]):
         pass
     |}
-    [Type.Variable.create "_V", int_and_foo_string_union];
+    [Type.Variable.Unary.create "_V", int_and_foo_string_union];
 
   assert_constraints
     ~target:"Foo"
@@ -1021,7 +1021,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_T]):
         pass
     |}
-    [Type.Variable.create "_T", Type.Bottom];
+    [Type.Variable.Unary.create "_T", Type.Bottom];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -1031,7 +1031,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [Type.Variable.create "_K", Type.integer; Type.Variable.create "_V", Type.float];
+    [Type.Variable.Unary.create "_K", Type.integer; Type.Variable.Unary.create "_V", Type.float];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -1041,7 +1041,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V]):
         pass
     |}
-    [Type.Variable.create "_K", Type.integer; Type.Variable.create "_V", Type.float];
+    [Type.Variable.Unary.create "_K", Type.integer; Type.Variable.Unary.create "_V", Type.float];
 
   assert_constraints
     ~target:"Foo"
@@ -1064,7 +1064,7 @@ let test_constraints _ =
       class Foo(Bar[int]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
 
   assert_constraints
     ~target:"Bar"
@@ -1077,7 +1077,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K], Bar[_K]):
         pass
     |}
-    [Type.Variable.create "_V", Type.integer];
+    [Type.Variable.Unary.create "_V", Type.integer];
 
   assert_constraints
     ~target:"Bar"
@@ -1093,7 +1093,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
   assert_constraints
     ~target:"Baz"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
@@ -1108,7 +1108,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_K, _V], Bar[_K], Baz[_V]):
         pass
     |}
-    [Type.Variable.create "_T", Type.float];
+    [Type.Variable.Unary.create "_T", Type.float];
 
   assert_constraints
     ~target:"Iterator"
@@ -1118,7 +1118,7 @@ let test_constraints _ =
       class Iterator(typing.Protocol[_T]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
 
   assert_constraints
     ~target:"Iterator"
@@ -1130,7 +1130,7 @@ let test_constraints _ =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
 
   assert_constraints
     ~target:"Iterator"
@@ -1143,7 +1143,7 @@ let test_constraints _ =
       class Iterable(Iterator[_T]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
 
   assert_constraints
     ~target:"Foo"
@@ -1157,10 +1157,12 @@ let test_constraints _ =
       class Bar(Foo[_V2]):
         pass
     |}
-    [Type.Variable.create "_T", Type.integer];
+    [Type.Variable.Unary.create "_T", Type.integer];
 
   let t_bound =
-    Type.Variable.create ~constraints:(Type.Variable.Bound (Type.Primitive "Bound")) "T_Bound"
+    Type.Variable.Unary.create
+      ~constraints:(Type.Variable.Unary.Bound (Type.Primitive "Bound"))
+      "T_Bound"
   in
   assert_constraints
     ~target:"Foo"
@@ -1200,8 +1202,8 @@ let test_constraints _ =
     |}
     [];
   let t_explicit =
-    Type.Variable.create
-      ~constraints:(Type.Variable.Explicit [Type.integer; Type.string])
+    Type.Variable.Unary.create
+      ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.string])
       "T_Explicit"
   in
   assert_constraints

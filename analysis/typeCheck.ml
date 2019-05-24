@@ -288,7 +288,6 @@ module State(Context: Context) = struct
             let parameters =
               List.map parameters ~f:Type.Callable.Parameter.annotation
               |> List.concat_map ~f:Type.Variable.all_free_variables
-              |> List.map ~f:(fun variable -> Type.Variable variable)
             in
             List.fold
               parameters
@@ -301,7 +300,6 @@ module State(Context: Context) = struct
         List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
         |> (fun errors ->
             Type.Variable.all_free_variables annotation
-            |> List.map ~f:(fun variable -> Type.Variable variable)
             |> List.fold
               ~f:(check_invalid_variables resolution)
               ~init:errors)
@@ -814,7 +812,7 @@ module State(Context: Context) = struct
       let add_variance_error (state, annotation) =
         let state =
           match annotation with
-          | Type.Variable variable when Type.Variable.is_contravariant variable ->
+          | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
               emit_error
                 ~state
                 ~location
@@ -901,7 +899,7 @@ module State(Context: Context) = struct
               match annotation with
               | Type.Variable variable
                 when not (Statement.Define.is_constructor define) &&
-                     Type.Variable.is_covariant variable ->
+                     Type.Variable.Unary.is_covariant variable ->
                   emit_error
                     ~state
                     ~location
@@ -1636,9 +1634,9 @@ module State(Context: Context) = struct
                   | TypedDictionary { name; fields; total } ->
                       Type.TypedDictionary.constructor ~name ~fields ~total
                       |> Option.some
-                  | Variable { constraints = Type.Variable.Unconstrained; _ } ->
+                  | Variable { constraints = Type.Variable.Unary.Unconstrained; _ } ->
                       backup
-                  | Variable { constraints = Type.Variable.Explicit constraints; _ }
+                  | Variable { constraints = Type.Variable.Unary.Explicit constraints; _ }
                     when List.length constraints > 1 ->
                       backup
                   | Any ->
@@ -1646,9 +1644,9 @@ module State(Context: Context) = struct
                   | meta_parameter ->
                       let parent =
                         match meta_parameter with
-                        | Variable { constraints = Type.Variable.Explicit [parent]; _ } ->
+                        | Variable { constraints = Type.Variable.Unary.Explicit [parent]; _ } ->
                             parent
-                        | Variable { constraints = Type.Variable.Bound parent; _ } ->
+                        | Variable { constraints = Type.Variable.Unary.Bound parent; _ } ->
                             parent
                         | _ ->
                             meta_parameter
@@ -2861,11 +2859,13 @@ module State(Context: Context) = struct
             in
             let errors =
               match parsed with
-              | Variable variable when Type.Variable.contains_subvariable variable ->
-                  Error.create
-                    ~location
-                    ~kind:(AnalysisError.InvalidType (AnalysisError.NestedTypeVariables variable))
-                    ~define:Context.define
+              | Variable variable when Type.Variable.Unary.contains_subvariable variable ->
+                  let kind =
+                    AnalysisError.InvalidType (
+                      AnalysisError.NestedTypeVariables (Type.Variable.Unary variable)
+                    )
+                  in
+                  Error.create ~location ~kind ~define:Context.define
                   |> ErrorKey.add_error ~errors
               | _ ->
                   errors
@@ -4199,6 +4199,10 @@ module State(Context: Context) = struct
               (Node.create ~location definition)
               |> Annotated.Class.create
               |> Annotated.Class.generics ~resolution
+              |> List.filter_map
+                ~f:(function
+                    | Type.Variable variable -> Some (Type.Variable.Unary variable)
+                    | _ -> None)
             in
             schedule
               ~variables
@@ -4211,10 +4215,9 @@ module State(Context: Context) = struct
                 | Some annotation ->
                     let annotation = Resolution.parse_annotation resolution annotation in
                     Type.Variable.all_free_variables annotation
-                    |> List.map ~f:(fun variable -> Type.Variable variable)
               in
               List.concat_map parameters ~f:extract_variables
-              |> List.dedup_and_sort ~compare:Type.compare
+              |> List.dedup_and_sort ~compare:Type.Variable.compare
             in
             schedule ~variables ~define
         | _ ->

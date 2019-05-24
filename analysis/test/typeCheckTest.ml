@@ -103,10 +103,9 @@ let test_initial _ =
           | Some annotation ->
               let annotation = Resolution.parse_annotation resolution annotation in
               Type.Variable.all_free_variables annotation
-              |> List.map ~f:(fun variable -> Type.Variable variable)
         in
         List.concat_map define.signature.parameters ~f:extract_variables
-        |> List.dedup_and_sort ~compare:Type.compare
+        |> List.dedup_and_sort ~compare:Type.Variable.compare
       in
       let add_variable resolution variable =
         Resolution.add_type_variable resolution ~variable

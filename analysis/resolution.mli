@@ -27,7 +27,7 @@ type generic_type_problems =
     }
   | ViolateConstraints of {
       actual: Type.t;
-      expected: Type.Variable.t;
+      expected: Type.Variable.Unary.t;
     }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -61,8 +61,8 @@ val get_local: ?global_fallback: bool -> reference: Reference.t -> t -> Annotati
 val unset_local: t -> reference: Reference.t -> t
 val is_global: t -> reference: Reference.t -> bool
 
-val add_type_variable: t -> variable: Type.t -> t
-val type_variable_exists: t -> variable: Type.t -> bool
+val add_type_variable: t -> variable: Type.Variable.t -> t
+val type_variable_exists: t -> variable: Type.Variable.t -> bool
 
 val annotations: t -> Annotation.t Reference.Map.t
 val with_annotations: t -> annotations: Annotation.t Reference.Map.t -> t

@@ -165,7 +165,7 @@ type kind =
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
-  | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
+  | InvalidTypeVariable of { annotation: Type.Variable.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
@@ -433,7 +433,7 @@ let messages ~concise ~signature location kind =
   | IncompleteType { target; annotation; attempted_action } ->
       let inferred =
         match annotation with
-        | Type.Variable variable when Type.Variable.is_escaped_and_free variable -> ""
+        | Type.Variable variable when Type.Variable.Unary.is_escaped_and_free variable -> ""
         | _ ->  Format.asprintf "`%a` " pp_type annotation
       in
       let consequence =
@@ -724,7 +724,7 @@ let messages ~concise ~signature location kind =
                 "Expression `%a` is not a valid type."
                 pp_type annotation
             ]
-        | NestedTypeVariables variable ->
+        | NestedTypeVariables (Type.Variable.Unary variable) ->
             [
               Format.asprintf
                 "Expression `%a` is not a valid type. Type variables cannot contain other type \
@@ -760,7 +760,7 @@ let messages ~concise ~signature location kind =
           pp_type (Type.Variable expected)
           name;
       ]
-  | InvalidTypeVariable { annotation; origin } when concise ->
+  | InvalidTypeVariable { annotation = Type.Variable.Unary annotation; origin } when concise ->
       let format: ('a, Format.formatter, unit, string) format4 =
         match origin with
         | ClassToplevel ->
@@ -770,8 +770,8 @@ let messages ~concise ~signature location kind =
         | Toplevel ->
             "`%a` can only be used to annotate generic classes or functions."
       in
-      [Format.asprintf format pp_type annotation]
-  | InvalidTypeVariable { annotation; origin } ->
+      [Format.asprintf format pp_type (Type.Variable annotation)]
+  | InvalidTypeVariable { annotation = Type.Variable.Unary annotation; origin } ->
       (* The explicit annotation is necessary to appease the compiler. *)
       let format: ('a, Format.formatter, unit, string) format4 =
         match origin with
@@ -782,7 +782,7 @@ let messages ~concise ~signature location kind =
         | Toplevel ->
             "The type variable `%a` can only be used to annotate generic classes or functions."
       in
-      [Format.asprintf format pp_type annotation]
+      [Format.asprintf format pp_type (Type.Variable annotation)]
   | InvalidTypeVariance { origin; _ } when concise ->
       begin
         match origin with
@@ -1845,7 +1845,7 @@ let less_or_equal ~resolution left right =
         Resolution.equal_type_parameters_mismatch left right
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ->
-        Resolution.less_or_equal resolution ~left ~right &&
+        Type.Variable.equal left right &&
         equal_type_variable_origin left_origin right_origin
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ->
@@ -2215,7 +2215,7 @@ let join ~resolution left right =
         InvalidType (InvalidType left)
     | InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin }
-      when Type.equal left right && equal_type_variable_origin left_origin right_origin ->
+      when Type.Variable.equal left right && equal_type_variable_origin left_origin right_origin ->
         InvalidTypeVariable { annotation = left; origin = left_origin }
     | InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin }
@@ -2749,7 +2749,8 @@ let dequalify
         InvalidTypeParameters
           { invalid_type_parameters with name = Type.dequalify_identifier dequalify_map name }
     | InvalidTypeVariable { annotation; origin } ->
-        InvalidTypeVariable { annotation = dequalify annotation; origin }
+        InvalidTypeVariable
+          { annotation = Type.Variable.dequalify dequalify_map annotation; origin }
     | InvalidTypeVariance { annotation; origin } ->
         InvalidTypeVariance { annotation = dequalify annotation; origin }
     | InvalidInheritance name ->

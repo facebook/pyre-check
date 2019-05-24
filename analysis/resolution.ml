@@ -30,7 +30,7 @@ type generic_type_problems =
     }
   | ViolateConstraints of {
       actual: Type.t;
-      expected: Type.Variable.t;
+      expected: Type.Variable.Unary.t;
     }
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -57,7 +57,7 @@ end
 
 type t = {
   annotations: Annotation.t Reference.Map.t;
-  type_variables: Type.Set.t;
+  type_variables: Type.Variable.Set.t;
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
@@ -95,7 +95,7 @@ let create
     () =
   {
     annotations;
-    type_variables = Type.Set.empty;
+    type_variables = Type.Variable.Set.empty;
     order;
     resolve;
     aliases;
@@ -119,8 +119,8 @@ let pp format { annotations; type_variables; _ } =
       Reference.pp reference
       Annotation.pp annotation;
   in
-  Type.Set.to_list type_variables
-  |> List.map ~f:Type.show
+  Type.Variable.Set.to_list type_variables
+  |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
   Map.to_alist annotations
@@ -164,11 +164,11 @@ let is_global { annotations; global; _ } ~reference =
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
-  { resolution with type_variables = Type.Set.add type_variables variable }
+  { resolution with type_variables = Type.Variable.Set.add type_variables variable }
 
 
 let type_variable_exists { type_variables; _ } ~variable =
-  Type.Set.mem type_variables variable
+  Type.Variable.Set.mem type_variables variable
 
 
 let annotations { annotations; _ } =
@@ -417,7 +417,7 @@ let check_invalid_type_parameters resolution annotation =
             | "Optional"
             | "typing.Final"
             | "typing.Optional" ->
-                [Type.Variable (Type.Variable.create "T")]
+                [Type.Variable (Type.Variable.Unary.create "T")]
             | _ ->
                 generics resolution (Type.Primitive name)
                 |> Option.value ~default:[]
@@ -558,7 +558,7 @@ let is_invariance_mismatch resolution ~left ~right =
       in
       let due_to_invariant_variable (variable, left, right) =
         match variable with
-        | Type.Variable { variance = Type.Variable.Invariant; _ } ->
+        | Type.Variable { variance = Type.Variable.Unary.Invariant; _ } ->
             less_or_equal resolution ~left ~right
         | _ ->
             false

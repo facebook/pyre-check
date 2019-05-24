@@ -577,7 +577,7 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
   let value_annotation =
     match Type.create ~aliases:Handler.aliases value with
     | Type.Variable variable ->
-        if Type.Variable.contains_subvariable variable then
+        if Type.Variable.Unary.contains_subvariable variable then
           Type.Any
         else
           Type.Variable { variable with variable = Reference.show target }

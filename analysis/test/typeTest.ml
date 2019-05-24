@@ -114,26 +114,26 @@ let test_create _ =
   assert_create "typing.TypeVar('_T', $parameter$contravariant=False)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', int)"
-    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "_T");
   assert_create "typing.TypeVar('_T', name=int)" (Type.variable "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound=int)"
-    (Type.variable ~constraints:(Type.Variable.Bound Type.integer) "_T");
+    (Type.variable ~constraints:(Type.Variable.Unary.Bound Type.integer) "_T");
   assert_create
     "typing.TypeVar('_T', $parameter$bound='C')"
-    (Type.variable ~constraints:(Type.Variable.Bound (Type.Primitive "C")) "_T");
+    (Type.variable ~constraints:(Type.Variable.Unary.Bound (Type.Primitive "C")) "_T");
   assert_create
     "typing.TypeVar('_T', 'C', X)"
     (Type.variable
-       ~constraints:(Type.Variable.Explicit [Type.Primitive "C"; Type.Primitive "X"])
+       ~constraints:(Type.Variable.Unary.Explicit [Type.Primitive "C"; Type.Primitive "X"])
        "_T");
   assert_create
     "typing.TypeVar('_T', int, name=float)"
-    (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "_T");
+    (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "_T");
   assert_create
     "typing.TypeVar('_CallableT', bound='typing.Callable')"
     (Type.variable
-       ~constraints:(Type.Variable.Bound (Type.Callable.create ~annotation:Type.Any ()))
+       ~constraints:(Type.Variable.Unary.Bound (Type.Callable.create ~annotation:Type.Any ()))
        "_CallableT");
 
   (* Check that type aliases are resolved. *)
@@ -641,7 +641,7 @@ let test_concise _ =
       })
     "TypedDict(year: int, name: str)";
   assert_concise (Type.union [Type.integer; Type.string]) "Union[int, str]";
-  assert_concise (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T") "T"
+  assert_concise (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T") "T"
 
 
 let test_union _ =
@@ -699,10 +699,11 @@ let test_primitives _ =
 
   assert_equal
     []
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+    (Type.primitives (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+    (Type.primitives
+       (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
 
   assert_equal
     [Type.integer]
@@ -767,10 +768,10 @@ let test_elements _ =
 
   assert_equal
     []
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
   assert_equal
     [Type.integer]
-    (Type.elements (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+    (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
 
   assert_equal
     [Type.integer; Type.Primitive "parametric"]
@@ -824,9 +825,10 @@ let test_exists _ =
   assert_true (top_exists (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (top_exists (Type.Tuple (Type.Unbounded Type.integer)));
 
-  assert_true (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.Top]) "T"));
+  assert_true
+    (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
   assert_false
-    (top_exists (Type.variable ~constraints:(Type.Variable.Explicit [Type.integer]) "T"));
+    (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
   assert_true (top_exists (Type.parametric "parametric" [Type.integer; Type.Top]));
   assert_false (top_exists (Type.parametric "parametric" [Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
@@ -1053,7 +1055,21 @@ let test_dequalify _ =
 
   assert_dequalify
     (Type.parametric "A.B.C" [Type.optional (Type.integer)])
-    (Type.parametric "C" [Type.parametric "Optional" [Type.integer]])
+    (Type.parametric "C" [Type.parametric "Optional" [Type.integer]]);
+
+  let assert_dequalify_variable source expected =
+    assert_equal
+      ~cmp:Type.Variable.equal
+      ~printer:(Format.asprintf "%a" Type.Variable.pp)
+      ~pp_diff:(diff ~print:Type.Variable.pp)
+      (Type.Variable.dequalify
+         (Preprocessing.dequalify_map (parse map))
+         source)
+      expected
+  in
+  assert_dequalify_variable
+    (Type.Variable.Unary (Type.Variable.Unary.create "A.B.C"))
+    (Type.Variable.Unary (Type.Variable.Unary.create "C"))
 
 
 let test_from_overloads _ =
@@ -1158,6 +1174,7 @@ let test_variables _ =
     let variables =
       Type.create ~aliases (parse_single_expression source)
       |> Type.Variable.all_free_variables
+      |> List.filter_map ~f:(function Type.Variable.Unary variable -> Some variable)
       |> List.map ~f:(fun variable -> Type.Variable variable)
     in
     assert_equal (List.map expected ~f:Type.variable) variables
@@ -1389,7 +1406,7 @@ let test_collapse_escaped_variable_unions _ =
 
 
 let test_namespace_insensitive_compare _ =
-  let no_namespace_variable = Type.Variable.create "A" in
+  let no_namespace_variable = Type.Variable.Unary.create "A" in
   let namespaced_variable_1 =
     let namespace = Type.Variable.Namespace.create_fresh () in
     Type.Variable { no_namespace_variable with namespace }
@@ -1409,6 +1426,118 @@ let test_namespace_insensitive_compare _ =
     0;
   ()
 
+
+let test_namespace _ =
+  let no_namespace_variable = Type.Variable.Unary.create "A" in
+  let namespaced_variable_1 =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable.Unary { no_namespace_variable with namespace }
+  in
+  let namespace_2 = Type.Variable.Namespace.create_fresh () in
+  let namespaced_variable_2 =
+    Type.Variable.Unary { no_namespace_variable with namespace = namespace_2 }
+  in
+  assert_equal
+    (Type.Variable.namespace namespaced_variable_1 ~namespace:namespace_2)
+    namespaced_variable_2;
+  ()
+
+
+let test_mark_all_variables_as_bound _ =
+  let variable = Type.Variable (Type.Variable.Unary.create "T") in
+  assert_false (Type.Variable.all_variables_are_resolved variable);
+  let variable = Type.Variable.mark_all_variables_as_bound variable in
+  assert_true (Type.Variable.all_variables_are_resolved variable);
+  ()
+
+
+let test_namespace_all_free_variables _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let bound_variable =
+    Type.Variable.Unary.create "T2"
+    |> Type.Variable.Unary.mark_as_bound
+    |> (fun variable -> Type.Variable variable)
+  in
+  let annotation = Type.parametric "p" [free_variable; bound_variable] in
+  let namespace = Type.Variable.Namespace.create_fresh () in
+  let namespaced_free =
+    Type.Variable.Unary.create "T"
+    |> Type.Variable.Unary.namespace ~namespace
+    |> (fun variable -> Type.Variable variable)
+  in
+  assert_equal
+    (Type.Variable.namespace_all_free_variables annotation ~namespace)
+    (Type.parametric "p" [namespaced_free; bound_variable]);
+  ()
+
+
+let test_mark_all_free_variables_as_escaped _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let bound_variable =
+    Type.Variable.Unary.create "T2"
+    |> Type.Variable.Unary.mark_as_bound
+    |> (fun variable -> Type.Variable variable)
+  in
+  let annotation = Type.parametric "p" [free_variable; bound_variable] in
+  Type.Variable.Namespace.reset ();
+  let escaped_free =
+    let namespace = Type.Variable.Namespace.create_fresh () in
+    Type.Variable.Unary.create "T"
+    |> Type.Variable.Unary.mark_as_escaped
+    |> Type.Variable.Unary.namespace ~namespace
+    |> (fun variable -> Type.Variable variable)
+  in
+  Type.Variable.Namespace.reset ();
+  assert_equal
+    (Type.Variable.mark_all_free_variables_as_escaped annotation)
+    (Type.parametric "p" [escaped_free; bound_variable]);
+  ()
+
+
+let test_contains_escaped_free_variable _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  assert_false (Type.Variable.contains_escaped_free_variable free_variable);
+  let escaped_free =
+    Type.Variable.Unary.create "T"
+    |> Type.Variable.Unary.mark_as_escaped
+    |> (fun variable -> Type.Variable variable)
+  in
+  assert_true (Type.Variable.contains_escaped_free_variable escaped_free);
+  ()
+
+
+let test_convert_all_escaped_free_variables_to_anys _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let escaped_free =
+    Type.Variable.Unary.create "T"
+    |> Type.Variable.Unary.mark_as_escaped
+    |> (fun variable -> Type.Variable variable)
+  in
+  let annotation = Type.parametric "p" [free_variable; escaped_free] in
+  assert_equal
+    (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
+    (Type.parametric "p" [free_variable; Type.Any]);
+  ()
+
+
+let test_replace_all _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let annotation = Type.parametric "p" [free_variable; Type.integer] in
+  assert_equal
+    (Type.Variable.UnaryGlobalTransforms.replace_all
+       (fun _ -> Some Type.integer)
+       annotation)
+    (Type.parametric "p" [Type.integer; Type.integer]);
+  ()
+
+
+let test_collect_all _ =
+  let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
+  let annotation = Type.parametric "p" [free_variable; Type.integer] in
+  assert_equal
+    (Type.Variable.UnaryGlobalTransforms.collect_all annotation)
+    [ Type.Variable.Unary.create "T" ];
+  ()
 
 
 let () =
@@ -1441,6 +1570,14 @@ let () =
     "visit">::test_visit;
     "collapse_escaped_variable_unions">::test_collapse_escaped_variable_unions;
     "namespace_insensitive_compare">::test_namespace_insensitive_compare;
+    "namespace">::test_namespace;
+    "mark_all_variables_as_bound">::test_mark_all_variables_as_bound;
+    "namespace_all_free_variables">::test_namespace_all_free_variables;
+    "mark_all_free_variables_as_escaped">::test_mark_all_free_variables_as_escaped;
+    "contains_escaped_free_variable">::test_contains_escaped_free_variable;
+    "convert_all_escaped_free_variables_to_anys">::test_convert_all_escaped_free_variables_to_anys;
+    "replace_all">::test_replace_all;
+    "collect_all">::test_collect_all;
   ]
   |> Test.run;
   "callable">:::[

@@ -11,34 +11,35 @@ open Expression
 
 module Record : sig
   module Variable : sig
+    type state
+    [@@deriving compare, eq, sexp, show, hash]
     module RecordNamespace : sig
       type t
       [@@deriving compare, eq, sexp, show, hash]
     end
-    type state
-    [@@deriving compare, eq, sexp, show, hash]
+    module RecordUnary : sig
+      type 'annotation constraints =
+        | Bound of 'annotation
+        | Explicit of 'annotation list
+        | Unconstrained
+        | LiteralIntegers
+      [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation constraints =
-      | Bound of 'annotation
-      | Explicit of 'annotation list
-      | Unconstrained
-      | LiteralIntegers
-    [@@deriving compare, eq, sexp, show, hash]
+      type variance =
+        | Covariant
+        | Contravariant
+        | Invariant
+      [@@deriving compare, eq, sexp, show, hash]
 
-    type variance =
-      | Covariant
-      | Contravariant
-      | Invariant
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'annotation record = {
-      variable: Identifier.t;
-      constraints: 'annotation constraints;
-      variance: variance;
-      state: state;
-      namespace: RecordNamespace.t;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
+      type 'annotation record = {
+        variable: Identifier.t;
+        constraints: 'annotation constraints;
+        variance: variance;
+        state: state;
+        namespace: RecordNamespace.t;
+      }
+      [@@deriving compare, eq, sexp, show, hash]
+    end
   end
   module Callable : sig
     module RecordParameter : sig
@@ -118,7 +119,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of t Record.Variable.record
+  | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show]
 
 type type_t = t
@@ -319,25 +320,67 @@ module Variable : sig
     val reset: unit -> unit
     val create_fresh: unit -> t
   end
-  include module type of struct include Record.Variable end
-  type t = type_t record
+
+  type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
-  val create: ?constraints: type_t constraints -> ?variance: variance -> string -> t
-  val is_escaped_and_free: t -> bool
-  val is_contravariant: t -> bool
-  val is_covariant: t -> bool
-  val is_free: t -> bool
-  val namespace: t -> namespace: Namespace.t -> t
-  val mark_as_bound: t -> t
-  val upper_bound: t -> type_t
+
+  type t =
+    | Unary of unary_t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type variable_t = t
+
+  module type VariableKind = sig
+    type t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map: Core.Map.S with type Key.t = t
+
+    val is_free: t -> bool
+    val is_escaped_and_free: t -> bool
+
+    val mark_as_bound: t -> t
+    val mark_as_escaped: t -> t
+    val namespace: t -> namespace: Namespace.t -> t
+    val dequalify: t -> dequalify_map: Reference.t Reference.Map.t -> t
+
+    type domain
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val any: domain
+    (* The value in the domain directly corresponding to the variable, i.e. the replacement that
+       would leave a type unchanged *)
+    val self_reference: t -> domain
+  end
+  module Unary : sig
+    include module type of struct include Record.Variable.RecordUnary end
+    include VariableKind with type t = unary_t and type domain = type_t
+    val create: ?constraints: type_t constraints -> ?variance: variance -> string -> t
+    val is_contravariant: t -> bool
+    val is_covariant: t -> bool
+    val upper_bound: t -> type_t
+    val is_escaped_and_free: t -> bool
+    val contains_subvariable: t -> bool
+  end
+  module GlobalTransforms: sig
+    module type S = sig
+      type t
+      type domain
+      val replace_all: (t -> domain option) -> type_t -> type_t
+      val collect_all: type_t -> t list
+    end
+  end
+  module UnaryGlobalTransforms: GlobalTransforms.S with type t = unary_t and type domain = type_t
+  include module type of struct include Record.Variable end
+
+  module Set: Core.Set.S with type Elt.t = t
   val dequalify: Reference.t Reference.Map.t -> t -> t
-  val contains_subvariable: t -> bool
+  val namespace: t -> namespace: Namespace.t -> t
 
   val mark_all_variables_as_bound: type_t -> type_t
   val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t
   val all_free_variables: type_t -> t list
   val all_variables_are_resolved: type_t -> bool
-  val instantiate_all_free_variables: replacement:type_t -> type_t -> type_t
   val mark_all_free_variables_as_escaped: ?specific: t list -> type_t -> type_t
   val collapse_all_escaped_variable_unions: type_t -> type_t
   val contains_escaped_free_variable: type_t -> bool
@@ -347,8 +390,8 @@ end
 val namespace_insensitive_compare: t -> t -> int
 
 val variable
-  :  ?constraints: type_t Variable.constraints
-  -> ?variance: Variable.variance
+  :  ?constraints: type_t Variable.Unary.constraints
+  -> ?variance: Variable.Unary.variance
   -> string
   -> t
 

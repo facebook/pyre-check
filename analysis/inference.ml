@@ -173,7 +173,6 @@ module State = struct
           let parameters =
             List.map parameters ~f:Type.Callable.Parameter.annotation
             |> List.concat_map ~f:Type.Variable.all_free_variables
-            |> List.map ~f:(fun variable -> Type.Variable variable)
           in
           List.fold
             parameters
@@ -186,7 +185,6 @@ module State = struct
       List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
       |> (fun errors ->
           Type.Variable.all_free_variables annotation
-          |> List.map ~f:(fun variable -> Type.Variable variable)
           |> List.fold
             ~f:(check_invalid_variables resolution)
             ~init:errors)
@@ -689,7 +687,7 @@ module State = struct
       let add_variance_error (state, annotation) =
         let state =
           match annotation with
-          | Type.Variable variable when Type.Variable.is_contravariant variable ->
+          | Type.Variable variable when Type.Variable.Unary.is_contravariant variable ->
               emit_error
                 ~state
                 ~location
@@ -789,7 +787,7 @@ module State = struct
               match annotation with
               | Type.Variable variable
                 when not (Statement.Define.is_constructor define) &&
-                     Type.Variable.is_covariant variable ->
+                     Type.Variable.Unary.is_covariant variable ->
                   emit_error
                     ~state
                     ~location
@@ -1519,9 +1517,9 @@ module State = struct
                   | TypedDictionary { name; fields; total } ->
                       Type.TypedDictionary.constructor ~name ~fields ~total
                       |> Option.some
-                  | Variable { constraints = Type.Variable.Unconstrained; _ } ->
+                  | Variable { constraints = Type.Variable.Unary.Unconstrained; _ } ->
                       backup
-                  | Variable { constraints = Type.Variable.Explicit constraints; _ }
+                  | Variable { constraints = Type.Variable.Unary.Explicit constraints; _ }
                     when List.length constraints > 1 ->
                       backup
                   | Any ->
@@ -1529,9 +1527,9 @@ module State = struct
                   | meta_parameter ->
                       let parent =
                         match meta_parameter with
-                        | Variable { constraints = Type.Variable.Explicit [parent]; _ } ->
+                        | Variable { constraints = Type.Variable.Unary.Explicit [parent]; _ } ->
                             parent
-                        | Variable { constraints = Type.Variable.Bound parent; _ } ->
+                        | Variable { constraints = Type.Variable.Unary.Bound parent; _ } ->
                             parent
                         | _ ->
                             meta_parameter

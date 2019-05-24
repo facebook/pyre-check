@@ -140,7 +140,7 @@ type kind =
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
-  | InvalidTypeVariable of { annotation: Type.t; origin: type_variable_origin }
+  | InvalidTypeVariable of { annotation: Type.Variable.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }

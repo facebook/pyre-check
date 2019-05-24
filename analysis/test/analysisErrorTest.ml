@@ -1261,7 +1261,7 @@ let test_suppress _ =
 
 
 let test_namespace_insensitive_set _ =
-  let no_namespace_variable = Type.Variable.create "A" in
+  let no_namespace_variable = Type.Variable.Unary.create "A" in
   let namespaced_variable_1 =
     let namespace = Type.Variable.Namespace.create_fresh () in
     Type.Variable { no_namespace_variable with namespace }

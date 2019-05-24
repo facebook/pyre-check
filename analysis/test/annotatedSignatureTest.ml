@@ -331,7 +331,7 @@ let test_select _ =
     "[[int], int]" "(**int_to_int_dictionary)"
     (`NotFoundInvalidKeywordArgument
        (+Name (Name.Identifier "int_to_int_dictionary"),
-         Type.dictionary ~key:Type.integer ~value:Type.integer));
+        Type.dictionary ~key:Type.integer ~value:Type.integer));
   assert_select
     "[[int, Named(i, int)], int]"
     "(1, **{'a': 1})"
@@ -448,7 +448,7 @@ let test_select _ =
     (`NotFoundMismatchWithClosest
        ("[[ESCAPED[_R]], ESCAPED[_R]]", Type.literal_string "string", "\"string\"",
         Type.variable
-          ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R", None, 1));
+          ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.float]) "_R", None, 1));
   assert_select "[[typing.List[_R]], _R]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select
     "[[typing.List[_R]], _R]"
@@ -456,7 +456,7 @@ let test_select _ =
     (`NotFoundMismatchWithClosest
        ("[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]", Type.list Type.string, "['string']",
         Type.list (Type.variable
-                     ~constraints:(Type.Variable.Explicit [Type.integer; Type.float]) "_R"),
+                     ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.float]) "_R"),
         None,
         1));
   assert_select "[[], _R]" "()" (`Found "[[], ESCAPED[_R]]");
@@ -489,7 +489,7 @@ let test_select _ =
         "union",
         Type.variable
           "_T_float_or_str"
-          ~constraints:(Type.Variable.Explicit [Type.float; Type.string]),
+          ~constraints:(Type.Variable.Unary.Explicit [Type.float; Type.string]),
         None,
         1)
     );

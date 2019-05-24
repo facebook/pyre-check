@@ -13,46 +13,49 @@ open PyreParser
 
 module Record = struct
   module Variable = struct
-    module RecordNamespace = struct
-      type t =  int
-      [@@deriving compare, eq, sexp, show, hash]
-    end
     type state =
       | Free of { escaped: bool }
       | InFunction
     [@@deriving compare, eq, sexp, show, hash]
 
+    module RecordNamespace = struct
+      type t =  int
+      [@@deriving compare, eq, sexp, show, hash]
+    end
 
-    type 'annotation constraints =
-      | Bound of 'annotation
-      | Explicit of 'annotation list
-      | Unconstrained
-      | LiteralIntegers
-    [@@deriving compare, eq, sexp, show, hash]
+    module RecordUnary = struct
+      type 'annotation constraints =
+        | Bound of 'annotation
+        | Explicit of 'annotation list
+        | Unconstrained
+        | LiteralIntegers
+      [@@deriving compare, eq, sexp, show, hash]
 
-    type variance =
-      | Covariant
-      | Contravariant
-      | Invariant
-    [@@deriving compare, eq, sexp, show, hash]
+      type variance =
+        | Covariant
+        | Contravariant
+        | Invariant
+      [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation record = {
-      variable: Identifier.t;
-      constraints: 'annotation constraints;
-      variance: variance;
-      state: state;
-      namespace: RecordNamespace.t;
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-
-    let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
-      {
-        variable = name;
-        constraints;
-        variance;
-        state = Free { escaped = false };
-        namespace = 0;
+      type 'annotation record = {
+        variable: Identifier.t;
+        constraints: 'annotation constraints;
+        variance: variance;
+        state: state;
+        namespace: RecordNamespace.t;
       }
+      [@@deriving compare, eq, sexp, show, hash]
+
+      let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
+        {
+          variable = name;
+          constraints;
+          variance;
+          state = Free { escaped = false };
+          namespace = 0;
+        }
+    end
+
   end
   module Callable = struct
     module RecordParameter = struct
@@ -166,7 +169,7 @@ and t =
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
-  | Variable of t Record.Variable.record
+  | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show, hash]
 
 
@@ -881,7 +884,7 @@ let union parameters =
 
 
 let variable ?constraints ?variance name =
-  Variable (Record.Variable.create ?constraints ?variance name)
+  Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
 
 
 let yield parameter =
@@ -1220,8 +1223,8 @@ module Transform = struct
         | Variable ({ constraints; _ } as variable) ->
             let constraints =
               match constraints with
-              | Record.Variable.Bound bound ->
-                  Record.Variable.Bound (visit_annotation bound ~state)
+              | Record.Variable.RecordUnary.Bound bound ->
+                  Record.Variable.RecordUnary.Bound (visit_annotation bound ~state)
               | Explicit constraints ->
                   Explicit (List.map constraints ~f:(visit_annotation ~state))
               | Unconstrained ->
@@ -1800,7 +1803,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   List.find_map ~f:bound arguments
                 in
                 if not (List.is_empty explicits) then
-                  Record.Variable.Explicit explicits
+                  Record.Variable.RecordUnary.Explicit explicits
                 else if Option.is_some bound then
                   Bound (Option.value_exn bound)
                 else
@@ -1812,7 +1815,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     Call.Argument.name = Some { Node.value = name; _ };
                     value = { Node.value = True; _ };
                   } when String.equal (Identifier.sanitized name) "covariant" ->
-                      Some Record.Variable.Covariant
+                      Some Record.Variable.RecordUnary.Covariant
                   | {
                     Call.Argument.name = Some { Node.value = name; _ };
                     value = { Node.value = True; _ };
@@ -1822,7 +1825,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                       None
                 in
                 List.find_map arguments ~f:variance_definition
-                |> Option.value ~default:Record.Variable.Invariant
+                |> Option.value ~default:Record.Variable.RecordUnary.Invariant
               in
               variable value ~constraints ~variance
           | Call {
@@ -2400,7 +2403,80 @@ let dequalify_identifier map identifier =
   |> Reference.show
 
 
-module Variable = struct
+module Variable: sig
+  module Namespace : sig
+    include module type of struct include Record.Variable.RecordNamespace end
+    val reset: unit -> unit
+    val create_fresh: unit -> t
+  end
+
+  type unary_t = type_t Record.Variable.RecordUnary.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type t =
+    | Unary of unary_t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type variable_t = t
+
+  module type VariableKind = sig
+    type t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map: Core.Map.S with type Key.t = t
+
+    val is_free: t -> bool
+    val is_escaped_and_free: t -> bool
+
+    val mark_as_bound: t -> t
+    val mark_as_escaped: t -> t
+    val namespace: t -> namespace: Namespace.t -> t
+    val dequalify: t -> dequalify_map: Reference.t Reference.Map.t -> t
+
+    type domain
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val any: domain
+    (* The value in the domain directly corresponding to the variable, i.e. the replacement that
+       would leave a type unchanged *)
+    val self_reference: t -> domain
+  end
+  module Unary : sig
+    include module type of struct include Record.Variable.RecordUnary end
+    include VariableKind with type t = unary_t and type domain = type_t
+    val create: ?constraints: type_t constraints -> ?variance: variance -> string -> t
+    val is_contravariant: t -> bool
+    val is_covariant: t -> bool
+    val upper_bound: t -> type_t
+    val is_escaped_and_free: t -> bool
+    val contains_subvariable: t -> bool
+  end
+  module GlobalTransforms: sig
+    module type S = sig
+      type t
+      type domain
+      val replace_all: (t -> domain option) -> type_t -> type_t
+      val collect_all: type_t -> t list
+    end
+  end
+  module UnaryGlobalTransforms: GlobalTransforms.S with type t = unary_t and type domain = type_t
+  include module type of struct include Record.Variable end
+
+  module Set: Core.Set.S with type Elt.t = t
+  val dequalify: Reference.t Reference.Map.t -> t -> t
+  val namespace: t -> namespace: Namespace.t -> t
+
+  val mark_all_variables_as_bound: type_t -> type_t
+  val namespace_all_free_variables: type_t -> namespace: Namespace.t -> type_t
+  val all_free_variables: type_t -> t list
+  val all_variables_are_resolved: type_t -> bool
+  val mark_all_free_variables_as_escaped: ?specific: t list -> type_t -> type_t
+  val collapse_all_escaped_variable_unions: type_t -> type_t
+  val contains_escaped_free_variable: type_t -> bool
+  val convert_all_escaped_free_variables_to_anys: type_t -> type_t
+
+  val converge_all_variable_namespaces: type_t -> type_t
+end = struct
   module Namespace = struct
     include Record.Variable.RecordNamespace
     let fresh = ref 1
@@ -2413,129 +2489,267 @@ module Variable = struct
       fresh := namespace + 1;
       namespace
   end
-  include Record.Variable
 
-  type t = type_t record
+  type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  let is_contravariant = function
-    | { variance = Contravariant; _ } -> true
-    | _ -> false
+  type t =
+    | Unary of unary_t
+  [@@deriving compare, eq, sexp, show, hash]
 
-  let is_covariant = function
-    | { variance = Covariant; _ } -> true
-    | _ -> false
+  type variable_t = t
 
-  let is_free = function
-    | { state = Free _; _ } -> true
-    | _ -> false
+  module type VariableKind = sig
+    type t
+    [@@deriving compare, eq, sexp, show, hash]
+    module Map: Core.Map.S with type Key.t = t
+
+    val is_free: t -> bool
+    val is_escaped_and_free: t -> bool
+
+    val mark_as_bound: t -> t
+    val mark_as_escaped: t -> t
+    val namespace: t -> namespace: Namespace.t -> t
+    val dequalify: t -> dequalify_map: Reference.t Reference.Map.t -> t
+
+    type domain
+    [@@deriving compare, eq, sexp, show, hash]
+
+    val any: domain
+    val self_reference: t -> domain
+  end
+
+  module GlobalTransforms = struct
+    module type VariableKind = sig
+      include VariableKind
+
+      (* We don't want these to be part of the public interface for Unary or Variadic.Parameters *)
+      val local_replace: (t -> domain option) -> type_t -> type_t option
+      val local_collect: type_t -> t list
+    end
+
+    module Make(Variable: VariableKind) = struct
+      include Variable
+
+      let replace_all operation =
+        instantiate
+          ~constraints:(Variable.local_replace operation)
+          ~widen:false
+
+      let map operation =
+        replace_all (fun variable -> operation variable |> Variable.self_reference |> Option.some)
+
+      let mark_all_as_bound =
+        map Variable.mark_as_bound
+
+      let namespace_all_free_variables annotation ~namespace =
+        let namespace_if_free variable =
+          if Variable.is_free variable then
+            Variable.namespace variable ~namespace
+          else
+            variable
+        in
+        map namespace_if_free annotation
+
+      let mark_as_escaped annotation ~variables ~namespace =
+        let mark_as_escaped_if_in_list variable =
+          if List.mem variables variable ~equal:Variable.equal then
+            Variable.mark_as_escaped variable
+            |> Variable.namespace ~namespace
+          else
+            variable
+        in
+        map mark_as_escaped_if_in_list annotation
+
+      (* Sets all of the variables of type Variable.t to the same namespace (-1).  This should
+         only be used to implement namespace_insensitive_compare *)
+      let converge_all_variable_namespaces =
+        map (Variable.namespace ~namespace:(-1))
+
+      let convert_all_escaped_free_variables_to_anys =
+        let convert_if_escaped variable =
+          if Variable.is_escaped_and_free variable then
+            Some Variable.any
+          else
+            Some (Variable.self_reference variable)
+        in
+        replace_all convert_if_escaped
+
+      let collect_all annotation =
+        let module CollectorTransform = Transform.Make(struct
+            type state = Variable.t list
+
+            let visit_children_before _ _ =
+              true
+
+            let visit_children_after =
+              false
+
+            let visit sofar annotation =
+              let new_state =
+                (Variable.local_collect annotation) @ sofar
+              in
+              { Transform.transformed_annotation = annotation; new_state }
+
+          end)
+        in
+        fst (CollectorTransform.visit [] annotation)
+        |> List.rev
+
+      let all_free_variables annotation =
+        collect_all annotation
+        |> List.filter ~f:Variable.is_free
+
+      let contains_escaped_free_variable annotation =
+        collect_all annotation
+        |> List.exists ~f:Variable.is_escaped_and_free
+    end
+
+    module type S = sig
+      type t
+      type domain
+      val replace_all: (t -> domain option) -> type_t -> type_t
+      val collect_all: type_t -> t list
+    end
+  end
+
+  module Unary = struct
+    include Record.Variable.RecordUnary
+
+    type t = type_t record
+    [@@deriving compare, eq, sexp, show, hash]
+
+    type domain = type_t
+    [@@deriving compare, eq, sexp, show, hash]
+
+    module Map = Core.Map.Make(struct
+        type nonrec t = t
+        let compare = compare
+        let sexp_of_t = sexp_of_t
+        let t_of_sexp = t_of_sexp
+      end)
+
+    let any = Any
+
+    let self_reference variable = Variable variable
+
+    let is_contravariant = function
+      | { variance = Contravariant; _ } -> true
+      | _ -> false
+
+    let is_covariant = function
+      | { variance = Covariant; _ } -> true
+      | _ -> false
+
+    let is_free = function
+      | { state = Free _; _ } -> true
+      | _ -> false
+
+    let namespace variable ~namespace =
+      { variable with namespace }
+
+    let mark_as_bound variable =
+      { variable with state = InFunction }
+
+    let local_replace replacement = function
+      | Variable variable ->
+          replacement variable
+      | _ ->
+          None
+
+    let upper_bound { constraints; _ } =
+      match constraints with
+      | Unconstrained ->
+          object_primitive
+      | Bound bound ->
+          bound
+      | Explicit explicits ->
+          union explicits
+      | LiteralIntegers ->
+          integer
+
+    let is_escaped_and_free = function
+      | { state = Free { escaped }; _ } -> escaped
+      | _ -> false
+
+    let contains_subvariable { constraints; _ } =
+      let is_variable = function
+        | Variable _ -> true
+        | _ -> false
+      in
+      let contains_variable = exists ~predicate:is_variable in
+      match constraints with
+      | Unconstrained ->
+          false
+      | Bound bound ->
+          contains_variable bound
+      | Explicit explicits ->
+          List.exists explicits ~f:contains_variable
+      | LiteralIntegers ->
+          false
+
+    let mark_as_escaped variable =
+      { variable with state = Free { escaped = true } }
+
+    let local_collect = function
+      | Variable variable -> [variable]
+      | _ -> []
+
+    let dequalify ({ variable = name; _ } as variable) ~dequalify_map =
+      { variable with variable = dequalify_identifier dequalify_map name}
+  end
+
+  module UnaryGlobalTransforms = GlobalTransforms.Make(Unary)
+  include Record.Variable
+
+  module Set = Core.Set.Make(struct
+      type nonrec t = t
+      let compare = compare
+      let sexp_of_t = sexp_of_t
+      let t_of_sexp = t_of_sexp
+    end)
+
+  let dequalify dequalify_map = function
+    | Unary variable ->
+        Unary (Unary.dequalify variable ~dequalify_map)
 
   let namespace variable ~namespace =
-    { variable with namespace }
-
-  let mark_as_bound variable =
-    { variable with state = InFunction }
-
-  let upper_bound { constraints; _ } =
-    match constraints with
-    | Unconstrained ->
-        object_primitive
-    | Bound bound ->
-        bound
-    | Explicit explicits ->
-        union explicits
-    | LiteralIntegers ->
-        integer
-
-  let is_escaped_and_free = function
-    | { state = Free { escaped }; _ } -> escaped
-    | _ -> false
-
-  let contains_subvariable { constraints; _ } =
-    let is_variable = function
-      | Variable _ -> true
-      | _ -> false
-    in
-    let contains_variable = exists ~predicate:is_variable in
-    match constraints with
-    | Unconstrained ->
-        false
-    | Bound bound ->
-        contains_variable bound
-    | Explicit explicits ->
-        List.exists explicits ~f:contains_variable
-    | LiteralIntegers ->
-        false
-
-  let dequalify dequalify_map ({ variable; _ } as annotation) =
-    { annotation with variable = dequalify_identifier dequalify_map variable }
+    match variable with
+    | Unary variable ->
+        Unary (Unary.namespace variable ~namespace)
 
   let mark_all_variables_as_bound annotation =
-    let constraints annotation =
-      match annotation with
-      | Variable variable -> Some (Variable (mark_as_bound variable))
-      | _ -> None
-    in
-    instantiate annotation ~constraints
+    UnaryGlobalTransforms.mark_all_as_bound annotation
 
 
-  let namespace_all_free_variables annotation ~namespace:into_namespace =
-    let constraints annotation =
-      match annotation with
-      | Variable ({ state = Free _; _ } as variable) ->
-          Some (Variable (namespace variable ~namespace:into_namespace))
-      | _ -> None
-    in
-    instantiate annotation ~constraints
+  let namespace_all_free_variables annotation ~namespace =
+    UnaryGlobalTransforms.namespace_all_free_variables annotation ~namespace
 
 
   let all_free_variables annotation =
-    let is_free_variable = function
-      | Variable { state = Free _; _ } -> true
-      | _ -> false
-    in
-    let to_variable = function
-      | Variable variable -> variable
-      | _ -> failwith("collect got a non-variable")
-    in
-    collect annotation ~predicate:is_free_variable
-    |> List.map ~f:to_variable
+    UnaryGlobalTransforms.all_free_variables annotation
+    |> List.map ~f:(fun variable -> Unary variable)
 
 
   let all_variables_are_resolved annotation =
-    List.is_empty (all_free_variables annotation)
+    all_free_variables annotation
+    |> List.is_empty
 
-
-  let instantiate_all_free_variables ~replacement annotation =
-    let constraints =
-      all_free_variables annotation
-      |> List.map ~f:(fun variable -> Variable variable)
-      |> List.fold
-        ~init:Map.empty
-        ~f:(fun constraints variable -> Map.set constraints ~key:variable ~data:replacement)
-    in
-    instantiate annotation ~constraints:(Map.find constraints)
 
   let mark_all_free_variables_as_escaped ?specific annotation =
     let fresh_namespace = Namespace.create_fresh () in
-    let constraints =
-      let variables =
-        match specific with
-        | Some variables ->
-            variables
-        | None ->
-            all_free_variables annotation
-      in
-      let mark_as_escaped sofar variable =
-        let data =
-          namespace { variable with state = Free { escaped = true }} ~namespace:fresh_namespace
-          |> (fun variable -> Variable variable)
-        in
-        Map.set sofar ~key:(Variable variable) ~data
-      in
-      List.fold variables ~init:Map.empty ~f:mark_as_escaped
+    let variables =
+      match specific with
+      | Some variables ->
+          variables
+      | None ->
+          all_free_variables annotation
     in
-    instantiate annotation ~constraints:(Map.find constraints)
+    let specific_unaries = List.map variables ~f:(function Unary variable -> variable) in
+    UnaryGlobalTransforms.mark_as_escaped
+      annotation
+      ~variables:specific_unaries
+      ~namespace:fresh_namespace
 
 
   let collapse_all_escaped_variable_unions annotation =
@@ -2553,7 +2767,7 @@ module Variable = struct
             match annotation with
             | Union parameters ->
                 let not_escaped_free_variable = function
-                  | Variable variable -> not (is_escaped_and_free variable)
+                  | Variable variable -> not (Unary.is_escaped_and_free variable)
                   | _ -> true
                 in
                 List.filter parameters ~f:not_escaped_free_variable
@@ -2567,26 +2781,14 @@ module Variable = struct
     snd (ConcreteTransform.visit () annotation)
 
 
-  let contains_escaped_free_variable =
-    let predicate = function
-      | Variable variable -> is_escaped_and_free variable
-      | _ -> false
-    in
-    exists ~predicate
+  let contains_escaped_free_variable annotation =
+    UnaryGlobalTransforms.contains_escaped_free_variable annotation
 
   let convert_all_escaped_free_variables_to_anys annotation =
-    let constraints = function
-      | Variable variable when is_escaped_and_free variable -> Some Any
-      | _ -> None
-    in
-    instantiate annotation ~constraints
+    UnaryGlobalTransforms.convert_all_escaped_free_variables_to_anys annotation
 
-  let converge_all_variable_namespaces  =
-    let constraints = function
-      | Variable variable -> Some (Variable { variable with namespace = -1 })
-      | _ -> None
-    in
-    instantiate ~constraints
+  let converge_all_variable_namespaces annotation =
+    UnaryGlobalTransforms.converge_all_variable_namespaces annotation
 end
 
 
@@ -2742,12 +2944,12 @@ module TypedDictionary = struct
         [
           { annotation = Optional annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; Variable (Variable.create "_T")];
+            annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = Variable (Variable.create "_T");
+                  annotation = Variable (Variable.Unary.create "_T");
                   default = false;
                 };
               ];
@@ -2785,12 +2987,12 @@ module TypedDictionary = struct
         [
           { annotation = annotation; parameters = Defined [ key_parameter name ] };
           {
-            annotation = Union [annotation; Variable (Variable.create "_T")];
+            annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters = Defined [
                 key_parameter name;
                 Named {
                   name = "default";
-                  annotation = Variable (Variable.create "_T");
+                  annotation = Variable (Variable.Unary.create "_T");
                   default = false;
                 };
               ];

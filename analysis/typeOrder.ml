@@ -279,7 +279,7 @@ let contains (module Handler: Handler) annotation =
 
 let is_instantiated (module Handler: Handler) annotation =
   let is_invalid = function
-    | Type.Variable { constraints = Type.Variable.Unconstrained; _ } -> true
+    | Type.Variable { constraints = Type.Variable.Unary.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
         not (Handler.contains (Handler.indices ()) (Type.Primitive name))
@@ -364,11 +364,11 @@ let variables (module Handler: Handler) annotation =
   | left, _ when String.equal (Type.show left) "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some [Type.Variable (Type.Variable.create ~variance:Covariant "_T_meta")]
+      Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
   | left, _ when String.equal (Type.show left) "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just
          proxying to the Callable instance in the type order here. *)
-      Some [Type.Variable (Type.Variable.create ~variance:Covariant "_T_meta")]
+      Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
   | primitive, _ ->
       Handler.find (Handler.indices ()) Type.generic_primitive
       >>= fun generic_index ->
@@ -590,7 +590,7 @@ module OrderImplementation = struct
         let does_not_leak_namespaced_variables (external_constraints, _) =
           let predicate = function
             | Type.Variable variable ->
-                List.exists namespaced_variables ~f:((=) variable)
+                List.exists namespaced_variables ~f:((=) (Type.Variable.Unary variable))
             | _ ->
                 false
           in
@@ -695,7 +695,8 @@ module OrderImplementation = struct
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
           | Type.Variable left_variable, Type.Variable right_variable
-            when (Type.Variable.is_free left_variable) && (Type.Variable.is_free right_variable) ->
+            when (Type.Variable.Unary.is_free left_variable) &&
+                 (Type.Variable.Unary.is_free right_variable) ->
               (* Either works because constraining V1 to be less or equal to V2 implies
                  that V2 is greater than or equal to V1.  Therefore either constraint is sufficient,
                  and we should consider both.  This approach simplifies things downstream for
@@ -715,10 +716,10 @@ module OrderImplementation = struct
                 |> Option.to_list
               in
               right_greater_than_left @ left_less_than_right
-          | Type.Variable variable, bound when Type.Variable.is_free variable ->
+          | Type.Variable variable, bound when Type.Variable.Unary.is_free variable ->
               OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
               |> Option.to_list
-          | bound, Type.Variable variable when Type.Variable.is_free variable ->
+          | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
               OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
               |> Option.to_list
           | Type.Callable _, Type.Primitive protocol when is_protocol right ->
@@ -1016,7 +1017,7 @@ module OrderImplementation = struct
            union. *)
         | Type.Variable variable, Type.Union union ->
             List.exists ~f:(fun right -> less_or_equal order ~left ~right) union ||
-            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+            less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
 
         (* \exists i \in Union[...]. A <= B_i ->  A <= Union[...] *)
         | left, Type.Union right ->
@@ -1026,7 +1027,7 @@ module OrderImplementation = struct
            optional. *)
         | Type.Variable variable, Type.Optional optional ->
             less_or_equal order ~left ~right:optional ||
-            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+            less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
 
         (* A <= B -> A <= Optional[B].*)
         | Type.Optional left, Type.Optional right ->
@@ -1037,7 +1038,7 @@ module OrderImplementation = struct
             false
 
         | Type.Variable variable, right ->
-            less_or_equal order ~left:(Type.Variable.upper_bound variable) ~right
+            less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
 
         (* Tuple variables are covariant. *)
         | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
@@ -1458,8 +1459,14 @@ module OrderImplementation = struct
                     when List.length left = List.length right &&
                          List.length left = List.length variables ->
                       let join_parameters left right variable =
+                        let replace_free_unary_variables_with_top =
+                          let replace_if_free variable =
+                            Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                          in
+                          Type.Variable.UnaryGlobalTransforms.replace_all replace_if_free
+                        in
                         join_parameters left right variable
-                        |> Type.Variable.instantiate_all_free_variables ~replacement:Type.Top
+                        |> replace_free_unary_variables_with_top
                       in
                       Some (List.map3_exn ~f:join_parameters left right variables)
                   | _ ->
@@ -2128,7 +2135,7 @@ module OrderImplementation = struct
                     let transformations, sanitized_candidate =
                       let namespace = Type.Variable.Namespace.create_fresh () in
                       let module SanitizeTransform = Type.Transform.Make(struct
-                          type state = (Type.Variable.t * Type.Variable.t) list
+                          type state = (Type.Variable.Unary.t * Type.Variable.Unary.t) list
 
                           let visit_children_before _ _ =
                             true
@@ -2137,10 +2144,10 @@ module OrderImplementation = struct
                             false
 
                           let visit sofar = function
-                            | Type.Variable variable when Type.Variable.is_free variable ->
+                            | Type.Variable variable when Type.Variable.Unary.is_free variable ->
                                 let transformed_variable =
-                                  Type.Variable.namespace variable ~namespace
-                                  |> Type.Variable.mark_as_bound
+                                  Type.Variable.Unary.namespace variable ~namespace
+                                  |> Type.Variable.Unary.mark_as_bound
                                 in
                                 {
                                   Type.Transform.transformed_annotation =
@@ -2214,7 +2221,7 @@ module OrderImplementation = struct
                     let desanitize =
                       let constraints = function
                         | Type.Variable variable ->
-                            List.Assoc.find desanitize_map variable ~equal:Type.Variable.equal
+                            List.Assoc.find desanitize_map variable ~equal:Type.Variable.Unary.equal
                             >>| (fun variable -> Type.Variable variable)
                         | _ ->
                             None
@@ -2644,7 +2651,7 @@ module Builder = struct
 
     (* Since the builtin type hierarchy is not primitive, it's special cased. *)
     let type_builtin = Type.Primitive ("type") in
-    let type_variable = Type.Variable (Type.Variable.create "_T") in
+    let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
     insert handler type_builtin;
     connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
     connect
@@ -2672,8 +2679,8 @@ module Builder = struct
     connect
       handler
       ~parameters:[
-        Type.Variable (Type.Variable.create "_T");
-        Type.Variable (Type.Variable.create "_T2");
+        Type.Variable (Type.Variable.Unary.create "_T");
+        Type.Variable (Type.Variable.Unary.create "_T2");
       ]
       ~predecessor:typing_mapping
       ~successor:Type.generic_primitive;

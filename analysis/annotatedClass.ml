@@ -142,7 +142,7 @@ let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
     let annotation =
       match original_annotation with
-      | Type.Variable variable -> Type.Variable.upper_bound variable
+      | Type.Variable variable -> Type.Variable.Unary.upper_bound variable
       | _ -> original_annotation
     in
     match annotation with
@@ -247,7 +247,8 @@ let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Expression.Call.Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.Variable.all_free_variables
-    |> List.map ~f:(fun variable -> Type.Variable variable)
+    |> List.filter_map
+      ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable))
   in
   List.concat_map ~f:find_type_variables bases
   |> List.dedup ~compare:Type.compare
@@ -632,12 +633,14 @@ let create_attribute
   in
 
   (* Special case properties with type variables. *)
+  (* TODO(T44676629): handle this correctly *)
   let annotation =
     let free_variables =
       let variables =
         Annotation.annotation annotation
         |> Type.Variable.all_free_variables
-        |> List.map ~f:(fun variable -> Type.Variable variable)
+        |> List.filter_map
+          ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable))
         |> Type.Set.of_list
       in
       let generics =
