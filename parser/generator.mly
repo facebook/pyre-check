@@ -84,7 +84,7 @@
       Format.asprintf "__%s%s__" (if compound then "i" else "") name
     in
     let callee =
-      Name (Name.Attribute { base = left; attribute = name })
+      Name (Name.Attribute { base = left; attribute = name; special = false })
       |> Node.create ~location
     in
     Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
@@ -151,7 +151,7 @@
     let head, subscripts = subscript in
     let location = Node.location head in
     let callee =
-      Name (Name.Attribute { base = head; attribute = "__getitem__" })
+      Name (Name.Attribute { base = head; attribute = "__getitem__"; special = false })
       |> Node.create ~location
     in
     Call { callee; arguments = [subscript_argument ~subscripts ~location] }
@@ -163,7 +163,7 @@
       { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
     let callee =
-      Name (Name.Attribute { base = head; attribute = "__setitem__" })
+      Name (Name.Attribute { base = head; attribute = "__setitem__"; special = false })
       |> Node.create ~location
     in
     Call {
@@ -550,8 +550,13 @@ small_statement:
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
               let callee =
-                Expression.Name (Expression.Name.Attribute { base = yield; attribute = "__iter__" })
-                |> Node.create ~location
+                Expression.Name (
+                  Expression.Name.Attribute {
+                    base = yield;
+                    attribute = "__iter__";
+                    special = false
+                  }
+                ) |> Node.create ~location
               in
               Expression.Call { callee; arguments = [] }
               |> Node.create ~location
@@ -1342,7 +1347,9 @@ expression:
       in
       {
         Node.location;
-        value = Name (Name.Attribute { base = expression; attribute = snd identifier })
+        value = Name (
+          Name.Attribute { base = expression; attribute = snd identifier; special = false }
+        )
       }
     }
 

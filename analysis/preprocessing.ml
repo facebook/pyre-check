@@ -78,14 +78,15 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               | _ -> false
             in
             match value with
-            | Name (Name.Attribute { base; attribute }) ->
-                Name (Name.Attribute { base = transform_expression base; attribute })
+            | Name (Name.Attribute ({ base; _ } as name)) ->
+                Name (Name.Attribute { name with base = transform_expression base })
             | Call {
                 callee = {
                   Node.value = Name (
                       Name.Attribute {
                         base = { Node.value = Name base; _ };
                         attribute = "__getitem__";
+                        special = false;
                       });
                   _;
                 };
@@ -217,7 +218,8 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               callee = ({
                   Node.value = Name (Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "cast"
+                      attribute = "cast";
+                      special = false;
                     });
                   _;
                 } as callee);
@@ -550,7 +552,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                       let qualifier =
                         Node.create ~location (Name (Reference.name ~location qualifier))
                       in
-                      Name.Attribute { base = qualifier; attribute = sanitized }
+                      Name.Attribute { base = qualifier; attribute = sanitized; special = false }
                     in
                     let scope =
                       let aliases =
@@ -612,16 +614,15 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                                 Name.Attribute {
                                   base = Node.create ~location:(Node.location target) qualifier;
                                   attribute = identifier;
+                                  special = false;
                                 })
-                          | Name (Name.Attribute { base; attribute }) ->
-                              Name (
-                                Name.Attribute {
-                                  base =
-                                    Node.create
-                                      ~location:(Node.location base)
-                                      (combine qualifier (Node.value base));
-                                  attribute;
-                                })
+                          | Name (Name.Attribute ({ base; _ } as name)) ->
+                              let qualified_base =
+                                Node.create
+                                  ~location:(Node.location base)
+                                  (combine qualifier (Node.value base))
+                              in
+                              Name (Name.Attribute { name with base = qualified_base })
                           | _ -> failwith "Impossible."
                         in
                         combine (Name (Reference.name ~location qualifier)) qualified
@@ -989,18 +990,20 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 Name (
                   Name.Attribute {
                     base = Reference.expression ~location qualifier;
-                    attribute = identifier
+                    attribute = identifier;
+                    special = false;
                   })
               else
                 Node.value (Reference.expression ~location name)
           | _ ->
               Name (Name.Identifier identifier)
         end
-    | Name (Name.Attribute { base; attribute }) ->
+    | Name (Name.Attribute { base; attribute; special }) ->
         Name (
           Name.Attribute {
             base = qualify_expression ~qualify_strings ~scope base;
             attribute;
+            special;
           })
     | expression ->
         expression
@@ -1058,6 +1061,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                   Name.Attribute {
                     base = { Node.value = Name (Name.Identifier "typing"); _ };
                     attribute = "TypeVar";
+                    _;
                   }
                 ) ->
                   true
@@ -1072,11 +1076,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                                   Node.value = Name (Name.Identifier "typing_extensions");
                                   _ };
                                 attribute = "Literal";
+                                _;
                               }
                           );
                         _
                       };
                     attribute = "__getitem__";
+                    _;
                   }
                 ) ->
                   false
@@ -1366,6 +1372,7 @@ let expand_type_checking_imports source =
               Name.Attribute {
                 base = { Node.value = Name (Name.Identifier "typing"); _ };
                 attribute = "TYPE_CHECKING";
+                _;
               })
           | Name (Name.Identifier "TYPE_CHECKING") ->
               true
@@ -1604,7 +1611,8 @@ let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
               Name (
                 Name.Attribute {
                   base = { Node.value = Name (Name.Identifier "typing"); location };
-                  attribute = "_SpecialForm"
+                  attribute = "_SpecialForm";
+                  special = false;
                 })
             )
           );
@@ -1658,10 +1666,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                               value = Name (Name.Identifier "mypy_extensions");
                             };
                             attribute = "TypedDict";
+                            special = false;
                           }
                         );
                     };
                     attribute = "__getitem__";
+                    special = false;
                   });
             };
             arguments;
@@ -1683,10 +1693,12 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                               value = Name (Name.Identifier "typing");
                             };
                             attribute = "Type";
+                            special = false;
                           }
                         );
                     };
                     attribute = "__getitem__";
+                    special = false;
                   });
             };
             arguments = [{ Call.Argument.name = None; value = name }];
@@ -1732,6 +1744,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                           _;
                         };
                         attribute = "TypedDict";
+                        _;
                       }
                     );
                   _;
@@ -1766,7 +1779,8 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                   Name (
                     Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
-                      attribute = "TypedDict"
+                      attribute = "TypedDict";
+                      _;
                     });
                 _;
               };

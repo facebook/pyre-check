@@ -1027,6 +1027,7 @@ let rec expression ?(convert = false) annotation =
                     value = Name (Name.Attribute {
                         base = expression;
                         attribute = "__getitem__";
+                        special = false;
                       });
                   };
                   arguments = [convert_signature overload];
@@ -1047,7 +1048,8 @@ let rec expression ?(convert = false) annotation =
                         Node.location;
                         value = base_callable
                       };
-                      attribute = "__getitem__"
+                      attribute = "__getitem__";
+                      special = false;
                     });
                 };
                 arguments = [{ Call.Argument.name = None; value = overloads }];
@@ -1536,6 +1538,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                 Name.Attribute {
                   base = { Node.value = Name (Name.Identifier "typing"); _ };
                   attribute = "Callable";
+                  _;
                 }
               ) ->
                 true
@@ -1556,6 +1559,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                           Name.Attribute {
                             base = { Node.value = Name (Name.Identifier "typing"); _ };
                             attribute = "Callable";
+                            _;
                           }
                         );
                       _;
@@ -1567,6 +1571,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing"); _ };
                       attribute = "Callable";
+                      _;
                     }
                   ) ->
                     None, implementation_argument, overloads_argument
@@ -1583,7 +1588,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                             Node.value = Call {
                                 callee = {
                                   Node.value = Name (
-                                      Name.Attribute { base; attribute = "__getitem__" }
+                                      Name.Attribute { base; attribute = "__getitem__"; _ }
                                     );
                                   _;
                                 };
@@ -1592,6 +1597,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                             _;
                           };
                           attribute = "__getitem__";
+                          _;
                         });
                     _;
                   };
@@ -1601,7 +1607,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                   get_from_base base (Some argument) (Some overloads_argument)
               | Call {
                   callee = {
-                    Node.value = Name (Name.Attribute { base; attribute = "__getitem__" });
+                    Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
                     _;
                   };
                   arguments = [{ Call.Argument.value = argument; _ }];
@@ -1732,6 +1738,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                           Name.Attribute {
                             base;
                             attribute = "__getitem__";
+                            _;
                           });
                       _;
                     };
@@ -1754,6 +1761,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing") ; _ };
                       attribute = "TypeVar";
+                      _;
                     });
                 _;
               };
@@ -1812,6 +1820,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
                       attribute = "IntVar";
+                      _;
                     });
                 _;
               };
@@ -1830,11 +1839,13 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                             Name.Attribute {
                               base = { Node.value = Name (Name.Identifier "mypy_extensions") ; _ };
                               attribute = "TypedDict";
+                              _;
                             }
                           );
                         _;
                       };
                       attribute = "__getitem__";
+                      _;
                     });
                 _;
               };
@@ -1901,11 +1912,13 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                             Name.Attribute {
                               base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
                               attribute = "Literal";
+                              _;
                             }
                           );
                         _;
                       };
                       attribute = "__getitem__";
+                      _;
                     });
                 _;
               };
@@ -1941,7 +1954,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
               parse_callable expression
           | Call {
               callee = {
-                Node.value = Name (Name.Attribute { base; attribute = "__getitem__" });
+                Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
                 _;
               };
               arguments = [{ Call.Argument.value = argument; _ }];
@@ -1974,7 +1987,7 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
               else
                 Primitive sanitized
                 |> resolve_aliases
-          | Name (Name.Attribute { base; attribute }) ->
+          | Name (Name.Attribute { base; attribute; _ }) ->
               let attribute = Identifier.sanitized attribute in
               begin
                 match create_logic base with

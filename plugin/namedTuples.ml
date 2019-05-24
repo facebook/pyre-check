@@ -24,6 +24,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                 Name.Attribute {
                   base = { Node.value = Name (Name.Identifier "typing"); _ };
                   attribute = "NamedTuple";
+                  _;
                 });
               _;
             };
@@ -38,6 +39,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                 Name.Attribute {
                   base = { Node.value = Name (Name.Identifier "collections"); _ };
                   attribute = "namedtuple";
+                  _;
                 });
               _;
             };
@@ -197,6 +199,7 @@ let transform_ast ({ Source.statements; _ } as source) =
                     Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing"); _ };
                       attribute = "NamedTuple";
+                      _;
                     }
                   );
                   _;

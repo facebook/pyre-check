@@ -102,7 +102,7 @@ let from_name name =
   let rec get_reversed_identifiers = function
     | Name.Identifier identifier ->
         Some [identifier]
-    | Name.Attribute { base = { Node.value = Name base; _ }; attribute } ->
+    | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } ->
         begin
           match get_reversed_identifiers base with
           | Some sofar -> Some (attribute :: sofar)
@@ -134,6 +134,7 @@ let name ?(location = Location.Reference.any) reference =
         Name (Name.Attribute {
             base = create rest;
             attribute = identifier;
+            special = false;
           })
         |> Node.create ~location
   in

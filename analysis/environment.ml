@@ -454,10 +454,12 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
                           Node.value = Name (Name.Attribute {
                               base = { Node.value = Name (Name.Identifier "typing"); _ };
                               attribute = "Type";
+                              _;
                             });
                           _;
                         };
                         attribute = "__getitem__";
+                        _;
                       });
                     _;
                   };
@@ -473,10 +475,12 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
                                           _;
                                         };
                                         attribute = "TypedDict";
+                                        _;
                                       });
                                     _;
                                   };
                                   attribute = "__getitem__";
+                                  _;
                                 });
                               _;
                             };
@@ -498,6 +502,7 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
                 Name (Name.Attribute {
                     base = { Node.value = Name (Name.Identifier "typing"); _ };
                     attribute = "Any";
+                    _;
                   });
               _;
             } as value) ->

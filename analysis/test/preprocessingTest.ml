@@ -192,6 +192,7 @@ let test_expand_format_string _ =
           Name.Attribute {
             base = +Integer 1;
             attribute = "__add__";
+            special = false;
           });
         arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
       }

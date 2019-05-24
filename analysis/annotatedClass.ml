@@ -389,10 +389,12 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
                 Node.value = Name (Name.Attribute {
                     base = { Node.value = Name (Name.Identifier typing); _ };
                     attribute = "Protocol";
+                    _;
                   });
                 _;
               };
               attribute = "__getitem__";
+              _;
             });
           _;
         };
@@ -402,6 +404,7 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
       Name (Name.Attribute {
           base = { Node.value = Name (Name.Identifier typing); _ };
           attribute = "Protocol";
+          _;
         }) when (String.equal typing "typing") || (String.equal typing "typing_extensions") ->
         true
     | _ ->

@@ -24,6 +24,7 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                     Node.value = Name (Name.Attribute {
                         base = { Node.value = Name (Name.Identifier "typing"); _ };
                         attribute = "NewType";
+                        _;
                       });
                     _;
                   };

@@ -158,10 +158,12 @@ module ConstantPropagationState(Context: Context) = struct
                     match value with
                     | Name (Name.Identifier identifier) ->
                         get_constant location (Reference.create identifier)
-                    | Name ((Name.Attribute { base; attribute }) as name) ->
+                    | Name ((Name.Attribute { base; attribute; special }) as name) ->
                         let base, transformed = transform base in
                         if transformed then
-                          Node.create ~location (Name (Name.Attribute { base; attribute })),
+                          Node.create
+                            ~location
+                            (Name (Name.Attribute { base; attribute; special })),
                           transformed
                         else
                           get_constant location (Reference.from_name_exn name)
@@ -491,10 +493,10 @@ let run
         when String.length (Identifier.sanitized identifier) > 15 ->
           let replacement = replace identifier in
           Name.Identifier replacement
-      | Name.Attribute { base; attribute = identifier; }
+      | Name.Attribute ({ attribute = identifier; _ } as name)
         when String.length (Identifier.sanitized identifier) > 15 ->
           let replacement = replace identifier in
-          Name.Attribute { base; attribute = replacement }
+          Name.Attribute { name with attribute = replacement }
       | name ->
           name
     in
@@ -570,15 +572,18 @@ let run
                                   | Name.Attribute {
                                       base = { Node.location; value = Name name };
                                       attribute;
+                                      special;
                                     } ->
                                       Name.Attribute {
                                         base = { Node.location; value = Name (convert name) };
                                         attribute = convert_identifier attribute;
+                                        special;
                                       }
-                                  | Name.Attribute { base; attribute } ->
+                                  | Name.Attribute { base; attribute; special } ->
                                       Name.Attribute {
                                         base;
                                         attribute = convert_identifier attribute;
+                                        special;
                                       }
                                 in
                                 Name (convert name)
@@ -639,12 +644,14 @@ let run
         let expression _ expression =
           let rec sanitize { Node.location; value } =
             match value with
-            | Name (Name.Attribute { base; attribute }) ->
+            | Name (Name.Attribute { base; attribute; special }) ->
                 let base = sanitize base in
                 let value =
                   match Hashtbl.find replacements attribute with
-                  | Some replacement -> Name (Name.Attribute { base; attribute = replacement })
-                  | None -> Name (Name.Attribute { base; attribute })
+                  | Some replacement ->
+                      Name (Name.Attribute { base; attribute = replacement; special })
+                  | None ->
+                      Name (Name.Attribute { base; attribute; special })
                 in
                 { Node.location; value }
             | Name (Name.Identifier identifier) ->
@@ -717,8 +724,8 @@ let run
                 |> Reference.name ~location
                 |> fun name -> Name name
                 |> Node.create ~location
-            | Name (Name.Attribute { base; attribute }) ->
-                Name (Name.Attribute { base = dequalify base; attribute })
+            | Name (Name.Attribute ({ base; _ } as name)) ->
+                Name (Name.Attribute { name with base = dequalify base })
                 |> Node.create ~location
             | Call { callee; arguments } ->
                 Call { callee = dequalify callee; arguments }

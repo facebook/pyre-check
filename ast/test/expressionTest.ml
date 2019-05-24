@@ -517,7 +517,7 @@ let test_convert_accesses _ =
     (Access (SimpleAccess [Identifier "a"]));
   assert_convert_new_to_old
     (Name (
-      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }
     ))
     (Access (SimpleAccess [Identifier "a"; Identifier "b"]));
   assert_convert_new_to_old
@@ -526,8 +526,10 @@ let test_convert_accesses _ =
         Name.Attribute {
           base = ~+(Name (Name.Identifier "a"));
           attribute = "b";
+          special = false;
       }));
       attribute = "c";
+      special = false;
     }))
     (Access (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"]));
   assert_convert_new_to_old
@@ -539,7 +541,7 @@ let test_convert_accesses _ =
   assert_convert_new_to_old
     (Call {
       callee = ~+(Name (
-        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }
       ));
       arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }];
     })
@@ -568,7 +570,7 @@ let test_convert_accesses _ =
   assert_convert_old_to_new
     (SimpleAccess [Identifier "a"; Identifier "b"])
     (Name (
-      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+      Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }
     ));
   assert_convert_old_to_new
     (SimpleAccess [Identifier"a"; Identifier "b"; Identifier "c"])
@@ -577,8 +579,10 @@ let test_convert_accesses _ =
         Name.Attribute {
           base = ~+(Name (Name.Identifier "a"));
           attribute = "b";
+          special = false;
       }));
       attribute = "c";
+      special = false;
     }));
   assert_convert_old_to_new
     (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]])
@@ -594,15 +598,16 @@ let test_convert_accesses _ =
     ])
     (Call {
       callee = ~+(Name (
-        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b" }
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }
       ));
       arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }];
     });
   assert_convert_old_to_new
     (ExpressionAccess { expression = ~+(List []); access = [Identifier "a"; Identifier "b"]})
     (Name (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a" }));
+      base = ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a"; special = false }));
       attribute = "b";
+      special = false;
     }))
 
 
@@ -619,8 +624,11 @@ let test_create_name _ =
   assert_create_from_identifiers
     ["a"; "b"; "c"]
     (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
+      base = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false })
+      );
       attribute = "c";
+      special = false;
     });
 
   let assert_create raw_string expected =
@@ -630,8 +638,11 @@ let test_create_name _ =
   assert_create
     "a.b.c"
     (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
+      base = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false })
+      );
       attribute = "c";
+      special = false;
     })
 
 
@@ -645,14 +656,18 @@ let test_name_to_identifiers _ =
   assert_name_to_identifiers (Name.Identifier "a") (Some ["a"]);
   assert_name_to_identifiers
     (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"}));
+      base = ~+(Name (
+        Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false })
+      );
       attribute = "c";
+      special = false;
     })
     (Some ["a"; "b"; "c"]);
   assert_name_to_identifiers
     (Name.Attribute {
-      base = ~+(Name (Name.Attribute { base = ~+(Integer 1); attribute = "b"}));
+      base = ~+(Name (Name.Attribute { base = ~+(Integer 1); attribute = "b"; special = false }));
       attribute = "c";
+      special = false;
     })
     None
 

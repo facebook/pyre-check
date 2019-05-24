@@ -158,6 +158,7 @@ module Name = struct
     type 'expression t = {
       base: 'expression;
       attribute: Identifier.t;
+      special: bool
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
@@ -658,7 +659,10 @@ module ComparisonOperator = struct
     >>| fun name ->
     let arguments = [{ Call.Argument.name = None; value = right }] in
     Call {
-      callee = { Node.location; value = Name (Name.Attribute { base = left; attribute = name })};
+      callee = {
+        Node.location;
+        value = Name (Name.Attribute { base = left; attribute = name; special = false });
+      };
       arguments;
     }
     |> Node.create ~location
@@ -685,7 +689,7 @@ module UnaryOperator = struct
       Call {
         callee = {
           Node.location;
-          value = Name (Name.Attribute { base = operand; attribute = name });
+          value = Name (Name.Attribute { base = operand; attribute = name; special = false });
         };
         arguments = [];
       }
@@ -825,10 +829,11 @@ let rec convert { Node.location; value } =
         Name.Attribute {
           base = { Node.value = Name (Name.Identifier base); _ };
           attribute;
+          _;
         }
       ) ->
         None, [Access.Identifier attribute; Access.Identifier base]
-    | Name (Name.Attribute { base; attribute }) ->
+    | Name (Name.Attribute { base; attribute; _ }) ->
         let base_expression, access = split (Node.value base) in
         base_expression, (Access.Identifier attribute) :: access
     | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
@@ -982,6 +987,7 @@ let rec convert_to_new ({ Node.location; value } as expression) =
         Name (Name.Attribute {
             base = convert_to_new { Node.location; value = expression };
             attribute = identifier;
+            special = false;
           })
         |> Node.create ~location
     | Some { Node.value = expression; location }, Call arguments :: [] ->
@@ -997,6 +1003,7 @@ let rec convert_to_new ({ Node.location; value } as expression) =
         Name (Name.Attribute {
             base = (Name (Name.Identifier base)) |> Node.create ~location;
             attribute = identifier;
+            special = false;
           })
         |> Node.create ~location
     | None, Call arguments :: [Identifier base] ->
@@ -1009,6 +1016,7 @@ let rec convert_to_new ({ Node.location; value } as expression) =
         Name (Name.Attribute {
             base = convert expression access;
             attribute = identifier;
+            special = false;
           })
         |> Node.create ~location
     | _, Call arguments :: access ->
@@ -1072,11 +1080,9 @@ let rec convert_to_new ({ Node.location; value } as expression) =
           Comprehension.element = convert_to_new element;
           generators = List.map ~f:convert_generator generators;
         } |> Node.create ~location
-    | Some { Node.value = Name (Name.Attribute { base; attribute }); location }, [] ->
-        Name (Name.Attribute {
-          base = convert_to_new base;
-          attribute;
-        }) |> Node.create ~location
+    | Some { Node.value = Name (Name.Attribute ({ base; _ } as name)); location }, [] ->
+        Name (Name.Attribute { name with base = convert_to_new base })
+        |> Node.create ~location
     | Some { Node.value = Set elements; location }, [] ->
         Set (List.map ~f:convert_to_new elements)
         |> Node.create ~location
@@ -1145,6 +1151,7 @@ let create_name_from_identifiers identifiers =
           Name.Attribute {
             base = create rest;
             attribute = identifier;
+            special = false;
           })
         |> Node.create ~location
   in
@@ -1170,7 +1177,7 @@ let name_to_identifiers name =
     match sofar, name with
     | Some sofar, Name (Name.Identifier identifier) ->
         Some (identifier :: sofar)
-    | Some sofar, Name (Name.Attribute { base; attribute }) ->
+    | Some sofar, Name (Name.Attribute { base; attribute; _ }) ->
         collect (Some (attribute :: sofar)) (Node.value base)
     | _ ->
         None
@@ -1199,9 +1206,14 @@ let rec sanitized ({ Node.value; location } as expression) =
   | Name (Name.Identifier identifier) ->
       Name (Name.Identifier (Identifier.sanitized identifier))
       |> Node.create ~location
-  | Name (Name.Attribute { base; attribute }) ->
-      Name (Name.Attribute { base = sanitized base; attribute = Identifier.sanitized attribute })
-      |> Node.create ~location
+  | Name (Name.Attribute { base; attribute; special }) ->
+      Name (
+        Name.Attribute {
+          base = sanitized base;
+          attribute = Identifier.sanitized attribute;
+          special;
+        }
+      ) |> Node.create ~location
   | Call { callee; arguments } ->
       let sanitize_argument ({ Call.Argument.name; _ } as argument) =
         let name =
@@ -1259,7 +1271,7 @@ let rec delocalize ({ Node.value; location } as expression) =
             |> fun name -> Name name
             |> Node.create ~location
           in
-          Name (Name.Attribute { base = qualifier; attribute = sanitized })
+          Name (Name.Attribute { base = qualifier; attribute = sanitized; special = false })
         else
           begin
             Log.debug "Unable to extract qualifier from %s" identifier;
@@ -1267,8 +1279,8 @@ let rec delocalize ({ Node.value; location } as expression) =
           end
     | Name (Name.Identifier identifier) ->
         Name (Name.Identifier identifier)
-    | Name (Name.Attribute { base; attribute }) ->
-        Name (Name.Attribute { base = delocalize base; attribute })
+    | Name (Name.Attribute ({ base; _ } as name)) ->
+        Name (Name.Attribute { name with base = delocalize base })
     | List elements ->
         List (List.map elements ~f:delocalize)
     | Tuple elements ->
@@ -1551,7 +1563,7 @@ module PrettyPrinter = struct
     | Call { Call.callee; arguments } ->
         begin
           match Node.value callee with
-          | Name (Name.Attribute { base; attribute = "__getitem__" }) ->
+          | Name (Name.Attribute { base; attribute = "__getitem__"; _ }) ->
               Format.fprintf
                 formatter
                 "%a[%a]"
@@ -1636,7 +1648,7 @@ module PrettyPrinter = struct
     | Name (Name.Identifier name) ->
         Format.fprintf formatter "%s" name
 
-    | Name (Name.Attribute { base; attribute }) ->
+    | Name (Name.Attribute { base; attribute; _ }) ->
         Format.fprintf
           formatter
           "%a.%s"
@@ -1696,7 +1708,7 @@ let rec show_sanitized { Node.location; value } =
       Format.asprintf "%a.%s" pp expression (Access.show_sanitized access)
   | Name (Name.Identifier identifier) ->
       Identifier.sanitized identifier
-  | Name (Name.Attribute { base; attribute }) ->
+  | Name (Name.Attribute { base; attribute; _ }) ->
       Format.asprintf "%s.%s" (show_sanitized base) (Identifier.sanitized attribute)
   | Call { callee; _ } ->
       Format.asprintf "%s.(...)" (show_sanitized callee)

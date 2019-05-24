@@ -1298,7 +1298,9 @@ module State = struct
                 value = Call {
                     callee = {
                       Node.location;
-                      value = Name (Name.Attribute { base = iterator; attribute = "__aiter__" });
+                      value = Name (
+                        Name.Attribute { base = iterator; attribute = "__aiter__"; special = false }
+                      );
                     };
                     arguments = [];
                   };
@@ -1309,7 +1311,9 @@ module State = struct
               value = Call {
                   callee = {
                     Node.location;
-                    value = Name (Name.Attribute { base = aiter; attribute = "__anext__" });
+                    value = Name (
+                      Name.Attribute { base = aiter; attribute = "__anext__"; special = false }
+                    );
                   };
                   arguments = [];
                 };
@@ -1322,7 +1326,9 @@ module State = struct
                 value = Call {
                     callee = {
                       Node.location;
-                      value = Name (Name.Attribute { base = iterator; attribute = "__iter__" });
+                      value = Name (
+                        Name.Attribute { base = iterator; attribute = "__iter__"; special = false }
+                      );
                     };
                     arguments = [];
                   };
@@ -1333,7 +1339,9 @@ module State = struct
               value = Call {
                   callee = {
                     Node.location;
-                    value = Name (Name.Attribute { base = iter; attribute = "__next__" });
+                    value = Name (
+                      Name.Attribute { base = iter; attribute = "__next__"; special = false }
+                    );
                   };
                   arguments = [];
                 };
@@ -1918,7 +1926,9 @@ module State = struct
         Call {
           callee = {
             Node.location;
-            value = Name (Name.Attribute { base = value; attribute = "__" ^ name ^ "__" });
+            value = Name (
+              Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = false }
+            );
           };
           arguments = [];
         }
@@ -1947,6 +1957,7 @@ module State = struct
               Name.Attribute {
                 base = { Node.value = Name (Name.Identifier "typing"); _ };
                 attribute = "cast";
+                _;
               });
         };
         arguments = [
@@ -2111,7 +2122,9 @@ module State = struct
               value = Call {
                   callee = {
                     Node.location;
-                    value = Name (Name.Attribute { base = right; attribute = "__contains__" });
+                    value = Name (
+                      Name.Attribute { base = right; attribute = "__contains__"; special = false }
+                    );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2123,7 +2136,9 @@ module State = struct
                 value = Call {
                     callee = {
                       Node.location;
-                      value = Name (Name.Attribute { base = right; attribute = "__iter__" });
+                      value = Name (
+                        Name.Attribute { base = right; attribute = "__iter__"; special = false }
+                      );
                     };
                     arguments = [];
                   };
@@ -2135,7 +2150,9 @@ module State = struct
                 value = Call {
                     callee = {
                       Node.location;
-                      value = Name (Name.Attribute { base = iter; attribute = "__next__" });
+                      value = Name (
+                        Name.Attribute { base = iter; attribute = "__next__"; special = false }
+                      );
                     };
                     arguments = [];
                   };
@@ -2146,7 +2163,9 @@ module State = struct
               value = Call {
                   callee = {
                     Node.location;
-                    value = Name (Name.Attribute { base = next; attribute = "__eq__" });
+                    value = Name (
+                      Name.Attribute { base = next; attribute = "__eq__"; special = false }
+                    );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2158,7 +2177,9 @@ module State = struct
                 value = Call {
                     callee = {
                       Node.location;
-                      value = Name (Name.Attribute { base = right; attribute = "__getitem__" });
+                      value = Name (
+                        Name.Attribute { base = right; attribute = "__getitem__"; special = false }
+                      );
                     };
                     arguments = [
                       {
@@ -2174,7 +2195,9 @@ module State = struct
               value = Call {
                   callee = {
                     Node.location;
-                    value = Name (Name.Attribute { base = getitem; attribute = "__eq__" });
+                    value = Name (
+                      Name.Attribute { base = getitem; attribute = "__eq__"; special = false }
+                    );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2306,7 +2329,7 @@ module State = struct
     | Name (Name.Identifier identifier) ->
         forward_reference ~state (Reference.create identifier)
 
-    | Name ((Name.Attribute { base; attribute }) as name) ->
+    | Name ((Name.Attribute { base; attribute; _ }) as name) ->
         let reference = Reference.from_name name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base } =
           forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:base
@@ -2826,7 +2849,7 @@ module State = struct
                 match name with
                 | Name.Identifier identifier ->
                     Some (Reference.create identifier), None, None
-                | Name.Attribute { base; attribute } ->
+                | Name.Attribute { base; attribute; _ } ->
                     let resolved = Resolution.resolve resolution base in
                     let parent, class_attributes =
                       if Type.is_meta resolved then
@@ -3047,6 +3070,7 @@ module State = struct
                     | Name.Attribute {
                         base = { Node.value = Name (Name.Identifier self); _ };
                         attribute;
+                        _;
                       },
                       Name _ when Identifier.sanitized self = "self" ->
                         let sanitized = Expression.show_sanitized value in
@@ -3162,7 +3186,7 @@ module State = struct
                         (not (Resolution.is_string_to_any_mapping resolution value_annotation))
                     else
                       None
-                | Name.Attribute { base = { Node.value = Name base; _ }; attribute }, None
+                | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
                   when Expression.is_simple_name base && insufficiently_annotated ->
                     (* Module *)
                     let reference = Reference.from_name_exn base in
@@ -3689,7 +3713,7 @@ module State = struct
                       resolution
                       ~reference
                       ~annotation:(Annotation.create parameter)
-                | _, Name.Attribute { base; attribute } ->
+                | _, Name.Attribute { base; attribute; _ } ->
                     let parent = Resolution.resolve resolution base in
                     let attribute_annotation =
                       get_attribute_annotation ~resolution ~parent ~name:attribute
@@ -3782,7 +3806,7 @@ module State = struct
               begin
                 let refined =
                   match name with
-                  | Name.Attribute { base; attribute } ->
+                  | Name.Attribute { base; attribute; _ } ->
                       let parent = Resolution.resolve resolution base in
                       let attribute_annotation =
                         get_attribute_annotation ~resolution ~parent ~name:attribute

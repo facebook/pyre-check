@@ -593,6 +593,7 @@ module Define = struct
                   Name.Attribute {
                     base = { Node.value = Name (Name.Identifier self); _ };
                     attribute = name;
+                    _;
                   });
               _;
             } when Identifier.equal self (self_identifier define) ->
@@ -629,6 +630,7 @@ module Define = struct
                           Name.Attribute {
                             base = { Node.value = Name (Name.Identifier _ ); _ };
                             attribute = target;
+                            _;
                           });
                       _;
                     },
@@ -701,11 +703,13 @@ module Define = struct
                                           Node.location;
                                           value = Name (Name.Identifier "typing")
                                         };
-                                        attribute = "Union"
+                                        attribute = "Union";
+                                        special = false;
                                       }
                                     );
                                 };
                                 attribute = "__getitem__";
+                                special = false;
                               }
                             );
                         };
@@ -749,6 +753,7 @@ module Define = struct
                       Name.Attribute {
                         base = { Node.value = Name (Name.Identifier self); _ };
                         attribute = name;
+                        _;
                       });
                   _;
                 };
@@ -834,12 +839,17 @@ module Define = struct
                               Node.location;
                               value = Name (
                                   Name.Attribute {
-                                    base = { Node.location; value = Name (Name.Identifier "typing") };
+                                    base = {
+                                      Node.location;
+                                      value = Name (Name.Identifier "typing");
+                                    };
                                     attribute = "ClassVar";
+                                    special = false;
                                   }
                                 );
                             };
                             attribute = "__getitem__";
+                            special = false;
                           }
                         );
                     };
@@ -927,8 +937,11 @@ module Class = struct
           callee = {
             Node.value = Name (Name.Attribute {
                 base = { value = Name (Name.Identifier "dataclasses"); _ };
-                attribute = "dataclass" });
-            _ };
+                attribute = "dataclass";
+                _;
+              });
+            _;
+          };
           arguments };
           _ } ->
           let has_frozen_argument Expression.Call.Argument.{ name; value } =
@@ -1000,7 +1013,11 @@ module Class = struct
                             callee = {
                               Node.location;
                               value = Name (
-                                  Name.Attribute { base = value; attribute = "__getitem__" }
+                                  Name.Attribute {
+                                    base = value;
+                                    attribute = "__getitem__";
+                                    special = false;
+                                  }
                                 );
                             };
                             arguments = [{ Call.Argument.name = None; value = index }]
@@ -1180,12 +1197,17 @@ module Class = struct
                                   Node.location;
                                   value = Name (
                                       Name.Attribute {
-                                        base = { Node.location; value = Name (Name.Identifier "typing") };
+                                        base = {
+                                          Node.location;
+                                          value = Name (Name.Identifier "typing");
+                                        };
                                         attribute = "Type";
+                                        special = false;
                                       }
                                     );
                                 };
                                 attribute = "__getitem__";
+                                special = false;
                               }
                             );
                         };
@@ -1206,12 +1228,17 @@ module Class = struct
                                 Node.location;
                                 value = Name (
                                     Name.Attribute {
-                                      base = { Node.location; value = Name (Name.Identifier "typing") };
+                                      base = {
+                                        Node.location;
+                                        value = Name (Name.Identifier "typing");
+                                      };
                                       attribute = "ClassVar";
+                                      special = false;
                                     }
                                   );
                               };
                               attribute = "__getitem__";
+                              special = false;
                             }
                           );
                       };
@@ -1405,6 +1432,7 @@ module Class = struct
             Name.Attribute {
               base = { Node.value = Name (Name.Identifier "abc"); _ };
               attribute = "ABCMeta";
+              _;
             }
           );
         _;
@@ -1443,12 +1471,14 @@ module For = struct
                           value = Name (Name.Attribute {
                               base;
                               attribute = iterator;
+                              special = false;
                             });
                         };
                         arguments = [];
                       };
                   };
                   attribute = next;
+                  special = false;
                 });
             };
             arguments = [];
@@ -1500,6 +1530,7 @@ module With = struct
                        Name.Attribute {
                          base = expression;
                          attribute = call_name;
+                         special = false;
                        }
                      );
                  };
@@ -1586,10 +1617,12 @@ module Try = struct
                               Name.Attribute {
                                 base = { Node.location; value = Name (Name.Identifier "typing") };
                                 attribute = "Union";
+                                special = false;
                               }
                             );
                         };
                         attribute = "__getitem__";
+                        special = false;
                       }
                     );
                 };

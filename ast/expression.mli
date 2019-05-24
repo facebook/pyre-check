@@ -87,6 +87,7 @@ module Name : sig
     type 'expression t = {
       base: 'expression;
       attribute: Identifier.t;
+      special: bool;
     }
     [@@deriving compare, eq, sexp, show, hash]
   end
