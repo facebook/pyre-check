@@ -305,7 +305,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.called_once_with(arguments, upgrade.sort_errors(errors))
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-            call(["jf", "submit", "--update-fields", "--no-deps"]),
+            call(["jf", "submit", "--update-fields"]),
         ]
         subprocess.assert_has_calls(calls)
 
@@ -319,7 +319,7 @@ class FixmeAllTest(unittest.TestCase):
         fix.called_once_with(arguments, upgrade.sort_errors(errors))
         calls = [
             call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-            call(["jf", "submit", "--update-fields", "--no-deps"]),
+            call(["jf", "submit", "--update-fields"]),
         ]
         subprocess.assert_has_calls(calls)
 
@@ -406,7 +406,7 @@ class FixmeSingleTest(unittest.TestCase):
             fix.assert_not_called()
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit", "--update-fields", "--no-deps"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
 
@@ -431,7 +431,7 @@ class FixmeSingleTest(unittest.TestCase):
             fix.called_once_with(arguments, upgrade.sort_errors(errors))
             calls = [
                 call(["hg", "commit", "--message", upgrade._commit_message("local")]),
-                call(["jf", "submit", "--update-fields", "--no-deps"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             call.assert_has_calls(calls)
 
@@ -1044,6 +1044,6 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                         ),
                     ]
                 ),
-                call(["jf", "submit", "--update-fields", "--no-deps"]),
+                call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
