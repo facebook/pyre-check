@@ -175,7 +175,11 @@ let test_for _ =
       node
         7
         (Node.Block
-          [parse_single_statement "a = [].__iter__().__next__()"; !!"body"]) [5] [5];
+          [parse_single_statement
+            ~coerce_special_methods:true
+            "a = [].__iter__().__next__()"; !!"body"])
+        [5]
+        [5];
       node 8 (Node.Block [!!"orelse"]) [5] [6];
     ]
 

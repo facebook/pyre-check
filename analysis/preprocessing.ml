@@ -86,7 +86,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                       Name.Attribute {
                         base = { Node.value = Name base; _ };
                         attribute = "__getitem__";
-                        special = false;
+                        _;
                       });
                   _;
                 };
@@ -219,7 +219,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                   Node.value = Name (Name.Attribute {
                       base = { Node.value = Name (Name.Identifier "typing"); _ };
                       attribute = "cast";
-                      special = false;
+                      _;
                     });
                   _;
                 } as callee);
@@ -998,13 +998,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           | _ ->
               Name (Name.Identifier identifier)
         end
-    | Name (Name.Attribute { base; attribute; special }) ->
-        Name (
-          Name.Attribute {
-            base = qualify_expression ~qualify_strings ~scope base;
-            attribute;
-            special;
-          })
+    | Name (Name.Attribute ({ base; _ } as name)) ->
+        Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
     | expression ->
         expression
 
@@ -1671,7 +1666,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                         );
                     };
                     attribute = "__getitem__";
-                    special = false;
+                    special = true;
                   });
             };
             arguments;
@@ -1698,7 +1693,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                         );
                     };
                     attribute = "__getitem__";
-                    special = false;
+                    special = true;
                   });
             };
             arguments = [{ Call.Argument.name = None; value = name }];

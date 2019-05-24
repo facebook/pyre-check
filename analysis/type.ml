@@ -925,7 +925,12 @@ let rec expression ?(convert = false) annotation =
     Call {
       callee = {
         Node.location;
-        value = create_name (base ^ ".__getitem__");
+        value = Name (
+          Name.Attribute {
+            base = { Node.location; value = create_name base };
+            attribute = "__getitem__";
+            special = true;
+          });
       };
       arguments;
     }
@@ -1002,7 +1007,13 @@ let rec expression ?(convert = false) annotation =
           Call {
             callee = {
               Node.location;
-              value = create_name "typing.Callable.__getitem__"
+              value = Name (
+                Name.Attribute {
+                  base = { Node.location; value = create_name "typing.Callable" };
+                  attribute = "__getitem__";
+                  special = true;
+                }
+              );
             };
             arguments = [convert_signature implementation];
           };
@@ -1027,7 +1038,7 @@ let rec expression ?(convert = false) annotation =
                     value = Name (Name.Attribute {
                         base = expression;
                         attribute = "__getitem__";
-                        special = false;
+                        special = true;
                       });
                   };
                   arguments = [convert_signature overload];
@@ -1049,7 +1060,7 @@ let rec expression ?(convert = false) annotation =
                         value = base_callable
                       };
                       attribute = "__getitem__";
-                      special = false;
+                      special = true;
                     });
                 };
                 arguments = [{ Call.Argument.name = None; value = overloads }];

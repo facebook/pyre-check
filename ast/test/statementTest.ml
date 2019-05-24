@@ -825,7 +825,7 @@ let test_preamble _ =
       | { Node.value = With block; _ } -> block
       | _ -> failwith "Could not parse `with` statement."
     in
-    let { Source.statements = preamble; _ } = parse preamble in
+    let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
@@ -844,7 +844,7 @@ let test_preamble _ =
       | { Node.value = For block; _ } -> block
       | _ -> failwith "Could not parse `for` statement."
     in
-    let { Source.statements = preamble; _ } = parse preamble in
+    let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
@@ -865,7 +865,7 @@ let test_preamble _ =
     in
     let preambles =
       let preamble source =
-        let { Source.statements = preamble; _ } = parse source in
+        let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true source in
         preamble
       in
       List.map preambles ~f:preamble

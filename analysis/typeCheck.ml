@@ -1413,7 +1413,7 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iterator; attribute = "__aiter__"; special = false }
+                        Name.Attribute { base = iterator; attribute = "__aiter__"; special = true }
                       );
                     };
                     arguments = [];
@@ -1426,7 +1426,7 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = aiter; attribute = "__anext__"; special = false }
+                      Name.Attribute { base = aiter; attribute = "__anext__"; special = true }
                     );
                   };
                   arguments = [];
@@ -1441,7 +1441,7 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iterator; attribute = "__iter__"; special = false }
+                        Name.Attribute { base = iterator; attribute = "__iter__"; special = true }
                       );
                     };
                     arguments = [];
@@ -1454,7 +1454,7 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = iter; attribute = "__next__"; special = false }
+                      Name.Attribute { base = iter; attribute = "__next__"; special = true }
                     );
                   };
                   arguments = [];
@@ -2043,7 +2043,7 @@ module State(Context: Context) = struct
           callee = {
             Node.location;
             value = Name (
-              Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = false }
+              Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = true }
             );
           };
           arguments = [];
@@ -2235,7 +2235,7 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = right; attribute = "__contains__"; special = false }
+                      Name.Attribute { base = right; attribute = "__contains__"; special = true }
                     );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
@@ -2249,7 +2249,7 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = right; attribute = "__iter__"; special = false }
+                        Name.Attribute { base = right; attribute = "__iter__"; special = true }
                       );
                     };
                     arguments = [];
@@ -2263,7 +2263,7 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iter; attribute = "__next__"; special = false }
+                        Name.Attribute { base = iter; attribute = "__next__"; special = true }
                       );
                     };
                     arguments = [];
@@ -2276,7 +2276,7 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = next; attribute = "__eq__"; special = false }
+                      Name.Attribute { base = next; attribute = "__eq__"; special = true }
                     );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
@@ -2290,7 +2290,7 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = right; attribute = "__getitem__"; special = false }
+                        Name.Attribute { base = right; attribute = "__getitem__"; special = true }
                       );
                     };
                     arguments = [
@@ -2308,7 +2308,7 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = getitem; attribute = "__eq__"; special = false }
+                      Name.Attribute { base = getitem; attribute = "__eq__"; special = true }
                     );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];

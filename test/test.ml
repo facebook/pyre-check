@@ -50,6 +50,39 @@ let trim_extra_indentation source =
   |> String.concat ~sep:"\n"
 
 
+let rec coerce_special_methods { Node.location; value } =
+  (* Turn all explicit dunder attribute accesses to be special methods accesses. *)
+  let open Expression in
+  match value with
+  | Name (Name.Attribute ({ base; attribute; _ } as name))
+    when String.is_prefix ~prefix:"__" attribute && String.is_suffix ~suffix:"__" attribute ->
+      {
+        Node.location;
+        value = Name (
+          Name.Attribute { name with base = coerce_special_methods base; special = true }
+        );
+      }
+  | Call { callee; arguments } ->
+      { Node.location; value = Call { callee = coerce_special_methods callee; arguments} }
+  | _ ->
+      { Node.location; value }
+
+
+let coerce_special_methods_source source =
+  let module Transform = Transform.Make(struct
+      include Transform.Identity
+      type t = unit
+
+      let transform_expression_children _ _ = true
+
+      let expression _ expression =
+        coerce_special_methods expression
+    end)
+  in
+  Transform.transform () source
+  |> Transform.source
+
+
 let run tests =
   let rec bracket test =
     let bracket_test test context =
@@ -83,6 +116,7 @@ let parse_untrimmed
     ?(docstring = None)
     ?(ignore_lines = [])
     ?(convert = false)
+    ?(coerce_special_methods = false)
     source =
   let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
@@ -111,10 +145,13 @@ let parse_untrimmed
         ~qualifier
         (Generator.parse (Lexer.read state) buffer)
     in
-    if convert then
-      Preprocessing.convert source
-    else
-      source
+    let convert = if convert then Preprocessing.convert else Fn.id in
+    let coerce_special_methods =
+      if coerce_special_methods then coerce_special_methods_source else Fn.id
+    in
+    source
+    |> convert
+    |> coerce_special_methods
   with
   | Pyre.ParserError _
   | Generator.Error ->
@@ -150,11 +187,19 @@ let parse
     ?(docstring = None)
     ?local_mode
     ?(convert = false)
+    ?(coerce_special_methods = false)
     source =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~convert
+    |> parse_untrimmed
+        ~handle
+        ~qualifier
+        ~debug
+        ~version
+        ~docstring
+        ~convert
+        ~coerce_special_methods
   in
   match local_mode with
   | Some local_mode ->
@@ -180,12 +225,16 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement ?(convert = false) ?(preprocess = false) source =
+let parse_single_statement
+    ?(convert = false)
+    ?(preprocess = false)
+    ?(coerce_special_methods = false)
+    source =
   let source =
     if preprocess then
-      Preprocessing.preprocess (parse ~convert source)
+      Preprocessing.preprocess (parse ~convert ~coerce_special_methods source)
     else
-      parse ~convert source
+      parse ~convert ~coerce_special_methods source
   in
   match source with
   | { Source.statements = [statement]; _ } -> statement
@@ -211,8 +260,12 @@ let parse_single_class ?(convert = false) source =
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression ?(convert = false) ?(preprocess = false) source =
-  match parse_single_statement ~convert ~preprocess source with
+let parse_single_expression
+    ?(convert = false)
+    ?(preprocess = false)
+    ?(coerce_special_methods = false)
+    source =
+  match parse_single_statement ~convert ~preprocess ~coerce_special_methods source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 

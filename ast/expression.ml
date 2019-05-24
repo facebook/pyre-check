@@ -661,7 +661,7 @@ module ComparisonOperator = struct
     Call {
       callee = {
         Node.location;
-        value = Name (Name.Attribute { base = left; attribute = name; special = false });
+        value = Name (Name.Attribute { base = left; attribute = name; special = true });
       };
       arguments;
     }
@@ -689,7 +689,7 @@ module UnaryOperator = struct
       Call {
         callee = {
           Node.location;
-          value = Name (Name.Attribute { base = operand; attribute = name; special = false });
+          value = Name (Name.Attribute { base = operand; attribute = name; special = true });
         };
         arguments = [];
       }

@@ -84,7 +84,7 @@
       Format.asprintf "__%s%s__" (if compound then "i" else "") name
     in
     let callee =
-      Name (Name.Attribute { base = left; attribute = name; special = false })
+      Name (Name.Attribute { base = left; attribute = name; special = true })
       |> Node.create ~location
     in
     Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
@@ -151,7 +151,7 @@
     let head, subscripts = subscript in
     let location = Node.location head in
     let callee =
-      Name (Name.Attribute { base = head; attribute = "__getitem__"; special = false })
+      Name (Name.Attribute { base = head; attribute = "__getitem__"; special = true })
       |> Node.create ~location
     in
     Call { callee; arguments = [subscript_argument ~subscripts ~location] }
@@ -163,7 +163,7 @@
       { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
     let callee =
-      Name (Name.Attribute { base = head; attribute = "__setitem__"; special = false })
+      Name (Name.Attribute { base = head; attribute = "__setitem__"; special = true })
       |> Node.create ~location
     in
     Call {
@@ -554,7 +554,7 @@ small_statement:
                   Expression.Name.Attribute {
                     base = yield;
                     attribute = "__iter__";
-                    special = false
+                    special = true
                   }
                 ) |> Node.create ~location
               in

@@ -192,7 +192,7 @@ let test_expand_format_string _ =
           Name.Attribute {
             base = +Integer 1;
             attribute = "__add__";
-            special = false;
+            special = true;
           });
         arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
       }
@@ -1896,7 +1896,7 @@ let test_replace_mypy_extensions_stub _ =
 let test_expand_typed_dictionaries _ =
   let assert_expand ?(qualifier = Reference.empty) source expected =
     let expected =
-      parse ~qualifier expected
+      parse ~qualifier ~coerce_special_methods:true expected
       |> Preprocessing.qualify
     in
     let actual =

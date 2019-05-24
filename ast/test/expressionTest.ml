@@ -380,7 +380,7 @@ let test_comparison_operator_override _ =
     assert_equal
       ~printer:(function | Some expression -> Expression.show expression | _ -> "None")
       ~cmp:(Option.equal Expression.equal)
-      (expected >>| parse_single_expression)
+      (expected >>| parse_single_expression ~coerce_special_methods:true)
       (ComparisonOperator.override operator)
   in
   assert_override "a < b" (Some "a.__lt__(b)");

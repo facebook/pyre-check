@@ -709,7 +709,7 @@ module Define = struct
                                     );
                                 };
                                 attribute = "__getitem__";
-                                special = false;
+                                special = true;
                               }
                             );
                         };
@@ -849,7 +849,7 @@ module Define = struct
                                 );
                             };
                             attribute = "__getitem__";
-                            special = false;
+                            special = true;
                           }
                         );
                     };
@@ -1016,7 +1016,7 @@ module Class = struct
                                   Name.Attribute {
                                     base = value;
                                     attribute = "__getitem__";
-                                    special = false;
+                                    special = true;
                                   }
                                 );
                             };
@@ -1207,7 +1207,7 @@ module Class = struct
                                     );
                                 };
                                 attribute = "__getitem__";
-                                special = false;
+                                special = true;
                               }
                             );
                         };
@@ -1238,7 +1238,7 @@ module Class = struct
                                   );
                               };
                               attribute = "__getitem__";
-                              special = false;
+                              special = true;
                             }
                           );
                       };
@@ -1471,14 +1471,14 @@ module For = struct
                           value = Name (Name.Attribute {
                               base;
                               attribute = iterator;
-                              special = false;
+                              special = true;
                             });
                         };
                         arguments = [];
                       };
                   };
                   attribute = next;
-                  special = false;
+                  special = true;
                 });
             };
             arguments = [];
@@ -1530,7 +1530,7 @@ module With = struct
                        Name.Attribute {
                          base = expression;
                          attribute = call_name;
-                         special = false;
+                         special = true;
                        }
                      );
                  };
@@ -1622,7 +1622,7 @@ module Try = struct
                             );
                         };
                         attribute = "__getitem__";
-                        special = false;
+                        special = true;
                       }
                     );
                 };

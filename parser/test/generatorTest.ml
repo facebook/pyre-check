@@ -136,7 +136,7 @@ let test_lexer _ =
            callee = +Name (Name.Attribute {
                base = +Integer 1;
                attribute = "__add__";
-               special = false;
+               special = true;
              });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
          });
@@ -149,7 +149,7 @@ let test_lexer _ =
            callee = +Name (Name.Attribute {
                base = +Integer 1;
                attribute = "__add__";
-               special = false;
+               special = true;
              });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
          });
@@ -162,7 +162,7 @@ let test_lexer _ =
            callee = +Name (Name.Attribute {
                base = +Integer 1;
                attribute = "__add__";
-               special = false;
+               special = true;
              });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
          });
@@ -175,7 +175,7 @@ let test_lexer _ =
            callee = +Name (Name.Attribute {
                base = +Integer 1;
                attribute = "__add__";
-               special = false;
+               special = true;
              });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
          });
@@ -299,6 +299,20 @@ let test_access _ =
           callee = +Name (Name.Attribute {
               base = !"a";
               attribute = "__getitem__";
+              special = true;
+            });
+          arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
+        }
+      )
+    ];
+  assert_parsed_equal
+    "a.__getitem__(1)"
+    [
+      +Expression (
+        +Call {
+          callee = +Name (Name.Attribute {
+              base = !"a";
+              attribute = "__getitem__";
               special = false;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
@@ -313,7 +327,7 @@ let test_access _ =
           callee = +Name (Name.Attribute {
               base = !"a";
               attribute = "__getitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             {
@@ -338,7 +352,7 @@ let test_access _ =
               callee = +Name (Name.Attribute {
                   base = !"a";
                   attribute = "__getitem__";
-                  special = false;
+                  special = true;
                 });
               arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
             };
@@ -355,7 +369,7 @@ let test_access _ =
           callee = +Name (Name.Attribute {
               base = !"a";
               attribute = "__getitem__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = !"b" }];
         }
@@ -369,7 +383,7 @@ let test_access _ =
           callee = +Name (Name.Attribute {
               base = !"a";
               attribute = "__getitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             {
@@ -395,7 +409,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -420,7 +434,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -445,7 +459,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -470,7 +484,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -503,7 +517,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -528,7 +542,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              { Call.Argument.name = None; value = +Tuple [+Integer 1; +Integer 2] }
@@ -543,7 +557,7 @@ let test_access _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__getitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -1017,7 +1031,7 @@ let test_define _ =
                      callee = +Name (Name.Attribute {
                          base = !"Tuple";
                          attribute = "__getitem__";
-                         special = false;
+                         special = true;
                        });
                      arguments = [
                        {
@@ -1642,7 +1656,7 @@ let test_binary_operator _ =
           callee = +Name (Name.Attribute {
               base = +Integer 1;
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
@@ -1656,7 +1670,7 @@ let test_binary_operator _ =
           callee = +Name (Name.Attribute {
               base = +Integer 1;
               attribute = "__xor__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
@@ -1670,7 +1684,7 @@ let test_binary_operator _ =
           callee = +Name (Name.Attribute {
               base = +Integer 1;
               attribute = "__floordiv__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
         }
@@ -1686,12 +1700,12 @@ let test_binary_operator _ =
                 callee = +Name (Name.Attribute {
                     base = +Integer 1;
                     attribute = "__rshift__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
               };
               attribute = "__rshift__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
         }
@@ -1707,12 +1721,12 @@ let test_binary_operator _ =
                 callee = +Name (Name.Attribute {
                     base = +Integer 1;
                     attribute = "__sub__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
               };
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
         }
@@ -1726,7 +1740,7 @@ let test_binary_operator _ =
            callee = +Name (Name.Attribute {
                base = !"a";
                attribute = "__add__";
-               special = false;
+               special = true;
              });
            arguments = [
              {
@@ -1842,7 +1856,7 @@ let test_lambda _ =
              callee = +Name (Name.Attribute {
                  base = +Name (Name.Identifier "x");
                  attribute = "__add__";
-                 special = false;
+                 special = true;
                });
              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
            };
@@ -2445,7 +2459,7 @@ let test_yield _ =
                 callee = +Name (Name.Attribute {
                     base = !"a";
                     attribute = "__iter__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [];
               });
@@ -2478,7 +2492,7 @@ let test_yield _ =
           callee = +Name (Name.Attribute {
               base = !"x";
               attribute = "__iadd__";
-              special = false;
+              special = true;
             });
           arguments =
             [{
@@ -2819,7 +2833,7 @@ let test_string _ =
           callee = +Name (Name.Attribute {
               base = +String (StringLiteral.create "a");
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
@@ -2833,7 +2847,7 @@ let test_string _ =
           callee = +Name (Name.Attribute {
               base = +String (StringLiteral.create "a");
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
@@ -2847,7 +2861,7 @@ let test_string _ =
           callee = +Name (Name.Attribute {
               base = +String (StringLiteral.create "a");
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
@@ -2861,7 +2875,7 @@ let test_string _ =
           callee = +Name (Name.Attribute {
               base = +String (StringLiteral.create "a");
               attribute = "__add__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +String (StringLiteral.create "b") }];
         }
@@ -3332,7 +3346,7 @@ let test_assign _ =
           callee = +Name (Name.Attribute {
               base = !"a";
               attribute = "__iadd__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         };
@@ -3357,7 +3371,7 @@ let test_assign _ =
                   special = false;
                 });
               attribute = "__iadd__";
-              special = false;
+              special = true;
             });
           arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
         };
@@ -4366,7 +4380,7 @@ let test_tuple _ =
              callee = +Name (Name.Attribute {
                  base = +Integer 1;
                  attribute = "__add__";
-                 special = false;
+                 special = true;
                });
              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
            };
@@ -4394,7 +4408,7 @@ let test_tuple _ =
              callee = +Name (Name.Attribute {
                  base = +Integer 1;
                  attribute = "__add__";
-                 special = false;
+                 special = true;
                });
              arguments = [{ Call.Argument.name = None; value = +Integer 1 }];
            };
@@ -4471,7 +4485,7 @@ let test_stubs _ =
               callee = +Name (Name.Attribute {
                   base = !"Optional";
                   attribute = "__getitem__";
-                  special = false;
+                  special = true;
                 });
               arguments = [
                 { Call.Argument.name = None; value = !"int" }
@@ -4681,7 +4695,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
@@ -4698,7 +4712,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
@@ -4710,12 +4724,12 @@ let test_setitem _ =
                       callee = +Name (Name.Attribute {
                           base = !"i";
                           attribute = "__getitem__";
-                          special = false;
+                          special = true;
                         });
                       arguments = [{ Call.Argument.name = None; value = !"j" }];
                     };
                     attribute = "__iadd__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [{ Call.Argument.name = None; value = +Integer 3 }];
               };
@@ -4734,12 +4748,12 @@ let test_setitem _ =
                 callee = +Name (Name.Attribute {
                     base = !"i";
                     attribute = "__getitem__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [{ Call.Argument.name = None; value = !"j" }];
               };
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = +Integer 7 };
@@ -4756,7 +4770,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             {
@@ -4776,7 +4790,7 @@ let test_setitem _ =
                 callee = +Name (Name.Attribute {
                     base = !"i";
                     attribute = "__getitem__";
-                    special = false;
+                    special = true;
                   });
                 arguments = [
                   {
@@ -4805,7 +4819,7 @@ let test_setitem _ =
            callee = +Name (Name.Attribute {
                base = !"i";
                attribute = "__setitem__";
-               special = false;
+               special = true;
              });
            arguments = [
              { Call.Argument.name = None; value = !"j" };
@@ -4835,7 +4849,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
@@ -4852,7 +4866,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"j";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"i" };
@@ -4871,7 +4885,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
@@ -4890,7 +4904,7 @@ let test_setitem _ =
             callee = +Name (Name.Attribute {
                 base = !"i";
                 attribute = "__getitem__";
-                special = false;
+                special = true;
               });
             arguments = [{ Call.Argument.name = None; value = !"j" }];
           };
@@ -4908,7 +4922,7 @@ let test_setitem _ =
           callee = +Name (Name.Attribute {
               base = !"i";
               attribute = "__setitem__";
-              special = false;
+              special = true;
             });
           arguments = [
             { Call.Argument.name = None; value = !"j" };
