@@ -588,13 +588,8 @@ module OrderImplementation = struct
           map_implementation overload ~f:(Type.Variable.namespace_all_free_variables ~namespace)
         in
         let does_not_leak_namespaced_variables (external_constraints, _) =
-          let predicate = function
-            | Type.Variable variable ->
-                List.exists namespaced_variables ~f:((=) (Type.Variable.Unary variable))
-            | _ ->
-                false
-          in
-          not (TypeConstraints.exists external_constraints ~predicate)
+          not
+            (TypeConstraints.exists_in_bounds external_constraints ~variables:namespaced_variables)
         in
         let instantiate_return (external_constraints, partial_solution) =
           let instantiated_return =
@@ -705,22 +700,22 @@ module OrderImplementation = struct
                 OrderedConstraints.add_lower_bound
                   constraints
                   ~order
-                  ~variable:right_variable
-                  ~bound:left
+                  ~pair:(Type.Variable.UnaryPair (right_variable, left))
                 |> Option.to_list,
                 OrderedConstraints.add_upper_bound
                   constraints
                   ~order
-                  ~variable:left_variable
-                  ~bound:right
+                  ~pair:(Type.Variable.UnaryPair (left_variable, right))
                 |> Option.to_list
               in
               right_greater_than_left @ left_less_than_right
           | Type.Variable variable, bound when Type.Variable.Unary.is_free variable ->
-              OrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
+              let pair = Type.Variable.UnaryPair (variable, bound) in
+              OrderedConstraints.add_upper_bound constraints ~order ~pair
               |> Option.to_list
           | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
-              OrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
+              let pair = Type.Variable.UnaryPair (variable, bound) in
+              OrderedConstraints.add_lower_bound constraints ~order ~pair
               |> Option.to_list
           | Type.Callable _, Type.Primitive protocol when is_protocol right ->
               if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then

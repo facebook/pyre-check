@@ -3424,15 +3424,17 @@ let test_solve_less_or_equal _ =
           lower_bound
           >>| parse_annotation
           >>| postprocess
-          >>| (fun bound ->
-              OrderedConstraints.add_lower_bound sofar ~order:handler ~variable ~bound |> unwrap)
+          >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+          >>| (fun pair ->
+              OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
           |> Option.value ~default:sofar
         in
         upper_bound
         >>| parse_annotation
         >>| postprocess
-        >>| (fun bound ->
-            OrderedConstraints.add_upper_bound sofar ~order:handler ~variable ~bound |> unwrap)
+        >>| (fun bound -> Type.Variable.UnaryPair (variable, bound))
+        >>| (fun pair ->
+            OrderedConstraints.add_lower_bound sofar ~order:handler ~pair |> unwrap)
         |> Option.value ~default:sofar
       in
       constraints

@@ -57,15 +57,16 @@ let variable ?(name = "_V") constraints =
 
 
 let add_bound constraints (variable, kind, bound) =
+  let pair = Type.Variable.UnaryPair (variable, bound) in
   let order = () in
   constraints
   >>= begin
     fun constraints ->
       match kind with
       | `Lower ->
-          DiamondOrderedConstraints.add_lower_bound constraints ~order ~variable ~bound
+          DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
       | `Upper ->
-          DiamondOrderedConstraints.add_upper_bound constraints ~order ~variable ~bound
+          DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
   end
 
 
@@ -317,21 +318,24 @@ let test_partial_solution _ =
 
 let test_exists _ =
   let order = () in
-  let constraints_with_child =
-    let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
+  let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
+  let unconstrained_b = variable ~name:"B" Type.Variable.Unary.Unconstrained in
+  let constraints_with_unconstrained_b =
+    let pair = Type.Variable.UnaryPair (unconstrained_a, Type.Variable unconstrained_b) in
     DiamondOrderedConstraints.add_lower_bound
       TypeConstraints.empty
       ~order
-      ~variable:unconstrained_a
-      ~bound:child
+      ~pair
     |> function | Some constraints -> constraints | None -> failwith "add bound failed"
   in
   assert_true
-    (TypeConstraints.exists constraints_with_child ~predicate:(Type.equal child));
-  assert_true
-    (TypeConstraints.exists constraints_with_child ~predicate:Type.is_top);
+    (TypeConstraints.exists_in_bounds
+       constraints_with_unconstrained_b
+       ~variables:[Type.Variable.Unary unconstrained_b]);
   assert_false
-    (TypeConstraints.exists constraints_with_child ~predicate:Type.is_unbound);
+    (TypeConstraints.exists_in_bounds
+       constraints_with_unconstrained_b
+       ~variables:[Type.Variable.Unary unconstrained_a]);
   ()
 
 

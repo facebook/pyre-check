@@ -9,7 +9,7 @@ type t
 val empty: t
 
 (* Checks a predicate against all of the bounds accumulated in a set of constraints *)
-val exists: t -> predicate: (Type.t -> bool) -> bool
+val exists_in_bounds: t -> variables: Type.Variable.t list -> bool
 
 module Solution : sig
   type t
@@ -32,18 +32,8 @@ module type OrderedConstraintsType = sig
      The solve system can handle chained constraints of the form X =<= F(Y) && Y =<= T, but declines
      to solve cyclic ones, e.g. X =<= Y, Y =<= X. *)
   type order
-  val add_lower_bound
-    :  t
-    -> order: order
-    -> variable: Type.Variable.Unary.t
-    -> bound: Type.t
-    -> t option
-  val add_upper_bound
-    :  t
-    -> order: order
-    -> variable: Type.Variable.Unary.t
-    -> bound: Type.t
-    -> t option
+  val add_lower_bound: t -> order: order -> pair: Type.Variable.pair -> t option
+  val add_upper_bound: t -> order: order -> pair: Type.Variable.pair -> t option
   val solve: t -> order: order -> Solution.t option
   (* This solves the constraints for the given variables, and then substitutes those solution in
      for those variables in the constraints for the remaining constraints. *)

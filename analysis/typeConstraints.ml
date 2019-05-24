@@ -5,9 +5,10 @@
 
 open Core
 open Pyre
+module UnaryVariable = Type.Variable.Unary
 
 
-type interval = {
+type unary_interval = {
   upper_bound: Type.t;
   lower_bound: Type.t;
 }
@@ -16,16 +17,29 @@ type interval = {
 
 module VariableMap = Type.Variable.Unary.Map
 
+type t = {
+  unaries: unary_interval UnaryVariable.Map.t;
+}
 
-type t = interval VariableMap.t
+
+let show_map map ~show_key ~show_data ~short_name =
+  if Map.is_empty map then
+    ""
+  else
+    let show ~key ~data sofar =
+      Printf.sprintf "%s => %s" (show_key key) (show_data data) :: sofar
+    in
+    Map.fold map ~init:[] ~f:show
+    |> String.concat ~sep:"\n"
+    |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format constraints =
-  let show ~key ~data sofar =
-    Printf.sprintf "%s => %s" (Type.Variable.Unary.show key) (show_interval data) :: sofar
-  in
-  VariableMap.fold constraints ~init:[] ~f:show
-  |> String.concat ~sep:"\n"
+let pp format { unaries } =
+  show_map
+    unaries
+    ~show_key:UnaryVariable.show
+    ~show_data:show_unary_interval
+    ~short_name:"un"
   |> Format.fprintf format "{%s}"
 
 
@@ -33,66 +47,74 @@ let show annotation =
   Format.asprintf "%a" pp annotation
 
 
-let empty = VariableMap.empty
+let empty =
+  {
+    unaries = UnaryVariable.Map.empty;
+  }
 
 
-let exists constraints ~predicate =
-  let exists_in_interval_bounds { upper_bound; lower_bound } =
-    Type.exists upper_bound ~predicate || Type.exists lower_bound ~predicate
+let exists_in_bounds { unaries } ~variables =
+  let contains_variable annotation =
+    Type.Variable.UnaryGlobalTransforms.collect_all annotation
+    |> List.exists
+      ~f:(fun variable ->
+          List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
   in
-  VariableMap.exists constraints ~f:exists_in_interval_bounds
+  let exists_in_interval_bounds { upper_bound; lower_bound } =
+    contains_variable upper_bound || contains_variable lower_bound
+  in
+  UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
+
+
+
+let is_empty { unaries } =
+  UnaryVariable.Map.is_empty unaries
+
+
+let contains_key { unaries } = function
+  | Type.Variable.Unary unary ->
+      Map.mem unaries unary
 
 
 module Solution = struct
-  type t = Type.t VariableMap.t
+  type t = {
+    unaries: Type.t UnaryVariable.Map.t;
+  }
 
-  let equal =
-    VariableMap.equal Type.equal
+  let equal left right  =
+    UnaryVariable.Map.equal Type.equal left.unaries right.unaries
 
-  let show solution =
-    let show_line ~key:{ Type.Variable.Unary.variable; _ } ~data accumulator =
-      Format.sprintf "%s -> %s" variable (Type.show data) :: accumulator
+  let show { unaries } =
+    let unaries =
+      show_map unaries ~show_key:UnaryVariable.show ~show_data:Type.show ~short_name:"un"
     in
-    VariableMap.fold solution ~init:[] ~f:show_line
-    |> List.rev
-    |> String.concat ~sep:"\n"
-    |> Format.sprintf "{%s}"
+    Format.sprintf "{%s}" unaries
 
   let empty =
-    VariableMap.empty
+    { unaries = UnaryVariable.Map.empty }
 
-  let instantiate solution =
-    let constraints = function
-      | Type.Variable variable ->
-          VariableMap.find solution variable
-      | _ ->
-          None
-    in
-    Type.instantiate ~constraints ~widen:false
+  let instantiate { unaries } annotation =
+    Type.Variable.UnaryGlobalTransforms.replace_all
+      (fun variable -> UnaryVariable.Map.find unaries variable)
+      annotation
 
-  let instantiate_single_variable =
-    VariableMap.find
+  let instantiate_single_variable { unaries; _ } =
+    UnaryVariable.Map.find unaries
 
-  let create =
-    VariableMap.of_alist_exn
+  let create unaries =
+    { unaries = UnaryVariable.Map.of_alist_exn unaries }
+
+  let set ({ unaries } as solution) = function
+    | Type.Variable.UnaryPair (key, data) ->
+        { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
 end
 
 
 
 module type OrderedConstraintsType = sig
   type order
-  val add_lower_bound
-    :  t
-    -> order: order
-    -> variable: Type.Variable.Unary.t
-    -> bound: Type.t
-    -> t option
-  val add_upper_bound
-    :  t
-    -> order: order
-    -> variable: Type.Variable.Unary.t
-    -> bound: Type.t
-    -> t option
+  val add_lower_bound: t -> order: order -> pair: Type.Variable.pair -> t option
+  val add_upper_bound: t -> order: order -> pair: Type.Variable.pair -> t option
   val solve: t -> order: order -> Solution.t option
   val extract_partial_solution
     :  t
@@ -111,22 +133,92 @@ end
 
 
 module OrderedConstraints(Order: OrderType) = struct
-  module Interval = struct
+  module IntervalContainer = struct
+    module type Interval = sig
+      module Variable: Type.Variable.VariableKind
+      type t
+      val create: ?upper_bound: Variable.domain -> ?lower_bound: Variable.domain -> unit -> t
+      val intersection: t -> t -> order: Order.t -> t
+      (* Returns the lowest non-bottom value within the interval, such that it fulfills the
+         requirements potentially given in the variable *)
+      val narrowest_valid_value
+        :  t
+        -> order: Order.t
+        -> variable: Variable.t
+        -> Variable.domain option
+      val merge_solution_in: t -> variable: Variable.t -> solution: Solution.t -> t
+      val is_trivial: t -> variable: Variable.t -> bool
+      val free_variables: t -> Type.Variable.t list
+    end
+
+    module Make (Interval: Interval) = struct
+      let add_bound container ~order ~variable ~bound ~is_lower_bound =
+        if Interval.Variable.equal_domain bound (Interval.Variable.self_reference variable) then
+          Some container
+        else
+          let new_constraint =
+            if is_lower_bound then
+              Interval.create ~lower_bound:bound ()
+            else
+              Interval.create ~upper_bound:bound ()
+          in
+          let existing =
+            Map.find container variable
+            |> Option.value ~default:(Interval.create ())
+          in
+          let intersection = Interval.intersection existing new_constraint ~order in
+          Interval.narrowest_valid_value intersection ~order ~variable
+          >>| (fun _ -> Map.set container ~key:variable ~data:intersection)
+
+      let merge_solution container ~solution =
+        Map.mapi
+          container
+          ~f:(fun ~key ~data -> Interval.merge_solution_in data ~variable:key ~solution)
+        |> Map.filteri ~f:(fun ~key ~data -> not (Interval.is_trivial data ~variable:key))
+
+      let partition_independent_dependent container ~with_regards_to =
+        let is_independent target =
+          Interval.free_variables target
+          |> List.exists ~f:(contains_key with_regards_to)
+          |> not
+        in
+        Map.partition_tf container ~f:is_independent
+
+      let add_solution container partial_solution ~order =
+        let add_solution ~key:variable ~data:target = function
+          | Some partial_solution ->
+              Interval.narrowest_valid_value target ~order ~variable
+              >>| (fun value -> Interval.Variable.pair variable value)
+              >>| Solution.set partial_solution
+          | None ->
+              None
+        in
+        Map.fold container ~f:add_solution ~init:(Some partial_solution)
+    end
+  end
+
+  module UnaryTypeInterval = struct
+    module Variable = UnaryVariable
+
+    type t = unary_interval
+
     let lower_bound { lower_bound; _ } = lower_bound
+
     let upper_bound { upper_bound; _ } = upper_bound
 
     let create ?(upper_bound = Type.Top) ?(lower_bound = Type.Bottom) () =
       { upper_bound; lower_bound }
 
-    let join order left right =
+    let intersection left right ~order =
       {
         upper_bound = Order.meet order left.upper_bound right.upper_bound;
         lower_bound = Order.join order left.lower_bound right.lower_bound;
       }
 
-    (* Returns the lowest non-bottom value within the interval, such that it fulfills the
-       requirements given by the exogenous constraint (from a type variable declaration) *)
-    let actualize interval ~order ~exogenous_constraint =
+    let narrowest_valid_value
+        interval
+        ~order
+        ~variable:{ UnaryVariable.constraints = exogenous_constraint; _} =
       let lowest_non_bottom_member interval ~order =
         let non_empty { upper_bound; lower_bound } ~order =
           Order.less_or_equal order ~left:lower_bound ~right:upper_bound
@@ -135,7 +227,7 @@ module OrderedConstraints(Order: OrderType) = struct
         >>| (function | Type.Bottom  -> upper_bound interval | other -> other)
       in
       match exogenous_constraint with
-      | Type.Variable.Unary.Explicit explicits ->
+      | UnaryVariable.Explicit explicits ->
           let explicits =
             match lower_bound interval with
             | Type.Variable { constraints = Explicit left_constraints; _ } ->
@@ -159,7 +251,7 @@ module OrderedConstraints(Order: OrderType) = struct
           (* and solved in a fixpoint *)
           List.find ~f:(contains interval ~order) explicits
       | Bound exogenous_bound ->
-          join order interval (create ~upper_bound:exogenous_bound ())
+          intersection interval (create ~upper_bound:exogenous_bound ()) ~order
           |> lowest_non_bottom_member ~order
       | Unconstrained ->
           lowest_non_bottom_member interval ~order
@@ -174,27 +266,35 @@ module OrderedConstraints(Order: OrderType) = struct
           | Some found_member when is_literal_integer found_member -> member
           | Some (Type.Union union) when List.for_all union ~f:is_literal_integer -> member
           | _ -> None
+
+    let merge_solution_in { upper_bound; lower_bound } ~variable ~solution =
+      let smart_instantiate annotation =
+        let instantiated = Solution.instantiate solution annotation in
+        Option.some_if (not (Type.equal instantiated (Type.Variable variable))) instantiated
+      in
+      let upper_bound = smart_instantiate upper_bound in
+      let lower_bound = smart_instantiate lower_bound in
+      create ?upper_bound ?lower_bound ()
+
+    let is_trivial interval ~variable:_ =
+      match interval with
+      | { upper_bound = Type.Top; lower_bound = Type.Bottom } -> true
+      | _ -> false
+
+    let free_variables { upper_bound; lower_bound } =
+      (Type.Variable.all_free_variables upper_bound) @
+      (Type.Variable.all_free_variables lower_bound)
   end
+
+  module UnaryIntervalContainer = IntervalContainer.Make(UnaryTypeInterval)
 
   type order = Order.t
 
-  let add_bound constraints ~order ~variable ~bound ~is_lower_bound =
-    if Type.equal bound (Type.Variable variable) then
-      Some constraints
-    else
-      let new_constraint =
-        if is_lower_bound then
-          Interval.create ~lower_bound:bound ()
-        else
-          Interval.create ~upper_bound:bound ()
-      in
-      let existing =
-        Map.find constraints variable
-        |> Option.value ~default:(Interval.create ())
-      in
-      let joined = Interval.join order existing new_constraint in
-      Interval.actualize joined ~order ~exogenous_constraint:variable.constraints
-      >>| (fun _ -> Map.set constraints ~key:variable ~data:joined)
+  let add_bound ({ unaries } as constraints) ~order ~pair ~is_lower_bound =
+    match pair with
+    | Type.Variable.UnaryPair (variable, bound) ->
+        UnaryIntervalContainer.add_bound unaries ~order ~variable ~bound ~is_lower_bound
+        >>| (fun unaries -> { constraints with unaries })
 
   let add_lower_bound =
     add_bound ~is_lower_bound:true
@@ -202,74 +302,46 @@ module OrderedConstraints(Order: OrderType) = struct
   let add_upper_bound =
     add_bound ~is_lower_bound:false
 
-  let merge_solution constraints solution =
-    let instantiate_interval ~key ~data:{upper_bound; lower_bound} =
-      let smart_instantiate annotation =
-        let instantiated = Solution.instantiate solution annotation in
-        Option.some_if (not (Type.equal instantiated (Type.Variable key))) instantiated
-      in
-      let upper_bound = smart_instantiate upper_bound in
-      let lower_bound = smart_instantiate lower_bound in
-      Interval.create ?upper_bound ?lower_bound ()
-    in
-    let remove_trivial_constraints =
-      let is_not_trivial = function
-        | { upper_bound = Type.Top; lower_bound = Type.Bottom } -> false
-        | _ -> true
-      in
-      VariableMap.filter ~f:is_not_trivial
-    in
-    VariableMap.mapi constraints ~f:instantiate_interval
-    |> remove_trivial_constraints
+  let merge_solution { unaries } solution =
+    {
+      unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
+    }
 
   let solve constraints ~order =
     let rec build_solution ~remaining_constraints ~partial_solution =
       let independent_constraints, dependent_constraints =
-        let is_independent { upper_bound; lower_bound } =
-          let contains_key = function
-            | Type.Variable variable ->
-                VariableMap.mem remaining_constraints variable
-            | _ ->
-                false
-          in
-          (not (Type.exists upper_bound ~predicate:contains_key)) &&
-          (not (Type.exists lower_bound ~predicate:contains_key))
+        let independent_unaries, dependent_unaries =
+          UnaryIntervalContainer.partition_independent_dependent
+            remaining_constraints.unaries
+            ~with_regards_to:remaining_constraints
         in
-        VariableMap.partition_tf remaining_constraints ~f:is_independent
-      in
-      let handle_independent_constraint ~key:variable ~data:interval partial_solution =
-        let add_actualized_interval partial_solution =
-          let { Type.Variable.Unary.constraints = exogenous_constraint; _ } = variable in
-          Interval.actualize interval ~order ~exogenous_constraint
-          >>| (fun data -> VariableMap.set partial_solution ~key:variable ~data)
-        in
-        partial_solution
-        >>= add_actualized_interval
+        { unaries = independent_unaries },
+        { unaries = dependent_unaries }
       in
       let handle_dependent_constraints partial_solution =
-        if VariableMap.is_empty dependent_constraints then
+        if is_empty dependent_constraints then
           Some partial_solution
-        else if VariableMap.is_empty independent_constraints then
+        else if is_empty independent_constraints then
           None
         else
           let remaining_constraints = merge_solution dependent_constraints partial_solution in
           build_solution ~remaining_constraints ~partial_solution
       in
-      Map.fold
-        independent_constraints
-        ~f:handle_independent_constraint
-        ~init:(Some partial_solution)
+      UnaryIntervalContainer.add_solution independent_constraints.unaries partial_solution ~order
       >>= handle_dependent_constraints
     in
-    build_solution ~remaining_constraints:constraints ~partial_solution:VariableMap.empty
+    build_solution ~remaining_constraints:constraints ~partial_solution:Solution.empty
 
-  let extract_partial_solution constraints ~order ~variables =
-    let variables = List.map variables ~f:(function Type.Variable.Unary variable -> variable) in
+  let extract_partial_solution { unaries } ~order ~variables =
     let extracted_constraints, remaining_constraints =
-      let matches ~key ~data:_ =
-        List.exists variables ~f:((=) key)
+      let unary_matches ~key ~data:_ =
+        List.exists variables ~f:((=) (Type.Variable.Unary key))
       in
-      VariableMap.partitioni_tf constraints ~f:matches
+      let extracted_unaries, remaining_unaries =
+        UnaryVariable.Map.partitioni_tf unaries ~f:unary_matches
+      in
+      { unaries = extracted_unaries },
+      { unaries = remaining_unaries }
     in
     solve extracted_constraints ~order
     >>| (fun solution -> merge_solution remaining_constraints solution, solution)

@@ -324,6 +324,11 @@ module Variable : sig
   type unary_t = type_t Record.Variable.RecordUnary.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  type unary_domain = type_t
+
+  type pair =
+    | UnaryPair of unary_t * unary_domain
+
   type t =
     | Unary of unary_t
   [@@deriving compare, eq, sexp, show, hash]
@@ -351,6 +356,7 @@ module Variable : sig
     (* The value in the domain directly corresponding to the variable, i.e. the replacement that
        would leave a type unchanged *)
     val self_reference: t -> domain
+    val pair: t -> domain -> pair
   end
   module Unary : sig
     include module type of struct include Record.Variable.RecordUnary end

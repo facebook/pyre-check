@@ -436,15 +436,14 @@ let check_invalid_type_parameters resolution annotation =
                           let order = full_order resolution in
                           { order with any_is_bottom = true }
                         in
+                        let pair = Type.Variable.UnaryPair (generic, given) in
                         TypeOrder.OrderedConstraints.add_lower_bound
                           TypeConstraints.empty
                           ~order
-                          ~variable:generic
-                          ~bound:given
+                          ~pair
                         >>| TypeOrder.OrderedConstraints.add_upper_bound
                           ~order
-                          ~variable:generic
-                          ~bound:given
+                          ~pair
                         |> Option.is_none
                       in
                       if invalid then
