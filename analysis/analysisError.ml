@@ -731,6 +731,13 @@ let messages ~concise ~signature location kind =
                  variables in their constraints."
                 pp_type (Type.Variable variable)
             ]
+        | NestedTypeVariables (Type.Variable.ParameterVariadic variable) ->
+            [
+              Format.asprintf
+                "Expression `%a` is not a valid type. Type variables cannot contain other type \
+                 variables in their constraints."
+                Type.Variable.Variadic.Parameters.pp variable
+            ]
       end
   | InvalidTypeParameters
       { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual };} ->
@@ -760,29 +767,57 @@ let messages ~concise ~signature location kind =
           pp_type (Type.Variable expected)
           name;
       ]
-  | InvalidTypeVariable { annotation = Type.Variable.Unary annotation; origin } when concise ->
-      let format: ('a, Format.formatter, unit, string) format4 =
+  | InvalidTypeVariable { annotation; origin } when concise ->
+      let format: ('b, Format.formatter, unit, string) format4 =
         match origin with
         | ClassToplevel ->
-            "Current class isn't generic over `%a`."
+            "Current class isn't generic over `%s`."
         | Define ->
-            "`%a` isn't present in the function's parameters."
+            "`%s` isn't present in the function's parameters."
         | Toplevel ->
-            "`%a` can only be used to annotate generic classes or functions."
+            "`%s` can only be used to annotate generic classes or functions."
       in
-      [Format.asprintf format pp_type (Type.Variable annotation)]
-  | InvalidTypeVariable { annotation = Type.Variable.Unary annotation; origin } ->
+      begin
+        match annotation with
+        | Type.Variable.Unary variable ->
+            [Format.asprintf format (Type.show (Type.Variable variable))]
+        | Type.Variable.ParameterVariadic variable ->
+            let name = Type.Variable.Variadic.Parameters.name variable in
+            if origin = ClassToplevel then
+              [
+                "Classes parameterized by callable parameter variadics are not supported at " ^
+                "this time";
+              ]
+            else
+              [Format.asprintf format name]
+      end
+  | InvalidTypeVariable { annotation; origin } ->
       (* The explicit annotation is necessary to appease the compiler. *)
-      let format: ('a, Format.formatter, unit, string) format4 =
+      let format: ('b, Format.formatter, unit, string) format4 =
         match origin with
         | ClassToplevel ->
-            "The current class isn't generic with respect to the type variable `%a`."
+            "The current class isn't generic with respect to the type variable `%s`."
         | Define ->
-            "The type variable `%a` isn't present in the function's parameters."
+            "The type variable `%s` isn't present in the function's parameters."
         | Toplevel ->
-            "The type variable `%a` can only be used to annotate generic classes or functions."
+            "The type variable `%s` can only be used to annotate generic classes or functions."
       in
-      [Format.asprintf format pp_type (Type.Variable annotation)]
+      begin
+        match annotation with
+        | Type.Variable.Unary variable ->
+            [Format.asprintf format (Type.show (Type.Variable variable))]
+        | Type.Variable.ParameterVariadic variable ->
+            let name = Type.Variable.Variadic.Parameters.name variable in
+            if origin = ClassToplevel then
+              [
+                Format.asprintf
+                  "Cannot propagate callable parameter variadic `%s`.  Classes \
+                   parameterized by callable parameter variadics are not supported at this time"
+                  name
+              ]
+            else
+              [Format.asprintf format name]
+      end
   | InvalidTypeVariance { origin; _ } when concise ->
       begin
         match origin with
@@ -1180,9 +1215,17 @@ let messages ~concise ~signature location kind =
             "anoynmous call"
       in
       [ Format.asprintf "Solving type variables for %s led to infinite recursion" callee ]
+  | NotCallable
+      (Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ }
+       as annotation) ->
+      [
+        Format.asprintf
+          "`%a` cannot be safely called because the types and kinds of its parameters depend on a \
+           type variable."
+          pp_type annotation
+      ]
   | NotCallable annotation ->
       [ Format.asprintf "`%a` is not a function." pp_type annotation ]
-
   | ProhibitedAny { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Given annotation cannot be `Any`."]

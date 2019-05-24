@@ -70,6 +70,20 @@ let add_bound constraints (variable, kind, bound) =
   end
 
 
+let add_parameter_variadic_bound constraints (variable, kind, bound) =
+  let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
+  let order = () in
+  constraints
+  >>= begin
+    fun constraints ->
+      match kind with
+      | `Lower ->
+          DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
+      | `Upper ->
+          DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
+  end
+
+
 let test_add_bound _ =
   let assert_bound_result ?(preconstraints = Some empty) ~variable ~kind ~bound expected_is_some =
     let result =
@@ -129,6 +143,42 @@ let test_add_bound _ =
     ~kind:`Lower
     ~bound:right_parent
     false;
+
+  let assert_bound_result ?(preconstraints = empty) ~variable ~kind ~bound expected_is_some =
+    let result =
+      add_parameter_variadic_bound (Some preconstraints) (variable, kind, bound)
+      |> Option.is_some
+    in
+    assert_equal
+      ~printer:(Printf.sprintf "%B")
+      expected_is_some
+      result
+  in
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  (* Adding a constraint to a parameter variadic with no preconstraints should always work *)
+  assert_bound_result
+    ~variable:parameter_variadic
+    ~kind:`Lower
+    ~bound:(Type.Callable.Defined [])
+    true;
+  let preconstraints =
+    add_parameter_variadic_bound (Some empty) (parameter_variadic, `Lower, Type.Callable.Defined [])
+    |> (fun preconstraints -> Option.value_exn preconstraints)
+  in
+  (* Adding the same constraint twice should be permitted *)
+  assert_bound_result
+    ~preconstraints
+    ~variable:parameter_variadic
+    ~kind:`Lower
+    ~bound:(Type.Callable.Defined [])
+    true;
+  (* We currently always reject adding a different bound to something with a bound already *)
+  assert_bound_result
+    ~preconstraints
+    ~variable:parameter_variadic
+    ~kind:`Lower
+    ~bound:(Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0])
+    false;
   ()
 
 
@@ -145,15 +195,26 @@ let optional_map_print map =
   |> Option.value ~default:"None"
 
 
-let expect_sequence_solution bounds expected =
+let expect_sequence_solution
+    ?callable_parameters_bounds
+    bounds
+    ?callable_parameters_solution
+    expected =
   let result =
+    let add_callable_parameters_bounds init =
+      match callable_parameters_bounds with
+      | Some bounds ->
+          List.fold bounds ~init ~f:add_parameter_variadic_bound
+      | None ->
+          init
+    in
     List.fold bounds ~init:(Some empty) ~f:add_bound
+    |> add_callable_parameters_bounds
     >>= DiamondOrderedConstraints.solve ~order:()
   in
   let expected =
     expected
-    >>| List.map ~f:(fun (variable, solution) -> variable, solution)
-    >>| TypeConstraints.Solution.create
+    >>| TypeConstraints.Solution.create ?callable_parameters:callable_parameters_solution
   in
   assert_equal
     ~cmp:optional_map_compare
@@ -213,6 +274,29 @@ let test_single_variable_solution _ =
   expect_sequence_solution
     [explicit_int_string_parent_A, `Lower, grandparent]
     None;
+
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let empty_parameters = Type.Callable.Defined [] in
+
+  let one_named_parameter =
+    Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0]
+  in
+  (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to
+     a variable yields a solution of a replacement of that variable with empty parameters *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[parameter_variadic, `Lower, empty_parameters]
+    []
+    ~callable_parameters_solution:[parameter_variadic, empty_parameters]
+    (Some []);
+  (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
+     fails *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[
+      parameter_variadic, `Lower, empty_parameters;
+      parameter_variadic, `Lower, one_named_parameter;
+    ]
+    []
+    None;
   ()
 
 
@@ -249,6 +333,59 @@ let test_multiple_variable_solution _ =
       unconstrained_a, `Lower, Type.Variable unconstrained_b;
       unconstrained_b, `Lower, Type.Variable unconstrained_a;
       unconstrained_c, `Lower, child;
+    ]
+    None;
+
+  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let empty_parameters = Type.Callable.Defined [] in
+  (* A is greater than B, and B is greater than empty => both A and B solve to empty *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[
+      parameters_a, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_b;
+      parameters_b, `Lower, empty_parameters;
+    ]
+    []
+    ~callable_parameters_solution:[parameters_a, empty_parameters; parameters_b, empty_parameters]
+    (Some []);
+  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
+     this yet *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[
+      parameters_a, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_b;
+      parameters_b, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_a;
+    ]
+    []
+    None;
+  let parameters_with_unconstrained_a =
+    Type.Callable.Defined
+      [Type.Callable.Parameter.create ~annotation:(Type.Variable unconstrained_a) "x" 0]
+  in
+  let parameters_with_integer =
+    Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:(Type.integer) "x" 0]
+  in
+  (* A is greater than [T] and T is greater than int => T solves to int and A solves to [int].
+     This is a test of unaries and parameter variadics getting along *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[
+      parameters_a, `Lower, parameters_with_unconstrained_a
+    ]
+    [unconstrained_a, `Lower, Type.integer]
+    ~callable_parameters_solution:[parameters_a, parameters_with_integer]
+    (Some [unconstrained_a, Type.integer]);
+  (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to
+     be greater than typing.Callable[A, int]. *)
+  expect_sequence_solution
+    ~callable_parameters_bounds:[
+      parameters_a, `Lower, parameters_with_unconstrained_a
+    ]
+    [
+      unconstrained_a,
+      `Lower,
+      Type.Callable.create
+        ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameters_a)
+        ~annotation:Type.integer
+        ()
     ]
     None;
   ()

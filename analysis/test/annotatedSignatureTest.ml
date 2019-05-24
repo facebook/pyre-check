@@ -56,43 +56,75 @@ let parse_annotation annotation =
      be generated from Callable.create on defines. *)
   annotation
   |> parse_single_expression
-  |> Resolution.parse_annotation ~allow_untracked:true resolution
+  |> Resolution.parse_annotation
+    ~allow_untracked:true
+    ~allow_invalid_type_parameters:true
+    resolution
 
 
 let test_select _ =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
-      callable
-      |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
-      |> String.substr_replace_all
-        ~pattern:"$literal_string"
-        ~with_:"typing_extensions.Literal[\"string\"]"
-      |> Format.asprintf "typing.Callable%s"
-      |> parse_annotation
-      |> Type.instantiate ~constraints:begin
-        function
-        | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
-            Type.Variable.Namespace.reset ();
-            Some (Type.Variable.mark_all_free_variables_as_escaped variable)
-        | _ ->
-            None
-      end
-      |> function
-      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
-          let undefined { Type.Callable.parameters; _ } =
-            match parameters with
-            | Type.Callable.Undefined -> true
-            | _ -> false
+      match parse_annotation callable with
+      | Type.Parametric
+          { name = "CallableWithVariadicGenericParameters"; parameters = [ annotation ] } ->
+          let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+          {
+            Type.Callable.kind = Anonymous;
+            implementation = {
+              annotation;
+              parameters = Type.Callable.ParameterVariadicTypeVariable parameter_variadic;
+            };
+            overloads = [];
+            implicit = None;
+          }
+      | Type.Parametric
+          { name = "CallableWithEscapedVariadicGenericParameters"; parameters = [ annotation ] } ->
+          let parameter_variadic =
+            Type.Variable.Variadic.Parameters.create "T"
+            |> Type.Variable.Variadic.Parameters.mark_as_escaped
           in
-          if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
-            failwith "Undefined parameters"
-          else
-            name
-            >>| Reference.create
-            >>| (fun name -> { callable with kind = Named name })
-            |> Option.value ~default:callable
+          {
+            Type.Callable.kind = Anonymous;
+            implementation = {
+              annotation;
+              parameters = Type.Callable.ParameterVariadicTypeVariable parameter_variadic;
+            };
+            overloads = [];
+            implicit = None;
+          }
       | _ ->
-          failwith "Could not extract signatures"
+          callable
+          |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
+          |> String.substr_replace_all
+            ~pattern:"$literal_string"
+            ~with_:"typing_extensions.Literal[\"string\"]"
+          |> Format.asprintf "typing.Callable%s"
+          |> parse_annotation
+          |> Type.instantiate ~constraints:begin
+            function
+            | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
+                Type.Variable.Namespace.reset ();
+                Some (Type.Variable.mark_all_free_variables_as_escaped variable)
+            | _ ->
+                None
+          end
+          |> function
+          | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
+              let undefined { Type.Callable.parameters; _ } =
+                match parameters with
+                | Type.Callable.Undefined -> true
+                | _ -> false
+              in
+              if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
+                failwith "Undefined parameters"
+              else
+                name
+                >>| Reference.create
+                >>| (fun name -> { callable with kind = Named name })
+                |> Option.value ~default:callable
+          | _ ->
+              failwith "Could not extract signatures"
     in
     let callable = parse_callable callable in
     Type.Variable.Namespace.reset ();
@@ -665,6 +697,12 @@ let test_select _ =
     "[[Keywords(kwargs, _S)], dict[_T, _S]]"
     "(a=1)"
     (`Found "[[Keywords(kwargs, $literal_one)], dict[ESCAPED[_T], $literal_one]]");
+  assert_select
+    "CallableWithVariadicGenericParameters[int]"
+    "(a=1)"
+    (`NotFound
+       ("CallableWithEscapedVariadicGenericParameters[int]",
+        Some CallingParameterVariadicTypeVariable));
 
   ()
 

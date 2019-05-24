@@ -139,6 +139,8 @@ let test_apply_decorators _ =
       match parameters with
       | Undefined ->
           0
+      | ParameterVariadicTypeVariable _ ->
+          0
       | Defined parameters ->
           List.length parameters
     in
@@ -178,8 +180,8 @@ let test_apply_decorators _ =
   |> (fun define -> Callable.apply_decorators ~define ~resolution)
   |> (fun { Type.Callable.parameters; _ } ->
       assert_equal
-        ~printer:(Type.Callable.show_parameters Type.pp)
-        ~cmp:(Type.Callable.equal_parameters Type.equal)
+        ~printer:Type.Callable.show_parameters
+        ~cmp:Type.Callable.equal_parameters
         (Type.Callable.Defined [
             Type.Callable.Parameter.Named {
               name = "other";

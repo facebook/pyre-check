@@ -20,7 +20,8 @@ module Solution : sig
 
   (* For testing *)
   val create
-    :  (Type.Variable.Unary.t * Type.t) list
+    :  ?callable_parameters: (Type.Variable.Variadic.Parameters.t * Type.Callable.parameters) list
+    -> (Type.Variable.Unary.t * Type.t) list
     -> t
   val show: t -> string
 end

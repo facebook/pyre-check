@@ -3355,6 +3355,7 @@ let test_solve_less_or_equal _ =
     |}
     |> fun environment -> TypeCheck.resolution environment ()
   in
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
   let assert_solve
       ~left
       ~right
@@ -3363,6 +3364,7 @@ let test_solve_less_or_equal _ =
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.Variable.mark_all_variables_as_bound)
+      ?callable_parameters_solution
       expected =
     let handler =
       let constructor instantiated =
@@ -3380,9 +3382,22 @@ let test_solve_less_or_equal _ =
       }
     in
     let parse_annotation annotation =
+      let constraints = function
+        | Type.Parametric
+            { name = "CallableWithVariadicGenericParameters"; parameters = [ annotation ] } ->
+            Some (
+              Type.Callable.create
+                ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+                ~annotation ())
+        | _ -> None
+      in
       annotation
       |> parse_single_expression
-      |> Resolution.parse_annotation resolution
+      |> Resolution.parse_annotation
+        ~allow_untracked:true
+        ~allow_invalid_type_parameters:true
+        resolution
+      |> Type.instantiate ~constraints
     in
     let parse_variable variable =
       match parse_annotation variable with
@@ -3408,7 +3423,8 @@ let test_solve_less_or_equal _ =
       in
       expected
       |> List.map ~f:parse_pairs
-      |> List.map ~f:TypeConstraints.Solution.create
+      |> List.map
+        ~f:(TypeConstraints.Solution.create ?callable_parameters:callable_parameters_solution)
     in
     let constraints =
       let add_bounds sofar (key, (lower_bound, upper_bound)) =
@@ -3702,6 +3718,59 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Tuple[typing.Callable[[T], T], int]"
     ~right:"typing.Tuple[typing.Callable[[T1], T2], T1]"
     [["T2", "int"; "T1", "int"]];
+
+  let parameters_with_two_anonymous_integers =
+    Type.Callable.Defined [
+      Type.Callable.Parameter.create ~annotation:Type.integer "__x" 0;
+      Type.Callable.Parameter.create ~annotation:Type.integer "__y" 1;
+    ]
+  in
+  (* CallableWithVariadicGenericParameters[return_type] is a magic alias right now for
+     typing.Callable[parameter_variadic, return_type].  This is necessary until we build
+     support for declaring parameter variadics *)
+
+  (* Solving Callable[[int, int], int] against Callable[Ts, int] should give you Ts => [int, int] *)
+  assert_solve
+    ~left:"typing.Callable[[int, int], int]"
+    ~right:"CallableWithVariadicGenericParameters[int]"
+    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
+    [[]];
+  (* We need to ensure that return values are still checked *)
+  assert_solve
+    ~left:"typing.Callable[[int, int], int]"
+    ~right:"CallableWithVariadicGenericParameters[str]"
+    [];
+  (* Solving Callable[[int, int], int] against Callable[Ts, T] should give you
+     Ts => [int, int] and T => int *)
+  assert_solve
+    ~left:"typing.Callable[[int, int], int]"
+    ~right:"CallableWithVariadicGenericParameters[T1]"
+    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
+    [["T1", "int"]];
+  (* We should be able to capture the same parameter set twice *)
+  assert_solve
+    ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, int], int]]"
+    ~right:(
+      "typing.Tuple[CallableWithVariadicGenericParameters[int], " ^
+      "CallableWithVariadicGenericParameters[int]]")
+    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
+    [[]];
+  (* We currently do not find a way to take both [int, int] and [int, str].  A correct solution
+     would be [int, Intersection[int, str]].  This is probably not desired *)
+  assert_solve
+    ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, str], int]]"
+    ~right:(
+      "typing.Tuple[CallableWithVariadicGenericParameters[int], " ^
+      "CallableWithVariadicGenericParameters[int]]")
+    [];
+  (* There is no common interface between a callable that requires exactly two arguments and one
+     that requires exactly one *)
+  assert_solve
+    ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int], int]]"
+    ~right:(
+      "typing.Tuple[CallableWithVariadicGenericParameters[int], " ^
+      "CallableWithVariadicGenericParameters[int]]")
+    [];
   ()
 
 

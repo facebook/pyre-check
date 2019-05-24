@@ -248,7 +248,7 @@ let find_propagated_type_variables bases ~resolution =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.Variable.all_free_variables
     |> List.filter_map
-      ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable))
+      ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable) | _ -> None)
   in
   List.concat_map ~f:find_type_variables bases
   |> List.dedup ~compare:Type.compare
@@ -640,7 +640,7 @@ let create_attribute
         Annotation.annotation annotation
         |> Type.Variable.all_free_variables
         |> List.filter_map
-          ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable))
+          ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable) | _ -> None)
         |> Type.Set.of_list
       in
       let generics =

@@ -18,8 +18,8 @@ let apply
             List.tl parameters
             |> Option.value ~default:parameters
             |> fun parameters -> Type.Callable.Defined parameters
-        | Type.Callable.Undefined ->
-            Type.Callable.Undefined
+        | _ ->
+            parameters
       in
       { Type.Callable.annotation; parameters }
   | _ ->

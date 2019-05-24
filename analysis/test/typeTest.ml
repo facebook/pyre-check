@@ -956,7 +956,25 @@ let test_is_resolved _ =
     (Type.Variable.all_variables_are_resolved (Type.union [Type.integer; Type.variable "_T"]));
 
   assert_true (Type.Variable.all_variables_are_resolved Type.integer);
-  assert_true (Type.Variable.all_variables_are_resolved (Type.union [Type.integer; Type.string]))
+  assert_true (Type.Variable.all_variables_are_resolved (Type.union [Type.integer; Type.string]));
+
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  assert_false
+    (Type.Variable.all_variables_are_resolved
+       (Type.Callable.create
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~annotation:Type.integer
+          ()
+       ));
+  let parameter_variadic = parameter_variadic |> Type.Variable.Variadic.Parameters.mark_as_bound in
+  assert_true
+    (Type.Variable.all_variables_are_resolved
+       (Type.Callable.create
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~annotation:Type.integer
+          ()
+       ));
+  ()
 
 
 let test_class_name _ =
@@ -1174,7 +1192,7 @@ let test_variables _ =
     let variables =
       Type.create ~aliases (parse_single_expression source)
       |> Type.Variable.all_free_variables
-      |> List.filter_map ~f:(function Type.Variable.Unary variable -> Some variable)
+      |> List.filter_map ~f:(function Type.Variable.Unary variable -> Some variable | _ -> None)
       |> List.map ~f:(fun variable -> Type.Variable variable)
     in
     assert_equal (List.map expected ~f:Type.variable) variables
@@ -1184,7 +1202,21 @@ let test_variables _ =
   assert_variables "Parametric[T, S]" ["T"; "S"];
   assert_variables "typing.Callable[..., int]" [];
   assert_variables "typing.Callable[..., T]" ["T"];
-  assert_variables "typing.Callable[[T, int], str]" ["T"]
+  assert_variables "typing.Callable[[T, int], str]" ["T"];
+
+  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let unary = Type.Variable.Unary.create "T" in
+  assert_equal
+    [
+      Type.Variable.Unary unary;
+      Type.Variable.ParameterVariadic parameter_variadic;
+    ]
+    (Type.Variable.all_free_variables
+       (Type.Callable.create
+          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
+          ~annotation:(Type.Variable unary)
+          ()));
+  ()
 
 
 let test_parameter_name_compatibility _ =

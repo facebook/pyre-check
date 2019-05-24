@@ -569,6 +569,16 @@ module OrderImplementation = struct
               [initial_constraints]
           | Undefined, Defined _ ->
               [initial_constraints]
+          | bound, ParameterVariadicTypeVariable variable
+            when Type.Variable.Variadic.Parameters.is_free variable ->
+              let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
+              OrderedConstraints.add_upper_bound
+                initial_constraints
+                ~order
+                ~pair
+              |> Option.to_list
+          | _, _ ->
+              []
         with _ ->
           []
       in

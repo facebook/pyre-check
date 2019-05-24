@@ -43,6 +43,7 @@ type reason =
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
+  | CallingParameterVariadicTypeVariable
 [@@deriving eq, show, compare]
 
 
@@ -351,6 +352,11 @@ let select
         consume base_signature_match ~arguments:ordered_arguments ~parameters
     | Undefined ->
         base_signature_match
+    | ParameterVariadicTypeVariable _ ->
+        {
+          base_signature_match with
+          reasons = { arity = [ CallingParameterVariadicTypeVariable ]; annotation = [] };
+        }
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _; } as signature_match) =
@@ -665,6 +671,7 @@ let select
             | TooManyArguments _ -> 1
             | UnexpectedKeyword _ -> 1
             | AbstractClassInstantiation _ -> 1
+            | CallingParameterVariadicTypeVariable -> 1
           in
           let get_most_important best_reason reason =
             if importance reason > importance best_reason then

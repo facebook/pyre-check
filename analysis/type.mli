@@ -40,6 +40,12 @@ module Record : sig
       }
       [@@deriving compare, eq, sexp, show, hash]
     end
+    module RecordVariadic : sig
+      module RecordParameters : sig
+        type record
+        [@@deriving compare, eq, sexp, show, hash]
+      end
+    end
   end
   module Callable : sig
     module RecordParameter : sig
@@ -68,14 +74,15 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation parameters =
+    type 'annotation record_parameters =
       | Defined of ('annotation RecordParameter.t) list
       | Undefined
+      | ParameterVariadicTypeVariable of Variable.RecordVariadic.RecordParameters.record
     [@@deriving compare, eq, sexp, show, hash]
 
     type 'annotation overload = {
       annotation: 'annotation;
-      parameters: 'annotation parameters;
+      parameters: 'annotation record_parameters;
     }
     [@@deriving compare, eq, sexp, show, hash]
 
@@ -221,6 +228,9 @@ module Callable : sig
   type t = type_t Record.Callable.record
   [@@deriving compare, eq, sexp, show, hash]
 
+  type parameters = type_t Record.Callable.record_parameters
+  [@@deriving compare, eq, sexp, show, hash]
+
   module Overload: sig
     val parameters: type_t overload -> Parameter.parameter list option
 
@@ -232,13 +242,14 @@ module Callable : sig
 
   val map: t -> f:(type_t -> type_t) -> t option
   val map_implementation: type_t overload -> f: (type_t -> type_t) -> type_t overload
+  val map_parameters: t -> f:(parameters -> parameters) -> t
 
   val with_return_annotation: t -> annotation: type_t -> t
 
   val create
     :  ?name: Reference.t
     -> ?overloads: (type_t overload) list
-    -> ?parameters: type_t parameters
+    -> ?parameters: parameters
     -> ?implicit: implicit
     -> annotation: type_t
     -> unit
@@ -299,7 +310,12 @@ val coroutine_value: t -> t
 
 val parameters: t -> t list
 val single_parameter: t -> t
-val instantiate: ?widen: bool -> t -> constraints:(t -> t option) -> t
+val instantiate
+  :  ?widen: bool
+  -> ?visit_children_before: bool
+  -> t
+  -> constraints:(t -> t option)
+  -> t
 val weaken_literals: t -> t
 val split: t -> t * (t list)
 val class_name: t -> Reference.t
@@ -326,11 +342,18 @@ module Variable : sig
 
   type unary_domain = type_t
 
+  type parameter_variadic_t = Record.Variable.RecordVariadic.RecordParameters.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type parameter_variadic_domain = Callable.parameters
+
   type pair =
     | UnaryPair of unary_t * unary_domain
+    | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
 
   type t =
     | Unary of unary_t
+    | ParameterVariadic of parameter_variadic_t
   [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
@@ -368,6 +391,13 @@ module Variable : sig
     val is_escaped_and_free: t -> bool
     val contains_subvariable: t -> bool
   end
+  module Variadic : sig
+    module Parameters : sig
+      include VariableKind with type t = parameter_variadic_t and type domain = Callable.parameters
+      val name: t -> Identifier.t
+      val create: string -> t
+    end
+  end
   module GlobalTransforms: sig
     module type S = sig
       type t
@@ -377,6 +407,8 @@ module Variable : sig
     end
   end
   module UnaryGlobalTransforms: GlobalTransforms.S with type t = unary_t and type domain = type_t
+  module ParameterVariadicGlobalTransforms:
+    GlobalTransforms.S with type t = parameter_variadic_t and type domain = Callable.parameters
   include module type of struct include Record.Variable end
 
   module Set: Core.Set.S with type Elt.t = t

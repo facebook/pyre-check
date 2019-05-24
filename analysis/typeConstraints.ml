@@ -5,6 +5,7 @@
 
 open Core
 open Pyre
+module ParameterVariable = Type.Variable.Variadic.Parameters
 module UnaryVariable = Type.Variable.Unary
 
 
@@ -15,10 +16,16 @@ type unary_interval = {
 [@@deriving show]
 
 
-module VariableMap = Type.Variable.Unary.Map
+type callable_parameter_interval =
+  | Top
+  | Singleton of Type.Callable.parameters
+  | Bottom
+[@@deriving show]
+
 
 type t = {
   unaries: unary_interval UnaryVariable.Map.t;
+  callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
 }
 
 
@@ -34,13 +41,22 @@ let show_map map ~show_key ~show_data ~short_name =
     |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format { unaries } =
-  show_map
-    unaries
-    ~show_key:UnaryVariable.show
-    ~show_data:show_unary_interval
-    ~short_name:"un"
-  |> Format.fprintf format "{%s}"
+let pp format { unaries; callable_parameters } =
+  let unaries =
+    show_map
+      unaries
+      ~show_key:UnaryVariable.show
+      ~show_data:show_unary_interval
+      ~short_name:"un"
+  in
+  let callable_parameters =
+    show_map
+      callable_parameters
+      ~show_key:ParameterVariable.show
+      ~show_data:show_callable_parameter_interval
+      ~short_name:"cb"
+  in
+  Format.fprintf format "{%s%s}" unaries callable_parameters
 
 
 let show annotation =
@@ -50,63 +66,108 @@ let show annotation =
 let empty =
   {
     unaries = UnaryVariable.Map.empty;
+    callable_parameters = ParameterVariable.Map.empty;
   }
 
 
-let exists_in_bounds { unaries } ~variables =
+let exists_in_bounds { unaries; callable_parameters } ~variables =
   let contains_variable annotation =
-    Type.Variable.UnaryGlobalTransforms.collect_all annotation
-    |> List.exists
-      ~f:(fun variable ->
-          List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
+    let contains_unary =
+      Type.Variable.UnaryGlobalTransforms.collect_all annotation
+      |> List.exists
+        ~f:(fun variable ->
+            List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
+    in
+    let contains_parameter_variadic =
+      let parameter_variadic_contained_in_list variable =
+        List.mem variables (Type.Variable.ParameterVariadic variable) ~equal:Type.Variable.equal
+      in
+      Type.Variable.ParameterVariadicGlobalTransforms.collect_all annotation
+      |> List.exists ~f:parameter_variadic_contained_in_list
+    in
+    contains_unary || contains_parameter_variadic
   in
   let exists_in_interval_bounds { upper_bound; lower_bound } =
     contains_variable upper_bound || contains_variable lower_bound
   in
-  UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
+  let exists_in_callable_parameter_interval_bounds = function
+    | Singleton parameters ->
+        Type.Callable.create ~parameters ~annotation:Type.Any ()
+        |> contains_variable
+    | _ ->
+        false
+  in
+  UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds ||
+  ParameterVariable.Map.exists callable_parameters ~f:exists_in_callable_parameter_interval_bounds
 
 
 
-let is_empty { unaries } =
-  UnaryVariable.Map.is_empty unaries
+let is_empty { unaries; callable_parameters } =
+  UnaryVariable.Map.is_empty unaries && ParameterVariable.Map.is_empty callable_parameters
 
 
-let contains_key { unaries } = function
+let contains_key { unaries; callable_parameters } = function
   | Type.Variable.Unary unary ->
       Map.mem unaries unary
+  | Type.Variable.ParameterVariadic parameters ->
+      Map.mem callable_parameters parameters
 
 
 module Solution = struct
   type t = {
     unaries: Type.t UnaryVariable.Map.t;
+    callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
   }
 
   let equal left right  =
-    UnaryVariable.Map.equal Type.equal left.unaries right.unaries
+    UnaryVariable.Map.equal Type.equal left.unaries right.unaries &&
+    ParameterVariable.Map.equal
+      Type.Callable.equal_parameters
+      left.callable_parameters
+      right.callable_parameters
 
-  let show { unaries } =
+  let show { unaries; callable_parameters } =
     let unaries =
       show_map unaries ~show_key:UnaryVariable.show ~show_data:Type.show ~short_name:"un"
     in
-    Format.sprintf "{%s}" unaries
+    let callable_parameters =
+      show_map
+        callable_parameters
+        ~show_key:ParameterVariable.show
+        ~show_data:Type.Callable.show_parameters
+        ~short_name:"cb"
+    in
+    Format.sprintf "{%s%s}" unaries callable_parameters
 
   let empty =
-    { unaries = UnaryVariable.Map.empty }
+    { unaries = UnaryVariable.Map.empty; callable_parameters = ParameterVariable.Map.empty }
 
-  let instantiate { unaries } annotation =
+  let instantiate { unaries; callable_parameters } annotation =
     Type.Variable.UnaryGlobalTransforms.replace_all
       (fun variable -> UnaryVariable.Map.find unaries variable)
       annotation
+    |> Type.Variable.ParameterVariadicGlobalTransforms.replace_all
+      (fun variable -> ParameterVariable.Map.find callable_parameters variable)
 
   let instantiate_single_variable { unaries; _ } =
     UnaryVariable.Map.find unaries
 
-  let create unaries =
-    { unaries = UnaryVariable.Map.of_alist_exn unaries }
+  let create ?callable_parameters unaries =
+    let callable_parameters =
+      callable_parameters
+      >>| ParameterVariable.Map.of_alist_exn
+      |> Option.value ~default:(ParameterVariable.Map.empty)
+    in
+    { unaries = UnaryVariable.Map.of_alist_exn unaries; callable_parameters }
 
-  let set ({ unaries } as solution) = function
+  let set ({ unaries; callable_parameters } as solution) = function
     | Type.Variable.UnaryPair (key, data) ->
         { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
+    | Type.Variable.ParameterVariadicPair (key, data) ->
+        {
+          solution with
+          callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data;
+        }
 end
 
 
@@ -286,15 +347,92 @@ module OrderedConstraints(Order: OrderType) = struct
       (Type.Variable.all_free_variables lower_bound)
   end
 
+  module CallableParametersInterval = struct
+    module Variable = ParameterVariable
+
+    type t = callable_parameter_interval
+
+    let create ?upper_bound ?lower_bound () =
+      match upper_bound, lower_bound with
+      | None, None ->
+          Bottom
+      | Some only, None
+      | None, Some only ->
+          Singleton only
+      | Some left, Some right when Type.Callable.equal_parameters left right ->
+          Singleton left
+      | Some _, Some _ ->
+          Top
+
+    let narrowest_valid_value interval ~order:_ ~variable:_ =
+      match interval with
+      | Top
+      | Bottom ->
+          None
+      | Singleton parameters ->
+          Some parameters
+
+    let intersection left right ~order:_ =
+      match left, right with
+      | Top, _
+      | _, Top ->
+          Top
+      | other, Bottom
+      | Bottom, other ->
+          other
+      | Singleton left, Singleton right when Type.Callable.equal_parameters left right ->
+          Singleton left
+      | _, _ ->
+          Top
+
+    let merge_solution_in target ~variable:_ ~solution  =
+      match target with
+      | Top
+      | Bottom ->
+          target
+      | Singleton parameters ->
+          let callable = Type.Callable.create ~parameters ~annotation:Type.Any () in
+          match Solution.instantiate solution callable with
+          | Type.Callable { implementation = { parameters = instantiated_parameters; _ }; _ } ->
+              Singleton instantiated_parameters
+          | _ ->
+              failwith "impossible"
+
+    let is_trivial interval ~variable =
+      match interval with
+      | Singleton (Type.Callable.ParameterVariadicTypeVariable target_variable) ->
+          ParameterVariable.equal variable target_variable
+      | _ ->
+          false
+
+    let free_variables = function
+      | Top
+      | Bottom ->
+          []
+      | Singleton parameters ->
+          Type.Callable.create ~parameters ~annotation:Type.Any ()
+          |> Type.Variable.all_free_variables
+  end
+
+  module CallableParametersIntervalContainer = IntervalContainer.Make(CallableParametersInterval)
+
   module UnaryIntervalContainer = IntervalContainer.Make(UnaryTypeInterval)
 
   type order = Order.t
 
-  let add_bound ({ unaries } as constraints) ~order ~pair ~is_lower_bound =
+  let add_bound ({ unaries; callable_parameters } as constraints) ~order ~pair ~is_lower_bound =
     match pair with
     | Type.Variable.UnaryPair (variable, bound) ->
         UnaryIntervalContainer.add_bound unaries ~order ~variable ~bound ~is_lower_bound
         >>| (fun unaries -> { constraints with unaries })
+    | Type.Variable.ParameterVariadicPair (variable, bound) ->
+        CallableParametersIntervalContainer.add_bound
+          callable_parameters
+          ~order
+          ~variable
+          ~bound
+          ~is_lower_bound
+        >>| (fun callable_parameters -> { constraints with callable_parameters })
 
   let add_lower_bound =
     add_bound ~is_lower_bound:true
@@ -302,9 +440,11 @@ module OrderedConstraints(Order: OrderType) = struct
   let add_upper_bound =
     add_bound ~is_lower_bound:false
 
-  let merge_solution { unaries } solution =
+  let merge_solution { unaries; callable_parameters } solution =
     {
       unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
+      callable_parameters =
+        CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
     }
 
   let solve constraints ~order =
@@ -315,8 +455,13 @@ module OrderedConstraints(Order: OrderType) = struct
             remaining_constraints.unaries
             ~with_regards_to:remaining_constraints
         in
-        { unaries = independent_unaries },
-        { unaries = dependent_unaries }
+        let independent_parameters, dependent_parameters =
+          CallableParametersIntervalContainer.partition_independent_dependent
+            remaining_constraints.callable_parameters
+            ~with_regards_to:remaining_constraints
+        in
+        { unaries = independent_unaries; callable_parameters = independent_parameters },
+        { unaries = dependent_unaries; callable_parameters = dependent_parameters }
       in
       let handle_dependent_constraints partial_solution =
         if is_empty dependent_constraints then
@@ -328,20 +473,29 @@ module OrderedConstraints(Order: OrderType) = struct
           build_solution ~remaining_constraints ~partial_solution
       in
       UnaryIntervalContainer.add_solution independent_constraints.unaries partial_solution ~order
+      >>= CallableParametersIntervalContainer.add_solution
+        independent_constraints.callable_parameters
+        ~order
       >>= handle_dependent_constraints
     in
     build_solution ~remaining_constraints:constraints ~partial_solution:Solution.empty
 
-  let extract_partial_solution { unaries } ~order ~variables =
+  let extract_partial_solution { unaries; callable_parameters } ~order ~variables =
     let extracted_constraints, remaining_constraints =
       let unary_matches ~key ~data:_ =
         List.exists variables ~f:((=) (Type.Variable.Unary key))
       in
+      let callable_parameters_matches ~key ~data:_ =
+        List.exists variables ~f:((=) (Type.Variable.ParameterVariadic key))
+      in
       let extracted_unaries, remaining_unaries =
         UnaryVariable.Map.partitioni_tf unaries ~f:unary_matches
       in
-      { unaries = extracted_unaries },
-      { unaries = remaining_unaries }
+      let extracted_variadics, remaining_variadics =
+        ParameterVariable.Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
+      in
+      { unaries = extracted_unaries; callable_parameters = extracted_variadics },
+      { unaries = remaining_unaries; callable_parameters = remaining_variadics }
     in
     solve extracted_constraints ~order
     >>| (fun solution -> merge_solution remaining_constraints solution, solution)

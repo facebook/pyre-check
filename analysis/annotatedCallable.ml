@@ -272,7 +272,7 @@ let apply_decorators
                         match decorated_parameters with
                         | Undefined ->
                             { overload with Type.Callable.annotation = decorated_annotation }
-                        | Defined _ ->
+                        | _ ->
                             {
                               Type.Callable.annotation = decorated_annotation;
                               parameters = decorated_parameters;

@@ -1684,7 +1684,7 @@ module State = struct
       | Some Annotated.Signature.Found { implementation = { annotation; _ }; _ } ->
           { state; resolved = annotation }
       | Some Annotated.Signature.NotFound {
-          callable = { implementation = { annotation; _ }; kind; implicit; _ };
+          callable = ({ implementation = { annotation; _ }; kind; implicit; _ } as callable);
           reason = Some reason;
         } ->
           let state =
@@ -1790,6 +1790,11 @@ module State = struct
                   Error.create
                     ~location
                     ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
+                    ~define
+              | CallingParameterVariadicTypeVariable ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.NotCallable (Type.Callable callable))
                     ~define
             in
             emit_raw_error ~state error

@@ -86,6 +86,7 @@ let decorate
                     ()
             in
             List.map parameters ~f:convert
+        | ParameterVariadicTypeVariable _
         | Undefined ->
             original_parameters
       in
