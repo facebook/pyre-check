@@ -123,6 +123,7 @@ val attribute_fold
 val attribute
   :  ?transitive: bool
   -> ?class_attributes: bool
+  -> ?special_method: bool
   -> t
   -> resolution: Resolution.t
   -> name: Identifier.t

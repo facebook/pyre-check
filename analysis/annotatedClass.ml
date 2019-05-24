@@ -30,6 +30,7 @@ module AttributeCache = struct
     transitive: bool;
     class_attributes: bool;
     include_generated_attributes: bool;
+    special_method: bool;
     name: Reference.t;
     instantiated: Type.t;
   }
@@ -552,7 +553,7 @@ let create_attribute
         in
         let overloads =  (List.mapi ~f:overload members) @ overloads in
         Some (Type.Callable { callable with overloads })
-    | Some (Type.Primitive name),
+    | Some (Parametric { name = "type"; parameters = [Type.Primitive name] }),
       "__getitem__",
       Some (Type.Callable ({ kind = Named callable_name; _ } as callable))
       when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
@@ -688,6 +689,7 @@ let attribute_table
     ~transitive
     ~class_attributes
     ~include_generated_attributes
+    ?(special_method = false)
     ?instantiated
     ({ Node.value = { Class.name; _ }; _ } as definition)
     ~resolution =
@@ -697,6 +699,7 @@ let attribute_table
     {
       AttributeCache.transitive;
       class_attributes;
+      special_method;
       include_generated_attributes;
       name;
       instantiated;
@@ -735,7 +738,9 @@ let attribute_table
       let table = Attribute.Table.create () in
       (* Pass over normal class hierarchy. *)
       let definitions =
-        if transitive then
+        if class_attributes && special_method then
+          []
+        else if transitive then
           definition :: superclass_definitions
         else
           [definition]
@@ -764,13 +769,7 @@ let attribute_table
         Attribute.parent attribute
         |> Resolution.class_definition resolution
         >>| (fun target ->
-            let solution =
-              constraints
-                ~target
-                ~instantiated
-                ~resolution
-                definition
-            in
+            let solution = constraints ~target ~instantiated ~resolution definition in
             Attribute.instantiate
               ~constraints:(fun annotation ->
                   Some (TypeConstraints.Solution.instantiate solution annotation))
@@ -780,6 +779,7 @@ let attribute_table
         ~f:(fun instantiated -> Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
       Hashtbl.set ~key ~data:table AttributeCache.cache;
       table
+
 
 let attributes
     ?(transitive = false)
@@ -798,6 +798,7 @@ let attributes
   |>
   Attribute.Table.to_list
 
+
 let attribute_fold
     ?(transitive = false)
     ?(class_attributes = false)
@@ -813,6 +814,7 @@ let attribute_fold
 let attribute
     ?(transitive = false)
     ?(class_attributes = false)
+    ?(special_method = false)
     ({ Node.location; _ } as definition)
     ~resolution
     ~name
@@ -822,6 +824,7 @@ let attribute
       ~instantiated
       ~transitive
       ~class_attributes
+      ~special_method
       ~include_generated_attributes:true
       ~resolution
       definition

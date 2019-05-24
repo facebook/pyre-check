@@ -2441,7 +2441,7 @@ module State(Context: Context) = struct
     | Name (Name.Identifier identifier) ->
         forward_reference ~state (Reference.create identifier)
 
-    | Name ((Name.Attribute { base; attribute; _ }) as name) ->
+    | Name ((Name.Attribute { base; attribute; special }) as name) ->
         let reference = Reference.from_name name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base } =
           forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:base
@@ -2511,6 +2511,7 @@ module State(Context: Context) = struct
                       class_definition
                       ~transitive:true
                       ~class_attributes
+                      ~special_method:special
                       ~resolution
                       ~name
                       ~instantiated

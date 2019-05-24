@@ -168,7 +168,7 @@ let test_check_undefined_type _ =
     |}
     [
       "Missing parameter annotation [2]: Parameter `other` has no type specified.";
-      "Undefined type [11]: Type `Herp` is not defined.";
+      "Invalid type [31]: Expression `Herp` is not a valid type.";
     ];
 
   (* Attributes *)

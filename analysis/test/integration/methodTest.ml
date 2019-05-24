@@ -118,6 +118,57 @@ let test_check_method_parameters _ =
         return x == y
     |}
     [];
+  assert_strict_type_errors
+    {|
+      class Meta:
+          def foo(self) -> None: ...
+
+      class Foo(metaclass=Meta):
+          def foo(self) -> None: ...
+
+      reveal_type(Foo.foo)
+      reveal_type(Foo().foo)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `Foo.foo` is " ^
+      "`typing.Callable(Foo.foo)[[Named(self, unknown)], None]`.";
+      "Revealed type [-1]: Revealed type for `Foo.(...).foo` is " ^
+      "`typing.Callable(Foo.foo)[[], None]`.";
+    ];
+  assert_strict_type_errors
+    {|
+      class Meta:
+          def __getitem__(self, item: int) -> int: ...
+
+      class Foo(metaclass=Meta):
+          def __getitem__(self, item: int) -> str: ...
+
+      reveal_type(Foo[1])
+      reveal_type(Foo()[1])
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is `int`.";
+      "Revealed type [-1]: Revealed type for `Foo.(...).__getitem__.(...)` is `str`.";
+    ];
+  assert_strict_type_errors
+    {|
+      _T = typing.TypeVar('_T')
+
+      class EnumMeta:
+          def __getitem__(self: typing.Type[_T], name: str) -> _T: ...
+
+      class Enum(metaclass=EnumMeta): ...
+
+      # Definition in class str: def __getitem__(self, i: Union[int, slice]) -> str: ...
+
+      class StringEnum(Enum, str): ...
+
+      reveal_type(StringEnum["key"])
+    |}
+    [
+      "Invalid method signature [36]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
+      "Revealed type [-1]: Revealed type for `StringEnum.__getitem__.(...)` is `StringEnum`.";
+    ];
 
   (* Defining methods *)
   assert_type_errors

@@ -685,14 +685,24 @@ let test_class_attributes _ =
       "implicit";
       "second";
       "third";
-      "__name__";
       "__call__";
+      "__class__";
+      "__delattr__";
       "__doc__";
+      "__eq__";
+      "__format__";
+      "__getattribute__";
       "__getitem__";
-      "__init__";
-      "__new__";
-      "__sizeof__";
       "__hash__";
+      "__init__";
+      "__name__";
+      "__ne__";
+      "__new__";
+      "__reduce__";
+      "__repr__";
+      "__setattr__";
+      "__sizeof__";
+      "__str__";
     ];
   assert_fold
     ~class_attributes:true
@@ -709,15 +719,25 @@ let test_class_attributes _ =
       "__instance__";
       "__static__";
       "__meta__";
-      "__name__";
-      "__doc__";
       "__type__";
       "__call__";
+      "__class__";
+      "__delattr__";
+      "__doc__";
+      "__eq__";
+      "__format__";
+      "__getattribute__";
       "__getitem__";
-      "__init__";
-      "__new__";
-      "__sizeof__";
       "__hash__";
+      "__init__";
+      "__name__";
+      "__ne__";
+      "__new__";
+      "__reduce__";
+      "__repr__";
+      "__setattr__";
+      "__sizeof__";
+      "__str__";
     ];
 
   (* Test 'attribute' *)
