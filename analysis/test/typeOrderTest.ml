@@ -3445,6 +3445,12 @@ let test_solve_less_or_equal _ =
       (solve_less_or_equal handler ~constraints ~left ~right
        |> List.filter_map ~f:(OrderedConstraints.solve ~order:handler))
   in
+  assert_solve
+    ~leave_unbound_in_left:["T_Unconstrained"]
+    ~left:"typing.Optional[T_Unconstrained]"
+    ~right:"object"
+    [[]];
+
   assert_solve ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
   assert_solve ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
   assert_solve ~left:"Q" ~right:"T_Unconstrained" [["T_Unconstrained", "Q"]];

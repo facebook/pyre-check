@@ -682,6 +682,7 @@ module OrderImplementation = struct
           match left, right with
           | _, _ when Type.equal left right ->
               [constraints]
+          | _, Type.Primitive "object"
           | _, Type.Any
           | _, Type.Top ->
               [constraints]
