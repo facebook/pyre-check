@@ -39,7 +39,9 @@ type issue = {
 
 (* Compute all flows from paths in ~source tree to corresponding paths in
    ~sink tree, while avoiding duplication as much as possible.
+
    Strategy:
+
    Let F and B for forward and backward taint
    respectively. For each path p in B from the root to some node with non-empty
    taint T, we match T with the join of taint in the upward and downward closure

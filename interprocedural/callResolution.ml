@@ -58,13 +58,13 @@ let is_global ~resolution access =
 (* Figure out what target to pick for an indirect call that resolves to target_name.
    E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
    targetting the override tree of Base.method is wrong, as it would include all siblings for A.
-   Instead, we have the following cases:
-   a) receiver type matches target_name's declaring type -> override target_name
-   b) no target_name override entries are subclasses of A -> real target_name
-   c) some override entries are subclasses of A -> override all those
-   where override name is
-    1) the override target if it exists in the override shared mem
-    2) the real target otherwise
+
+ * Instead, we have the following cases:
+ * a) receiver type matches target_name's declaring type -> override target_name
+ * b) no target_name override entries are subclasses of A -> real target_name
+ * c) some override entries are subclasses of A -> override all those where override name is
+ *  1) the override target if it exists in the override shared mem
+ *  2) the real target otherwise
 *)
 let compute_indirect_targets ~resolution ~receiver_type target_name =
   let get_class_type = Resolution.parse_reference resolution in

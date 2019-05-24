@@ -129,9 +129,9 @@ let test_filter_directories context =
     ["Incompatible return type [7]: Expected `C` but got `D`."];
 
   (* The structure:
-     /root/check <- pyre is meant to analyze here
-     /root/check/search <- this is added to the search path, handles are relative to here instead
-                           of check. The practical case here is resource_cache/typeshed. *)
+   *  /root/check <- pyre is meant to analyze here
+   *  /root/check/search <- this is added to the search path, handles are relative to here instead
+   *                       of check. The practical case here is resource_cache/typeshed. *)
   assert_errors
     ~root
     ~search_path:[Path.SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]

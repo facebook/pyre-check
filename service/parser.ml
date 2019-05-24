@@ -349,8 +349,8 @@ let find_sources
 
 let find_stubs_and_sources configuration =
   (* If two directories contain the same source file:
-     - Prefer external sources over internal sources
-     - Prefer the one that appears earlier in the search path. *)
+   *  - Prefer external sources over internal sources
+   *  - Prefer the one that appears earlier in the search path. *)
   let filter_interfering_sources ~configuration (stubs: Path.t list) (sources: Path.t list) =
     let qualifiers = Reference.Hash_set.create () in
     let keep path =

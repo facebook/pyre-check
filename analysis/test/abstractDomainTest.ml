@@ -273,9 +273,10 @@ module IntToStringSet = struct
   (* Builds maps from i -> string sets, where all unrelated string elements are in the range
      except for one, and keys are from [0,n), n being the number of unrelated string elements.
      So each map value differs in the key to range mapping.
-     [ 1 -> { "b" }, 2 -> { "c" } ]
-     [ 1 -> { "a" }, 0 -> { "c" } ]
-     [ 2 -> { "a" }, 0 -> { "b" } ]
+
+   * [ 1 -> { "b" }, 2 -> { "c" } ]
+   * [ 1 -> { "a" }, 0 -> { "c" } ]
+   * [ 2 -> { "a" }, 0 -> { "b" } ]
   *)
   let rotation =
     let length = List.length StringSet.unrelated in

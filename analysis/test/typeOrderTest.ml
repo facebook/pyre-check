@@ -96,9 +96,9 @@ let meet
     }
 
 (* Butterfly:
-    0 - 2
-      X
-    1 - 3 *)
+ *  0 - 2
+ *    X
+ *  1 - 3 *)
 let butterfly =
   let order = Builder.create () |> TypeOrder.handler in
   insert order Type.Bottom;
@@ -119,10 +119,10 @@ let butterfly =
 
 
 (*          0 - 3
-            |   |   \
-            BOTTOM  - b - 1      TOP
-            |  \       /
-            4 -- 2 ---           *)
+ *          |   |   \
+ *          BOTTOM  - b - 1      TOP
+ *          |  \       /
+ *          4 -- 2 ---           *)
 let order =
   let bottom = !"bottom" in
   let order = Builder.create () |> TypeOrder.handler in
@@ -149,15 +149,15 @@ let order =
 
 
 (*
-   TOP
-    |
-    A
-   / \
-  B   C
-   \ /
-    D
-    |
- BOTTOM
+ *   TOP
+ *    |
+ *    A
+ *   / \
+ *  B   C
+ *   \ /
+ *    D
+ *    |
+ * BOTTOM
 *)
 let diamond_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -185,15 +185,15 @@ let disconnected_order =
   order
 
 (*
-   TOP
-    |
-    A
-   /|
-  B |
-   \|
-    C
-    |
- BOTTOM
+ *   TOP
+ *    |
+ *    A
+ *   /|
+ *  B |
+ *   \|
+ *    C
+ *    |
+ * BOTTOM
 *)
 let triangle_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -284,28 +284,28 @@ let variance_order =
 (* A much more complicated set of rules, to explore the full combination of generic types.
    These rules define a situation like this:
 
-   _T_co = covariant
-   _T_contra = contravariant
+ * _T_co = covariant
+ * _T_contra = contravariant
 
-   class A(Generic[_T_co, _T_contra])
-   class B(A[_T_contra, _T_co])
+ * class A(Generic[_T_co, _T_contra])
+ * class B(A[_T_contra, _T_co])
 
-   Hence the graph:
+ * Hence the graph:
 
-      /--  A[int, int]    <  A[float, int]  ----\
-      |         V                   V           |
-   /--|--  A[int, float]  <  A[float, float]  --|---\
-   |  V                                         V   |
-   |  |                                         |   |
-   V  \--  B[int, int]    >  B[float, int]  ----/   V
-   |            ^                   ^               |
-   \----   B[int, float]  >  B[float, float]  ------/
+ *     /--  A[int, int]    <  A[float, int]  ----\
+ *     |         V                   V           |
+ *  /--|--  A[int, float]  <  A[float, float]  --|---\
+ *  |  V                                         V   |
+ *  |  |                                         |   |
+ *  V  \--  B[int, int]    >  B[float, int]  ----/   V
+ *  |            ^                   ^               |
+ *  \----   B[int, float]  >  B[float, float]  ------/
 
 
-   Additionally, classes C and D are defined as follows:
+ * Additionally, classes C and D are defined as follows:
 
-   class C(B[int, int])
-   class D(B[float, float])
+ * class C(B[int, int])
+ * class D(B[float, float])
 *)
 let multiplane_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -365,28 +365,28 @@ let multiplane_variance_order =
 (* A type order where types A and B have parallel planes.
    These rules define a situation like this:
 
-   _T_co = covariant
-   _T_contra = contravariant
+ *  _T_co = covariant
+ * _T_contra = contravariant
 
-   class A(Generic[_T_co, _T_contra])
-   class B(A[_T_co, _T_contra])
+ * class A(Generic[_T_co, _T_contra])
+ * class B(A[_T_co, _T_contra])
 
-   Hence the graph:
+ *  Hence the graph:
 
-      /--  A[int, int]    <  A[float, int]  ----\
-      |         V                   V           |
-   /--|--  A[int, float]  <  A[float, float]  --|---\
-   |  V                                         V   |
-   |  |                                         |   |
-   V  \--  B[int, int]    <  B[float, int]  ----/   V
-   |            V                   V               |
-   \----   B[int, float]  <  B[float, float]  ------/
+ *      /--  A[int, int]    <  A[float, int]  ----\
+ *      |         V                   V           |
+ *   /--|--  A[int, float]  <  A[float, float]  --|---\
+ *   |  V                                         V   |
+ *   |  |                                         |   |
+ *   V  \--  B[int, int]    <  B[float, int]  ----/   V
+ *   |            V                   V               |
+ *   \----   B[int, float]  <  B[float, float]  ------/
 
 
-   Additionally, classes C and D are defined as follows:
+ * Additionally, classes C and D are defined as follows:
 
-   class C(B[int, int])
-   class D(B[float, float])
+ * class C(B[int, int])
+ * class D(B[float, float])
 *)
 let parallel_planes_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
@@ -675,17 +675,17 @@ let test_method_resolution_order_linearize _ =
 
 let test_successors _ =
   (* Butterfly:
-      0 - 2
-        X
-      1 - 3 *)
+   *  0 - 2
+   *    X
+   *  1 - 3 *)
   assert_equal (successors butterfly "3") [];
   assert_equal (successors butterfly "0") ["3"; "2"];
 
   (*          0 - 3
-              /   /   \
-              BOTTOM - 1      TOP
-              |  \       /
-              4 -- 2 ---           *)
+   *          /   /   \
+   *          BOTTOM - 1      TOP
+   *          |  \       /
+   *          4 -- 2 ---           *)
   assert_equal (successors order "3") [];
   assert_equal (successors order "0") ["3"];
   assert_equal
@@ -2688,13 +2688,13 @@ let test_meet _ =
 
   let make_potentially_inconsistent_order ~x_before_y =
     (* Corresponds to
-       T = typing.TypeVar("T")
-       T1 = typing.TypeVar("T1")
-       class B(typing.Generic[T, T1]): pass
-       class A(typing.Generic[T]): pass
-       class X(B[T, str]): pass
-       class Y(B[int, str]): pass
-       class M(A[T], X[T], Y[T]): pass *)
+     *  T = typing.TypeVar("T")
+     * T1 = typing.TypeVar("T1")
+     * class B(typing.Generic[T, T1]): pass
+     * class A(typing.Generic[T]): pass
+     * class X(B[T, str]): pass
+     * class Y(B[int, str]): pass
+     * class M(A[T], X[T], Y[T]): pass *)
 
     let order = Builder.create () |> TypeOrder.handler in
 
@@ -2896,8 +2896,8 @@ let test_deduplicate _ =
 
 let test_remove_extra_edges _ =
   (* 0 -> 1 -> 2 -> 3
-     |----^         ^
-     |--------------^
+   *  |----^         ^
+   *  |--------------^
   *)
   let (module Handler: TypeOrder.Handler) =
     let order = Builder.create () |> TypeOrder.handler in
@@ -2928,9 +2928,9 @@ let test_remove_extra_edges _ =
 
 let test_connect_annotations_to_top _ =
   (* Partial partial order:
-      0 - 2
-      |
-      1   3 *)
+   *  0 - 2
+   *  |
+   *  1   3 *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
@@ -2957,9 +2957,9 @@ let test_connect_annotations_to_top _ =
 
 let test_sort_bottom_edges _ =
   (* Partial partial order:
-      0 - 2
-      |
-      1   3 *)
+   *  0 - 2
+   *  |
+   *  1   3 *)
   let (module Handler: Handler) =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
@@ -3055,9 +3055,9 @@ let test_check_integrity _ =
   assert_raises TypeOrder.Cyclic (fun _ -> check_integrity order);
 
   (* 0 -> 1
-     ^    |
-      \   v
-     .  - 2 -> 3 *)
+   * ^    |
+   *  \   v
+   * .  - 2 -> 3 *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     insert order Type.Bottom;
@@ -3570,7 +3570,7 @@ let test_solve_less_or_equal _ =
     [["T_C_Q_int", "T_C_Q"]];
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
-     T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
+   *  T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
   assert_solve
     ~left:"T_D_Q"
     ~right:"T_C_Q_int"

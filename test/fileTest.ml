@@ -99,11 +99,11 @@ let test_handle _ =
 
 let test_handle_to_path context =
   (* Set up a directory structure that looks like this:
-     /local/a.py
-     /local/matching.py
-     /other/b.py
-     /other/matching.py
-     /virtualEnv/importMe/a.py
+   * /local/a.py
+   * /local/matching.py
+   * /other/b.py
+   * /other/matching.py
+   * /virtualEnv/importMe/a.py
   *)
   let local_root =
     bracket_tmpdir context

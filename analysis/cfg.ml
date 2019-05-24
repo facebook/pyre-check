@@ -252,11 +252,11 @@ let create ?(convert = false) define =
     match statements with
     | { Ast.Node.value = For ({ For.body; orelse; _ } as loop); _ } :: statements ->
         (*       ____________
-                 v          |
-                 -> [split] -> [preamble; body]
-                 | \_________
-                 v          v
-                 [orelse] -> [join] -> *)
+         *       v          |
+         *       -> [split] -> [preamble; body]
+         *       | \_________
+         *       v          v
+         *       [orelse] -> [join] -> *)
         let split = Node.empty graph (Node.For loop) in
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
@@ -277,9 +277,9 @@ let create ?(convert = false) define =
     | ({ Ast.Node.value = If ({ If.test; body; orelse; _ } as conditional); _ } as statement)
       :: statements ->
         (* -> [split] -> [body]
-                 |          |
-                 v          v
-              [orelse] -> [join] -> *)
+         *       |          |
+         *       v          v
+         *    [orelse] -> [join] -> *)
         let split = Node.empty graph (Node.If conditional) in
         let join = Node.empty graph Node.Join in
         Node.connect predecessor split;
@@ -325,24 +325,24 @@ let create ?(convert = false) define =
            executed, regardless of the exit path (normal, return, or error), and we need to
            preserve the state that got us into the "finally".
 
-           I.e., even if all three "finally" blocks jump to the global error in case of errors,
+         * I.e., even if all three "finally" blocks jump to the global error in case of errors,
            and jump to the global return in case of a return exit, their normal exit depends on
            whether we are executing finally after dispatch, after body/orelse, or after the
            return block.
 
-           -> [split] -> [body] -> [orelse] -> [finally; exit node] -> next
-                 |         |            |           ^                  statements
-                 |  -------/            | (on       |
-                 |  | (on error)        | error)    |
-                 V  V                   |           |
-             [dispatch] --> [handler1] -+-----------|
-                 |      --> [handler2] -+-----------/
-                 |              |       |
-                 |  ------------/       |     (from all nodes on normal exit)
-                 V  V  (on error)       |               |
-             [uncaught; finally] <------/          [finally; return exit]
-                 |                                      |
-             [global error exit]                   [global normal exit]
+         * -> [split] -> [body] -> [orelse] -> [finally; exit node] -> next
+         *       |         |            |           ^                  statements
+         *       |  -------/            | (on       |
+         *       |  | (on error)        | error)    |
+         *       V  V                   |           |
+         *   [dispatch] --> [handler1] -+-----------|
+         *       |      --> [handler2] -+-----------/
+         *       |              |       |
+         *       |  ------------/       |     (from all nodes on normal exit)
+         *       V  V  (on error)       |               |
+         *   [uncaught; finally] <------/          [finally; return exit]
+         *       |                                      |
+         *   [global error exit]                   [global normal exit]
         *)
         let finally () =
           let entry =
@@ -407,11 +407,11 @@ let create ?(convert = false) define =
 
     | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->
         (*       ____________
-                 v          |
-                 -> [split] -> [body]
-                 | \_________
-                 v          v
-                 [orelse] -> [join] -> *)
+         *       v          |
+         *       -> [split] -> [body]
+         *       | \_________
+         *       v          v
+         *       [orelse] -> [join] -> *)
         let split = Node.empty graph (Node.While loop) in
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
@@ -431,12 +431,12 @@ let create ?(convert = false) define =
 
     | statement :: statements ->
         (* -> [statement] ->
-                 |      \        ^
-                 |       ?       |
-                 |    [yield] -- |
-                 |
-                 ?
-           [break | continue | error | normal ] *)
+         *       |      \        ^
+         *       |       ?       |
+         *       |    [yield] -- |
+         *       |
+         *       ?
+         * [break | continue | error | normal ] *)
         let node =
           match predecessor.Node.kind with
           | Node.Block statements ->

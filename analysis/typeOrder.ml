@@ -627,6 +627,7 @@ module OrderImplementation = struct
        At the heart of our handling of generics is this function, solve_less_or_equal.
 
        This function takes:
+
          * a statement of the form F(T1, T2, ... Tn) =<= G(T1, T2, ... Tn), where F and G are types
            which may contain any number of free type variables.
            In this context a free type variable is one whose value we are trying to determine.
@@ -634,11 +635,14 @@ module OrderImplementation = struct
            incomplete initialization, or even some sort of synthetic type variable we're using to
            answer a question like, "if this is an iterable, what kind of iterable is it?" for
            correctly handling *args parameters.
+
          * a precondition set of constraints (as defined in TypeConstraints.mli) from a previous
            call to solve_less_or_equal (or from somewhere else).  This is how you're able to define
            conjunctions of =<= statements, as when you are trying to satisfy a number of
            argument <-> parameter pairs in signature selection
+
        and returns:
+
          * an arbitrarily ordered list of constraints (again as defined in Typeconstraints.mli) that
            each are sufficient to satisfy the given statement and the precondition constraints.  If
            this list is empty, there is no way to satify those requirements (at least as well as
