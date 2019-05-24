@@ -883,6 +883,7 @@ let test_less_or_equal _ =
         | _ ->
             None
       in
+      let aliases = create_true_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
     connect
@@ -1107,6 +1108,7 @@ let test_less_or_equal _ =
                   ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
+    let aliases = create_true_alias_table aliases in
     less_or_equal
       ?attributes
       ?is_protocol
@@ -1431,6 +1433,7 @@ let test_less_or_equal _ =
       | "_T" -> Some (Type.variable "_T")
       | _ -> None
     in
+    let aliases = create_true_alias_table aliases in
     parse_callable ~aliases
   in
   let is_protocol = function
@@ -2075,6 +2078,7 @@ let test_join _ =
         | _ ->
             None
       in
+      let aliases = create_true_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
     connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
@@ -2099,6 +2103,7 @@ let test_join _ =
     ]
     |> Identifier.Table.find
   in
+  let aliases = create_true_alias_table aliases in
 
   assert_join
     ~order
@@ -2380,6 +2385,7 @@ let test_join _ =
     ]
     |> Identifier.Table.find
   in
+  let variance_aliases = create_true_alias_table variance_aliases in
   assert_join
     ~order:variance_order
     ~aliases:variance_aliases

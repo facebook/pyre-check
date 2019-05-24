@@ -16,7 +16,7 @@ type t = {
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
-  aliases: Type.t Identifier.Table.t;
+  aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
   undecorated_functions: (Type.t Type.Callable.overload) Reference.Table.t;
@@ -35,7 +35,7 @@ module type Handler = sig
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Identifier.t -> unit
-  val register_alias: handle: File.Handle.t -> key: Identifier.t -> data: Type.t -> unit
+  val register_alias: handle: File.Handle.t -> key: Identifier.t -> data: Type.alias -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val class_definition: ?convert: bool -> Identifier.t -> Class.t Node.t option
@@ -53,7 +53,7 @@ module type Handler = sig
   val module_definition: Reference.t -> Module.t option
 
   val in_class_definition_keys: Identifier.t -> bool
-  val aliases: Identifier.t -> Type.t option
+  val aliases: Identifier.t -> Type.alias option
   val globals: Reference.t -> Resolution.global option
   val undecorated_signature: Reference.t -> Type.t Type.Callable.overload option
   val dependencies: Reference.t -> Reference.Set.Tree.t option
@@ -75,7 +75,7 @@ end
 
 
 module ResolvedAlias = struct
-  type t = { handle: File.Handle.t; name: Type.primitive; annotation: Type.t }
+  type t = { handle: File.Handle.t; name: Type.primitive; annotation: Type.alias }
   [@@deriving sexp, compare, hash]
 
   let register (module Handler: Handler) { handle; name; annotation } =
@@ -513,13 +513,23 @@ let collect_aliases (module Handler: Handler) { Source.handle; statements; quali
           | Call _, None
           | Name _, None ->
               let value = Expression.delocalize value in
-              let value_annotation = Type.create ~aliases:Handler.aliases value in
-              if not (Type.is_top target_annotation ||
-                      Type.is_top value_annotation ||
-                      Type.equal value_annotation target_annotation) then
-                { UnresolvedAlias.handle; target; value } :: aliases
-              else
-                aliases
+              begin
+                match Type.Variable.Variadic.Parameters.parse_declaration value with
+                | Some variable ->
+                    Handler.register_alias
+                      ~handle
+                      ~key:(Reference.show target)
+                      ~data:(Type.VariableAlias variable);
+                    aliases
+                | None ->
+                    let value_annotation = Type.create ~aliases:Handler.aliases value in
+                    if not (Type.is_top target_annotation ||
+                            Type.is_top value_annotation ||
+                            Type.equal value_annotation target_annotation) then
+                      { UnresolvedAlias.handle; target; value } :: aliases
+                    else
+                      aliases
+              end
           | _ ->
               aliases
         end
@@ -625,7 +635,8 @@ let resolve_alias (module Handler: Handler) { UnresolvedAlias.handle; target; va
   in
   let _, annotation = TrackedTransform.visit () value_annotation in
   if Hash_set.is_empty dependencies then
-    Result.Ok { ResolvedAlias.handle; name = target_primitive_name; annotation = annotation }
+    Result.Ok
+      { ResolvedAlias.handle; name = target_primitive_name; annotation = Type.TypeAlias annotation }
   else
     Result.Error (Hash_set.to_list dependencies)
 
@@ -973,7 +984,10 @@ let propagate_nested_classes (module Handler: Handler) resolution annotation =
       else
         begin
           let primitive name = Type.Primitive (Reference.show name) in
-          Handler.register_alias ~handle ~key:(Reference.show alias) ~data:(primitive full_name);
+          Handler.register_alias
+            ~handle
+            ~key:(Reference.show alias)
+            ~data:(Type.TypeAlias (primitive full_name));
           alias :: added_sofar
         end
     in
@@ -1130,21 +1144,21 @@ module Builder = struct
     Hashtbl.set
       aliases
       ~key:"typing.DefaultDict"
-      ~data:(Type.Primitive "collections.defaultdict");
+      ~data:(Type.TypeAlias (Type.Primitive "collections.defaultdict"));
     Hashtbl.set
       aliases
       ~key:"None"
-      ~data:(Type.Optional Type.Bottom);
+      ~data:(Type.TypeAlias (Type.Optional Type.Bottom));
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set
       aliases
       ~key:"PathLike"
-      ~data:(Type.Primitive "_PathLike");
+      ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));
     Hashtbl.set
       aliases
       ~key:"TSelf"
-      ~data:(Type.variable "_PathLike");
+      ~data:(Type.TypeAlias (Type.variable "_PathLike"));
 
     TypeOrder.insert
       (TypeOrder.handler order)
@@ -1204,7 +1218,7 @@ module Builder = struct
         Format.asprintf
           "  %a -> %a"
           Identifier.pp key
-          Type.pp data in
+          Type.pp_alias data in
       Hashtbl.to_alist aliases
       |> List.map ~f:alias
       |> String.concat ~sep:"\n" in

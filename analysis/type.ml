@@ -942,11 +942,11 @@ let rec expression ?(convert = false) annotation =
       callee = {
         Node.location;
         value = Name (
-          Name.Attribute {
-            base = { Node.location; value = create_name base };
-            attribute = "__getitem__";
-            special = true;
-          });
+            Name.Attribute {
+              base = { Node.location; value = create_name base };
+              attribute = "__getitem__";
+              special = true;
+            });
       };
       arguments;
     }
@@ -1026,12 +1026,12 @@ let rec expression ?(convert = false) annotation =
             callee = {
               Node.location;
               value = Name (
-                Name.Attribute {
-                  base = { Node.location; value = create_name "typing.Callable" };
-                  attribute = "__getitem__";
-                  special = true;
-                }
-              );
+                  Name.Attribute {
+                    base = { Node.location; value = create_name "typing.Callable" };
+                    attribute = "__getitem__";
+                    special = true;
+                  }
+                );
             };
             arguments = [convert_signature implementation];
           };
@@ -1516,14 +1516,18 @@ let primitive_substitution_map =
   |> Identifier.Table.of_alist_exn
 
 
-let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
+let rec create_logic
+    ?(use_cache=true)
+    ~aliases
+    ~parameter_variadic_declarations
+    { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result when use_cache ->
       result
   | _ ->
       let result =
         let result =
-          let create_logic = create_logic ~use_cache ~aliases in
+          let create_logic = create_logic ~use_cache ~aliases ~parameter_variadic_declarations in
           let resolve_aliases annotation =
             let visited = Hash_set.create () in
             let module ResolveTransform = Transform.Make(struct
@@ -1760,8 +1764,10 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
                     match Node.value parameters with
                     | List parameters ->
                         Defined (List.mapi ~f:extract_parameter parameters)
-                    | _ ->
-                        Undefined
+                    | _  ->
+                        parameter_variadic_declarations (Expression.show parameters)
+                        >>| (fun variable -> ParameterVariadicTypeVariable variable)
+                        |> Option.value ~default:Undefined
                   in
                   { annotation = create_logic annotation; parameters }
               | _ ->
@@ -2109,12 +2115,28 @@ let rec create_logic ?(use_cache=true) ~aliases { Node.value = expression; _ } =
       result
 
 
+type alias =
+  | TypeAlias of t
+  | VariableAlias of Record.Variable.RecordVariadic.RecordParameters.record
+[@@deriving compare, eq, sexp, show, hash]
+
+
 let create ~aliases =
-  let aliases = function
-    | Primitive name -> aliases name
+  let parameter_variadic_declarations name =
+    match aliases name with
+    | Some (VariableAlias variable) -> Some variable
     | _ -> None
   in
-  create_logic ~use_cache:true ~aliases
+  let aliases = function
+    | Primitive name ->
+        begin
+          match aliases name with
+          | Some (TypeAlias alias) -> Some alias
+          | _ -> None
+        end
+    | _ -> None
+  in
+  create_logic ~use_cache:true ~aliases ~parameter_variadic_declarations
 
 let contains_callable annotation =
   exists annotation ~predicate:is_callable
@@ -2500,6 +2522,7 @@ module Variable: sig
       include VariableKind with type t = parameter_variadic_t and type domain = Callable.parameters
       val name: t -> Identifier.t
       val create: string -> t
+      val parse_declaration: Expression.t -> t option
     end
   end
   module GlobalTransforms: sig
@@ -2841,6 +2864,29 @@ end = struct
 
       let dequalify ({ name; _ } as variable) ~dequalify_map =
         { variable with name = dequalify_identifier dequalify_map name}
+
+      let parse_declaration = function
+        | {
+          Node.value = Call {
+              callee = {
+                Node.value = Name (
+                    Name.Attribute {
+                      base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                      attribute = "CallableParameterTypeVariable";
+                      special = false;
+                    });
+                _;
+              };
+              arguments = [{
+                  Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                  _;
+                }];
+            };
+          _;
+        } ->
+            Some (create value)
+        | _ ->
+            None
     end
   end
 

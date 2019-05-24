@@ -59,8 +59,8 @@ let rec coerce_special_methods { Node.location; value } =
       {
         Node.location;
         value = Name (
-          Name.Attribute { name with base = coerce_special_methods base; special = true }
-        );
+            Name.Attribute { name with base = coerce_special_methods base; special = true }
+          );
       }
   | Call { callee; arguments } ->
       { Node.location; value = Call { callee = coerce_special_methods callee; arguments} }
@@ -193,13 +193,13 @@ let parse
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed
-        ~handle
-        ~qualifier
-        ~debug
-        ~version
-        ~docstring
-        ~convert
-        ~coerce_special_methods
+      ~handle
+      ~qualifier
+      ~debug
+      ~version
+      ~docstring
+      ~convert
+      ~coerce_special_methods
   in
   match local_mode with
   | Some local_mode ->
@@ -283,7 +283,7 @@ let parse_callable ?name ?(aliases = fun _ -> None) callable =
   in
   match name, callable with
   | Some name, Type.Callable callable ->
-    Type.Callable { callable with Type.Callable.kind = Named name }
+      Type.Callable { callable with Type.Callable.kind = Named name }
   | _ ->
       callable
 
@@ -1245,3 +1245,11 @@ let assert_errors
     ~printer:(String.concat ~sep:"\n")
     errors
     descriptions
+
+
+let create_true_alias_table true_aliases =
+  let aliases primitive =
+    true_aliases primitive
+    >>| (fun alias -> Type.TypeAlias alias)
+  in
+  aliases

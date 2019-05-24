@@ -742,9 +742,9 @@ let test_query context =
             (3, 15, 3, 16, Type.literal_integer 2);
             (3, 11, 3, 17, Type.list Type.integer);
             (3, 6, 3, 7,
-              parse_callable
-                ~name:(Reference.create "list.__iter__")
-                "typing.Callable[[], typing.Iterator[int]]");
+             parse_callable
+               ~name:(Reference.create "list.__iter__")
+               "typing.Callable[[], typing.Iterator[int]]");
             (4, 3, 4, 4, Type.literal_integer 1);
             (4, 7, 4, 8, Type.literal_integer 1);
           ] |> create_types_at_locations)
@@ -872,9 +872,9 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ([
             (2, 4, 2, 5,
-              parse_callable
-                ~name:(Reference.create "list.__iter__")
-                "typing.Callable[[], typing.Iterator[int]]");
+             parse_callable
+               ~name:(Reference.create "list.__iter__")
+               "typing.Callable[[], typing.Iterator[int]]");
             (2, 13, 2, 14, Type.literal_integer 2);
             (2, 10, 2, 11, Type.literal_integer 1);
             (2, 9, 2, 15, Type.list Type.integer)
@@ -1343,8 +1343,8 @@ let test_decode_serialized_ocaml_values context =
       Some {|{"successors":"(str)","is_test":false,"is_final":false}|});
   assert_decode
     ~key:(Aliases.serialize_key "my_integer")
-    ~value:Type.integer
-    ~response:("Alias", "my_integer", Some "int");
+    ~value:(Type.TypeAlias Type.integer)
+    ~response:("Alias", "my_integer", Some "(Type.TypeAlias int)");
   assert_decode
     ~key:(Globals.serialize_key (!&"string_global"))
     ~value:(
@@ -1474,14 +1474,14 @@ let test_decode_serialized_ocaml_values context =
   in
   assert_decode_pair
     ~key:(Aliases.serialize_key "my_integer")
-    ~first:Type.integer
-    ~second:Type.string
+    ~first:(Type.TypeAlias Type.integer)
+    ~second:(Type.TypeAlias Type.string)
     ~response:(TypeQuery.DecodedPair {
         serialized_key = Aliases.serialize_key "my_integer";
         kind = "Alias";
         actual_key = "my_integer";
-        first_value = Some "int";
-        second_value = Some "str";
+        first_value = Some "(Type.TypeAlias int)";
+        second_value = Some "(Type.TypeAlias str)";
         equal = false;
       });
   assert_decode_pair

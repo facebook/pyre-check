@@ -1411,8 +1411,12 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iterator; attribute = "__aiter__"; special = true }
-                      );
+                          Name.Attribute {
+                            base = iterator;
+                            attribute = "__aiter__";
+                            special = true;
+                          }
+                        );
                     };
                     arguments = [];
                   };
@@ -1424,8 +1428,8 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = aiter; attribute = "__anext__"; special = true }
-                    );
+                        Name.Attribute { base = aiter; attribute = "__anext__"; special = true }
+                      );
                   };
                   arguments = [];
                 };
@@ -1439,8 +1443,8 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iterator; attribute = "__iter__"; special = true }
-                      );
+                          Name.Attribute { base = iterator; attribute = "__iter__"; special = true }
+                        );
                     };
                     arguments = [];
                   };
@@ -1452,8 +1456,8 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = iter; attribute = "__next__"; special = true }
-                    );
+                        Name.Attribute { base = iter; attribute = "__next__"; special = true }
+                      );
                   };
                   arguments = [];
                 };
@@ -2046,8 +2050,8 @@ module State(Context: Context) = struct
           callee = {
             Node.location;
             value = Name (
-              Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = true }
-            );
+                Name.Attribute { base = value; attribute = "__" ^ name ^ "__"; special = true }
+              );
           };
           arguments = [];
         }
@@ -2238,8 +2242,8 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = right; attribute = "__contains__"; special = true }
-                    );
+                        Name.Attribute { base = right; attribute = "__contains__"; special = true }
+                      );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2252,8 +2256,8 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = right; attribute = "__iter__"; special = true }
-                      );
+                          Name.Attribute { base = right; attribute = "__iter__"; special = true }
+                        );
                     };
                     arguments = [];
                   };
@@ -2266,8 +2270,8 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = iter; attribute = "__next__"; special = true }
-                      );
+                          Name.Attribute { base = iter; attribute = "__next__"; special = true }
+                        );
                     };
                     arguments = [];
                   };
@@ -2279,8 +2283,8 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = next; attribute = "__eq__"; special = true }
-                    );
+                        Name.Attribute { base = next; attribute = "__eq__"; special = true }
+                      );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2293,8 +2297,8 @@ module State(Context: Context) = struct
                     callee = {
                       Node.location;
                       value = Name (
-                        Name.Attribute { base = right; attribute = "__getitem__"; special = true }
-                      );
+                          Name.Attribute { base = right; attribute = "__getitem__"; special = true }
+                        );
                     };
                     arguments = [
                       {
@@ -2311,8 +2315,8 @@ module State(Context: Context) = struct
                   callee = {
                     Node.location;
                     value = Name (
-                      Name.Attribute { base = getitem; attribute = "__eq__"; special = true }
-                    );
+                        Name.Attribute { base = getitem; attribute = "__eq__"; special = true }
+                      );
                   };
                   arguments = [{ Call.Argument.name = None; value = left }];
                 };
@@ -2843,9 +2847,12 @@ module State(Context: Context) = struct
           | _ ->
               begin
                 match parsed with
-                | Type.Top -> false
-                | Type.Optional Type.Bottom -> false
-                | annotation -> not (Resolution.contains_untracked resolution annotation)
+                | Type.Top ->
+                    Option.is_some (Type.Variable.Variadic.Parameters.parse_declaration value)
+                | Type.Optional Type.Bottom ->
+                    false
+                | annotation ->
+                    not (Resolution.contains_untracked resolution annotation)
               end
         in
         let state, resolved =

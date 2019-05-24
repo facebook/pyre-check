@@ -61,7 +61,7 @@ type t = {
   order: (module TypeOrder.Handler);
 
   resolve: resolution: t -> Expression.t -> Type.t;
-  aliases: Type.primitive -> Type.t option;
+  aliases: Type.primitive -> Type.alias option;
 
   global: Reference.t -> global option;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
@@ -505,9 +505,13 @@ let parse_annotation
     if allow_invalid_type_parameters then
       aliases name
     else
-      aliases name
-      >>| check_invalid_type_parameters resolution
-      >>| snd
+      match aliases name with
+      | Some (Type.TypeAlias alias) ->
+          check_invalid_type_parameters resolution alias
+          |> snd
+          |> (fun alias -> Some (Type.TypeAlias alias))
+      | result ->
+          result
   in
   let parsed = Type.create ~aliases expression in
   let constraints = function

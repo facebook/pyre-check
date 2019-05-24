@@ -258,8 +258,13 @@ module Callable : sig
   val create_from_implementation: type_t overload -> type_t
 end
 
+type alias =
+  | TypeAlias of t
+  | VariableAlias of Record.Variable.RecordVariadic.RecordParameters.record
+[@@deriving compare, eq, sexp, show, hash]
+
 val create
-  :  aliases:(primitive -> t option)
+  :  aliases:(primitive -> alias option)
   -> Expression.t
   -> t
 
@@ -396,6 +401,7 @@ module Variable : sig
       include VariableKind with type t = parameter_variadic_t and type domain = Callable.parameters
       val name: t -> Identifier.t
       val create: string -> t
+      val parse_declaration: Expression.t -> t option
     end
   end
   module GlobalTransforms: sig

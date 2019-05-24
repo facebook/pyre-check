@@ -80,7 +80,7 @@ module ClassMetadataValue = struct
 end
 
 module AliasValue = struct
-  type t = Type.t
+  type t = Type.alias
   let prefix = Prefix.make ()
   let description = "Alias"
 end

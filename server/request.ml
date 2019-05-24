@@ -594,7 +594,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               in
               Some (ClassMetadataValue.description, key, value)
           | (Aliases.Decoded (key, value)) ->
-              Some (AliasValue.description, key, value >>| Type.show)
+              Some (AliasValue.description, key, value >>| Type.show_alias)
           | (Globals.Decoded (key, value)) ->
               let value =
                 value
@@ -786,7 +786,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                       | (ClassMetadata.Decoded (_, first)), (ClassMetadata.Decoded (_, second)) ->
                           Option.equal Resolution.equal_class_metadata first second
                       | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
-                          Option.equal Type.equal first second
+                          Option.equal Type.equal_alias first second
                       | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
                           Option.equal
                             Annotation.equal

@@ -13,7 +13,7 @@ type t = {
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   order: TypeOrder.t;
-  aliases: Type.t Identifier.Table.t;
+  aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
   undecorated_functions: Type.t Type.Callable.overload Reference.Table.t;
@@ -36,7 +36,7 @@ module type Handler = sig
     -> unit
   val set_class_definition: name: Identifier.t -> definition: Class.t Node.t -> unit
   val register_class_metadata: Identifier.t -> unit
-  val register_alias: handle: File.Handle.t -> key: Identifier.t -> data: Type.t -> unit
+  val register_alias: handle: File.Handle.t -> key: Identifier.t -> data: Type.alias -> unit
   val purge: ?debug: bool -> File.Handle.t list -> unit
 
   val class_definition: ?convert: bool -> Identifier.t -> Class.t Node.t option
@@ -54,7 +54,7 @@ module type Handler = sig
   val module_definition: Reference.t -> Module.t option
 
   val in_class_definition_keys: Identifier.t -> bool
-  val aliases: Identifier.t -> Type.t option
+  val aliases: Identifier.t -> Type.alias option
   val globals: Reference.t -> Resolution.global option
   val undecorated_signature: Reference.t -> Type.t Type.Callable.overload option
   val dependencies: Reference.t -> Reference.Set.Tree.t option

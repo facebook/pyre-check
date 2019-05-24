@@ -781,6 +781,56 @@ let test_nested_variable_error _ =
   ()
 
 
+let test_callable_parameter_variadics _ =
+  assert_type_errors
+    {|
+      from typing import Callable
+      V = typing_extensions.CallableParameterTypeVariable("V")
+      def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]: ...
+      def foo(x: int) -> int:
+        return 7
+      def bar(x: int, y: str) -> int:
+        return 7
+      def g() -> None:
+         reveal_type(f(foo))
+         reveal_type(f(bar))
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f.(...)` is `typing.Callable[[Named(x, int)], " ^
+      "typing.List[int]]`.";
+      "Revealed type [-1]: Revealed type for `f.(...)` is `typing.Callable[[Named(x, int), " ^
+      "Named(y, str)], typing.List[int]]`.";
+    ];
+  assert_type_errors
+    {|
+      V = typing_extensions.CallableParameterTypeVariable("V")
+      class Propagating(typing.List[typing.Callable[V, int]]):
+         def foo(self) -> int: ...
+    |}
+    [
+      "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  " ^
+      "Classes parameterized by callable parameter variadics are not supported at this time";
+    ];
+  (* We really don't support typechecking the bodies of these decorators yet *)
+  assert_type_errors
+    {|
+      from typing import Callable
+      V = typing_extensions.CallableParameterTypeVariable("V")
+      def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
+        def decorated( *args: object, **kwargs: object) -> typing.List[int]:
+          return [x( *args, **kwargs)]
+        return decorated
+    |}
+    [
+      "Call error [29]: `typing.Callable[V, int]` cannot be safely called because the types " ^
+      "and kinds of its parameters depend on a type variable.";
+      "Incompatible return type [7]: Expected `typing.Callable[V, typing.List[int]]` but " ^
+      "got `typing.Callable(f.decorated)[[Variable(args, object), " ^
+      "Keywords(kwargs, object)], typing.List[int]]`.";
+    ];
+  ()
+
+
 let () =
   "typeVariable">:::[
     "check_unbounded_variables">::test_check_unbounded_variables;
@@ -789,5 +839,6 @@ let () =
     "distinguish">::test_distinguish;
     "integer_variables">::test_integer_variables;
     "nested_variable_error">::test_nested_variable_error;
+    "callable_parameter_variadics">::test_callable_parameter_variadics;
   ]
   |> Test.run
