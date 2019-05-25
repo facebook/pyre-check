@@ -4,35 +4,28 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Pyre
-
 
 type result = {
   handles: File.Handle.t list;
   environment: (module Analysis.Environment.Handler);
-  errors: Analysis.Error.t list;
+  errors: Analysis.Error.t list
 }
 
-
-(** Internal result type; not exposed. *)
 type analyze_source_results = {
   errors: Analysis.Error.t list;
-  number_files: int;
+  number_files: int
 }
-
+(** Internal result type; not exposed. *)
 
 let analyze_sources
     ~scheduler
-    ~configuration:({
-        Configuration.Analysis.local_root;
-        filter_directories;
-        ignore_all_errors;
-        _;
-      } as configuration)
+    ~configuration:( { Configuration.Analysis.local_root; filter_directories; ignore_all_errors; _ }
+                   as configuration )
     ~environment
-    ~handles =
+    ~handles
+  =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ();
@@ -43,12 +36,9 @@ let analyze_sources
         Path.directory_contains ~follow_symlinks:true ~directory handle
       in
       let should_keep =
-        filter_directories
-        >>| List.exists ~f:directory_contains
-        |> Option.value ~default:true
+        filter_directories >>| List.exists ~f:directory_contains |> Option.value ~default:true
       in
-      if should_keep then
-        (* If ignore_all_errors is None, default to not filtering. *)
+      if should_keep then (* If ignore_all_errors is None, default to not filtering. *)
         ignore_all_errors
         >>| (fun directories -> not (List.exists directories ~f:directory_contains))
         |> Option.value ~default:true
@@ -59,15 +49,14 @@ let analyze_sources
       let path = File.Handle.to_path ~configuration handle in
       match path with
       | Some path ->
-          (* Only analyze handles which live directly under the source root - in case we have
-             a search path or typeshed under the source root, we don't want to analyze them
-             since they're not part of a user's project. *)
+          (* Only analyze handles which live directly under the source root - in case we have a
+             search path or typeshed under the source root, we don't want to analyze them since
+             they're not part of a user's project. *)
           Path.equal
             path
-            (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle)) &&
-          filter_by_directories path
-      | _ ->
-          false
+            (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle))
+          && filter_by_directories path
+      | _ -> false
     in
     Scheduler.map_reduce
       scheduler
@@ -80,12 +69,11 @@ let analyze_sources
     |> List.sort ~compare:File.Handle.compare
   in
   Statistics.performance ~name:"filtered directories" ~timer ();
-
   let errors =
     let timer = Timer.start () in
     let empty_result = { errors = []; number_files = 0 } in
     Log.info "Checking %d sources..." (List.length handles);
-    let run (module Check: Analysis.Check.Signature) =
+    let run (module Check : Analysis.Check.Signature) =
       Log.info "Running check `%s`..." Check.name;
       let timer = Timer.start () in
       let map _ handles =
@@ -96,25 +84,15 @@ let analyze_sources
           match SharedMemory.Sources.get handle with
           | Some source ->
               let new_errors = Check.run ~configuration ~environment ~source in
-              {
-                errors = List.append new_errors errors;
-                number_files = number_files + 1;
-              }
-          | _ ->
-              {
-                errors;
-                number_files = number_files + 1;
-              }
+              { errors = List.append new_errors errors; number_files = number_files + 1 }
+          | _ -> { errors; number_files = number_files + 1 }
         in
         List.fold handles ~init:empty_result ~f:analyze_source
       in
       let reduce left right =
         let number_files = left.number_files + right.number_files in
         Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
-        {
-          errors = List.append left.errors right.errors;
-          number_files;
-        }
+        { errors = List.append left.errors right.errors; number_files }
       in
       let { errors; _ } =
         Scheduler.map_reduce
@@ -130,59 +108,47 @@ let analyze_sources
       Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
       errors
     in
-    let errors =
-      List.map (Analysis.Check.checks ~configuration) ~f:run
-      |> List.concat
-    in
+    let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in
     Statistics.performance ~name:"analyzed sources" ~timer ();
     errors
   in
-
   let timer = Timer.start () in
   let errors = Postprocess.ignore ~configuration scheduler handles errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
-
   errors
 
 
 let check
     ~scheduler:original_scheduler
-    ~configuration:({
-        Configuration.Analysis.project_root;
-        local_root;
-        search_path;
-        typeshed;
-        _;
-      } as configuration) =
+    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; typeshed; _ }
+                   as configuration )
+  =
   (* Sanity check environment. *)
   let check_directory_exists directory =
     if not (Path.is_directory directory) then
-      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory))
   in
   check_directory_exists local_root;
   check_directory_exists project_root;
-  search_path
-  |> List.map ~f:Path.SearchPath.to_path
-  |> List.iter ~f:check_directory_exists;
+  search_path |> List.map ~f:Path.SearchPath.to_path |> List.iter ~f:check_directory_exists;
   Option.iter typeshed ~f:check_directory_exists;
-
   let scheduler =
     let bucket_multiplier =
-      try Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> (fun value -> Option.value_exn value))
-      with _ -> 10
+      try
+        Int.of_string (Sys.getenv "BUCKET_MULTIPLIER" |> fun value -> Option.value_exn value)
+      with
+      | _ -> 10
     in
     match original_scheduler with
     | None -> Scheduler.create ~configuration ~bucket_multiplier ()
     | Some scheduler -> scheduler
   in
-
   (* Parse sources. *)
   let { Parser.stubs; sources } = Parser.parse_all scheduler ~configuration in
   Postprocess.register_ignores ~configuration scheduler (sources @ stubs);
-  let environment = (module Environment.SharedHandler: Analysis.Environment.Handler) in
+  let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~stubs ~sources;
   let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:(stubs @ sources) in
-
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -204,25 +170,20 @@ let check
   Statistics.coverage
     ~randomly_log_every:20
     ~path:path_to_files
-    ~coverage:[
-      "crashes", crashes;
-      "declare_coverage", declare_coverage;
-      "default_coverage", default_coverage;
-      "full_type_coverage", full;
-      "ignore_coverage", ignore;
-      "no_type_coverage", untyped;
-      "partial_type_coverage", partial;
-      "source_files", source_files;
-      "strict_coverage", strict_coverage;
-      "total_errors", List.length errors;
-    ]
+    ~coverage:
+      [ "crashes", crashes;
+        "declare_coverage", declare_coverage;
+        "default_coverage", default_coverage;
+        "full_type_coverage", full;
+        "ignore_coverage", ignore;
+        "no_type_coverage", untyped;
+        "partial_type_coverage", partial;
+        "source_files", source_files;
+        "strict_coverage", strict_coverage;
+        "total_errors", List.length errors ]
     ();
-
   (* Only destroy the scheduler if the check command created it. *)
-  begin
-    match original_scheduler with
-    | None -> Scheduler.destroy scheduler
-    | Some _ -> ()
-  end;
-
+  ( match original_scheduler with
+  | None -> Scheduler.destroy scheduler
+  | Some _ -> () );
   { handles = stubs @ sources; environment; errors }

@@ -5,20 +5,15 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Plugin
-
 open Test
-
 
 let test_transform_ast _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let handle = File.Handle.create qualifier in
     let parse = parse ~qualifier:(Source.qualifier ~handle) in
-    assert_source_equal
-      (parse expected)
-      (NewType.transform_ast (parse source))
+    assert_source_equal (parse expected) (NewType.transform_ast (parse source))
   in
   assert_expand
     {|
@@ -47,7 +42,6 @@ let test_transform_ast _ =
         def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]):
           pass
     |};
-
   (* Don't transform non-toplevel statements. *)
   assert_expand
     {|
@@ -60,8 +54,4 @@ let test_transform_ast _ =
     |}
 
 
-let () =
-  "plugin_new_type">:::[
-    "transform_ast">::test_transform_ast;
-  ]
-  |> Test.run
+let () = "plugin_new_type" >::: ["transform_ast" >:: test_transform_ast] |> Test.run

@@ -7,31 +7,27 @@ open Ast
 open Analysis
 open Expression
 
+val is_local : Identifier.t -> bool
 
-val is_local: Identifier.t -> bool
+val get_global_targets
+  :  resolution:Resolution.t ->
+  global:Access.t ->
+  (Callable.t * Type.Callable.implicit option) list
 
-val get_global_targets:
-  resolution: Resolution.t
-  -> global: Access.t
-  -> (Callable.t * Type.Callable.implicit option) list
+val get_indirect_targets
+  :  resolution:Resolution.t ->
+  receiver:Access.general_access ->
+  method_name:Identifier.t ->
+  (Callable.t * Type.Callable.implicit option) list
 
-val get_indirect_targets:
-  resolution: Resolution.t
-  -> receiver: Access.general_access
-  -> method_name: Identifier.t
-  -> (Callable.t * Type.Callable.implicit option) list
-
-
-(* Returns a normalized path and optional addition parameter prefix, e.g. for
-   constructor calls *)
-val normalize_global:
-  resolution: Resolution.t
-  -> Access.t
-  -> Access.t * Expression.t Argument.record list
-
+(* Returns a normalized path and optional addition parameter prefix, e.g. for constructor calls *)
+val normalize_global
+  :  resolution:Resolution.t ->
+  Access.t ->
+  Access.t * Expression.t Argument.record list
 
 (* Returns all call targets from Call expressions in the given access *)
-val resolve_call_targets:
-  resolution: Resolution.t
-  -> Access.general_access
-  -> (Callable.t * Type.Callable.implicit option) list
+val resolve_call_targets
+  :  resolution:Resolution.t ->
+  Access.general_access ->
+  (Callable.t * Type.Callable.implicit option) list

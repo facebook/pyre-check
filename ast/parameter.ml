@@ -6,28 +6,17 @@
 open Core
 open Sexplib.Std
 
-
 type 'expression parameter = {
   name: Identifier.t;
   value: 'expression option;
-  annotation: 'expression option;
+  annotation: 'expression option
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-
-type 'expression t = 'expression parameter Node.t
-[@@deriving compare, eq, sexp, show, hash]
-
+type 'expression t = 'expression parameter Node.t [@@deriving compare, eq, sexp, show, hash]
 
 let create ?(location = Location.Reference.any) ?value ?annotation ~name () =
-  {
-    Node.location;
-    value = {
-      name;
-      value;
-      annotation;
-    };
-  }
+  { Node.location; value = { name; value; annotation } }
 
 
 let name { Node.value = { name; _ }; _ } = name

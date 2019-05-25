@@ -4,26 +4,20 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Expression
 open Pyre
 open Statement
-
 module Callable = AnnotatedCallable
 module Attribute = AnnotatedAttribute
 
-
-type t = Class.t Node.t
-[@@deriving compare, eq, sexp, show, hash]
-
+type t = Class.t Node.t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: (Expression.t Expression.Call.Argument.t list) option
+  arguments: Expression.t Expression.Call.Argument.t list option
 }
 [@@deriving compare, eq, sexp, show, hash]
-
 
 module AttributeCache = struct
   type t = {
@@ -32,95 +26,70 @@ module AttributeCache = struct
     include_generated_attributes: bool;
     special_method: bool;
     name: Reference.t;
-    instantiated: Type.t;
+    instantiated: Type.t
   }
   [@@deriving compare, sexp, hash]
 
+  include Hashable.Make (struct
+    type nonrec t = t
 
-  include Hashable.Make(struct
-      type nonrec t = t
-      let compare = compare
-      let hash = Hashtbl.hash
-      let hash_fold_t = hash_fold_t
-      let sexp_of_t = sexp_of_t
-      let t_of_sexp = t_of_sexp
-    end)
+    let compare = compare
 
+    let hash = Hashtbl.hash
 
-  let cache: Attribute.Table.t Table.t =
-    Table.create ~size:1023 ()
+    let hash_fold_t = hash_fold_t
 
+    let sexp_of_t = sexp_of_t
 
-  let clear () =
-    Table.clear cache
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let cache : Attribute.Table.t Table.t = Table.create ~size:1023 ()
+
+  let clear () = Table.clear cache
 end
-
 
 type class_data = {
   instantiated: Type.t;
   class_attributes: bool;
-  class_definition: t;
+  class_definition: t
 }
-
 
 let name_equal
     { Node.value = { Class.name = left; _ }; _ }
-    { Node.value = { Class.name = right; _ }; _ } =
+    { Node.value = { Class.name = right; _ }; _ }
+  =
   Reference.equal left right
 
 
-let create definition =
-  definition
+let create definition = definition
 
+let name { Node.value = { Class.name; _ }; _ } = name
 
-let name { Node.value = { Class.name; _ }; _ } =
-  name
-
-
-let bases { Node.value = { Class.bases; _ }; _ } =
-  bases
-
+let bases { Node.value = { Class.bases; _ }; _ } = bases
 
 let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
   let matches target decorator =
     match decorator with
-    | { Node.value = Access (SimpleAccess access); _ } ->
-        begin
-          match Expression.Access.name_and_arguments ~call:access with
-          | Some { callee = name; arguments } when String.equal name target ->
-              let convert_argument { Argument.name; value } =
-                { Call.Argument.name; value }
-              in
-              Some {
-                name;
-                arguments = Some (List.map ~f:convert_argument arguments)
-              }
-          | None when String.equal (Access.show access) target ->
-              Some { name = Access.show access; arguments = None }
-          | _ ->
-              None
-        end
+    | { Node.value = Access (SimpleAccess access); _ } -> (
+      match Expression.Access.name_and_arguments ~call:access with
+      | Some { callee = name; arguments } when String.equal name target ->
+          let convert_argument { Argument.name; value } = { Call.Argument.name; value } in
+          Some { name; arguments = Some (List.map ~f:convert_argument arguments) }
+      | None when String.equal (Access.show access) target ->
+          Some { name = Access.show access; arguments = None }
+      | _ -> None )
     | { Node.value = Call { callee; arguments }; _ }
       when String.equal target (Expression.show callee) ->
-        Some {
-          name = Expression.show callee;
-          arguments = Some arguments
-        }
-    | { Node.value = Name _; _ }
-      when String.equal target (Expression.show decorator) ->
-        Some {
-          name = Expression.show decorator;
-          arguments = None;
-        }
-    | _ ->
-        None
+        Some { name = Expression.show callee; arguments = Some arguments }
+    | { Node.value = Name _; _ } when String.equal target (Expression.show decorator) ->
+        Some { name = Expression.show decorator; arguments = None }
+    | _ -> None
   in
   List.filter_map ~f:(matches decorator) decorators
 
 
-let annotation { Node.value = { Class.name; _ }; _ } =
-  Type.Primitive (Reference.show name)
-
+let annotation { Node.value = { Class.name; _ }; _ } = Type.Primitive (Reference.show name)
 
 let successors { Node.value = { Class.name; _ }; _ } ~resolution =
   Type.Primitive (Reference.show name)
@@ -130,13 +99,10 @@ let successors { Node.value = { Class.name; _ }; _ } ~resolution =
 
 
 let successors_fold class_node ~resolution ~f ~initial =
-  successors class_node ~resolution
-  |> List.fold ~init:initial ~f
+  successors class_node ~resolution |> List.fold ~init:initial ~f
 
 
-let is_unit_test { Node.value; _ } =
-  Class.is_unit_test value
-
+let is_unit_test { Node.value; _ } = Class.is_unit_test value
 
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
@@ -146,7 +112,9 @@ let resolve_class ~resolution annotation =
       | _ -> original_annotation
     in
     match annotation with
-    | Type.Top | Type.Bottom | Type.Any ->
+    | Type.Top
+    | Type.Bottom
+    | Type.Any ->
         Some []
     | Type.Union annotations ->
         let flatten_optional sofar optional =
@@ -159,22 +127,16 @@ let resolve_class ~resolution annotation =
         >>| List.concat
         >>| List.rev
     | annotation when Type.is_meta annotation ->
-        Type.single_parameter annotation
-        |> extract ~is_meta:true
-    | _ ->
-        begin
-          match Resolution.class_definition resolution annotation with
-          | Some class_definition ->
-              Some [
-                {
-                  instantiated = original_annotation;
-                  class_attributes = is_meta;
-                  class_definition = create class_definition;
-                }
-              ]
-          | None ->
-              None
-        end
+        Type.single_parameter annotation |> extract ~is_meta:true
+    | _ -> (
+      match Resolution.class_definition resolution annotation with
+      | Some class_definition ->
+          Some
+            [ { instantiated = original_annotation;
+                class_attributes = is_meta;
+                class_definition = create class_definition
+              } ]
+      | None -> None )
   in
   extract ~is_meta:false annotation
 
@@ -182,34 +144,25 @@ let resolve_class ~resolution annotation =
 module Method = struct
   type t = {
     define: Define.t;
-    parent: Type.t;
+    parent: Type.t
   }
   [@@deriving compare, eq, sexp, show, hash]
 
+  let create ~define ~parent = { define; parent }
 
-  let create ~define ~parent =
-    { define; parent }
+  let name { define; _ } = Define.unqualified_name define
 
+  let define { define; _ } = define
 
-  let name { define; _ } =
-    Define.unqualified_name define
+  let parent { parent; _ } = parent
 
-
-  let define { define; _ } =
-    define
-
-
-  let parent { parent; _ } =
-    parent
-
-
-  let parameter_annotations
-      { define = { Define.signature = { parameters; _ }; _ }; _ }
-      ~resolution =
+  let parameter_annotations { define = { Define.signature = { parameters; _ }; _ }; _ }
+                            ~resolution
+    =
     let element { Node.value = { Parameter.name; annotation; _ }; _ } =
       let annotation =
-        (annotation
-         >>| fun annotation -> Resolution.parse_annotation resolution annotation)
+        annotation
+        >>| (fun annotation -> Resolution.parse_annotation resolution annotation)
         |> Option.value ~default:Type.Top
       in
       name, annotation
@@ -219,7 +172,8 @@ module Method = struct
 
   let return_annotation
       { define = { Define.signature = { return_annotation; async; _ }; _ } as define; _ }
-      ~resolution =
+      ~resolution
+    =
     let annotation =
       Option.value_map
         return_annotation
@@ -228,30 +182,25 @@ module Method = struct
     in
     if async then
       Type.awaitable annotation
-    else
-    if Define.is_coroutine define then
-      begin
-        match annotation with
-        | Type.Parametric { name; parameters = [_; _; return_annotation] }
-          when String.equal name "typing.Generator" ->
-            Type.awaitable return_annotation
-        | _ ->
-            Type.Top
-      end
+    else if Define.is_coroutine define then
+      match annotation with
+      | Type.Parametric { name; parameters = [_; _; return_annotation] }
+        when String.equal name "typing.Generator" ->
+          Type.awaitable return_annotation
+      | _ -> Type.Top
     else
       annotation
 end
-
 
 let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Expression.Call.Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.Variable.all_free_variables
-    |> List.filter_map
-      ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable) | _ -> None)
+    |> List.filter_map ~f:(function
+           | Type.Variable.Unary variable -> Some (Type.Variable variable)
+           | _ -> None)
   in
-  List.concat_map ~f:find_type_variables bases
-  |> List.dedup ~compare:Type.compare
+  List.concat_map ~f:find_type_variables bases |> List.dedup ~compare:Type.compare
 
 
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
@@ -260,18 +209,13 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
       Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     in
     match annotation with
-    | Type.Parametric { name = "typing.Generic"; parameters; } ->
-        Some parameters
-    | Type.Parametric { name = "typing.Protocol"; parameters } ->
-        Some parameters
-    | _ ->
-        None
+    | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
+    | Type.Parametric { name = "typing.Protocol"; parameters } -> Some parameters
+    | _ -> None
   in
-  begin
-    match List.find_map ~f:generic bases with
-    | None -> find_propagated_type_variables bases ~resolution
-    | Some parameters -> parameters
-  end
+  match List.find_map ~f:generic bases with
+  | None -> find_propagated_type_variables bases ~resolution
+  | Some parameters -> parameters
 
 
 let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
@@ -289,30 +233,23 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     if List.is_empty variables then
       []
     else
-      [{
-        Expression.Call.Argument.name = None;
-        value =
-          Type.parametric "typing.Generic" variables
-          |> Type.expression;
-      }]
+      [ { Expression.Call.Argument.name = None;
+          value = Type.parametric "typing.Generic" variables |> Type.expression
+        } ]
 
 
 let constraints ?target ?parameters definition ~instantiated ~resolution =
   let target = Option.value ~default:definition target in
   let parameters =
     match parameters with
-    | None ->
-        generics ~resolution target
-    | Some parameters ->
-        parameters
+    | None -> generics ~resolution target
+    | Some parameters -> parameters
   in
   let right =
     let target = annotation target in
     match target with
-    | Primitive name ->
-        Type.parametric name parameters
-    | _ ->
-        target
+    | Primitive name -> Type.parametric name parameters
+    | _ -> target
   in
   match instantiated, right with
   | Type.Primitive name, Parametric { name = right_name; _ } when String.equal name right_name ->
@@ -342,36 +279,31 @@ let metaclass definition ~resolution =
     let get_metaclass = function
       | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
           Some (Resolution.parse_annotation resolution value)
-      | _ ->
-          None
+      | _ -> None
     in
     List.find_map ~f:get_metaclass bases
   in
   (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
      for why we need to consider all metaclasses. *)
   let metaclass_candidates =
-    definition :: superclasses ~resolution definition
-    |> List.filter_map ~f:get_metaclass
+    definition :: superclasses ~resolution definition |> List.filter_map ~f:get_metaclass
   in
   match metaclass_candidates with
-  | [] ->
-      Type.Primitive "type"
-  | first :: candidates ->
+  | [] -> Type.Primitive "type"
+  | first :: candidates -> (
       let candidate = List.fold candidates ~init:first ~f:(Resolution.meet resolution) in
       match candidate with
       | Type.Bottom ->
           (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
           first
-      | _ ->
-          candidate
+      | _ -> candidate )
 
 
 let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
   let extract_define = function
     | { Node.value = Define define; _ } ->
         Some (Method.create ~define ~parent:(annotation definition))
-    | _ ->
-        None
+    | _ -> None
   in
   List.filter_map ~f:extract_define body
 
@@ -379,38 +311,40 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
   let is_protocol { Call.Argument.name; value = { Node.value; _ } } =
     match name, value with
-    | None, Access (SimpleAccess ((Identifier "typing") :: (Identifier "Protocol") :: _))
-    | None,
-      Access (SimpleAccess ((Identifier "typing_extensions") :: (Identifier "Protocol") :: _)) ->
+    | None, Access (SimpleAccess (Identifier "typing" :: Identifier "Protocol" :: _))
+    | None, Access (SimpleAccess (Identifier "typing_extensions" :: Identifier "Protocol" :: _)) ->
         true
-    | None,
-      Call {
-        callee = {
-          Node.value = Name (Name.Attribute {
-              base = {
-                Node.value = Name (Name.Attribute {
-                    base = { Node.value = Name (Name.Identifier typing); _ };
-                    attribute = "Protocol";
-                    _;
-                  });
-                _;
-              };
-              attribute = "__getitem__";
-              _;
-            });
-          _;
-        };
-        _;
-      }
-    | None,
-      Name (Name.Attribute {
-          base = { Node.value = Name (Name.Identifier typing); _ };
-          attribute = "Protocol";
-          _;
-        }) when (String.equal typing "typing") || (String.equal typing "typing_extensions") ->
+    | ( None,
+        Call
+          { callee =
+              { Node.value =
+                  Name
+                    (Name.Attribute
+                      { base =
+                          { Node.value =
+                              Name
+                                (Name.Attribute
+                                  { base = { Node.value = Name (Name.Identifier typing); _ };
+                                    attribute = "Protocol"
+                                  ; _
+                                  })
+                          ; _
+                          };
+                        attribute = "__getitem__"
+                      ; _
+                      })
+              ; _
+              }
+          ; _
+          } )
+    | ( None,
+        Name
+          (Name.Attribute
+            { base = { Node.value = Name (Name.Identifier typing); _ }; attribute = "Protocol"; _ })
+      )
+      when String.equal typing "typing" || String.equal typing "typing_extensions" ->
         true
-    | _ ->
-        false
+    | _ -> false
   in
   List.exists ~f:is_protocol bases
 
@@ -422,63 +356,51 @@ let create_attribute
     ?(defined = true)
     ?(inherited = false)
     ?(default_class_attribute = false)
-    {
-      Node.location;
-      value = {
-        Statement.Attribute.name = attribute_name;
-        annotation = attribute_annotation;
-        defines;
-        value;
-        async;
-        setter;
-        property;
-        primitive;
-        toplevel;
-        final;
-        static;
-        frozen;
-      };
-    } =
+    { Node.location;
+      value =
+        { Statement.Attribute.name = attribute_name;
+          annotation = attribute_annotation;
+          defines;
+          value;
+          async;
+          setter;
+          property;
+          primitive;
+          toplevel;
+          final;
+          static;
+          frozen
+        }
+    }
+  =
   let class_annotation = annotation parent in
   let initialized =
     match value with
     | Some { Node.value = Ellipsis; _ }
     | None ->
         false
-    | _ ->
-        true
+    | _ -> true
   in
-
-  let parsed_annotation =
-    attribute_annotation
-    >>| Resolution.parse_annotation resolution
-  in
-
+  let parsed_annotation = attribute_annotation >>| Resolution.parse_annotation resolution in
   (* Account for class attributes. *)
   let annotation, class_attribute =
-    (parsed_annotation
-     >>| (fun annotation ->
-         let annotation_value =
-           if Type.is_final annotation then
-             Type.final_value annotation
-           else
-             Type.class_variable_value annotation
-         in
-         match annotation_value with
-         | Some annotation -> Some annotation, true
-         | _ -> Some annotation, false))
+    parsed_annotation
+    >>| (fun annotation ->
+          let annotation_value =
+            if Type.is_final annotation then
+              Type.final_value annotation
+            else
+              Type.class_variable_value annotation
+          in
+          match annotation_value with
+          | Some annotation -> Some annotation, true
+          | _ -> Some annotation, false)
     |> Option.value ~default:(None, default_class_attribute)
   in
-
   let final =
-    let is_final_annotation =
-      (parsed_annotation
-       >>| Type.is_final)
-      |> Option.value ~default:false
-    in
+    let is_final_annotation = parsed_annotation >>| Type.is_final |> Option.value ~default:false in
     final || is_final_annotation
   in
-
   (* Handle enumeration attributes. *)
   let annotation, value, class_attribute =
     let superclasses =
@@ -486,26 +408,25 @@ let create_attribute
       |> List.map ~f:(fun definition -> name definition |> Reference.show)
       |> String.Set.of_list
     in
-    if not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)) &&
-       not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)) &&
-       not inherited &&
-       primitive then
-      Some class_annotation, None, true  (* Enums override values. *)
+    if
+      (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
+      && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
+      && (not inherited)
+      && primitive
+    then
+      Some class_annotation, None, true (* Enums override values. *)
     else
       annotation, value, class_attribute
   in
-
   (* Handle Callables *)
   let annotation =
     let instantiated =
       match instantiated with
-      | Some instantiated ->
-          instantiated
-      | None ->
-          class_annotation
+      | Some instantiated -> instantiated
+      | None -> class_annotation
     in
     match defines with
-    | Some (({ Define.signature = { Define.name; _ }; _ } as define :: _) as defines) ->
+    | Some (({ Define.signature = { Define.name; _ }; _ } as define) :: _ as defines) ->
         let parent =
           if Define.is_static_method define then
             None
@@ -522,41 +443,38 @@ let create_attribute
         in
         List.map defines ~f:apply_decorators
         |> Callable.create ~parent ~name:(Reference.show name)
-        |> (fun callable -> Some (Type.Callable callable))
-    | _ ->
-        annotation
+        |> fun callable -> Some (Type.Callable callable)
+    | _ -> annotation
   in
-
   (* Special cases *)
   let annotation =
     match instantiated, attribute_name, annotation with
-    | Some (Type.TypedDictionary { fields; total; _ }),
-      method_name,
-      Some (Type.Callable callable) ->
+    | Some (Type.TypedDictionary { fields; total; _ }), method_name, Some (Type.Callable callable)
+      ->
         Type.TypedDictionary.special_overloads ~fields ~method_name ~total
         >>| (fun overloads ->
-            Some (Type.Callable {
-                callable with
-                implementation = { annotation = Type.Top; parameters = Undefined };
-                overloads;
-              }))
+              Some
+                (Type.Callable
+                   { callable with
+                     implementation = { annotation = Type.Top; parameters = Undefined };
+                     overloads
+                   }))
         |> Option.value ~default:annotation
-    | Some (Type.Tuple (Bounded members)),
-      "__getitem__",
-      Some (Type.Callable ({ overloads; _ } as callable)) ->
+    | ( Some (Type.Tuple (Bounded members)),
+        "__getitem__",
+        Some (Type.Callable ({ overloads; _ } as callable)) ) ->
         let overload index member =
-          {
-            Type.Callable.annotation = member;
-            parameters = Defined [
-                Named { name = "x"; annotation = Type.literal_integer index; default = false };
-              ];
+          { Type.Callable.annotation = member;
+            parameters =
+              Defined
+                [Named { name = "x"; annotation = Type.literal_integer index; default = false }]
           }
         in
-        let overloads =  (List.mapi ~f:overload members) @ overloads in
+        let overloads = List.mapi ~f:overload members @ overloads in
         Some (Type.Callable { callable with overloads })
-    | Some (Parametric { name = "type"; parameters = [Type.Primitive name] }),
-      "__getitem__",
-      Some (Type.Callable ({ kind = Named callable_name; _ } as callable))
+    | ( Some (Parametric { name = "type"; parameters = [Type.Primitive name] }),
+        "__getitem__",
+        Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
       when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
         let implementation =
           let generics =
@@ -567,25 +485,18 @@ let create_attribute
           in
           let parameters =
             let parameter generic =
-              Type.Callable.Parameter.Named {
-                name = "$";
-                annotation = Type.meta generic;
-                default = false;
-              }
+              Type.Callable.Parameter.Named
+                { name = "$"; annotation = Type.meta generic; default = false }
             in
             List.map generics ~f:parameter
           in
-          {
-            Type.Callable.annotation =
-              Type.meta (Type.Parametric { name; parameters = generics });
-            parameters = Defined parameters;
+          { Type.Callable.annotation = Type.meta (Type.Parametric { name; parameters = generics });
+            parameters = Defined parameters
           }
         in
         Some (Type.Callable { callable with implementation; overloads = [] })
-    | _ ->
-        annotation
+    | _ -> annotation
   in
-
   let annotation =
     match annotation, value with
     | Some annotation, Some value ->
@@ -593,12 +504,11 @@ let create_attribute
           ~global:true
           ~final
           ~original:(Some annotation)
-          (if setter then
-             (Resolution.parse_annotation resolution value)
-           else
-             annotation)
-    | Some annotation, None ->
-        Annotation.create_immutable ~global:true ~final annotation
+          ( if setter then
+              Resolution.parse_annotation resolution value
+          else
+            annotation )
+    | Some annotation, None -> Annotation.create_immutable ~global:true ~final annotation
     | None, Some value ->
         let literal_value_annotation =
           if setter then
@@ -613,25 +523,20 @@ let create_attribute
           in
           not (List.is_empty (get_dataclass_decorator parent))
         in
-        if not (Type.is_partially_typed literal_value_annotation) &&
-           not is_dataclass_attribute &&
-           toplevel
-        then
-          (* Treat literal attributes as having been explicitly annotated. *)
-          Annotation.create_immutable
-            ~global:true
-            ~final
-            literal_value_annotation
+        if
+          (not (Type.is_partially_typed literal_value_annotation))
+          && (not is_dataclass_attribute)
+          && toplevel
+        then (* Treat literal attributes as having been explicitly annotated. *)
+          Annotation.create_immutable ~global:true ~final literal_value_annotation
         else
           Annotation.create_immutable
             ~global:true
             ~final
             ~original:(Some Type.Top)
             (Resolution.parse_annotation resolution value)
-    | _ ->
-        Annotation.create_immutable ~global:true ~final Type.Top
+    | _ -> Annotation.create_immutable ~global:true ~final Type.Top
   in
-
   (* Special case properties with type variables. *)
   (* TODO(T44676629): handle this correctly *)
   let annotation =
@@ -639,24 +544,19 @@ let create_attribute
       let variables =
         Annotation.annotation annotation
         |> Type.Variable.all_free_variables
-        |> List.filter_map
-          ~f:(function Type.Variable.Unary variable -> Some (Type.Variable variable) | _ -> None)
+        |> List.filter_map ~f:(function
+               | Type.Variable.Unary variable -> Some (Type.Variable variable)
+               | _ -> None)
         |> Type.Set.of_list
       in
-      let generics =
-        generics parent ~resolution
-        |> Type.Set.of_list
-      in
-      Set.diff variables generics
-      |> Set.to_list
+      let generics = generics parent ~resolution |> Type.Set.of_list in
+      Set.diff variables generics |> Set.to_list
     in
     if property && not (List.is_empty free_variables) then
       let constraints =
         let instantiated = Option.value instantiated ~default:class_annotation in
-        List.fold
-          free_variables
-          ~init:Type.Map.empty
-          ~f:(fun map variable -> Map.set map ~key:variable ~data:instantiated)
+        List.fold free_variables ~init:Type.Map.empty ~f:(fun map variable ->
+            Map.set map ~key:variable ~data:instantiated)
         |> Map.find
       in
       Annotation.annotation annotation
@@ -665,26 +565,22 @@ let create_attribute
     else
       annotation
   in
-
   let value = Option.value value ~default:(Node.create Ellipsis ~location) in
-
-  {
-    Node.location;
-    value = {
-      Attribute.name = attribute_name;
-      parent = class_annotation;
-      annotation;
-      value;
-      defined;
-      class_attribute;
-      async;
-      initialized;
-      property;
-      final;
-      static;
-      frozen;
-    };
-
+  { Node.location;
+    value =
+      { Attribute.name = attribute_name;
+        parent = class_annotation;
+        annotation;
+        value;
+        defined;
+        class_attribute;
+        async;
+        initialized;
+        property;
+        final;
+        static;
+        frozen
+      }
   }
 
 
@@ -695,29 +591,29 @@ let attribute_table
     ?(special_method = false)
     ?instantiated
     ({ Node.value = { Class.name; _ }; _ } as definition)
-    ~resolution =
+    ~resolution
+  =
   let original_instantiated = instantiated in
   let instantiated = Option.value instantiated ~default:(annotation definition) in
   let key =
-    {
-      AttributeCache.transitive;
+    { AttributeCache.transitive;
       class_attributes;
       special_method;
       include_generated_attributes;
       name;
-      instantiated;
+      instantiated
     }
   in
   match Hashtbl.find AttributeCache.cache key with
-  | Some result ->
-      result
+  | Some result -> result
   | None ->
       let definition_attributes
           ~in_test
           ~instantiated
           ~class_attributes
           ~table
-          ({ Node.value = ({ Class.name = parent_name; _ } as definition); _ } as parent) =
+          ({ Node.value = { Class.name = parent_name; _ } as definition; _ } as parent)
+        =
         let collect_attributes attribute =
           create_attribute
             attribute
@@ -734,9 +630,8 @@ let attribute_table
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =
-        List.exists
-          (definition :: superclass_definitions)
-          ~f:(fun { Node.value; _ } -> Class.is_unit_test value)
+        List.exists (definition :: superclass_definitions) ~f:(fun { Node.value; _ } ->
+            Class.is_unit_test value)
       in
       let table = Attribute.Table.create () in
       (* Pass over normal class hierarchy. *)
@@ -763,23 +658,24 @@ let attribute_table
       in
       List.iter
         meta_definitions
-        ~f:(definition_attributes
-              ~in_test
-              ~instantiated:(Type.meta instantiated)
-              ~class_attributes:false
-              ~table);
+        ~f:
+          (definition_attributes
+             ~in_test
+             ~instantiated:(Type.meta instantiated)
+             ~class_attributes:false
+             ~table);
       let instantiate ~instantiated attribute =
         Attribute.parent attribute
         |> Resolution.class_definition resolution
-        >>| (fun target ->
-            let solution = constraints ~target ~instantiated ~resolution definition in
-            Attribute.instantiate
-              ~constraints:(fun annotation ->
-                  Some (TypeConstraints.Solution.instantiate solution annotation))
-              attribute)
+        >>| fun target ->
+        let solution = constraints ~target ~instantiated ~resolution definition in
+        Attribute.instantiate
+          ~constraints:(fun annotation ->
+            Some (TypeConstraints.Solution.instantiate solution annotation))
+          attribute
       in
-      Option.iter original_instantiated
-        ~f:(fun instantiated -> Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
+      Option.iter original_instantiated ~f:(fun instantiated ->
+          Attribute.Table.filter_map table ~f:(instantiate ~instantiated));
       Hashtbl.set ~key ~data:table AttributeCache.cache;
       table
 
@@ -790,7 +686,8 @@ let attributes
     ?(include_generated_attributes = true)
     ?instantiated
     definition
-    ~resolution =
+    ~resolution
+  =
   attribute_table
     ~transitive
     ~class_attributes
@@ -798,8 +695,7 @@ let attributes
     ?instantiated
     definition
     ~resolution
-  |>
-  Attribute.Table.to_list
+  |> Attribute.Table.to_list
 
 
 let attribute_fold
@@ -809,7 +705,8 @@ let attribute_fold
     definition
     ~initial
     ~f
-    ~resolution =
+    ~resolution
+  =
   attributes ~transitive ~class_attributes ~include_generated_attributes ~resolution definition
   |> List.fold ~init:initial ~f
 
@@ -821,7 +718,8 @@ let attribute
     ({ Node.location; _ } as definition)
     ~resolution
     ~name
-    ~instantiated =
+    ~instantiated
+  =
   let table =
     attribute_table
       ~instantiated
@@ -833,35 +731,36 @@ let attribute
       definition
   in
   match Attribute.Table.lookup_name table name with
-  | Some attribute ->
-      attribute
+  | Some attribute -> attribute
   | None ->
       create_attribute
         ~resolution
         ~parent:definition
         ~defined:false
         ~default_class_attribute:class_attributes
-        {
-          Node.location;
-          value = {
-            Statement.Attribute.name;
-            annotation = None;
-            defines = None;
-            value = None;
-            async = false;
-            setter = false;
-            property = false;
-            primitive = true;
-            toplevel = true;
-            final = false;
-            static = false;
-            frozen = false;
-          }
+        { Node.location;
+          value =
+            { Statement.Attribute.name;
+              annotation = None;
+              defines = None;
+              value = None;
+              async = false;
+              setter = false;
+              property = false;
+              primitive = true;
+              toplevel = true;
+              final = false;
+              static = false;
+              frozen = false
+            }
         }
 
 
-let rec fallback_attribute ~resolution ~name
-    ({ Node.value = { Class.name = class_name; _ }; _ } as definition) =
+let rec fallback_attribute
+    ~resolution
+    ~name
+    ({ Node.value = { Class.name = class_name; _ }; _ } as definition)
+  =
   let compound_backup =
     let name =
       match name with
@@ -891,8 +790,7 @@ let rec fallback_attribute ~resolution ~name
           ~name
           ~instantiated:(annotation definition)
         |> Option.some
-    | _ ->
-        None
+    | _ -> None
   in
   let getitem_backup () =
     let fallback =
@@ -905,46 +803,36 @@ let rec fallback_attribute ~resolution ~name
         ~instantiated:(annotation definition)
     in
     if Attribute.defined fallback then
-      let annotation =
-        fallback
-        |> Attribute.annotation
-        |> Annotation.annotation
-      in
-      begin
-        match annotation with
-        | Type.Callable ({ implementation; _ } as callable) ->
-            let location = Attribute.location fallback in
-            let arguments =
-              let self_argument =
-                {
-                  Call.Argument.name = None;
-                  value = Reference.expression ~convert:true ~location class_name
-                }
-              in
-              let name_argument =
-                {
-                  Call.Argument.name = None;
-                  value = { Node.location; value = Expression.String (StringLiteral.create name) }
-                }
-              in
-              [self_argument; name_argument]
+      let annotation = fallback |> Attribute.annotation |> Annotation.annotation in
+      match annotation with
+      | Type.Callable ({ implementation; _ } as callable) ->
+          let location = Attribute.location fallback in
+          let arguments =
+            let self_argument =
+              { Call.Argument.name = None;
+                value = Reference.expression ~convert:true ~location class_name
+              }
             in
-            let implementation =
-              match AnnotatedSignature.select ~resolution ~arguments ~callable with
-              | AnnotatedSignature.Found { Type.Callable.implementation; _ } ->
-                  implementation
-              | AnnotatedSignature.NotFound _ ->
-                  implementation
+            let name_argument =
+              { Call.Argument.name = None;
+                value = { Node.location; value = Expression.String (StringLiteral.create name) }
+              }
             in
-            let return_annotation = Type.Callable.Overload.return_annotation implementation in
-            Some
-              (create_attribute
-                 ~resolution
-                 ~parent:definition
-                 {
-                   Node.location;
-                   value = {
-                     Statement.Attribute.name;
+            [self_argument; name_argument]
+          in
+          let implementation =
+            match AnnotatedSignature.select ~resolution ~arguments ~callable with
+            | AnnotatedSignature.Found { Type.Callable.implementation; _ } -> implementation
+            | AnnotatedSignature.NotFound _ -> implementation
+          in
+          let return_annotation = Type.Callable.Overload.return_annotation implementation in
+          Some
+            (create_attribute
+               ~resolution
+               ~parent:definition
+               { Node.location;
+                 value =
+                   { Statement.Attribute.name;
                      annotation = Some (Type.expression ~convert:true return_annotation);
                      defines = None;
                      value = None;
@@ -955,12 +843,10 @@ let rec fallback_attribute ~resolution ~name
                      toplevel = true;
                      final = false;
                      static = false;
-                     frozen = false;
-                   };
-                 })
-        | _ ->
-            None
-      end
+                     frozen = false
+                   }
+               })
+      | _ -> None
     else
       None
   in
@@ -974,32 +860,24 @@ let constructor definition ~instantiated ~resolution =
     let class_annotation = annotation definition in
     match class_annotation with
     | Type.Primitive name
-    | Type.Parametric { name; _ } ->
+    | Type.Parametric { name; _ } -> (
         let generics = generics definition ~resolution in
         (* Tuples are special. *)
         if String.equal name "tuple" then
           match generics with
-          | [tuple_variable] ->
-              Type.Tuple (Type.Unbounded tuple_variable)
-          | _ ->
-              Type.Tuple (Type.Unbounded Type.Any)
+          | [tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
+          | _ -> Type.Tuple (Type.Unbounded Type.Any)
         else
-          begin
-            let backup = Type.Parametric { name; parameters = generics } in
-            match instantiated, generics with
-            | _, [] ->
-                instantiated
-            | Type.Primitive instantiated_name, _ when String.equal instantiated_name name ->
-                backup
-            | Type.Parametric { parameters; name = instantiated_name }, _
-              when String.equal instantiated_name name &&
-                   List.length parameters <> List.length generics ->
-                backup
-            | _ ->
-                instantiated
-          end
-    | _ ->
-        instantiated
+          let backup = Type.Parametric { name; parameters = generics } in
+          match instantiated, generics with
+          | _, [] -> instantiated
+          | Type.Primitive instantiated_name, _ when String.equal instantiated_name name -> backup
+          | Type.Parametric { parameters; name = instantiated_name }, _
+            when String.equal instantiated_name name
+                 && List.length parameters <> List.length generics ->
+              backup
+          | _ -> instantiated )
+    | _ -> instantiated
   in
   let definitions =
     definition :: superclasses ~resolution definition
@@ -1009,40 +887,22 @@ let constructor definition ~instantiated ~resolution =
     attribute
     |> Attribute.parent
     |> (fun class_annotation ->
-        List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
+         List.findi definitions ~f:(fun _ annotation -> Type.equal annotation class_annotation))
     >>| fst
     |> Option.value ~default:Int.max_value
   in
   let constructor_signature, constructor_index =
     let attribute =
-      attribute
-        definition
-        ~transitive:true
-        ~resolution
-        ~name:"__init__"
-        ~instantiated
+      attribute definition ~transitive:true ~resolution ~name:"__init__" ~instantiated
     in
-    let signature =
-      attribute
-      |> Attribute.annotation
-      |> Annotation.annotation
-    in
+    let signature = attribute |> Attribute.annotation |> Annotation.annotation in
     signature, definition_index attribute
   in
   let new_signature, new_index =
     let attribute =
-      attribute
-        definition
-        ~transitive:true
-        ~resolution
-        ~name:"__new__"
-        ~instantiated
+      attribute definition ~transitive:true ~resolution ~name:"__new__" ~instantiated
     in
-    let signature =
-      attribute
-      |> Attribute.annotation
-      |> Annotation.annotation
-    in
+    let signature = attribute |> Attribute.annotation |> Annotation.annotation in
     signature, definition_index attribute
   in
   let signature =
@@ -1054,8 +914,7 @@ let constructor definition ~instantiated ~resolution =
   match signature with
   | Type.Callable callable ->
       Type.Callable (Type.Callable.with_return_annotation ~annotation:return_annotation callable)
-  | _ ->
-      signature
+  | _ -> signature
 
 
 let constructors definition ~resolution =
@@ -1081,25 +940,19 @@ let overrides definition ~resolution ~name =
       annotation definition
       |> (fun instantiated -> constraints ~target:parent definition ~resolution ~instantiated)
       |> (fun solution ->
-          Attribute.instantiate
-            ~constraints:(fun annotation ->
-                Some (TypeConstraints.Solution.instantiate solution annotation))
-            potential_override)
+           Attribute.instantiate
+             ~constraints:(fun annotation ->
+               Some (TypeConstraints.Solution.instantiate solution annotation))
+             potential_override)
       |> Option.some
     else
       None
   in
-  superclasses definition ~resolution
-  |> List.find_map ~f:find_override
+  superclasses definition ~resolution |> List.find_map ~f:find_override
 
 
 let has_method ?transitive definition ~resolution ~name =
-  attribute
-    ?transitive
-    definition
-    ~resolution
-    ~name
-    ~instantiated:(annotation definition)
+  attribute ?transitive definition ~resolution ~name ~instantiated:(annotation definition)
   |> Attribute.annotation
   |> Annotation.annotation
   |> Type.is_callable
@@ -1107,23 +960,22 @@ let has_method ?transitive definition ~resolution ~name =
 
 let inferred_callable_type definition ~resolution =
   let explicit_callables =
-    let extract_callable { Method.define = ({ Define.signature = { name; _ }; _ } as define); _ } =
+    let extract_callable { Method.define = { Define.signature = { name; _ }; _ } as define; _ } =
       Option.some_if (Reference.is_suffix ~suffix:(Reference.create "__call__") name) define
-      >>| (fun define ->
-          Reference.show name,
-          Define.is_overloaded_method define,
-          Callable.create_overload ~define ~resolution)
+      >>| fun define ->
+      ( Reference.show name,
+        Define.is_overloaded_method define,
+        Callable.create_overload ~define ~resolution )
     in
-    methods definition
-    |> List.filter_map ~f:extract_callable
+    methods definition |> List.filter_map ~f:extract_callable
   in
   if List.is_empty explicit_callables then
     None
   else
     let parent = annotation definition in
-    let (name, _, _) = List.hd_exn explicit_callables in
+    let name, _, _ = List.hd_exn explicit_callables in
     let explicit_callables =
-      List.map explicit_callables ~f:(fun (_, is_overload, callable) -> (is_overload, callable))
+      List.map explicit_callables ~f:(fun (_, is_overload, callable) -> is_overload, callable)
     in
     let callable = Callable.create ~parent:(Some parent) ~name explicit_callables in
     Some callable

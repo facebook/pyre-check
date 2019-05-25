@@ -3,11 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 open Test
 open OUnit2
 open IntegrationTest
-
 
 let test_check_attributes _ =
   assert_type_errors
@@ -16,10 +14,8 @@ let test_check_attributes _ =
         def foo(self) -> int:
           return self.bar
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-    ];
+    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
   assert_type_errors
     {|
       class Foo:
@@ -54,7 +50,6 @@ let test_check_attributes _ =
           return self.bar
     |}
     [];
-
   assert_type_errors
     {|
       class Foo:
@@ -63,13 +58,9 @@ let test_check_attributes _ =
         def f(self) -> str:
             return self.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` " ^
-      "has type `int` but is used as type `None`.";
-      "Incompatible return type [7]: Expected `str` but got `int`."
-    ];
-
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` "
+      ^ "has type `int` but is used as type `None`.";
+      "Incompatible return type [7]: Expected `str` but got `int`." ];
   assert_strict_type_errors
     {|
       class Bar:
@@ -81,14 +72,10 @@ let test_check_attributes _ =
           self.bar.bar()
     |}
     ["Undefined attribute [16]: Optional type has no attribute `bar`."];
-
-  assert_type_errors
-    {|
+  assert_type_errors {|
       a = str
       b = 1
-    |}
-    [];
-
+    |} [];
   assert_type_errors
     {|
       class Foo:
@@ -96,11 +83,8 @@ let test_check_attributes _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type " ^
-      "`typing.Optional[int]` but no type is specified.";
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type "
+      ^ "`typing.Optional[int]` but no type is specified." ];
   assert_strict_type_errors
     {|
       class Foo:
@@ -108,11 +92,8 @@ let test_check_attributes _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type " ^
-      "`typing.Optional[int]` but no type is specified.";
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type "
+      ^ "`typing.Optional[int]` but no type is specified." ];
   assert_strict_type_errors
     {|
       class Foo:
@@ -120,11 +101,8 @@ let test_check_attributes _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` " ^
-      "but is used as type `int`."
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` "
+      ^ "but is used as type `int`." ];
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -134,7 +112,6 @@ let test_check_attributes _ =
         return Bar.bar
     |}
     [];
-
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -144,12 +121,9 @@ let test_check_attributes _ =
         x = Bar()
         return x.baz
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`. Type `int` expected on " ^
-      "line 6, specified on line 4.";
-      "Undefined attribute [16]: `Bar` has no attribute `baz`."
-    ];
-
+    [ "Incompatible return type [7]: Expected `int` but got `unknown`. Type `int` expected on "
+      ^ "line 6, specified on line 4.";
+      "Undefined attribute [16]: `Bar` has no attribute `baz`." ];
   assert_type_errors
     {|
       class Bar:
@@ -159,7 +133,6 @@ let test_check_attributes _ =
           return other.bar
     |}
     [];
-
   assert_type_errors
     {|
       class Foo:
@@ -167,34 +140,25 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
   assert_type_errors
     {|
       class Foo:
         bar: typing.Any
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+    [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
-       `typing.Any` but is never initialized.";
-    ];
-
+       `typing.Any` but is never initialized." ];
   assert_type_errors
     {|
       class Foo:
         bar: typing.Dict[str, typing.Any] = {}
         baz: typing.Dict[typing.Any, typing.Any] = {}
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type " ^
-      "that does not contain `Any`.";
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `baz` of class `Foo` must have a type "
+      ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
       class Foo:
@@ -203,14 +167,11 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+    [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
-
+      "Incompatible return type [7]: Expected `int` but got `str`." ];
   (* Annotations containing `Any` in strict are not permitted. *)
   assert_type_errors
     {|
@@ -221,13 +182,10 @@ let test_check_attributes _ =
           self.bar = 1
           return self.bar
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
+    [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
-       `typing.Any` but is never initialized.";
-    ];
-
+       `typing.Any` but is never initialized." ];
   (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
      are thrown in debug that are filtered away in strict. *)
   assert_strict_type_errors
@@ -240,11 +198,8 @@ let test_check_attributes _ =
           self.bar = 1
           return self.bar
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `MyType` must be specified " ^
-      "as type other than `Any`."
-    ];
-
+    [ "Missing global annotation [5]: Globally accessible variable `MyType` must be specified "
+      ^ "as type other than `Any`." ];
   assert_type_errors
     {|
       class Foo:
@@ -253,22 +208,16 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
-      "but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` "
+      ^ "but is used as type `str`." ];
   assert_type_errors
     {|
           class Foo:
             a: str = ""
           Foo.a = 1
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` " ^
-      "but is used as type `int`."
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `a` declared in class `Foo` has type `str` "
+      ^ "but is used as type `int`." ];
   assert_type_errors
     {|
       class Foo:
@@ -277,11 +226,8 @@ let test_check_attributes _ =
         param.bar = 'foo'
         return param.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
-      "but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` "
+      ^ "but is used as type `str`." ];
   assert_type_errors
     {|
       bar: int = 1
@@ -290,7 +236,6 @@ let test_check_attributes _ =
         return bar
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
-
   assert_type_errors
     {|
       class Foo:
@@ -298,11 +243,8 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `int` but got `str`.";
+      "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
   assert_type_errors
     {|
       class Foo:
@@ -312,11 +254,8 @@ let test_check_attributes _ =
         foo_obj.bar = "foo"
         return foo_obj.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
-      "but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` "
+      ^ "but is used as type `str`." ];
   assert_type_errors
     {|
       class Foo:
@@ -326,11 +265,8 @@ let test_check_attributes _ =
           self.bar = "foo"
           return self.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
-      "but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` "
+      ^ "but is used as type `str`." ];
   assert_type_errors
     {|
       class Foo:
@@ -340,7 +276,6 @@ let test_check_attributes _ =
             return self.a
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       class Foo:
@@ -350,9 +285,8 @@ let test_check_attributes _ =
         foo_obj.bar = 1
         return foo_obj.bar
     |}
-    ["Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
-     "to have type `typing.Optional[int]` but is never initialized."];
-
+    [ "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
+      ^ "to have type `typing.Optional[int]` but is never initialized." ];
   assert_type_errors
     {|
       class Foo:
@@ -362,9 +296,8 @@ let test_check_attributes _ =
           return a.bar
         return 0
     |}
-    ["Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
-     "to have type `typing.Optional[int]` but is never initialized."];
-
+    [ "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
+      ^ "to have type `typing.Optional[int]` but is never initialized." ];
   assert_type_errors
     {|
       class Foo:
@@ -374,13 +307,10 @@ let test_check_attributes _ =
           return a.bar
         return 0
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` " ^
-      "to have type `typing.Optional[int]` but is never initialized.";
+    [ "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` "
+      ^ "to have type `typing.Optional[int]` but is never initialized.";
       "Undefined attribute [16]: Optional type has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`.";
-    ];
-
+      "Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`." ];
   assert_type_errors
     {|
       class Foo:
@@ -391,7 +321,6 @@ let test_check_attributes _ =
         return foo_obj.bar
     |}
     [];
-
   assert_type_errors
     {|
       class Foo:
@@ -401,13 +330,10 @@ let test_check_attributes _ =
         foo_obj.bar = 1
         return foo_obj.bar
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` " ^
-      "has type `int` but no type is specified.";
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` "
+      ^ "has type `int` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
+      ^ "has type `int` but no type is specified." ];
   assert_type_errors
     {|
       class Foo:
@@ -417,12 +343,9 @@ let test_check_attributes _ =
             self.baz = 5
           return self.baz
     |}
-    [
-      (* TODO(T24330702): we should only report this once. *)
+    [ (* TODO(T24330702): we should only report this once. *)
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-    ];
-
+      "Undefined attribute [16]: `Foo` has no attribute `baz`." ];
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|
@@ -432,11 +355,8 @@ let test_check_attributes _ =
         Foo.bar = "foo"
         return Foo.bar
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` " ^
-      "but is used as type `str`."
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type `int` "
+      ^ "but is used as type `str`." ];
   assert_type_errors
     {|
       class Foo:
@@ -445,16 +365,13 @@ let test_check_attributes _ =
           self.bar = 0
           return self.bar
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have " ^
-      "type `typing.Generic[Variable[_T]]` but is never initialized.";
+    [ "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have "
+      ^ "type `typing.Generic[Variable[_T]]` but is never initialized.";
       "Invalid type variable [34]: The current class isn't generic with respect to the type \
        variable `Variable[_T]`.";
-      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type " ^
-      "`typing.Generic[Variable[_T]]` but is used as type `int`.";
-      "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`.";
-    ];
-
+      "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type "
+      ^ "`typing.Generic[Variable[_T]]` but is used as type `int`.";
+      "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`." ];
   (* Static attributes are properly resolved. *)
   assert_type_errors
     {|
@@ -465,7 +382,6 @@ let test_check_attributes _ =
         return Foo.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       class Foo:
@@ -476,7 +392,6 @@ let test_check_attributes _ =
         return Foo.Bar().attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       class Foo:
@@ -487,7 +402,6 @@ let test_check_attributes _ =
           return Foo.DERP
     |}
     [];
-
   (* Attributes defined in constructor. *)
   assert_type_errors
     {|
@@ -498,7 +412,6 @@ let test_check_attributes _ =
           return self.attribute
     |}
     [];
-
   assert_type_errors
     {|
       class unittest.TestCase: ...
@@ -509,7 +422,6 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       class unittest.case.TestCase: ...
@@ -520,7 +432,6 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       class unittest.case.TestCase: ...
@@ -530,7 +441,6 @@ let test_check_attributes _ =
           self.x = 1
     |}
     [];
-
   assert_type_errors
     {|
       class Foo:
@@ -540,7 +450,6 @@ let test_check_attributes _ =
           return self.attribute
     |}
     [];
-
   (* Class implements `__getattr__`. *)
   assert_type_errors
     {|
@@ -553,7 +462,6 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
-
   (* Attributes of other classes are properly resolved. *)
   assert_type_errors
     {|
@@ -566,7 +474,6 @@ let test_check_attributes _ =
         return bar.bar
     |}
     [];
-
   (* Any has all attributes in default mode, but not strict mode. *)
   assert_strict_type_errors
     {|
@@ -580,16 +487,12 @@ let test_check_attributes _ =
         return any.attribute
     |}
     [];
-
   (* We allow instance attributes to be accessed via class objects. *)
-  assert_type_errors
-    {|
+  assert_type_errors {|
       class Foo:
         attribute: int = 1
       Foo.attribute
-    |}
-    [];
-
+    |} [];
   (* Check attribute type propagation. *)
   assert_type_errors
     {|
@@ -599,11 +502,8 @@ let test_check_attributes _ =
           self.attribute = not_annotated()
           a = self.attribute.something
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type " ^
-      "`int` but is used as type `unknown`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
+      ^ "`int` but is used as type `unknown`." ];
   (* Check attribute type variable resolution. *)
   assert_type_errors
     {|
@@ -614,10 +514,8 @@ let test_check_attributes _ =
       def bar(wrapper: Wrapper[int]) -> int:
         return wrapper.value
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
-      "type `Variable[_VALUE]` but is never initialized.";
-    ];
+    [ "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
+      ^ "type `Variable[_VALUE]` but is never initialized." ];
   assert_type_errors
     {|
       _VALUE = typing.TypeVar('_VALUE')
@@ -630,10 +528,8 @@ let test_check_attributes _ =
       def bar(wrapper: WrapperSubclass) -> int:
         return wrapper.value
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have " ^
-      "type `Variable[_VALUE]` but is never initialized.";
-    ];
+    [ "Uninitialized attribute [13]: Attribute `value` is declared in class `Wrapper` to have "
+      ^ "type `Variable[_VALUE]` but is never initialized." ];
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -642,7 +538,6 @@ let test_check_attributes _ =
           return self
     |}
     [];
-
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -651,10 +546,8 @@ let test_check_attributes _ =
         def f(cls) -> ReturnClass[_T]:
           return cls
     |}
-    [
-      "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
-       `typing.Type[ReturnClass[Variable[_T]]]`.";
-    ];
+    [ "Incompatible return type [7]: Expected `ReturnClass[Variable[_T]]` but got \
+       `typing.Type[ReturnClass[Variable[_T]]]`." ];
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -675,7 +568,6 @@ let test_check_attributes _ =
         return c.property
     |}
     [];
-
   assert_type_errors
     {|
       _T = typing.TypeVar('_T')
@@ -687,7 +579,6 @@ let test_check_attributes _ =
           reveal_type(self.property)
     |}
     ["Revealed type [-1]: Revealed type for `self.property` is `B`."];
-
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -709,7 +600,6 @@ let test_check_attributes _ =
         a = t()
     |}
     [];
-
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors
     {|
@@ -718,11 +608,8 @@ let test_check_attributes _ =
       def foo(f: typing.Optional[Foo]) -> int:
         return f.debug
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: Optional type has no attribute `debug`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
+      "Undefined attribute [16]: Optional type has no attribute `debug`." ];
   (* Attributes defined with property decorators. *)
   assert_type_errors
     {|
@@ -733,7 +620,6 @@ let test_check_attributes _ =
         return Foo().prop
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   (* Attributes defined with getters and setters. *)
   assert_type_errors
     {|
@@ -751,13 +637,10 @@ let test_check_attributes _ =
         foo.x = None
         foo.x = "string"
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
-      " has type `int` but is used as type `None`.";
-      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`" ^
-      " has type `int` but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`"
+      ^ " has type `int` but is used as type `None`.";
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo`"
+      ^ " has type `int` but is used as type `str`." ];
   assert_type_errors
     {|
       x: typing.Optional[int]
@@ -775,11 +658,8 @@ let test_check_attributes _ =
         foo.x = None
         foo.x = "string"
     |}
-    [
-      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
-       `typing.Optional[int]` but is used as type `str`.";
-    ];
-
+    [ "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
+       `typing.Optional[int]` but is used as type `str`." ];
   assert_type_errors
     {|
       __property__: typing.Any = ...
@@ -798,10 +678,8 @@ let test_check_attributes _ =
         foo = Foo()
         return foo.y
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `__property__` " ^
-      "must be specified as type other than `Any`."
-    ]
+    [ "Missing global annotation [5]: Globally accessible variable `__property__` "
+      ^ "must be specified as type other than `Any`." ]
 
 
 let test_check_missing_attribute _ =
@@ -811,12 +689,10 @@ let test_check_missing_attribute _ =
         a = unknown
       Foo.a = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but no type is specified.";
-      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one control \
-       flow path that doesn't define `unknown`.";
-    ];
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` "
+      ^ "but no type is specified.";
+      "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
+       control flow path that doesn't define `unknown`." ];
   assert_type_errors
     {|
       class Foo:
@@ -830,10 +706,8 @@ let test_check_missing_attribute _ =
         def __init__(self, a) -> None:
           self.a = a
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `a` has no type specified.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
-    ];
+    [ "Missing parameter annotation [2]: Parameter `a` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified." ];
   assert_type_errors
     {|
       class Foo:
@@ -856,33 +730,23 @@ let test_check_missing_attribute _ =
       class Foo:
         a = unknown
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
-       control flow path that doesn't define `unknown`.";
-    ];
-
+       control flow path that doesn't define `unknown`." ];
   assert_type_errors
     {|
         class Foo:
           a: typing.Any
         Foo.a = 1
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
-      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have " ^
-      "type `typing.Any` but is never initialized."
-    ];
-
-  assert_default_type_errors
-    ~handle:"stub.pyi"
-    {|
+      "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have "
+      ^ "type `typing.Any` but is never initialized." ];
+  assert_default_type_errors ~handle:"stub.pyi" {|
         class Foo:
           a: int
-    |}
-    [];
-
+    |} [];
   assert_type_errors
     {|
         class Foo:
@@ -890,7 +754,6 @@ let test_check_missing_attribute _ =
             self.a = a
     |}
     ["Missing parameter annotation [2]: Parameter `a` must have a type other than `Any`."];
-
   assert_type_errors
     {|
       class Foo:
@@ -900,12 +763,9 @@ let test_check_missing_attribute _ =
       def foo() -> bool:
         return Foo().a
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
-      "Incompatible return type [7]: Expected `bool` but got `typing.Any`."
-    ];
-
+      "Incompatible return type [7]: Expected `bool` but got `typing.Any`." ];
   assert_type_errors
     {|
       class Foo:
@@ -915,11 +775,8 @@ let test_check_missing_attribute _ =
           else:
             self.x = "hi"
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
-      "`typing.Union[int, str]` but no type is specified."
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type "
+      ^ "`typing.Union[int, str]` but no type is specified." ];
   assert_type_errors
     {|
       class Foo:
@@ -929,11 +786,8 @@ let test_check_missing_attribute _ =
           else:
             self.x = y
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type " ^
-      "`typing.Union[int, str]` but no type is specified."
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type "
+      ^ "`typing.Union[int, str]` but no type is specified." ];
   assert_type_errors
     {|
       class Foo:
@@ -943,17 +797,14 @@ let test_check_missing_attribute _ =
           self.a: typing.Any = 1
           self.b: typing.List[typing.Any] = [1]
     |}
-    [
-      "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` " ^
-      "but type `Any` is specified.";
-      "Missing attribute annotation [4]: Attribute `y` of class `Foo` must have a type " ^
-      "that does not contain `Any`.";
-      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` " ^
-      "but type `Any` is specified.";
-      "Missing attribute annotation [4]: Attribute `b` of class `Foo` must have a type " ^
-      "that does not contain `Any`.";
-    ];
-
+    [ "Missing attribute annotation [4]: Attribute `x` of class `Foo` has type `int` "
+      ^ "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `y` of class `Foo` must have a type "
+      ^ "that does not contain `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` "
+      ^ "but type `Any` is specified.";
+      "Missing attribute annotation [4]: Attribute `b` of class `Foo` must have a type "
+      ^ "that does not contain `Any`." ];
   (* Don't report in non-debug mode. *)
   assert_default_type_errors
     {|
@@ -962,76 +813,64 @@ let test_check_missing_attribute _ =
           self.a = 1
     |}
     [];
-  assert_default_type_errors
-    {|
+  assert_default_type_errors {|
       class Foo:
         a: typing.Any
       Foo.a = 1
-    |}
-    []
+    |} []
 
 
 let test_check_getattr _ =
   let assert_test_getattr source =
     let getattr_stub =
-      {
-        qualifier = !&"has_getattr";
+      { qualifier = !&"has_getattr";
         handle = "has_getattr.pyi";
         source =
           {|
             from typing import Any
             def __getattr__(name: str) -> Any: ...
-          |};
+          |}
       }
     in
     let getattr_stub_str =
-      {
-        qualifier = !&"has_getattr_str";
+      { qualifier = !&"has_getattr_str";
         handle = "has_getattr_str.pyi";
-        source =
-          {|
+        source = {|
             def __getattr__(name: str) -> str: ...
-          |};
+          |}
       }
     in
     let getattr_stub_untyped =
-      {
-        qualifier = !&"has_getattr_untyped";
+      { qualifier = !&"has_getattr_untyped";
         handle = "has_getattr_untyped.pyi";
-        source =
-          {|
+        source = {|
             def __getattr__(name): ...
-          |};
+          |}
       }
     in
     let getattr_stub_invalid_arity =
-      {
-        qualifier = !&"has_getattr_invalid_arity";
+      { qualifier = !&"has_getattr_invalid_arity";
         handle = "has_getattr_invalid_arity.pyi";
-        source =
-          {|
+        source = {|
             def __getattr__(x: int, y: str) -> str: ...
-          |};
+          |}
       }
     in
     let getattr_stub_not_callable =
-      {
-        qualifier = !&"has_getattr_not_callable";
+      { qualifier = !&"has_getattr_not_callable";
         handle = "has_getattr_not_callable.pyi";
-        source =
-          {|
+        source = {|
             __getattr__ = 3
-          |};
+          |}
       }
     in
     assert_type_errors
-      ~update_environment_with:[
-        getattr_stub;
-        getattr_stub_str;
-        getattr_stub_untyped;
-        getattr_stub_invalid_arity;
-        getattr_stub_not_callable;
-      ]
+      ~update_environment_with:
+        [ getattr_stub;
+          getattr_stub_str;
+          getattr_stub_untyped;
+          getattr_stub_invalid_arity;
+          getattr_stub_not_callable ]
       source
   in
   assert_test_getattr
@@ -1075,20 +914,16 @@ let test_check_getattr _ =
       def foo() -> None:
          has_getattr_invalid_arity.any_attribute
     |}
-    [
-      "Undefined attribute [16]: Module `has_getattr_invalid_arity` " ^
-      "has no attribute `any_attribute`."
-    ];
+    [ "Undefined attribute [16]: Module `has_getattr_invalid_arity` "
+      ^ "has no attribute `any_attribute`." ];
   assert_test_getattr
     {|
       import has_getattr_not_callable
       def foo() -> None:
          has_getattr_not_callable.any_attribute
     |}
-    [
-      "Undefined attribute [16]: Module `has_getattr_not_callable` " ^
-      "has no attribute `any_attribute`."
-    ]
+    [ "Undefined attribute [16]: Module `has_getattr_not_callable` "
+      ^ "has no attribute `any_attribute`." ]
 
 
 let test_check_metaclass_attributes _ =
@@ -1106,10 +941,9 @@ let test_check_metaclass_attributes _ =
 
 
 let () =
-  "attribute">:::[
-    "check_attributes">::test_check_attributes;
-    "check_missing_attribute">::test_check_missing_attribute;
-    "check_getattr">::test_check_getattr;
-    "check_metaclass_attributes">::test_check_metaclass_attributes;
-  ]
+  "attribute"
+  >::: [ "check_attributes" >:: test_check_attributes;
+         "check_missing_attribute" >:: test_check_missing_attribute;
+         "check_getattr" >:: test_check_getattr;
+         "check_metaclass_attributes" >:: test_check_metaclass_attributes ]
   |> Test.run

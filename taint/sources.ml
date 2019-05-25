@@ -5,19 +5,18 @@
 
 open Core
 
-
 type t =
   | Cookies
   | Demo
   | NamedSource of string
   | PII
-  | Secrets  (* Such as passwords, tokens *)
+  | Secrets (* Such as passwords, tokens *)
   | Test
   | Thrift
   | UserControlled
 [@@deriving compare, eq, sexp, show, hash]
-let _ = show  (* unused *)
 
+let _ = show (* unused *)
 
 let show = function
   | Cookies -> "Cookies"

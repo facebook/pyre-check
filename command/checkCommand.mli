@@ -5,4 +5,4 @@
 
 open Core
 
-val check_command: Command.t
+val check_command : Command.t

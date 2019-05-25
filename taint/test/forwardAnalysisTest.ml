@@ -5,22 +5,16 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Pyre
 open Taint
-
 open Interprocedural
 open TestHelper
 
-
 let assert_taint ?(qualifier = "qualifier") ?models source expect =
   let configuration =
-    Configuration.Analysis.create
-      ~project_root:(Path.current_working_directory ())
-      ()
+    Configuration.Analysis.create ~project_root:(Path.current_working_directory ()) ()
   in
-
   let source =
     let path = Test.mock_path (qualifier ^ ".py") in
     let file = File.create ~content:(Test.trim_extra_indentation source) path in
@@ -36,67 +30,41 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
     | Some source -> source
     | None -> failwith "Unable to parse source."
   in
-
   let environment =
-    let models =
-      models
-      >>| (fun model -> [Test.parse model])
-      |> Option.value ~default:[]
-    in
+    let models = models >>| (fun model -> [Test.parse model]) |> Option.value ~default:[] in
     let environment =
       Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
     in
     Test.populate ~configuration environment [source];
     environment
   in
-
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
-      Model.parse
-        ~resolution:(TypeCheck.resolution environment ())
-        ~source:model_source
-        ~configuration:TaintConfiguration.default
-        Callable.Map.empty
-      |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
-      |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
+        Model.parse
+          ~resolution:(TypeCheck.resolution environment ())
+          ~source:model_source
+          ~configuration:TaintConfiguration.default
+          Callable.Map.empty
+        |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
+        |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
-
   TypeCheck.run ~configuration ~environment ~source |> ignore;
-  let defines =
-    source
-    |> Preprocessing.convert
-    |> Preprocessing.defines
-    |> List.rev
-  in
-  let () =
-    List.map ~f:Callable.create defines
-    |> Fixpoint.KeySet.of_list
-    |> Fixpoint.remove_new
-  in
+  let defines = source |> Preprocessing.convert |> Preprocessing.defines |> List.rev in
+  let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in
-    let () =
-      Log.log
-        ~section:`Taint
-        "Analyzing %a"
-        Interprocedural.Callable.pp
-        call_target
-    in
+    let () = Log.log ~section:`Taint "Analyzing %a" Interprocedural.Callable.pp call_target in
     let forward, _errors =
-      ForwardAnalysis.run
-        ~environment
-        ~define
-        ~existing_model:Taint.Result.empty_model
+      ForwardAnalysis.run ~environment ~define ~existing_model:Taint.Result.empty_model
     in
     let model = { Taint.Result.empty_model with forward } in
     Result.empty_model
     |> Result.with_model Taint.Result.kind model
-    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target;
+    |> Fixpoint.add_predefined Fixpoint.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
   List.iter ~f:check_expectation expect
-
 
 
 let test_no_model _ =
@@ -107,11 +75,7 @@ let test_no_model _ =
       def copy_source():
         pass
       |}
-      [
-        outcome
-          ~kind:`Function
-          "does_not_exist";
-      ]
+      [outcome ~kind:`Function "does_not_exist"]
   in
   assert_raises
     (OUnitTest.OUnit_failure "model not found for `Function (\"does_not_exist\")")
@@ -124,12 +88,7 @@ let test_simple_source _ =
       def simple_source():
         return __test_source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.simple_source";
-    ];
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"];
   assert_taint
     ~models:{|
       def custom_source() -> TaintSource[Test]: ...
@@ -138,17 +97,13 @@ let test_simple_source _ =
       def simple_source():
         return custom_source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.simple_source";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"]
 
 
 let test_hardcoded_source _ =
   assert_taint
-    ~models:{|
+    ~models:
+      {|
       django.http.Request.GET: TaintSource[UserControlled] = ...
       django.http.Request.POST: TaintSource[UserControlled] = ...
     |}
@@ -162,22 +117,12 @@ let test_hardcoded_source _ =
       def files(request: django.http.Request):
         return request.FILES
     |}
-    [
-      outcome
-        ~kind:`Object
-        ~returns:[Sources.UserControlled]
-        "django.http.Request.GET";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.UserControlled]
-        "qualifier.get";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.UserControlled]
-        "qualifier.post";
-    ];
+    [ outcome ~kind:`Object ~returns:[Sources.UserControlled] "django.http.Request.GET";
+      outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get";
+      outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.post" ];
   assert_taint
-    ~models:{|
+    ~models:
+      {|
       django.http.Request.GET: TaintSource[UserControlled] = ...
       def dict.__getitem__(self: TaintInTaintOut, key): ...
     |}
@@ -185,12 +130,7 @@ let test_hardcoded_source _ =
       def get_field(request: django.http.Request):
         return request.GET['field']
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.UserControlled]
-        "qualifier.get_field";
-    ];
+    [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_field"];
   assert_taint
     ~models:{|
       os.environ: TaintSource[UserControlled] = ...
@@ -199,14 +139,10 @@ let test_hardcoded_source _ =
       def get_environment_variable():
         return os.environ
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.UserControlled]
-        "qualifier.get_environment_variable";
-    ];
+    [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_environment_variable"];
   assert_taint
-    ~models:{|
+    ~models:
+      {|
       os.environ: TaintSource[UserControlled] = ...
       def dict.__getitem__(self: TaintInTaintOut, key): ...
     |}
@@ -214,12 +150,10 @@ let test_hardcoded_source _ =
       def get_environment_variable_with_getitem():
         return os.environ['BAD']
     |}
-    [
-      outcome
+    [ outcome
         ~kind:`Function
         ~returns:[Sources.UserControlled]
-        "qualifier.get_environment_variable_with_getitem";
-    ];
+        "qualifier.get_environment_variable_with_getitem" ];
   assert_taint
     {|
       class Request(django.http.Request): ...
@@ -227,12 +161,7 @@ let test_hardcoded_source _ =
       def get_field(request: Request):
         return request.GET['field']
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.UserControlled]
-        "qualifier.get_field";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_field"]
 
 
 let test_local_copy _ =
@@ -242,12 +171,7 @@ let test_local_copy _ =
         var = __test_source()
         return var
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.copy_source";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.copy_source"]
 
 
 let test_access_paths _ =
@@ -263,27 +187,14 @@ let test_access_paths _ =
         x = o.b
         return x.g
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.access_downward_closed";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.access_non_taint";
-    ];
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.access_downward_closed";
+      outcome ~kind:`Function ~returns:[] "qualifier.access_non_taint" ];
   assert_taint
     {|
       def access_through_expression():
         return " ".join(__test_source())
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.access_through_expression";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.access_through_expression"]
 
 
 let test_class_model _ =
@@ -293,13 +204,7 @@ let test_class_model _ =
         def bar():
           return __test_source()
     |}
-    [
-      outcome
-        ~kind:`Method
-        ~returns:[Sources.Test]
-        "qualifier.Foo.bar";
-    ];
-
+    [outcome ~kind:`Method ~returns:[Sources.Test] "qualifier.Foo.bar"];
   assert_taint
     ~models:{|
       qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
@@ -312,17 +217,8 @@ let test_class_model _ =
       def as_class_attribute():
         return Data.ATTRIBUTE
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.as_instance_attribute";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.as_class_attribute";
-    ];
-
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_instance_attribute";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_class_attribute" ];
   assert_taint
     {|
       class Class:
@@ -335,16 +231,8 @@ let test_class_model _ =
         c.tainted = __test_source()
         return c.property
     |}
-    [
-      outcome
-        ~kind:`Method
-        ~returns:[]
-        "qualifier.Class.property";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.uses_property";
-    ]
+    [ outcome ~kind:`Method ~returns:[] "qualifier.Class.property";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.uses_property" ]
 
 
 let test_apply_method_model_at_call_site _ =
@@ -362,13 +250,7 @@ let test_apply_method_model_at_call_site _ =
         f = Foo()
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_across_methods";
-    ];
-
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_across_methods"];
   assert_taint
     {|
       class Foo:
@@ -383,13 +265,7 @@ let test_apply_method_model_at_call_site _ =
         f = Bar()
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.taint_across_methods";
-    ];
-
+    [outcome ~kind:`Function ~returns:[] "qualifier.taint_across_methods"];
   assert_taint
     {|
       class Foo:
@@ -403,13 +279,7 @@ let test_apply_method_model_at_call_site _ =
       def taint_across_methods(f: Foo):
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_across_methods";
-    ];
-
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_across_methods"];
   assert_taint
     {|
       class Foo:
@@ -423,13 +293,7 @@ let test_apply_method_model_at_call_site _ =
       def taint_across_methods(f: Bar):
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.taint_across_methods";
-    ];
-
+    [outcome ~kind:`Function ~returns:[] "qualifier.taint_across_methods"];
   assert_taint
     {|
       class Foo:
@@ -448,13 +312,7 @@ let test_apply_method_model_at_call_site _ =
 
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_with_union_type";
-    ];
-
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_with_union_type"];
   assert_taint
     {|
       class Foo:
@@ -479,13 +337,7 @@ let test_apply_method_model_at_call_site _ =
 
         return f.qux()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_with_union_type";
-    ];
-
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_with_union_type"];
   assert_taint
     {|
       class Indirect:
@@ -499,12 +351,7 @@ let test_apply_method_model_at_call_site _ =
         direct = indirect.direct()
         return direct.source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_indirect_concatenated_call";
-    ];
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_indirect_concatenated_call"];
   assert_taint
     {|
       class Indirect:
@@ -517,12 +364,7 @@ let test_apply_method_model_at_call_site _ =
       def taint_indirect_concatenated_call(indirect: Indirect):
         return indirect.direct().source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.taint_indirect_concatenated_call";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_indirect_concatenated_call"]
 
 
 let test_taint_in_taint_out_application _ =
@@ -536,13 +378,7 @@ let test_taint_in_taint_out_application _ =
         x = __tito(y)
         return x
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.simple_source";
-    ];
-
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"];
   assert_taint
     {|
       def simple_source():
@@ -556,12 +392,7 @@ let test_taint_in_taint_out_application _ =
         x = __no_tito(y)
         return x
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.no_tito_taint";
-    ]
+    [outcome ~kind:`Function ~returns:[] "qualifier.no_tito_taint"]
 
 
 let test_dictionary _ =
@@ -596,28 +427,11 @@ let test_dictionary _ =
         }
         return dict["a"]
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.dictionary_source";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.dictionary_same_index";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.dictionary_different_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.dictionary_unknown_read_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.dictionary_unknown_write_index";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_source";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_same_index";
+      outcome ~kind:`Function ~returns:[] "qualifier.dictionary_different_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_unknown_read_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_unknown_write_index" ]
 
 
 let test_comprehensions _ =
@@ -641,32 +455,12 @@ let test_comprehensions _ =
       def source_in_generator_expression(data):
           return ( __test_source() for x in data )
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_iterator";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_expression";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_set_iterator";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_set_expression";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_generator_iterator";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_generator_expression";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_iterator";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_expression";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_set_iterator";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_set_expression";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_generator_iterator";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_generator_expression" ]
 
 
 let test_list _ =
@@ -700,36 +494,13 @@ let test_list _ =
           [*match, _, _] = [ 1, __test_source(), "foo" ]
           return match
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_list";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.list_same_index";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.list_different_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.list_unknown_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.list_pattern_same_index";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.list_pattern_different_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.list_pattern_star_index";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_list";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.list_same_index";
+      outcome ~kind:`Function ~returns:[] "qualifier.list_different_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.list_unknown_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.list_pattern_same_index";
+      outcome ~kind:`Function ~returns:[] "qualifier.list_pattern_different_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.list_pattern_star_index" ]
 
 
 let test_tuple _ =
@@ -763,36 +534,13 @@ let test_tuple _ =
           ( *match, _, _ ) = ( 1, __test_source(), "foo" )
           return match
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_tuple";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.tuple_same_index";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.tuple_different_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.tuple_unknown_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.tuple_pattern_same_index";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.tuple_pattern_different_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.tuple_pattern_star_index";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_tuple";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tuple_same_index";
+      outcome ~kind:`Function ~returns:[] "qualifier.tuple_different_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tuple_unknown_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tuple_pattern_same_index";
+      outcome ~kind:`Function ~returns:[] "qualifier.tuple_pattern_different_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tuple_pattern_star_index" ]
 
 
 let test_lambda _ =
@@ -801,12 +549,7 @@ let test_lambda _ =
       def source_in_lambda():
           return lambda x : x + __test_source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_lambda";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_lambda"]
 
 
 let test_set _ =
@@ -823,20 +566,9 @@ let test_set _ =
           set = { 1, __test_source(), "foo" }
           return set[index]
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_set";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.set_index";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.set_unknown_index";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_set";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.set_index";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.set_unknown_index" ]
 
 
 let test_starred _ =
@@ -854,16 +586,8 @@ let test_starred _ =
           }
           return __tito( **dict )
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_starred";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_starred_starred";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_starred";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_starred_starred" ]
 
 
 let test_string _ =
@@ -879,20 +603,9 @@ let test_string _ =
         input = __test_source()
         return f"{input}"
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.normal_string";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.untainted_format_string";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.tainted_format_string";
-    ]
+    [ outcome ~kind:`Function ~returns:[] "qualifier.normal_string";
+      outcome ~kind:`Function ~returns:[] "qualifier.untainted_format_string";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tainted_format_string" ]
 
 
 let test_ternary _ =
@@ -911,24 +624,13 @@ let test_ternary _ =
           return "foo" if __test_source() else "bar"
 
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_then";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_else";
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_then";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_else";
       outcome
         ~kind:`Function
         ~returns:[Sources.Test; Sources.UserControlled]
         "qualifier.source_in_both";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.source_in_cond";
-    ]
+      outcome ~kind:`Function ~returns:[] "qualifier.source_in_cond" ]
 
 
 let test_unary _ =
@@ -937,12 +639,7 @@ let test_unary _ =
       def source_in_unary():
           return not __test_source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_unary";
-    ]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_unary"]
 
 
 let test_yield _ =
@@ -954,16 +651,8 @@ let test_yield _ =
       def source_in_yield_from():
           yield from __test_source()
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_yield";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.source_in_yield_from";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_yield";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_yield_from" ]
 
 
 let test_construction _ =
@@ -985,47 +674,33 @@ let test_construction _ =
         d = Data(5, x)
         return d
     |}
-    [
-      outcome
-        ~kind:`Method
-        ~returns:[]
-        ~tito_parameters:["capture"]
-        "qualifier.Data.__init__";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_capture";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.test_no_capture";
-    ]
+    [ outcome ~kind:`Method ~returns:[] ~tito_parameters:["capture"] "qualifier.Data.__init__";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_capture";
+      outcome ~kind:`Function ~returns:[] "qualifier.test_no_capture" ]
 
 
 let test_composed_models _ =
   assert_taint
-    ~models:{|
+    ~models:
+      {|
       def composed_model(x: TaintSink[Test], y, z) -> TaintSource[UserControlled]: ...
       def composed_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
     |}
-    [
-      outcome
+    [ outcome
         ~kind:`Function
         ~returns:[Sources.UserControlled]
-        ~sink_parameters:[
-          { name = "x"; sinks = [Taint.Sinks.Test] };
-          { name = "y"; sinks = [Taint.Sinks.Demo] };
-        ]
+        ~sink_parameters:
+          [{ name = "x"; sinks = [Taint.Sinks.Test] }; { name = "y"; sinks = [Taint.Sinks.Demo] }]
         ~tito_parameters:["z"]
-        "composed_model";
-    ]
+        "composed_model" ]
 
 
 let test_tito_side_effects _ =
   assert_taint
-    ~models:{|
+    ~models:
+      {|
       def change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
       def change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
       def qualifier.MyList.append(self, arg: TaintInTaintOut[Updates[self]]): ...
@@ -1064,62 +739,38 @@ let test_tito_side_effects _ =
         l.append(__test_source())
         return l
     |}
-    [
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_from_1_to_0";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_from_0_to_1";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_from_1_to_0_nested";
-      outcome
-        ~kind:`Function
-        ~returns:[]
-        "qualifier.test_from_1_to_0_nested_distinct";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_weak_assign";
-      outcome
-        ~kind:`Method
-        ~tito_parameters:["arg updates parameter 0"]
-        "qualifier.MyList.append";
-      outcome
-        ~kind:`Function
-        ~returns:[Sources.Test]
-        "qualifier.test_list_append";
-    ]
+    [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_from_1_to_0";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_from_0_to_1";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_from_1_to_0_nested";
+      outcome ~kind:`Function ~returns:[] "qualifier.test_from_1_to_0_nested_distinct";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_weak_assign";
+      outcome ~kind:`Method ~tito_parameters:["arg updates parameter 0"] "qualifier.MyList.append";
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.test_list_append" ]
 
 
 let () =
-  "taint">:::[
-    "no_model">::test_no_model;
-    "simple">::test_simple_source;
-    "hardcoded">::test_hardcoded_source;
-    "copy">::test_local_copy;
-    "test_access_paths">::test_access_paths;
-    "class_model">::test_class_model;
-    "test_apply_method_model_at_call_site">::test_apply_method_model_at_call_site;
-    "test_taint_in_taint_out_application">::test_taint_in_taint_out_application;
-    "test_union">::test_taint_in_taint_out_application;
-    "test_dictionary">::test_dictionary;
-    "test_comprehensions">::test_comprehensions;
-    "test_list">::test_list;
-    "test_lambda">::test_lambda;
-    "test_set">::test_set;
-    "test_starred">::test_starred;
-    "test_string">::test_string;
-    "test_ternary">::test_ternary;
-    "test_tuple">::test_tuple;
-    "test_unary">::test_unary;
-    "test_yield">::test_yield;
-    "test_construction">::test_construction;
-    "test_composed_models">::test_composed_models;
-    "test_tito_side_effects">::test_tito_side_effects;
-  ]
+  "taint"
+  >::: [ "no_model" >:: test_no_model;
+         "simple" >:: test_simple_source;
+         "hardcoded" >:: test_hardcoded_source;
+         "copy" >:: test_local_copy;
+         "test_access_paths" >:: test_access_paths;
+         "class_model" >:: test_class_model;
+         "test_apply_method_model_at_call_site" >:: test_apply_method_model_at_call_site;
+         "test_taint_in_taint_out_application" >:: test_taint_in_taint_out_application;
+         "test_union" >:: test_taint_in_taint_out_application;
+         "test_dictionary" >:: test_dictionary;
+         "test_comprehensions" >:: test_comprehensions;
+         "test_list" >:: test_list;
+         "test_lambda" >:: test_lambda;
+         "test_set" >:: test_set;
+         "test_starred" >:: test_starred;
+         "test_string" >:: test_string;
+         "test_ternary" >:: test_ternary;
+         "test_tuple" >:: test_tuple;
+         "test_unary" >:: test_unary;
+         "test_yield" >:: test_yield;
+         "test_construction" >:: test_construction;
+         "test_composed_models" >:: test_composed_models;
+         "test_tito_side_effects" >:: test_tito_side_effects ]
   |> TestHelper.run_with_taint_models

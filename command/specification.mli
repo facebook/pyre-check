@@ -4,30 +4,30 @@
  * LICENSE file in the root directory of this source tree. *)
 
 val base_command_line_arguments
-  : (bool
-     -> string option
-     -> string list
-     -> bool
-     -> bool
-     -> bool
-     -> bool
-     -> bool
-     -> bool
-     -> string list
-     -> bool
-     -> string option
-     -> string option
-     -> int
-     -> string
-     -> string option
-     -> string option
-     -> string
-     -> string list
-     -> string option
-     -> string list
-     -> string list
-     -> string
-     -> unit
-     -> unit,
-     unit -> unit)
+  : ( bool ->
+      string option ->
+      string list ->
+      bool ->
+      bool ->
+      bool ->
+      bool ->
+      bool ->
+      bool ->
+      string list ->
+      bool ->
+      string option ->
+      string option ->
+      int ->
+      string ->
+      string option ->
+      string option ->
+      string ->
+      string list ->
+      string option ->
+      string list ->
+      string list ->
+      string ->
+      unit ->
+      unit,
+      unit -> unit )
     Core.Command.Spec.t

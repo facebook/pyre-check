@@ -4,9 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
-
 
 type attribute = {
   name: Identifier.t;
@@ -20,68 +18,43 @@ type attribute = {
   property: bool;
   final: bool;
   static: bool;
-  frozen: bool;
+  frozen: bool
 }
 [@@deriving eq, show]
 
+type t = attribute Node.t [@@deriving eq, show]
 
-type t = attribute Node.t
-[@@deriving eq, show]
-
-
-let name { Node.value = { name; _ }; _ } =
-  name
-
+let name { Node.value = { name; _ }; _ } = name
 
 let annotation { Node.value = { annotation; async; _ }; _ } =
   if async then
-    Annotation.annotation annotation
-    |> Type.awaitable
-    |> Annotation.create
+    Annotation.annotation annotation |> Type.awaitable |> Annotation.create
   else
     annotation
 
 
-let parent { Node.value = { parent; _ }; _ } =
-  parent
+let parent { Node.value = { parent; _ }; _ } = parent
 
+let value { Node.value = { value; _ }; _ } = value
 
-let value { Node.value = { value; _ }; _ } =
-  value
+let initialized { Node.value = { initialized; _ }; _ } = initialized
 
+let location { Node.location; _ } = location
 
-let initialized { Node.value = { initialized; _ }; _ } =
-  initialized
+let defined { Node.value = { defined; _ }; _ } = defined
 
+let class_attribute { Node.value = { class_attribute; _ }; _ } = class_attribute
 
-let location { Node.location; _ } =
-  location
+let async { Node.value = { async; _ }; _ } = async
 
+let final { Node.value = { final; _ }; _ } = final
 
-let defined { Node.value = { defined; _ }; _ } =
-  defined
+let static { Node.value = { static; _ }; _ } = static
 
-
-let class_attribute { Node.value = { class_attribute; _ }; _ } =
-  class_attribute
-
-
-let async { Node.value = { async; _ }; _ } =
-  async
-
-
-let final { Node.value = { final; _ }; _ } =
-  final
-
-
-let static { Node.value = { static; _}; _ } =
-  static
-
-let instantiate
-    ({ Node.value = ({ annotation; _ } as attribute); _ } as attribute_node)
-    ~constraints =
-  {
-    attribute_node with
+let instantiate ({ Node.value = { annotation; _ } as attribute; _ } as attribute_node)
+                ~constraints
+  =
+  { attribute_node with
     Node.value = { attribute with annotation = Annotation.instantiate annotation ~constraints }
   }
 
@@ -91,36 +64,29 @@ module Table = struct
 
   type t = {
     attributes: element String.Table.t;
-    names: string list ref;
+    names: string list ref
   }
 
-  let create () = {
-    attributes = String.Table.create ();
-    names = ref []
-  }
+  let create () = { attributes = String.Table.create (); names = ref [] }
 
   let add { attributes; names } ({ Node.value = { name; _ }; _ } as attribute) =
     match Hashtbl.add attributes ~key:name ~data:attribute with
-    | `Ok ->
-        names := name :: !names;
-    | `Duplicate ->
-        ()
+    | `Ok -> names := name :: !names
+    | `Duplicate -> ()
+
 
   let lookup_name { attributes; _ } = Hashtbl.find attributes
 
-  let to_list { attributes; names } =
-    List.rev_map !names ~f:(Hashtbl.find_exn attributes)
+  let to_list { attributes; names } = List.rev_map !names ~f:(Hashtbl.find_exn attributes)
 
   let clear { attributes; names } =
     Hashtbl.clear attributes;
     names := []
 
+
   let filter_map ~f table =
-    let add_attribute attribute =
-      Option.iter (f attribute) ~f:(add table)
-    in
+    let add_attribute attribute = Option.iter (f attribute) ~f:(add table) in
     let attributes = to_list table in
     clear table;
     List.iter attributes ~f:add_attribute
-
 end

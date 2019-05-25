@@ -5,30 +5,26 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Analysis
 open Expression
 open Pyre
 open PyreParser
 open Statement
-
 open Test
-
 
 let test_is_method _ =
   let define ~name ~parent =
-    {
-      Define.signature = {
-        name = !&name;
-        parameters = [];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = parent >>| Reference.create;
-      };
-      body = [+Pass];
+    { Define.signature =
+        { name = !&name;
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = parent >>| Reference.create
+        };
+      body = [+Pass]
     }
   in
   assert_true (Define.is_method (define ~name:"path.source.foo" ~parent:(Some "path.source")));
@@ -37,19 +33,18 @@ let test_is_method _ =
 
 let test_is_classmethod _ =
   let define name decorators =
-    {
-      Define.signature = {
-        name = !&name;
-        parameters = [];
-        decorators;
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = Some (!&"bar");
-      };
-      body = [+Pass];
-    } in
-
+    { Define.signature =
+        { name = !&name;
+          parameters = [];
+          decorators;
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = Some !&"bar"
+        };
+      body = [+Pass]
+    }
+  in
   assert_false (Define.is_class_method (define "foo" []));
   assert_false (Define.is_class_method (define "__init__" []));
   assert_true (Define.is_class_method (define "foo" [!"classmethod"]));
@@ -60,17 +55,16 @@ let test_is_classmethod _ =
 
 let test_is_class_property _ =
   let define name decorators =
-    {
-      Define.signature = {
-        name = !&name;
-        parameters = [];
-        decorators;
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = Some (!&"bar");
-      };
-      body = [+Pass];
+    { Define.signature =
+        { name = !&name;
+          parameters = [];
+          decorators;
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = Some !&"bar"
+        };
+      body = [+Pass]
     }
   in
   assert_false (Define.is_class_property (define "foo" []));
@@ -81,24 +75,22 @@ let test_is_class_property _ =
 
 let test_decorator _ =
   let define decorators =
-    {
-      Define.signature = {
-        name = !&"foo";
-        parameters = [];
-        decorators;
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
-      };
-      body = [+Pass];
-    } in
-
+    { Define.signature =
+        { name = !&"foo";
+          parameters = [];
+          decorators;
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None
+        };
+      body = [+Pass]
+    }
+  in
   assert_false (Define.is_static_method (define []));
   assert_false (Define.is_static_method (define [!"foo"]));
   assert_true (Define.is_static_method (define [!"staticmethod"]));
   assert_true (Define.is_static_method (define [!"foo"; !"staticmethod"]));
-
   assert_false (Define.is_abstract_method (define []));
   assert_false (Define.is_abstract_method (define [!"foo"]));
   assert_true (Define.is_abstract_method (define [!"abstractmethod"]));
@@ -106,29 +98,26 @@ let test_decorator _ =
   assert_true (Define.is_abstract_method (define [!"abc.abstractmethod"]));
   assert_true (Define.is_abstract_method (define [!"abstractproperty"]));
   assert_true (Define.is_abstract_method (define [!"abc.abstractproperty"]));
-
   assert_true (Define.is_overloaded_method (define [!"overload"]));
   assert_true (Define.is_overloaded_method (define [!"typing.overload"]));
-
-  assert_true ((Define.is_property_setter) (define [!"foo.setter"]));
-  assert_false ((Define.is_property_setter) (define [!"setter"]));
-  assert_false ((Define.is_property_setter) (define [!"bar.setter"]))
+  assert_true (Define.is_property_setter (define [!"foo.setter"]));
+  assert_false (Define.is_property_setter (define [!"setter"]));
+  assert_false (Define.is_property_setter (define [!"bar.setter"]))
 
 
 let test_is_constructor _ =
   let assert_is_constructor ?(in_test = false) ~name ?(parent = None) expected =
     let define =
-      {
-        Define.signature = {
-          name = !&name;
-          parameters = [];
-          decorators = [];
-          docstring = None;
-          return_annotation = None;
-          async = false;
-          parent = parent >>| Reference.create;
-        };
-        body = [+Pass];
+      { Define.signature =
+          { name = !&name;
+            parameters = [];
+            decorators = [];
+            docstring = None;
+            return_annotation = None;
+            async = false;
+            parent = parent >>| Reference.create
+          };
+        body = [+Pass]
       }
     in
     assert_equal expected (Define.is_constructor ~in_test define)
@@ -146,7 +135,6 @@ let test_dump _ =
   let assert_dump source expected =
     assert_equal expected (parse_single_define ~convert:true source |> Define.dump)
   in
-
   assert_dump "def foo(): pass" false;
   assert_dump "def foo(): pyre_dump()" true;
   assert_dump "def foo(): pyre_dump_cfg()" false;
@@ -173,7 +161,6 @@ let test_constructor _ =
     else
       assert_true (List.is_empty constructors)
   in
-
   assert_constructor
     {|
       class Foo:
@@ -181,12 +168,10 @@ let test_constructor _ =
           pass
     |}
     ~exists:true;
-  assert_constructor
-    {|
+  assert_constructor {|
       class Foo:
         pass
-    |}
-    ~exists:false
+    |} ~exists:false
 
 
 let test_defines _ =
@@ -204,23 +189,17 @@ let test_defines _ =
     let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
-        assert_equal
-          define.Node.value.Define.signature.name
-          (!&method_id)
-          ~printer:Reference.show
-    | None when not exists ->
-        ()
+        assert_equal define.Node.value.Define.signature.name !&method_id ~printer:Reference.show
+    | None when not exists -> ()
     | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
-          Reference.pp name
+          Reference.pp
+          name
           method_name
         |> assert_failure
-    | None ->
-        Format.sprintf "method %s not found when expected" method_name
-        |> assert_failure
+    | None -> Format.sprintf "method %s not found when expected" method_name |> assert_failure
   in
-
   assert_define
     {|
       class Foo:
@@ -233,7 +212,6 @@ let test_defines _ =
     ~total:2
     ~method_name:"method"
     ~exists:true;
-
   assert_define
     {|
       class Foo:
@@ -254,19 +232,25 @@ let test_defines _ =
 let test_is_unit_test _ =
   assert_true
     (Class.is_unit_test
-       (parse_single_class ~convert:true {|
+       (parse_single_class
+          ~convert:true
+          {|
           class unittest.TestCase(object):
             pass
         |}));
   assert_true
     (Class.is_unit_test
-       (parse_single_class ~convert:true {|
+       (parse_single_class
+          ~convert:true
+          {|
           class unittest.case.TestCase(object):
             pass
         |}));
   assert_false
     (Class.is_unit_test
-       (parse_single_class ~convert:true {|
+       (parse_single_class
+          ~convert:true
+          {|
           class a.TestCase(unittest.TestCase):
             pass
         |}))
@@ -286,9 +270,9 @@ let test_attributes _ =
       ~annotation
       ?defines
       ~value
-      () =
-    {
-      Attribute.name;
+      ()
+    =
+    { Attribute.name;
       annotation;
       defines;
       value;
@@ -299,7 +283,7 @@ let test_attributes _ =
       toplevel;
       final;
       static;
-      frozen;
+      frozen
     }
     |> Node.create ~location
   in
@@ -319,30 +303,22 @@ let test_attributes _ =
         List.map expected ~f:attribute
       in
       let definition =
-        {
-          Record.Class.name = !&"";
-          bases = [];
-          body = [];
-          decorators = [];
-          docstring = None;
-        }
+        { Record.Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
       in
       assert_equal
         ~cmp:(List.equal ~equal:Attribute.equal)
-        ~printer:(
-          fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n"
-        )
+        ~printer:(fun attributes ->
+          List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
         expected
-        (parse_single_define ~convert source
-         |> Define.implicit_attributes ~convert ~definition
-         |> Identifier.SerializableMap.bindings
-         |> List.map ~f:snd)
+        ( parse_single_define ~convert source
+        |> Define.implicit_attributes ~convert ~definition
+        |> Identifier.SerializableMap.bindings
+        |> List.map ~f:snd )
     in
     assertion ~convert:true;
     assertion ~convert:false
   in
   assert_implicit_attributes "def foo(): pass" [];
-
   assert_implicit_attributes
     {|
       def foo():
@@ -364,47 +340,36 @@ let test_attributes _ =
         self.attribute: str = value
     |}
     ["attribute", Some (Type.Union [Type.string; Type.integer]), Some "value", true];
-
   assert_implicit_attributes
     {|
       def foo():
         self.attribute, self.other = derp()
     |}
-    [
-      "attribute", None, Some "derp()", true;
-      "other", None, Some "derp()", true;
-    ];
+    ["attribute", None, Some "derp()", true; "other", None, Some "derp()", true];
   assert_implicit_attributes
     {|
       def foo(self, derp: int):
         self.attribute, self.other = derp
     |}
-    [
-      "attribute", None, Some "derp", true;
-      "other", None, Some "derp", true;
-    ];
-
+    ["attribute", None, Some "derp", true; "other", None, Some "derp", true];
   assert_implicit_attributes
     {|
       def foo(self, argument: str):
         self.attribute = argument
     |}
     ["attribute", None, Some "argument", true];
-
   assert_implicit_attributes
     {|
       def foo(self, attribute: str):
         self.attribute = attribute
     |}
     ["attribute", Some Type.string, Some "attribute", true];
-
   assert_implicit_attributes
     {|
       def foo(self, attribute: MyType):
         self.attribute = attribute
     |}
     ["attribute", Some (Type.Primitive "MyType"), Some "attribute", true];
-
   assert_implicit_attributes
     {|
       def foo(self, attribute: str, test: bool):
@@ -412,14 +377,12 @@ let test_attributes _ =
           self.attribute = attribute
     |}
     ["attribute", None, Some "attribute", false];
-
   assert_implicit_attributes
     {|
       def foo(self, argument: str):
         self.argument = unknown
     |}
     ["argument", None, Some "unknown", true];
-
   (* Implicit arguments in branches. *)
   assert_implicit_attributes
     {|
@@ -431,12 +394,9 @@ let test_attributes _ =
           if False:
             self.nested = value
     |}
-    [
-      "attribute", None, Some "value", true;
+    [ "attribute", None, Some "value", true;
       "nested", None, Some "value", false;
-      "other", None, Some "value", false;
-    ];
-
+      "other", None, Some "value", false ];
   (* `self` isn't special cased if a self parameter is passed into the function. *)
   assert_implicit_attributes
     {|
@@ -444,25 +404,24 @@ let test_attributes _ =
       renamed_self.attribute: int = value
   |}
     ["attribute", Some Type.integer, Some "value", true];
-
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
     let assertion ~convert =
       let expected =
         expected
         >>| fun (name, annotation, value, setter) ->
-          create_attribute
-            ~setter
-            ~name
-            ~annotation:(annotation >>| Type.expression ~convert)
-            ~value
-            ~property:true
-            ()
+        create_attribute
+          ~setter
+          ~name
+          ~annotation:(annotation >>| Type.expression ~convert)
+          ~value
+          ~property:true
+          ()
       in
       let define =
         let define = parse_single_define ~convert source in
-        let signature = { define.signature with parent = Some (!&"Parent") } in
-        { define with signature  }
+        let signature = { define.signature with parent = Some !&"Parent" } in
+        { define with signature }
       in
       assert_equal
         ~cmp:(Option.equal Attribute.equal)
@@ -492,41 +451,38 @@ let test_attributes _ =
       def Parent.foo() -> int: pass
     |}
     (Some ("foo", Some Type.integer, None, false));
-
   (* Test class attributes. *)
-  let assert_attributes
-      ?(in_test = false)
-      ?(include_generated_attributes = true)
-      source
-      expected =
+  let assert_attributes ?(in_test = false)
+                        ?(include_generated_attributes = true)
+                        source
+                        expected =
     let assertion ~convert =
       let expected =
         let attribute (name, location, annotation, value, setter, number_of_defines) =
           let location =
             match location with
-            | None ->
-                None
+            | None -> None
             | Some ((start_line, start_column), (stop_line, stop_column)) ->
-                Some {
-                  Location.path = String.hash "test.py";
-                  start = { Location.line = start_line; column = start_column };
-                  stop = { Location.line = stop_line; column = stop_column };
-                }
+                Some
+                  { Location.path = String.hash "test.py";
+                    start = { Location.line = start_line; column = start_column };
+                    stop = { Location.line = stop_line; column = stop_column }
+                  }
           in
           let defines =
             if number_of_defines > 0 then
-              let define = {
-                Statement.Define.signature = {
-                  name = !&"foo";
-                  parameters = [];
-                  decorators = [];
-                  docstring = None;
-                  return_annotation = Some !"int";
-                  async = false;
-                  parent = None;
-                };
-                body = [];
-              }
+              let define =
+                { Statement.Define.signature =
+                    { name = !&"foo";
+                      parameters = [];
+                      decorators = [];
+                      docstring = None;
+                      return_annotation = Some !"int";
+                      async = false;
+                      parent = None
+                    };
+                  body = []
+                }
               in
               Some (List.init ~f:(fun _ -> define) number_of_defines)
             else
@@ -544,30 +500,30 @@ let test_attributes _ =
         List.map expected ~f:attribute
       in
       let printer attributes =
-        List.map attributes ~f:Attribute.show
-        |> String.concat ~sep:"\n\n"
+        List.map attributes ~f:Attribute.show |> String.concat ~sep:"\n\n"
       in
       let equal
           { Node.value = left; location = left_location }
-          { Node.value = right; location = right_location } =
+          { Node.value = right; location = right_location }
+        =
         let open Attribute in
-        left.async = right.async &&
-        left.setter = right.setter &&
-        String.equal left.name right.name &&
-        Option.equal Expression.equal left.annotation right.annotation &&
-        Option.equal Expression.equal left.value right.value &&
-        Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length) &&
-        (Location.equal left_location Location.Reference.any ||
-         Location.equal left_location right_location)
+        left.async = right.async
+        && left.setter = right.setter
+        && String.equal left.name right.name
+        && Option.equal Expression.equal left.annotation right.annotation
+        && Option.equal Expression.equal left.value right.value
+        && Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
+        && ( Location.equal left_location Location.Reference.any
+           || Location.equal left_location right_location )
       in
       assert_equal
         ~cmp:(List.equal ~equal)
         ~printer
         expected
-        (parse_single_class ~convert source
-         |> Class.attributes ~in_test ~include_generated_attributes ~convert
-         |> Identifier.SerializableMap.bindings
-         |> List.map ~f:snd)
+        ( parse_single_class ~convert source
+        |> Class.attributes ~in_test ~include_generated_attributes ~convert
+        |> Identifier.SerializableMap.bindings
+        |> List.map ~f:snd )
     in
     assertion ~convert:true;
     assertion ~convert:false
@@ -580,9 +536,7 @@ let test_attributes _ =
       class Foo:
         Foo.attribute: int = value
     |}
-    [
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
-    ];
+    [attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ()];
   assert_attributes
     {|
       class Foo:
@@ -594,12 +548,10 @@ let test_attributes _ =
         Foo.attribute: int = value
         whatever()['asdf'] = 5
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
+    [ attribute ~name:"__init__" ~number_of_defines:1 ();
       attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
       attribute ~name:"ignored" ~value:"ignored" ();
-      attribute ~name:"implicit" ~value:"implicit" ();
-    ];
+      attribute ~name:"implicit" ~value:"implicit" () ];
   assert_attributes
     {|
       class Foo:
@@ -607,9 +559,7 @@ let test_attributes _ =
         def Foo.f(self, x: int) -> int: ...
         def Foo.f(self, x: str) -> str: ...
     |}
-    [
-      attribute ~name:"f" ~number_of_defines:2 ();
-    ];
+    [attribute ~name:"f" ~number_of_defines:2 ()];
   assert_attributes
     {|
       class Foo:
@@ -617,10 +567,8 @@ let test_attributes _ =
           self.attribute = value  # Prioritize explicit declaration
         Foo.attribute: int = value
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
-      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
-    ];
+    [ attribute ~name:"__init__" ~number_of_defines:1 ();
+      attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" () ];
   assert_attributes
     {|
       class Foo:
@@ -631,12 +579,10 @@ let test_attributes _ =
         def Foo.not_inlined(self):
           self.other: int = 1
     |}
-    [
-      attribute ~name:"__init__" ~number_of_defines:1 ();
+    [ attribute ~name:"__init__" ~number_of_defines:1 ();
       attribute ~name:"attribute" ~annotation:Type.integer ~value:"value" ();
       attribute ~name:"init" ~number_of_defines:1 ();
-      attribute ~name:"not_inlined" ~number_of_defines:1 ();
-    ];
+      attribute ~name:"not_inlined" ~number_of_defines:1 () ];
   assert_attributes
     {|
       class Foo:
@@ -658,12 +604,10 @@ let test_attributes _ =
         class Foo.Bar:  # no preprocessing in tests
           ...
     |}
-    [
-      attribute
+    [ attribute
         ~name:"Bar"
         ~annotation:(Type.class_variable (Type.meta (Type.Primitive "Foo.Bar")))
-        ();
-    ];
+        () ];
   assert_attributes
     {|
       class Foo:
@@ -680,27 +624,20 @@ let test_attributes _ =
         def Foo.x(self, value:str) -> None: ...
     |}
     [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
-
   (* Simultaneous assignment *)
   assert_attributes
     {|
       class Foo:
         Foo.a, Foo.b = 1, 2
      |}
-    [
-      "a", None, None, Some "1", false, 0;
-      "b", None, None, Some "2", false, 0;
-    ];
+    ["a", None, None, Some "1", false, 0; "b", None, None, Some "2", false, 0];
   assert_attributes
     {|
       class Foo:
         Foo.a, Foo.b = list(range(2))
     |}
-    [
-      "a", None, None, Some "list(range(2))[0]", false, 0;
-      "b", None, None, Some "list(range(2))[1]", false, 0;
-    ];
-
+    [ "a", None, None, Some "list(range(2))[0]", false, 0;
+      "b", None, None, Some "list(range(2))[1]", false, 0 ];
   (* Implicit attributes in tests. *)
   assert_attributes
     ~in_test:true
@@ -709,10 +646,7 @@ let test_attributes _ =
         def Test.setUp(self):
           self.attribute = value
     |}
-    [
-      attribute ~name:"attribute" ~value:"value" ();
-      attribute ~name:"setUp" ~number_of_defines:1 ();
-    ];
+    [attribute ~name:"attribute" ~value:"value" (); attribute ~name:"setUp" ~number_of_defines:1 ()];
   assert_attributes
     ~in_test:true
     {|
@@ -722,41 +656,30 @@ let test_attributes _ =
         def Test.with_context(self):
           self.context = value
     |}
-    [
-      attribute ~name:"attribute" ~value:"value" ();
+    [ attribute ~name:"attribute" ~value:"value" ();
       attribute ~name:"context" ~value:"value" ();
       attribute ~name:"setUp" ~number_of_defines:1 ();
-      attribute ~name:"with_context" ~number_of_defines:1 ();
-    ];
-
+      attribute ~name:"with_context" ~number_of_defines:1 () ];
   (* __slot__ attributes *)
   assert_attributes
     {|
       class Foo:
         __slots__ = ['attribute']
     |}
-    [
-      attribute ~name:"attribute" ();
-    ];
+    [attribute ~name:"attribute" ()];
   assert_attributes
     {|
       class Foo:
         __slots__ = ['name', 'identifier']
     |}
-    [
-      attribute ~name:"identifier" ();
-      attribute ~name:"name" ();
-    ];
-
+    [attribute ~name:"identifier" (); attribute ~name:"name" ()];
   assert_attributes
     {|
       class Foo:
         Foo.x, Foo.y = 1, 2
     |}
-    [
-      attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
-      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" ();
-    ]
+    [ attribute ~location:((3, 2), (3, 7)) ~name:"x" ~value:"1" ();
+      attribute ~location:((3, 9), (3, 14)) ~name:"y" ~value:"2" () ]
 
 
 let test_update _ =
@@ -766,10 +689,9 @@ let test_update _ =
       ~cmp:Class.equal
       (parse_single_class ~convert:true expected)
       (Class.update
-        (parse_single_class ~convert:true stub)
-        ~definition:(parse_single_class ~convert:true definition))
+         (parse_single_class ~convert:true stub)
+         ~definition:(parse_single_class ~convert:true definition))
   in
-
   assert_updated
     ~stub:{|
       class Foo:
@@ -832,12 +754,10 @@ let test_preamble _ =
       preamble
       (With.preamble block)
   in
-
   assert_preamble "with item: pass" "item";
   assert_preamble "with item, other: pass" "item; other";
   assert_preamble "with item as name: pass" "name = item.__enter__()";
   assert_preamble "async with item as name: pass" "name = await item.__aenter__()";
-
   let assert_preamble block preamble =
     let block =
       match parse_single_statement block with
@@ -851,12 +771,10 @@ let test_preamble _ =
       preamble
       [For.preamble block]
   in
-
   assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
   assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
   assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
   assert_preamble "async for a in b: pass" "a = await b.__aiter__().__anext__()";
-
   let assert_preamble block preambles =
     let handlers =
       match parse_single_statement block with
@@ -871,9 +789,8 @@ let test_preamble _ =
       List.map preambles ~f:preamble
     in
     let printer preambles =
-      List.map
-        preambles
-        ~f:(fun preamble -> List.map ~f:Statement.show preamble |> String.concat ~sep:", ")
+      List.map preambles ~f:(fun preamble ->
+          List.map ~f:Statement.show preamble |> String.concat ~sep:", ")
       |> String.concat ~sep:"\n"
     in
     assert_equal
@@ -882,7 +799,6 @@ let test_preamble _ =
       preambles
       (List.map handlers ~f:Try.preamble)
   in
-
   assert_preamble "try: pass" [];
   assert_preamble
     {|
@@ -909,10 +825,8 @@ let test_preamble _ =
       except Exception as error:
         pass
     |}
-    [
-      "error = ...\nassert isinstance(error, IOError)";
-      "error = ...\nassert isinstance(error, Exception)";
-    ];
+    [ "error = ...\nassert isinstance(error, IOError)";
+      "error = ...\nassert isinstance(error, Exception)" ];
   assert_preamble
     {|
       try:
@@ -944,77 +858,65 @@ let test_convert _ =
     |}
 
 
-
 let test_assume _ =
   assert_equal
     (assume (+True))
-    (+Assert {
-       Assert.test = +True;
-       message = None;
-       origin = Assert.Assertion;
-     })
+    (+Assert { Assert.test = +True; message = None; origin = Assert.Assertion })
 
 
 let test_terminates _ =
   assert_true
-    (parse ({|
+    ( parse {|
         x = 1
         return x
-     |})
-     |> (fun source -> terminates source.Source.statements));
+     |}
+    |> fun source -> terminates source.Source.statements );
   assert_true
-    (parse ({|
+    (parse {|
        x = 1
        raise
-    |})
-     |> (fun source -> terminates source.Source.statements));
+    |} |> fun source -> terminates source.Source.statements);
   assert_false
-    (parse ({|
+    ( parse {|
          if x:
           return x
          x = 1
-     |})
-     |> (fun source -> terminates source.Source.statements))
+     |}
+    |> fun source -> terminates source.Source.statements )
 
 
 let test_docstring _ =
   assert_equal
-    (parse_single_statement ~convert:true {|
+    ( parse_single_statement
+        ~convert:true
+        {|
          def foo():
            """doc
               string
                end"""
            pass
     |}
-     |> (function
-         | { Node.value = Define { Define.signature = { docstring; _ }; _ }; _ } -> docstring
-         | _ -> None))
+    |> function
+    | { Node.value = Define { Define.signature = { docstring; _ }; _ }; _ } -> docstring
+    | _ -> None )
     (Some "doc\nstring\n end")
 
 
 let test_pp _ =
   let assert_pretty_print ~expected source =
     let pretty_print_expected =
-      expected
-      |> String.lstrip ~drop:((=) '\n')
-      |> Test.trim_extra_indentation
+      expected |> String.lstrip ~drop:(( = ) '\n') |> Test.trim_extra_indentation
     in
-    let source =
-      Test.trim_extra_indentation source
-      |> String.rstrip ~drop:((=) '\n')
-    in
+    let source = Test.trim_extra_indentation source |> String.rstrip ~drop:(( = ) '\n') in
     let pretty_print_of_source =
       source
       |> String.split_on_chars ~on:['\n']
       |> Parser.parse
       |> List.map ~f:Statement.show
       |> String.concat ~sep:"\n"
-      |> String.rstrip ~drop:((=) '\n')
+      |> String.rstrip ~drop:(( = ) '\n')
     in
-    assert_equal
-      ~printer:Fn.id
-      pretty_print_expected
-      pretty_print_of_source
+    assert_equal ~printer:Fn.id pretty_print_expected pretty_print_of_source
   in
   (* Test 1 : simple def *)
   assert_pretty_print
@@ -1026,7 +928,6 @@ let test_pp _ =
       def foo(bar):
         x = "hello world"
     |};
-
   (* Test 2 : def with multiple decorators *)
   assert_pretty_print
     {|
@@ -1035,12 +936,12 @@ let test_pp _ =
       def foo(bar):
         x = "hello world"
     |}
-    ~expected:{|
+    ~expected:
+      {|
       @(decorator1, decorator2)
       def foo(bar):
         x = "hello world"
     |};
-
   (* Test 3 : multiple defs and statements *)
   assert_pretty_print
     {|
@@ -1054,7 +955,8 @@ let test_pp _ =
         x = "hello squirrel"
         y = 5
     |}
-    ~expected:{|
+    ~expected:
+      {|
       @(decorator1, decorator2)
       def foo(bar):
         x = "hello world"
@@ -1064,7 +966,6 @@ let test_pp _ =
         x = "hello squirrel"
         y = 5
     |};
-
   (* Test 4 : cover classes, for loops, compound statements *)
   assert_pretty_print
     {|
@@ -1075,7 +976,8 @@ let test_pp _ =
             i = 1
           i = 2
     |}
-    ~expected:{|
+    ~expected:
+      {|
       @(class_decorator)
       class Foo(Bar):
         def Foo#baz(quux):
@@ -1083,7 +985,6 @@ let test_pp _ =
             i = 1
           i = 2
     |};
-
   (* Test 5 : try/except/finally blocks *)
   assert_pretty_print
     {|
@@ -1101,7 +1002,8 @@ let test_pp _ =
       finally:
         pass
     |}
-    ~expected:{|
+    ~expected:
+      {|
       try:
         raise Exception("whoops")
       except SomeError as e:
@@ -1116,7 +1018,6 @@ let test_pp _ =
       finally:
         pass
     |};
-
   (* Test 6 : while and if/then/else and list access *)
   assert_pretty_print
     {|
@@ -1130,7 +1031,8 @@ let test_pp _ =
       i[j] = 3
       i[j::1] = i[:j]
     |}
-    ~expected:{|
+    ~expected:
+      {|
       while x:
         i = 1
         if i > 0:
@@ -1141,51 +1043,45 @@ let test_pp _ =
       i.__setitem__(j,3)
       i.__setitem__(slice(j,None,1),i[slice(None,j,None)])
     |};
-
   assert_pretty_print
     {|
       @some.decorator('with_a_string')
       def decorator_test():
         return 5
     |}
-    ~expected:{|
+    ~expected:
+      {|
       @(some.decorator("with_a_string"))
       def decorator_test():
         return 5
     |};
-
-  assert_pretty_print
-    {|
+  assert_pretty_print {|
       global a
-    |}
-    ~expected:{|
+    |} ~expected:{|
       global a
     |}
 
 
 let () =
-  "define">:::[
-    "is_method">::test_is_method;
-    "classmethod">::test_is_classmethod;
-    "is_class_property">::test_is_class_property;
-    "decorator">::test_decorator;
-    "is_constructor">::test_is_constructor;
-    "dump">::test_dump;
-  ]
+  "define"
+  >::: [ "is_method" >:: test_is_method;
+         "classmethod" >:: test_is_classmethod;
+         "is_class_property" >:: test_is_class_property;
+         "decorator" >:: test_decorator;
+         "is_constructor" >:: test_is_constructor;
+         "dump" >:: test_dump ]
   |> Test.run;
-  "class">:::[
-    "constructor">::test_constructor;
-    "defines">::test_defines;
-    "attributes">::test_attributes;
-    "update">::test_update;
-    "is_unit_test">::test_is_unit_test;
-  ]
+  "class"
+  >::: [ "constructor" >:: test_constructor;
+         "defines" >:: test_defines;
+         "attributes" >:: test_attributes;
+         "update" >:: test_update;
+         "is_unit_test" >:: test_is_unit_test ]
   |> Test.run;
-  "statement">:::[
-    "convert">::test_convert;
-    "assume">::test_assume;
-    "preamble">::test_preamble;
-    "terminates">::test_terminates;
-    "pp">::test_pp;
-  ]
+  "statement"
+  >::: [ "convert" >:: test_convert;
+         "assume" >:: test_assume;
+         "preamble" >:: test_preamble;
+         "terminates" >:: test_terminates;
+         "pp" >:: test_pp ]
   |> Test.run

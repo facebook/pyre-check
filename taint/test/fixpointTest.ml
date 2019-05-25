@@ -5,28 +5,20 @@
 
 open Core
 open OUnit2
-
 open Taint
-
 open Interprocedural
 open TestHelper
 
-
 type expect_fixpoint = {
   expect: expectation list;
-  iterations: int;
+  iterations: int
 }
-
 
 let assert_fixpoint ?models source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let { all_callables; callgraph; environment; overrides } =
-    initialize
-      ?models
-      ~qualifier:"qualifier"
-      source
+    initialize ?models ~qualifier:"qualifier" source
   in
-
   let dependencies =
     DependencyGraph.from_callgraph callgraph
     |> DependencyGraph.union overrides
@@ -138,155 +130,95 @@ let test_fixpoint _ =
         obj = deep_tito(__user_controlled(), __test_source())
         getattr('obj', obj.g.f)
     |}
-    ~expect:{
-      iterations = 4;
-      expect = [
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5001;
-              pattern = ".*Possible shell injection.*Data from \\[UserControlled\\].*\\[RemoteCodeExecution\\].*";
-            };
-          ]
-          "qualifier.rce_problem";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-            }
-          ]
-          "qualifier.match_flows";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-            }
-          ]
-          "qualifier.match_flows_multiple";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-            };
-          ]
-          "qualifier.match_via_methods";
-
-        outcome
-          ~kind:`Function
-          ~errors:[]
-          "qualifier.no_match_via_methods";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-            };
-          ]
-          "qualifier.match_via_receiver";
-
-        outcome
-          ~kind:`Function
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Taint.Sinks.Test] }
-          ]
-          ~errors:[]
-          "qualifier.qux";
-
-        outcome
-          ~kind:`Function
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Taint.Sinks.Test] }
-          ]
-          "qualifier.bad";
-
-        outcome
-          ~kind:`Function
-          ~returns:[Sources.Test]
-          ~errors:[]
-          "qualifier.bar";
-
-        outcome
-          ~kind:`Function
-          ~returns:[Sources.Test]
-          "qualifier.some_source";
-
-        outcome
-          ~kind:`Function
-          ~sink_parameters:[
-            { name = "list"; sinks = [Taint.Sinks.Test] }
-          ]
-          "qualifier.list_sink";
-
-        outcome
-          ~kind:`Function
-          ~errors:[]
-          "qualifier.no_list_match";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*";
-            };
-          ]
-          "qualifier.list_match";
-
-        outcome
-          ~kind:`Function
-          ~errors:[]
-          "qualifier.test_getattr_obj_no_match";
-
-        outcome
-          ~kind:`Function
-          ~tito_parameters:["some_obj"]
-          ~errors:[
-            {
-              code = 5010;
-              pattern = ".*Attacker may control at least one argument to getattr(,)";
-            };
-          ]
-          "qualifier.test_getattr_field_match";
-
-        outcome
-          ~kind:`Function
-          ~tito_parameters:["tito"]
-          ~errors:[]
-          "qualifier.deep_tito";
-
-        outcome
-          ~kind:`Function
-          ~errors:[]
-          "qualifier.test_deep_tito_no_match";
-
-        outcome
-          ~kind:`Function
-          ~errors:[
-            {
-              code = 5010;
-              pattern = ".*Attacker may control at least one argument to getattr(,)";
-            };
-          ]
-          "qualifier.test_deep_tito_match";
-      ]
-    }
+    ~expect:
+      { iterations = 4;
+        expect =
+          [ outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5001;
+                    pattern =
+                      ".*Possible shell injection.*Data from \
+                       \\[UserControlled\\].*\\[RemoteCodeExecution\\].*"
+                  } ]
+              "qualifier.rce_problem";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                  } ]
+              "qualifier.match_flows";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                  } ]
+              "qualifier.match_flows_multiple";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                  } ]
+              "qualifier.match_via_methods";
+            outcome ~kind:`Function ~errors:[] "qualifier.no_match_via_methods";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                  } ]
+              "qualifier.match_via_receiver";
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "arg"; sinks = [Taint.Sinks.Test] }]
+              ~errors:[]
+              "qualifier.qux";
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "arg"; sinks = [Taint.Sinks.Test] }]
+              "qualifier.bad";
+            outcome ~kind:`Function ~returns:[Sources.Test] ~errors:[] "qualifier.bar";
+            outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.some_source";
+            outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "list"; sinks = [Taint.Sinks.Test] }]
+              "qualifier.list_sink";
+            outcome ~kind:`Function ~errors:[] "qualifier.no_list_match";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5002;
+                    pattern = ".*Test flow.*Data from \\[Test\\] source(s).* \\[Test\\] sink(s).*"
+                  } ]
+              "qualifier.list_match";
+            outcome ~kind:`Function ~errors:[] "qualifier.test_getattr_obj_no_match";
+            outcome
+              ~kind:`Function
+              ~tito_parameters:["some_obj"]
+              ~errors:
+                [ { code = 5010;
+                    pattern = ".*Attacker may control at least one argument to getattr(,)"
+                  } ]
+              "qualifier.test_getattr_field_match";
+            outcome ~kind:`Function ~tito_parameters:["tito"] ~errors:[] "qualifier.deep_tito";
+            outcome ~kind:`Function ~errors:[] "qualifier.test_deep_tito_no_match";
+            outcome
+              ~kind:`Function
+              ~errors:
+                [ { code = 5010;
+                    pattern = ".*Attacker may control at least one argument to getattr(,)"
+                  } ]
+              "qualifier.test_deep_tito_match" ]
+      }
 
 
 let test_combined_analysis _ =
   assert_fixpoint
-    ~models:{|
+    ~models:
+      {|
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
@@ -294,25 +226,23 @@ let test_combined_analysis _ =
         __test_sink(x)
         return x or __user_controlled()
     |}
-    ~expect:{
-      expect = [
-        outcome
-          ~kind:`Function
-          ~returns:[Sources.UserControlled]
-          ~sink_parameters:[
-            { name = "x"; sinks = [Sinks.Test] };
-            { name = "y"; sinks = [Sinks.Demo] };
-          ]
-          ~tito_parameters:["x"; "z"]
-          "qualifier.combined_model";
-      ];
-      iterations = 2;
-    }
+    ~expect:
+      { expect =
+          [ outcome
+              ~kind:`Function
+              ~returns:[Sources.UserControlled]
+              ~sink_parameters:
+                [{ name = "x"; sinks = [Sinks.Test] }; { name = "y"; sinks = [Sinks.Demo] }]
+              ~tito_parameters:["x"; "z"]
+              "qualifier.combined_model" ];
+        iterations = 2
+      }
 
 
 let test_skipped_analysis _ =
   assert_fixpoint
-    ~models:{|
+    ~models:
+      {|
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> SkipAnalysis: ...
     |}
     {|
@@ -320,23 +250,21 @@ let test_skipped_analysis _ =
         __test_sink(x)
         return x or __user_controlled()
     |}
-    ~expect:{
-      expect = [
-        outcome
-          ~kind:`Function
-          ~sink_parameters:[
-            { name = "y"; sinks = [Sinks.Demo] };
-          ]
-          ~tito_parameters:["z"]
-          "qualifier.skipped_model";
-      ];
-      iterations = 1;
-    }
+    ~expect:
+      { expect =
+          [ outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
+              ~tito_parameters:["z"]
+              "qualifier.skipped_model" ];
+        iterations = 1
+      }
 
 
 let test_sanitized_analysis _ =
   assert_fixpoint
-    ~models:{|
+    ~models:
+      {|
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut) -> Sanitize: ...
     |}
     {|
@@ -345,24 +273,16 @@ let test_sanitized_analysis _ =
         __test_sink(x)
         return x or __user_controlled()
     |}
-    ~expect:{
-      expect = [
-        outcome
-          ~kind:`Function
-          ~sink_parameters:[
-            { name = "y"; sinks = [Sinks.Demo] };
-          ]
-          ~tito_parameters:["z"]
-          ~errors:[
-            {
-              code = 5001;
-              pattern = ".*";
-            };
-          ]
-          "qualifier.sanitized_model";
-      ];
-      iterations = 1;
-    }
+    ~expect:
+      { expect =
+          [ outcome
+              ~kind:`Function
+              ~sink_parameters:[{ name = "y"; sinks = [Sinks.Demo] }]
+              ~tito_parameters:["z"]
+              ~errors:[{ code = 5001; pattern = ".*" }]
+              "qualifier.sanitized_model" ];
+        iterations = 1
+      }
 
 
 let test_primed_source_analysis _ =
@@ -374,31 +294,22 @@ let test_primed_source_analysis _ =
       def primed_model(x, y):
         eval(y)
     |}
-    ~expect:{
-      expect = [
-        outcome
-          ~kind:`Function
-          ~source_parameters:[
-            { name = "y"; sources = [Sources.UserControlled] }
-          ]
-          ~sink_parameters:[
-            { name = "y"; sinks = [Sinks.RemoteCodeExecution] };
-          ]
-          ~errors:[
-            {
-              code = 5001;
-              pattern = ".*Possible shell injection.*";
-            };
-          ]
-          "qualifier.primed_model";
-      ];
-      iterations = 2;
-    }
+    ~expect:
+      { expect =
+          [ outcome
+              ~kind:`Function
+              ~source_parameters:[{ name = "y"; sources = [Sources.UserControlled] }]
+              ~sink_parameters:[{ name = "y"; sinks = [Sinks.RemoteCodeExecution] }]
+              ~errors:[{ code = 5001; pattern = ".*Possible shell injection.*" }]
+              "qualifier.primed_model" ];
+        iterations = 2
+      }
 
 
 let test_primed_sink_analysis _ =
   assert_fixpoint
-    ~models:{|
+    ~models:
+      {|
       def qualifier.primed_model(x, y: TaintSource[Test]) -> TaintSink[Test]: ...
     |}
     {|
@@ -408,30 +319,22 @@ let test_primed_sink_analysis _ =
       def no_flow(x, y):
         return x
     |}
-    ~expect:{
-      expect = [
-        outcome
-          ~kind:`Function
-          ~returns:[Sources.Test]
-          ~source_parameters:[
-            { name = "y"; sources = [Sources.Test] }
-          ]
-          ~sink_parameters:[]  (* No backward prop on return sinks *)
-          ~tito_parameters:["y"]
-          ~errors:[
-            {
-              code = 5002;
-              pattern = ".*Test.*";
-            };
-          ]
-          "qualifier.primed_model";
-      ];
-      iterations = 2;
-    }
+    ~expect:
+      { expect =
+          [ outcome
+              ~kind:`Function
+              ~returns:[Sources.Test]
+              ~source_parameters:[{ name = "y"; sources = [Sources.Test] }]
+              ~sink_parameters:[] (* No backward prop on return sinks *)
+              ~tito_parameters:["y"]
+              ~errors:[{ code = 5002; pattern = ".*Test.*" }]
+              "qualifier.primed_model" ];
+        iterations = 2
+      }
 
 
-(* Check that overrides are propagated properly, sources, sinks, and whether a
-   target is obscure or not. *)
+(* Check that overrides are propagated properly, sources, sinks, and whether a target is obscure or
+   not. *)
 let test_overrides _ =
   assert_fixpoint
     {|
@@ -466,84 +369,49 @@ let test_overrides _ =
         return b.split()
 
     |}
-    ~expect:{
-      iterations = 4;
-      expect = [
-        outcome
-          ~kind:`Override
-          ~obscure:true
-          "qualifier.Base.split";
-
-        outcome
-          ~kind:`Function
-          ~tito_parameters:["b"]
-          ~errors:[]
-          "qualifier.test_obscure_override";
-
-        outcome
-          ~kind:`Override
-          ~returns:[Sources.Test; Sources.UserControlled]
-          "qualifier.Base.some_source";
-
-        outcome
-          ~kind:`Method
-          ~returns:[]
-          "qualifier.Base.some_source";
-
-        outcome
-          ~kind:`Method
-          "qualifier.Base.some_sink";
-
-        outcome
-          ~kind:`Override
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }
-          ]
-          "qualifier.Base.some_sink";
-
-        outcome
-          ~kind:`Method
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Sinks.Test] }
-          ]
-          "qualifier.C.some_sink";
-
-        outcome
-          ~kind:`Override
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }
-          ]
-          "qualifier.C.some_sink";
-
-        outcome
-          ~kind:`Method
-          ~sink_parameters:[
-            { name = "arg"; sinks = [Sinks.RemoteCodeExecution] }
-          ]
-          "qualifier.D.some_sink";
-
-        outcome
-          ~kind:`Method
-          ~returns:[Sources.Test]
-          "qualifier.D.some_source";
-
-        outcome
-          ~kind:`Method
-          ~returns:[Sources.UserControlled]
-          "qualifier.E.some_source";
-
-      ]
-    }
+    ~expect:
+      { iterations = 4;
+        expect =
+          [ outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
+            outcome
+              ~kind:`Function
+              ~tito_parameters:["b"]
+              ~errors:[]
+              "qualifier.test_obscure_override";
+            outcome
+              ~kind:`Override
+              ~returns:[Sources.Test; Sources.UserControlled]
+              "qualifier.Base.some_source";
+            outcome ~kind:`Method ~returns:[] "qualifier.Base.some_source";
+            outcome ~kind:`Method "qualifier.Base.some_sink";
+            outcome
+              ~kind:`Override
+              ~sink_parameters:[{ name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }]
+              "qualifier.Base.some_sink";
+            outcome
+              ~kind:`Method
+              ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Test] }]
+              "qualifier.C.some_sink";
+            outcome
+              ~kind:`Override
+              ~sink_parameters:[{ name = "arg"; sinks = [Sinks.RemoteCodeExecution; Sinks.Test] }]
+              "qualifier.C.some_sink";
+            outcome
+              ~kind:`Method
+              ~sink_parameters:[{ name = "arg"; sinks = [Sinks.RemoteCodeExecution] }]
+              "qualifier.D.some_sink";
+            outcome ~kind:`Method ~returns:[Sources.Test] "qualifier.D.some_source";
+            outcome ~kind:`Method ~returns:[Sources.UserControlled] "qualifier.E.some_source" ]
+      }
 
 
 let () =
-  "taint">:::[
-    "fixpoint">::test_fixpoint;
-    "combined_analysis">::test_combined_analysis;
-    "skipped_analysis">::test_skipped_analysis;
-    "sanitized_analysis">::test_sanitized_analysis;
-    "primed_source_analysis">::test_primed_source_analysis;
-    "primed_sink_analysis">::test_primed_sink_analysis;
-    "overrides">::test_overrides;
-  ]
+  "taint"
+  >::: [ "fixpoint" >:: test_fixpoint;
+         "combined_analysis" >:: test_combined_analysis;
+         "skipped_analysis" >:: test_skipped_analysis;
+         "sanitized_analysis" >:: test_sanitized_analysis;
+         "primed_source_analysis" >:: test_primed_source_analysis;
+         "primed_sink_analysis" >:: test_primed_sink_analysis;
+         "overrides" >:: test_overrides ]
   |> TestHelper.run_with_taint_models

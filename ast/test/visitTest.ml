@@ -5,130 +5,98 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Expression
 open Statement
-
 open Test
-
 
 let test_collect _ =
   let assert_collect statements expected =
     let collect =
       let module ExpressionPredicate = struct
         type t = Expression.t
-        let predicate expression =
-          Some expression
-      end in
+
+        let predicate expression = Some expression
+      end
+      in
       let module StatementPredicate = struct
         type t = Statement.t
 
-        let visit_children _ =
-          true
+        let visit_children _ = true
 
-        let predicate statement =
-          Some statement
-      end in
-      let module Collector =
-        Visit.Collector(ExpressionPredicate)(StatementPredicate) in
-      Collector.collect (Source.create statements) in
+        let predicate statement = Some statement
+      end
+      in
+      let module Collector = Visit.Collector (ExpressionPredicate) (StatementPredicate) in
+      Collector.collect (Source.create statements)
+    in
     let equal left right =
-      List.equal (fst left) (fst right) ~equal:Expression.equal &&
-      List.equal (snd left) (snd right) ~equal:Statement.equal in
+      List.equal (fst left) (fst right) ~equal:Expression.equal
+      && List.equal (snd left) (snd right) ~equal:Statement.equal
+    in
     let printer (expressions, statements) =
       Format.asprintf
         "%a | %a"
-        Sexp.pp [%message (expressions: Expression.t list)]
-        Sexp.pp [%message (statements: Statement.t list)]
+        Sexp.pp
+        [%message (expressions : Expression.t list)]
+        Sexp.pp
+        [%message (statements : Statement.t list)]
     in
-    assert_equal ~cmp:equal ~printer expected collect in
-
+    assert_equal ~cmp:equal ~printer expected collect
+  in
   assert_collect
     [+Expression (+Float 1.0); +Expression (+Float 2.0)]
-    ([
-      +Float 2.0;
-      +Float 1.0;
-    ],
-      [
-        +Expression (+Float 2.0);
-        +Expression (+Float 1.0);
-      ]);
-
+    ([+Float 2.0; +Float 1.0], [+Expression (+Float 2.0); +Expression (+Float 1.0)]);
   assert_collect
-    [
-      +If {
-        If.test = +Float 2.0;
-        body = [+Expression (+Float 3.0)];
-        orelse = [+Expression (+Float 4.0)];
-      };
-    ]
-    ([
-      +Float 4.0;
-      +Float 3.0;
-      +Float 2.0;
-    ],
-      [
-        +If {
-          If.test = +Float 2.0;
-          body = [+Expression (+Float 3.0)];
-          orelse = [+Expression (+Float 4.0)];
-        };
+    [ +If
+         { If.test = +Float 2.0;
+           body = [+Expression (+Float 3.0)];
+           orelse = [+Expression (+Float 4.0)]
+         } ]
+    ( [+Float 4.0; +Float 3.0; +Float 2.0],
+      [ +If
+           { If.test = +Float 2.0;
+             body = [+Expression (+Float 3.0)];
+             orelse = [+Expression (+Float 4.0)]
+           };
         +Expression (+Float 4.0);
-        +Expression (+Float 3.0);
-      ]);
-
+        +Expression (+Float 3.0) ] );
   assert_collect
-    [
-      +If {
-        If.test = +Float 1.0;
-        body = [
-          +If {
-            If.test = +Float 2.0;
-            body = [+Expression (+Float 3.0)];
-            orelse = [+Expression (+Float 4.0)];
-          };
-        ];
-        orelse = [+Expression (+Float 5.0)];
-      };
-    ]
-    ([
-      +Float 5.0;
-      +Float 4.0;
-      +Float 3.0;
-      +Float 2.0;
-      +Float 1.0;
-    ],
-      [
-        +If {
-          If.test = +Float 1.0;
-          body = [
-            +If {
-              If.test = +Float 2.0;
-              body = [+Expression (+Float 3.0)];
-              orelse = [+Expression (+Float 4.0)];
-            };
-          ];
-          orelse = [+Expression (+Float 5.0)];
-        };
+    [ +If
+         { If.test = +Float 1.0;
+           body =
+             [ +If
+                  { If.test = +Float 2.0;
+                    body = [+Expression (+Float 3.0)];
+                    orelse = [+Expression (+Float 4.0)]
+                  } ];
+           orelse = [+Expression (+Float 5.0)]
+         } ]
+    ( [+Float 5.0; +Float 4.0; +Float 3.0; +Float 2.0; +Float 1.0],
+      [ +If
+           { If.test = +Float 1.0;
+             body =
+               [ +If
+                    { If.test = +Float 2.0;
+                      body = [+Expression (+Float 3.0)];
+                      orelse = [+Expression (+Float 4.0)]
+                    } ];
+             orelse = [+Expression (+Float 5.0)]
+           };
         +Expression (+Float 5.0);
-        +If {
-          If.test = +Float 2.0;
-          body = [+Expression (+Float 3.0)];
-          orelse = [+Expression (+Float 4.0)];
-        };
+        +If
+           { If.test = +Float 2.0;
+             body = [+Expression (+Float 3.0)];
+             orelse = [+Expression (+Float 4.0)]
+           };
         +Expression (+Float 4.0);
-        +Expression (+Float 3.0);
-      ])
+        +Expression (+Float 3.0) ] )
 
 
 let test_collect_accesses _ =
-  let source =
-    {|
+  let source = {|
        s = ham.egg(cheese).bake
-    |}
-    |> parse_single_statement ~convert:true
-  in
+    |} |> parse_single_statement ~convert:true in
   let instantiate location =
     let lookup_table = Int.Table.of_alist_exn [String.hash "test.py", "test.py"] in
     Location.instantiate ~lookup:(Hashtbl.find lookup_table) location
@@ -139,35 +107,28 @@ let test_collect_accesses _ =
       expected_accesses
       (List.map
          ~f:(fun node ->
-             Format.sprintf "%s|%s"
-               (Node.location node |> instantiate |> Location.Instantiated.show)
-               (Expression.show (Node.create_with_default_location (Access (Node.value node)))))
+           Format.sprintf
+             "%s|%s"
+             (Node.location node |> instantiate |> Location.Instantiated.show)
+             (Expression.show (Node.create_with_default_location (Access (Node.value node)))))
          (Visit.collect_accesses source))
   in
   assert_collected_accesses
     source
-    [
-      "test.py:2:4-2:24|ham.egg(cheese).bake";
-      "test.py:2:12-2:18|cheese";
-      "test.py:2:0-2:1|s";
-    ]
+    ["test.py:2:4-2:24|ham.egg(cheese).bake"; "test.py:2:12-2:18|cheese"; "test.py:2:0-2:1|s"]
 
 
 let test_statement_visitor _ =
-  let module StatementVisitor =
-  struct
+  let module StatementVisitor = struct
     type t = int String.Table.t
 
-    let visit_children _ =
-      true
+    let visit_children _ = true
 
     let statement _ visited statement =
       let increment hash_table key =
         match Hashtbl.find hash_table key with
-        | None ->
-            Hashtbl.set hash_table ~key ~data:1
-        | Some value ->
-            Hashtbl.set hash_table ~key ~data:(value + 1)
+        | None -> Hashtbl.set hash_table ~key ~data:1
+        | Some value -> Hashtbl.set hash_table ~key ~data:(value + 1)
       in
       match Node.value statement with
       | Assign _ ->
@@ -179,19 +140,19 @@ let test_statement_visitor _ =
       | Return _ ->
           increment visited "return";
           visited
-      | _ ->
-          visited
-
+      | _ -> visited
   end
   in
-  let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
+  let module Visit = Visit.MakeStatementVisitor (StatementVisitor) in
   let assert_counts source expected_counts =
     let table = Visit.visit (String.Table.create ()) source in
     List.iter
       ~f:(fun (key, expected_value) -> assert_equal (Some expected_value) (Hashtbl.find table key))
       expected_counts
   in
-  let source = parse {|
+  let source =
+    parse
+      {|
       from b import c
       def f():
         a = 1
@@ -202,39 +163,31 @@ let test_statement_visitor _ =
         c = 3
   |}
   in
-  assert_counts source [
-    "assign", 3;
-    "return", 1;
-    "import", 2;
-  ];
+  assert_counts source ["assign", 3; "return", 1; "import", 2];
   ()
 
 
 let test_statement_visitor_source _ =
-  let module StatementVisitor =
-  struct
+  let module StatementVisitor = struct
     type t = string (* Last source *)
 
-    let visit_children _ =
-      true
+    let visit_children _ = true
 
-    let statement { Source.handle; _ } _ _ =
-      File.Handle.show handle
+    let statement { Source.handle; _ } _ _ = File.Handle.show handle
   end
   in
-  let module Visit = Visit.MakeStatementVisitor(StatementVisitor) in
+  let module Visit = Visit.MakeStatementVisitor (StatementVisitor) in
   let handle = Visit.visit "" (parse ~handle:"test.py" "a = 1") in
   assert_equal "test.py" handle;
-
   let handle = Visit.visit "" (parse ~handle:"test2.py" "b = 2") in
   assert_equal "test2.py" handle;
   ()
 
+
 let () =
-  "visit">:::[
-    "collect">::test_collect;
-    "collect_accesses_with_location">::test_collect_accesses;
-    "statement_visitor">::test_statement_visitor;
-    "statement_visitor_source">::test_statement_visitor_source;
-  ]
+  "visit"
+  >::: [ "collect" >:: test_collect;
+         "collect_accesses_with_location" >:: test_collect_accesses;
+         "statement_visitor" >:: test_statement_visitor;
+         "statement_visitor_source" >:: test_statement_visitor_source ]
   |> Test.run

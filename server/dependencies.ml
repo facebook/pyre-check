@@ -4,23 +4,20 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Analysis
 open Configuration.Analysis
 open Pyre
 
-
 let compute_dependencies
-    ~state:{ State.environment = (module Handler: Environment.Handler); scheduler; _ }
+    ~state:{ State.environment = (module Handler : Environment.Handler); scheduler; _ }
     ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
-    files =
+    files
+  =
   let timer = Timer.start () in
   let handle file =
-    try
-      Some (File.handle file ~configuration)
-    with File.NonexistentHandle _ ->
-      None
+    try Some (File.handle file ~configuration) with
+    | File.NonexistentHandle _ -> None
   in
   let handles = List.filter_map files ~f:handle in
   let old_signature_hashes, new_signature_hashes =
@@ -30,24 +27,20 @@ let compute_dependencies
         try
           let handle = File.handle file ~configuration in
           let signature_hash =
-            Ast.SharedMemory.Sources.get handle
-            >>| Source.signature_hash
-            |> Option.value ~default
+            Ast.SharedMemory.Sources.get handle >>| Source.signature_hash |> Option.value ~default
           in
           Hashtbl.set table ~key:handle ~data:signature_hash
-        with (File.NonexistentHandle _) ->
-          Log.log ~section:`Server "Unable to get handle for %a" File.pp file
+        with
+        | File.NonexistentHandle _ ->
+            Log.log ~section:`Server "Unable to get handle for %a" File.pp file
       in
       List.iter files ~f:add_signature_hash;
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
-
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
-      List.filter
-        handles
-        ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
+      List.filter handles ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
     in
     if not (List.is_empty newly_introduced_handles) then
       Ast.SharedMemory.HandleKeys.add
@@ -58,28 +51,23 @@ let compute_dependencies
       List.filter_map files ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-    Service.Parser.parse_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:None
-      ~files
+    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
   in
-
   let dependents =
     Log.log
       ~section:`Server
       "Handling type check request for files %a"
-      Sexp.pp [%message (handles: File.Handle.t list)];
+      Sexp.pp
+      [%message (handles : File.Handle.t list)];
     let signature_hash_changed handle =
-      (* If the hash is not found, then the handle was not part of
-         handles, hence its hash cannot have changed. *)
+      (* If the hash is not found, then the handle was not part of handles, hence its hash cannot
+         have changed. *)
       Hashtbl.find old_signature_hashes handle
       >>= (fun old_hash ->
-          Hashtbl.find new_signature_hashes handle
-          >>| fun new_hash -> old_hash <> new_hash)
+            Hashtbl.find new_signature_hashes handle >>| fun new_hash -> old_hash <> new_hash)
       |> Option.value ~default:false
     in
     let deferred_files =
@@ -93,9 +81,7 @@ let compute_dependencies
         else
           Dependencies.of_list
       in
-      get_dependencies
-        ~get_dependencies:Handler.dependencies
-        ~modules
+      get_dependencies ~get_dependencies:Handler.dependencies ~modules
       |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get
       |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
     in
@@ -104,17 +90,17 @@ let compute_dependencies
       ~timer
       ~randomly_log_every:100
       ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
-      ~integers:[
-        "number of dependencies", File.Handle.Set.length deferred_files;
-        "number of files", List.length handles;
-      ]
+      ~integers:
+        [ "number of dependencies", File.Handle.Set.length deferred_files;
+          "number of files", List.length handles ]
       ();
     deferred_files
   in
   Log.log
     ~section:`Server
     "Inferred affected files: %a"
-    Sexp.pp [%message (dependents: File.Handle.Set.t)];
+    Sexp.pp
+    [%message (dependents : File.Handle.Set.t)];
   let to_file handle =
     Ast.SharedMemory.Sources.get handle
     >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)

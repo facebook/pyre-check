@@ -5,49 +5,41 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Ast
 open Pyre
 open PyreParser
 open Statement
 
-
 let initialize () =
-  Memory.get_heap_handle (Configuration.Analysis.create ())
-  |> ignore;
+  Memory.get_heap_handle (Configuration.Analysis.create ()) |> ignore;
   Log.initialize_for_tests ();
   Statistics.disable ();
   Type.Cache.disable ()
 
 
-let () =
-  initialize ()
-
+let () = initialize ()
 
 let trim_extra_indentation source =
-  let is_non_empty line =
-    not (String.for_all ~f:Char.is_whitespace line) in
+  let is_non_empty line = not (String.for_all ~f:Char.is_whitespace line) in
   let minimum_indent lines =
     let indent line =
-      String.to_list line
-      |> List.take_while ~f:Char.is_whitespace
-      |> List.length in
+      String.to_list line |> List.take_while ~f:Char.is_whitespace |> List.length
+    in
     List.filter lines ~f:is_non_empty
     |> List.map ~f:indent
-    |> List.fold ~init:Int.max_value ~f:Int.min in
+    |> List.fold ~init:Int.max_value ~f:Int.min
+  in
   let strip_line minimum_indent line =
     if not (is_non_empty line) then
       line
     else
-      String.slice line minimum_indent (String.length line) in
+      String.slice line minimum_indent (String.length line)
+  in
   let strip_lines minimum_indent = List.map ~f:(strip_line minimum_indent) in
-  let lines =
-    String.rstrip source
-    |> String.split ~on:'\n' in
+  let lines = String.rstrip source |> String.split ~on:'\n' in
   let minimum_indent = minimum_indent lines in
-  strip_lines minimum_indent lines
-  |> String.concat ~sep:"\n"
+  strip_lines minimum_indent lines |> String.concat ~sep:"\n"
 
 
 let rec coerce_special_methods { Node.location; value } =
@@ -56,31 +48,27 @@ let rec coerce_special_methods { Node.location; value } =
   match value with
   | Name (Name.Attribute ({ base; attribute; _ } as name))
     when String.is_prefix ~prefix:"__" attribute && String.is_suffix ~suffix:"__" attribute ->
-      {
-        Node.location;
-        value = Name (
-            Name.Attribute { name with base = coerce_special_methods base; special = true }
-          );
+      { Node.location;
+        value =
+          Name (Name.Attribute { name with base = coerce_special_methods base; special = true })
       }
   | Call { callee; arguments } ->
-      { Node.location; value = Call { callee = coerce_special_methods callee; arguments} }
-  | _ ->
-      { Node.location; value }
+      { Node.location; value = Call { callee = coerce_special_methods callee; arguments } }
+  | _ -> { Node.location; value }
 
 
 let coerce_special_methods_source source =
-  let module Transform = Transform.Make(struct
-      include Transform.Identity
-      type t = unit
+  let module Transform = Transform.Make (struct
+    include Transform.Identity
 
-      let transform_expression_children _ _ = true
+    type t = unit
 
-      let expression _ expression =
-        coerce_special_methods expression
-    end)
+    let transform_expression_children _ _ = true
+
+    let expression _ expression = coerce_special_methods expression
+  end)
   in
-  Transform.transform () source
-  |> Transform.source
+  Transform.transform () source |> Transform.source
 
 
 let run tests =
@@ -92,16 +80,11 @@ let run tests =
       Unix.unsetenv "HH_SERVER_DAEMON"
     in
     match test with
-    | OUnitTest.TestLabel (name, test) ->
-        OUnitTest.TestLabel (name, bracket test)
-    | OUnitTest.TestList tests ->
-        OUnitTest.TestList (List.map tests ~f:bracket)
-    | OUnitTest.TestCase (length, f) ->
-        OUnitTest.TestCase (length, bracket_test f)
+    | OUnitTest.TestLabel (name, test) -> OUnitTest.TestLabel (name, bracket test)
+    | OUnitTest.TestList tests -> OUnitTest.TestList (List.map tests ~f:bracket)
+    | OUnitTest.TestCase (length, f) -> OUnitTest.TestCase (length, bracket_test f)
   in
-  tests
-  |> bracket
-  |> run_test_tt_main
+  tests |> bracket |> run_test_tt_main
 
 
 let parse_untrimmed
@@ -117,13 +100,12 @@ let parse_untrimmed
     ?(ignore_lines = [])
     ?(convert = false)
     ?(coerce_special_methods = false)
-    source =
+    source
+  =
   let handle = File.Handle.create handle in
   let buffer = Lexing.from_string (source ^ "\n") in
-  buffer.Lexing.lex_curr_p <- {
-    buffer.Lexing.lex_curr_p with
-    Lexing.pos_fname = File.Handle.show handle;
-  };
+  buffer.Lexing.lex_curr_p <-
+    { buffer.Lexing.lex_curr_p with Lexing.pos_fname = File.Handle.show handle };
   try
     let source =
       let state = Lexer.State.initial () in
@@ -149,31 +131,22 @@ let parse_untrimmed
     let coerce_special_methods =
       if coerce_special_methods then coerce_special_methods_source else Fn.id
     in
-    source
-    |> convert
-    |> coerce_special_methods
+    source |> convert |> coerce_special_methods
   with
   | Pyre.ParserError _
   | Generator.Error ->
       let location =
-        Location.create
-          ~start:buffer.Lexing.lex_curr_p
-          ~stop:buffer.Lexing.lex_curr_p
+        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
       in
       let line = location.Location.start.Location.line - 1
       and column = location.Location.start.Location.column in
-
-      let header =
-        Format.asprintf
-          "\nCould not parse test at %a"
-          Location.Reference.pp location
-      in
-      let indicator =
-        if column > 0 then (String.make (column - 1) ' ') ^ "^" else "^" in
+      let header = Format.asprintf "\nCould not parse test at %a" Location.Reference.pp location in
+      let indicator = if column > 0 then String.make (column - 1) ' ' ^ "^" else "^" in
       let error =
         match List.nth (String.split source ~on:'\n') line with
         | Some line -> Format.asprintf "%s:\n  %s\n  %s" header line indicator
-        | None -> header ^ "." in
+        | None -> header ^ "."
+      in
       if not silent then
         Printf.printf "%s" error;
       failwith "Could not parse test"
@@ -188,24 +161,24 @@ let parse
     ?local_mode
     ?(convert = false)
     ?(coerce_special_methods = false)
-    source =
+    source
+  =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed
-      ~handle
-      ~qualifier
-      ~debug
-      ~version
-      ~docstring
-      ~convert
-      ~coerce_special_methods
+         ~handle
+         ~qualifier
+         ~debug
+         ~version
+         ~docstring
+         ~convert
+         ~coerce_special_methods
   in
   match local_mode with
   | Some local_mode ->
       { source with Source.metadata = { metadata with Source.Metadata.local_mode } }
-  | _ ->
-      source
+  | _ -> source
 
 
 let parse_list named_sources =
@@ -216,8 +189,8 @@ let parse_list named_sources =
   in
   let { Service.Parser.parsed; _ } =
     Service.Parser.parse_sources
-      ~configuration:(
-        Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
+      ~configuration:
+        (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:(List.map ~f:create_file named_sources)
@@ -229,7 +202,8 @@ let parse_single_statement
     ?(convert = false)
     ?(preprocess = false)
     ?(coerce_special_methods = false)
-    source =
+    source
+  =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse ~convert ~coerce_special_methods source)
@@ -243,8 +217,7 @@ let parse_single_statement
 
 let parse_last_statement ?(convert = false) source =
   match parse ~convert source with
-  | { Source.statements; _ } when List.length statements > 0 ->
-      List.last_exn statements
+  | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
   | _ -> failwith "Could not parse last statement"
 
 
@@ -264,7 +237,8 @@ let parse_single_expression
     ?(convert = false)
     ?(preprocess = false)
     ?(coerce_special_methods = false)
-    source =
+    source
+  =
   match parse_single_statement ~convert ~preprocess ~coerce_special_methods source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
@@ -277,15 +251,11 @@ let parse_single_call ?(preprocess = false) source =
 
 
 let parse_callable ?name ?(aliases = fun _ -> None) callable =
-  let callable =
-    parse_single_expression callable
-    |> Type.create ~aliases
-  in
+  let callable = parse_single_expression callable |> Type.create ~aliases in
   match name, callable with
   | Some name, Type.Callable callable ->
       Type.Callable { callable with Type.Callable.kind = Named name }
-  | _ ->
-      callable
+  | _ -> callable
 
 
 let diff ~print format (left, right) =
@@ -300,21 +270,15 @@ let diff ~print format (left, right) =
       "bash -c \"diff -u <(echo '%s') <(echo '%s')\""
       (escape (Format.asprintf "%a" print left))
       (escape (Format.asprintf "%a" print right))
-    |> Unix.open_process_in in
+    |> Unix.open_process_in
+  in
   Format.fprintf format "\n%s" (In_channel.input_all input);
   In_channel.close input
 
 
 let map_printer ~key_pp ~data_pp map =
-  let to_string (key, data) =
-    Format.asprintf
-      "    %a -> %a"
-      key_pp key
-      data_pp data
-  in
-  Map.to_alist map
-  |> List.map ~f:to_string
-  |> String.concat ~sep:"\n"
+  let to_string (key, data) = Format.asprintf "    %a -> %a" key_pp key data_pp data in
+  Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
 let assert_source_equal =
@@ -324,11 +288,7 @@ let assert_source_equal =
     ~pp_diff:(diff ~print:Source.pp)
 
 
-let assert_type_equal =
-  assert_equal
-    ~printer:Type.show
-    ~cmp:Type.equal
-
+let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
 
 let add_defaults_to_environment ~configuration environment_handler =
   let source =
@@ -337,7 +297,7 @@ let add_defaults_to_environment ~configuration environment_handler =
         class unittest.mock.Base: ...
         class unittest.mock.Mock(unittest.mock.Base): ...
         class unittest.mock.NonCallableMock: ...
-      |};
+      |}
   in
   Service.Environment.populate
     ~configuration
@@ -347,58 +307,39 @@ let add_defaults_to_environment ~configuration environment_handler =
 
 
 (* Expression helpers. *)
-let (~+) value =
-  Node.create_with_default_location value
+let ( ~+ ) value = Node.create_with_default_location value
 
-
-let (!) name =
+let ( ! ) name =
   let open Expression in
   +Access (SimpleAccess (Access.create name))
 
 
-let (!!) name =
-  +Statement.Expression (
-    +Expression.Name (Expression.create_name ~location:Location.Reference.any name)
-  )
+let ( !! ) name =
+  +Statement.Expression
+     (+Expression.Name (Expression.create_name ~location:Location.Reference.any name))
 
 
-let (!+) name =
-  Access.create name
+let ( !+ ) name = Access.create name
 
-
-let (!&) name =
-  Reference.create name
-
+let ( !& ) name = Reference.create name
 
 (* Assertion helpers. *)
-let assert_true =
-  assert_bool ""
+let assert_true = assert_bool ""
 
+let assert_false test = assert_bool "" (not test)
 
-let assert_false test =
-  assert_bool "" (not test)
+let assert_is_some test = assert_true (Option.is_some test)
 
+let assert_is_none test = assert_true (Option.is_none test)
 
-let assert_is_some test =
-  assert_true (Option.is_some test)
+let assert_unreached () = assert_true false
 
-
-let assert_is_none test =
-  assert_true (Option.is_none test)
-
-
-let assert_unreached () =
-  assert_true false
-
-
-let mock_path path =
-  Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
-
+let mock_path path = Path.create_relative ~root:(Path.current_working_directory ()) ~relative:path
 
 let write_file (path, content) =
   let content = trim_extra_indentation content in
   let path =
-    if (Filename.is_absolute path) then
+    if Filename.is_absolute path then
       Path.create_absolute ~follow_symbolic_links:false path
     else
       mock_path path
@@ -409,21 +350,14 @@ let write_file (path, content) =
 
 
 (* Override `OUnit`s functions the return absolute paths. *)
-let bracket_tmpdir ?suffix context =
-  bracket_tmpdir ?suffix context
-  |> Filename.realpath
-
+let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> Filename.realpath
 
 let bracket_tmpfile ?suffix context =
-  bracket_tmpfile ?suffix context
-  |> (fun (filename, channel) -> Filename.realpath filename, channel)
+  bracket_tmpfile ?suffix context |> fun (filename, channel) -> Filename.realpath filename, channel
 
 
 (* Common type checking and analysis setup functions. *)
-let mock_configuration =
-  Configuration.Analysis.create ()
-
-
+let mock_configuration = Configuration.Analysis.create ()
 
 let typeshed_stubs ?(include_helper_builtins = true) () =
   let builtins =
@@ -754,8 +688,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     else
       builtin_stubs
   in
-  [
-    Source.create ~qualifier:(Reference.create "sys") [];
+  [ Source.create ~qualifier:(Reference.create "sys") [];
     parse
       ~qualifier:(Reference.create "hashlib")
       ~handle:"hashlib.pyi"
@@ -918,11 +851,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
-    parse
-      ~qualifier:Reference.empty
-      ~handle:"builtins.pyi"
-      builtins
-    |> Preprocessing.preprocess;
+    parse ~qualifier:Reference.empty ~handle:"builtins.pyi" builtins |> Preprocessing.preprocess;
     parse
       ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
@@ -1120,8 +1049,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def assertFalse(self, x: Any) -> Bool:
               ...
       |}
-    |> Preprocessing.preprocess;
-  ]
+    |> Preprocessing.preprocess ]
 
 
 let populate ~configuration environment sources =
@@ -1129,13 +1057,12 @@ let populate ~configuration environment sources =
 
 
 let populate_shared_memory =
-  Service.Environment.populate_shared_memory
-    ~scheduler:(Scheduler.mock ())
+  Service.Environment.populate_shared_memory ~scheduler:(Scheduler.mock ())
 
-let environment
-    ?(sources = typeshed_stubs ())
-    ?(configuration = mock_configuration)
-    () =
+
+let environment ?(sources = typeshed_stubs ())
+                ?(configuration = mock_configuration)
+                () =
   let environment =
     let environment = Environment.Builder.create () in
     Environment.handler environment
@@ -1144,22 +1071,18 @@ let environment
   environment
 
 
-let mock_signature = {
-  Define.name = Reference.create "$empty";
-  parameters = [];
-  decorators = [];
-  docstring = None;
-  return_annotation = None;
-  async = false;
-  parent = None;
-}
+let mock_signature =
+  { Define.name = Reference.create "$empty";
+    parameters = [];
+    decorators = [];
+    docstring = None;
+    return_annotation = None;
+    async = false;
+    parent = None
+  }
 
 
-let mock_define = {
-  Define.signature = mock_signature;
-  body = [];
-}
-
+let mock_define = { Define.signature = mock_signature; body = [] }
 
 let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
   let environment = environment ~sources () in
@@ -1170,10 +1093,9 @@ let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configurati
 type test_update_environment_with_t = {
   qualifier: Reference.t;
   handle: string;
-  source: string;
+  source: string
 }
 [@@deriving compare, eq, show]
-
 
 let assert_errors
     ?(autogenerated = false)
@@ -1188,7 +1110,8 @@ let assert_errors
     ?(update_environment_with = [])
     ~check
     source
-    errors =
+    errors
+  =
   Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ();
   let descriptions =
@@ -1214,15 +1137,11 @@ let assert_errors
       let environment =
         let sources =
           source
-          :: List.map
-            update_environment_with
-            ~f:(fun { qualifier; handle; source } -> parse ~qualifier ~handle ~source)
+          :: List.map update_environment_with ~f:(fun { qualifier; handle; source } ->
+                 parse ~qualifier ~handle ~source)
         in
         let environment =
-          environment
-            ~sources:(typeshed_stubs ())
-            ~configuration:mock_configuration
-            ()
+          environment ~sources:(typeshed_stubs ()) ~configuration:mock_configuration ()
         in
         Service.Environment.populate
           ~configuration:mock_configuration
@@ -1231,14 +1150,10 @@ let assert_errors
           sources;
         environment
       in
-      let configuration =
-        Configuration.Analysis.create ~debug ~strict ~declare ~infer ()
-      in
+      let configuration = Configuration.Analysis.create ~debug ~strict ~declare ~infer () in
       check ~configuration ~environment ~source
     in
-    List.map
-      (check source)
-      ~f:(fun error -> Error.description error ~show_error_traces ~concise)
+    List.map (check source) ~f:(fun error -> Error.description error ~show_error_traces ~concise)
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
@@ -1248,8 +1163,5 @@ let assert_errors
 
 
 let create_true_alias_table true_aliases =
-  let aliases primitive =
-    true_aliases primitive
-    >>| (fun alias -> Type.TypeAlias alias)
-  in
+  let aliases primitive = true_aliases primitive >>| fun alias -> Type.TypeAlias alias in
   aliases

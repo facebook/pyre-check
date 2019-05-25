@@ -5,30 +5,23 @@
 
 open Core
 open Analysis
-
 open OUnit2
 
 let test_compute_hashes_to_keys _ =
   let open Service.EnvironmentSharedMemory in
   assert_equal
     ~cmp:(String.Map.equal String.equal)
-    (String.Map.of_alist_exn [
-        OrderEdges.hash_of_key 15, OrderEdges.serialize_key 15;
-        OrderBackedges.hash_of_key 15, OrderBackedges.serialize_key 15;
-        OrderAnnotations.hash_of_key 15, OrderAnnotations.serialize_key 15;
-      ])
+    (String.Map.of_alist_exn
+       [ OrderEdges.hash_of_key 15, OrderEdges.serialize_key 15;
+         OrderBackedges.hash_of_key 15, OrderBackedges.serialize_key 15;
+         OrderAnnotations.hash_of_key 15, OrderAnnotations.serialize_key 15 ])
     (Service.TypeOrder.compute_hashes_to_keys ~indices:[15] ~annotations:[]);
   assert_equal
     ~cmp:(String.Map.equal String.equal)
-    (String.Map.of_alist_exn [
-        OrderIndices.hash_of_key (Type.Primitive "fifteen"),
-        OrderIndices.serialize_key (Type.Primitive "fifteen");
-      ])
+    (String.Map.of_alist_exn
+       [ ( OrderIndices.hash_of_key (Type.Primitive "fifteen"),
+           OrderIndices.serialize_key (Type.Primitive "fifteen") ) ])
     (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:[Type.Primitive "fifteen"])
 
 
-let () =
-  "typeOrder">:::[
-    "compute_hashes_to_keys">::test_compute_hashes_to_keys;
-  ]
-  |> Test.run
+let () = "typeOrder" >::: ["compute_hashes_to_keys" >:: test_compute_hashes_to_keys] |> Test.run

@@ -6,12 +6,9 @@
 open Core
 open OUnit2
 open Test
-
 open Ast
-
 open Pyre
 open Path.AppendOperator
-
 
 let test_parse_stubs_modules_list _ =
   let root = Path.current_working_directory () in
@@ -23,16 +20,14 @@ let test_parse_stubs_modules_list _ =
     let create_module_with_relative relative =
       File.create ~content:"def f()->int:\n    return 1\n" (Path.create_relative ~root ~relative)
     in
-    [
-      create_stub_with_relative "a.pyi";
+    [ create_stub_with_relative "a.pyi";
       create_stub_with_relative "dir/b.pyi";
       create_stub_with_relative "2/c.pyi";
       create_stub_with_relative "2and3/d.pyi";
       create_module_with_relative "moda.py";
       create_module_with_relative "dir/modb.py";
       create_module_with_relative "2/modc.py";
-      create_module_with_relative "2and3/modd.py";
-    ]
+      create_module_with_relative "2and3/modd.py" ]
   in
   let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
@@ -42,22 +37,20 @@ let test_parse_stubs_modules_list _ =
       ~files
   in
   assert_equal (List.length files) (List.length handles);
-  let get_handle_at position =
-    File.handle ~configuration (List.nth_exn files position)
-  in
+  let get_handle_at position = File.handle ~configuration (List.nth_exn files position) in
   let assert_stub_matches_name ~handle define =
     let name =
       match Ast.SharedMemory.Sources.get (get_handle_at handle) with
-      | Some {
-          Source.statements = [
-            {
-              Node.value =
-                Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define);
-              _;
-            };
-          ];
-          _;
-        } when Statement.Define.is_stub define -> name
+      | Some
+          { Source.statements =
+              [ { Node.value =
+                    Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define)
+                ; _
+                } ]
+          ; _
+          }
+        when Statement.Define.is_stub define ->
+          name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
@@ -65,15 +58,12 @@ let test_parse_stubs_modules_list _ =
   let assert_module_matches_name ~handle define =
     let name =
       match Ast.SharedMemory.Sources.get (get_handle_at handle) with
-      | Some {
-          Source.statements = [
-            {
-              Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ };
-              _;
-            };
-          ];
-          _;
-        } -> name
+      | Some
+          { Source.statements =
+              [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }]
+          ; _
+          } ->
+          name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
@@ -104,7 +94,6 @@ let test_find_stubs context =
       expected
       handles
   in
-
   let local_root = Path.create_absolute (bracket_tmpdir context) in
   let local_subdirectory_root = Path.create_relative ~root:local_root ~relative:"subdirectory" in
   Sys_utils.mkdir_no_fail (Path.absolute local_subdirectory_root);
@@ -121,32 +110,27 @@ let test_find_stubs context =
   write_file module_root "b.pyi";
   write_file module_root "c.py";
   write_file local_subdirectory_root "stub.pyi";
-
   write_file local_root "ttypes.py";
   write_file local_root "ttypes.pyi";
   write_file local_root "dir/legit.pyi";
   write_file local_root "excluded.pyi";
   write_file local_root "nested/excluded.pyi";
-
   write_file (virtual_root ^| "package") "virtual.py";
   write_file (virtual_root ^| "package") "virtual.pyi";
   write_file (virtual_root ^| "external") "other.py";
-
   let configuration =
     Configuration.Analysis.create
       ~local_root
       ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
-      ~search_path:[
-        Path.SearchPath.Root local_subdirectory_root;
-        Path.SearchPath.Root module_root;
-        Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" };
-      ]
+      ~search_path:
+        [ Path.SearchPath.Root local_subdirectory_root;
+          Path.SearchPath.Root module_root;
+          Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" } ]
       ()
   in
   assert_stubs
     configuration
     ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.pyi"; "stub.pyi"; "ttypes.pyi"];
-
   let configuration = { configuration with Configuration.Analysis.search_path = [] } in
   assert_stubs configuration ["a.pyi"; "subdirectory/stub.pyi"; "ttypes.pyi"]
 
@@ -165,7 +149,6 @@ let test_find_sources context =
     write_file local_root "b.py";
     write_file local_root "b.pyi";
     write_file module_root "a.pyi";
-
     write_file local_root "ttypes.py";
     write_file local_root "dir/legit.py";
     write_file local_root "excluded.py";
@@ -175,7 +158,6 @@ let test_find_sources context =
     write_file local_root "a.jpg";
     write_file local_root "nested/a.jpg";
     write_file local_root "extensionless";
-
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -202,7 +184,7 @@ let test_external_sources context =
   let handles =
     let root = Path.create_absolute (bracket_tmpdir context) in
     let create_path name =
-      let path_name = (Path.absolute root) ^ name in
+      let path_name = Path.absolute root ^ name in
       Sys_utils.mkdir_no_fail path_name;
       Path.create_absolute path_name
     in
@@ -216,7 +198,6 @@ let test_external_sources context =
     write_file local_root "a.py";
     write_file local_root "b.py";
     write_file external_root "a.py";
-
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -250,7 +231,6 @@ let test_parse_typeshed context =
     write_file typeshed_root "third_party/c.pyi";
     write_file typeshed_root "tests/d.pyi";
     write_file typeshed_root ".skipme/e.pyi";
-
     Service.Parser.find_stubs_and_sources
       (Configuration.Analysis.create ~local_root ~typeshed:typeshed_root ())
     |> fst
@@ -274,33 +254,25 @@ let test_parse_source _ =
   in
   let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
-      ~configuration:(
-        Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
+      ~configuration:
+        (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
   in
   let handle = File.handle ~configuration file in
   assert_equal handles [handle];
-
   let source = Ast.SharedMemory.Sources.get handle in
   assert_equal (Option.is_some source) true;
-
   let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
   assert_equal handle (File.Handle.create "a.py");
   assert_equal number_of_lines 3;
-  begin
-    match statements with
-    | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
-        assert_equal
-          ~cmp:Reference.equal
-          ~printer:Reference.show
-          name
-          (Reference.create "a.foo")
-    | _ -> assert_unreached ()
-  end
+  match statements with
+  | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
+      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "a.foo")
+  | _ -> assert_unreached ()
 
 
 let test_parse_sources context =
@@ -310,47 +282,29 @@ let test_parse_sources context =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
-
     let write_file root relative =
-      File.create ~content (Path.create_relative ~root ~relative)
-      |> File.write
+      File.create ~content (Path.create_relative ~root ~relative) |> File.write
     in
     write_file local_root "a.pyi";
     write_file local_root "a.py";
-
     write_file module_root "b.pyi";
     write_file local_root "b.py";
-
     write_file local_root "c.py";
     write_file local_root ".pyre/resource_cache/typeshed/ignoreme.py";
-
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
-
     Unix.symlink
-      ~src:((Path.absolute link_root) ^/ "link.py")
-      ~dst:((Path.absolute local_root) ^/ "d.py");
+      ~src:(Path.absolute link_root ^/ "link.py")
+      ~dst:(Path.absolute local_root ^/ "d.py");
     Unix.symlink
-      ~src:((Path.absolute link_root) ^/ "seemingly_unrelated.pyi")
-      ~dst:((Path.absolute local_root) ^/ "d.pyi");
-
+      ~src:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
+      ~dst:(Path.absolute local_root ^/ "d.pyi");
     let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~search_path:[Path.SearchPath.Root module_root]
-        ()
+      Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root module_root] ()
     in
     let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
-    let stubs =
-      stubs
-      |> List.map ~f:File.Handle.show
-      |> List.sort ~compare:String.compare
-    in
-    let sources =
-      sources
-      |> List.map ~f:File.Handle.show
-      |> List.sort ~compare:String.compare
-    in
+    let stubs = stubs |> List.map ~f:File.Handle.show |> List.sort ~compare:String.compare in
+    let sources = sources |> List.map ~f:File.Handle.show |> List.sort ~compare:String.compare in
     stubs, sources
   in
   assert_equal
@@ -367,10 +321,7 @@ let test_parse_sources context =
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let stub_handles, source_handles =
     let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~search_path:[Path.SearchPath.Root stub_root]
-        ()
+      Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root stub_root] ()
     in
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
@@ -390,13 +341,10 @@ let test_parse_sources context =
     stub_handles
     [File.Handle.create "stub.pyi"];
   assert_equal source_handles [File.Handle.create "a.py"];
-  begin
-    match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
-    | Some { Source.hash; _ } ->
-        assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
-    | None ->
-        assert_unreached ()
-  end
+  match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
+  | Some { Source.hash; _ } ->
+      assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
+  | None -> assert_unreached ()
 
 
 let test_register_modules _ =
@@ -407,22 +355,21 @@ let test_register_modules _ =
     let get_qualifier file =
       File.handle ~configuration file
       |> Ast.SharedMemory.Sources.get
-      >>| (fun { Source.qualifier; _ } -> qualifier)
+      >>| fun { Source.qualifier; _ } -> qualifier
     in
     let file =
       File.create
         ~content:(trim_extra_indentation raw_source)
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
     in
-    (* Use a "canary" to inspect the exports of a.py between its
-       module parsing stage and source parsing stage. *)
+    (* Use a "canary" to inspect the exports of a.py between its module parsing stage and source
+       parsing stage. *)
     let import_non_toplevel =
       File.create
         ~content:"from .a import *"
         (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"canary.py")
     in
     let files = [file; import_non_toplevel] in
-
     (* Build environment. *)
     Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
@@ -442,31 +389,24 @@ let test_register_modules _ =
     assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
     Test.populate_shared_memory ~configuration ~stubs:[] ~sources;
     assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
-
     let assert_exports ~qualifier =
       assert_equal
         ~cmp:(List.equal ~equal:Reference.equal)
         ~printer:(fun expression_list ->
-            List.map ~f:(Reference.show) expression_list
-            |> String.concat ~sep:", ")
+          List.map ~f:Reference.show expression_list |> String.concat ~sep:", ")
         (List.map ~f:Reference.create expected_exports)
         (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
     in
-
     assert_exports ~qualifier;
     assert_exports ~qualifier:(Option.value_exn (get_qualifier import_non_toplevel))
   in
-  assert_module_exports
-    {|
+  assert_module_exports {|
       def foo() -> int:
         return 1
-    |}
-    ["foo"];
-  assert_module_exports
-    {|
+    |} ["foo"];
+  assert_module_exports {|
       from x import y as z
-    |}
-    ["z"];
+    |} ["z"];
   assert_module_exports
     {|
       from a import b
@@ -500,14 +440,13 @@ let test_register_modules _ =
 
 
 let () =
-  "parser">:::[
-    "parse_stubs_modules_list">::test_parse_stubs_modules_list;
-    "find_stubs">::test_find_stubs;
-    "find_sources">::test_find_sources;
-    "external_sources">::test_external_sources;
-    "parse_typeshed">::test_parse_typeshed;
-    "parse_source">::test_parse_source;
-    "parse_sources">::test_parse_sources;
-    "register_modules">::test_register_modules;
-  ]
+  "parser"
+  >::: [ "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
+         "find_stubs" >:: test_find_stubs;
+         "find_sources" >:: test_find_sources;
+         "external_sources" >:: test_external_sources;
+         "parse_typeshed" >:: test_parse_typeshed;
+         "parse_source" >:: test_parse_source;
+         "parse_sources" >:: test_parse_sources;
+         "register_modules" >:: test_register_modules ]
   |> Test.run

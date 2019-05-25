@@ -4,11 +4,8 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
-
 open LanguageServer.Types
-
 
 let get_watchman_watched_directories () =
   let channel = Unix.open_process_in "watchman watch-list" in
@@ -38,6 +35,5 @@ let command =
   let open Command.Spec in
   Command.basic_spec
     ~summary:"Reports debugging diagnostics for Pyre to the standard output."
-    (empty
-     +> anon (maybe_with_default "." ("source-root" %: string)))
+    (empty +> anon (maybe_with_default "." ("source-root" %: string)))
     run_rage

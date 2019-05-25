@@ -4,18 +4,16 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Ast
-
 module Error = AnalysisError
 
-
 module type Signature = sig
-  val name: string
+  val name : string
+
   val run
-    :  configuration: Configuration.Analysis.t
-    -> environment: (module Environment.Handler)
-    -> source: Source.t
-    -> Error.t list
+    :  configuration:Configuration.Analysis.t ->
+    environment:(module Environment.Handler) ->
+    source:Source.t ->
+    Error.t list
 end
 
-
-val checks: configuration: Configuration.Analysis.t ->  (module Signature) list
+val checks : configuration:Configuration.Analysis.t -> (module Signature) list

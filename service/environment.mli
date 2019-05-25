@@ -7,20 +7,20 @@ open Ast
 open Analysis
 
 val populate
-  :  (module Environment.Handler)
-  -> configuration: Configuration.Analysis.t
-  -> scheduler: Scheduler.t
-  -> Source.t list
-  -> unit
+  :  (module Environment.Handler) ->
+  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  Source.t list ->
+  unit
 
 (* Exposed in order to support loading saved states. *)
-module SharedHandler: Environment.Handler
+module SharedHandler : Environment.Handler
 
 val populate_shared_memory
-  :  configuration: Configuration.Analysis.t
-  -> scheduler: Scheduler.t
-  -> stubs: File.Handle.t list
-  -> sources: File.Handle.t list
-  -> unit
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  stubs:File.Handle.t list ->
+  sources:File.Handle.t list ->
+  unit
 
-val normalize_shared_memory: unit -> unit
+val normalize_shared_memory : unit -> unit

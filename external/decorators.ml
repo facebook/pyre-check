@@ -5,11 +5,9 @@
 
 open Core
 
-
-let apply
-    ~overload:{ Type.Callable.annotation; parameters }
-    ~resolution:_
-    ~name =
+let apply ~overload:{ Type.Callable.annotation; parameters }
+          ~resolution:_
+          ~name =
   match name with
   | "$strip_first_parameter" ->
       let parameters =
@@ -18,13 +16,10 @@ let apply
             List.tl parameters
             |> Option.value ~default:parameters
             |> fun parameters -> Type.Callable.Defined parameters
-        | _ ->
-            parameters
+        | _ -> parameters
       in
       { Type.Callable.annotation; parameters }
-  | _ ->
-      { Type.Callable.annotation; parameters }
+  | _ -> { Type.Callable.annotation; parameters }
 
 
-let special_decorators =
-  String.Set.singleton "$strip_first_parameter"
+let special_decorators = String.Set.singleton "$strip_first_parameter"

@@ -6,29 +6,26 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_format_string _ =
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def foo() -> None:
         f'foo{1}'
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       def foo() -> None:
         f'foo{1 + "x"}'
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
   assert_type_errors
     {|
       global_number: int = 1
       def foo() -> None:
         f'foo{global_number + "x"}'
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
   assert_type_errors
     {|
       global_number: int = 1
@@ -44,27 +41,19 @@ let test_format_string _ =
       def foo() -> None:
         f'{boo() + "x"}'
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
-  assert_type_errors
-    {|
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
+  assert_type_errors {|
       def foo() -> None:
         f'{{x}}'
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       def foo() -> None:
         f'{{{x}}}'
     |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ]
+    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ]
 
 
-let () =
-  "format_string">:::[
-    "format_string">::test_format_string;
-  ]
-  |> Test.run
+let () = "format_string" >::: ["format_string" >:: test_format_string] |> Test.run

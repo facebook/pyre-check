@@ -4,13 +4,11 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
-
 open Ast
 open Core
 open Expression
 open Taint
 open Test
-
 
 let test_normalize_access _ =
   let parse_access expression =
@@ -25,9 +23,7 @@ let test_normalize_access _ =
         if List.is_empty modules then
           None
         else
-          List.map
-            modules
-            ~f:(fun name -> Source.create ~qualifier:(Reference.create name) [])
+          List.map modules ~f:(fun name -> Source.create ~qualifier:(Reference.create name) [])
           |> Option.some
       in
       Test.resolution ?sources ()
@@ -45,14 +41,12 @@ let test_normalize_access _ =
       expected
       normalized
   in
-
   let local name = AccessPath.Local name in
   let global access = AccessPath.Global (Access.create access) in
   let literal literal =
     Expression.String (Expression.StringLiteral.create literal)
     |> Node.create_with_default_location
   in
-
   assert_normalized "a" (global "a");
   assert_normalized "a()" (AccessPath.Call { callee = global "a"; arguments = +[] });
   assert_normalized
@@ -67,28 +61,17 @@ let test_normalize_access _ =
   assert_normalized
     ~modules:["a"; "a.b"]
     "a.b.c.d.e"
-    (AccessPath.Access {
-        expression = AccessPath.Access {
-            expression = global "a.b.c";
-            member = "d";
-          };
-        member = "e";
-      });
-
+    (AccessPath.Access
+       { expression = AccessPath.Access { expression = global "a.b.c"; member = "d" };
+         member = "e"
+       });
   assert_normalized "$a" (local "$a");
   assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = +[] });
-  assert_normalized
-    "$a.b"
-    (AccessPath.Access { expression = local "$a"; member = "b" });
+  assert_normalized "$a.b" (AccessPath.Access { expression = local "$a"; member = "b" });
   assert_normalized
     "'some string'.join"
     (AccessPath.Access
-       {expression = (AccessPath.Expression (literal "some string")); member = "join"})
+       { expression = AccessPath.Expression (literal "some string"); member = "join" })
 
 
-
-let () =
-  "taintaccesspath">:::[
-    "normalize">::test_normalize_access;
-  ]
-  |> Test.run
+let () = "taintaccesspath" >::: ["normalize" >:: test_normalize_access] |> Test.run

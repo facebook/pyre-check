@@ -6,8 +6,7 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
-*)
-
+ *)
 
 (*****************************************************************************)
 (* The prefix is used to guarantee that we are not mixing different kind of
@@ -15,7 +14,7 @@
  * It just creates a new prefix every time its called.
  * The $ at the end of the prefix ensures that we don't have ambiguities if a key
  * happens to start with a digit.
-*)
+ *)
 (*****************************************************************************)
 
 type t = string
@@ -26,8 +25,8 @@ let make =
     incr prefix_count;
     string_of_int !prefix_count ^ "$"
 
-let make_key prefix k =
-  prefix ^ k
+
+let make_key prefix k = prefix ^ k
 
 let remove prefix k =
   let prefix_size = String.length prefix in

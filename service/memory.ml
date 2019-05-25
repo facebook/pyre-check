@@ -5,18 +5,17 @@
 
 module SharedMemory = Hack_parallel.Std.SharedMem
 
-
 let unsafe_little_endian_representation ~key =
   (* Ensure that key is a well-formed digest. *)
   Digest.to_hex key
   |> Digest.from_hex
-  |> fun digest -> assert (Digest.equal digest key);
-  (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference.
-     This code is not portable by any means. *)
+  |> fun digest ->
+  assert (Digest.equal digest key);
+  (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference. This
+     code is not portable by any means. *)
   let rec compute_little_endian accumulator index =
     let accumulator =
-      Int64.mul accumulator (Int64.of_int 256)
-      |> Int64.add (Int64.of_int (Char.code key.[index]))
+      Int64.mul accumulator (Int64.of_int 256) |> Int64.add (Int64.of_int (Char.code key.[index]))
     in
     if index = 0 then
       accumulator
@@ -29,16 +28,13 @@ let unsafe_little_endian_representation ~key =
 
 type decodable = ..
 
-
-type decoding_error = [
-  | `Malformed_key
+type decoding_error =
+  [ `Malformed_key
   | `Unknown_type
   | `Decoder_failure of exn
-]
-
+  ]
 
 let registry = Hashtbl.create 13
-
 
 let register prefix decoder =
   let prefix = Prefix.make_key prefix "" in
@@ -48,37 +44,35 @@ let register prefix decoder =
 
 let decode ~key ~value =
   match String.index key '$' with
-  | exception Not_found ->
-      Result.Error `Malformed_key
-  | dollar ->
+  | exception Not_found -> Result.Error `Malformed_key
+  | dollar -> (
       let prefix_size = dollar + 1 in
       let prefix = String.sub key 0 prefix_size in
       match Hashtbl.find registry prefix with
       | exception Not_found -> Result.Error `Unknown_type
-      | decoder ->
-          let key =
-            String.sub key prefix_size (String.length key - prefix_size)
-          in
+      | decoder -> (
+          let key = String.sub key prefix_size (String.length key - prefix_size) in
           match decoder key value with
           | result -> Result.Ok result
-          | exception exn -> Result.Error (`Decoder_failure exn)
+          | exception exn -> Result.Error (`Decoder_failure exn) ) )
 
 
 module type KeyType = sig
   include SharedMem.UserKeyType
+
   type out
-  val from_string: string -> out
+
+  val from_string : string -> out
 end
 
-
-module Register (Key: KeyType) (Value: Value.Type) (): sig
+module Register (Key : KeyType) (Value : Value.Type) () : sig
   type decodable += Decoded of Key.out * Value.t option
 
-  val serialize_key: Key.t -> string
+  val serialize_key : Key.t -> string
 
-  val hash_of_key: Key.t -> string
+  val hash_of_key : Key.t -> string
 
-  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
+  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
 end = struct
   (* Register decoder *)
   type decodable += Decoded of Key.out * Value.t option
@@ -86,18 +80,15 @@ end = struct
   let () =
     let decode key value =
       let value =
-        try Some (Marshal.from_string value 0)
-        with _ -> None
+        try Some (Marshal.from_string value 0) with
+        | _ -> None
       in
       Decoded (Key.from_string key, value)
     in
     register Value.prefix decode
 
-  let serialize_key key =
-    Key.to_string key
-    |> Prefix.make_key Value.prefix
-    |> Base64.encode_exn
 
+  let serialize_key key = Key.to_string key |> Prefix.make_key Value.prefix |> Base64.encode_exn
 
   let hash_of_key key =
     key
@@ -109,103 +100,92 @@ end = struct
 
 
   let compute_hashes_to_keys ~keys =
-    let add map key =
-      Core.Map.set
-        map
-        ~key:(hash_of_key key)
-        ~data:(serialize_key key)
-    in
+    let add map key = Core.Map.set map ~key:(hash_of_key key) ~data:(serialize_key key) in
     Core.List.fold keys ~init:Core.String.Map.empty ~f:add
 end
 
-
-module NoCache (Key: KeyType) (Value: Value.Type):
-sig
+module NoCache (Key : KeyType) (Value : Value.Type) : sig
   type decodable += Decoded of Key.out * Value.t option
 
-  val serialize_key: Key.t -> string
-  val hash_of_key: Key.t -> string
-  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
+  val serialize_key : Key.t -> string
 
-  include SharedMemory.NoCache with
-    type t = Value.t
-                                and type key = Key.t
-                                and module KeySet = Set.Make (Key)
-                                and module KeyMap = MyMap.Make (Key)
+  val hash_of_key : Key.t -> string
+
+  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+
+  include
+    SharedMemory.NoCache
+    with type t = Value.t
+     and type key = Key.t
+     and module KeySet = Set.Make(Key)
+     and module KeyMap = MyMap.Make(Key)
 end = struct
   include Register (Key) (Value) ()
+
   include SharedMemory.NoCache (Key) (Value)
 end
 
-
-module WithCache (Key: KeyType) (Value: Value.Type):
-sig
+module WithCache (Key : KeyType) (Value : Value.Type) : sig
   type decodable += Decoded of Key.out * Value.t option
 
-  val serialize_key: Key.t -> string
-  val hash_of_key: Key.t -> string
-  val compute_hashes_to_keys: keys: Key.t list -> string Core.String.Map.t
+  val serialize_key : Key.t -> string
 
-  include SharedMemory.WithCache with
-    type t = Value.t
-                                  and type key = Key.t
-                                  and module KeySet = Set.Make (Key)
-                                  and module KeyMap = MyMap.Make (Key)
+  val hash_of_key : Key.t -> string
+
+  val compute_hashes_to_keys : keys:Key.t list -> string Core.String.Map.t
+
+  include
+    SharedMemory.WithCache
+    with type t = Value.t
+     and type key = Key.t
+     and module KeySet = Set.Make(Key)
+     and module KeyMap = MyMap.Make(Key)
 end = struct
   include Register (Key) (Value) ()
+
   include SharedMemory.WithCache (Key) (Value)
 end
-
 
 type bytes = int
 
 type configuration = {
   heap_handle: Hack_parallel.Std.SharedMem.handle;
-  minor_heap_size: bytes;
+  minor_heap_size: bytes
 }
 
-
-let configuration: configuration option ref = ref None
-
+let configuration : configuration option ref = ref None
 
 let initial_heap_size = 4096 * 1024 * 1024 (* 4 GB *)
 
-
 let worker_garbage_control =
-  {
-    (Gc.get ()) with
-    Gc.minor_heap_size = 256 * 1024; (* 256 KB *)
-    space_overhead = 100;
-  }
+  { (Gc.get ()) with Gc.minor_heap_size = 256 * 1024; (* 256 KB *)
+                                                      space_overhead = 100 }
 
 
 let initialize log_level =
   match !configuration with
   | None ->
-      let minor_heap_size = 4 * 1024 * 1024 in (* 4 MB *)
+      let minor_heap_size = 4 * 1024 * 1024 in
+      (* 4 MB *)
       let space_overhead = 50 in
-      (* Only sets the GC for the master process - the parallel
-           workers use GC settings with less overhead. *)
-      Gc.set {
-        (Gc.get ()) with
-        Gc.minor_heap_size;
-        space_overhead;
-      };
+      (* Only sets the GC for the master process - the parallel workers use GC settings with less
+         overhead. *)
+      Gc.set { (Gc.get ()) with Gc.minor_heap_size; space_overhead };
       let shared_mem_config =
-        {
-          SharedMemory.global_size = initial_heap_size;
+        { SharedMemory.global_size = initial_heap_size;
           heap_size = initial_heap_size;
           dep_table_pow = 19;
           hash_table_pow = 22;
           shm_dirs = ["/dev/shm"; "/pyre"];
-          shm_min_avail = 1024 * 1024 * 512; (* 512 MB *)
-          log_level;
-        } in
+          shm_min_avail = 1024 * 1024 * 512;
+          (* 512 MB *)
+          log_level
+        }
+      in
       let heap_handle = SharedMemory.init shared_mem_config in
       configuration := Some { heap_handle; minor_heap_size };
       { heap_handle; minor_heap_size }
-  | Some configuration ->
-      configuration
+  | Some configuration -> configuration
 
 
 let get_heap_handle { Configuration.Analysis.debug; _ } =
@@ -229,16 +209,18 @@ let save_shared_memory ~path =
   SharedMem.save_table path
 
 
-let load_shared_memory ~path =
-  SharedMem.load_table path
-
+let load_shared_memory ~path = SharedMem.load_table path
 
 module SingletonKey = struct
   type t = int
+
   let to_string = Core.Int.to_string
+
   let compare = Core.Int.compare
 
   type out = int
+
   let from_string = Core.Int.of_string
+
   let key = 0
 end

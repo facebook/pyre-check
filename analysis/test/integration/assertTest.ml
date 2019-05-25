@@ -7,7 +7,6 @@ open Test
 open OUnit2
 open IntegrationTest
 
-
 let test_check_assert _ =
   assert_type_errors
     {|
@@ -15,9 +14,9 @@ let test_check_assert _ =
         if optional or len(optional) > 0:
           pass
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `typing.Sized` for 1st anonymous parameter to call `len` but got " ^
-     "`typing.Optional[str]`."];
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `typing.Sized` for 1st anonymous parameter to call `len` but got "
+      ^ "`typing.Optional[str]`." ];
   assert_type_errors
     {|
       def foo(optional: typing.Optional[str]) -> None:
@@ -61,12 +60,10 @@ let test_check_assert _ =
           assert not True
         return int_to_int(x)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter " ^
-      "to call `int_to_int` but got `typing.Union[int, typing.Undeclared]`.";
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ];
+    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
+      ^ "to call `int_to_int` but got `typing.Union[int, typing.Undeclared]`.";
+      "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -168,7 +165,7 @@ let test_check_assert_functions _ =
     |}
     [];
   assert_default_type_errors
-    ~qualifier:(!&"foo")
+    ~qualifier:!&"foo"
     {|
       class One:
           a: int
@@ -201,6 +198,7 @@ let test_check_assert_functions _ =
     |}
     []
 
+
 let test_check_all _ =
   assert_type_errors
     {|
@@ -209,7 +207,6 @@ let test_check_all _ =
           return ','.join(x)
     |}
     [];
-
   assert_type_errors
     {|
       def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
@@ -217,19 +214,14 @@ let test_check_all _ =
           return ','.join(x)
     |}
     [];
-
   assert_type_errors
     {|
       def foo(x: typing.Iterable[typing.Optional[str]]) -> typing.Optional[str]:
         if not all(x):
           return ','.join(x)
     |}
-    [
-      "Incompatible parameter type [6]: \
-       Expected `typing.Iterable[str]` for 1st anonymous parameter to call \
-       `str.join` but got `typing.Iterable[typing.Optional[str]]`."
-    ];
-
+    [ "Incompatible parameter type [6]: Expected `typing.Iterable[str]` for 1st anonymous \
+       parameter to call `str.join` but got `typing.Iterable[typing.Optional[str]]`." ];
   assert_type_errors
     {|
       def foo(x: typing.Iterable[typing.Union[str, None]]) -> typing.Optional[str]:
@@ -237,7 +229,6 @@ let test_check_all _ =
           return ','.join(x)
     |}
     [];
-
   assert_type_errors
     {|
       def foo(x: typing.Iterable[typing.Union[str, int, None]]) -> \
@@ -247,7 +238,6 @@ let test_check_all _ =
         return []
     |}
     [];
-
   assert_type_errors
     {|
       def foo(x: typing.Dict[typing.Optional[int], _T]) -> typing.Dict[int, _T]:
@@ -255,16 +245,13 @@ let test_check_all _ =
           return x
         return {}
     |}
-    [
-      "Incompatible return type [7]: \
-       Expected `typing.Dict[int, Variable[_T]]` but got \
-       `typing.Dict[typing.Optional[int], Variable[_T]]`."
-    ]
+    [ "Incompatible return type [7]: Expected `typing.Dict[int, Variable[_T]]` but got \
+       `typing.Dict[typing.Optional[int], Variable[_T]]`." ]
+
 
 let () =
-  "assert">:::[
-    "check_assert">::test_check_assert;
-    "check_assert_functions">::test_check_assert_functions;
-    "check_all">::test_check_all;
-  ]
+  "assert"
+  >::: [ "check_assert" >:: test_check_assert;
+         "check_assert_functions" >:: test_check_assert_functions;
+         "check_all" >:: test_check_all ]
   |> Test.run

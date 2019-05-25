@@ -5,10 +5,8 @@
 
 open Core
 open OUnit2
-
 open Server
 open Protocol
-
 
 let test_type_query_json _ =
   let open TypeQuery in
@@ -20,18 +18,15 @@ let test_type_query_json _ =
   in
   assert_serializes (Error "message") {|{"error": "message"}|};
   assert_serializes
-    (Response
-       (FoundAttributes
-          [{ name = "name"; annotation = Analysis.Type.integer }]))
+    (Response (FoundAttributes [{ name = "name"; annotation = Analysis.Type.integer }]))
     {|{"response": {"attributes": [{"name": "name", "annotation": "int"}]}}|};
   assert_serializes
     (Response
        (FoundMethods
-          [{
-            name = "method";
-            parameters = [Analysis.Type.integer];
-            return_annotation = Analysis.Type.string;
-          }]))
+          [ { name = "method";
+              parameters = [Analysis.Type.integer];
+              return_annotation = Analysis.Type.string
+            } ]))
     {|
       {
        "response": {
@@ -45,16 +40,10 @@ let test_type_query_json _ =
        }
       }
     |};
-  assert_serializes
-    (Response (Type Analysis.Type.integer))
-    {|{"response": {"type": "int"}}|};
+  assert_serializes (Response (Type Analysis.Type.integer)) {|{"response": {"type": "int"}}|};
   assert_serializes
     (Response (Superclasses [Analysis.Type.integer; Analysis.Type.string]))
     {|{"response": {"superclasses": ["int", "str"]}}|}
 
 
-let () =
-  "serverProtocol">:::[
-    "type_query_json">::test_type_query_json;
-  ]
-  |> Test.run
+let () = "serverProtocol" >::: ["type_query_json" >:: test_type_query_json] |> Test.run

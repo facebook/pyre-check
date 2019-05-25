@@ -5,21 +5,24 @@
 
 open Core
 
-type t = string
-[@@deriving compare, eq, sexp, hash]
+type t = string [@@deriving compare, eq, sexp, hash]
 
 module Map : Map.S with type Key.t = t
-module SerializableMap: SerializableMap.S with type key = t
-module Set: Set.S with type Elt.t = t
+
+module SerializableMap : SerializableMap.S with type key = t
+
+module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
-val sanitized: t -> t
-val equal_sanitized: t -> t -> bool
+val sanitized : t -> t
 
-val pp: Format.formatter -> t -> unit
-val pp_sanitized: Format.formatter -> t -> unit
+val equal_sanitized : t -> t -> bool
 
-val remove_leading_underscores: t -> t
+val pp : Format.formatter -> t -> unit
 
-val split_star: t -> string * t
+val pp_sanitized : Format.formatter -> t -> unit
+
+val remove_leading_underscores : t -> t
+
+val split_star : t -> string * t

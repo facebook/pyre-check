@@ -7,9 +7,10 @@ open Core
 open OUnit2
 open Taint
 
-
 let test_simple _ =
-  let configuration = TaintConfiguration.parse {|
+  let configuration =
+    TaintConfiguration.parse
+      {|
     { sources: [
         { name: "A" },
         { name: "B" }
@@ -43,7 +44,8 @@ let test_simple _ =
 
 let test_invalid_source _ =
   let parse () =
-    TaintConfiguration.parse {|
+    TaintConfiguration.parse
+      {|
     { sources: [
         { name: "A" },
         { name: "B" }
@@ -64,14 +66,13 @@ let test_invalid_source _ =
     }
     |}
   in
-  assert_raises
-    (Failure "Unsupported taint source `C`")
-    parse
+  assert_raises (Failure "Unsupported taint source `C`") parse
 
 
 let test_invalid_sink _ =
   let parse () =
-    TaintConfiguration.parse {|
+    TaintConfiguration.parse
+      {|
     { sources: [
       ],
       sinks: [
@@ -91,25 +92,19 @@ let test_invalid_sink _ =
     }
     |}
   in
-  assert_raises
-    (Failure "Unsupported taint sink `B`")
-    parse
+  assert_raises (Failure "Unsupported taint sink `B`") parse
 
 
 let test_empty _ =
-  assert_raises
-    (Yojson.Json_error "Blank input data")
-    (fun () ->
-       let _ = TaintConfiguration.parse {| |} in
-       ()
-    )
+  assert_raises (Yojson.Json_error "Blank input data") (fun () ->
+      let _ = TaintConfiguration.parse {| |} in
+      ())
 
 
 let () =
-  "test_configuration">:::[
-    "test_simple">::test_simple;
-    "test_invalid_source">::test_invalid_source;
-    "test_invalid_sink">::test_invalid_sink;
-    "test_empty">::test_empty;
-  ]
+  "test_configuration"
+  >::: [ "test_simple" >:: test_simple;
+         "test_invalid_source" >:: test_invalid_source;
+         "test_invalid_sink" >:: test_invalid_sink;
+         "test_empty" >:: test_empty ]
   |> Test.run

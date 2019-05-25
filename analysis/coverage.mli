@@ -5,54 +5,54 @@
 
 open Ast
 
-
 type t = {
   full: int;
   partial: int;
   untyped: int;
   ignore: int;
-  crashes: int;
+  crashes: int
 }
 [@@deriving eq, show]
 
-val create
-  :  ?full: int
-  -> ?partial: int
-  -> ?untyped: int
-  -> ?ignore: int
-  -> ?crashes: int
-  -> unit
-  -> t
+val create : ?full:int -> ?partial:int -> ?untyped:int -> ?ignore:int -> ?crashes:int -> unit -> t
 
-val full: t -> int
-val partial: t -> int
-val untyped: t -> int
-val ignore: t -> int
-val crashes: t -> int
+val full : t -> int
 
-val sum: t -> t -> t
-val aggregate: Annotation.t list -> t
-val aggregate_over_source: source: Source.t -> t list -> t
+val partial : t -> int
 
-val log: t -> total_errors: int -> path: string -> unit
+val untyped : t -> int
 
-module CoverageValue: sig
+val ignore : t -> int
+
+val crashes : t -> int
+
+val sum : t -> t -> t
+
+val aggregate : Annotation.t list -> t
+
+val aggregate_over_source : source:Source.t -> t list -> t
+
+val log : t -> total_errors:int -> path:string -> unit
+
+module CoverageValue : sig
   type nonrec t = t
-  val prefix: Prefix.t
-  val description: string
+
+  val prefix : Prefix.t
+
+  val description : string
 end
 
+module SharedMemory : module type of Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
 
-module SharedMemory: module type of Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
+val add : t -> handle:File.Handle.t -> unit
 
-val add: t -> handle: File.Handle.t -> unit
-val get: handle: File.Handle.t -> t option
+val get : handle:File.Handle.t -> t option
 
 type aggregate = {
   strict_coverage: int;
   declare_coverage: int;
   default_coverage: int;
-  source_files: int;
+  source_files: int
 }
 
-val coverage: number_of_files: int -> sources: File.Handle.t list -> aggregate
+val coverage : number_of_files:int -> sources:File.Handle.t list -> aggregate

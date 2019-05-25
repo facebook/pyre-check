@@ -6,11 +6,8 @@
 open Core
 open Pyre
 
-
 module Event = struct
-  type event_type =
-    | Duration of int
-  [@@deriving yojson]
+  type event_type = Duration of int [@@deriving yojson]
 
   type t = {
     name: string;
@@ -28,20 +25,18 @@ module Event = struct
     |> Time.Span.to_ms
     |> Int.of_float
 
+
   let create ?(timestamp = now_in_milliseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
     let pid = Unix.getpid () |> Pid.to_int in
     { name; pid; event_type; timestamp; tags }
 end
 
-
 let log_event event =
   let log_to_path path =
     let path = Path.create_absolute ~follow_symbolic_links:false path in
     let line = event |> Event.to_yojson |> Yojson.Safe.to_string in
-    File.append
-      ~lines:[line]
-      path
+    File.append ~lines:[line] path
   in
   Configuration.Analysis.get_global ()
   >>= (fun { Configuration.Analysis.profiling_output; _ } -> profiling_output)

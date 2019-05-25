@@ -6,28 +6,23 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_check_imports _ =
   assert_type_errors
     {|
       import durp
     |}
     ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       import typing
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       import typing, durp
     |}
     ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       from typing import durp
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       from durp import typing
@@ -38,20 +33,16 @@ let test_check_imports _ =
     {|
       a = durp.x
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
+    [ "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
       "Undefined name [18]: Global name `durp` is not defined, or there is at least one control \
-       flow path that doesn't define `durp`."
-    ];
+       flow path that doesn't define `durp`." ];
   assert_type_errors
     {|
       import durp
       a = durp.x
     |}
-    [
-      "Undefined import [21]: Could not find a module corresponding to import `durp`.";
-      "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
-    ];
+    [ "Undefined import [21]: Could not find a module corresponding to import `durp`.";
+      "Missing global annotation [5]: Globally accessible variable `a` has no type specified." ];
   assert_type_errors
     {|
       from typing import Optional
@@ -60,8 +51,4 @@ let test_check_imports _ =
     ["Incompatible return type [7]: Expected `None` but got `int`."]
 
 
-let () =
-  "import">:::[
-    "check_imports">::test_check_imports;
-  ]
-  |> Test.run
+let () = "import" >::: ["check_imports" >:: test_check_imports] |> Test.run

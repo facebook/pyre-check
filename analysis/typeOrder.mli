@@ -6,94 +6,103 @@
 open Core
 
 exception Cyclic
+
 exception Incomplete
+
 exception Untracked of Type.t
 
-
-module Target: sig
+module Target : sig
   type t = {
     target: int;
     parameters: Type.t list
   }
   [@@deriving compare, eq, sexp, show]
 
-  module Set: Set.S with type Elt.t = t
+  module Set : Set.S with type Elt.t = t
 end
 
 type t = {
-  edges: (Target.t list) Int.Table.t;
-  backedges: (Target.t list) Int.Table.t;
+  edges: Target.t list Int.Table.t;
+  backedges: Target.t list Int.Table.t;
   indices: int Type.Table.t;
-  annotations: Type.t Int.Table.t;
+  annotations: Type.t Int.Table.t
 }
 [@@deriving show]
 
-(** The handler module for interfacing with TypeOrder lookups. See
-    [Environment_handler] for more. *)
+(** The handler module for interfacing with TypeOrder lookups. See [Environment_handler] for more. *)
 module type Handler = sig
   type ('key, 'table) lookup
 
-  val edges: unit -> (int, Target.t list) lookup
-  val backedges: unit -> (int, Target.t list) lookup
-  val indices: unit -> (Type.t, int) lookup
-  val annotations: unit -> (int, Type.t) lookup
+  val edges : unit -> (int, Target.t list) lookup
 
-  val find: ('key, 'value) lookup -> 'key -> 'value option
-  val find_unsafe: ('key, 'value) lookup -> 'key -> 'value
-  val contains: ('key, 'value) lookup -> 'key -> bool
-  val set: ('key, 'value) lookup -> key:'key -> data:'value -> unit
+  val backedges : unit -> (int, Target.t list) lookup
 
-  val add_key: int -> unit
-  val keys: unit -> int list
+  val indices : unit -> (Type.t, int) lookup
 
-  val length: ('key, 'value) lookup -> int
+  val annotations : unit -> (int, Type.t) lookup
 
-  val show: unit -> string
+  val find : ('key, 'value) lookup -> 'key -> 'value option
+
+  val find_unsafe : ('key, 'value) lookup -> 'key -> 'value
+
+  val contains : ('key, 'value) lookup -> 'key -> bool
+
+  val set : ('key, 'value) lookup -> key:'key -> data:'value -> unit
+
+  val add_key : int -> unit
+
+  val keys : unit -> int list
+
+  val length : ('key, 'value) lookup -> int
+
+  val show : unit -> string
 end
 
-(** Provides a default in-process environment handler constructed from a
-    [TypeOrder.t]. *)
-val handler: t -> (module Handler)
+val handler : t -> (module Handler)
+(** Provides a default in-process environment handler constructed from a [TypeOrder.t]. *)
 
-val insert: (module Handler) -> Type.t -> unit
+val insert : (module Handler) -> Type.t -> unit
+
 val connect
-  :  ?parameters: Type.t list
-  -> (module Handler)
-  -> predecessor: Type.t
-  -> successor: Type.t
-  -> unit
+  :  ?parameters:Type.t list ->
+  (module Handler) ->
+  predecessor:Type.t ->
+  successor:Type.t ->
+  unit
 
-(* Disconnect the annotations from all of its successors, including any
-   backedges. It does not remove the annotations from the TypeOrder. *)
-val disconnect_successors: (module Handler) -> Type.t list -> unit
+(* Disconnect the annotations from all of its successors, including any backedges. It does not
+   remove the annotations from the TypeOrder. *)
+val disconnect_successors : (module Handler) -> Type.t list -> unit
 
-(* Converts the type order representation into a canonical format in order to support comparing type
-   environment states. *)
-val normalize: (module Handler) -> unit
+(* Converts the type order representation into a canonical format in order to support comparing
+   type environment states. *)
+val normalize : (module Handler) -> unit
 
-(* Returns true if the type order contains the literal annotation. For example, if typing.List
-   is in order, `contains order typing.List` will evaluate to true, whereas
-   `contains order typing.List[int]` will evaluate to false. *)
-val contains: (module Handler) -> Type.t -> bool
+(* Returns true if the type order contains the literal annotation. For example, if typing.List is
+   in order, `contains order typing.List` will evaluate to true, whereas `contains order
+   typing.List[int]` will evaluate to false. *)
+val contains : (module Handler) -> Type.t -> bool
 
 (* Returns true if the annotation can be deconstructed into primitive types that exist in the type
    order. If typing.List and int are in the type order, both `contains order typing.List` and
-   `is_instantiated order typing.List[int]` will evaluate to true, but
-   `is_instantiated order typing.List[str]` will evaluate to false. *)
-val is_instantiated: (module Handler) -> Type.t -> bool
+   `is_instantiated order typing.List[int]` will evaluate to true, but `is_instantiated order
+   typing.List[str]` will evaluate to false. *)
+val is_instantiated : (module Handler) -> Type.t -> bool
 
 val method_resolution_order_linearize
-  :  (module Handler)
-  -> get_successors:(int -> Target.t list option)
-  -> Type.primitive
-  -> Type.primitive list
-val successors: (module Handler) -> Type.primitive -> Type.primitive list
+  :  (module Handler) ->
+  get_successors:(int -> Target.t list option) ->
+  Type.primitive ->
+  Type.primitive list
 
-val variables: (module Handler) -> Type.t -> Type.t list option
+val successors : (module Handler) -> Type.primitive -> Type.primitive list
 
-module ProtocolAssumptions: sig
+val variables : (module Handler) -> Type.t -> Type.t list option
+
+module ProtocolAssumptions : sig
   type t
-  val empty: t
+
+  val empty : t
 end
 [@@deriving show]
 
@@ -103,65 +112,74 @@ type order = {
   attributes: Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
   any_is_bottom: bool;
-  protocol_assumptions: ProtocolAssumptions.t;
+  protocol_assumptions: ProtocolAssumptions.t
 }
 
 val solve_less_or_equal
-  :  order
-  -> constraints: TypeConstraints.t
-  -> left: Type.t
-  -> right: Type.t
-  -> TypeConstraints.t list
-val less_or_equal: order -> left: Type.t -> right: Type.t -> bool
-val is_compatible_with: order -> left: Type.t -> right: Type.t -> bool
-val least_upper_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
-val greatest_lower_bound: (module Handler) -> Type.t -> Type.t -> Type.t list
-val join: order -> Type.t -> Type.t -> Type.t
-val meet: order -> Type.t -> Type.t -> Type.t
-val widen
-  :  order
-  -> widening_threshold: int
-  -> previous: Type.t
-  -> next: Type.t
-  -> iteration: int
-  -> Type.t
-val diff_variables: Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
+  :  order ->
+  constraints:TypeConstraints.t ->
+  left:Type.t ->
+  right:Type.t ->
+  TypeConstraints.t list
 
-module OrderedConstraints: TypeConstraints.OrderedConstraintsType with type order = order
+val less_or_equal : order -> left:Type.t -> right:Type.t -> bool
+
+val is_compatible_with : order -> left:Type.t -> right:Type.t -> bool
+
+val least_upper_bound : (module Handler) -> Type.t -> Type.t -> Type.t list
+
+val greatest_lower_bound : (module Handler) -> Type.t -> Type.t -> Type.t list
+
+val join : order -> Type.t -> Type.t -> Type.t
+
+val meet : order -> Type.t -> Type.t -> Type.t
+
+val widen
+  :  order ->
+  widening_threshold:int ->
+  previous:Type.t ->
+  next:Type.t ->
+  iteration:int ->
+  Type.t
+
+val diff_variables : Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
+
+module OrderedConstraints : TypeConstraints.OrderedConstraintsType with type order = order
 
 val instantiate_protocol_parameters
-  :  order
-  -> candidate: Type.t
-  -> protocol: Ast.Identifier.t
-  -> Type.t list option
-
+  :  order ->
+  candidate:Type.t ->
+  protocol:Ast.Identifier.t ->
+  Type.t list option
 
 val instantiate_successors_parameters
-  :  order
-  -> source: Type.t
-  -> target: Type.t
-  -> Type.t List.t Option.t
+  :  order ->
+  source:Type.t ->
+  target:Type.t ->
+  Type.t List.t Option.t
 
-val is_consistent_with: order -> Type.t -> Type.t -> bool
-val consistent_solution_exists: order -> Type.t -> Type.t -> bool
+val is_consistent_with : order -> Type.t -> Type.t -> bool
 
-val deduplicate: (module Handler) -> annotations: Type.t list -> unit
-val remove_extra_edges: (module Handler) -> bottom: Type.t -> top: Type.t -> Type.t list -> unit
-val connect_annotations_to_top
-  :  (module Handler)
-  -> top: Type.t
-  -> Type.t list
-  -> unit
-val sort_bottom_edges: (module Handler) -> bottom: Type.t -> unit
+val consistent_solution_exists : order -> Type.t -> Type.t -> bool
 
-val check_integrity: (module Handler) -> unit
+val deduplicate : (module Handler) -> annotations:Type.t list -> unit
 
-val to_dot: (module Handler) -> string
+val remove_extra_edges : (module Handler) -> bottom:Type.t -> top:Type.t -> Type.t list -> unit
 
-module Builder: sig
-  val create: unit -> t
-  val copy: t -> t
+val connect_annotations_to_top : (module Handler) -> top:Type.t -> Type.t list -> unit
 
-  val default: unit -> t
-  val builtin_types: Type.Set.t
+val sort_bottom_edges : (module Handler) -> bottom:Type.t -> unit
+
+val check_integrity : (module Handler) -> unit
+
+val to_dot : (module Handler) -> string
+
+module Builder : sig
+  val create : unit -> t
+
+  val copy : t -> t
+
+  val default : unit -> t
+
+  val builtin_types : Type.Set.t
 end

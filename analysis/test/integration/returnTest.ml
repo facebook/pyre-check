@@ -6,64 +6,37 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_check_return _ =
-  assert_type_errors
-    "def foo() -> None: pass"
-    [];
-
-  assert_type_errors
-    "def foo() -> None: return"
-    [];
-
-  assert_type_errors
-    "def foo() -> float: return 1.0"
-    [];
-
-  assert_type_errors
-    "def foo() -> float: return 1"
-    [];
-
+  assert_type_errors "def foo() -> None: pass" [];
+  assert_type_errors "def foo() -> None: return" [];
+  assert_type_errors "def foo() -> float: return 1.0" [];
+  assert_type_errors "def foo() -> float: return 1" [];
   assert_type_errors
     "def foo() -> int: return 1.0"
     ["Incompatible return type [7]: Expected `int` but got `float`."];
-
   assert_type_errors
     "def foo() -> str: return 1.0"
     ["Incompatible return type [7]: Expected `str` but got `float`."];
-
   assert_type_errors
     "def foo() -> str: return"
     ["Incompatible return type [7]: Expected `str` but got `None`."];
-
   assert_type_errors
     "def foo() -> typing.List[str]: return 1"
     ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
-
   assert_default_type_errors
     "def foo() -> int: return"
     ["Incompatible return type [7]: Expected `int` but got `None`."];
-
-  assert_type_errors
-    "def foo() -> typing.List[str]: return []"
-    [];
-
-  assert_type_errors
-    "def foo() -> typing.Dict[str, int]: return {}"
-    [];
-
+  assert_type_errors "def foo() -> typing.List[str]: return []" [];
+  assert_type_errors "def foo() -> typing.Dict[str, int]: return {}" [];
   assert_type_errors
     {|
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type " ^
-      "that does not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type " ^
-      "that does not contain `Any`.";
-    ];
-
+    [ "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
       def f() -> dict:
@@ -71,77 +44,53 @@ let test_check_return _ =
       def foo() -> typing.Dict[typing.Any]:
         return f()
     |}
-    [
-      "Missing return annotation [3]: Return type must be specified as type that does " ^
-      "not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type that does " ^
-      "not contain `Any`.";
-      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1.";
-    ];
-
+    [ "Missing return annotation [3]: Return type must be specified as type that does "
+      ^ "not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type that does "
+      ^ "not contain `Any`.";
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1." ];
   assert_type_errors
     {|
       x: typing.Type
       def foo() -> typing.Type[typing.Any]:
         return x
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
-      "as type that does not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type " ^
-      "that does not contain `Any`.";
-    ];
-
-  assert_type_errors
-    {|
+    [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
+      ^ "as type that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`." ];
+  assert_type_errors {|
       def derp()->typing.Union[str, None]:
           return None
-    |}
-    [];
-
+    |} [];
   assert_type_errors
     "def foo() -> str: return 1.0\ndef bar() -> int: return ''"
-    [
-      "Incompatible return type [7]: Expected `str` but got `float`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-    ];
-
-  assert_type_errors
-    "class A: pass\ndef foo() -> A: return A()"
-    [];
-
+    [ "Incompatible return type [7]: Expected `str` but got `float`.";
+      "Incompatible return type [7]: Expected `int` but got `str`." ];
+  assert_type_errors "class A: pass\ndef foo() -> A: return A()" [];
   assert_type_errors
     "class A: pass\ndef foo() -> A: return 1"
     ["Incompatible return type [7]: Expected `A` but got `int`."];
-
-  assert_type_errors
-    "def bar() -> str: return ''\ndef foo() -> str: return bar()"
-    [];
-
+  assert_type_errors "def bar() -> str: return ''\ndef foo() -> str: return bar()" [];
   assert_type_errors
     "def foo() -> str: return not_annotated()"
     ["Incompatible return type [7]: Expected `str` but got `unknown`."];
-
   assert_type_errors
     {|
       def x()->int:
         return None
     |}
     ["Incompatible return type [7]: Expected `int` but got `None`."];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def derp()->typing.Set[int]:
         return {1}
-    |}
-    [];
-
+    |} [];
   assert_type_errors
     {|
       def derp()->typing.Set[int]:
         return {""}
     |}
     ["Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."];
-
   assert_type_errors
     {|
       def foo() -> str:
@@ -150,11 +99,8 @@ let test_check_return _ =
         else:
           return 2
     |}
-    [
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-      "Incompatible return type [7]: Expected `str` but got `int`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `str` but got `int`.";
+      "Incompatible return type [7]: Expected `str` but got `int`." ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -164,8 +110,7 @@ let test_check_return _ =
       def bar(x: list[int]) -> int:
         return foo(x)
     |}
-    [ "Incompatible return type [7]: Expected `Variable[T]` but got `typing.List[Variable[T]]`." ];
-
+    ["Incompatible return type [7]: Expected `Variable[T]` but got `typing.List[Variable[T]]`."];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -175,7 +120,6 @@ let test_check_return _ =
         return foo(x)
     |}
     [];
-
   assert_type_errors
     {|
       T = typing.TypeVar('T', int, str)
@@ -185,7 +129,6 @@ let test_check_return _ =
         return foo(8) + 9
     |}
     ["Incompatible return type [7]: Expected `Variable[T <: [int, str]]` but got `str`."];
-
   assert_type_errors
     {|
       class C:
@@ -194,7 +137,6 @@ let test_check_return _ =
         return C
     |}
     [];
-
   assert_type_errors
     {|
       class C:
@@ -214,12 +156,9 @@ let test_check_return_control_flow _ =
         if unknown_condition:
           return 1
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
+    [ "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
       "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
-       one control flow path that doesn't define `unknown_condition`.";
-    ];
-
+       one control flow path that doesn't define `unknown_condition`." ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -228,37 +167,29 @@ let test_check_return_control_flow _ =
         else:
           x = 1
     |}
-    [
-      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
+    [ "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
       "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
-       one control flow path that doesn't define `unknown_condition`.";
-    ];
-
+       one control flow path that doesn't define `unknown_condition`." ];
   assert_type_errors
     {|
       x: typing.List[int]
       def foo() -> list:
         return x
     |}
-    [
-      "Missing return annotation [3]: Returning `typing.List[int]` but return type " ^
-      "must be specified as type that does not contain `Any`.";
+    [ "Missing return annotation [3]: Returning `typing.List[int]` but return type "
+      ^ "must be specified as type that does not contain `Any`.";
       "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`."
     ];
-
   assert_type_errors
     {|
       x: typing.List[typing.Any]
       def foo() -> list:
         return x
     |}
-    [
-      "Missing global annotation [5]: Globally accessible variable `x` must be specified " ^
-      "as type that does not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type " ^
-      "that does not contain `Any`."
-    ];
-
+    [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
+      ^ "as type that does not contain `Any`.";
+      "Missing return annotation [3]: Return type must be specified as type "
+      ^ "that does not contain `Any`." ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, str]) -> int:
@@ -315,19 +246,11 @@ let test_check_return_control_flow _ =
         return input
     |}
     [];
-
   assert_type_errors
     "def foo() -> str: return None"
     ["Incompatible return type [7]: Expected `str` but got `None`."];
-
-  assert_type_errors
-    "def foo() -> typing.Optional[str]: return None"
-    [];
-
-  assert_type_errors
-    "def foo() -> typing.Optional[int]: return 1"
-    [];
-
+  assert_type_errors "def foo() -> typing.Optional[str]: return None" [];
+  assert_type_errors "def foo() -> typing.Optional[int]: return 1" [];
   assert_type_errors
     {|
       def foo(flag: bool) -> typing.Optional[float]:
@@ -340,7 +263,6 @@ let test_check_return_control_flow _ =
   assert_type_errors
     "def foo() -> typing.Optional[int]: return 1.0"
     ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `float`."];
-
   assert_type_errors
     {|
       def foo(optional: typing.Optional[int]) -> int:
@@ -356,7 +278,6 @@ let test_check_return_control_flow _ =
         return kwargs
     |}
     ["Incompatible return type [7]: Expected `None` but got `typing.Dict[str, int]`."];
-
   assert_type_errors
     {|
       def f( *args: int) -> None:
@@ -365,15 +286,11 @@ let test_check_return_control_flow _ =
         return f( *args)
     |}
     [];
-
   (* Object methods are picked up for optionals. *)
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def f() -> int:
         return None.__sizeof__()
-    |}
-    [];
-
+    |} [];
   (* Builtins. *)
   assert_default_type_errors
     {|
@@ -389,14 +306,12 @@ let test_check_return_control_flow _ =
         return ...
     |}
     [];
-
   assert_type_errors
     {|
       def f() -> int:
         return builtins.__name__
     |}
     ["Incompatible return type [7]: Expected `int` but got `unknown`."];
-
   (* Meta. *)
   assert_type_errors
     {|
@@ -404,26 +319,21 @@ let test_check_return_control_flow _ =
         return meta
     |}
     [];
-
   assert_type_errors
     {|
       def f(meta: type[int]) -> typing.Type[int]:
         return meta
     |}
     [];
-
   assert_type_errors
     {|
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `meta` must have a type " ^
-      "that does not contain `Any`.";
-      "Incompatible return type [7]: Expected `typing.Type[int]` but got " ^
-      "`typing.Type[typing.Any]`.";
-    ];
-
+    [ "Missing parameter annotation [2]: Parameter `meta` must have a type "
+      ^ "that does not contain `Any`.";
+      "Incompatible return type [7]: Expected `typing.Type[int]` but got "
+      ^ "`typing.Type[typing.Any]`." ];
   assert_type_errors
     {|
       class other(): pass
@@ -434,7 +344,6 @@ let test_check_return_control_flow _ =
         return result
     |}
     ["Incompatible return type [7]: Expected `other` but got `unknown`."];
-
   assert_type_errors
     {|
       def derp(x) -> None:
@@ -445,10 +354,8 @@ let test_check_return_control_flow _ =
         }
         return y
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`.";
-    ]
+    [ "Missing parameter annotation [2]: Parameter `x` has no type specified.";
+      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`." ]
 
 
 let test_check_collections _ =
@@ -458,7 +365,6 @@ let test_check_collections _ =
         return {1, *x}
     |}
     ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
-
   assert_type_errors
     {|
       def foo(input: typing.Optional[typing.List[int]]) -> typing.List[int]:
@@ -504,7 +410,6 @@ let test_check_noreturn _ =
         return None
     |}
     [];
-
   assert_type_errors
     {|
       def no_return(input: typing.Optional[int]) -> int:
@@ -513,14 +418,12 @@ let test_check_noreturn _ =
         return input
     |}
     [];
-
   assert_type_errors
     {|
       def no_return() -> str:
         sys.exit(0)  # once control flow terminates, we know input won't be returned.
     |}
     [];
-
   assert_type_errors
     {|
       def may_not_return() -> str:
@@ -530,7 +433,6 @@ let test_check_noreturn _ =
           return ""
     |}
     [];
-
   assert_type_errors
     {|
       def no_return() -> int:
@@ -543,11 +445,10 @@ let test_check_noreturn _ =
 
 
 let () =
-  "return">:::[
-    "check_return">::test_check_return;
-    "check_return_control_flow">::test_check_return_control_flow;
-    "check_collections">::test_check_collections;
-    "check_meta_annotations">::test_check_meta_annotations;
-    "check_noreturn">::test_check_noreturn;
-  ]
+  "return"
+  >::: [ "check_return" >:: test_check_return;
+         "check_return_control_flow" >:: test_check_return_control_flow;
+         "check_collections" >:: test_check_collections;
+         "check_meta_annotations" >:: test_check_meta_annotations;
+         "check_noreturn" >:: test_check_noreturn ]
   |> Test.run

@@ -6,7 +6,6 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_assert_is_none _ =
   assert_type_errors
     {|
@@ -23,7 +22,6 @@ let test_assert_is_none _ =
           reveal_type(a.x)
     |}
     ["Revealed type [-1]: Revealed type for `a.x` is `int`."];
-
   assert_type_errors
     {|
       from typing import Optional
@@ -33,7 +31,6 @@ let test_assert_is_none _ =
           self.assertIsNotNone(2)
     |}
     [];
-
   assert_type_errors
     {|
       from typing import Optional
@@ -49,7 +46,6 @@ let test_assert_is_none _ =
           reveal_type(a.x)
     |}
     ["Revealed type [-1]: Revealed type for `a.x` is `int`."];
-
   assert_type_errors
     {|
       from typing import Optional
@@ -67,8 +63,4 @@ let test_assert_is_none _ =
     ["Revealed type [-1]: Revealed type for `a.x` is `int`."]
 
 
-let () =
-  "assert_is_not_none">:::[
-    "check_assert_is_none">::test_assert_is_none;
-  ]
-  |> Test.run
+let () = "assert_is_not_none" >::: ["check_assert_is_none" >:: test_assert_is_none] |> Test.run

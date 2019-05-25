@@ -7,6 +7,8 @@ open Core
 
 type t
 
-val start: unit -> t
-val stop: t -> Time.Span.t
-val stop_in_ms: t -> int
+val start : unit -> t
+
+val stop : t -> Time.Span.t
+
+val stop_in_ms : t -> int

@@ -8,7 +8,6 @@ open Pyre
 open Network
 open Server
 
-
 let run
     _
     transitive
@@ -35,7 +34,8 @@ let run
     excludes
     extensions
     local_root
-    () =
+    ()
+  =
   try
     let filter_directories =
       filter_directories
@@ -78,34 +78,27 @@ let run
         ()
     in
     (fun () ->
-       let socket =
-         try
-           Operations.connect ~retries:3 ~configuration
-         with Operations.ConnectionFailure ->
-           raise Operations.ServerNotRunning
-       in
-
-       Socket.write
-         socket
-         (Protocol.Request.DisplayTypeErrors []);
-
-       let response_json =
-         match Socket.read socket with
-         | Protocol.TypeCheckResponse errors ->
-             errors
-             |> List.map ~f:snd
-             |> List.concat
-             |> (fun errors ->
-                 `Assoc [
-                   "errors",
-                   `List
-                     (List.map
-                        ~f:(fun error -> Analysis.Error.to_json ~show_error_traces error)
-                        errors)
-                 ])
-         | _ -> failwith "Unexpected response in incremental check."
-       in
-       Log.print "%s" (Yojson.Safe.to_string response_json))
+      let socket =
+        try Operations.connect ~retries:3 ~configuration with
+        | Operations.ConnectionFailure -> raise Operations.ServerNotRunning
+      in
+      Socket.write socket (Protocol.Request.DisplayTypeErrors []);
+      let response_json =
+        match Socket.read socket with
+        | Protocol.TypeCheckResponse errors ->
+            errors
+            |> List.map ~f:snd
+            |> List.concat
+            |> fun errors ->
+            `Assoc
+              [ ( "errors",
+                  `List
+                    (List.map
+                       ~f:(fun error -> Analysis.Error.to_json ~show_error_traces error)
+                       errors) ) ]
+        | _ -> failwith "Unexpected response in incremental check."
+      in
+      Log.print "%s" (Yojson.Safe.to_string response_json))
     |> Scheduler.run_process ~configuration
   with
   | Operations.ServerNotRunning ->
@@ -118,18 +111,17 @@ let run
 
 let command =
   Command.basic_spec
-    ~summary:"Shows current errors by asking the server. \
-              Starts a daemon server in the current directory if it does not exist."
+    ~summary:
+      "Shows current errors by asking the server. Starts a daemon server in the current directory \
+       if it does not exist."
     Command.Spec.(
       empty
       +> flag
-        "-nonblocking"
-        no_arg
-        ~doc:("Ask the server to return partial results immediately, " ^
-              "even if analysis is still in progress.")
-      +> flag
-        "-transitive"
-        no_arg
-        ~doc:("Calculate dependencies of changed files transitively.")
+           "-nonblocking"
+           no_arg
+           ~doc:
+             ( "Ask the server to return partial results immediately, "
+             ^ "even if analysis is still in progress." )
+      +> flag "-transitive" no_arg ~doc:"Calculate dependencies of changed files transitively."
       ++ Specification.base_command_line_arguments)
     run

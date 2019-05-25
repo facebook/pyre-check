@@ -4,7 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 val compute_dependencies
-  :  state: State.t
-  -> configuration: Configuration.Analysis.t
-  -> File.t list
-  -> File.Set.t
+  :  state:State.t ->
+  configuration:Configuration.Analysis.t ->
+  File.t list ->
+  File.Set.t

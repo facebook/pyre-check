@@ -5,23 +5,18 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Analysis
 open Expression
 open Statement
-
 open Pyre
 open Test
-
 
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
     let handle = File.Handle.create handle in
     let parse = parse ~qualifier:(Source.qualifier ~handle) in
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_relative_imports (parse source))
+    assert_source_equal (parse expected) (Preprocessing.expand_relative_imports (parse source))
   in
   assert_expand
     ~handle:"module/submodule/test.py"
@@ -59,13 +54,9 @@ let test_expand_relative_imports _ =
 
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_string_annotations (parse source))
+    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
+    assert_source_equal (parse expected) (Preprocessing.expand_string_annotations (parse source))
   in
-
   assert_expand
     {|
       class Foo:
@@ -83,9 +74,7 @@ let test_expand_string_annotations _ =
       constant: Foo = ...
       def foo(f: Foo) -> Foo: ...
     |};
-  assert_expand
-    "def foo(f: '1234'): ..."
-    "def foo(f: $unparsed_annotation): ...";
+  assert_expand "def foo(f: '1234'): ..." "def foo(f: $unparsed_annotation): ...";
   assert_expand
     {|
       class Foo: ...
@@ -95,7 +84,6 @@ let test_expand_string_annotations _ =
       class Foo: ...
       def foo(f: Foo[K, V]): ...
     |};
-
   assert_expand
     {|
       from typing import cast
@@ -121,9 +109,7 @@ let test_expand_string_annotations _ =
       class Foo:
         x: B = cast(float, 42)
     |};
-  assert_expand
-    "x = typing.cast('1234', 42)"
-    "x = typing.cast($unparsed_annotation, 42)";
+  assert_expand "x = typing.cast('1234', 42)" "x = typing.cast($unparsed_annotation, 42)";
   assert_expand
     {|
       import typing
@@ -139,24 +125,16 @@ let test_expand_string_annotations _ =
         y = typing.cast(typing.List[Foo], x)
         z = typing.cast(typing.Dict[str, Foo], x)
     |};
-  assert_expand
-    "def foo(f: Literal['A']): ..."
-    "def foo(f: Literal['A']): ...";
+  assert_expand "def foo(f: Literal['A']): ..." "def foo(f: Literal['A']): ...";
   assert_expand
     "def foo(f: typing_extensions.Literal['A']): ..."
     "def foo(f: typing_extensions.Literal['A']): ...";
   assert_expand
     "def foo(f: typing_extensions.Literal['A', 'B']): ..."
     "def foo(f: typing_extensions.Literal['A', 'B']): ...";
-  assert_expand
-    "def foo(f: te.Literal['A', 'B']): ..."
-    "def foo(f: te.Literal['A', 'B']): ...";
-  assert_expand
-    "class Foo(typing.List['str']): ..."
-    "class Foo(typing.List[str]): ...";
-  assert_expand
-    "class Foo('str'): ..."
-    "class Foo('str'): ...";
+  assert_expand "def foo(f: te.Literal['A', 'B']): ..." "def foo(f: te.Literal['A', 'B']): ...";
+  assert_expand "class Foo(typing.List['str']): ..." "class Foo(typing.List[str]): ...";
+  assert_expand "class Foo('str'): ..." "class Foo('str'): ...";
   ()
 
 
@@ -168,7 +146,6 @@ let test_expand_format_string _ =
          ~handle:(File.Handle.create "test.py")
          [+Expression (+String (StringLiteral.create ~expressions value))])
   in
-
   assert_format_string "f'foo'" "foo" [];
   assert_format_string "f'{1}'" "{1}" [+Integer 1];
   assert_format_string "f'foo{1}'" "foo{1}" [+Integer 1];
@@ -186,25 +163,17 @@ let test_expand_format_string _ =
   assert_format_string
     "f'foo{1+2}'"
     "foo{1+2}"
-    [
-      +Call {
-        callee = +Name (
-          Name.Attribute {
-            base = +Integer 1;
-            attribute = "__add__";
-            special = true;
-          });
-        arguments = [{ Call.Argument.name = None; value = +Integer 2 }];
-      }
-    ];
-
+    [ +Call
+         { callee =
+             +Name (Name.Attribute { base = +Integer 1; attribute = "__add__"; special = true });
+           arguments = [{ Call.Argument.name = None; value = +Integer 2 }]
+         } ];
   (* Ensure we fix up locations. *)
   let assert_locations_equal source expected_locations =
     let construct_location ((start_line, start_column), (stop_line, stop_column)) =
-      {
-        Location.path = String.hash "test.py";
+      { Location.path = String.hash "test.py";
         start = { Location.line = start_line; column = start_column };
-        stop = { Location.line = stop_line; column = stop_column };
+        stop = { Location.line = stop_line; column = stop_column }
       }
     in
     let expected_locations = List.map expected_locations ~f:construct_location in
@@ -212,31 +181,31 @@ let test_expand_format_string _ =
       Preprocessing.expand_format_string (parse_untrimmed source)
     in
     match preprocessed with
-    | [{ Node.value = Expression {
-        Node.value = String { StringLiteral.kind = StringLiteral.Format expression_list; _ }; _ };
-        _;
-      }] ->
+    | [ { Node.value =
+            Expression
+              { Node.value =
+                  String { StringLiteral.kind = StringLiteral.Format expression_list; _ }
+              ; _
+              }
+        ; _
+        } ] ->
         let actual_locations = List.map expression_list ~f:Node.location in
         assert_equal
           ~cmp:(fun left right -> List.equal ~equal:Location.Reference.equal left right)
           ~printer:(List.to_string ~f:Location.Reference.show)
           expected_locations
           actual_locations
-    | _ ->
-        assert_unreached ()
+    | _ -> assert_unreached ()
   in
-  assert_locations_equal "f'foo{1}'" [((1, 3), (1, 4))];
-  assert_locations_equal "f'foo{123}a{456}'" [((1, 3), (1, 6)); ((1, 9), (1, 12))]
+  assert_locations_equal "f'foo{1}'" [(1, 3), (1, 4)];
+  assert_locations_equal "f'foo{123}a{456}'" [(1, 3), (1, 6); (1, 9), (1, 12)]
 
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle
-    in
+    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
-
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
   assert_qualify "from a import b, c; b, c" "from a import b, c; a.b, a.c";
@@ -244,9 +213,7 @@ let test_qualify _ =
   assert_qualify "from a import b; b()" "from a import b; a.b()";
   assert_qualify "from a import b as c; c" "from a import b as c; a.b";
   assert_qualify "from builtins import b; b" "from builtins import b; b";
-
   assert_qualify "b; import a as b; b" "b; import a as b; a";
-
   (* Qualification in different places. *)
   let assert_qualify_statement actual expected =
     let import = "import a as b;" in
@@ -277,7 +244,6 @@ let test_qualify _ =
   assert_qualify_statement "b if b else b" "a if a else a";
   assert_qualify_statement "(b, b)" "(a, a)";
   assert_qualify_statement "-b" "-a";
-
   assert_qualify_statement "assert b" "assert a";
   assert_qualify_statement "del b" "del a";
   assert_qualify_statement
@@ -293,8 +259,6 @@ let test_qualify _ =
   assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
   assert_qualify_statement "yield b" "yield a";
   assert_qualify_statement "yield from b" "yield from a";
-
-
   (* Always pick conditional imports. *)
   assert_qualify
     {|
@@ -322,7 +286,6 @@ let test_qualify _ =
         import a as b
       a
     |};
-
   (* Qualify assignments. *)
   assert_qualify
     {|
@@ -335,7 +298,6 @@ let test_qualify _ =
       from module import constant
       $local_qualifier$a: typing.List[int] = module.constant
     |};
-
   assert_qualify
     {|
       a, *b = [1]
@@ -343,7 +305,6 @@ let test_qualify _ =
     {|
       $local_qualifier$a, *$local_qualifier$b = [1]
     |};
-
   assert_qualify
     {|
       [*a, b] = [1]
@@ -351,7 +312,6 @@ let test_qualify _ =
     {|
       [*$local_qualifier$a, $local_qualifier$b] = [1]
     |};
-
   (* Qualify classes. *)
   assert_qualify
     {|
@@ -421,7 +381,6 @@ let test_qualify _ =
         @classmethod
         def qualifier.Class.classmethod(): pass
     |};
-
   assert_qualify
     {|
       from module import C
@@ -435,7 +394,6 @@ let test_qualify _ =
       class qualifier.C: ...
       $local_qualifier$b = qualifier.C
     |};
-
   assert_qualify
     {|
       class C:
@@ -447,7 +405,6 @@ let test_qualify _ =
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
-
   assert_qualify
     {|
       local = 0
@@ -461,7 +418,6 @@ let test_qualify _ =
         def qualifier.C.__init__($parameter$self):
           $parameter$self.local = 1
     |};
-
   assert_qualify
     {|
       INDENT = 0
@@ -475,7 +431,6 @@ let test_qualify _ =
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
-
   (* Treat special forms like class definitions. *)
   assert_qualify
     ~handle:"typing.pyi"
@@ -487,8 +442,6 @@ let test_qualify _ =
       Type: _SpecialForm = ...
       def typing.foo($parameter$l: typing.Type[int]): ...
     |};
-
-
   (* Only qualify strings for annotations and potential type aliases. *)
   assert_qualify
     {|
@@ -567,7 +520,6 @@ let test_qualify _ =
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
     |};
-
   (* Qualify parameters *)
   assert_qualify
     {|
@@ -589,7 +541,6 @@ let test_qualify _ =
       class qualifier.A(): pass
       def qualifier.foo($parameter$x: typing_extensions.Literal['A']): ...
     |};
-
   (* Qualify functions. *)
   assert_qualify
     {|
@@ -609,7 +560,6 @@ let test_qualify _ =
       for $target$b in []: pass
       def qualifier.b(): pass
     |};
-
   assert_qualify "def foo(): ..." "def qualifier.foo(): ...";
   assert_qualify
     {|
@@ -658,7 +608,6 @@ let test_qualify _ =
       from typing import List
       def qualifier.foo() -> typing.List[int]: pass
     |};
-
   (* Nested defines. *)
   assert_qualify
     {|
@@ -686,7 +635,6 @@ let test_qualify _ =
         def qualifier.foo.nested($parameter$a):
           def qualifier.foo.nested.a(): pass
     |};
-
   (* SSA-gutted. *)
   assert_qualify
     {|
@@ -840,7 +788,6 @@ let test_qualify _ =
       else:
         return $local_qualifier$variable
     |};
-
   assert_qualify
     {|
        a: x = ...
@@ -851,7 +798,6 @@ let test_qualify _ =
        $local_qualifier$a: qualifier.x = ...
        def qualifier.x(): ...
     |};
-
   assert_qualify
     {|
        def f(a: x): ...
@@ -862,7 +808,6 @@ let test_qualify _ =
        def qualifier.x():
          ...
     |};
-
   assert_qualify
     {|
       class C:
@@ -878,7 +823,6 @@ let test_qualify _ =
         def qualifier.C.x():
           ...
     |};
-
   assert_qualify
     {|
       class slice:
@@ -892,7 +836,6 @@ let test_qualify _ =
       class qualifier.C:
         qualifier.C.slice: int = ...
     |};
-
   assert_qualify
     {|
       def f():
@@ -931,7 +874,6 @@ let test_qualify _ =
         def qualifier.C.g($parameter$x: qualifier.C.alias):
           pass
     |};
-
   (* Decorator qualification tests *)
   assert_qualify
     {|
@@ -1090,7 +1032,7 @@ let test_qualify _ =
 
 
 let test_replace_version_specific_code _ =
-  let assert_preprocessed ?(handle="stub.pyi") source expected =
+  let assert_preprocessed ?(handle = "stub.pyi") source expected =
     assert_source_equal
       (parse ~handle expected)
       (Preprocessing.replace_version_specific_code (parse ~handle source))
@@ -1111,7 +1053,6 @@ let test_replace_version_specific_code _ =
         def compatible()->str:
           ...
     |};
-
   assert_preprocessed
     {|
       if (3,) > sys.version_info:
@@ -1128,7 +1069,6 @@ let test_replace_version_specific_code _ =
         def compatible()->str:
           ...
     |};
-
   assert_preprocessed
     {|
         if sys.version_info < (3,):
@@ -1148,7 +1088,6 @@ let test_replace_version_specific_code _ =
         _encodable = Union[bytes, bytearray, memoryview]
         _decodable = Union[bytes, bytearray, memoryview, str]
   |};
-
   assert_preprocessed
     {|
       if sys.version_info <= (3, 0):
@@ -1165,7 +1104,6 @@ let test_replace_version_specific_code _ =
         def compatible()->str:
           ...
     |};
-
   assert_preprocessed
     {|
       if sys.version_info < 3:
@@ -1222,7 +1160,8 @@ let test_replace_version_specific_code _ =
          def compatible()->str:
            ...
     |};
-  assert_preprocessed ~handle:"file.py"
+  assert_preprocessed
+    ~handle:"file.py"
     {|
       if sys.version_info >= (3, 5):
         from A import B
@@ -1232,7 +1171,6 @@ let test_replace_version_specific_code _ =
     {|
        from A import B
     |};
-
   assert_preprocessed
     {|
       if sys.version_info[0] >= 3:
@@ -1256,7 +1194,7 @@ let test_replace_version_specific_code _ =
 
 
 let test_replace_platform_specific_code _ =
-  let assert_preprocessed ?(handle="stub.pyi") source expected =
+  let assert_preprocessed ?(handle = "stub.pyi") source expected =
     assert_source_equal
       (parse ~handle expected)
       (Preprocessing.replace_platform_specific_code (parse ~handle source))
@@ -1399,12 +1337,10 @@ let test_expand_type_checking_imports _ =
       (parse expected)
       (Preprocessing.expand_type_checking_imports (parse source))
   in
-  assert_expanded
-    {|
+  assert_expanded {|
       if typing.TYPE_CHECKING:
         pass
-    |}
-    {|
+    |} {|
       pass
     |};
   assert_expanded
@@ -1440,7 +1376,6 @@ let test_expand_type_checking_imports _ =
       from whoops import TYPE_CHECKING
       pass
     |};
-
   (* Nested. *)
   assert_expanded
     {|
@@ -1452,7 +1387,6 @@ let test_expand_type_checking_imports _ =
       def foo():
         pass
     |};
-
   (* Inverted. *)
   assert_expanded
     {|
@@ -1480,18 +1414,18 @@ let test_expand_wildcard_imports _ =
       let get_qualifier file =
         File.handle ~configuration file
         |> Ast.SharedMemory.Sources.get
-        >>| (fun { Source.qualifier; _ } -> qualifier)
+        >>| fun { Source.qualifier; _ } -> qualifier
       in
       Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
-      Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
+      Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files)
     in
     let files = List.map environment_sources ~f:create_file in
     let file_to_check = create_file ("test.py", check_source) in
     clear_memory (file_to_check :: files);
     let { Service.Parser.parsed; _ } =
       Service.Parser.parse_sources
-        ~configuration:(
-          Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
+        ~configuration:
+          (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
         ~files:(file_to_check :: files)
@@ -1502,8 +1436,7 @@ let test_expand_wildcard_imports _ =
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statement_list ->
-          List.map statement_list ~f:Statement.show
-          |> String.concat ~sep:", ")
+        List.map statement_list ~f:Statement.show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get file_to_check_handle)))
   in
@@ -1524,10 +1457,7 @@ let test_expand_wildcard_imports _ =
       from a import foo
     |};
   assert_expanded
-    [
-      "a.py", "def foo(): pass";
-      "b.py", "def bar(): pass";
-    ]
+    ["a.py", "def foo(): pass"; "b.py", "def bar(): pass"]
     {|
       from a import *
       from b import *
@@ -1537,15 +1467,14 @@ let test_expand_wildcard_imports _ =
       from b import bar
     |};
   assert_expanded
-    [
-      "a.py",
-      {|
+    [ ( "a.py",
+        {|
         from x import y
         def foo(): pass
         def bar(): pass
         def _private(): pass
-      |};
-    ]
+      |}
+      ) ]
     {|
       from a import *
     |}
@@ -1553,15 +1482,14 @@ let test_expand_wildcard_imports _ =
       from a import y, foo, bar
     |};
   assert_expanded
-    [
-      "a.py",
-      {|
+    [ ( "a.py",
+        {|
         from x import y
         def foo(): pass
         def bar(): pass
         __all__ = ["bar"]
-      |};
-    ]
+      |}
+      ) ]
     {|
       from a import *
     |}
@@ -1572,42 +1500,32 @@ let test_expand_wildcard_imports _ =
 
 let test_expand_implicit_returns _ =
   let assert_expand source expected =
-    assert_source_equal
-      (parse expected)
-      (Preprocessing.expand_implicit_returns (parse source))
+    assert_source_equal (parse expected) (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
     assert_source_equal
       (Preprocessing.expand_implicit_returns (parse source))
-      (Source.create ~handle:(File.Handle.create "test.py")
-         [
-           +Define {
-             signature = {
-               name = !&"foo";
-               parameters = [];
-               decorators = [];
-               docstring = None;
-               return_annotation = None;
-               async = false;
-               parent = None;
-             };
-             body = expected_body;
-           };
-         ])
+      (Source.create
+         ~handle:(File.Handle.create "test.py")
+         [ +Define
+              { signature =
+                  { name = !&"foo";
+                    parameters = [];
+                    decorators = [];
+                    docstring = None;
+                    return_annotation = None;
+                    async = false;
+                    parent = None
+                  };
+                body = expected_body
+              } ])
   in
   assert_expand_implicit_returns
     {|
       def foo():
         pass
     |}
-    [
-      +Pass;
-      +Return {
-        Return.expression = None;
-        is_implicit = true
-      }
-    ];
-
+    [+Pass; +Return { Return.expression = None; is_implicit = true }];
   assert_expand
     {|
       def foo():
@@ -1617,7 +1535,6 @@ let test_expand_implicit_returns _ =
       def foo():
         yield None
     |};
-
   assert_expand_implicit_returns
     {|
       def foo():
@@ -1626,19 +1543,8 @@ let test_expand_implicit_returns _ =
         finally:
           pass
     |}
-    [
-      +Try {
-        Try.body = [+Pass];
-        handlers = [];
-        orelse = [];
-        finally = [+Pass];
-      };
-      +Return {
-        Return.expression = None;
-        is_implicit = true
-      }
-    ];
-
+    [ +Try { Try.body = [+Pass]; handlers = []; orelse = []; finally = [+Pass] };
+      +Return { Return.expression = None; is_implicit = true } ];
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
     {|
@@ -1646,17 +1552,8 @@ let test_expand_implicit_returns _ =
         while derp:
           pass
     |}
-    [
-      +While {
-        While.test = +Name (Name.Identifier "derp");
-        body = [+Pass];
-        orelse = [];
-      };
-      +Return {
-        Return.expression = None;
-        is_implicit = true
-      }
-    ];
+    [ +While { While.test = +Name (Name.Identifier "derp"); body = [+Pass]; orelse = [] };
+      +Return { Return.expression = None; is_implicit = true } ];
   assert_expand
     {|
       def foo():
@@ -1677,191 +1574,132 @@ let test_defines _ =
       ~cmp:(List.equal ~equal:Define.equal)
       ~printer
       defines
-      (Preprocessing.defines ~include_toplevels:true (Source.create statements)
-       |> List.map ~f:Node.value)
+      ( Preprocessing.defines ~include_toplevels:true (Source.create statements)
+      |> List.map ~f:Node.value )
   in
   let create_define name =
-    {
-      Define.signature = {
-        name = !&name;
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
-      };
-      body = [+Expression (+Float 1.0)];
+    { Define.signature =
+        { name = !&name;
+          parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None
+        };
+      body = [+Expression (+Float 1.0)]
     }
   in
   let create_toplevel body =
-    {
-      Define.signature = {
-        name = !&"$toplevel";
-        parameters = [];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
-      };
-      body;
+    { Define.signature =
+        { name = !&"$toplevel";
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None
+        };
+      body
     }
   in
   let create_class_toplevel ~parent ~body =
-    {
-      Define.signature = {
-        name = !&(parent ^ ".$class_toplevel");
-        parameters = [];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = Some (Reference.create parent);
-      };
-      body;
+    { Define.signature =
+        { name = !&(parent ^ ".$class_toplevel");
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = Some (Reference.create parent)
+        };
+      body
     }
   in
-
   let define = create_define "foo" in
-  assert_defines
-    [+Define define]
-    [create_toplevel [+Define define]; define];
-
+  assert_defines [+Define define] [create_toplevel [+Define define]; define];
   let inner =
-    {
-      Define.signature = {
-        name = !&"foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
-      };
-      body = [+Expression (+Float 1.0)];
+    { Define.signature =
+        { name = !&"foo";
+          parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None
+        };
+      body = [+Expression (+Float 1.0)]
     }
   in
   let define =
-    {
-      Define.signature = {
-        name = !&"foo";
-        parameters = [
-          +{
-            Parameter.name = "a";
-            value = None;
-            annotation = None;
-          };
-        ];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = None;
-      };
-      body = [+Expression (+Float 1.0); +Define inner];
+    { Define.signature =
+        { name = !&"foo";
+          parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = None
+        };
+      body = [+Expression (+Float 1.0); +Define inner]
     }
   in
-  assert_defines
-    [+Define define]
-    [create_toplevel [+Define define]; define];
-
+  assert_defines [+Define define] [create_toplevel [+Define define]; define];
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in
   let define_bar = create_define "bar" in
   let body = [+Define define_foo; +Define define_bar] in
   let parent =
-    {
-      Statement.Class.name = !&"Foo";
-      bases = [];
-      body;
-      decorators = [];
-      docstring = None;
-    }
+    { Statement.Class.name = !&"Foo"; bases = []; body; decorators = []; docstring = None }
   in
   assert_defines
     [+Class parent]
-    [
-      create_toplevel [+Class parent];
+    [ create_toplevel [+Class parent];
       create_class_toplevel ~parent:"Foo" ~body;
       define_bar;
-      define_foo;
-    ]
+      define_foo ]
 
 
 let test_classes _ =
   let assert_classes statements class_defines =
     assert_equal
       ~cmp:(List.equal ~equal:Class.equal)
-      (Preprocessing.classes (Source.create statements)
-       |> List.map ~f:Node.value)
-      class_defines in
-
+      (Preprocessing.classes (Source.create statements) |> List.map ~f:Node.value)
+      class_defines
+  in
   let class_define =
-    {
-      Class.name = !&"foo";
+    { Class.name = !&"foo";
       bases = [];
-      body = [
-        +Define {
-          signature = {
-            name = !&"bar";
-            parameters = [];
-            decorators = [];
-            docstring = None;
-            return_annotation = None;
-            async = false;
-            parent = Some (!&"foo");
-          };
-          body = [+Pass];
-        };
-      ];
+      body =
+        [ +Define
+             { signature =
+                 { name = !&"bar";
+                   parameters = [];
+                   decorators = [];
+                   docstring = None;
+                   return_annotation = None;
+                   async = false;
+                   parent = Some !&"foo"
+                 };
+               body = [+Pass]
+             } ];
       decorators = [];
-      docstring = None;
+      docstring = None
     }
   in
-  assert_classes
-    [+Class class_define]
-    [class_define];
-
+  assert_classes [+Class class_define] [class_define];
   let inner =
-    {
-      Class.name = !&"bar";
-      bases = [];
-      body = [+Pass];
-      decorators = [];
-      docstring = None;
-    }
+    { Class.name = !&"bar"; bases = []; body = [+Pass]; decorators = []; docstring = None }
   in
   let class_define =
-    {
-      Class.name = !&"foo";
-      bases = [];
-      body = [
-        +Class inner;
-      ];
-      decorators = [];
-      docstring = None;
-    }
+    { Class.name = !&"foo"; bases = []; body = [+Class inner]; decorators = []; docstring = None }
   in
-  assert_classes
-    [+Class class_define]
-    [class_define; inner]
+  assert_classes [+Class class_define] [class_define; inner]
 
 
 let test_replace_mypy_extensions_stub _ =
-  let given = parse
+  let given =
+    parse
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
@@ -1876,7 +1714,8 @@ let test_replace_mypy_extensions_stub _ =
       def DefaultArg(type: _T = ..., name: Optional[str] = ...) -> _T: ...
     |}
   in
-  let expected = parse
+  let expected =
+    parse
       ~handle:"mypy_extensions.pyi"
       {|
       from typing import Dict, Type, TypeVar, Optional, Union, Any, Generic
@@ -1896,8 +1735,7 @@ let test_replace_mypy_extensions_stub _ =
 let test_expand_typed_dictionaries _ =
   let assert_expand ?(qualifier = Reference.empty) source expected =
     let expected =
-      parse ~qualifier ~coerce_special_methods:true expected
-      |> Preprocessing.qualify
+      parse ~qualifier ~coerce_special_methods:true expected |> Preprocessing.qualify
     in
     let actual =
       parse ~qualifier source
@@ -1910,9 +1748,9 @@ let test_expand_typed_dictionaries _ =
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       Movie = mypy_extensions.TypedDict('Movie', {})
@@ -1943,37 +1781,37 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]")
-    ~qualifier:(!&"foo.bar");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" )
+    ~qualifier:!&"foo.bar";
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', False, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True):
@@ -1981,9 +1819,9 @@ let test_expand_typed_dictionaries _ =
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   (* Invalid TypedDicts *)
   assert_expand
     {|
@@ -2006,36 +1844,36 @@ let test_expand_typed_dictionaries _ =
         year: int
         def ignored_method(self) -> None: pass
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=True, total=False):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, garbage=7):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, OtherClass):
         name: str
         year: int
     |}
-    ("Movie: " ^
-     "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = " ^
-     "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]");
+    ( "Movie: "
+    ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
+    ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
   ()
 
 
@@ -2048,9 +1886,7 @@ let test_try_preprocess _ =
     let parsed = source |> parse in
     let expected = expected >>| parse in
     let printer source =
-      source
-      >>| Format.asprintf "%a" Source.pp
-      |> Option.value ~default:"(none)"
+      source >>| Format.asprintf "%a" Source.pp |> Option.value ~default:"(none)"
     in
     assert_equal
       ~cmp:(Option.equal Source.equal)
@@ -2058,28 +1894,23 @@ let test_try_preprocess _ =
       expected
       (Preprocessing.try_preprocess parsed)
   in
-  assert_try_preprocess
-    "from foo import *"
-    None;
-  assert_try_preprocess
-    "a = 3"
-    (Some "$local_test$a = 3")
+  assert_try_preprocess "from foo import *" None;
+  assert_try_preprocess "a = 3" (Some "$local_test$a = 3")
 
 
 let () =
-  "preprocessing">:::[
-    "expand_string_annotations">::test_expand_string_annotations;
-    "expand_format_string">::test_expand_format_string;
-    "qualify">::test_qualify;
-    "replace_version_specific_code">::test_replace_version_specific_code;
-    "replace_platform_specific_code">::test_replace_platform_specific_code;
-    "expand_type_checking_imports">::test_expand_type_checking_imports;
-    "expand_wildcard_imports">::test_expand_wildcard_imports;
-    "expand_implicit_returns">::test_expand_implicit_returns;
-    "defines">::test_defines;
-    "classes">::test_classes;
-    "typed_dictionary_stub_fix">::test_replace_mypy_extensions_stub;
-    "typed_dictionaries">::test_expand_typed_dictionaries;
-    "try_preprocess">::test_try_preprocess;
-  ]
+  "preprocessing"
+  >::: [ "expand_string_annotations" >:: test_expand_string_annotations;
+         "expand_format_string" >:: test_expand_format_string;
+         "qualify" >:: test_qualify;
+         "replace_version_specific_code" >:: test_replace_version_specific_code;
+         "replace_platform_specific_code" >:: test_replace_platform_specific_code;
+         "expand_type_checking_imports" >:: test_expand_type_checking_imports;
+         "expand_wildcard_imports" >:: test_expand_wildcard_imports;
+         "expand_implicit_returns" >:: test_expand_implicit_returns;
+         "defines" >:: test_defines;
+         "classes" >:: test_classes;
+         "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
+         "typed_dictionaries" >:: test_expand_typed_dictionaries;
+         "try_preprocess" >:: test_try_preprocess ]
   |> Test.run

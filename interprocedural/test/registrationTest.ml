@@ -5,51 +5,43 @@
 
 open Core
 open OUnit2
-
 open Interprocedural
 
+module SimpleAnalysis = Interprocedural.Result.Make (struct
+  type result = string
 
-module SimpleAnalysis = Interprocedural.Result.Make(struct
-    type result = string
-    type call_model = int
-    [@@deriving show]
+  type call_model = int [@@deriving show]
 
-    let name = "simple-test-analysis"
-    let empty_model = 0
-    let obscure_model = -1
+  let name = "simple-test-analysis"
 
-    let get_errors _ =
-      []
+  let empty_model = 0
 
-    let join ~iteration:_ a b =
-      a + b
+  let obscure_model = -1
 
-    let widen ~iteration ~previous ~next =
-      join ~iteration previous next
+  let get_errors _ = []
 
-    let reached_fixpoint ~iteration:_ ~previous ~next =
-      next <= previous
+  let join ~iteration:_ a b = a + b
 
-    let externalize _ _ _ = []
+  let widen ~iteration ~previous ~next = join ~iteration previous next
 
-    let metadata () = `Assoc ["foo", `String "bar"]
-  end)
+  let reached_fixpoint ~iteration:_ ~previous ~next = next <= previous
 
+  let externalize _ _ _ = []
 
-include SimpleAnalysis.Register(struct
-    let init ~configuration:_ ~environment:_ ~functions:_ =
-      Callable.Map.empty
+  let metadata () = `Assoc ["foo", `String "bar"]
+end)
 
-    let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ =
-      "some result", 5
-  end)
+include SimpleAnalysis.Register (struct
+  let init ~configuration:_ ~environment:_ ~functions:_ = Callable.Map.empty
 
+  let analyze ~callable:_ ~environment:_ ~define:_ ~existing:_ = "some result", 5
+end)
 
 let test_simple_analysis _ =
-  match  AnalysisKind.analysis_by_name SimpleAnalysis.name with
+  match AnalysisKind.analysis_by_name SimpleAnalysis.name with
   | None -> assert_failure "Lookup of analysis module failed."
   | Some analysis_kind ->
-      let Result.Analysis { analysis; _ } = Result.get_abstract_analysis analysis_kind in
+      let (Result.Analysis { analysis; _ }) = Result.get_abstract_analysis analysis_kind in
       let module Analysis = (val analysis) in
       assert_equal (Analysis.empty_model |> Analysis.show_call_model) "0";
       assert_equal (Analysis.obscure_model |> Analysis.show_call_model) "-1";
@@ -57,7 +49,4 @@ let test_simple_analysis _ =
 
 
 let () =
-  "interproceduralRegistration">:::[
-    "test_simple_analysis">::test_simple_analysis;
-  ]
-  |> Test.run
+  "interproceduralRegistration" >::: ["test_simple_analysis" >:: test_simple_analysis] |> Test.run

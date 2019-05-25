@@ -5,16 +5,15 @@
 
 open Analysis
 
-
 val register_ignores
-  :  configuration: Configuration.Analysis.t
-  -> Scheduler.t
-  -> File.Handle.t list
-  -> unit
+  :  configuration:Configuration.Analysis.t ->
+  Scheduler.t ->
+  File.Handle.t list ->
+  unit
 
 val ignore
-  :  configuration: Configuration.Analysis.t
-  -> Scheduler.t
-  -> File.Handle.t list
-  -> Error.t list
-  -> Error.t list
+  :  configuration:Configuration.Analysis.t ->
+  Scheduler.t ->
+  File.Handle.t list ->
+  Error.t list ->
+  Error.t list

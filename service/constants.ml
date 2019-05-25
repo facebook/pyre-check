@@ -4,18 +4,13 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
 open Path.AppendOperator
 
-
 module Persistent = struct
   let log_path configuration =
-    (Configuration.Analysis.pyre_root configuration
-     ^| "persistent")
-    ^| "client.log"
+    (Configuration.Analysis.pyre_root configuration ^| "persistent") ^| "client.log"
 end
-
 
 module Server = struct
   let root configuration =
@@ -23,15 +18,16 @@ module Server = struct
     Unix.mkdir_p (Path.absolute server_root);
     server_root
 
+
   let log_path configuration =
     let root = root configuration in
     Path.create_relative ~root ~relative:"server.stdout"
+
 
   let saved_state_path configuration =
     let root = root configuration in
     Path.create_relative ~root ~relative:"server.state"
 end
-
 
 module Watchman = struct
   let log_path configuration =

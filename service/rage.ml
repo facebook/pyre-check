@@ -4,11 +4,8 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
-
 open LanguageServer.Types
-
 
 let get_logs configuration =
   let get_log (name, path) =
@@ -18,17 +15,10 @@ let get_logs configuration =
       else
         None
     in
-    read_path path
-    >>| fun content ->
-    { RageResponse.RageResult.title = Some name; data = content }
+    read_path path >>| fun content -> { RageResponse.RageResult.title = Some name; data = content }
   in
   List.filter_map
     ~f:get_log
-    [
-      "server",
-      (Constants.Server.log_path configuration);
-      "watchman",
-      (Constants.Watchman.log_path configuration);
-      "persistent",
-      (Constants.Persistent.log_path configuration);
-    ]
+    [ "server", Constants.Server.log_path configuration;
+      "watchman", Constants.Watchman.log_path configuration;
+      "persistent", Constants.Persistent.log_path configuration ]

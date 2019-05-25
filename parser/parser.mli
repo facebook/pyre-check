@@ -7,10 +7,10 @@ open Ast
 
 exception Error of string
 
-(** Parse python source. ?handle is path relative to the file's source root, if any. *)
 val parse
-  :  ?start_line: int
-  -> ?start_column: int
-  -> ?handle: File.Handle.t
-  -> string list
-  -> Statement.t list
+  :  ?start_line:int ->
+  ?start_column:int ->
+  ?handle:File.Handle.t ->
+  string list ->
+  Statement.t list
+(** Parse python source. ?handle is path relative to the file's source root, if any. *)

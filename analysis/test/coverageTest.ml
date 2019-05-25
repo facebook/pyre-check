@@ -3,14 +3,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 open Core
-
 open OUnit2
-
 open Pyre
 open Analysis
-
 
 let test_coverage _ =
   let coverage =
@@ -19,17 +15,16 @@ let test_coverage _ =
         ~configuration:(Configuration.Analysis.create ())
         ~scheduler:(Scheduler.mock ())
         ~preprocessing_state:None
-        ~files:[
-          File.create
-            ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
-          File.create
-            ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
-          File.create
-            ~content:"#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n"
-            (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py");
-        ]
+        ~files:
+          [ File.create
+              ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
+              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
+            File.create
+              ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
+              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
+            File.create
+              ~content:"#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n"
+              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py") ]
     in
     Coverage.coverage ~number_of_files:3 ~sources:parsed
   in
@@ -38,8 +33,4 @@ let test_coverage _ =
     { Coverage.strict_coverage = 2; declare_coverage = 1; default_coverage = 0; source_files = 3 }
 
 
-let () =
-  "coverage">:::[
-    "compute_coverage">::test_coverage;
-  ]
-  |> Test.run
+let () = "coverage" >::: ["compute_coverage" >:: test_coverage] |> Test.run

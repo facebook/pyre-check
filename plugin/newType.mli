@@ -5,6 +5,5 @@
 
 open Ast
 
-
 (* `typing.NewType` expansion according to PEP484. *)
-val transform_ast: Source.t -> Source.t
+val transform_ast : Source.t -> Source.t

@@ -5,28 +5,25 @@
 
 open Core
 
-
-type scope = | Local | Global
-
+type scope =
+  | Local
+  | Global
 
 and immutable = {
   scope: scope;
   original: Type.t;
-  final: bool;
+  final: bool
 }
-
 
 and mutability =
   | Mutable
   | Immutable of immutable
 
-
 and t = {
   annotation: Type.t;
-  mutability: mutability;
+  mutability: mutability
 }
 [@@deriving eq, show, hash, sexp]
-
 
 let pp format { annotation; mutability } =
   let mutability =
@@ -50,28 +47,19 @@ let pp format { annotation; mutability } =
 
 let _ = show (* Ignore unused generated show *)
 
+let show = Format.asprintf "%a" pp
 
-let show =
-  Format.asprintf "%a" pp
+let create ?(mutability = Mutable) annotation = { annotation; mutability }
 
-
-let create ?(mutability = Mutable) annotation =
-  { annotation; mutability }
-
-
-let create_immutable ~global ?(original = None) ?(final = false) annotation  =
+let create_immutable ~global ?(original = None) ?(final = false) annotation =
   let scope = if global then Global else Local in
   let original = Option.value ~default:annotation original in
   { annotation; mutability = Immutable { scope; original; final } }
 
 
-let annotation { annotation; _ } =
-  annotation
+let annotation { annotation; _ } = annotation
 
-
-let mutability { mutability; _ } =
-  mutability
-
+let mutability { mutability; _ } = mutability
 
 let scope { mutability; _ } =
   match mutability with
@@ -91,9 +79,7 @@ let is_global annotation =
   | _ -> false
 
 
-let is_immutable { mutability; _ } =
-  not (equal_mutability mutability Mutable)
-
+let is_immutable { mutability; _ } = not (equal_mutability mutability Mutable)
 
 let is_final { mutability; _ } =
   match mutability with
@@ -105,8 +91,7 @@ let instantiate { annotation; mutability } ~constraints =
   let instantiate = Type.instantiate ~constraints in
   let mutability =
     match mutability with
-    | Mutable ->
-        Mutable
+    | Mutable -> Mutable
     | Immutable { scope; original; _ } ->
         Immutable { scope; original = instantiate original; final = false }
   in

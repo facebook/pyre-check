@@ -5,10 +5,8 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Test
-
 
 let assert_awaitable_errors =
   let check ~configuration ~environment ~source =
@@ -32,7 +30,6 @@ let test_forward _ =
       await awaited
     |}
     [];
-
   (* Assert. *)
   assert_awaitable_errors
     {|
@@ -55,7 +52,6 @@ let test_forward _ =
       assert awaited
     |}
     ["Unawaited awaitable [101]: `awaited` is never awaited."];
-
   (* Delete. *)
   assert_awaitable_errors
     {|
@@ -65,7 +61,6 @@ let test_forward _ =
         del (await awaited)
     |}
     [];
-
   (* Raise. *)
   assert_awaitable_errors
     {|
@@ -74,7 +69,6 @@ let test_forward _ =
       raise (await awaitable)
     |}
     [];
-
   (* Return. *)
   assert_awaitable_errors
     {|
@@ -84,7 +78,6 @@ let test_forward _ =
         return awaited
     |}
     [];
-
   (* Yield. *)
   assert_awaitable_errors
     {|
@@ -111,7 +104,6 @@ let test_forward _ =
         yield from (await awaited)
     |}
     ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
-
   (* Tuples. *)
   assert_awaitable_errors
     {|
@@ -121,7 +113,6 @@ let test_forward _ =
         yield (await awaited, 3)
     |}
     [];
-
   (* Boolean operators. *)
   assert_awaitable_errors
     {|
@@ -139,7 +130,6 @@ let test_forward _ =
         1 and (2 and (await awaited))
     |}
     [];
-
   (* Calls are blocked on the access fold refactor to be complete. *)
   assert_awaitable_errors
     {|
@@ -150,7 +140,6 @@ let test_forward _ =
         takes_awaitable(awaited)
     |}
     ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
-
   (* Comparison operators. *)
   assert_awaitable_errors
     {|
@@ -168,7 +157,6 @@ let test_forward _ =
         return 0 == (await awaited)
     |}
     [];
-
   (* Container literals. *)
   assert_awaitable_errors
     {|
@@ -211,7 +199,6 @@ let test_forward _ =
         lambda x: (await awaited) or 42
     |}
     [];
-
   (* Starred expressions. *)
   assert_awaitable_errors
     {|
@@ -229,7 +216,6 @@ let test_forward _ =
         {1: "x", **(await awaited)}
     |}
     [];
-
   (* Ternaries. *)
   assert_awaitable_errors
     {|
@@ -252,7 +238,6 @@ let test_forward _ =
       1 if 2 else (await awaited)
     |}
     [];
-
   (* Unary operators. *)
   assert_awaitable_errors
     {|
@@ -261,7 +246,6 @@ let test_forward _ =
       -(not (await awaited))
     |}
     [];
-
   (* Yield. *)
   assert_awaitable_errors
     {|
@@ -270,7 +254,6 @@ let test_forward _ =
       yield (await awaited) if 1 > 2 else False
     |}
     [];
-
   (* Comprehensions. *)
   assert_awaitable_errors
     {|
@@ -307,7 +290,6 @@ let test_forward _ =
       ((await awaited) for i in [1, 2, 3])
     |}
     [];
-
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
@@ -339,9 +321,4 @@ let test_state _ =
     []
 
 
-let () =
-  "awaitableCheck">:::[
-    "forward">::test_forward;
-    "state">::test_state;
-  ]
-  |> Test.run
+let () = "awaitableCheck" >::: ["forward" >:: test_forward; "state" >:: test_state] |> Test.run

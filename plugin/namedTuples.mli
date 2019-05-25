@@ -5,5 +5,4 @@
 
 open Ast
 
-
-val transform_ast: Source.t -> Source.t
+val transform_ast : Source.t -> Source.t

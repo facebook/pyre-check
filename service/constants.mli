@@ -5,19 +5,18 @@
 
 open Pyre
 
-
-module Persistent: sig
-  val log_path: Configuration.Analysis.t -> Path.t
+module Persistent : sig
+  val log_path : Configuration.Analysis.t -> Path.t
 end
 
-module Server: sig
-  val root: Configuration.Analysis.t -> Path.t
+module Server : sig
+  val root : Configuration.Analysis.t -> Path.t
 
-  val log_path: Configuration.Analysis.t -> Path.t
+  val log_path : Configuration.Analysis.t -> Path.t
 
-  val saved_state_path: Configuration.Analysis.t -> Path.t
+  val saved_state_path : Configuration.Analysis.t -> Path.t
 end
 
-module Watchman: sig
-  val log_path: Configuration.Analysis.t -> Path.t
+module Watchman : sig
+  val log_path : Configuration.Analysis.t -> Path.t
 end

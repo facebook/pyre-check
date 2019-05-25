@@ -6,7 +6,6 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_check_assign _ =
   assert_type_errors
     {|
@@ -15,7 +14,6 @@ let test_check_assign _ =
         x = 'string'  # Reassignment is okay.
     |}
     [];
-
   assert_type_errors
     {|
       def foo() -> None:
@@ -23,30 +21,23 @@ let test_check_assign _ =
         reveal_type(x)
         x = 1
     |}
-    [
-      "Incompatible variable type [9]: x is declared to have type `str` " ^
-      "but is used as type `int`.";
+    [ "Incompatible variable type [9]: x is declared to have type `str` "
+      ^ "but is used as type `int`.";
       "Revealed type [-1]: Revealed type for `x` is `str`.";
-      "Incompatible variable type [9]: x is declared to have type `str` " ^
-      "but is used as type `int`.";
-    ];
-
-  assert_default_type_errors
-    {|
+      "Incompatible variable type [9]: x is declared to have type `str` "
+      ^ "but is used as type `int`." ];
+  assert_default_type_errors {|
       def foo(x: typing.Any) -> None:
         y: int = x
-    |}
-    [];
-
+    |} [];
   assert_type_errors
     {|
       def foo() -> None:
         x = 1
         x += 'asdf'
     |}
-    ["Incompatible parameter type [6]: " ^
-     "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`."];
-
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
   (* Prune `undeclared` from assignments. *)
   assert_type_errors
     {|
@@ -54,10 +45,8 @@ let test_check_assign _ =
         y = x
         z = y
     |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ];
+    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -66,20 +55,16 @@ let test_check_assign _ =
         y = x
         z = y
     |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ];
+    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ];
   assert_type_errors
     {|
       def foo() -> None:
         y = [x]
         z = y
     |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ];
+    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ];
   assert_type_errors
     {|
       def foo(a: bool) -> None:
@@ -88,10 +73,8 @@ let test_check_assign _ =
         y = [x]
         z = y
     |}
-    [
-      "Undefined name [18]: Global name `x` is not defined, or there is at least one control \
-       flow path that doesn't define `x`.";
-    ];
+    [ "Undefined name [18]: Global name `x` is not defined, or there is at least one control flow \
+       path that doesn't define `x`." ];
   assert_type_errors
     {|
       from typing import Final
@@ -125,8 +108,8 @@ let test_check_assign _ =
       b = Base()
       b.y = 12 # error
     |}
-    ["Invalid assignment [41]: Assigning to class variable through instance, \
-      did you mean to assign to `Base.y` instead?"];
+    [ "Invalid assignment [41]: Assigning to class variable through instance, did you mean to \
+       assign to `Base.y` instead?" ];
   assert_type_errors
     {|
       from typing import ClassVar
@@ -149,8 +132,4 @@ let test_check_assign _ =
     ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."]
 
 
-let () =
-  "assign">:::[
-    "check_assign">::test_check_assign;
-  ]
-  |> Test.run
+let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run

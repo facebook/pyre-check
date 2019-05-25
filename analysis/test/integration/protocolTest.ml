@@ -87,10 +87,8 @@ let test_check_protocol _ =
         takesFooBarProtocol(FooClass())
         takesFooBarProtocol(FooBarClass())
     |}
-    [
-      "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st anonymous parameter " ^
-      "to call `takesFooBarProtocol` but got `FooClass`."
-    ];
+    [ "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st anonymous parameter "
+      ^ "to call `takesFooBarProtocol` but got `FooClass`." ];
   assert_type_errors
     {|
       class ParentFoo():
@@ -195,10 +193,8 @@ let test_check_protocol _ =
         foo(a)
 
     |}
-    [
-      "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` " ^
-      "but is never initialized.";
-    ];
+    [ "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` "
+      ^ "but is never initialized." ];
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -215,10 +211,8 @@ let test_check_protocol _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
-      "but got `Alpha`.";
-    ];
+    [ "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` "
+      ^ "but got `Alpha`." ];
   assert_type_errors
     {|
       class P1(typing.Protocol):
@@ -257,10 +251,8 @@ let test_check_protocol _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` " ^
-      "but got `Alpha`.";
-    ];
+    [ "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` "
+      ^ "but got `Alpha`." ];
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -340,10 +332,8 @@ let test_check_generic_protocols _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `P[str]` for 1st anonymous parameter to call `foo` but got `Alpha`.";
-    ];
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `P[str]` for 1st anonymous parameter to call `foo` but got `Alpha`." ];
   assert_type_errors
     {|
       T = typing.TypeVar("T", int, str)
@@ -383,19 +373,16 @@ let test_check_generic_protocols _ =
         foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st " ^
-      "anonymous parameter to call `foo` but got `Alpha`.";
-    ];
+    [ "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st "
+      ^ "anonymous parameter to call `foo` but got `Alpha`." ];
   ()
 
+
 let test_check_generic_implementors _ =
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def foo(l: typing.List[int]) -> int:
          return len(l)
-    |}
-    [];
+    |} [];
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -460,10 +447,8 @@ let test_check_generic_implementors _ =
       foo(a)
 
     |}
-    [
-      "Incompatible parameter type [6]: " ^
-      "Expected `P[bool]` for 1st anonymous parameter to call `foo` but got `Alpha[int]`."
-    ];
+    [ "Incompatible parameter type [6]: "
+      ^ "Expected `P[bool]` for 1st anonymous parameter to call `foo` but got `Alpha[int]`." ];
   assert_type_errors
     {|
     T1 = typing.TypeVar("T1")
@@ -526,11 +511,8 @@ let test_callback_protocols _ =
         takesP(exactMatch)
         takesP(doesNotMatch)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call " ^
-      "`takesP` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
-    ];
-
+    [ "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call "
+      ^ "`takesP` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`." ];
   assert_type_errors
     {|
       class NotAProtocol():
@@ -540,11 +522,8 @@ let test_callback_protocols _ =
       def foo() -> NotAProtocol:
         return exactMatch
     |}
-    [
-      "Incompatible return type [7]: Expected `NotAProtocol` but got " ^
-      "`typing.Callable(exactMatch)[[Named(x, int), Named(y, str)], bool]`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `NotAProtocol` but got "
+      ^ "`typing.Callable(exactMatch)[[Named(x, int), Named(y, str)], bool]`." ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -560,11 +539,9 @@ let test_callback_protocols _ =
         takesPInt(exactMatch)
         takesPInt(doesNotMatch)
     |}
-    [
-      "Incompatible parameter type [6]: Expected `P[int]` for 1st anonymous parameter to call " ^
-      "`takesPInt` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
+    [ "Incompatible parameter type [6]: Expected `P[int]` for 1st anonymous parameter to call "
+      ^ "`takesPInt` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`."
     ];
-
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -586,14 +563,11 @@ let test_callback_protocols _ =
         reveal_type(v)
         takesPGeneric(doesNotMatch)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `v` is `int`.";
+    [ "Revealed type [-1]: Revealed type for `v` is `int`.";
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st anonymous parameter " ^
-      "to call `takesPGeneric` but got " ^
-      "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
-    ];
-
+      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st anonymous parameter "
+      ^ "to call `takesPGeneric` but got "
+      ^ "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`." ];
   assert_type_errors
     {|
       class P(typing.Protocol):
@@ -610,10 +584,9 @@ let test_callback_protocols _ =
 
 
 let () =
-  "protocol">:::[
-    "check_protocols">::test_check_protocol;
-    "check_generic_implementors">::test_check_generic_implementors;
-    "check_generic_protocols">::test_check_generic_protocols;
-    "callback_protocols">::test_callback_protocols;
-  ]
+  "protocol"
+  >::: [ "check_protocols" >:: test_check_protocol;
+         "check_generic_implementors" >:: test_check_generic_implementors;
+         "check_generic_protocols" >:: test_check_generic_protocols;
+         "callback_protocols" >:: test_callback_protocols ]
   |> Test.run

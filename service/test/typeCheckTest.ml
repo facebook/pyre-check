@@ -5,10 +5,8 @@
 
 open Core
 open OUnit2
-
 open Pyre
 open Test
-
 
 let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~files errors =
   let configuration =
@@ -24,30 +22,19 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   let add_file file =
     let content = Option.value_exn (File.content file) in
     let path = Path.absolute (File.path file) in
-    begin
-      try
-        Unix.mkdir (Filename.dirname path)
-      with Unix.Unix_error _ ->
-        ()
-    end;
+    ( try Unix.mkdir (Filename.dirname path) with
+    | Unix.Unix_error _ -> () );
     Out_channel.write_all path ~data:content
   in
   List.iter ~f:add_file files;
   let { Service.Parser.parsed = handles; _ } =
-    Service.Parser.parse_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:None
-      ~files
+    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
   in
-  let ((module Handler: Analysis.Environment.Handler) as environment) =
-    (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
+  let ((module Handler : Analysis.Environment.Handler) as environment) =
+    (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
   in
   Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
-  Test.populate
-    ~configuration
-    environment
-    (typeshed_stubs ~include_helper_builtins:false ());
+  Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   let actual_errors =
     Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
@@ -77,21 +64,16 @@ let type_check_sources_list_test context =
       |> trim_extra_indentation
     in
     let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
-    [
-      File.create
+    [ File.create
         ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-        (Path.create_relative ~root ~relative:path);
-    ]
+        (Path.create_relative ~root ~relative:path) ]
   in
   let check _ =
     let root = Path.current_working_directory () in
-    let files =
-      {|
+    let files = {|
         def foo() -> str:
           return 1
-      |}
-      |> create_files ~root
-    in
+      |} |> create_files ~root in
     assert_errors ~root ~files ["Incompatible return type [7]: Expected `str` but got `int`."]
   in
   with_bracket_chdir context (bracket_tmpdir context) check
@@ -117,17 +99,13 @@ let test_filter_directories context =
   assert_errors
     ~root
     ~files
-    [
-      "Incompatible return type [7]: Expected `C` but got `D`.";
-      "Incompatible return type [7]: Expected `C` but got `D`.";
-    ];
-
+    [ "Incompatible return type [7]: Expected `C` but got `D`.";
+      "Incompatible return type [7]: Expected `C` but got `D`." ];
   assert_errors
     ~root
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~files
     ["Incompatible return type [7]: Expected `C` but got `D`."];
-
   (* The structure:
    *  /root/check <- pyre is meant to analyze here
    *  /root/check/search <- this is added to the search path, handles are relative to here instead
@@ -136,24 +114,20 @@ let test_filter_directories context =
     ~root
     ~search_path:[Path.SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
-    ~files:[
-      File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
-      File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py");
-    ]
+    ~files:
+      [ File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
+        File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py") ]
     ["Incompatible return type [7]: Expected `C` but got `D`."];
   assert_errors
     ~root
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/ignore"]
-    ~files:[
-      File.create ~content (Path.create_relative ~root ~relative:"check/ignore/file.py");
-    ]
+    ~files:[File.create ~content (Path.create_relative ~root ~relative:"check/ignore/file.py")]
     []
 
 
 let () =
-  "typeChecker">:::[
-    "type_check_sources_list">::type_check_sources_list_test;
-    "filter_directories">::test_filter_directories;
-  ]
+  "typeChecker"
+  >::: [ "type_check_sources_list" >:: type_check_sources_list_test;
+         "filter_directories" >:: test_filter_directories ]
   |> Test.run

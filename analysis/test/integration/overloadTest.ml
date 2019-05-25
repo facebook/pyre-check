@@ -3,10 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 open OUnit2
 open IntegrationTest
-
 
 let test_check_implementation _ =
   assert_type_errors
@@ -20,11 +18,7 @@ let test_check_implementation _ =
       def foo() -> None:
           pass
     |}
-    [
-      "Missing overload implementation [42]: Overloaded function `foo` \
-       must have an implementation."
-    ];
-
+    ["Missing overload implementation [42]: Overloaded function `foo` must have an implementation."];
   assert_default_type_errors
     ~handle:"stub.pyi"
     {|
@@ -38,7 +32,6 @@ let test_check_implementation _ =
           pass
     |}
     [];
-
   assert_type_errors
     {|
       from typing import overload
@@ -50,7 +43,6 @@ let test_check_implementation _ =
           pass
     |}
     [];
-
   assert_type_errors
     {|
       from typing import overload
@@ -65,13 +57,8 @@ let test_check_implementation _ =
       def foo(x:str) -> float:
           return 1
     |}
-    [
-      "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
-       incompatible with the return type of the implementation (`float`)."
-    ]
+    [ "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
+       incompatible with the return type of the implementation (`float`)." ]
 
-let () =
-  "method">:::[
-    "check_implementation">::test_check_implementation;
-  ]
-  |> Test.run
+
+let () = "method" >::: ["check_implementation" >:: test_check_implementation] |> Test.run

@@ -6,9 +6,7 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_final_methods _ =
-
   assert_type_errors
     {|
         from typing import final
@@ -21,7 +19,6 @@ let test_final_methods _ =
             pass
       |}
     ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."];
-
   assert_type_errors
     {|
      from typing import final
@@ -34,7 +31,6 @@ let test_final_methods _ =
          pass
    |}
     ["Invalid override [40]: `Bar.bar` cannot override final method defined in `Foo`."];
-
   assert_type_errors
     {|
         from typing import final
@@ -44,7 +40,6 @@ let test_final_methods _ =
           pass
       |}
     ["Invalid inheritance [39]: `typing.final` cannot be used with non-method functions."];
-
   assert_type_errors
     {|
         from typing import final
@@ -58,7 +53,6 @@ let test_final_methods _ =
 
 
 let test_final_class _ =
-
   assert_type_errors
     {|
     from typing import final
@@ -72,7 +66,6 @@ let test_final_class _ =
 
 
 let test_final_attributes _ =
-
   assert_type_errors
     {|
       from typing import Final
@@ -81,20 +74,14 @@ let test_final_attributes _ =
       class B(A):
         x = 200
     |}
-    [
-      "Invalid assignment [41]: Cannot reassign final attribute `x`."
-    ];
-
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
   assert_type_errors
     {|
       from typing import List, Final
       x: List[Final[int]] = []
     |}
-    [
-      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. \
-       Final cannot be nested."
+    [ "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested."
     ];
-
   assert_type_errors
     {|
       from typing import Final
@@ -104,7 +91,6 @@ let test_final_attributes _ =
           pass
     |}
     ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
-
   assert_type_errors
     {|
       from typing import Final
@@ -113,18 +99,16 @@ let test_final_attributes _ =
           pass
     |}
     ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
-
-  assert_type_errors ~concise:true
+  assert_type_errors
+    ~concise:true
     {|
       from typing import List, Final
       x: List[Final[int]] = []
     |}
-    [
-      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. \
-       Final cannot be nested."
+    [ "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested."
     ];
-
-  assert_type_errors ~concise:true
+  assert_type_errors
+    ~concise:true
     {|
       from typing import Final, List
       class A:
@@ -134,11 +118,9 @@ let test_final_attributes _ =
     ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
 
 
-
 let () =
-  "final">:::[
-    "final_methods">::test_final_methods;
-    "final_classes">::test_final_class;
-    "final_attributes">::test_final_attributes
-  ]
+  "final"
+  >::: [ "final_methods" >:: test_final_methods;
+         "final_classes" >:: test_final_class;
+         "final_attributes" >:: test_final_attributes ]
   |> Test.run

@@ -4,74 +4,54 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 module ServerDependencies = Dependencies
 open Ast
 open Analysis
-
 open State
 open Configuration.Analysis
-
 open Pyre
 
-type errors = (File.Handle.t * State.Error.t list) list
-[@@deriving show]
+type errors = (File.Handle.t * State.Error.t list) list [@@deriving show]
 
 let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
   let initial_files = Option.value ~default:(Hashtbl.keys errors) checked_files in
   let error_file error = File.Handle.create (Error.path error) in
-  List.fold
-    ~init:File.Handle.Map.empty
-    ~f:(fun map key -> Map.set map ~key ~data:[])
-    initial_files
+  List.fold ~init:File.Handle.Map.empty ~f:(fun map key -> Map.set map ~key ~data:[]) initial_files
   |> (fun map ->
-      List.fold
-        ~init:map
-        ~f:(fun map error -> Map.add_multi map ~key:(error_file error) ~data:error)
-        error_list)
+       List.fold
+         ~init:map
+         ~f:(fun map error -> Map.add_multi map ~key:(error_file error) ~data:error)
+         error_list)
   |> Map.to_alist
 
 
 let recheck
-    ~state:({
-        State.environment;
-        errors;
-        scheduler;
-        _ } as state)
+    ~state:({ State.environment; errors; scheduler; _ } as state)
     ~configuration:({ debug; _ } as configuration)
-    ~files =
-
+    ~files
+  =
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   Resolution.Cache.clear ();
   let recheck, removed_handles =
     let update_handle_state (updated, removed) file =
       match File.handle ~configuration file with
-      | exception (File.NonexistentHandle _) ->
+      | exception File.NonexistentHandle _ ->
           Log.warning "`%s` not found in search path." (Path.absolute (File.path file));
           updated, removed
-      | handle when (not (Path.file_exists (File.path file))) ->
-          updated, handle :: removed
-      | handle ->
-          begin
-            match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
-            | Some existing ->
-                let existing_handle =
-                  Module.handle existing
-                  |> Option.value ~default:handle
-                in
-                if File.Handle.equal existing_handle handle then
-                  (file :: updated), removed
-                else if
-                  (File.Handle.is_stub handle) &&
-                  (not (File.Handle.is_stub existing_handle)) then
-                  (* Stubs take priority over existing handles. *)
-                  file :: updated, existing_handle :: removed
-                else
-                  updated, removed
-            | _  ->
-                file :: updated, removed
-          end
+      | handle when not (Path.file_exists (File.path file)) -> updated, handle :: removed
+      | handle -> (
+        match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
+        | Some existing ->
+            let existing_handle = Module.handle existing |> Option.value ~default:handle in
+            if File.Handle.equal existing_handle handle then
+              file :: updated, removed
+            else if File.Handle.is_stub handle && not (File.Handle.is_stub existing_handle) then
+              (* Stubs take priority over existing handles. *)
+              file :: updated, existing_handle :: removed
+            else
+              updated, removed
+        | _ -> file :: updated, removed )
     in
     List.fold files ~f:update_handle_state ~init:([], [])
   in
@@ -79,10 +59,8 @@ let recheck
     List.map removed_handles ~f:File.Handle.show
     |> String.concat ~sep:", "
     |> Log.info "Removing type information for `%s`";
-
-  let (module Handler: Environment.Handler) = environment in
+  let (module Handler : Environment.Handler) = environment in
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck > 5) in
-
   (* Also recheck dependencies of the changed files. *)
   let recheck =
     Set.union
@@ -90,20 +68,17 @@ let recheck
       (ServerDependencies.compute_dependencies recheck ~state ~configuration)
     |> Set.to_list
   in
-
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
     let timer = Timer.start () in
     let handle file =
-      try
-        Some (File.handle ~configuration file)
-      with File.NonexistentHandle _ ->
-        None
+      try Some (File.handle ~configuration file) with
+      | File.NonexistentHandle _ -> None
     in
-    (* Watchman only notifies Pyre that a file has been updated, we have to detect
-       removals manually and update our handle set. *)
+    (* Watchman only notifies Pyre that a file has been updated, we have to detect removals
+       manually and update our handle set. *)
     Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
     let targets =
       let find_target file = Path.readlink (File.path file) in
@@ -117,41 +92,27 @@ let recheck
     Statistics.performance
       ~name:"purged old environment"
       ~timer
-      ~integers:[
-        "number of files", (List.length (handles @ removed_handles))
-      ]
+      ~integers:["number of files", List.length (handles @ removed_handles)]
       ();
-
     let stubs, sources =
-      let is_stub file =
-        file
-        |> File.path
-        |> Path.absolute
-        |> String.is_suffix ~suffix:".pyi"
-      in
+      let is_stub file = file |> File.path |> Path.absolute |> String.is_suffix ~suffix:".pyi" in
       List.partition_tf ~f:is_stub recheck
     in
     Log.info "Parsing %d updated stubs..." (List.length stubs);
-    let {
-      Service.Parser.parsed = stubs;
-      syntax_error = stub_syntax_errors;
-      system_error = stub_system_errors;
-    } =
-      Service.Parser.parse_sources
-        ~configuration
-        ~scheduler
-        ~preprocessing_state:None
-        ~files:stubs
+    let { Service.Parser.parsed = stubs;
+          syntax_error = stub_syntax_errors;
+          system_error = stub_system_errors
+        }
+      =
+      Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files:stubs
     in
     let sources =
       let stub_qualifiers =
-        List.map stubs ~f:(fun handle -> Source.qualifier ~handle)
-        |> Reference.Hash_set.of_list
+        List.map stubs ~f:(fun handle -> Source.qualifier ~handle) |> Reference.Hash_set.of_list
       in
       let keep file =
         match handle file with
-        | None ->
-            false
+        | None -> false
         | Some handle ->
             let qualifier = Source.qualifier ~handle in
             if Hash_set.mem stub_qualifiers qualifier then
@@ -165,11 +126,11 @@ let recheck
       List.filter sources ~f:keep
     in
     Log.info "Parsing %d updated sources..." (List.length sources);
-    let {
-      Service.Parser.parsed = sources;
-      syntax_error = source_syntax_errors;
-      system_error = source_system_errors;
-    } =
+    let { Service.Parser.parsed = sources;
+          syntax_error = source_syntax_errors;
+          system_error = source_system_errors
+        }
+      =
       Service.Parser.parse_sources
         ~configuration
         ~scheduler
@@ -177,24 +138,20 @@ let recheck
         ~files:sources
     in
     let unparsed =
-      List.concat [
-        stub_syntax_errors;
-        stub_system_errors;
-        source_syntax_errors;
-        source_system_errors;
-      ]
+      List.concat
+        [stub_syntax_errors; stub_system_errors; source_syntax_errors; source_system_errors]
     in
     if not (List.is_empty unparsed) then
       Log.warning
         "Unable to parse `%s`."
-        (List.map unparsed ~f:File.Handle.show
-         |> String.concat ~sep:", ");
+        (List.map unparsed ~f:File.Handle.show |> String.concat ~sep:", ");
     stubs @ sources
   in
   Log.log
     ~section:`Debug
     "Repopulating the environment with %a"
-    Sexp.pp [%message (repopulate_handles: File.Handle.t list)];
+    Sexp.pp
+    [%message (repopulate_handles : File.Handle.t list)];
   Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
   |> Service.Environment.populate ~configuration ~scheduler environment;
@@ -204,12 +161,10 @@ let recheck
     ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
     ();
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
-
   (* Compute new set of errors. *)
- (* Clear all type resolution info from shared memory for all affected sources. *)
+  (* Clear all type resolution info from shared memory for all affected sources. *)
   ResolutionSharedMemory.remove repopulate_handles;
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulate_handles);
-
   let new_errors =
     Service.Check.analyze_sources
       ~scheduler
@@ -220,22 +175,18 @@ let recheck
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) (removed_handles @ repopulate_handles);
   (* Associate the new errors with new files *)
-  List.iter
-    new_errors
-    ~f:(fun error ->
-        Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
+  List.iter new_errors ~f:(fun error ->
+      Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
   let checked_files =
     List.filter_map
-      ~f:(fun file -> try
-             Some (File.handle ~configuration file)
-           with File.NonexistentHandle _ ->
-             Log.warning
-               "Could not create a handle for %s. It will be excluded from the type-check response."
-               (Path.absolute (File.path file));
-             None
-         )
+      ~f:(fun file ->
+        try Some (File.handle ~configuration file) with
+        | File.NonexistentHandle _ ->
+            Log.warning
+              "Could not create a handle for %s. It will be excluded from the type-check response."
+              (Path.absolute (File.path file));
+            None)
       recheck
     |> Option.some
   in
-  state,
-  build_file_to_error_map ~checked_files ~state new_errors
+  state, build_file_to_error_map ~checked_files ~state new_errors

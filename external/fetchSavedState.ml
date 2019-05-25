@@ -5,16 +5,12 @@
 
 open Pyre
 
-
 type fetched_saved_state = {
   saved_state_path: Path.t;
-  changed_files: Path.t list;
+  changed_files: Path.t list
 }
 
-
-let saved_state_query ~watchman_root:_ ~project_name:_ =
-  `Assoc []
-
+let saved_state_query ~watchman_root:_ ~project_name:_ = `Assoc []
 
 let load ~watchman_root:_ ~project_name:_ ~configuration_file_hash:_ ~version:_ ~target_path:_ =
   None

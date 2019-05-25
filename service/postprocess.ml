@@ -4,13 +4,10 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Analysis
 open Pyre
-
 open PostprocessSharedMemory
-
 
 let register_ignores ~configuration scheduler handles =
   (* Invalidate keys before updating *)
@@ -20,18 +17,12 @@ let register_ignores ~configuration scheduler handles =
     |> List.concat
     |> IgnoreLines.KeySet.of_list
     |> IgnoreLines.remove_batch;
-    keys
-    |> IgnoreKeys.KeySet.of_list
-    |> IgnoreKeys.remove_batch
+    keys |> IgnoreKeys.KeySet.of_list |> IgnoreKeys.remove_batch
   in
-  let remove_modes handles =
-    ErrorModes.KeySet.of_list handles
-    |> ErrorModes.remove_batch
-  in
+  let remove_modes handles = ErrorModes.KeySet.of_list handles |> ErrorModes.remove_batch in
   let timer = Timer.start () in
   remove_ignores handles;
   remove_modes handles;
-
   (* Register new values *)
   let register_ignores_for_handle handle =
     let key = File.Handle.show handle in
@@ -43,27 +34,24 @@ let register_ignores ~configuration scheduler handles =
           let add_ignore ignore_map ignore_line =
             Location.Reference.Map.add_multi
               ~key:(Ignore.key ignore_line)
-              ~data:ignore_line ignore_map
+              ~data:ignore_line
+              ignore_map
           in
           List.fold ~init:Location.Reference.Map.empty ~f:add_ignore ignore_lines
         in
-        Map.iteri
-          ~f:(fun ~key ~data -> IgnoreLines.add key data)
-          ignore_map;
+        Map.iteri ~f:(fun ~key ~data -> IgnoreLines.add key data) ignore_map;
         IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
-    | _ ->
-        ()
+    | _ -> ()
   in
   let register_local_mode handle =
     match Ast.SharedMemory.Sources.get handle with
     | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
         ErrorModes.add handle local_mode
-    | _ ->
-        ()
+    | _ -> ()
   in
   let register handles =
     List.iter handles ~f:register_ignores_for_handle;
-    List.iter handles ~f:(register_local_mode);
+    List.iter handles ~f:register_local_mode
   in
   Scheduler.iter scheduler ~configuration ~f:register ~inputs:handles;
   Statistics.performance ~name:"registered ignores" ~timer ()
@@ -74,14 +62,16 @@ let ignore ~configuration scheduler handles errors =
     let add_to_lookup lookup error =
       Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup
     in
-    List.fold errors ~init:Location.Reference.Map.empty ~f:add_to_lookup in
+    List.fold errors ~init:Location.Reference.Map.empty ~f:add_to_lookup
+  in
   let errors =
     let not_ignored error =
       let get_codes = List.concat_map ~f:Ignore.codes in
       IgnoreLines.get (Error.key error)
       >>| (fun ignores ->
-          not (List.is_empty (get_codes ignores) ||
-               List.mem ~equal:(=) (get_codes ignores) (Error.code error)))
+            not
+              ( List.is_empty (get_codes ignores)
+              || List.mem ~equal:( = ) (get_codes ignores) (Error.code error) ))
       |> Option.value ~default:true
     in
     List.filter ~f:not_ignored errors
@@ -90,9 +80,7 @@ let ignore ~configuration scheduler handles errors =
     let get_unused_ignores path =
       let ignores =
         let key_to_ignores sofar key =
-          IgnoreLines.get key
-          >>| (fun ignores -> ignores @ sofar)
-          |> Option.value ~default:sofar
+          IgnoreLines.get key >>| (fun ignores -> ignores @ sofar) |> Option.value ~default:sofar
         in
         List.fold
           (IgnoreKeys.get (File.Handle.show path) |> Option.value ~default:[])
@@ -103,22 +91,20 @@ let ignore ~configuration scheduler handles errors =
       let filter_active_ignores sofar ignore =
         match Ignore.kind ignore with
         | Ignore.TypeIgnore -> sofar
-        | _ ->
-            begin
-              match Map.find error_lookup (Ignore.key ignore) with
-              | Some codes ->
-                  let unused_codes =
-                    let find_unused sofar code =
-                      if List.mem ~equal:(=) codes code then sofar else code :: sofar
-                    in
-                    List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
-                  in
-                  if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
-                    sofar
-                  else
-                    { ignore with Ignore.codes = unused_codes } :: sofar
-              | _ -> ignore :: sofar
-            end
+        | _ -> (
+          match Map.find error_lookup (Ignore.key ignore) with
+          | Some codes ->
+              let unused_codes =
+                let find_unused sofar code =
+                  if List.mem ~equal:( = ) codes code then sofar else code :: sofar
+                in
+                List.fold ~init:[] ~f:find_unused (Ignore.codes ignore)
+              in
+              if List.is_empty (Ignore.codes ignore) || List.is_empty unused_codes then
+                sofar
+              else
+                { ignore with Ignore.codes = unused_codes } :: sofar
+          | _ -> ignore :: sofar )
       in
       List.fold ~init:[] ~f:filter_active_ignores ignores
     in
@@ -134,16 +120,14 @@ let ignore ~configuration scheduler handles errors =
   in
   let create_unused_ignore_error errors unused_ignore =
     let error =
-      {
-        Error.location =
-          Location.instantiate
-            (Ignore.location unused_ignore)
-            ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash);
+      { Error.location =
+          Location.instantiate (Ignore.location unused_ignore) ~lookup:(fun hash ->
+              Ast.SharedMemory.Handles.get ~hash);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
-        signature = {
-          Node.location = Ignore.location unused_ignore;
-          value = Statement.Define.Signature.create_toplevel ~qualifier:None;
-        };
+        signature =
+          { Node.location = Ignore.location unused_ignore;
+            value = Statement.Define.Signature.create_toplevel ~qualifier:None
+          }
       }
     in
     error :: errors

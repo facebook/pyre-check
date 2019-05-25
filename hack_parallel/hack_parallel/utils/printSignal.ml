@@ -6,7 +6,7 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
-*)
+ *)
 
 let string_of_signal n =
   match n with

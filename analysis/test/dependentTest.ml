@@ -4,77 +4,60 @@
  * LICENSE file in the root directory of this source tree. *)
 open Core
 open OUnit2
-
 open Analysis
 open Ast
-
 open Test
 
-
 let configuration = Configuration.Analysis.create ()
-
 
 let populate source =
   let environment = Environment.Builder.create () in
   Test.populate ~configuration (Environment.handler environment) [parse source];
-  environment
-  |> Environment.handler
+  environment |> Environment.handler
 
 
 let test_index _ =
   let environment = Environment.Builder.create () in
-  let source = {|
+  let source =
+    {|
       class baz.baz(): pass
       _T = typing.TypeVar("_T")
       def foo(): pass
     |}
   in
-  Test.populate
-    ~configuration
-    (Environment.handler environment)
-    [parse ~handle:"test.py" source];
-  let {
-    Dependencies.class_keys;
-    function_keys;
-    alias_keys;
-    _;
-  } = environment.Environment.dependencies.Dependencies.index in
+  Test.populate ~configuration (Environment.handler environment) [parse ~handle:"test.py" source];
+  let { Dependencies.class_keys; function_keys; alias_keys; _ } =
+    environment.Environment.dependencies.Dependencies.index
+  in
   let assert_table_contains_key table key =
     let keyset = Hashtbl.find_exn table (File.Handle.create "test.py") in
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys "baz.baz";
-  assert_table_contains_key function_keys (!&"foo");
+  assert_table_contains_key function_keys !&"foo";
   assert_table_contains_key alias_keys "_T"
 
 
 let add_dependent table handle dependent =
   let handle = File.Handle.create handle in
   let source = Source.qualifier ~handle in
-  let dependent =
-    File.Handle.create dependent
-    |> fun handle -> Source.qualifier ~handle
-  in
+  let dependent = File.Handle.create dependent |> fun handle -> Source.qualifier ~handle in
   let update entry =
     match entry with
-    | None ->
-        Reference.Set.singleton dependent
-    | Some set ->
-        Set.add set dependent
+    | None -> Reference.Set.singleton dependent
+    | Some set -> Set.add set dependent
   in
   Hashtbl.update table source ~f:update
 
 
-let get_dependencies (module Handler: Environment.Handler) qualifier =
+let get_dependencies (module Handler : Environment.Handler) qualifier =
   Handler.dependencies qualifier
 
 
 let assert_dependencies ~environment ~modules ~expected function_to_test =
   let get_dependencies = get_dependencies (Environment.handler environment) in
   let dependencies =
-    function_to_test
-      ~get_dependencies
-      ~modules:(List.map modules ~f:Reference.create)
+    function_to_test ~get_dependencies ~modules:(List.map modules ~f:Reference.create)
     |> Set.to_list
     |> List.map ~f:Reference.show
     |> List.sort ~compare:String.compare
@@ -97,18 +80,10 @@ let test_dependent_of_list _ =
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
-  assert_dependencies
-    ~modules:["b"; "c"]
-    ~expected:["a"];
-  assert_dependencies
-    ~modules:["a"]
-    ~expected:["test"];
-  assert_dependencies
-    ~modules:["c"]
-    ~expected:["a"; "b"];
-  assert_dependencies
-    ~modules:["test"]
-    ~expected:[]
+  assert_dependencies ~modules:["b"; "c"] ~expected:["a"];
+  assert_dependencies ~modules:["a"] ~expected:["test"];
+  assert_dependencies ~modules:["c"] ~expected:["a"; "b"];
+  assert_dependencies ~modules:["test"] ~expected:[]
 
 
 let test_dependent_of_list_duplicates _ =
@@ -125,9 +100,7 @@ let test_dependent_of_list_duplicates _ =
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.of_list
   in
-  assert_dependencies
-    ~modules:["a"]
-    ~expected:["b"; "c"]
+  assert_dependencies ~modules:["a"] ~expected:["b"; "c"]
 
 
 let test_transitive_dependent_of_list _ =
@@ -144,15 +117,9 @@ let test_transitive_dependent_of_list _ =
   let assert_dependencies ~modules ~expected =
     assert_dependencies ~environment ~modules ~expected Dependencies.transitive_of_list
   in
-  assert_dependencies
-    ~modules:["b"; "c"]
-    ~expected:["a"; "test"];
-  assert_dependencies
-    ~modules:["c"]
-    ~expected:["a"; "b"; "test"];
-  assert_dependencies
-    ~modules:["test"]
-    ~expected:[]
+  assert_dependencies ~modules:["b"; "c"] ~expected:["a"; "test"];
+  assert_dependencies ~modules:["c"] ~expected:["a"; "b"; "test"];
+  assert_dependencies ~modules:["test"] ~expected:[]
 
 
 let test_transitive_dependents _ =
@@ -179,21 +146,16 @@ let test_transitive_dependents _ =
     let expected = List.sort ~compare:String.compare expected in
     assert_equal expected dependencies
   in
-  assert_dependents
-    ~handle:"c.py"
-    ~expected:["a"; "b"; "test"]
+  assert_dependents ~handle:"c.py" ~expected:["a"; "b"; "test"]
 
 
 let test_normalize _ =
   let assert_normalized ~edges expected =
-    let (module Handler: Environment.Handler) =
-      Environment.Builder.create ()
-      |> Environment.handler
+    let (module Handler : Environment.Handler) =
+      Environment.Builder.create () |> Environment.handler
     in
     let add_dependent (left, right) =
-      Handler.DependencyHandler.add_dependent
-        ~handle:(File.Handle.create (left ^ ".py"))
-        (!&right)
+      Handler.DependencyHandler.add_dependent ~handle:(File.Handle.create (left ^ ".py")) !&right
     in
     List.iter edges ~f:add_dependent;
     let all_modules =
@@ -210,16 +172,11 @@ let test_normalize _ =
       in
       let printer = function
         | None -> "None"
-        | Some dependents ->
-            Reference.Set.Tree.sexp_of_t dependents
-            |> Sexp.to_string
+        | Some dependents -> Reference.Set.Tree.sexp_of_t dependents |> Sexp.to_string
       in
       (* If the printer shows identical sets here but the equality fails, the underlying
          representation must have diverged. *)
-      assert_equal
-        ~printer
-        (Some expected)
-        (Handler.DependencyHandler.dependents (!&node))
+      assert_equal ~printer (Some expected) (Handler.DependencyHandler.dependents !&node)
     in
     List.iter expected ~f:assert_dependents_equal
   in
@@ -227,47 +184,22 @@ let test_normalize _ =
   assert_normalized ~edges:["a", "c"; "b", "c"] ["c", ["a"; "b"]];
   assert_normalized ~edges:["b", "c"; "a", "c"] ["c", ["a"; "b"]];
   assert_normalized
-    ~edges:[
-      "a", "h";
-      "b", "h";
-      "c", "h";
-      "d", "h";
-      "e", "h";
-      "f", "h";
-      "g", "h";
-    ]
+    ~edges:["a", "h"; "b", "h"; "c", "h"; "d", "h"; "e", "h"; "f", "h"; "g", "h"]
     ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
   assert_normalized
-    ~edges:[
-      "g", "h";
-      "f", "h";
-      "e", "h";
-      "d", "h";
-      "c", "h";
-      "b", "h";
-      "a", "h";
-    ]
+    ~edges:["g", "h"; "f", "h"; "e", "h"; "d", "h"; "c", "h"; "b", "h"; "a", "h"]
     ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]];
   assert_normalized
-    ~edges:[
-      "d", "h";
-      "e", "h";
-      "f", "h";
-      "g", "h";
-      "c", "h";
-      "b", "h";
-      "a", "h";
-    ]
+    ~edges:["d", "h"; "e", "h"; "f", "h"; "g", "h"; "c", "h"; "b", "h"; "a", "h"]
     ["h", ["a"; "b"; "c"; "d"; "e"; "f"; "g"]]
 
 
 let () =
-  "dependencies">:::[
-    "index">::test_index;
-    "transitive_dependents">::test_transitive_dependents;
-    "transitive_dependent_of_list">::test_transitive_dependent_of_list;
-    "dependent_of_list">::test_dependent_of_list;
-    "dependent_of_list_duplicates">::test_dependent_of_list_duplicates;
-    "normalize">::test_normalize;
-  ]
+  "dependencies"
+  >::: [ "index" >:: test_index;
+         "transitive_dependents" >:: test_transitive_dependents;
+         "transitive_dependent_of_list" >:: test_transitive_dependent_of_list;
+         "dependent_of_list" >:: test_dependent_of_list;
+         "dependent_of_list_duplicates" >:: test_dependent_of_list_duplicates;
+         "normalize" >:: test_normalize ]
   |> Test.run

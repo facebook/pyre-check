@@ -4,12 +4,9 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Analysis
 open Pyre
-
 open Service
-
 
 (* run_command prints out the errors, for a Check run *)
 let run_check
@@ -36,7 +33,8 @@ let run_check
     excludes
     extensions
     local_root
-    () =
+    ()
+  =
   let filter_directories =
     filter_directories
     >>| String.split_on_chars ~on:[';']
@@ -69,7 +67,7 @@ let run_check
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~search_path:(List.map search_path ~f:(Path.SearchPath.create))
+      ~search_path:(List.map search_path ~f:Path.SearchPath.create)
       ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
       ~extensions
@@ -77,31 +75,25 @@ let run_check
       ()
   in
   (fun () ->
-     let timer = Timer.start () in
-     let { Check.errors; _ } = Check.check ~scheduler:None ~configuration in
-
-     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-     Statistics.performance
-       ~name:"check"
-       ~timer
-       ~integers:[
-         "gc_minor_collections", minor_collections;
-         "gc_major_collections", major_collections;
-         "gc_compactions", compactions;
-       ]
-       ~normals:["request kind", "FullCheck"]
-       ();
-     if debug then
-       Memory.report_statistics ();
-
-     (* Print results. *)
-     Yojson.Safe.to_string
-       (`Assoc [
-           "errors",
-           `List
-             (List.map ~f:(fun error -> Error.to_json ~show_error_traces error) errors);
-         ])
-     |> Log.print "%s")
+    let timer = Timer.start () in
+    let { Check.errors; _ } = Check.check ~scheduler:None ~configuration in
+    let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
+    Statistics.performance
+      ~name:"check"
+      ~timer
+      ~integers:
+        [ "gc_minor_collections", minor_collections;
+          "gc_major_collections", major_collections;
+          "gc_compactions", compactions ]
+      ~normals:["request kind", "FullCheck"]
+      ();
+    if debug then
+      Memory.report_statistics ();
+    (* Print results. *)
+    Yojson.Safe.to_string
+      (`Assoc
+        ["errors", `List (List.map ~f:(fun error -> Error.to_json ~show_error_traces error) errors)])
+    |> Log.print "%s")
   |> Scheduler.run_process ~configuration
 
 

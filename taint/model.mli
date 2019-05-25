@@ -7,28 +7,22 @@ open Ast
 open Analysis
 open Interprocedural
 
-
 type t = {
   is_obscure: bool;
   call_target: Callable.t;
-  model: TaintResult.call_model;
+  model: TaintResult.call_model
 }
 [@@deriving show, sexp]
 
 exception InvalidModel of string
 
-val get_callsite_model
-  :  call_target: [<Callable.t]
-  -> t
+val get_callsite_model : call_target:[< Callable.t ] -> t
 
-val get_global_model
-  :  resolution: Resolution.t
-  -> expression: Expression.t
-  -> t option
+val get_global_model : resolution:Resolution.t -> expression:Expression.t -> t option
 
 val parse
-  :  resolution: Resolution.t
-  -> source: string
-  -> configuration: Configuration.t
-  -> TaintResult.call_model Callable.Map.t
-  -> TaintResult.call_model Callable.Map.t
+  :  resolution:Resolution.t ->
+  source:string ->
+  configuration:Configuration.t ->
+  TaintResult.call_model Callable.Map.t ->
+  TaintResult.call_model Callable.Map.t

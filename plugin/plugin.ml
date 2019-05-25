@@ -5,18 +5,12 @@
 
 open Analysis
 open Environment
-
 module NamedTuples = NamedTuples
 module Filter = Filter
 module NewType = NewType
 
+let apply_to_ast source = source |> NamedTuples.transform_ast |> NewType.transform_ast
 
-let apply_to_ast source =
-  source
-  |> NamedTuples.transform_ast
-  |> NewType.transform_ast
-
-
-let apply_to_environment (module Handler: Handler) resolution source =
-  ClassDecorator.transform_dataclass (module Handler: Handler) resolution source;
-  ClassDecorator.transform_attrs (module Handler: Handler) resolution source;
+let apply_to_environment (module Handler : Handler) resolution source =
+  ClassDecorator.transform_dataclass (module Handler : Handler) resolution source;
+  ClassDecorator.transform_attrs (module Handler : Handler) resolution source

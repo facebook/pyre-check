@@ -5,21 +5,17 @@
 
 open Analysis
 
-
 type result = {
   handles: File.Handle.t list;
   environment: (module Environment.Handler);
-  errors: Error.t list;
+  errors: Error.t list
 }
 
 val analyze_sources
-  :  scheduler: Scheduler.t
-  -> configuration: Configuration.Analysis.t
-  -> environment: (module Environment.Handler)
-  -> handles: File.Handle.t list
-  -> Error.t list
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  environment:(module Environment.Handler) ->
+  handles:File.Handle.t list ->
+  Error.t list
 
-val check
-  :  scheduler: Scheduler.t option
-  -> configuration: Configuration.Analysis.t
-  -> result
+val check : scheduler:Scheduler.t option -> configuration:Configuration.Analysis.t -> result

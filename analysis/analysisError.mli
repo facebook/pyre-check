@@ -6,7 +6,6 @@
 open Ast
 open Core
 
-
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
   | Module of Reference.t
@@ -16,7 +15,7 @@ type mismatch = {
   actual: Type.t;
   actual_expressions: Expression.t list;
   expected: Type.t;
-  due_to_invariance: bool;
+  due_to_invariance: bool
 }
 [@@deriving compare, eq, show, hash]
 
@@ -25,14 +24,14 @@ type missing_annotation = {
   annotation: Type.t option;
   given_annotation: Type.t option;
   evidence_locations: Location.Instantiated.t list;
-  thrown_at_source: bool;
+  thrown_at_source: bool
 }
 [@@deriving compare, eq, show, sexp, hash]
 
 type incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
-  declare_location: Location.Instantiated.t;
+  declare_location: Location.Instantiated.t
 }
 [@@deriving compare, eq, show, sexp, hash]
 
@@ -91,10 +90,7 @@ type invalid_override_kind =
 
 type invalid_assignment_kind =
   | Final of Reference.t
-  | ClassVariable of {
-      class_variable: Identifier.t;
-      class_name: Identifier.t;
-    }
+  | ClassVariable of { class_variable: Identifier.t; class_name: Identifier.t }
   | ReadOnly of Reference.t
 [@@deriving compare, eq, sexp, show, hash]
 
@@ -112,30 +108,30 @@ type kind =
   | IncompatibleAttributeType of { parent: Type.t; incompatible_type: incompatible_type }
   | IncompatibleAwaitableType of Type.t
   | IncompatibleConstructorAnnotation of Type.t
-  | IncompatibleParameterType of {
-      name: Identifier.t option;
-      position: int;
-      callee: Reference.t option;
-      mismatch: mismatch;
-    }
+  | IncompatibleParameterType of
+      { name: Identifier.t option;
+        position: int;
+        callee: Reference.t option;
+        mismatch: mismatch
+      }
   | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
   | IncompatibleVariableType of incompatible_type
-  | IncompatibleOverload of {
-      implementation_annotation: Type.t;
-      name: Reference.t;
-      overload_annotation: Type.t;
-    }
-  | IncompleteType of {
-      target: Expression.t;
-      annotation: Type.t;
-      attempted_action: illegal_action_on_incomplete_type;
-    }
-  | InconsistentOverride of {
-      overridden_method: Identifier.t;
-      parent: Reference.t;
-      override: override;
-      override_kind: override_kind;
-    }
+  | IncompatibleOverload of
+      { implementation_annotation: Type.t;
+        name: Reference.t;
+        overload_annotation: Type.t
+      }
+  | IncompleteType of
+      { target: Expression.t;
+        annotation: Type.t;
+        attempted_action: illegal_action_on_incomplete_type
+      }
+  | InconsistentOverride of
+      { overridden_method: Identifier.t;
+        parent: Reference.t;
+        override: override;
+        override_kind: override_kind
+      }
   | InvalidArgument of invalid_argument
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
@@ -145,10 +141,10 @@ type kind =
   | InvalidInheritance of invalid_inheritance
   | InvalidOverride of { parent: Identifier.t; decorator: invalid_override_kind }
   | InvalidAssignment of invalid_assignment_kind
-  | MissingArgument of {
-      callee: Reference.t option;
-      parameter: AnnotatedSignature.missing_argument;
-    }
+  | MissingArgument of
+      { callee: Reference.t option;
+        parameter: AnnotatedSignature.missing_argument
+      }
   | MissingAttributeAnnotation of { parent: Type.t; missing_annotation: missing_annotation }
   | MissingGlobalAnnotation of missing_annotation
   | MissingOverloadImplementation of Reference.t
@@ -172,41 +168,45 @@ type kind =
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
-
   (* Additional errors. *)
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of Reference.t
 [@@deriving compare, eq, show, hash]
 
 include BaseError.Error with type kind := kind
-module Set: Set.S with type Elt.t = t
 
-val weaken_literals: kind -> kind
-val due_to_analysis_limitations: t -> bool
-val due_to_mismatch_with_any: Resolution.t -> t -> bool
+module Set : Set.S with type Elt.t = t
 
-val less_or_equal: resolution: Resolution.t -> t -> t -> bool
-val join: resolution: Resolution.t -> t -> t -> t
-val meet: resolution: Resolution.t -> t -> t -> t
-val widen: resolution: Resolution.t -> previous: t -> next: t -> iteration: int -> t
+val weaken_literals : kind -> kind
 
-val join_at_define
-  :  resolution: Resolution.t
-  -> t list
-  -> t list
+val due_to_analysis_limitations : t -> bool
 
-val join_at_source: resolution: Resolution.t -> t list -> t list
+val due_to_mismatch_with_any : Resolution.t -> t -> bool
 
-val deduplicate: t list -> t list
-val filter: configuration: Configuration.Analysis.t -> resolution: Resolution.t -> t list -> t list
-val suppress: mode: Source.mode -> resolution: Resolution.t -> t -> bool
+val less_or_equal : resolution:Resolution.t -> t -> t -> bool
 
-val dequalify: Reference.t Reference.Map.t -> resolution: Resolution.t -> t -> t
+val join : resolution:Resolution.t -> t -> t -> t
+
+val meet : resolution:Resolution.t -> t -> t -> t
+
+val widen : resolution:Resolution.t -> previous:t -> next:t -> iteration:int -> t
+
+val join_at_define : resolution:Resolution.t -> t list -> t list
+
+val join_at_source : resolution:Resolution.t -> t list -> t list
+
+val deduplicate : t list -> t list
+
+val filter : configuration:Configuration.Analysis.t -> resolution:Resolution.t -> t list -> t list
+
+val suppress : mode:Source.mode -> resolution:Resolution.t -> t -> bool
+
+val dequalify : Reference.t Reference.Map.t -> resolution:Resolution.t -> t -> t
 
 val create_mismatch
-  :  resolution: Resolution.t
-  -> actual: Type.t
-  -> actual_expression: Expression.t option
-  -> expected: Type.t
-  -> covariant: bool
-  -> mismatch
+  :  resolution:Resolution.t ->
+  actual:Type.t ->
+  actual_expression:Expression.t option ->
+  expected:Type.t ->
+  covariant:bool ->
+  mismatch

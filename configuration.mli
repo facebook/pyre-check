@@ -5,7 +5,7 @@
 
 open Pyre
 
-module Analysis: sig
+module Analysis : sig
   type t = {
     start_time: float;
     infer: bool;
@@ -13,8 +13,8 @@ module Analysis: sig
     additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
-    filter_directories: (Path.t list) option;
-    ignore_all_errors: (Path.t list) option;
+    filter_directories: Path.t list option;
+    ignore_all_errors: Path.t list option;
     number_of_workers: int;
     local_root: Path.t;
     sections: string list;
@@ -33,55 +33,56 @@ module Analysis: sig
     excludes: Str.regexp list;
     extensions: string list;
     store_type_check_resolution: bool;
-    incremental_transitive_dependencies: bool;
+    incremental_transitive_dependencies: bool
   }
   [@@deriving show, eq]
 
   val create
-    :  ?start_time: float
-    -> ?infer: bool
-    -> ?recursive_infer: bool
-    -> ?additional_checks: string list
-    -> ?configuration_file_hash: string
-    -> ?parallel: bool
-    -> ?filter_directories: Path.t list
-    -> ?ignore_all_errors: Path.t list
-    -> ?number_of_workers: int
-    -> ?local_root: Path.t
-    -> ?sections: string list
-    -> ?project_root: Path.t
-    -> ?search_path: Path.SearchPath.t list
-    -> ?typeshed: Path.t
-    -> ?verbose: bool
-    -> ?expected_version: string
-    -> ?strict: bool
-    -> ?declare: bool
-    -> ?debug: bool
-    -> ?show_error_traces: bool
-    -> ?log_identifier: string
-    -> ?logger: string
-    -> ?profiling_output: string
-    -> ?excludes: string list
-    -> ?extensions: string list
-    -> ?store_type_check_resolution: bool
-    -> ?incremental_transitive_dependencies: bool
-    -> unit
-    -> t
+    :  ?start_time:float ->
+    ?infer:bool ->
+    ?recursive_infer:bool ->
+    ?additional_checks:string list ->
+    ?configuration_file_hash:string ->
+    ?parallel:bool ->
+    ?filter_directories:Path.t list ->
+    ?ignore_all_errors:Path.t list ->
+    ?number_of_workers:int ->
+    ?local_root:Path.t ->
+    ?sections:string list ->
+    ?project_root:Path.t ->
+    ?search_path:Path.SearchPath.t list ->
+    ?typeshed:Path.t ->
+    ?verbose:bool ->
+    ?expected_version:string ->
+    ?strict:bool ->
+    ?declare:bool ->
+    ?debug:bool ->
+    ?show_error_traces:bool ->
+    ?log_identifier:string ->
+    ?logger:string ->
+    ?profiling_output:string ->
+    ?excludes:string list ->
+    ?extensions:string list ->
+    ?store_type_check_resolution:bool ->
+    ?incremental_transitive_dependencies:bool ->
+    unit ->
+    t
 
-  val set_global: t -> unit
-  val get_global: unit -> t option
+  val set_global : t -> unit
 
-  val localize: t -> local_debug: bool -> local_strict: bool -> declare: bool -> t
+  val get_global : unit -> t option
 
-  val pyre_root: t -> Path.t
+  val localize : t -> local_debug:bool -> local_strict:bool -> declare:bool -> t
 
-  val search_path: t -> Path.SearchPath.t list
+  val pyre_root : t -> Path.t
+
+  val search_path : t -> Path.SearchPath.t list
 end
 
-module Server: sig
+module Server : sig
   type load_parameters = {
     shared_memory_path: Path.t;
-    changed_files_path: Path.t;
+    changed_files_path: Path.t
   }
 
   type load =
@@ -93,8 +94,9 @@ module Server: sig
     | Load of load
 
   type socket_path = {
-    path: Path.t; (* actual path to socket (OCaml has limits on socket path length) *)
-    link: Path.t; (* symbolic link to path in pyre directory *)
+    path: Path.t;
+    (* actual path to socket (OCaml has limits on socket path length) *)
+    link: Path.t (* symbolic link to path in pyre directory *)
   }
 
   type t = {
@@ -107,19 +109,20 @@ module Server: sig
     daemonize: bool;
     saved_state_action: saved_state_action option;
     (* Analysis configuration *)
-    configuration: Analysis.t;
+    configuration: Analysis.t
   }
 
-  val set_global: t -> unit
-  val get_global: unit -> t option
+  val set_global : t -> unit
+
+  val get_global : unit -> t option
 end
 
-module StaticAnalysis: sig
+module StaticAnalysis : sig
   type t = {
     (* A directory to write files in. *)
     result_json_path: Path.t option;
     dump_call_graph: bool;
     (* Analysis configuration *)
-    configuration: Analysis.t;
+    configuration: Analysis.t
   }
 end

@@ -6,40 +6,39 @@
 open Ast
 open Analysis
 
+type t = Callable.t list Callable.Map.t
 
-type t = (Callable.t list) Callable.Map.t
-type callgraph = (Callable.t list) Callable.RealMap.t
+type callgraph = Callable.t list Callable.RealMap.t
+
 (* Maps method names to closest sub-types that override them next *)
-type overrides = (Reference.t list) Reference.Map.t
+type overrides = Reference.t list Reference.Map.t
 
-val empty: t
-val empty_callgraph: callgraph
-val empty_overrides: overrides
+val empty : t
 
+val empty_callgraph : callgraph
+
+val empty_overrides : overrides
+
+val partition : edges:t -> Callable.t list list
 (** Returns a partition of nodes for strongly connected components in the dependency graph *)
-val partition: edges: t -> (Callable.t list) list
 
+val reverse : t -> t
 (** Reverse edges in the dependency graph *)
-val reverse: t -> t
 
-val pp: Format.formatter -> t -> unit
-val pp_partitions: Format.formatter -> (Callable.t list) list -> unit
+val pp : Format.formatter -> t -> unit
 
-val dump: t -> configuration: Configuration.Analysis.t -> unit
+val pp_partitions : Format.formatter -> Callable.t list list -> unit
 
-val from_overrides: overrides -> t
-val from_callgraph: callgraph -> t
+val dump : t -> configuration:Configuration.Analysis.t -> unit
 
-val create_callgraph:
-  environment: (module Environment.Handler)
-  -> source: Source.t
-  -> callgraph
+val from_overrides : overrides -> t
 
-val create_overrides:
-  environment: (module Environment.Handler)
-  -> source: Source.t
-  -> overrides
+val from_callgraph : callgraph -> t
 
-val union: t -> t -> t
+val create_callgraph : environment:(module Environment.Handler) -> source:Source.t -> callgraph
 
-val expand_callees: Callable.t list -> Callable.non_override_target list
+val create_overrides : environment:(module Environment.Handler) -> source:Source.t -> overrides
+
+val union : t -> t -> t
+
+val expand_callees : Callable.t list -> Callable.non_override_target list

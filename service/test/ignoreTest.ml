@@ -5,7 +5,6 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Pyre
 open Test
@@ -27,17 +26,14 @@ let create_files ~root content =
     |> trim_extra_indentation
   in
   let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
-  [
-    File.create
+  [ File.create
       ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-      (Path.create_relative ~root ~relative:path);
-  ]
+      (Path.create_relative ~root ~relative:path) ]
 
 
-let assert_errors
-    ?(show_error_traces = false)
-    input_source
-    expected_errors =
+let assert_errors ?(show_error_traces = false)
+                  input_source
+                  expected_errors =
   let root = Path.current_working_directory () in
   let configuration =
     Configuration.Analysis.create ~local_root:root ~project_root:(Path.create_absolute "/") ()
@@ -51,13 +47,10 @@ let assert_errors
       ~files:(create_files ~root input_source)
   in
   Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
-  let ((module Handler: Analysis.Environment.Handler) as environment) =
-    (module Service.Environment.SharedHandler: Analysis.Environment.Handler)
+  let ((module Handler : Analysis.Environment.Handler) as environment) =
+    (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
   in
-  Test.populate
-    ~configuration
-    environment
-    (typeshed_stubs ~include_helper_builtins: false ());
+  Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   add_defaults_to_environment ~configuration environment;
   Service.Postprocess.register_ignores ~configuration scheduler handles;
   let descriptions =
@@ -66,27 +59,24 @@ let assert_errors
   in
   Handler.purge handles;
   let description_list_to_string descriptions =
-    Format.asprintf "%a" Sexp.pp [%message (descriptions: string list)]
+    Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:description_list_to_string
     ~pp_diff:
-      (diff
-         ~print:(fun format expected_errors ->
-             Format.fprintf format "%s" (description_list_to_string expected_errors)))
+      (diff ~print:(fun format expected_errors ->
+           Format.fprintf format "%s" (description_list_to_string expected_errors)))
     expected_errors
     descriptions
 
 
 let ignore_lines_test context =
   let check _ =
-    assert_errors
-      {|
+    assert_errors {|
         def foo() -> int:
           return 1.0  # pyre-ignore
-      |}
-      [];
+      |} [];
     assert_errors
       {|
         def foo() -> str:
@@ -104,12 +94,10 @@ let ignore_lines_test context =
           return 1
        |}
       [];
-    assert_errors
-      {|
+    assert_errors {|
         def foo() -> str:
           return 1.0  # pyre-ignore[7]
-      |}
-      [];
+      |} [];
     assert_errors
       {|
         def foo() -> str:
@@ -118,7 +106,6 @@ let ignore_lines_test context =
           return 1.0  # pyre-ignore[7]
       |}
       [];
-
     (* Test error on unused ignores *)
     assert_errors
       {|
@@ -126,18 +113,14 @@ let ignore_lines_test context =
           return a
       |}
       ["Incompatible return type [7]: Expected `None` but got `int`."];
-    assert_errors
-      {|
+    assert_errors {|
         def foo(a: int) -> None:
           return a  # pyre-ignore
-      |}
-      [];
-    assert_errors
-      {|
+      |} [];
+    assert_errors {|
         def foo(a: int) -> None:
           return a  # pyre-fixme
-      |}
-      [];
+      |} [];
     assert_errors
       {|
         def foo(a: int) -> None:
@@ -156,21 +139,17 @@ let ignore_lines_test context =
           return a  # pyre-fixme
       |}
       ["Unused ignore [0]: Pyre ignore is extraneous."];
-    assert_errors
-      {|
+    assert_errors {|
         def foo(a: int) -> int:
           return a  # type: ignore
-      |}
-      [];
+      |} [];
     assert_errors
       {|
         def foo() -> str:
           return 1.0  # pyre-ignore[5]
       |}
-      [
-        "Unused ignore [0]: Pyre ignore [5] is extraneous.";
-        "Incompatible return type [7]: Expected `str` but got `float`."
-      ];
+      [ "Unused ignore [0]: Pyre ignore [5] is extraneous.";
+        "Incompatible return type [7]: Expected `str` but got `float`." ];
     assert_errors
       {|
         def foo(a: int) -> int:
@@ -199,7 +178,6 @@ let ignore_lines_test context =
           return bar(a.undefined)  # pyre-ignore[7, 5, 16]
       |}
       ["Unused ignore [0]: Pyre ignore [5] is extraneous."];
-
     assert_errors
       {|
         # pyre-strict
@@ -214,8 +192,4 @@ let ignore_lines_test context =
   with_bracket_chdir context (bracket_tmpdir context) check
 
 
-let () =
-  "typeChecker">:::[
-    "ignore_lines">::ignore_lines_test;
-  ]
-  |> Test.run
+let () = "typeChecker" >::: ["ignore_lines" >:: ignore_lines_test] |> Test.run

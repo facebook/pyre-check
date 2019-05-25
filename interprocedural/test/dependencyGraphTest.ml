@@ -5,18 +5,14 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Ast
 open Interprocedural
 open Statement
-
 open Test
 
-
-let parse_source ?(qualifier=Reference.empty) ?handle source =
-  parse ~qualifier ~debug:false source ?handle
-  |> Preprocessing.preprocess
+let parse_source ?(qualifier = Reference.empty) ?handle source =
+  parse ~qualifier ~debug:false source ?handle |> Preprocessing.preprocess
 
 
 let create_call_graph ?(update_environment_with = []) source_text =
@@ -25,14 +21,14 @@ let create_call_graph ?(update_environment_with = []) source_text =
   let environment = Test.environment ~configuration () in
   let sources =
     source
-    :: List.map
-      update_environment_with
-      ~f:(fun { qualifier; handle; source } -> parse_source ~qualifier ~handle source)
+    :: List.map update_environment_with ~f:(fun { qualifier; handle; source } ->
+           parse_source ~qualifier ~handle source)
   in
   Test.populate ~configuration environment sources;
   let errors = TypeCheck.run ~configuration ~environment ~source in
   if not (List.is_empty errors) then
-    Format.asprintf "Type errors in %s\n%a"
+    Format.asprintf
+      "Type errors in %s\n%a"
       source_text
       (Format.pp_print_list TypeCheck.Error.pp)
       errors
@@ -41,18 +37,15 @@ let create_call_graph ?(update_environment_with = []) source_text =
 
 
 let create_callable = function
-  | `Function name ->
-      !&name
-      |> Callable.create_function
-  | `Method name ->
-      !&name
-      |> Callable.create_method
+  | `Function name -> !&name |> Callable.create_function
+  | `Method name -> !&name |> Callable.create_method
 
 
 let compare_dependency_graph call_graph ~expected =
   let expected =
     let map_callee_callers (callee, callers) =
-      create_callable callee, List.map callers ~f:create_callable in
+      create_callable callee, List.map callers ~f:create_callable
+    in
     List.map expected ~f:map_callee_callers
   in
   let printer call_graph =
@@ -93,12 +86,8 @@ let test_construction _ =
       def qux(self):
         return self.bar()
     |}
-    ~expected:[
-      `Method "Foo.__init__", [];
-      `Method "Foo.bar", [];
-      `Method "Foo.qux", [`Method "Foo.bar"];
-    ];
-
+    ~expected:
+      [`Method "Foo.__init__", []; `Method "Foo.bar", []; `Method "Foo.qux", [`Method "Foo.bar"]];
   assert_call_graph
     {|
     class Foo:
@@ -112,12 +101,9 @@ let test_construction _ =
         return self.bar()
     |}
     ~expected:
-      [
-        `Method "Foo.__init__", [];
+      [ `Method "Foo.__init__", [];
         `Method "Foo.bar", [`Method "Foo.qux"];
-        `Method "Foo.qux", [`Method "Foo.bar"]
-      ];
-
+        `Method "Foo.qux", [`Method "Foo.bar"] ];
   assert_call_graph
     {|
      class A:
@@ -128,46 +114,34 @@ let test_construction _ =
        def __init__(self) -> None:
          a = A()
     |}
-    ~expected:[
-      `Method "A.__init__", [];
-      `Method "B.__init__", [`Method "A.__init__"];
-    ];
-
+    ~expected:[`Method "A.__init__", []; `Method "B.__init__", [`Method "A.__init__"]];
   assert_call_graph
-    ~update_environment_with:[
-      {
-        qualifier = !&"foobar";
-        handle = "foobar.pyi";
-        source =
-          {|
+    ~update_environment_with:
+      [ { qualifier = !&"foobar";
+          handle = "foobar.pyi";
+          source = {|
             def bar(x: string) -> str: ...
-          |};
-      }
-    ]
+          |}
+        } ]
     {|
      def foo():
        foobar.bar("foo")
     |}
     ~expected:[`Function "foo", [`Function "foobar.bar"]];
-
   assert_call_graph
-    ~update_environment_with:[
-      {
-        qualifier = !&"bar.baz.qux";
-        handle = "bar.baz.pyi";
-        source =
-          {|
+    ~update_environment_with:
+      [ { qualifier = !&"bar.baz.qux";
+          handle = "bar.baz.pyi";
+          source = {|
             def derp() -> str: ...
-          |};
-      }
-    ]
+          |}
+        } ]
     {|
      from bar.baz import qux
      def foo():
        qux.derp()
     |}
     ~expected:[`Function "foo", [`Function "bar.baz.qux.derp"]]
-
 
 
 let test_construction_reverse _ =
@@ -184,7 +158,6 @@ let test_construction_reverse _ =
         return self.bar()
     |}
     ~expected:[`Method "Foo.bar", [`Method "Foo.qux"]];
-
   assert_reverse_call_graph
     {|
     class Foo:
@@ -201,10 +174,8 @@ let test_construction_reverse _ =
         return self.qux()
     |}
     ~expected:
-      [
-        `Method "Foo.bar", [`Method "Foo.qux"; `Method "Foo.baz"];
-        `Method "Foo.qux", [`Method "Foo.bar"];
-      ]
+      [ `Method "Foo.bar", [`Method "Foo.qux"; `Method "Foo.baz"];
+        `Method "Foo.qux", [`Method "Foo.bar"] ]
 
 
 let test_type_collection _ =
@@ -221,25 +192,20 @@ let test_type_collection _ =
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
-      ResolutionSharedMemory.get name
-      |> (fun value -> Option.value_exn value)
-      |> Int.Map.of_tree
+      ResolutionSharedMemory.get name |> (fun value -> Option.value_exn value) |> Int.Map.of_tree
     in
     let test_expect (node_id, statement_index, test_access, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
       let test_access = Access.create test_access in
       let annotations =
         Map.find_exn lookup key
-        |> (fun { ResolutionSharedMemory.precondition; _ } ->
-            Reference.Map.of_tree precondition)
+        |> fun { ResolutionSharedMemory.precondition; _ } -> Reference.Map.of_tree precondition
       in
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
       let keep_access = function
-        | Access.SimpleAccess access ->
-            Some access
-        | _ ->
-            None
+        | Access.SimpleAccess access -> Some access
+        | _ -> None
       in
       Visit.collect_accesses statement
       |> List.map ~f:Ast.Node.value
@@ -247,11 +213,11 @@ let test_type_collection _ =
       |> List.hd_exn
       |> fun access ->
       if String.equal (Access.show access) (Access.show test_access) then
-        let module State =
-          TypeCheck.State(struct
-            let configuration = configuration
-            let define = +Test.mock_define
-          end)
+        let module State = TypeCheck.State (struct
+          let configuration = configuration
+
+          let define = +Test.mock_define
+        end)
         in
         let state = State.create ~resolution () in
         let expression =
@@ -259,17 +225,13 @@ let test_type_collection _ =
           |> Node.create_with_default_location
           |> Expression.convert_to_new
         in
-        let { State.resolved; _ } =
-          State.forward_expression ~state ~expression
-        in
+        let { State.resolved; _ } = State.forward_expression ~state ~expression in
         match resolved with
         | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->
             assert_equal expected_type (Reference.show callable_type)
-        | _ ->
-            assert false
+        | _ -> assert false
     in
     List.iter expected ~f:test_expect
-
   in
   assert_type_collection
     {|
@@ -288,13 +250,9 @@ let test_type_collection _ =
             a = B()
             a.foo()
         |}
-    ~qualifier:(!&"test1")
+    ~qualifier:!&"test1"
     ~expected:
-      [
-        (5, 1, "$local_0$a.foo.(...)", "test1.A.foo");
-        (5, 3, "$local_0$a.foo.(...)", "test1.B.foo")
-      ];
-
+      [5, 1, "$local_0$a.foo.(...)", "test1.A.foo"; 5, 3, "$local_0$a.foo.(...)", "test1.B.foo"];
   assert_type_collection
     {|
        class A:
@@ -309,8 +267,8 @@ let test_type_collection _ =
          def caller(self):
            a = B().foo().foo()
     |}
-    ~qualifier:(!&"test2")
-    ~expected:[(5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo")]
+    ~qualifier:!&"test2"
+    ~expected:[5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
 let test_method_overrides _ =
@@ -329,9 +287,7 @@ let test_method_overrides _ =
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Reference.equal in
     let printer map =
-      map
-      |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t)
-      |> Sexp.to_string
+      map |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t) |> Sexp.to_string
     in
     assert_equal
       ~cmp:(Reference.Map.equal equal_elements)
@@ -351,11 +307,7 @@ let test_method_overrides _ =
       class Qux(Foo):
         def foo(): pass
     |}
-    ~expected:
-      [
-        "Bar.foo", ["Baz"];
-        "Foo.foo", ["Bar"; "Qux"];
-      ]
+    ~expected:["Bar.foo", ["Baz"]; "Foo.foo", ["Bar"; "Qux"]]
 
 
 let test_strongly_connected_components _ =
@@ -369,15 +321,13 @@ let test_strongly_connected_components _ =
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let partitions =
       let edges =
-        DependencyGraph.create_callgraph ~environment ~source
-        |> DependencyGraph.from_callgraph
+        DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in
     assert_equal ~printer expected partitions
   in
-
   assert_strongly_connected_components
     {|
     class Foo:
@@ -391,13 +341,7 @@ let test_strongly_connected_components _ =
         return self.c1()
     |}
     ~qualifier:"s0"
-    ~expected:
-      [
-        [`Method "s0.Foo.__init__"];
-        [`Method "s0.Foo.c1"];
-        [`Method "s0.Foo.c2"];
-      ];
-
+    ~expected:[[`Method "s0.Foo.__init__"]; [`Method "s0.Foo.c1"]; [`Method "s0.Foo.c2"]];
   assert_strongly_connected_components
     {|
     class Foo:
@@ -421,13 +365,10 @@ let test_strongly_connected_components _ =
     |}
     ~qualifier:"s1"
     ~expected:
-      [
-        [`Method "s1.Foo.__init__"];
+      [ [`Method "s1.Foo.__init__"];
         [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
         [`Method "s1.Foo.c3"; `Method "s1.Foo.c4"];
-        [`Method "s1.Foo.c5"];
-      ];
-
+        [`Method "s1.Foo.c5"] ];
   assert_strongly_connected_components
     {|
     class Foo:
@@ -458,22 +399,19 @@ let test_strongly_connected_components _ =
     |}
     ~qualifier:"s2"
     ~expected:
-      [
-        [`Method "s2.Foo.__init__"];
+      [ [`Method "s2.Foo.__init__"];
         [`Method "s2.Bar.__init__"];
         [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
         [`Method "s2.Bar.c1"];
-        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"];
-      ]
+        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"] ]
 
 
 let () =
   Scheduler.Daemon.check_entry_point ();
-  "callGraph">:::[
-    "type_collection">::test_type_collection;
-    "build">::test_construction;
-    "build_reverse">::test_construction_reverse;
-    "overrides">::test_method_overrides;
-    "strongly_connected_components">::test_strongly_connected_components;
-  ]
+  "callGraph"
+  >::: [ "type_collection" >:: test_type_collection;
+         "build" >:: test_construction;
+         "build_reverse" >:: test_construction_reverse;
+         "overrides" >:: test_method_overrides;
+         "strongly_connected_components" >:: test_strongly_connected_components ]
   |> Test.run

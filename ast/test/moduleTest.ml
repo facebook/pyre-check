@@ -5,37 +5,34 @@
 
 open Core
 open OUnit2
-
 open Ast
-
 open Test
-
 
 let test_empty_stub _ =
   assert_true
-    (Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:true []
-     |> Module.empty_stub);
+    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:true []
+    |> Module.empty_stub );
   assert_false
-    (Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:false []
-     |> Module.empty_stub);
+    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:false []
+    |> Module.empty_stub );
   assert_false
-    (Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
-     |> Module.empty_stub)
+    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
+    |> Module.empty_stub )
 
 
 let test_handle _ =
   assert_equal
-    (Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
-     |> Module.handle)
+    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
+    |> Module.handle )
     None;
   assert_equal
-    (Module.create
-       ~qualifier:Reference.empty
-       ~local_mode:Source.Default
-       ~handle:(File.Handle.create "voodoo.py")
-       ~stub:false
-       []
-     |> Module.handle)
+    ( Module.create
+        ~qualifier:Reference.empty
+        ~local_mode:Source.Default
+        ~handle:(File.Handle.create "voodoo.py")
+        ~stub:false
+        []
+    |> Module.handle )
     (Some (File.Handle.create "voodoo.py"))
 
 
@@ -56,7 +53,6 @@ let test_aliased_export _ =
     in
     List.iter ~f:assert_aliased_export aliased_exports
   in
-
   assert_aliased_exports
     {|
       from other.module import Class
@@ -64,70 +60,46 @@ let test_aliased_export _ =
       import blah
       import standard_library_module as module
     |}
-    [
-      "Class", "other.module.Class";
+    [ "Class", "other.module.Class";
       "function", "different.module.function";
       "blah", "blah";
-      "module", "standard_library_module";
-    ];
-
-  assert_aliased_exports
-    "from some.module import aliased as alias"
-    ["alias", "some.module.aliased"];
-
+      "module", "standard_library_module" ];
+  assert_aliased_exports "from some.module import aliased as alias" ["alias", "some.module.aliased"];
   assert_aliased_exports
     "from some.module import one, two"
-    [
-      "one", "some.module.one";
-      "two", "some.module.two";
-    ];
-
-  assert_aliased_exports
-    "from some.module import *"
-    ["*", "some.module"];
-
+    ["one", "some.module.one"; "two", "some.module.two"];
+  assert_aliased_exports "from some.module import *" ["*", "some.module"];
   assert_aliased_exports
     ~qualifier:(Reference.create "some.module")
     "from . import path as other"
     ["other", "some.path"];
-
   assert_aliased_exports
     ~qualifier:(Reference.create "some.long.module")
     "from .relative import path as other"
     ["other", "some.long.relative.path"];
-
   assert_aliased_exports
     ~qualifier:(Reference.create "some.long.module")
     "from ..relative import path as other"
     ["other", "some.relative.path"];
-
   assert_aliased_exports
     ~qualifier:(Reference.create "some.long.module")
     "from ...relative import path as other"
     ["other", "relative.path"];
-
   assert_aliased_exports
     ~qualifier:(Reference.create "some.module")
     "from some.module.derp import path as other"
     ["other", "some.module.derp.path"];
-
   assert_aliased_exports
     ~qualifier:(Reference.create "some.module")
     "from some.module.other import other as other"
     ["other", "some.module.other.other"];
-
-
-  assert_aliased_exports
-    "from builtins import path as other"
-    ["other", "path"];
-
+  assert_aliased_exports "from builtins import path as other" ["other", "path"];
   assert_aliased_exports
     {|
       from other import thing
       from other import thing
     |}
     ["thing", "other.thing"];
-
   (* Exports through assignments. *)
   assert_aliased_exports
     ~qualifier:(Reference.create "requests")
@@ -138,11 +110,7 @@ let test_aliased_export _ =
       $local_requests$call = requests.api.call()
       $local_requests$not_exported = other.assignment
     |}
-    [
-      "post", "requests.api.post";
-      "call", "$not_exported";
-      "not_exported", "$not_exported";
-    ]
+    ["post", "requests.api.post"; "call", "$not_exported"; "not_exported", "$not_exported"]
 
 
 let test_wildcard_exports _ =
@@ -154,8 +122,7 @@ let test_wildcard_exports _ =
     assert_equal
       ~cmp:(List.equal ~equal:Reference.equal)
       ~printer:(fun expression_list ->
-          List.map expression_list ~f:(Reference.show)
-          |> String.concat ~sep:", ")
+        List.map expression_list ~f:Reference.show |> String.concat ~sep:", ")
       (List.map expected ~f:Reference.create)
       (module_from_source ~source ~qualifier |> Module.wildcard_exports)
   in
@@ -183,7 +150,6 @@ let test_wildcard_exports _ =
       $local_module$Qualified = 1
     |}
     ["Class"; "function"; "blah"; "module"; "foo"; "variable"; "Bar"; "Qualified"];
-
   assert_wildcard_exports
     {|
       from other.module import Class
@@ -196,7 +162,6 @@ let test_wildcard_exports _ =
       __all__ = ["only_export"]
     |}
     ["only_export"];
-
   assert_wildcard_exports
     {|
       def foo(): ...
@@ -204,7 +169,6 @@ let test_wildcard_exports _ =
       class Bar: ...
     |}
     ["foo"; "variable"; "Bar"];
-
   assert_wildcard_exports
     {|
       import standard_library_module as _module
@@ -213,7 +177,6 @@ let test_wildcard_exports _ =
       class _Bar: pass
     |}
     [];
-
   assert_wildcard_exports
     ~qualifier:(Reference.create "_underscore")
     {|
@@ -222,7 +185,6 @@ let test_wildcard_exports _ =
       class Bar: ...
     |}
     ["foo"; "variable"; "Bar"];
-
   assert_wildcard_exports
     ~qualifier:(Reference.create "qualified")
     {|
@@ -231,7 +193,6 @@ let test_wildcard_exports _ =
       class qualified.Bar: ...
     |}
     ["foo"; "variable"; "Bar"];
-
   assert_in_wildcard_exports
     {|
       def foo(): ...
@@ -243,10 +204,9 @@ let test_wildcard_exports _ =
 
 
 let () =
-  "module">:::[
-    "empty_stub">::test_empty_stub;
-    "handle">::test_handle;
-    "aliased_export">::test_aliased_export;
-    "wildcard_exports">::test_wildcard_exports;
-  ]
+  "module"
+  >::: [ "empty_stub" >:: test_empty_stub;
+         "handle" >:: test_handle;
+         "aliased_export" >:: test_aliased_export;
+         "wildcard_exports" >:: test_wildcard_exports ]
   |> Test.run

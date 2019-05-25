@@ -6,7 +6,6 @@
 open Core
 open OUnit2
 
-
 let test_transform_environment _ =
   PluginTest.assert_environment_contains
     {|
@@ -14,8 +13,7 @@ let test_transform_environment _ =
       class Foo:
         ...
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           def __init__(self) -> None:
@@ -26,7 +24,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       if 1 > 2:
@@ -34,8 +31,7 @@ let test_transform_environment _ =
         class Foo:
           ...
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           def __init__(self) -> None:
@@ -46,8 +42,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -55,8 +49,7 @@ let test_transform_environment _ =
         def foo() -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           def foo() -> None:
@@ -69,7 +62,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclasses.dataclass
@@ -77,8 +69,7 @@ let test_transform_environment _ =
         def foo() -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclasses.dataclass
         class Foo:
           def foo() -> None:
@@ -91,7 +82,6 @@ let test_transform_environment _ =
            pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -101,8 +91,7 @@ let test_transform_environment _ =
         def __repr__(self) -> str:
           pass
     |}
-    [
-      {|
+    [ {|
        @dataclass
        class Foo:
          def __init__(self) -> None:
@@ -113,15 +102,13 @@ let test_transform_environment _ =
            pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
       class Foo:
         name = 'abc'
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name = 'abc'
@@ -133,15 +120,13 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
       class Foo:
         name: str
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -153,7 +138,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -161,8 +145,7 @@ let test_transform_environment _ =
         name: str
         age: int
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -175,7 +158,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -185,8 +167,7 @@ let test_transform_environment _ =
         def __init__(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -199,7 +180,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -207,8 +187,7 @@ let test_transform_environment _ =
         name: str
         age = 3
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -221,7 +200,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -229,8 +207,7 @@ let test_transform_environment _ =
         name: str
         age: int = 3
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -243,7 +220,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -252,8 +228,7 @@ let test_transform_environment _ =
         age: typing.List[int]
         parent: typing.Tuple['int', 'str']
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class Foo:
           name: str
@@ -267,8 +242,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
-
   (* Dataclass boolean arguments *)
   PluginTest.assert_environment_contains
     {|
@@ -277,8 +250,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(init = False)
         class Foo:
           def foo(self) -> None:
@@ -289,7 +261,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass(repr = False)
@@ -297,8 +268,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(repr = False)
         class Foo:
           def foo(self) -> None:
@@ -309,7 +279,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass(eq = False)
@@ -317,8 +286,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(eq = False)
         class Foo:
           def foo(self) -> None:
@@ -329,7 +297,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass(order = True)
@@ -337,8 +304,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(order = True)
         class Foo:
           def foo(self) -> None:
@@ -359,7 +325,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass(eq = False, order = True)
@@ -367,8 +332,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(eq = False, order = True)
         class Foo:
           def foo(self) -> None:
@@ -387,7 +351,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass(frozen = True)
@@ -395,8 +358,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @dataclass(frozen = True)
         class Foo:
           def foo(self) -> None:
@@ -409,7 +371,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   (* Dataclass inheritance *)
   PluginTest.assert_environment_contains
     {|
@@ -423,8 +384,7 @@ let test_transform_environment _ =
         y: int = 0
         z: str = "a"
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(Base):
           z: int = 10
@@ -448,9 +408,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -463,8 +422,7 @@ let test_transform_environment _ =
         y: int = 0
         z: str = "a"
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(Base):
           z: int = 10
@@ -488,9 +446,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -502,8 +459,7 @@ let test_transform_environment _ =
         x: typing.Any = 15.0
         y: int = 0
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(Base):
           z: int = 10
@@ -526,9 +482,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -540,8 +495,7 @@ let test_transform_environment _ =
         x: str = "a"
         y: int = 0
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(Base):
           z: int = 10
@@ -564,9 +518,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -581,8 +534,7 @@ let test_transform_environment _ =
         x: typing.Any = 15.0
         y: int = 0
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(B):
           z: int = 10
@@ -610,9 +562,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @dataclass
@@ -625,8 +576,7 @@ let test_transform_environment _ =
       class A:
         x: int = 15
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class C(B, A):
           z: int = 10
@@ -658,9 +608,8 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       class NotDataClass:
@@ -669,8 +618,7 @@ let test_transform_environment _ =
       class DataClass(NotDataClass):
         y: int = 5
     |}
-    [
-      {|
+    [ {|
         class NotDataClass:
           x: int = 15
       |};
@@ -684,7 +632,7 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
   PluginTest.assert_environment_contains
     {|
@@ -696,8 +644,7 @@ let test_transform_environment _ =
         x: int
         init_variable: dataclasses.InitVar[str]
     |}
-    [
-      {|
+    [ {|
         @dataclass
         class A:
           x: int
@@ -708,12 +655,9 @@ let test_transform_environment _ =
             pass
           def __eq__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ]
 
 
 let () =
-  "plugin_data_class">:::[
-    "transform_environment">::test_transform_environment;
-  ]
-  |> Test.run
+  "plugin_data_class" >::: ["transform_environment" >:: test_transform_environment] |> Test.run

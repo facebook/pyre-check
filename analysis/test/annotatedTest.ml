@@ -4,15 +4,10 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Analysis
-
 open Test
 
-
-let configuration =
-  Configuration.Analysis.create ()
-
+let configuration = Configuration.Analysis.create ()
 
 let populate_with_sources sources =
   let environment =
@@ -35,5 +30,4 @@ let populate source =
   Environment.handler environment
 
 
-let value option =
-  Option.value_exn option
+let value option = Option.value_exn option

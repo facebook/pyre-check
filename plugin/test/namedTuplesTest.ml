@@ -5,20 +5,15 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Plugin
-
 open Test
-
 
 let test_transform_ast _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
     let handle = File.Handle.create qualifier in
     let parse = parse ~qualifier:(Source.qualifier ~handle) in
-    assert_source_equal
-      (parse expected)
-      (NamedTuples.transform_ast (parse source))
+    assert_source_equal (parse expected) (NamedTuples.transform_ast (parse source))
   in
   assert_expand
     {|
@@ -77,7 +72,6 @@ let test_transform_ast _ =
         T.b: typing.Any
         T.c: typing.Any
     |};
-
   assert_expand
     {|
       class Foo(Bar, collections.namedtuple('T', ['one', 'two'])):
@@ -91,7 +85,6 @@ let test_transform_ast _ =
         Foo.two: typing.Any
         Foo.three: int = 1
     |};
-
   assert_expand
     {|
       class Foo(typing.NamedTuple):
@@ -107,7 +100,6 @@ let test_transform_ast _ =
         Foo.b: str
         Foo.c: int = 3
     |};
-
   assert_expand
     {|
       class Foo(collections.namedtuple("PatchDocument", ("op", "path", "value", "ts", "lazy"))):
@@ -131,7 +123,6 @@ let test_transform_ast _ =
          Foo.lazy: typing.Any
          pass
     |};
-
   assert_expand
     {|
       class Foo:
@@ -145,7 +136,6 @@ let test_transform_ast _ =
           T.a: typing.Any
           T.b: typing.Any
     |};
-
   assert_expand
     {|
       def foo():
@@ -157,7 +147,6 @@ let test_transform_ast _ =
           def T.__init__(self): ...
           T._fields: typing.Tuple[()] = ()
     |};
-
   (* TODO (T42893621): properly handle this case *)
   assert_expand
     {|
@@ -172,8 +161,4 @@ let test_transform_ast _ =
     |}
 
 
-let () =
-  "plugin_named_tuples">:::[
-    "transform_ast">::test_transform_ast;
-  ]
-  |> Test.run
+let () = "plugin_named_tuples" >::: ["transform_ast" >:: test_transform_ast] |> Test.run

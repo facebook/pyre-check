@@ -13,20 +13,20 @@ type t = {
   ignored_line: int;
   codes: int list;
   location: Location.t;
-  kind: kind;
+  kind: kind
 }
 [@@deriving compare, eq, show, sexp, hash]
 
-val create
-  :  ignored_line: int
-  -> codes: int list
-  -> location: Location.t
-  -> kind: kind
-  -> t
+val create : ignored_line:int -> codes:int list -> location:Location.t -> kind:kind -> t
 
-val ignored_line: t -> int
-val codes: t -> int list
-val location: t -> Location.t
-val kind: t -> kind
-val increment: t -> t
-val key: t -> Location.t
+val ignored_line : t -> int
+
+val codes : t -> int list
+
+val location : t -> Location.t
+
+val kind : t -> kind
+
+val increment : t -> t
+
+val key : t -> Location.t

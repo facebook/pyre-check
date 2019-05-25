@@ -4,18 +4,14 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Pyre
 open PyreParser
-
-
 
 type 'success parse_result =
   | Success of 'success
   | SyntaxError of File.Handle.t
   | SystemError of File.Handle.t
-
 
 let parse_source ~configuration ?(show_parser_errors = true) file =
   let parse_lines ~handle lines =
@@ -23,14 +19,14 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
     try
       let statements = Parser.parse ~handle lines in
       let hash = [%hash: string list] lines in
-      Success (
-        Source.create
-          ~docstring:(Statement.extract_docstring statements)
-          ~hash
-          ~metadata
-          ~handle
-          ~qualifier:(Source.qualifier ~handle)
-          statements)
+      Success
+        (Source.create
+           ~docstring:(Statement.extract_docstring statements)
+           ~hash
+           ~metadata
+           ~handle
+           ~qualifier:(Source.qualifier ~handle)
+           statements)
     with
     | Parser.Error error ->
         if show_parser_errors then
@@ -45,46 +41,39 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
   Path.readlink (File.path file)
   >>| (fun target -> Ast.SharedMemory.SymlinksToPaths.add target (File.path file))
   |> ignore;
-  File.lines file
-  >>| parse_lines ~handle
-  |> Option.value ~default:(SystemError handle)
+  File.lines file >>| parse_lines ~handle |> Option.value ~default:(SystemError handle)
 
 
 module FixpointResult = struct
   type t = {
     parsed: File.Handle.t parse_result list;
-    not_parsed: File.t list;
+    not_parsed: File.t list
   }
 
   let merge
       { parsed = left_parsed; not_parsed = left_not_parsed }
-      { parsed = right_parsed; not_parsed = right_not_parsed } =
-    {
-      parsed = left_parsed @ right_parsed;
-      not_parsed = left_not_parsed @ right_not_parsed;
-    }
+      { parsed = right_parsed; not_parsed = right_not_parsed }
+    =
+    { parsed = left_parsed @ right_parsed; not_parsed = left_not_parsed @ right_not_parsed }
 end
-
 
 let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configuration ~files =
   let parse ({ FixpointResult.parsed; not_parsed } as result) file =
     let use_parsed_source source =
       let source =
         match preprocessing_state with
-        | Some state ->
-            ProjectSpecificPreprocessing.preprocess ~state source
-        | None ->
-            source
+        | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
+        | None -> source
       in
       let store_result ~preprocessed ~file =
         let add_module_from_source
-            {
-              Source.qualifier;
+            { Source.qualifier;
               handle;
               statements;
-              metadata = { Source.Metadata.local_mode; _ };
-              _;
-            } =
+              metadata = { Source.Metadata.local_mode; _ }
+            ; _
+            }
+          =
           Module.create
             ~qualifier
             ~local_mode
@@ -93,15 +82,12 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
             statements
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
-
         add_module_from_source preprocessed;
         let handle = File.handle ~configuration file in
         Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
-        Plugin.apply_to_ast preprocessed
-        |> Ast.SharedMemory.Sources.add handle;
+        Plugin.apply_to_ast preprocessed |> Ast.SharedMemory.Sources.add handle;
         handle
       in
-
       if force then
         let handle =
           Analysis.Preprocessing.preprocess source
@@ -113,10 +99,8 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
         | Some preprocessed ->
             let handle = store_result ~preprocessed ~file in
             { result with parsed = Success handle :: parsed }
-        | None ->
-            { result with not_parsed = file :: not_parsed }
+        | None -> { result with not_parsed = file :: not_parsed }
     in
-
     parse_source ~configuration ~show_parser_errors file
     |> fun parsed_source ->
     match parsed_source with
@@ -130,9 +114,8 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
 type parse_sources_result = {
   parsed: File.Handle.t list;
   syntax_error: File.Handle.t list;
-  system_error: File.Handle.t list;
+  system_error: File.Handle.t list
 }
-
 
 let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
   let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
@@ -142,32 +125,28 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
         ~configuration
         ~initial:{ FixpointResult.parsed = []; not_parsed = [] }
         ~map:(fun _ files ->
-            parse_sources_job
-              ~show_parser_errors:((List.length parsed) = 0)
-              ~preprocessing_state
-              ~force
-              ~configuration
-              ~files)
+          parse_sources_job
+            ~show_parser_errors:(List.length parsed = 0)
+            ~preprocessing_state
+            ~force
+            ~configuration
+            ~files)
         ~reduce:FixpointResult.merge
         ~inputs:not_parsed
         ()
     in
-
-    if List.is_empty new_not_parsed then
-      (* All done. *)
+    if List.is_empty new_not_parsed then (* All done. *)
       parsed @ new_parsed
     else if List.is_empty new_parsed then
       (* No progress was made, force the parse ignoring all temporary errors. *)
       fixpoint ~force:true input_state
-    else
-      (* We made some progress, continue with the fixpoint. *)
+    else (* We made some progress, continue with the fixpoint. *)
       fixpoint { parsed = parsed @ new_parsed; not_parsed = new_not_parsed }
   in
   let result = fixpoint { parsed = []; not_parsed = files } in
   let () =
     let get_qualifier file =
-      File.handle ~configuration file
-      |> (fun handle -> Source.qualifier ~handle)
+      File.handle ~configuration file |> fun handle -> Source.qualifier ~handle
     in
     List.map files ~f:get_qualifier
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
@@ -185,22 +164,20 @@ let log_parse_errors ~syntax_error ~system_error ~description =
   let syntax_errors = List.length syntax_error in
   let system_errors = List.length system_error in
   let count = syntax_errors + system_errors in
-  if count > 0 then
+  if count > 0 then (
     let hint =
       if syntax_errors > 0 && not (Log.is_enabled `Parser) then
         Format.asprintf
           " Run `pyre %s` without `--hide-parse-errors` for more details%s."
-          (try (Array.nget Sys.argv 1) with _ -> "restart")
+          ( try Array.nget Sys.argv 1 with
+          | _ -> "restart" )
           (if system_errors > 0 then " on the syntax errors" else "")
       else
         ""
     in
     let details =
       let to_string count description =
-        Format.sprintf "%d %s%s"
-          count
-          description
-          (if count == 1 then "" else "s")
+        Format.sprintf "%d %s%s" count description (if count == 1 then "" else "s")
       in
       if syntax_errors > 0 && system_errors > 0 then
         Format.sprintf
@@ -219,27 +196,21 @@ let log_parse_errors ~syntax_error ~system_error ~description =
       (if count > 1 then "s" else "")
       details
       hint;
-    let trace list =
-      List.map list ~f:File.Handle.show
-      |> String.concat ~sep:";"
-    in
+    let trace list = List.map list ~f:File.Handle.show |> String.concat ~sep:";" in
     Statistics.event
       ~flush:true
       ~name:"parse errors"
-      ~integers:[
-        "syntax errors", syntax_errors;
-        "system errors", system_errors;
-      ]
-      ~normals:[
-        "description", description;
-        "syntax errors trace", trace syntax_error;
-        "system errors trace", trace system_error;
-      ]
-      ()
+      ~integers:["syntax errors", syntax_errors; "system errors", system_errors]
+      ~normals:
+        [ "description", description;
+          "syntax errors trace", trace syntax_error;
+          "system errors trace", trace system_error ]
+      () )
 
 
 let find_stubs
-    ({ Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration) =
+    ({ Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration)
+  =
   let stubs =
     let typeshed_directories =
       let list_subdirectories typeshed_path =
@@ -249,15 +220,16 @@ let find_stubs
           | `Yes -> true
           | _ -> false
         in
-        if is_directory root then
+        if is_directory root then (
           match Core.Sys.ls_dir root with
           | entries ->
               let select_directories sofar path =
-                if is_directory (root ^/ path) &&
-                   not (String.equal path "tests") &&
-                   not (String.is_prefix path ~prefix:".")
+                if
+                  is_directory (root ^/ path)
+                  && (not (String.equal path "tests"))
+                  && not (String.is_prefix path ~prefix:".")
                 then
-                  (Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path))
+                  Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path)
                   :: sofar
                 else
                   sofar
@@ -265,12 +237,10 @@ let find_stubs
               List.fold ~init:[] ~f:select_directories entries
           | exception Sys_error _ ->
               Log.error "Could not list typeshed directory: `%s`" root;
-              []
-        else
-          begin
-            Log.info "Not a typeshed directory: `%s`" root;
-            []
-          end
+              [] )
+        else (
+          Log.info "Not a typeshed directory: `%s`" root;
+          [] )
       in
       Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
     in
@@ -279,20 +249,19 @@ let find_stubs
       Log.info "Finding type stubs in `%a`..." Path.pp search_root;
       let directory_filter path =
         let is_python_2_directory path =
-          String.is_suffix ~suffix:"/2" path ||
-          String.is_suffix ~suffix:"/2.7" path
+          String.is_suffix ~suffix:"/2" path || String.is_suffix ~suffix:"/2.7" path
         in
-        not (is_python_2_directory path) &&
-        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+        (not (is_python_2_directory path))
+        && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
       let file_filter path =
-        String.is_suffix path ~suffix:".pyi" &&
-        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+        String.is_suffix path ~suffix:".pyi"
+        && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
-      (* The typeshed resource cache and the search path might live under the local root.
-         If that's the case, we should make sure that we don't add these stubs when analyzing the
-         local root, as that would clobber the order. The method of solving this is by only adding
-         handles that correspond directly to the root. *)
+      (* The typeshed resource cache and the search path might live under the local root. If that's
+         the case, we should make sure that we don't add these stubs when analyzing the local root,
+         as that would clobber the order. The method of solving this is by only adding handles that
+         correspond directly to the root. *)
       let keep path =
         let reconstructed =
           File.create path
@@ -302,8 +271,7 @@ let find_stubs
         in
         Path.equal reconstructed path
       in
-      Path.list ~file_filter ~directory_filter ~root:(search_root) ()
-      |> List.filter ~f:keep
+      Path.list ~file_filter ~directory_filter ~root:search_root () |> List.filter ~f:keep
     in
     List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
   in
@@ -314,24 +282,20 @@ let find_stubs
         not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
       let file_filter path =
-        String.is_suffix ~suffix:".py" path &&
-        not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+        String.is_suffix ~suffix:".py" path
+        && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
       Path.list ~file_filter ~directory_filter ~root ()
     in
-    search_path
-    |> List.map ~f:Path.SearchPath.to_path
-    |> List.map ~f:modules
+    search_path |> List.map ~f:Path.SearchPath.to_path |> List.map ~f:modules
   in
-  List.append stubs modules
-  |> List.concat
+  List.append stubs modules |> List.concat
 
 
-let find_sources
-    { Configuration.Analysis.local_root; excludes; extensions; _ } =
+let find_sources { Configuration.Analysis.local_root; excludes; extensions; _ } =
   let directory_filter path =
-    not (String.is_substring ~substring: ".pyre/resource_cache" path) &&
-    not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+    (not (String.is_substring ~substring:".pyre/resource_cache" path))
+    && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
   in
   let valid_suffixes = ".py" :: extensions in
   let file_filter path =
@@ -341,8 +305,8 @@ let find_sources
       >>| (fun extension -> "." ^ extension)
       |> Option.value ~default:""
     in
-    List.exists ~f:(String.equal extension) valid_suffixes &&
-    not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
+    List.exists ~f:(String.equal extension) valid_suffixes
+    && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
   in
   Path.list ~file_filter ~directory_filter ~root:local_root ()
 
@@ -351,13 +315,10 @@ let find_stubs_and_sources configuration =
   (* If two directories contain the same source file:
    *  - Prefer external sources over internal sources
    *  - Prefer the one that appears earlier in the search path. *)
-  let filter_interfering_sources ~configuration (stubs: Path.t list) (sources: Path.t list) =
+  let filter_interfering_sources ~configuration (stubs : Path.t list) (sources : Path.t list) =
     let qualifiers = Reference.Hash_set.create () in
     let keep path =
-      let handle =
-        File.create path
-        |> File.handle ~configuration
-      in
+      let handle = File.create path |> File.handle ~configuration in
       let qualifier = Ast.Source.qualifier ~handle in
       match Hash_set.strict_add qualifiers qualifier with
       | Result.Ok () -> true
@@ -374,24 +335,19 @@ let find_stubs_and_sources configuration =
 
 type result = {
   stubs: File.Handle.t list;
-  sources: File.Handle.t list;
+  sources: File.Handle.t list
 }
-
 
 let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration) =
   let stub_paths, source_paths = find_stubs_and_sources configuration in
   let stubs =
     let timer = Timer.start () in
     Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
-    let { parsed; syntax_error; system_error }  =
+    let { parsed; syntax_error; system_error } =
       let preprocessing_state =
         let to_handle path =
-          try
-            File.create path
-            |> File.handle ~configuration
-            |> Option.some
-          with File.NonexistentHandle _ ->
-            None
+          try File.create path |> File.handle ~configuration |> Option.some with
+          | File.NonexistentHandle _ -> None
         in
         ProjectSpecificPreprocessing.initial (List.filter_map stub_paths ~f:to_handle)
       in
@@ -408,7 +364,7 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
   let sources =
     let timer = Timer.start () in
     Log.info "Parsing %d sources in `%a`..." (List.length source_paths) Path.pp local_root;
-    let { parsed; syntax_error; system_error }  =
+    let { parsed; syntax_error; system_error } =
       parse_sources
         ~preprocessing_state:None
         ~configuration

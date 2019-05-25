@@ -4,117 +4,86 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
-
 open Ast
 open Analysis
 open Taint
 open Domains
 open Core
 
+let is_user_controlled = ( = ) Sources.UserControlled
 
-let is_user_controlled = (=) Sources.UserControlled
-let is_RCE = (=) Sinks.RemoteCodeExecution
+let is_RCE = ( = ) Sinks.RemoteCodeExecution
 
+let source_taint = ForwardTaint.of_list [Sources.Test; Sources.UserControlled]
 
-let source_taint = ForwardTaint.of_list [ Sources.Test; Sources.UserControlled; ]
-let sink_taint = BackwardTaint.of_list [ Sinks.Test; Sinks.RemoteCodeExecution; ]
-
+let sink_taint = BackwardTaint.of_list [Sinks.Test; Sinks.RemoteCodeExecution]
 
 let test_partition_match_all _ =
   let open Flow in
-  let flows = [ { source_taint; sink_taint; } ] in
-  let { matched; rest; } = partition_flows flows in
+  let flows = [{ source_taint; sink_taint }] in
+  let { matched; rest } = partition_flows flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
     flows
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
     []
     rest
 
 
 let test_partition_match_some_sources _ =
   let open Flow in
-  let flows = [ { source_taint; sink_taint; } ] in
-  let { matched; rest; } = partition_flows ~sources:is_user_controlled flows in
+  let flows = [{ source_taint; sink_taint }] in
+  let { matched; rest } = partition_flows ~sources:is_user_controlled flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint = ForwardTaint.singleton Sources.UserControlled;
-        sink_taint;
-      };
-    ]
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [{ source_taint = ForwardTaint.singleton Sources.UserControlled; sink_taint }]
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint = ForwardTaint.singleton Sources.Test;
-        sink_taint;
-      };
-    ]
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [{ source_taint = ForwardTaint.singleton Sources.Test; sink_taint }]
     rest
 
 
 let test_partition_match_some_sinks _ =
   let open Flow in
-  let flows = [ { source_taint; sink_taint; } ] in
-  let { matched; rest; } = partition_flows ~sinks:is_RCE flows in
+  let flows = [{ source_taint; sink_taint }] in
+  let { matched; rest } = partition_flows ~sinks:is_RCE flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint;
-        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
-      };
-    ]
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution }]
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint;
-        sink_taint = BackwardTaint.singleton Sinks.Test;
-      };
-    ]
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [{ source_taint; sink_taint = BackwardTaint.singleton Sinks.Test }]
     rest
 
 
 let test_partition_match_some_sinks_and_sources _ =
   let open Flow in
-  let flows = [ { source_taint; sink_taint; } ] in
-  let { matched; rest; } = partition_flows ~sources:is_user_controlled ~sinks:is_RCE flows in
+  let flows = [{ source_taint; sink_taint }] in
+  let { matched; rest } = partition_flows ~sources:is_user_controlled ~sinks:is_RCE flows in
   assert_equal
     ~msg:"Matching"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint = ForwardTaint.singleton Sources.UserControlled;
-        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
-      };
-    ]
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [ { source_taint = ForwardTaint.singleton Sources.UserControlled;
+        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution
+      } ]
     matched;
   assert_equal
     ~msg:"Rest"
-    ~printer:(fun taint -> Sexp.to_string [%message (taint: Flow.flow list)])
-    [
-      {
-        source_taint = ForwardTaint.singleton Sources.Test;
-        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution;
+    ~printer:(fun taint -> Sexp.to_string [%message (taint : Flow.flow list)])
+    [ { source_taint = ForwardTaint.singleton Sources.Test;
+        sink_taint = BackwardTaint.singleton Sinks.RemoteCodeExecution
       };
-      {
-        source_taint;
-        sink_taint = BackwardTaint.singleton Sinks.Test;
-      };
-    ]
+      { source_taint; sink_taint = BackwardTaint.singleton Sinks.Test } ]
     rest
 
 
@@ -153,7 +122,7 @@ let test_no_errors _ =
     in
     assert_equal
       ~msg:"Errors"
-      ~printer:(fun errors -> Sexp.to_string [%message (errors: Interprocedural.Error.t list)])
+      ~printer:(fun errors -> Sexp.to_string [%message (errors : Interprocedural.Error.t list)])
       []
       errors
   in
@@ -226,12 +195,11 @@ let test_errors _ =
 
 
 let () =
-  "test_taint_flow">:::[
-    "partition_match_all">::test_partition_match_all;
-    "partition_match_some_sources">::test_partition_match_some_sources;
-    "partition_match_some_sinks">::test_partition_match_some_sinks;
-    "partition_match_some_sinks_and_sources">::test_partition_match_some_sinks_and_sources;
-    "test_no_errors">::test_no_errors;
-    "test_errors">::test_errors;
-  ]
+  "test_taint_flow"
+  >::: [ "partition_match_all" >:: test_partition_match_all;
+         "partition_match_some_sources" >:: test_partition_match_some_sources;
+         "partition_match_some_sinks" >:: test_partition_match_some_sinks;
+         "partition_match_some_sinks_and_sources" >:: test_partition_match_some_sinks_and_sources;
+         "test_no_errors" >:: test_no_errors;
+         "test_errors" >:: test_errors ]
   |> Test.run

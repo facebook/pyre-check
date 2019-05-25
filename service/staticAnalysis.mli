@@ -8,26 +8,25 @@ open Ast
 open Statement
 open Interprocedural
 
-
 val record_and_merge_call_graph
-  : environment: (module Environment.Handler)
-  -> call_graph: DependencyGraph.callgraph
-  -> path: File.Handle.t
-  -> source: Source.t
-  -> DependencyGraph.callgraph
+  :  environment:(module Environment.Handler) ->
+  call_graph:DependencyGraph.callgraph ->
+  path:File.Handle.t ->
+  source:Source.t ->
+  DependencyGraph.callgraph
 
-val record_overrides: DependencyGraph.overrides -> unit
+val record_overrides : DependencyGraph.overrides -> unit
 
 val callables
-  :  resolution: Resolution.t
-  -> source: Source.t
-  -> (Callable.real_target * Define.t Node.t) list
+  :  resolution:Resolution.t ->
+  source:Source.t ->
+  (Callable.real_target * Define.t Node.t) list
 
 val analyze
-  :  ?taint_models_directory: string
-  -> scheduler: Scheduler.t
-  -> configuration: Configuration.StaticAnalysis.t
-  -> environment: (module Environment.Handler)
-  -> handles: File.Handle.t list
-  -> unit
-  -> Interprocedural.Error.t list
+  :  ?taint_models_directory:string ->
+  scheduler:Scheduler.t ->
+  configuration:Configuration.StaticAnalysis.t ->
+  environment:(module Environment.Handler) ->
+  handles:File.Handle.t list ->
+  unit ->
+  Interprocedural.Error.t list

@@ -3,11 +3,9 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 open Test
 open OUnit2
 open IntegrationTest
-
 
 let test_check_contextmanager _ =
   assert_type_errors
@@ -21,7 +19,6 @@ let test_check_contextmanager _ =
           return number
     |}
     [];
-
   assert_type_errors
     {|
       @contextlib.contextmanager
@@ -33,7 +30,6 @@ let test_check_contextmanager _ =
           return number
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       @contextlib.contextmanager
@@ -44,12 +40,9 @@ let test_check_contextmanager _ =
         with f() as number:
           return number
     |}
-    [
-      (* TODO(T27138096): Iterable should have attribute `__enter__`. *)
+    [ (* TODO(T27138096): Iterable should have attribute `__enter__`. *)
       "Undefined attribute [16]: `typing.Iterable` has no attribute `__enter__`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-
+      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
   assert_type_errors
     {|
       @contextlib.contextmanager
@@ -61,7 +54,6 @@ let test_check_contextmanager _ =
           return number
     |}
     [];
-
   (* Decorators are chained properly. *)
   assert_type_errors
     {|
@@ -72,11 +64,8 @@ let test_check_contextmanager _ =
       def g() -> None:
         reveal_type(f)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(args, typing.Any), \
-       Keywords(kwargs, typing.Any)], contextlib.GeneratorContextManager[int]]`.";
-    ];
-
+    [ "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(args, \
+       typing.Any), Keywords(kwargs, typing.Any)], contextlib.GeneratorContextManager[int]]`." ];
   assert_type_errors
     {|
       class C:
@@ -90,6 +79,7 @@ let test_check_contextmanager _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
+
 let test_check_asynccontextmanager _ =
   assert_type_errors
     {|
@@ -102,7 +92,6 @@ let test_check_asynccontextmanager _ =
           return number
     |}
     [];
-
   assert_type_errors
     {|
       @contextlib.asynccontextmanager
@@ -114,7 +103,6 @@ let test_check_asynccontextmanager _ =
           return number
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
-
   assert_type_errors
     {|
       @contextlib.asynccontextmanager
@@ -125,13 +113,10 @@ let test_check_asynccontextmanager _ =
         async with f() as number:
           return number
     |}
-    [
-      (* TODO(T41786660): AsyncIterable should have attribute `__aenter__` ? *)
+    [ (* TODO(T41786660): AsyncIterable should have attribute `__aenter__` ? *)
       "Incompatible awaitable type [12]: Expected an awaitable but got `unknown`.";
       "Undefined attribute [16]: `typing.AsyncIterable` has no attribute `__aenter__`.";
-      "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
-
+      "Incompatible return type [7]: Expected `int` but got `unknown`." ];
   assert_type_errors
     {|
       @contextlib.asynccontextmanager
@@ -143,7 +128,6 @@ let test_check_asynccontextmanager _ =
           return number
     |}
     [];
-
   assert_type_errors
     {|
       class C:
@@ -157,15 +141,15 @@ let test_check_asynccontextmanager _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."]
 
+
 let test_check_click_command _ =
   let assert_type_errors =
     let update_environment_with =
-      [{
-        Test.qualifier = !&"click";
-        handle = "click.pyi";
-        (* This is just a mock stub of click and is not meant to be accurate or complete *)
-        source =
-          {|
+      [ { Test.qualifier = !&"click";
+          handle = "click.pyi";
+          (* This is just a mock stub of click and is not meant to be accurate or complete *)
+          source =
+            {|
             from typing import Any
 
             def command() -> Any: ...
@@ -176,11 +160,10 @@ let test_check_click_command _ =
             def argument( *param_decls, **attrs) -> Any: ...
             class Context: ...
         |}
-      }]
+        } ]
     in
     assert_type_errors ~update_environment_with
   in
-
   assert_type_errors
     {|
       @click.command()
@@ -191,7 +174,6 @@ let test_check_click_command _ =
       main()
     |}
     [];
-
   assert_type_errors
     {|
       @click.command()
@@ -202,7 +184,6 @@ let test_check_click_command _ =
       main()
     |}
     [];
-
   assert_type_errors
     {|
       def common_params(
@@ -223,7 +204,6 @@ let test_check_click_command _ =
       main()
     |}
     [];
-
   assert_type_errors
     {|
       @click.group()
@@ -249,7 +229,6 @@ let test_check_click_command _ =
       run2()
     |}
     [];
-
   assert_type_errors
     {|
       def main(flag: bool) -> bool:
@@ -268,18 +247,14 @@ let test_decorators _ =
         pass
     |}
     [];
-
   assert_type_errors
     {|
       @typing.overload
       def overloaded() -> int:
         pass
     |}
-    [
-      "Missing overload implementation [42]: Overloaded function `overloaded` \
-       must have an implementation."
-    ];
-
+    [ "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
+       implementation." ];
   assert_type_errors
     {|
       from typing import overload
@@ -287,11 +262,8 @@ let test_decorators _ =
       def overloaded() -> int:
         pass
     |}
-    [
-      "Missing overload implementation [42]: Overloaded function `overloaded` \
-       must have an implementation."
-    ];
-
+    [ "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
+       implementation." ];
   assert_type_errors
     {|
       class Derp:
@@ -304,7 +276,6 @@ let test_decorators _ =
           return x
     |}
     [];
-
   assert_type_errors
     {|
       from typing import Callable
@@ -315,18 +286,14 @@ let test_decorators _ =
         return x
     |}
     [];
-
   assert_type_errors
     {|
       @my_decorator
       def f(x: int) -> int:
         return x
     |}
-    [
-      "Undefined name [18]: Global name `my_decorator` is not defined, or there is at least one \
-       control flow path that doesn't define `my_decorator`.";
-    ];
-
+    [ "Undefined name [18]: Global name `my_decorator` is not defined, or there is at least one \
+       control flow path that doesn't define `my_decorator`." ];
   assert_type_errors
     {|
       from typing import Any
@@ -336,7 +303,6 @@ let test_decorators _ =
         return x
     |}
     [];
-
   assert_type_errors
     {|
       from typing import Any
@@ -345,10 +311,8 @@ let test_decorators _ =
       def f(x: int) -> int:
         return x
     |}
-    [
-      "Incompatible parameter type [6]: Expected `int` for 1st anonymous " ^
-      "parameter to call `int.__add__` but got `str`."
-    ]
+    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous "
+      ^ "parameter to call `int.__add__` but got `str`." ]
 
 
 let test_check_user_decorators _ =
@@ -361,9 +325,7 @@ let test_check_user_decorators _ =
         return str(x)
       reveal_type(f)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`.";
-    ];
+    ["Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`."];
   (* We currently ignore decorating decorators. *)
   assert_type_errors
     {|
@@ -379,11 +341,8 @@ let test_check_user_decorators _ =
         return str(x)
       reveal_type(f)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
-      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`.";
-    ];
-
+    [ "Missing parameter annotation [2]: Parameter `f` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`." ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -404,12 +363,9 @@ let test_check_user_decorators _ =
       reveal_type(C.f)
       reveal_type(D.f)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `C.f` is `typing.Callable(C.f)[[C, int], None]`.";
-      "Revealed type [-1]: Revealed type for `D.f` is `typing.Callable(D.f)[[Named(self, unknown), \
-       Named(y, int)], None]`.";
-    ];
-
+    [ "Revealed type [-1]: Revealed type for `C.f` is `typing.Callable(C.f)[[C, int], None]`.";
+      "Revealed type [-1]: Revealed type for `D.f` is `typing.Callable(D.f)[[Named(self, \
+       unknown), Named(y, int)], None]`." ];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -423,12 +379,10 @@ let test_check_user_decorators _ =
 
       reveal_type(am_i_async)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+    [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
-    ]
+       `typing.Callable(am_i_async)[[Named(x, int)], str]`." ]
 
 
 let test_check_callable_class_decorators _ =
@@ -446,13 +400,10 @@ let test_check_callable_class_decorators _ =
         return str(x)
       reveal_type(am_i_async)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+    [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
-       `typing.Callable(am_i_async)[[Named(x, int)], str]`.";
-    ];
-
+       `typing.Callable(am_i_async)[[Named(x, int)], str]`." ];
   (* We don't support overloaded callable classes. *)
   assert_type_errors
     {|
@@ -471,24 +422,20 @@ let test_check_callable_class_decorators _ =
         return str(x)
       reveal_type(am_i_async)
     |}
-    [
-      "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
+    [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
       "Missing parameter annotation [2]: Parameter `coro` must have a type other than `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
-       str]]`.";
-    ]
-
+       str]]`." ]
 
 
 let () =
-  "decorator">:::[
-    "check_contextmanager">::test_check_contextmanager;
-    "check_asynccontextmanager">::test_check_asynccontextmanager;
-    "check_click_command">::test_check_click_command;
-    "check_user_decorators">::test_check_user_decorators;
-    "check_callable_class_decorators">::test_check_callable_class_decorators;
-    "decorators">::test_decorators;
-  ]
+  "decorator"
+  >::: [ "check_contextmanager" >:: test_check_contextmanager;
+         "check_asynccontextmanager" >:: test_check_asynccontextmanager;
+         "check_click_command" >:: test_check_click_command;
+         "check_user_decorators" >:: test_check_user_decorators;
+         "check_callable_class_decorators" >:: test_check_callable_class_decorators;
+         "decorators" >:: test_decorators ]
   |> Test.run

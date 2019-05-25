@@ -10,10 +10,6 @@ exception ParserError of string
 module Log = Log
 module Path = PyrePath
 
+let ( >>| ) = Option.( >>| )
 
-let (>>|) =
-  Option.(>>|)
-
-
-let (>>=) =
-  Option.(>>=)
+let ( >>= ) = Option.( >>= )

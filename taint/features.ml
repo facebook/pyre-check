@@ -7,7 +7,6 @@ open Core
 open Ast
 open Analysis
 
-
 module Breadcrumb = struct
   type first_kind =
     | FirstField
@@ -19,38 +18,28 @@ module Breadcrumb = struct
     | First of { kind: first_kind; name: string }
     | HasFirst of first_kind
     | Obscure
-    | SimpleVia of string  (* Declared breadcrumbs *)
+    | SimpleVia of string (* Declared breadcrumbs *)
     | Tito
-    | Type of string  (* Type constraint *)
+    | Type of string (* Type constraint *)
   [@@deriving show, sexp, compare]
 
   let to_json = function
-    | First { name; kind = FirstField } ->
-        `Assoc ["first-field", `String name ]
-    | First { name; kind = FirstIndex } ->
-        `Assoc ["first-index", `String name ]
-    | HasFirst FirstField ->
-        `Assoc ["has", `String "first-field"]
-    | HasFirst FirstIndex ->
-        `Assoc ["has", `String "first-index"]
-    | Obscure ->
-        `Assoc ["via", `String "obscure" ]
-    | SimpleVia name ->
-        `Assoc ["via", `String name ]
-    | Tito ->
-        `Assoc ["via", `String "tito" ]
-    | Type name ->
-        `Assoc ["type", `String name ]
+    | First { name; kind = FirstField } -> `Assoc ["first-field", `String name]
+    | First { name; kind = FirstIndex } -> `Assoc ["first-index", `String name]
+    | HasFirst FirstField -> `Assoc ["has", `String "first-field"]
+    | HasFirst FirstIndex -> `Assoc ["has", `String "first-index"]
+    | Obscure -> `Assoc ["via", `String "obscure"]
+    | SimpleVia name -> `Assoc ["via", `String name]
+    | Tito -> `Assoc ["via", `String "tito"]
+    | Type name -> `Assoc ["type", `String name]
+
 
   let simple_via ~allowed name =
     if List.mem allowed name ~equal:String.equal then
       SimpleVia name
     else
-      Format.sprintf "Unrecognized Via annotation `%s`" name
-      |> failwith
-
+      Format.sprintf "Unrecognized Via annotation `%s`" name |> failwith
 end
-
 
 (* Simple set of features that are unrelated, thus cheap to maintain *)
 module Simple = struct
@@ -60,22 +49,19 @@ module Simple = struct
     | Breadcrumb of Breadcrumb.t
   [@@deriving show, sexp, compare]
 end
-module SimpleSet = AbstractSetDomain.Make(Simple)
 
+module SimpleSet = AbstractSetDomain.Make (Simple)
 
-(* Set of complex features, where element can be abstracted and joins are
-   expensive. Should only be used for elements that need this kind of
-   joining.
-*)
+(* Set of complex features, where element can be abstracted and joins are expensive. Should only be
+   used for elements that need this kind of joining. *)
 module Complex = struct
-  type t =
-    | ReturnAccessPath of AbstractTreeDomain.Label.path
-  [@@deriving show, sexp, compare]
+  type t = ReturnAccessPath of AbstractTreeDomain.Label.path [@@deriving show, sexp, compare]
 
   let less_or_equal ~left ~right =
     match left, right with
     | ReturnAccessPath left_path, ReturnAccessPath right_path ->
         AbstractTreeDomain.Label.is_prefix ~prefix:right_path left_path
+
 
   let widen set =
     if List.length set > 3 then
@@ -83,18 +69,15 @@ module Complex = struct
     else
       set
 end
-module ComplexSet = AbstractElementSetDomain.Make(Complex)
 
+module ComplexSet = AbstractElementSetDomain.Make (Complex)
 
-let add_obscure set =
-  Simple.Breadcrumb Breadcrumb.Obscure :: set
-
+let add_obscure set = Simple.Breadcrumb Breadcrumb.Obscure :: set
 
 let add_type_breadcrumb ~resolution type_annotation =
   let is_scalar =
     match Option.map ~f:(Resolution.parse_annotation resolution) type_annotation with
-    | None ->
-        false
+    | None -> false
     | Some return_type ->
         Resolution.less_or_equal resolution ~left:return_type ~right:Type.number
         || Resolution.less_or_equal resolution ~left:return_type ~right:Type.bool
@@ -104,6 +87,6 @@ let add_type_breadcrumb ~resolution type_annotation =
     if not is_scalar then
       feature_set
     else
-      (Simple.Breadcrumb (Breadcrumb.Type "scalar")) :: feature_set
+      Simple.Breadcrumb (Breadcrumb.Type "scalar") :: feature_set
   in
   add

@@ -5,14 +5,10 @@
 
 open Core
 open OUnit2
-
 open Pyre
 open Test
 
-
-let (!) =
-  Path.create_absolute
-
+let ( ! ) = Path.create_absolute
 
 let root context =
   let path = bracket_tmpdir context in
@@ -22,21 +18,16 @@ let root context =
 
 let test_create context =
   let path, root = root context in
-
   (* Create absolute paths. *)
   assert_equal (root |> Path.show) path;
-
   (* Create relative paths. *)
-  assert_equal
-    (Path.create_relative ~root ~relative:"some/path" |> Path.show)
-    (path ^/ "some/path");
+  assert_equal (Path.create_relative ~root ~relative:"some/path" |> Path.show) (path ^/ "some/path");
   assert_equal
     (Path.create_relative ~root ~relative:(path ^/ "some/path") |> Path.show)
     (path ^/ "some/path");
   assert_equal
     (Path.create_relative ~root ~relative:"/other/root/some/path" |> Path.show)
     (path ^/ "other/root/some/path");
-
   (* Current directory. *)
   assert_equal (Path.current_working_directory () |> Path.show) (Sys.getcwd ())
 
@@ -45,10 +36,7 @@ let test_create_search_path context =
   let _, root = root context in
   (* Create root/subdirectory. *)
   let subdirectory = Path.create_relative ~root ~relative:"subdirectory" in
-  subdirectory
-  |> Path.show
-  |> Sys_utils.mkdir_no_fail;
-
+  subdirectory |> Path.show |> Sys_utils.mkdir_no_fail;
   assert_equal
     ~cmp:Path.SearchPath.equal
     (Path.SearchPath.Root root)
@@ -61,10 +49,9 @@ let test_create_search_path context =
     ~cmp:Path.SearchPath.equal
     (Path.SearchPath.Subdirectory { root; subdirectory = "subdirectory" })
     (Path.SearchPath.create (Path.show root ^ "$subdirectory"));
+  assert_raises (Failure "Unable to create search path from too$many$levels") (fun () ->
+      Path.SearchPath.create "too$many$levels")
 
-  assert_raises
-    (Failure "Unable to create search path from too$many$levels")
-    (fun () -> Path.SearchPath.create "too$many$levels")
 
 let test_relative context =
   let _, root = root context in
@@ -97,33 +84,19 @@ let test_uri context =
 let test_from_uri context =
   let path, root = root context in
   let uri = "file://" ^ path in
-  begin
-    match Path.from_uri uri with
-    | Some path_from_uri -> assert_equal root path_from_uri
-    | None -> assert_unreached ()
-  end;
-
+  ( match Path.from_uri uri with
+  | Some path_from_uri -> assert_equal root path_from_uri
+  | None -> assert_unreached () );
   let invalid_schema = "invalid-schema://" ^ path in
-  Path.from_uri invalid_schema
-  |> Option.is_none
-  |> assert_true;
-
+  Path.from_uri invalid_schema |> Option.is_none |> assert_true;
   let invalid_uri = "file://" ^ path ^/ "some/invalid/uri" in
   try
     Path.from_uri invalid_uri |> ignore;
     assert_unreached ()
   with
   | Unix.Unix_error (error, _name, parameter) ->
-      begin
-        assert_equal
-          ~printer:ident
-          "No such file or directory"
-          (Unix.Error.message error);
-        assert_equal
-          ~printer:ident
-          (path ^/ "some/invalid/uri")
-          parameter
-      end
+      assert_equal ~printer:ident "No such file or directory" (Unix.Error.message error);
+      assert_equal ~printer:ident (path ^/ "some/invalid/uri") parameter
 
 
 let test_get_relative_to_root context =
@@ -131,29 +104,18 @@ let test_get_relative_to_root context =
   let some = Path.create_relative ~root ~relative:"some/" in
   let relative = Path.create_relative ~root:some ~relative:"path" in
   let unrelated = Path.create_relative ~root ~relative:"other" in
-  assert_equal
-    (Path.get_relative_to_root ~root ~path:relative)
-    (Some "some/path");
-  assert_equal
-    (Path.get_relative_to_root ~root:some ~path:relative)
-    (Some "path");
-  assert_equal
-    (Path.get_relative_to_root ~root:some ~path:unrelated)
-    None;
-  assert_equal
-    (Path.get_relative_to_root ~root ~path:unrelated)
-    (Some "other")
+  assert_equal (Path.get_relative_to_root ~root ~path:relative) (Some "some/path");
+  assert_equal (Path.get_relative_to_root ~root:some ~path:relative) (Some "path");
+  assert_equal (Path.get_relative_to_root ~root:some ~path:unrelated) None;
+  assert_equal (Path.get_relative_to_root ~root ~path:unrelated) (Some "other")
 
 
 let test_append context =
   let path, root = root context in
   assert_equal ~printer:Fn.id (root |> Path.append ~element:"durp" |> Path.show) (path ^/ "durp");
   assert_equal
-    (Path.create_relative ~root ~relative:"path"
-     |> Path.append ~element:"durp"
-     |> Path.show)
+    (Path.create_relative ~root ~relative:"path" |> Path.append ~element:"durp" |> Path.show)
     (path ^/ "path/durp");
-
   let open Path.AppendOperator in
   assert_equal (root ^| "durp" |> Path.show) (path ^/ "durp");
   assert_equal ((root ^| "path") ^| "durp" |> Path.show) (path ^/ "path/durp");
@@ -163,7 +125,6 @@ let test_append context =
 let test_is_directory context =
   let path, _ = bracket_tmpfile context in
   assert_false (!path |> Path.is_directory);
-
   let path = bracket_tmpdir context in
   assert_true (!path |> Path.is_directory)
 
@@ -171,18 +132,13 @@ let test_is_directory context =
 let test_file_exists context =
   let path, _ = bracket_tmpfile context in
   assert_true (!path |> Path.file_exists);
-
   assert_false (Path.create_relative ~root:!path ~relative:"durp" |> Path.file_exists)
 
 
 let test_last context =
   let _, root = root context in
-  assert_equal
-    (Path.last (Path.create_relative ~root ~relative:"some"))
-    "some";
-  assert_equal
-    (Path.last (Path.create_relative ~root ~relative:"some/path"))
-    "path"
+  assert_equal (Path.last (Path.create_relative ~root ~relative:"some")) "some";
+  assert_equal (Path.last (Path.create_relative ~root ~relative:"some/path")) "path"
 
 
 let test_directory_contains context =
@@ -216,65 +172,48 @@ let test_link context =
 let test_remove context =
   let path, _ = bracket_tmpfile context in
   let path = !path in
-
   assert_true (Path.file_exists path);
   Path.remove path;
   assert_false (Path.file_exists path);
-  Path.remove path  (* Yolo *)
+  Path.remove path
 
+
+(* Yolo *)
 
 let test_build_symlink_map context =
-  let root =
-    bracket_tmpdir context
-    |> Path.create_absolute
-  in
+  let root = bracket_tmpdir context |> Path.create_absolute in
   let path relative = Path.create_relative ~root ~relative in
   let create_file path = Out_channel.write_all ~data:"" (Path.absolute path) in
   let link = path "link.py" in
   let target = path "original.py" in
   create_file target;
   Unix.symlink ~src:(Path.absolute target) ~dst:(Path.absolute link);
-
   let assert_keys ~links expected =
     let expected_map = Path.Map.of_alist_exn expected in
     let map = Path.build_symlink_map ~links in
     assert_equal ~cmp:(Path.Map.equal Path.equal) expected_map map
   in
   assert_keys ~links:[link] [target, link];
-
   let broken = path "broken.py" in
   create_file broken;
-
   let broken_link = path "broken_link.py" in
   Unix.symlink ~src:(Path.absolute broken) ~dst:(Path.absolute broken_link);
   Unix.remove (Path.absolute broken);
-  assert_keys
-    ~links:[link; broken_link]
-    [target, link];
-
+  assert_keys ~links:[link; broken_link] [target, link];
   let nonexistent = path "nonexistent.py" in
-  assert_keys
-    ~links:[link; broken_link; nonexistent]
-    [target, link]
+  assert_keys ~links:[link; broken_link; nonexistent] [target, link]
 
 
 let test_search_for_path context =
-  let root =
-    OUnit2.bracket_tmpdir context
-    |> Path.create_absolute
-  in
+  let root = OUnit2.bracket_tmpdir context |> Path.create_absolute in
   let assert_path ~search_path ~path ~expected =
     assert_equal (Some expected) (Path.search_for_path ~search_path ~path >>= Path.relative)
   in
   let search_path =
-    [
-      Path.SearchPath.Subdirectory { root; subdirectory = "a" };
-      Path.SearchPath.Subdirectory {
-        root = Path.create_relative ~root ~relative:"b";
-        subdirectory = "c";
-      };
-      Path.SearchPath.Subdirectory { root; subdirectory = "b" };
-    ]
+    [ Path.SearchPath.Subdirectory { root; subdirectory = "a" };
+      Path.SearchPath.Subdirectory
+        { root = Path.create_relative ~root ~relative:"b"; subdirectory = "c" };
+      Path.SearchPath.Subdirectory { root; subdirectory = "b" } ]
   in
   assert_path
     ~search_path
@@ -291,22 +230,21 @@ let test_search_for_path context =
 
 
 let () =
-  "path">:::[
-    "create">::test_create;
-    "relative">::test_relative;
-    "absolute">::test_absolute;
-    "directory_contains">::test_directory_contains;
-    "uri">::test_uri;
-    "from_uri">::test_from_uri;
-    "get_relative_to_root">::test_get_relative_to_root;
-    "append">::test_append;
-    "is_directory">::test_is_directory;
-    "file_exists">::test_file_exists;
-    "last">::test_last;
-    "link">::test_link;
-    "remove">::test_remove;
-    "create_search_path">::test_create_search_path;
-    "build_symlink_map">::test_build_symlink_map;
-    "search_for_path">::test_search_for_path;
-  ]
+  "path"
+  >::: [ "create" >:: test_create;
+         "relative" >:: test_relative;
+         "absolute" >:: test_absolute;
+         "directory_contains" >:: test_directory_contains;
+         "uri" >:: test_uri;
+         "from_uri" >:: test_from_uri;
+         "get_relative_to_root" >:: test_get_relative_to_root;
+         "append" >:: test_append;
+         "is_directory" >:: test_is_directory;
+         "file_exists" >:: test_file_exists;
+         "last" >:: test_last;
+         "link" >:: test_link;
+         "remove" >:: test_remove;
+         "create_search_path" >:: test_create_search_path;
+         "build_symlink_map" >:: test_build_symlink_map;
+         "search_for_path" >:: test_search_for_path ]
   |> Test.run

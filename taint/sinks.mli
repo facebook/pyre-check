@@ -3,12 +3,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 type t =
   | Demo
   | FileSystem
   | GetAttr
-  | LocalReturn  (* Special marker to describe function in-out behavior *)
+  | LocalReturn (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
   | ParameterUpdate of int (* Special marker to describe function in-out behavior *)
@@ -19,7 +18,4 @@ type t =
   | XSS
 [@@deriving compare, eq, sexp, show, hash]
 
-val parse:
-  allowed: string list
-  -> string
-  -> t
+val parse : allowed:string list -> string -> t

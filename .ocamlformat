@@ -2,9 +2,10 @@ assignment-operator=end-line
 break-cases=all
 break-fun-decl=fit-or-vertical
 break-infix=fit-or-vertical
+break-infix-before-func
 break-separators=after-and-docked
 break-sequences
-break-string-literals=never
+break-string-literals=wrap
 field-space=tight-decl
 if-then-else=fit-or-vertical
 indicate-nested-or-patterns=unsafe-no
@@ -20,3 +21,4 @@ space-around-records
 space-around-variants
 type-decl=sparse
 wrap-comments
+wrap-fun-args=false

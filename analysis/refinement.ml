@@ -7,18 +7,14 @@ open Core
 open Pyre
 open Annotation
 
-
 let refine ~resolution { annotation; mutability } refined =
   match mutability with
-  | Mutable ->
-      { annotation = refined; mutability }
+  | Mutable -> { annotation = refined; mutability }
   | Immutable { original; _ } ->
       let annotation =
         match refined with
-        | Type.Top ->
-            refined
-        | Type.Bottom ->
-            annotation
+        | Type.Top -> refined
+        | Type.Bottom -> annotation
         | refined ->
             Resolution.solve_less_or_equal
               resolution
@@ -31,9 +27,9 @@ let refine ~resolution { annotation; mutability } refined =
             |> Option.value ~default:annotation
       in
       let refine =
-        Type.is_top refined ||
-        (not (Type.is_unbound refined) &&
-         Resolution.less_or_equal resolution ~left:refined ~right:original)
+        Type.is_top refined
+        || (not (Type.is_unbound refined))
+           && Resolution.less_or_equal resolution ~left:refined ~right:original
       in
       if refine then
         { annotation = refined; mutability }
@@ -44,48 +40,39 @@ let refine ~resolution { annotation; mutability } refined =
 let less_or_equal ~resolution left right =
   let mutability_less_or_equal =
     match left.mutability, right.mutability with
-    | _, Immutable { scope = Global; _ } ->
-        true
+    | _, Immutable { scope = Global; _ } -> true
     | Immutable { scope = Local; _ }, Immutable { scope = Local; _ }
     | Mutable, Immutable { scope = Local; _ } ->
         true
-    | Mutable, Mutable ->
-        true
-    | _ ->
-        false
+    | Mutable, Mutable -> true
+    | _ -> false
   in
-  mutability_less_or_equal &&
-  Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+  mutability_less_or_equal
+  && Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
 
 
 let join ~resolution left right =
   let mutability =
     match left.mutability, right.mutability with
-    | Immutable ({ scope = Global; _ } as left),
-      Immutable ({ scope = Global; _ } as right) ->
-        Immutable {
-          scope = Global;
-          original = Resolution.join resolution left.original right.original;
-          final = false
-        }
-
+    | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
+        Immutable
+          { scope = Global;
+            original = Resolution.join resolution left.original right.original;
+            final = false
+          }
     | (Immutable { scope = Global; _ } as immutable), _
     | _, (Immutable { scope = Global; _ } as immutable) ->
         immutable
-
-    | Immutable ({ scope = Local; _ } as left),
-      Immutable ({ scope = Local; _ } as right) ->
-        Immutable {
-          scope = Local;
-          original = Resolution.join resolution left.original right.original;
-          final = false;
-        }
-
+    | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
+        Immutable
+          { scope = Local;
+            original = Resolution.join resolution left.original right.original;
+            final = false
+          }
     | (Immutable { scope = Local; _ } as immutable), _
     | _, (Immutable { scope = Local; _ } as immutable) ->
         immutable
-    | _ ->
-        Mutable
+    | _ -> Mutable
   in
   { annotation = Resolution.join resolution left.annotation right.annotation; mutability }
 
@@ -96,26 +83,21 @@ let meet ~resolution left right =
     | Mutable, _
     | _, Mutable ->
         Mutable
-
-    | Immutable ({ scope = Local; _ } as left),
-      Immutable ({ scope = Local; _ } as right) ->
-        Immutable {
-          scope = Local;
-          original = Resolution.meet resolution left.original right.original;
-          final = false;
-        }
-
+    | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
+        Immutable
+          { scope = Local;
+            original = Resolution.meet resolution left.original right.original;
+            final = false
+          }
     | (Immutable { scope = Local; _ } as immutable), _
     | _, (Immutable { scope = Local; _ } as immutable) ->
         immutable
-
-    | Immutable ({ scope = Global; _ } as left),
-      Immutable ({ scope = Global; _ } as right) ->
-        Immutable {
-          scope = Global;
-          original = Resolution.meet resolution left.original right.original;
-          final = false;
-        }
+    | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
+        Immutable
+          { scope = Global;
+            original = Resolution.meet resolution left.original right.original;
+            final = false
+          }
   in
   { annotation = Resolution.meet resolution left.annotation right.annotation; mutability }
 

@@ -5,4 +5,4 @@
 
 open Core
 
-val command: Command.t
+val command : Command.t

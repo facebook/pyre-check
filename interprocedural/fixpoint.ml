@@ -3,74 +3,73 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
 open Core
-
-
 module Result = InterproceduralResult
 module SharedMemory = Memory
 
-
 module Epoch = struct
-  type t = int
-  [@@deriving show]
+  type t = int [@@deriving show]
 
   let predefined = 0
+
   let initial = 1
 end
 
-
 type step = {
   epoch: Epoch.t;
-  iteration: int;
+  iteration: int
 }
 [@@deriving show]
 
-
 type state = {
-  is_partial: bool;  (* Whether to reanalyze this and its callers. *)
-  model: Result.model_t;  (* Model to use at call sites. *)
-  result: Result.result_t;  (* The result of the analysis. *)
+  is_partial: bool;
+  (* Whether to reanalyze this and its callers. *)
+  model: Result.model_t;
+  (* Model to use at call sites. *)
+  result: Result.result_t (* The result of the analysis. *)
 }
 
-
-module SharedModels = SharedMemory.WithCache
+module SharedModels =
+  SharedMemory.WithCache
     (Callable.Key)
     (struct
       type t = Result.model_t
+
       let prefix = Prefix.make ()
+
       let description = "InterproceduralFixpointModel"
     end)
 
-
-module SharedResults = SharedMemory.WithCache
+module SharedResults =
+  SharedMemory.WithCache
     (Callable.Key)
     (struct
       type t = Result.result_t
+
       let prefix = Prefix.make ()
+
       let description = "InterproceduralFixpointResults"
     end)
 
-
 type meta_data = {
   is_partial: bool;
-  step: step;
+  step: step
 }
 
-
 (* Caches the fixpoint state (is_partial) of a call model. *)
-module SharedFixpoint = SharedMemory.WithCache
+module SharedFixpoint =
+  SharedMemory.WithCache
     (Callable.Key)
     (struct
       type t = meta_data
+
       let prefix = Prefix.make ()
+
       let description = "InterproceduralFixpointMetadata"
     end)
 
-
 module KeySet = SharedModels.KeySet
 module KeyMap = SharedModels.KeyMap
-
 
 let get_new_model callable =
   let callable = (callable :> Callable.t) in
@@ -86,24 +85,22 @@ let get_model callable =
   let callable = (callable :> Callable.t) in
   match get_new_model callable with
   | Some _ as model -> model
-  | None ->
-      get_old_model callable
+  | None -> get_old_model callable
 
 
 let get_result callable =
   let callable = (callable :> Callable.t) in
-  SharedResults.get callable
-  |> Option.value ~default:Result.empty_result
+  SharedResults.get callable |> Option.value ~default:Result.empty_result
 
 
 let get_is_partial callable =
   let callable = (callable :> Callable.t) in
   match SharedFixpoint.get callable with
   | Some { is_partial; _ } -> is_partial
-  | None ->
-      match SharedFixpoint.get_old callable with
-      | None -> true
-      | Some { is_partial; _ } -> is_partial
+  | None -> (
+    match SharedFixpoint.get_old callable with
+    | None -> true
+    | Some { is_partial; _ } -> is_partial )
 
 
 let get_meta_data callable =
@@ -118,39 +115,33 @@ let has_model callable =
   SharedModels.mem key
 
 
-let meta_data_to_string {
-    is_partial;
-    step = { epoch; iteration; }
-  } =
-  Format.sprintf "{ partial: %b; epoch: %d; iteration: %d }"
-    is_partial epoch iteration
+let meta_data_to_string { is_partial; step = { epoch; iteration } } =
+  Format.sprintf "{ partial: %b; epoch: %d; iteration: %d }" is_partial epoch iteration
 
 
 let add_state step callable state =
   let callable = (callable :> Callable.t) in
-  (* Separate diagnostics from state to speed up lookups, and
-     cache fixpoint state separately.
-  *)
+  (* Separate diagnostics from state to speed up lookups, and cache fixpoint state separately. *)
   let () = SharedModels.add callable state.model in
   (* Skip result writing unless necessary (e.g. overrides don't have results) *)
   let () =
     match callable with
-    #Callable.target_with_result -> SharedResults.add callable state.result
+    | #Callable.target_with_result -> SharedResults.add callable state.result
     | _ -> ()
   in
-  SharedFixpoint.add callable { is_partial = state.is_partial; step; }
+  SharedFixpoint.add callable { is_partial = state.is_partial; step }
 
 
 let add_predefined epoch callable model =
   let callable = (callable :> Callable.t) in
   let () = SharedModels.add callable model in
-  let step = { epoch; iteration = 0; } in
-  SharedFixpoint.add callable { is_partial = false; step; }
+  let step = { epoch; iteration = 0 } in
+  SharedFixpoint.add callable { is_partial = false; step }
 
 
 let get_new_models = SharedModels.get_batch
-let get_new_results = SharedResults.get_batch
 
+let get_new_results = SharedResults.get_batch
 
 let oldify callable_set =
   SharedModels.oldify_batch callable_set;
@@ -168,8 +159,8 @@ let remove_new callable_set =
 let remove_old callable_set =
   SharedModels.remove_old_batch callable_set;
   SharedFixpoint.remove_old_batch callable_set
+
+
 (* No old results. *)
 
-
-let is_initial_iteration { epoch = _; iteration } =
-  iteration = 0
+let is_initial_iteration { epoch = _; iteration } = iteration = 0

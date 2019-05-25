@@ -6,7 +6,6 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_check_redundant_cast _ =
   assert_type_errors
     {|
@@ -14,12 +13,10 @@ let test_check_redundant_cast _ =
         typing.cast(int, x)
     |}
     ["Redundant cast [22]: The value being cast is already of type `int`."];
-  assert_type_errors
-    {|
+  assert_type_errors {|
       def foo(x: str) -> None:
         typing.cast(int, x)
-    |}
-    [];
+    |} [];
   assert_default_type_errors
     {|
       def foo(x: typing.Any) -> None:
@@ -40,8 +37,4 @@ let test_check_redundant_cast _ =
     []
 
 
-let () =
-  "redundantCast">:::[
-    "check_redundant_cast">::test_check_redundant_cast;
-  ]
-  |> Test.run
+let () = "redundantCast" >::: ["check_redundant_cast" >:: test_check_redundant_cast] |> Test.run

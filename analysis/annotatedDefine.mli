@@ -4,28 +4,21 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Statement
-
 module Callable = AnnotatedCallable
 module Class = AnnotatedClass
 
+type t [@@deriving compare, eq, sexp, show, hash]
 
-type t
-[@@deriving compare, eq, sexp, show, hash]
+val create : Define.t -> t
 
-val create: Define.t -> t
+val define : t -> Define.t
 
-val define: t -> Define.t
+val parameter_annotations : t -> resolution:Resolution.t -> Type.t Int.Map.t
 
-val parameter_annotations
-  :  t
-  -> resolution: Resolution.t
-  -> Type.t Int.Map.t
+val parent_definition : t -> resolution:Resolution.t -> Class.t option
 
-val parent_definition: t -> resolution: Resolution.t -> Class.t option
+val decorate : t -> resolution:Resolution.t -> t
 
-val decorate: t -> resolution: Resolution.t -> t
-
-val is_constructor: t -> resolution: Resolution.t -> bool
+val is_constructor : t -> resolution:Resolution.t -> bool

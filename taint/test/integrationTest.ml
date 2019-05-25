@@ -5,16 +5,12 @@
 
 open Core
 open OUnit2
-
 open Pyre
-
 open Interprocedural
 open TestHelper
 
-
 let test_integration _ =
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
-
   let test_paths =
     (* Shameful things happen here... *)
     Path.current_working_directory ()
@@ -22,40 +18,30 @@ let test_integration _ =
     |> String.chop_suffix_exn ~suffix:"_build/default/taint/test"
     |> (fun root -> Path.create_absolute root)
     |> (fun root -> Path.create_relative ~root ~relative:"taint/test/integration/")
-    |> (fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ())
+    |> fun root -> Path.list ~file_filter:(String.is_suffix ~suffix:".py") ~root ()
   in
   let run_test path =
     let check_expectation ~suffix actual =
       let output_filename ~suffix ~initial =
         if initial then
-          Path.with_suffix path ~suffix:suffix
+          Path.with_suffix path ~suffix
         else
           Path.with_suffix path ~suffix:(suffix ^ ".actual")
       in
-      let write_output ~suffix ?(initial=false) content =
-        try
-          output_filename ~suffix ~initial
-          |> File.create ~content
-          |> File.write
-        with Unix.Unix_error _ ->
-          failwith (Format.asprintf "Could not write `%s` file for %a" suffix Path.pp path)
+      let write_output ~suffix ?(initial = false) content =
+        try output_filename ~suffix ~initial |> File.create ~content |> File.write with
+        | Unix.Unix_error _ ->
+            failwith (Format.asprintf "Could not write `%s` file for %a" suffix Path.pp path)
       in
       let remove_old_output ~suffix =
-        try
-          output_filename ~suffix ~initial:false
-          |> Path.show
-          |> Sys.remove
-        with Sys_error _ ->
-          (* be silent *)
-          ()
+        try output_filename ~suffix ~initial:false |> Path.show |> Sys.remove with
+        | Sys_error _ ->
+            (* be silent *)
+            ()
       in
       let get_expected ~suffix =
-        try
-          Path.with_suffix path ~suffix
-          |> File.create
-          |> File.content
-        with Unix.Unix_error _ ->
-          None
+        try Path.with_suffix path ~suffix |> File.create |> File.content with
+        | Unix.Unix_error _ -> None
       in
       match get_expected ~suffix with
       | None ->
@@ -64,7 +50,7 @@ let test_integration _ =
       | Some expected ->
           if String.equal expected actual then
             remove_old_output ~suffix
-          else begin
+          else (
             write_output ~suffix actual;
             Printf.printf "Expectations differ for %s %s\n" suffix (Path.show path);
             assert_bool
@@ -74,44 +60,28 @@ let test_integration _ =
                  (Path.show path)
                  (Test.diff ~print:String.pp)
                  (expected, actual))
-              false
-          end
+              false )
     in
     let serialized_models =
-      let source =
-        File.create path
-        |> File.content
-        |> (fun content -> Option.value_exn content)
-      in
+      let source = File.create path |> File.content |> fun content -> Option.value_exn content in
       let model_source =
         try
           let model_path = Path.with_suffix path ~suffix:".pysa" in
-          File.create model_path
-          |> File.content
-        with Unix.Unix_error _ ->
-          None
+          File.create model_path |> File.content
+        with
+        | Unix.Unix_error _ -> None
       in
-      let handle =
-        Path.show path
-        |> String.split ~on:'/'
-        |> List.last_exn
-      in
+      let handle = Path.show path |> String.split ~on:'/' |> List.last_exn in
       let check_call_graph_expectation call_graph =
         let dependencies = DependencyGraph.from_callgraph call_graph in
         let actual =
-          Format.asprintf
-            "@%s\nCall dependencies\n%a"
-            "generated"
-            DependencyGraph.pp dependencies
+          Format.asprintf "@%s\nCall dependencies\n%a" "generated" DependencyGraph.pp dependencies
         in
         check_expectation ~suffix:".cg" actual
       in
       let check_overrides_expectation overrides =
         let actual =
-          Format.asprintf
-            "@%s\nOverrides\n%a"
-            "generated"
-            DependencyGraph.pp overrides
+          Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides
         in
         check_expectation ~suffix:".overrides" actual
       in
@@ -134,7 +104,7 @@ let test_integration _ =
         ~all_callables
         Fixpoint.Epoch.initial
       |> ignore;
-      let serialized_model callable: string =
+      let serialized_model callable : string =
         let externalization =
           Interprocedural.Analysis.externalize Taint.Analysis.abstract_kind callable
           |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
@@ -151,8 +121,4 @@ let test_integration _ =
   List.iter test_paths ~f:run_test
 
 
-let () =
-  "taint">:::[
-    "integration">::test_integration;
-  ]
-  |> TestHelper.run_with_taint_models
+let () = "taint" >::: ["integration" >:: test_integration] |> TestHelper.run_with_taint_models

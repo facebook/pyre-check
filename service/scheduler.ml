@@ -4,26 +4,22 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Hack_parallel.Std
-
 module Daemon = Daemon
-
 
 type t = {
   is_parallel: bool;
   workers: Worker.t list;
   number_of_workers: int;
-  bucket_multiplier: int;
+  bucket_multiplier: int
 }
 
-
-let entry =
-  Worker.register_entry_point ~restore:(fun _ -> ())
-
+let entry = Worker.register_entry_point ~restore:(fun _ -> ())
 
 let create
     ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
     ?(bucket_multiplier = 10)
-    () =
+    ()
+  =
   let heap_handle = Memory.get_heap_handle configuration in
   let workers =
     Hack_parallel.Std.Worker.make
@@ -40,15 +36,16 @@ let create
 
 let run_process
     ~configuration:({ Configuration.Analysis.verbose; sections; _ } as configuration)
-    process =
+    process
+  =
   Log.initialize ~verbose ~sections;
   Configuration.Analysis.set_global configuration;
   try
     let result = process () in
     Statistics.flush ();
     result
-  with error ->
-    raise error
+  with
+  | error -> raise error
 
 
 let map_reduce
@@ -59,23 +56,22 @@ let map_reduce
     ~map
     ~reduce
     ~inputs
-    () =
+    ()
+  =
   if is_parallel then
     let number_of_workers =
       Core.Int.max
         number_of_workers
-        (match bucket_size with
-         | Some exact_size when exact_size > 0 ->
-             (List.length inputs / exact_size) + 1
-         | _ ->
-             let bucket_multiplier =
-               Core.Int.min bucket_multiplier (1 + (List.length inputs / 400))
-             in
-             number_of_workers * bucket_multiplier)
+        ( match bucket_size with
+        | Some exact_size when exact_size > 0 -> (List.length inputs / exact_size) + 1
+        | _ ->
+            let bucket_multiplier =
+              Core.Int.min bucket_multiplier (1 + (List.length inputs / 400))
+            in
+            number_of_workers * bucket_multiplier )
     in
     let map accumulator inputs =
-      (fun () -> map accumulator inputs)
-      |> run_process ~configuration
+      (fun () -> map accumulator inputs) |> run_process ~configuration
     in
     MultiWorker.call
       (Some workers)
@@ -84,8 +80,7 @@ let map_reduce
       ~neutral:initial
       ~next:(Bucket.make ~num_workers:number_of_workers inputs)
   else
-    map initial inputs
-    |> fun mapped -> reduce mapped initial
+    map initial inputs |> fun mapped -> reduce mapped initial
 
 
 let iter scheduler ~configuration ~f ~inputs =
@@ -107,12 +102,8 @@ let single_job { workers; _ } ~f work =
     | ready :: _ -> ready
   in
   match workers with
-  | worker::_ ->
-      Worker.call worker f work
-      |> wait_until_ready
-      |> Worker.get_result
-  | [] ->
-      failwith "This service contains no workers"
+  | worker :: _ -> Worker.call worker f work |> wait_until_ready |> Worker.get_result
+  | [] -> failwith "This service contains no workers"
 
 
 let mock () =
@@ -122,17 +113,10 @@ let mock () =
   { workers = []; number_of_workers = 1; bucket_multiplier = 1; is_parallel = false }
 
 
-let is_parallel { is_parallel; _ } =
-  is_parallel
+let is_parallel { is_parallel; _ } = is_parallel
 
+let with_parallel ~is_parallel service = { service with is_parallel }
 
-let with_parallel ~is_parallel service =
-  { service with is_parallel }
+let workers { workers; _ } = workers
 
-
-let workers { workers; _ } =
-  workers
-
-
-let destroy _ =
-  Worker.killall ()
+let destroy _ = Worker.killall ()

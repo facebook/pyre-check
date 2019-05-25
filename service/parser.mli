@@ -3,25 +3,24 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-
-val find_stubs_and_sources: Configuration.Analysis.t -> Pyre.Path.t list * Pyre.Path.t list
+val find_stubs_and_sources : Configuration.Analysis.t -> Pyre.Path.t list * Pyre.Path.t list
 
 type parse_sources_result = {
   parsed: File.Handle.t list;
   syntax_error: File.Handle.t list;
-  system_error: File.Handle.t list;
+  system_error: File.Handle.t list
 }
 
 val parse_sources
-  :  configuration: Configuration.Analysis.t
-  -> scheduler: Scheduler.t
-  -> preprocessing_state: ProjectSpecificPreprocessing.state option
-  -> files: File.t list
-  -> parse_sources_result
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  preprocessing_state:ProjectSpecificPreprocessing.state option ->
+  files:File.t list ->
+  parse_sources_result
 
 type result = {
   stubs: File.Handle.t list;
-  sources: File.Handle.t list;
+  sources: File.Handle.t list
 }
 
-val parse_all: Scheduler.t -> configuration: Configuration.Analysis.t -> result
+val parse_all : Scheduler.t -> configuration:Configuration.Analysis.t -> result

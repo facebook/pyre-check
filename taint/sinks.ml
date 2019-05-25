@@ -5,15 +5,14 @@
 
 open Core
 
-
 type t =
   | Demo
   | FileSystem
   | GetAttr
-  | LocalReturn  (* Special marker to describe function in-out behavior *)
+  | LocalReturn (* Special marker to describe function in-out behavior *)
   | Logging
   | NamedSink of string
-  | ParameterUpdate of int  (* Special marker to describe side effect in-out behavior *)
+  | ParameterUpdate of int (* Special marker to describe side effect in-out behavior *)
   | RemoteCodeExecution
   | SQL
   | Test
@@ -21,9 +20,7 @@ type t =
   | XSS
 [@@deriving compare, eq, sexp, show, hash]
 
-
-let _ = show  (* unused but derived  *)
-
+let _ = show (* unused but derived *)
 
 let show = function
   | Demo -> "Demo"
@@ -54,8 +51,7 @@ let create = function
   | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
       let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
       ParameterUpdate (Int.of_string index)
-  | name ->
-      failwith (Format.sprintf "Unsupported taint sink `%s`" name)
+  | name -> failwith (Format.sprintf "Unsupported taint sink `%s`" name)
 
 
 let parse ~allowed name =

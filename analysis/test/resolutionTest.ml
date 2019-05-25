@@ -5,65 +5,53 @@
 
 open Core
 open OUnit2
-
 open Analysis
 open Ast
 open Pyre
 open Statement
 open Test
 
-
 let test_set_local _ =
   let assert_local ~resolution ~name ~expected =
     assert_equal
       ~cmp:(Option.equal Type.equal)
-      (expected
-       >>| parse_single_expression
-       >>| Type.create ~aliases:(fun _ -> None))
-      (Resolution.get_local resolution ~reference:(!&name) >>| Annotation.annotation)
+      (expected >>| parse_single_expression >>| Type.create ~aliases:(fun _ -> None))
+      (Resolution.get_local resolution ~reference:!&name >>| Annotation.annotation)
   in
-
   let resolution = Test.resolution ~sources:[] () in
   assert_local ~resolution ~name:"local" ~expected:None;
-
   let resolution =
     Resolution.set_local
       resolution
-      ~reference:(!&"local")
+      ~reference:!&"local"
       ~annotation:(Annotation.create Type.integer)
   in
   assert_local ~resolution ~name:"local" ~expected:(Some "int");
-
   let resolution =
-    Resolution.set_local
-      resolution
-      ~reference:(!&"local")
-      ~annotation:(Annotation.create Type.float)
+    Resolution.set_local resolution ~reference:!&"local" ~annotation:(Annotation.create Type.float)
   in
   assert_local ~resolution ~name:"local" ~expected:(Some "float")
 
 
 let test_parse_annotation _ =
-  let assert_parse_annotation ?(allow_untracked=false) ~resolution ~expected expression =
+  let assert_parse_annotation ?(allow_untracked = false) ~resolution ~expected expression =
     assert_equal
       ~cmp:Type.equal
       ~printer:Type.show
-      (parse_single_expression expected
-       |> Type.create ~aliases:(fun _ -> None))
-      (parse_single_expression expression
-       |> Resolution.parse_annotation ~allow_untracked resolution)
+      (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
+      ( parse_single_expression expression
+      |> Resolution.parse_annotation ~allow_untracked resolution )
   in
-
   let resolution =
     Test.resolution
-      ~sources:([
-          parse ~qualifier:(!&"empty") ~handle:"empty.pyi" "class Empty: ...";
-          parse
-            ~qualifier:(!&"empty.stub")
-            ~local_mode:Source.PlaceholderStub
-            ~handle:"empty/stub.pyi"
-            "";
-        ] @ (Test.typeshed_stubs ()))
+      ~sources:
+        ( [ parse ~qualifier:!&"empty" ~handle:"empty.pyi" "class Empty: ...";
+            parse
+              ~qualifier:!&"empty.stub"
+              ~local_mode:Source.PlaceholderStub
+              ~handle:"empty/stub.pyi"
+              "" ]
+        @ Test.typeshed_stubs () )
       ()
   in
   assert_parse_annotation ~resolution ~expected:"int" "int";
@@ -92,23 +80,19 @@ let make_resolution source =
     in
     Environment.handler environment
   in
-  populate source
-  |> fun environment -> TypeCheck.resolution environment ()
+  populate source |> fun environment -> TypeCheck.resolution environment ()
 
 
 let test_parse_reference _ =
   let resolution =
-    make_resolution
-      {|
+    make_resolution {|
       import typing
       class Foo: ...
       MyType = int
     |}
   in
   let assert_parse_reference reference expected =
-    assert_equal
-      ~printer:Type.show expected
-      (Resolution.parse_reference resolution (!&reference))
+    assert_equal ~printer:Type.show expected (Resolution.parse_reference resolution !&reference)
   in
   assert_parse_reference "undefined" Type.Top;
   assert_parse_reference "MyType" Type.integer;
@@ -157,42 +141,35 @@ let test_resolve_literal _ =
   assert_resolve_literal "G(7)" Type.Top;
   assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
   assert_resolve_literal "G" Type.Top;
-
   (* None *)
-  assert_resolve_literal "None" (Type.none);
+  assert_resolve_literal "None" Type.none;
   assert_resolve_literal "[None]" (Type.list Type.none);
-
   (* Dictionary *)
   assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);
-  assert_resolve_literal "{'a': i}" (Type.Any);
+  assert_resolve_literal "{'a': i}" Type.Any;
   assert_resolve_literal "{**foo}" Type.Any;
   assert_resolve_literal "{'a': 1, **foo}" Type.Any;
-
   (* Boolean Operator *)
-  assert_resolve_literal "1 or 2" (Type.integer);
+  assert_resolve_literal "1 or 2" Type.integer;
   assert_resolve_literal "True or 1" (Type.union [Type.bool; Type.integer]);
-  assert_resolve_literal "True or i" (Type.Any);
-
+  assert_resolve_literal "True or i" Type.Any;
   (* List *)
   assert_resolve_literal "[1]" (Type.list Type.integer);
   assert_resolve_literal "[1, 'string']" (Type.list (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "[1, i]" (Type.Any);
-
+  assert_resolve_literal "[1, i]" Type.Any;
   (* Set *)
   assert_resolve_literal "{1}" (Type.set Type.integer);
   assert_resolve_literal "{1, 'string'}" (Type.set (Type.Union [Type.integer; Type.string]));
-  assert_resolve_literal "{1, i}" (Type.Any);
-
+  assert_resolve_literal "{1, i}" Type.Any;
   (* Ternary *)
-  assert_resolve_literal "1 if x else 2" (Type.integer);
+  assert_resolve_literal "1 if x else 2" Type.integer;
   assert_resolve_literal "'hi' if x else 1" (Type.union [Type.string; Type.integer]);
-  assert_resolve_literal "1 if i else i" (Type.Any)
+  assert_resolve_literal "1 if i else i" Type.Any
 
 
 let test_resolve_mutable_literals _ =
   let resolution =
-    make_resolution
-      {|
+    make_resolution {|
       class C: ...
       class D(C): ...
       class Q: ...
@@ -200,9 +177,7 @@ let test_resolve_mutable_literals _ =
   in
   let assert_resolve_mutable_literals ~source ~against expected_output =
     let parse_annotation annotation =
-      annotation
-      |> parse_single_expression
-      |> Resolution.parse_annotation resolution
+      annotation |> parse_single_expression |> Resolution.parse_annotation resolution
     in
     let expression =
       match parse_single_statement source with
@@ -217,15 +192,8 @@ let test_resolve_mutable_literals _ =
       (parse_annotation expected_output)
       (Resolution.resolve_mutable_literals resolution ~expression ~resolved ~expected)
   in
-  assert_resolve_mutable_literals
-    ~source:"[D()]"
-    ~against:"typing.List[C]"
-    "typing.List[C]";
-  assert_resolve_mutable_literals
-    ~source:"[Q()]"
-    ~against:"typing.List[C]"
-    "typing.List[Q]";
-
+  assert_resolve_mutable_literals ~source:"[D()]" ~against:"typing.List[C]" "typing.List[C]";
+  assert_resolve_mutable_literals ~source:"[Q()]" ~against:"typing.List[C]" "typing.List[Q]";
   assert_resolve_mutable_literals
     ~source:"[y for y in [D()]]"
     ~against:"typing.List[C]"
@@ -234,7 +202,6 @@ let test_resolve_mutable_literals _ =
     ~source:"[y for y in [Q()]]"
     ~against:"typing.List[C]"
     "typing.List[Q]";
-
   assert_resolve_mutable_literals
     ~source:"{ 's': D() }"
     ~against:"typing.Dict[str, C]"
@@ -243,7 +210,6 @@ let test_resolve_mutable_literals _ =
     ~source:"{ 's': Q() }"
     ~against:"typing.Dict[str, C]"
     "typing.Dict[str, Q]";
-
   assert_resolve_mutable_literals
     ~source:"{ 's': y for y in [D()] }"
     ~against:"typing.Dict[str, C]"
@@ -252,20 +218,14 @@ let test_resolve_mutable_literals _ =
     ~source:"{ 's': y for y in [Q()] }"
     ~against:"typing.Dict[str, C]"
     "typing.Dict[str, Q]";
-
+  assert_resolve_mutable_literals ~source:"{ D() }" ~against:"typing.Set[C]" "typing.Set[C]";
+  assert_resolve_mutable_literals ~source:"{ Q() }" ~against:"typing.Set[C]" "typing.Set[Q]";
   assert_resolve_mutable_literals
-    ~source:"{ D() }"
-    ~against:"typing.Set[C]"
-    "typing.Set[C]";
-  assert_resolve_mutable_literals
-    ~source:"{ Q() }"
-    ~against:"typing.Set[C]"
-    "typing.Set[Q]";
-
-  assert_resolve_mutable_literals  "{ y for y in [D()] }"
+    "{ y for y in [D()] }"
     ~source:"typing.Set[C]"
     ~against:"typing.Set[C]";
-  assert_resolve_mutable_literals  "{ y for y in [Q()] }"
+  assert_resolve_mutable_literals
+    "{ y for y in [Q()] }"
     ~source:"typing.Set[C]"
     ~against:"typing.Set[Q]"
 
@@ -276,7 +236,6 @@ let test_function_definitions _ =
       let source (path, content) = path, trim_extra_indentation content in
       List.map sources ~f:source
     in
-
     let files =
       let file (path, content) = File.create ~content (mock_path path) in
       List.map sources ~f:file
@@ -290,14 +249,10 @@ let test_function_definitions _ =
     in
     assert_true (List.is_empty syntax_error);
     assert_true (List.is_empty system_error);
-
     let resolution =
       let sources =
         let source (path, content) =
-          parse
-            ~qualifier:(!&(String.chop_suffix_exn path ~suffix:".py"))
-            ~handle:path
-            content
+          parse ~qualifier:!&(String.chop_suffix_exn path ~suffix:".py") ~handle:path content
           |> Preprocessing.qualify
         in
         List.map sources ~f:source
@@ -305,58 +260,42 @@ let test_function_definitions _ =
       resolution ~sources ()
     in
     let functions =
-      Resolution.function_definitions resolution (!&function_name)
-      >>| List.map
-        ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } -> Reference.show name)
+      Resolution.function_definitions resolution !&function_name
+      >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
+              Reference.show name)
       |> Option.value ~default:[]
     in
     assert_equal ~printer:(String.concat ~sep:", ") expected functions
   in
   assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" ["foo.foo"];
   assert_functions
-    [
-      "bar.py",
-      {|
+    [ ( "bar.py",
+        {|
         @overload
         def bar(a: int) -> str: ...
         def bar(a: str) -> int: ...
-      |};
-    ]
+      |}
+      ) ]
     "bar.bar"
     ["bar.bar"; "bar.bar"];
   assert_functions
-    [
-      "baz.py",
-      {|
+    ["baz.py", {|
         def foo(a: int) -> str: ...
         def bar(a: str) -> int: ...
-      |};
-    ]
+      |}]
     "baz.foo"
     ["baz.foo"];
+  assert_functions [] "undefined.undefined" [];
   assert_functions
-    []
-    "undefined.undefined"
-    [];
-  assert_functions
-    [
-      "yarp.py",
-      {|
+    ["yarp.py", {|
         def foo():
           def nested(): pass
-      |};
-    ]
+      |}]
     "yarp.foo.nested"
     ["yarp.foo.nested"];
-  assert_functions
-    [
-      "builtins.py",
-      {|
+  assert_functions ["builtins.py", {|
         def len(): pass
-      |};
-    ]
-    "len"
-    ["len"];
+      |}] "len" ["len"];
   ()
 
 
@@ -379,13 +318,12 @@ let test_resolution_shared_memory _ =
 
 
 let () =
-  "resolution">:::[
-    "set_local">::test_set_local;
-    "parse_annotation">::test_parse_annotation;
-    "parse_reference">::test_parse_reference;
-    "resolve_literal">::test_resolve_literal;
-    "resolve_mutable_literals">::test_resolve_mutable_literals;
-    "function_definitions">::test_function_definitions;
-    "resolve_shared_memory">::test_resolution_shared_memory;
-  ]
+  "resolution"
+  >::: [ "set_local" >:: test_set_local;
+         "parse_annotation" >:: test_parse_annotation;
+         "parse_reference" >:: test_parse_reference;
+         "resolve_literal" >:: test_resolve_literal;
+         "resolve_mutable_literals" >:: test_resolve_mutable_literals;
+         "function_definitions" >:: test_function_definitions;
+         "resolve_shared_memory" >:: test_resolution_shared_memory ]
   |> Test.run

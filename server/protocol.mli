@@ -4,38 +4,32 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Ast
 open Analysis
 open Pyre
 
-module DefinitionRequest: sig
+module DefinitionRequest : sig
   type t = {
     id: LanguageServer.Types.RequestId.t;
     file: File.t;
-    position: Location.position;
+    position: Location.position
   }
   [@@deriving eq, show]
 end
-
 
 type client =
   | FileNotifier
   | Persistent
 [@@deriving eq, show]
 
-
-module TypeQuery: sig
+module TypeQuery : sig
   type serialized_ocaml_value =
-    | SerializedValue of {
-        serialized_key: string;
-        serialized_value: string;
-      }
-    | SerializedPair of {
-        serialized_key: string;
-        first_serialized_value: string;
-        second_serialized_value: string;
-      }
+    | SerializedValue of { serialized_key: string; serialized_value: string }
+    | SerializedPair of
+        { serialized_key: string;
+          first_serialized_value: string;
+          second_serialized_value: string
+        }
   [@@deriving eq, show, to_yojson]
 
   type request =
@@ -56,10 +50,7 @@ module TypeQuery: sig
     | Signature of Reference.t
     | Superclasses of Expression.t
     | Type of Expression.t
-    | TypeAtPosition of {
-        file: File.t;
-        position: Location.position;
-      }
+    | TypeAtPosition of { file: File.t; position: Location.position }
     | TypesInFile of File.t
   [@@deriving eq, show]
 
@@ -71,74 +62,74 @@ module TypeQuery: sig
 
   type attribute = {
     name: string;
-    annotation: Type.t;
+    annotation: Type.t
   }
   [@@deriving eq, show, to_yojson]
 
   type method_representation = {
     name: string;
     parameters: Type.t list;
-    return_annotation: Type.t;
+    return_annotation: Type.t
   }
   [@@deriving eq, show, to_yojson]
 
   type found_parameter = {
     parameter_name: string;
-    annotation: Type.t option;
+    annotation: Type.t option
   }
   [@@deriving eq, show, to_yojson]
 
   type found_signature = {
     return_type: Type.t option;
-    parameters: found_parameter list;
+    parameters: found_parameter list
   }
   [@@deriving eq, show, to_yojson]
 
   type type_at_location = {
     location: Location.Instantiated.t;
-    annotation: Type.t;
+    annotation: Type.t
   }
   [@@deriving eq, show, to_yojson]
 
   type coverage_at_location = {
     location: Location.Instantiated.t;
-    coverage: coverage_level;
+    coverage: coverage_level
   }
   [@@deriving eq, show, to_yojson]
 
   type decoded_value =
-    | DecodedValue of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        actual_value: string option;
-      }
-    | DecodedPair of {
-        serialized_key: string;
-        kind: string;
-        actual_key: string;
-        first_value: string option;
-        second_value: string option;
-        equal: bool;
-      }
+    | DecodedValue of
+        { serialized_key: string;
+          kind: string;
+          actual_key: string;
+          actual_value: string option
+        }
+    | DecodedPair of
+        { serialized_key: string;
+          kind: string;
+          actual_key: string;
+          first_value: string option;
+          second_value: string option;
+          equal: bool
+        }
   [@@deriving eq, show, to_yojson]
 
   type decoded = {
     decoded: decoded_value list;
-    undecodable_keys: string list;
+    undecodable_keys: string list
   }
   [@@deriving eq, show, to_yojson]
 
   type compatibility = {
     actual: Type.t;
     expected: Type.t;
-    result: bool;
+    result: bool
   }
   [@@derving eq, show]
 
   type key_mapping = {
     hash: string;
-    key: string;
+    key: string
   }
   [@@deriving eq, show, to_yojson]
 
@@ -166,7 +157,6 @@ module TypeQuery: sig
   [@@deriving eq, show, to_yojson]
 end
 
-
 module Request : sig
   type t =
     | LanguageServerProtocolRequest of string
@@ -183,16 +173,16 @@ module Request : sig
     | OpenDocument of File.t
     | CloseDocument of File.t
     | SaveDocument of File.t
-    | CodeActionRequest of {
-        id: LanguageServer.Types.RequestId.t;
-        uri: LanguageServer.Types.DocumentUri.t;
-        diagnostics: LanguageServer.Types.Diagnostic.t list;
-        file: File.t;
-      }
-    | ExecuteCommandRequest of {
-        id: LanguageServer.Types.RequestId.t;
-        arguments: LanguageServer.Types.CommandArguments.t list;
-      }
+    | CodeActionRequest of
+        { id: LanguageServer.Types.RequestId.t;
+          uri: LanguageServer.Types.DocumentUri.t;
+          diagnostics: LanguageServer.Types.Diagnostic.t list;
+          file: File.t
+        }
+    | ExecuteCommandRequest of
+        { id: LanguageServer.Types.RequestId.t;
+          arguments: LanguageServer.Types.CommandArguments.t list
+        }
   [@@deriving eq, show]
 
   type origin =
@@ -201,16 +191,16 @@ module Request : sig
     | FileNotifier
     | Background
 
-  val origin_name: origin -> string
+  val origin_name : origin -> string
 
-  val name: t -> string
+  val name : t -> string
 end
 
 type response =
   | LanguageServerProtocolResponse of string
   | ClientConnectionResponse of client
   | ClientExitResponse of client
-  | TypeCheckResponse of (File.Handle.t * (Error.t list)) list
+  | TypeCheckResponse of (File.Handle.t * Error.t list) list
   | TypeQueryResponse of TypeQuery.response
   | StopResponse
   | GetDefinitionResponse of Location.Instantiated.t option

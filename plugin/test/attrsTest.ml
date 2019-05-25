@@ -13,8 +13,7 @@ let test_transform_environment _ =
       class Foo:
         ...
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           def __init__(self) -> None:
@@ -33,7 +32,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       if 1 > 2:
@@ -41,8 +39,7 @@ let test_transform_environment _ =
         class Foo:
           ...
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           def __init__(self) -> None:
@@ -61,8 +58,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -70,8 +65,7 @@ let test_transform_environment _ =
         def foo() -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           def foo() -> None:
@@ -92,7 +86,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -102,8 +95,7 @@ let test_transform_environment _ =
         def __repr__(self) -> str:
           pass
     |}
-    [
-      {|
+    [ {|
        @attr.s
        class Foo:
          def __init__(self) -> None:
@@ -122,15 +114,13 @@ let test_transform_environment _ =
            pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
       class Foo:
         name = 'abc'
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           name = 'abc'
@@ -150,15 +140,13 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
       class Foo:
         name: str
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           name: str
@@ -178,7 +166,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -188,8 +175,7 @@ let test_transform_environment _ =
         def __init__(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class Foo:
           name: str
@@ -210,7 +196,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   (* Boolean arguments *)
   PluginTest.assert_environment_contains
     {|
@@ -219,8 +204,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s(init = False)
         class Foo:
           def foo(self) -> None:
@@ -239,7 +223,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s(repr = False)
@@ -247,8 +230,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s(repr = False)
         class Foo:
           def foo(self) -> None:
@@ -267,7 +249,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s(cmp = False)
@@ -275,8 +256,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s(cmp = False)
         class Foo:
           def foo(self) -> None:
@@ -287,7 +267,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s(auto_attribs = True)
@@ -295,8 +274,7 @@ let test_transform_environment _ =
         def foo(self) -> None:
           pass
     |}
-    [
-      {|
+    [ {|
         @attr.s(auto_attribs = True)
         class Foo:
           def foo(self) -> None:
@@ -317,7 +295,6 @@ let test_transform_environment _ =
             pass
       |}
     ];
-
   (* Inheritance *)
   PluginTest.assert_environment_contains
     {|
@@ -331,8 +308,7 @@ let test_transform_environment _ =
         y: int = 0
         z: str = "a"
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class C(Base):
           z: int = 10
@@ -372,9 +348,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -387,8 +362,7 @@ let test_transform_environment _ =
         y: int = 0
         z: str = "a"
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class C(Base):
           z: int = 10
@@ -428,9 +402,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -442,8 +415,7 @@ let test_transform_environment _ =
         x: str = "a"
         y: int = 0
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class C(Base):
           z: int = 10
@@ -482,9 +454,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -499,8 +470,7 @@ let test_transform_environment _ =
         x: typing.Any = 15.0
         y: int = 0
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class C(B):
           z: int = 10
@@ -544,9 +514,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       @attr.s
@@ -559,8 +528,7 @@ let test_transform_environment _ =
       class A:
         x: int = 15
     |}
-    [
-      {|
+    [ {|
         @attr.s
         class C(B, A):
           z: int = 10
@@ -616,9 +584,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ];
-
   PluginTest.assert_environment_contains
     {|
       class NoAttr:
@@ -627,8 +594,7 @@ let test_transform_environment _ =
       class WithAttr(NoAttr):
         y: int = 5
     |}
-    [
-      {|
+    [ {|
         class NoAttr:
           x: int = 15
       |};
@@ -650,12 +616,8 @@ let test_transform_environment _ =
             pass
           def __ge__(self, o: object) -> bool:
             pass
-      |};
+      |}
     ]
 
 
-let () =
-  "plugin_attrs">:::[
-    "transform_environment">::test_transform_environment;
-  ]
-  |> Test.run
+let () = "plugin_attrs" >::: ["transform_environment" >:: test_transform_environment] |> Test.run

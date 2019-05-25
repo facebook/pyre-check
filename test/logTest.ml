@@ -6,11 +6,8 @@
 open Core
 open OUnit2
 
-
 let test_rotate _ =
-  let create_file path =
-    Out_channel.create path |> Out_channel.close
-  in
+  let create_file path = Out_channel.create path |> Out_channel.close in
   let base_log_file = Filename.temp_file "log" "" in
   Sys.remove base_log_file;
   assert_equal (Sys.is_file base_log_file) `No;
@@ -19,16 +16,9 @@ let test_rotate _ =
   create_file rotated_file;
   assert_equal (Sys.is_file rotated_file) `Yes;
   assert_equal (Sys.is_file base_log_file) `Yes;
-
-  let create_path number =
-    Format.sprintf "%s.0000-%d" base_log_file number
-  in
-  [2; 3; 5; 8; 11]
-  |> List.map ~f:create_path
-  |> List.iter ~f:create_file;
-
+  let create_path number = Format.sprintf "%s.0000-%d" base_log_file number in
+  [2; 3; 5; 8; 11] |> List.map ~f:create_path |> List.iter ~f:create_file;
   assert_equal (Sys.is_file base_log_file) `Yes;
-
   let actual_path = Log.rotate ~number_to_keep:3 base_log_file in
   assert_equal (Sys.is_file base_log_file) `No;
   assert_equal (Unix.lstat base_log_file).Unix.st_kind Unix.S_LNK;
@@ -40,16 +30,10 @@ let test_rotate _ =
   assert_equal (Sys.is_file actual_path) `No
 
 
-let assert_enabled section =
-  assert_bool
-    "Section should be enabled"
-    (Log.is_enabled section)
-
+let assert_enabled section = assert_bool "Section should be enabled" (Log.is_enabled section)
 
 let assert_disabled section =
-  assert_bool
-    "Section should be disabled"
-    (not (Log.is_enabled section))
+  assert_bool "Section should be disabled" (not (Log.is_enabled section))
 
 
 let test_initialize_default_off _ =
@@ -69,9 +53,8 @@ let test_initialize_default_on _ =
 
 
 let () =
-  "log">:::[
-    "rotate">::test_rotate;
-    "initialize_default_off">::test_initialize_default_off;
-    "initialize_default_on">::test_initialize_default_on;
-  ]
+  "log"
+  >::: [ "rotate" >:: test_rotate;
+         "initialize_default_off" >:: test_initialize_default_off;
+         "initialize_default_on" >:: test_initialize_default_on ]
   |> run_test_tt_main

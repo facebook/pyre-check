@@ -4,124 +4,103 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
 open Analysis
 
-
 module InitializeRequest : module type of Types.InitializeRequest
 
-module TextDocumentDefinitionRequest
-  : module type of Types.TextDocumentDefinitionRequest
+module TextDocumentDefinitionRequest : module type of Types.TextDocumentDefinitionRequest
 
 (** PublishDiagnostics notification, method="textDocument/publishDiagnostics" *)
 module PublishDiagnostics : sig
-  type t
-  [@@deriving yojson]
+  type t [@@deriving yojson]
 
-  (** Turn a type check error into a PublishDiagnostics notification *)
   val of_errors
-    :  configuration: Configuration.Analysis.t
-    -> File.Handle.t
-    -> TypeCheck.Error.t list
-    -> t Or_error.t
+    :  configuration:Configuration.Analysis.t ->
+    File.Handle.t ->
+    TypeCheck.Error.t list ->
+    t Or_error.t
+  (** Turn a type check error into a PublishDiagnostics notification *)
 
+  val clear_diagnostics_for_uri : uri:string -> t
   (** Clear diagnostics for the given URI. *)
-  val clear_diagnostics_for_uri: uri: string -> t
 
-  val uri: t -> string
+  val uri : t -> string
 end
 
 (** DidSaveTextDocument notification, method="textDocument/didSave" *)
 module DidSaveTextDocument : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
-
+  val create : ?root:Path.t -> string -> string option -> t Or_error.t
   (** create path content_option evaluates to a DidSaveTextDocument notification *)
-  val create: ?root: Path.t -> string -> string option -> t Or_error.t
 end
 
 module ApplyWorkspaceEdit : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
-  val create: id: Types.RequestId.t -> Types.WorkspaceEdit.t -> t
+  val create : id:Types.RequestId.t -> Types.WorkspaceEdit.t -> t
 end
 
 module ShowMessage : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
-  val create: Types.ShowMessageParameters.messageType -> string -> t
+  val create : Types.ShowMessageParameters.messageType -> string -> t
 end
 
 module InitializeResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
+  val default : Types.RequestId.t -> t
   (** default [id] [response] the server initialize response message *)
-  val default: Types.RequestId.t -> t
 end
 
 module ShutdownResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
+  val default : Types.RequestId.t -> t
   (** default [id] [response] the shutdown response *)
-  val default: Types.RequestId.t -> t
 end
 
 module TextDocumentDefinitionResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
   val create
-    :  configuration: Configuration.Analysis.t
-    -> id: Types.RequestId.t
-    -> location: Ast.Location.Instantiated.t option
-    -> t
+    :  configuration:Configuration.Analysis.t ->
+    id:Types.RequestId.t ->
+    location:Ast.Location.Instantiated.t option ->
+    t
 end
 
 module HoverResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
   type hover_result = {
     location: Ast.Location.Instantiated.t;
-    contents: string;
+    contents: string
   }
 
-  val create: id: Types.RequestId.t -> result: hover_result option -> t
+  val create : id:Types.RequestId.t -> result:hover_result option -> t
 end
 
 module CodeActionResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
-  val create:
-    id: Types.RequestId.t ->
-    code_actions: Types.CodeAction.t list ->
-    t
-
+  val create : id:Types.RequestId.t -> code_actions:Types.CodeAction.t list -> t
 end
 
 module RageResponse : sig
-  type t
-  [@@deriving to_yojson]
+  type t [@@deriving to_yojson]
 
-  val create
-    :  items: Types.RageResponse.RageResult.rageItem list
-    -> id: Types.RequestId.t
-    -> t
+  val create : items:Types.RageResponse.RageResult.rageItem list -> id:Types.RequestId.t -> t
 end
 
-(** Convert json to string content and set the content length headers.
-    cf. https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol *)
-val to_message: Yojson.Safe.json -> string
+val to_message : Yojson.Safe.json -> string
+(** Convert json to string content and set the content length headers. cf.
+    https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol *)
 
+val write_message : Out_channel.t -> Yojson.Safe.json -> unit
 (** Write a language server protocol message to a channel *)
-val write_message: Out_channel.t -> Yojson.Safe.json -> unit
 
+val read_message : In_channel.t -> Yojson.Safe.json option
 (** Read a language server protocol message from a channel (can raise End_of_file) *)
-val read_message: In_channel.t -> Yojson.Safe.json option

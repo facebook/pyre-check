@@ -6,19 +6,18 @@
 open Ast
 open Expression
 
-
 type mismatch = {
   actual: Type.t;
   actual_expression: Expression.t;
   expected: Type.t;
   name: Identifier.t option;
-  position: int;
+  position: int
 }
 [@@deriving eq, show, compare]
 
 type invalid_argument = {
   expression: Expression.t;
-  annotation: Type.t;
+  annotation: Type.t
 }
 [@@deriving eq, show, compare]
 
@@ -41,7 +40,7 @@ type reason =
 
 type closest = {
   callable: Type.Callable.t;
-  reason: reason option;
+  reason: reason option
 }
 [@@deriving eq, show]
 
@@ -51,7 +50,7 @@ type t =
 [@@deriving eq, show]
 
 val select
-  :  resolution: Resolution.t
-  -> arguments: Expression.t Call.Argument.t list
-  -> callable: Type.Callable.t
-  -> t
+  :  resolution:Resolution.t ->
+  arguments:Expression.t Call.Argument.t list ->
+  callable:Type.Callable.t ->
+  t

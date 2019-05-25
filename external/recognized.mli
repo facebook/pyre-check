@@ -5,16 +5,15 @@
 
 open Core
 
+val asyncio_contextmanager_decorators : String.Set.t
 
-val asyncio_contextmanager_decorators: String.Set.t
+val classmethod_decorators : String.Set.t
 
-val classmethod_decorators: String.Set.t
+val property_decorators : String.Set.t
 
-val property_decorators: String.Set.t
+val classproperty_decorators : String.Set.t
 
-val classproperty_decorators: String.Set.t
-
-val enumeration_classes: String.Set.t
+val enumeration_classes : String.Set.t
 
 (* Names of functions that implement an 'assert'. *)
-val assert_functions: String.Set.t
+val assert_functions : String.Set.t

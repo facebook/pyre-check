@@ -7,142 +7,139 @@ open Ast
 open Statement
 module Attribute = AnnotatedAttribute
 
-
-type t
-[@@deriving compare, eq, sexp, show, hash]
+type t [@@deriving compare, eq, sexp, show, hash]
 
 type decorator = {
   name: string;
-  arguments: (Expression.t Expression.Call.Argument.t list) option
+  arguments: Expression.t Expression.Call.Argument.t list option
 }
 [@@deriving compare, eq, sexp, show, hash]
 
 type class_data = {
   instantiated: Type.t;
   class_attributes: bool;
-  class_definition: t;
+  class_definition: t
 }
 
-val name_equal: t -> t -> bool
+val name_equal : t -> t -> bool
 
-val create: Class.t Node.t -> t
+val create : Class.t Node.t -> t
 
-val name: t -> Reference.t
-val bases: t -> Expression.t Expression.Call.Argument.t list
-val get_decorator: t -> decorator: string -> decorator list
+val name : t -> Reference.t
 
-val annotation: t -> Type.t
-val successors: t -> resolution: Resolution.t -> Type.primitive list
-val successors_fold:
-  'a Class.record Node.t ->
+val bases : t -> Expression.t Expression.Call.Argument.t list
+
+val get_decorator : t -> decorator:string -> decorator list
+
+val annotation : t -> Type.t
+
+val successors : t -> resolution:Resolution.t -> Type.primitive list
+
+val successors_fold
+  :  'a Class.record Node.t ->
   resolution:Resolution.t ->
   f:('b -> string -> 'b) ->
   initial:'b ->
   'b
-val is_unit_test: t -> bool
 
-val metaclass: t -> resolution: Resolution.t -> Type.t
+val is_unit_test : t -> bool
 
-val resolve_class: resolution: Resolution.t -> Type.t -> class_data list option
+val metaclass : t -> resolution:Resolution.t -> Type.t
+
+val resolve_class : resolution:Resolution.t -> Type.t -> class_data list option
 
 module Method : sig
-  type t
-  [@@deriving compare, eq, sexp, show, hash]
+  type t [@@deriving compare, eq, sexp, show, hash]
 
-  val create: define: Define.t -> parent: Type.t -> t
+  val create : define:Define.t -> parent:Type.t -> t
 
-  val name: t -> Identifier.t
+  val name : t -> Identifier.t
 
-  val define: t -> Define.t
-  val parent: t -> Type.t
+  val define : t -> Define.t
 
-  val parameter_annotations
-    :  t
-    -> resolution: Resolution.t
-    -> (Identifier.t * Type.t) list
+  val parent : t -> Type.t
 
-  val return_annotation: t -> resolution: Resolution.t -> Type.t
+  val parameter_annotations : t -> resolution:Resolution.t -> (Identifier.t * Type.t) list
 
+  val return_annotation : t -> resolution:Resolution.t -> Type.t
 end
 
-val generics: t -> resolution: Resolution.t -> Type.t list
-(* Find free variables in the parametric type. E.g. for generic class
-    `class A(typing.Generic[_T], typing.Generic[_S]): ...`
-    and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
+val generics : t -> resolution:Resolution.t -> Type.t list
+
+(* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
+   typing.Generic[_S]): ...` and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
 
 val inferred_generic_base
-  :  t
-  -> resolution: Resolution.t
-  -> Expression.t Expression.Call.Argument.t list
+  :  t ->
+  resolution:Resolution.t ->
+  Expression.t Expression.Call.Argument.t list
 
 val constraints
-  :  ?target: t
-  -> ?parameters: Type.t list
-  -> t
-  -> instantiated: Type.t
-  -> resolution: Resolution.t
-  -> TypeConstraints.Solution.t
+  :  ?target:t ->
+  ?parameters:Type.t list ->
+  t ->
+  instantiated:Type.t ->
+  resolution:Resolution.t ->
+  TypeConstraints.Solution.t
 
-val superclasses
-  :  t
-  -> resolution: Resolution.t
-  -> t list
+val superclasses : t -> resolution:Resolution.t -> t list
 
-val methods: t -> Method.t list
-val is_protocol: t -> bool
+val methods : t -> Method.t list
 
-
+val is_protocol : t -> bool
 
 val create_attribute
-  :  resolution: Resolution.t
-  -> parent: t
-  -> ?instantiated: Type.t
-  -> ?defined: bool
-  -> ?inherited: bool
-  -> ?default_class_attribute: bool
-  -> Statement.Attribute.t
-  -> Attribute.t
+  :  resolution:Resolution.t ->
+  parent:t ->
+  ?instantiated:Type.t ->
+  ?defined:bool ->
+  ?inherited:bool ->
+  ?default_class_attribute:bool ->
+  Statement.Attribute.t ->
+  Attribute.t
 
 val attributes
-  :  ?transitive: bool
-  -> ?class_attributes: bool
-  -> ?include_generated_attributes: bool
-  -> ?instantiated: Type.t
-  -> t
-  -> resolution: Resolution.t
-  -> Attribute.t list
+  :  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?include_generated_attributes:bool ->
+  ?instantiated:Type.t ->
+  t ->
+  resolution:Resolution.t ->
+  Attribute.t list
+
 val attribute_fold
-  :  ?transitive: bool
-  -> ?class_attributes: bool
-  -> ?include_generated_attributes: bool
-  -> t
-  -> initial: 'accumulator
-  -> f: ('accumulator -> Attribute.t -> 'accumulator)
-  -> resolution: Resolution.t
-  -> 'accumulator
+  :  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?include_generated_attributes:bool ->
+  t ->
+  initial:'accumulator ->
+  f:('accumulator -> Attribute.t -> 'accumulator) ->
+  resolution:Resolution.t ->
+  'accumulator
+
 val attribute
-  :  ?transitive: bool
-  -> ?class_attributes: bool
-  -> ?special_method: bool
-  -> t
-  -> resolution: Resolution.t
-  -> name: Identifier.t
-  -> instantiated: Type.t
-  -> AnnotatedAttribute.t
+  :  ?transitive:bool ->
+  ?class_attributes:bool ->
+  ?special_method:bool ->
+  t ->
+  resolution:Resolution.t ->
+  name:Identifier.t ->
+  instantiated:Type.t ->
+  AnnotatedAttribute.t
 
 (* Attribute defined by `__getattr__`. *)
-val fallback_attribute: resolution: Resolution.t -> name: Identifier.t -> t -> Attribute.t option
+val fallback_attribute : resolution:Resolution.t -> name:Identifier.t -> t -> Attribute.t option
 
-val constructor: t -> instantiated:Type.t -> resolution: Resolution.t -> Type.t
+val constructor : t -> instantiated:Type.t -> resolution:Resolution.t -> Type.t
 
-val constructors: t -> resolution: Resolution.t -> Define.t list
+val constructors : t -> resolution:Resolution.t -> Define.t list
 
-val overrides: t -> resolution: Resolution.t -> name: Identifier.t -> Attribute.t option
+val overrides : t -> resolution:Resolution.t -> name:Identifier.t -> Attribute.t option
 
-val has_method: ?transitive: bool -> t -> resolution: Resolution.t -> name: Identifier.t -> bool
+val has_method : ?transitive:bool -> t -> resolution:Resolution.t -> name:Identifier.t -> bool
 
-val inferred_callable_type: t -> resolution: Resolution.t -> Type.Callable.t option
+val inferred_callable_type : t -> resolution:Resolution.t -> Type.Callable.t option
 
-module AttributeCache: sig
-  val clear: unit -> unit
+module AttributeCache : sig
+  val clear : unit -> unit
 end

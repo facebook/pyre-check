@@ -4,20 +4,17 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Analysis
 open Ast
 open Interprocedural
 open Statement
 open Pyre
 
-
 let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  DependencyGraph.create_callgraph ~environment ~source
-  |> record_and_merge_call_graph call_graph
+  DependencyGraph.create_callgraph ~environment ~source |> record_and_merge_call_graph call_graph
 
 
 let record_overrides overrides =
@@ -44,9 +41,11 @@ let callables ~resolution ~source =
         if not class_exists then
           Log.warning
             "Class %a for method %a is not part of the type environment"
-            Reference.pp class_name
-            Reference.pp name;
-        (Callable.create_method name, definition)
+            Reference.pp
+            class_name
+            Reference.pp
+            name;
+        Callable.create_method name, definition
   in
   List.map ~f:record_toplevel_definition defines
 
@@ -54,22 +53,17 @@ let callables ~resolution ~source =
 let analyze
     ?(taint_models_directory = "")
     ~scheduler
-    ~configuration:({
-        Configuration.StaticAnalysis.configuration;
-        dump_call_graph;
-        _;
-      } as analysis_configuration)
+    ~configuration:( { Configuration.StaticAnalysis.configuration; dump_call_graph; _ } as
+                   analysis_configuration )
     ~environment
     ~handles:paths
-    () =
+    ()
+  =
   let resolution = TypeCheck.resolution environment () in
-
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =
-    let combine ~key:_ left right =
-      List.rev_append left right
-    in
+    let combine ~key:_ left right = List.rev_append left right in
     let build_overrides overrides path =
       try
         match Ast.SharedMemory.Sources.get path with
@@ -78,24 +72,27 @@ let analyze
             let new_overrides = DependencyGraph.create_overrides ~environment ~source in
             record_overrides new_overrides;
             Map.merge_skewed overrides new_overrides ~combine
-      with TypeOrder.Untracked untracked_type ->
-        Log.info
-          "Error building overrides in path %a for untracked type %a"
-          File.Handle.pp path
-          Type.pp untracked_type;
-        overrides
+      with
+      | TypeOrder.Untracked untracked_type ->
+          Log.info
+            "Error building overrides in path %a for untracked type %a"
+            File.Handle.pp
+            path
+            Type.pp
+            untracked_type;
+          overrides
     in
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~initial:DependencyGraph.empty_overrides
-      ~map:(fun _ paths -> List.fold paths ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+      ~map:(fun _ paths ->
+        List.fold paths ~init:DependencyGraph.empty_overrides ~f:build_overrides)
       ~reduce:(Map.merge_skewed ~combine)
       ~inputs:paths
       ()
   in
   Statistics.performance ~name:"Overrides recorded" ~timer ();
-
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let callgraph =
@@ -104,11 +101,15 @@ let analyze
         Ast.SharedMemory.Sources.get path
         >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~path ~source)
         |> Option.value ~default:call_graph
-      with TypeOrder.Untracked untracked_type ->
-        Log.info "Error building call graph in path %a for untracked type %a"
-          File.Handle.pp path
-          Type.pp untracked_type;
-        call_graph
+      with
+      | TypeOrder.Untracked untracked_type ->
+          Log.info
+            "Error building call graph in path %a for untracked type %a"
+            File.Handle.pp
+            path
+            Type.pp
+            untracked_type;
+          call_graph
     in
     Scheduler.map_reduce
       scheduler
@@ -120,12 +121,9 @@ let analyze
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
-
   Log.info "Call graph edges: %d" (Callable.RealMap.length callgraph);
   if dump_call_graph then
-    DependencyGraph.from_callgraph callgraph
-    |> DependencyGraph.dump ~configuration;
-
+    DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
   let callables, stubs =
     let classify_source (callables, stubs) (callable, define) =
       if Define.is_stub define.Node.value then
@@ -135,24 +133,18 @@ let analyze
     in
     let make_callables result path =
       Ast.SharedMemory.Sources.get path
-      >>|
-      (fun source ->
-         callables ~resolution ~source
-         |> List.fold ~f:classify_source ~init:result)
+      >>| (fun source ->
+            callables ~resolution ~source |> List.fold ~f:classify_source ~init:result)
       |> Option.value ~default:result
     in
     List.fold paths ~f:make_callables ~init:([], [])
   in
-  (* TODO(T41380664): generalize this to handle more than taint analysis.
-     The analysis_configuration here should be picked from the command line somehow and it
-     would indicate which analysis to run (taint vs others), and also contain particular
-     analysis options passed the the analysis initialization code.
-  *)
-  let configuration_json = `Assoc [
-      "taint", `Assoc [
-        "model_directory", `String taint_models_directory;
-      ];
-    ]
+  (* TODO(T41380664): generalize this to handle more than taint analysis. The
+     analysis_configuration here should be picked from the command line somehow and it would
+     indicate which analysis to run (taint vs others), and also contain particular analysis options
+     passed the the analysis initialization code. *)
+  let configuration_json =
+    `Assoc ["taint", `Assoc ["model_directory", `String taint_models_directory]]
   in
   let analyses = [Taint.Analysis.abstract_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)
@@ -162,9 +154,7 @@ let analyze
       ~configuration:configuration_json
       ~environment
       ~functions:callables
-    |> Analysis.record_initial_models
-      ~functions:callables
-      ~stubs
+    |> Analysis.record_initial_models ~functions:callables ~stubs
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
   let dependencies =
@@ -197,9 +187,9 @@ let analyze
           ~all_callables
           Interprocedural.Fixpoint.Epoch.initial
       in
-      Log.info "Fixpoint iterations: %d" iterations;
+      Log.info "Fixpoint iterations: %d" iterations
     with
-      exn ->
+    | exn ->
         Interprocedural.Analysis.save_results
           ~configuration:analysis_configuration
           ~analyses

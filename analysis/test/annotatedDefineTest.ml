@@ -5,83 +5,59 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Analysis
 open Pyre
 open Statement
-
 open Test
 open AnnotatedTest
-
 module Class = Annotated.Class
 module Define = Annotated.Define
 
-
 let test_parent_definition _ =
   let parent_class_definition environment name parent =
-    {
-      Statement.Define.signature = {
-        name = !&name;
-        parameters = [];
-        decorators = [];
-        docstring = None;
-        return_annotation = None;
-        async = false;
-        parent = parent >>| Reference.create;
-      };
-      body = [+Pass];
+    { Statement.Define.signature =
+        { name = !&name;
+          parameters = [];
+          decorators = [];
+          docstring = None;
+          return_annotation = None;
+          async = false;
+          parent = parent >>| Reference.create
+        };
+      body = [+Pass]
     }
     |> Define.create
     |> Define.parent_definition ~resolution:(TypeCheck.resolution environment ())
   in
-
-  let environment =
-    populate {|
+  let environment = populate {|
       class foo():
         def bar(): pass
     |} in
-  let parent =
-    parent_class_definition environment "bar" (Some "foo")
-    |> value
-  in
-  assert_equal
-    ~cmp:Reference.equal
-    ~printer:Reference.show
-    (Class.name parent)
-    (!&"foo");
-
-  let environment =
-    populate {|
+  let parent = parent_class_definition environment "bar" (Some "foo") |> value in
+  assert_equal ~cmp:Reference.equal ~printer:Reference.show (Class.name parent) !&"foo";
+  let environment = populate {|
       def bar(): pass
     |} in
-  let parent =
-    parent_class_definition environment "bar" (Some "foo")
-  in
+  let parent = parent_class_definition environment "bar" (Some "foo") in
   assert_is_none parent;
-
   let environment =
-    populate {|
+    populate
+      {|
       class superfoo(): ...
       class foo(superfoo):
         def bar(): pass
-    |} in
-  let parent =
-    parent_class_definition environment "bar" (Some "foo")
-    |> value
+    |}
   in
+  let parent = parent_class_definition environment "bar" (Some "foo") |> value in
   let base_type =
-    match (List.hd (Class.bases parent)) with
+    match List.hd (Class.bases parent) with
     | Some { Expression.Call.Argument.value; _ } ->
         TypeCheck.resolution environment ()
-        |> (fun resolution -> Resolution.parse_annotation resolution value)
+        |> fun resolution -> Resolution.parse_annotation resolution value
     | _ -> Type.Top
   in
-  assert_equal
-    ~cmp:Reference.equal
-    ~printer:Reference.show
-    (Class.name parent)
-    (!&"foo");
+  assert_equal ~cmp:Reference.equal ~printer:Reference.show (Class.name parent) !&"foo";
   assert_equal base_type (Type.Primitive "superfoo")
 
 
@@ -90,10 +66,8 @@ let test_decorate _ =
   let resolution = TypeCheck.resolution (Test.environment ()) () in
   let assert_decorated source ~expected =
     let take_define = function
-      | [{ Node.value = Statement.Define define; _ }] ->
-          define
-      | _ ->
-          failwith "Expected a define"
+      | [{ Node.value = Statement.Define define; _ }] -> define
+      | _ -> failwith "Expected a define"
     in
     let define =
       Test.parse source
@@ -127,9 +101,8 @@ let test_decorate _ =
         ...
     |}
 
+
 let () =
-  "define">:::[
-    "parent_definition">::test_parent_definition;
-    "decorate">::test_decorate;
-  ]
-  |> Test.run;
+  "define"
+  >::: ["parent_definition" >:: test_parent_definition; "decorate" >:: test_decorate]
+  |> Test.run

@@ -6,8 +6,7 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
-*)
-
+ *)
 
 (*****************************************************************************)
 (* Very simple module used to make sure we don't mix keys of different
@@ -15,11 +14,13 @@
  * Because we have to "create" a new module every time, we have to make a new
  * prefix (cf prefix.ml). Since the prefixes are always different (for each
  * call to make), we are sure that they are not colliding.
-*)
+ *)
 (*****************************************************************************)
 
 module type Type = sig
   type t
-  val prefix: Prefix.t
-  val description: string
+
+  val prefix : Prefix.t
+
+  val description : string
 end

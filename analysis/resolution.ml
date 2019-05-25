@@ -4,78 +4,57 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
-
 open Ast
 open Statement
 
-
-type global = Annotation.t Node.t
-[@@deriving eq, show]
-
+type global = Annotation.t Node.t [@@deriving eq, show]
 
 type class_metadata = {
   successors: Type.primitive list;
   is_test: bool;
-  is_final: bool;
+  is_final: bool
 }
 [@@deriving eq]
 
-
 type generic_type_problems =
-  | IncorrectNumberOfParameters of {
-      actual: int;
-      expected: int;
-    }
-  | ViolateConstraints of {
-      actual: Type.t;
-      expected: Type.Variable.Unary.t;
-    }
+  | IncorrectNumberOfParameters of { actual: int; expected: int }
+  | ViolateConstraints of { actual: Type.t; expected: Type.Variable.Unary.t }
 [@@deriving compare, eq, sexp, show, hash]
-
 
 type type_parameters_mismatch = {
   name: string;
-  kind: generic_type_problems;
+  kind: generic_type_problems
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-
 module Cache = struct
   module Generics = struct
-    let cache =
-      Identifier.Table.create ()
+    let cache = Identifier.Table.create ()
 
     let clear () = Hashtbl.clear cache
   end
 
-  let clear () =
-    Generics.clear ()
+  let clear () = Generics.clear ()
 end
-
 
 type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   order: (module TypeOrder.Handler);
-
-  resolve: resolution: t -> Expression.t -> Type.t;
+  resolve: resolution:t -> Expression.t -> Type.t;
   aliases: Type.primitive -> Type.alias option;
-
   global: Reference.t -> global option;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   module_definition: Reference.t -> Module.t option;
-  class_definition: ?convert: bool -> Type.primitive -> (Class.t Node.t) option;
+  class_definition: ?convert:bool -> Type.primitive -> Class.t Node.t option;
   class_metadata: Type.primitive -> class_metadata option;
-  constructor: (resolution: t -> Type.primitive -> Type.t option);
-  generics: resolution: t -> Class.t Node.t -> Type.t list;
-  attributes: resolution: t -> Type.t -> AnnotatedAttribute.t list option;
+  constructor: resolution:t -> Type.primitive -> Type.t option;
+  generics: resolution:t -> Class.t Node.t -> Type.t list;
+  attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
-
-  parent: Reference.t option;
+  parent: Reference.t option
 }
-
 
 let create
     ~annotations
@@ -92,9 +71,9 @@ let create
     ~attributes
     ~is_protocol
     ?parent
-    () =
-  {
-    annotations;
+    ()
+  =
+  { annotations;
     type_variables = Type.Variable.Set.empty;
     order;
     resolve;
@@ -108,16 +87,13 @@ let create
     undecorated_signature;
     attributes;
     is_protocol;
-    parent;
+    parent
   }
 
 
 let pp format { annotations; type_variables; _ } =
   let annotation_map_entry (reference, annotation) =
-    Format.asprintf
-      "%a -> %a"
-      Reference.pp reference
-      Annotation.pp annotation;
+    Format.asprintf "%a -> %a" Reference.pp reference Annotation.pp annotation
   in
   Type.Variable.Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
@@ -129,24 +105,17 @@ let pp format { annotations; type_variables; _ } =
   |> Format.fprintf format "Annotations: [%s]"
 
 
-let show resolution =
-  Format.asprintf "%a" pp resolution
-
+let show resolution = Format.asprintf "%a" pp resolution
 
 let set_local ({ annotations; _ } as resolution) ~reference ~annotation =
   { resolution with annotations = Map.set annotations ~key:reference ~data:annotation }
 
 
-let get_local ?(global_fallback=true) ~reference { annotations; global; _ } =
+let get_local ?(global_fallback = true) ~reference { annotations; global; _ } =
   match Map.find annotations reference with
-  | Some result ->
-      Some result
-  | _ when global_fallback ->
-      Reference.delocalize reference
-      |> global
-      >>| Node.value
-  | _ ->
-      None
+  | Some result -> Some result
+  | _ when global_fallback -> Reference.delocalize reference |> global >>| Node.value
+  | _ -> None
 
 
 let unset_local ({ annotations; _ } as resolution) ~reference =
@@ -155,12 +124,8 @@ let unset_local ({ annotations; _ } as resolution) ~reference =
 
 let is_global { annotations; global; _ } ~reference =
   match Map.find annotations reference with
-  | Some annotation ->
-      Annotation.is_global annotation
-  | _ ->
-      Reference.delocalize reference
-      |> global
-      |> Option.is_some
+  | Some annotation -> Annotation.is_global annotation
+  | _ -> Reference.delocalize reference |> global |> Option.is_some
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
@@ -171,37 +136,21 @@ let type_variable_exists { type_variables; _ } ~variable =
   Type.Variable.Set.mem type_variables variable
 
 
-let annotations { annotations; _ } =
-  annotations
+let annotations { annotations; _ } = annotations
 
+let with_annotations resolution ~annotations = { resolution with annotations }
 
-let with_annotations resolution ~annotations =
-  { resolution with annotations }
+let parent { parent; _ } = parent
 
+let with_parent resolution ~parent = { resolution with parent }
 
-let parent { parent; _ } =
-  parent
+let order { order; _ } = order
 
+let resolve ({ resolve; _ } as resolution) = resolve ~resolution
 
-let with_parent resolution ~parent =
-  { resolution with parent }
+let global { global; _ } = global
 
-
-let order { order; _ } =
-  order
-
-
-let resolve ({ resolve; _  } as resolution) =
-  resolve ~resolution
-
-
-let global { global; _ } =
-  global
-
-
-let module_definition { module_definition; _ } =
-  module_definition
-
+let module_definition { module_definition; _ } = module_definition
 
 let primitive_name annotation =
   let primitive, _ = Type.split annotation in
@@ -209,48 +158,35 @@ let primitive_name annotation =
 
 
 let class_definition ?(convert = false) { class_definition; _ } annotation =
-  primitive_name annotation
-  >>= class_definition ~convert
+  primitive_name annotation >>= class_definition ~convert
 
 
-let class_metadata { class_metadata; _ } annotation =
-  primitive_name annotation
-  >>= class_metadata
+let class_metadata { class_metadata; _ } annotation = primitive_name annotation >>= class_metadata
 
-
-let constructor ({ constructor; _ } as resolution) =
-  constructor ~resolution
-
+let constructor ({ constructor; _ } as resolution) = constructor ~resolution
 
 let generics ({ generics; class_definition; _ } as resolution) annotation =
   primitive_name annotation
   >>= fun key ->
   Hashtbl.find_or_add Cache.Generics.cache key ~default:(fun _ ->
-      class_definition key >>| generics ~resolution
-    )
+      class_definition key >>| generics ~resolution)
 
 
-let attributes ({ attributes; _ } as resolution) =
-  attributes ~resolution
+let attributes ({ attributes; _ } as resolution) = attributes ~resolution
 
-
-let is_protocol { is_protocol; _ } =
-  is_protocol
-
+let is_protocol { is_protocol; _ } = is_protocol
 
 module FunctionDefinitionsCache = struct
-  let cache =
-    Reference.Table.create ()
+  let cache = Reference.Table.create ()
 
   let enabled =
     (* Only enable this in nonincremental mode for now. *)
     ref false
 
-  let enable () =
-    enabled := true
 
-  let set key value =
-    Hashtbl.set cache ~key ~data:value
+  let enable () = enabled := true
+
+  let set key value = Hashtbl.set cache ~key ~data:value
 
   let get key =
     if !enabled then
@@ -258,15 +194,13 @@ module FunctionDefinitionsCache = struct
     else
       None
 
-  let invalidate () =
-    Hashtbl.clear cache
-end
 
+  let invalidate () = Hashtbl.clear cache
+end
 
 let function_definitions resolution reference =
   match FunctionDefinitionsCache.get reference with
-  | Some result ->
-      result
+  | Some result -> result
   | None ->
       let qualifier =
         let rec qualifier ~lead ~tail =
@@ -277,8 +211,7 @@ let function_definitions resolution reference =
                 lead
               else
                 qualifier ~lead:new_lead ~tail
-          | _ ->
-              lead
+          | _ -> lead
         in
         qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
       in
@@ -286,9 +219,8 @@ let function_definitions resolution reference =
         Ast.SharedMemory.Sources.get_for_qualifier qualifier
         >>| Preprocessing.convert
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
-        >>| List.filter
-          ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-              Reference.equal reference name)
+        >>| List.filter ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
+                Reference.equal reference name)
       in
       FunctionDefinitionsCache.set reference result;
       result
@@ -303,42 +235,33 @@ let is_suppressed_module resolution reference =
       module_definition resolution reference
       >>| Module.empty_stub
       |> Option.value ~default:false
-      |> fun suppressed -> (suppressed, reference)
+      |> fun suppressed -> suppressed, reference
   in
-  List.fold ~f:is_suppressed ~init:(false, Reference.empty) (Reference.as_list reference)
-  |> fst
+  List.fold ~f:is_suppressed ~init:(false, Reference.empty) (Reference.as_list reference) |> fst
 
 
-let undecorated_signature { undecorated_signature; _ }  =
-  undecorated_signature
-
+let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
 let full_order ({ order; _ } as resolution) =
-  let constructor instantiated =
-    instantiated
-    |> Type.primitive_name
-    >>= constructor resolution
-  in
-  {
-    TypeOrder.handler = order;
+  let constructor instantiated = instantiated |> Type.primitive_name >>= constructor resolution in
+  { TypeOrder.handler = order;
     constructor;
     attributes = attributes resolution;
     is_protocol = is_protocol resolution;
     protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
-    any_is_bottom = false;
+    any_is_bottom = false
   }
 
 
 let solve_less_or_equal resolution ~constraints ~left ~right =
-  full_order resolution
-  |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
+  full_order resolution |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
 
 
 let constraints_solution_exists ~left ~right resolution =
-  not (
-    solve_less_or_equal resolution ~left ~right ~constraints:TypeConstraints.empty
+  not
+    ( solve_less_or_equal resolution ~left ~right ~constraints:TypeConstraints.empty
     |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order:(full_order resolution))
-    |> List.is_empty)
+    |> List.is_empty )
 
 
 let consistent_solution_exists resolution =
@@ -353,38 +276,19 @@ let partial_solve_constraints resolution =
   TypeOrder.OrderedConstraints.extract_partial_solution ~order:(full_order resolution)
 
 
-let less_or_equal resolution =
-  full_order resolution
-  |> TypeOrder.less_or_equal
+let less_or_equal resolution = full_order resolution |> TypeOrder.less_or_equal
 
+let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 
-let is_compatible_with resolution =
-  full_order resolution
-  |> TypeOrder.is_compatible_with
+let join resolution = full_order resolution |> TypeOrder.join
 
+let meet resolution = full_order resolution |> TypeOrder.meet
 
-let join resolution =
-  full_order resolution
-  |> TypeOrder.join
+let widen resolution = full_order resolution |> TypeOrder.widen
 
+let is_instantiated { order; _ } = TypeOrder.is_instantiated order
 
-let meet resolution =
-  full_order resolution
-  |> TypeOrder.meet
-
-
-let widen resolution =
-  full_order resolution
-  |> TypeOrder.widen
-
-
-let is_instantiated { order; _ } =
-  TypeOrder.is_instantiated order
-
-
-let is_tracked { order; _ } annotation =
-  TypeOrder.contains order annotation
-
+let is_tracked { order; _ } annotation = TypeOrder.contains order annotation
 
 let contains_untracked resolution annotation =
   List.exists
@@ -401,106 +305,96 @@ let is_string_to_any_mapping resolution annotation =
 
 
 let check_invalid_type_parameters resolution annotation =
-  let module InvalidTypeParametersTransform = Type.Transform.Make(struct
-      type state = type_parameters_mismatch list
+  let module InvalidTypeParametersTransform = Type.Transform.Make (struct
+    type state = type_parameters_mismatch list
 
-      let visit_children_before _ _ = false
-      let visit_children_after = true
-      let visit sofar annotation =
-        let transformed_annotation, new_state =
-          let generics_for_name name =
-            match name with
-            | "type"
-            | "typing.Type"
-            | "typing.ClassVar"
-            | "typing.Iterator"
-            | "Optional"
-            | "typing.Final"
-            | "typing.Optional" ->
-                [Type.Variable (Type.Variable.Unary.create "T")]
-            | _ ->
-                generics resolution (Type.Primitive name)
-                |> Option.value ~default:[]
-          in
-          let invalid_type_parameters ~name ~given =
-            let generics = generics_for_name name in
-            match List.zip generics given with
-            | Some [] ->
-                Type.Primitive name, sofar
-            | Some paired ->
-                let check_parameter (generic, given) =
-                  match generic with
-                  | Type.Variable generic ->
-                      let invalid =
-                        let order =
-                          let order = full_order resolution in
-                          { order with any_is_bottom = true }
-                        in
-                        let pair = Type.Variable.UnaryPair (generic, given) in
-                        TypeOrder.OrderedConstraints.add_lower_bound
-                          TypeConstraints.empty
-                          ~order
-                          ~pair
-                        >>| TypeOrder.OrderedConstraints.add_upper_bound
-                          ~order
-                          ~pair
-                        |> Option.is_none
-                      in
-                      if invalid then
-                        Type.Any,
-                        Some ({
-                            name;
-                            kind = ViolateConstraints { actual = given; expected = generic };
-                          })
-                      else
-                        given, None
-                  | _ ->
-                      (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
-                      given, None
-                in
-                List.map paired ~f:check_parameter
-                |> List.unzip
-                |> (fun (parameters, errors) ->
-                    Type.parametric name parameters, (List.filter_map errors ~f:Fn.id) @ sofar)
-            | None ->
-                let mismatch =
-                  {
-                    name;
-                    kind = IncorrectNumberOfParameters {
-                        actual = List.length given;
-                        expected = List.length generics;
-                      }
-                  }
-                in
-                Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
-          in
-          match annotation with
-          | Type.Primitive name ->
-              invalid_type_parameters ~name ~given:[]
-          (* natural variadics *)
-          | Type.Parametric { name = "typing.Protocol"; _ }
-          | Type.Parametric { name = "typing.Generic"; _ } ->
-              annotation, sofar
-          | Type.Parametric { name; parameters } ->
-              invalid_type_parameters ~name ~given:parameters
-          | _ ->
-              annotation, sofar
+    let visit_children_before _ _ = false
+
+    let visit_children_after = true
+
+    let visit sofar annotation =
+      let transformed_annotation, new_state =
+        let generics_for_name name =
+          match name with
+          | "type"
+          | "typing.Type"
+          | "typing.ClassVar"
+          | "typing.Iterator"
+          | "Optional"
+          | "typing.Final"
+          | "typing.Optional" ->
+              [Type.Variable (Type.Variable.Unary.create "T")]
+          | _ -> generics resolution (Type.Primitive name) |> Option.value ~default:[]
         in
-        { Type.Transform.transformed_annotation; new_state }
-    end)
+        let invalid_type_parameters ~name ~given =
+          let generics = generics_for_name name in
+          match List.zip generics given with
+          | Some [] -> Type.Primitive name, sofar
+          | Some paired ->
+              let check_parameter (generic, given) =
+                match generic with
+                | Type.Variable generic ->
+                    let invalid =
+                      let order =
+                        let order = full_order resolution in
+                        { order with any_is_bottom = true }
+                      in
+                      let pair = Type.Variable.UnaryPair (generic, given) in
+                      TypeOrder.OrderedConstraints.add_lower_bound
+                        TypeConstraints.empty
+                        ~order
+                        ~pair
+                      >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                      |> Option.is_none
+                    in
+                    if invalid then
+                      ( Type.Any,
+                        Some
+                          { name;
+                            kind = ViolateConstraints { actual = given; expected = generic }
+                          } )
+                    else
+                      given, None
+                | _ ->
+                    (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
+                    given, None
+              in
+              List.map paired ~f:check_parameter
+              |> List.unzip
+              |> fun (parameters, errors) ->
+              Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
+          | None ->
+              let mismatch =
+                { name;
+                  kind =
+                    IncorrectNumberOfParameters
+                      { actual = List.length given; expected = List.length generics }
+                }
+              in
+              Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
+        in
+        match annotation with
+        | Type.Primitive name -> invalid_type_parameters ~name ~given:[]
+        (* natural variadics *)
+        | Type.Parametric { name = "typing.Protocol"; _ }
+        | Type.Parametric { name = "typing.Generic"; _ } ->
+            annotation, sofar
+        | Type.Parametric { name; parameters } -> invalid_type_parameters ~name ~given:parameters
+        | _ -> annotation, sofar
+      in
+      { Type.Transform.transformed_annotation; new_state }
+  end)
   in
   InvalidTypeParametersTransform.visit [] annotation
 
 
 let parse_annotation
-    ?(allow_untracked=false)
-    ?(allow_invalid_type_parameters=false)
+    ?(allow_untracked = false)
+    ?(allow_invalid_type_parameters = false)
     ({ aliases; module_definition; _ } as resolution)
-    expression =
-  let expression =
-    Expression.delocalize expression
-    |> Expression.convert_to_new
-  in
+    expression
+  =
+  let expression = Expression.delocalize expression |> Expression.convert_to_new in
   let aliases name =
     if allow_invalid_type_parameters then
       aliases name
@@ -509,9 +403,8 @@ let parse_annotation
       | Some (Type.TypeAlias alias) ->
           check_invalid_type_parameters resolution alias
           |> snd
-          |> (fun alias -> Some (Type.TypeAlias alias))
-      | result ->
-          result
+          |> fun alias -> Some (Type.TypeAlias alias)
+      | result -> result
   in
   let parsed = Type.create ~aliases expression in
   let constraints = function
@@ -524,88 +417,70 @@ let parse_annotation
           Some Type.Any
         else
           None
-    | _ ->
-        None
+    | _ -> None
   in
   let annotation = Type.instantiate parsed ~constraints in
   if contains_untracked resolution annotation && not allow_untracked then
     Type.Top
   else if not allow_invalid_type_parameters then
-    check_invalid_type_parameters resolution annotation
-    |> snd
+    check_invalid_type_parameters resolution annotation |> snd
   else
     annotation
 
 
-let parse_reference ?(allow_untracked=false) resolution reference =
+let parse_reference ?(allow_untracked = false) resolution reference =
   Reference.expression reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
-  | Type.Parametric { name = left_name; parameters = left_parameters },
-    Type.Parametric { name = right_name; parameters = right_parameters }
+  | ( Type.Parametric { name = left_name; parameters = left_parameters },
+      Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
         TypeOrder.variables (order resolution) left
         >>= fun variables ->
-        (List.map3
-           variables
-           left_parameters
-           right_parameters
-           ~f:(fun variable left right -> (variable, left, right))
-         |> function
-         | List.Or_unequal_lengths.Ok list -> Some list
-         | _ -> None)
+        List.map3 variables left_parameters right_parameters ~f:(fun variable left right ->
+            variable, left, right)
+        |> function
+        | List.Or_unequal_lengths.Ok list -> Some list
+        | _ -> None
       in
       let due_to_invariant_variable (variable, left, right) =
         match variable with
         | Type.Variable { variance = Type.Variable.Unary.Invariant; _ } ->
             less_or_equal resolution ~left ~right
-        | _ ->
-            false
+        | _ -> false
       in
-      zipped
-      >>| List.exists ~f:due_to_invariant_variable
-      |> Option.value ~default:false
-  | _ ->
-      false
+      zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false
+  | _ -> false
 
 
-(* In general, python expressions can be self-referential. This resolution only checks
-   literals and annotations found in the resolution map, without resolving expressions. *)
+(* In general, python expressions can be self-referential. This resolution only checks literals and
+   annotations found in the resolution map, without resolving expressions. *)
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
   let is_concrete_constructable class_type =
-    generics resolution class_type
-    >>| List.is_empty
-    |> Option.value ~default:false
+    generics resolution class_type >>| List.is_empty |> Option.value ~default:false
   in
   match Node.value expression with
-  | Await expression ->
-      resolve_literal resolution expression
-      |> Type.awaitable_value
-
+  | Await expression -> resolve_literal resolution expression |> Type.awaitable_value
   | BooleanOperator { BooleanOperator.left; right; _ } ->
       let annotation =
-        join
-          resolution
-          (resolve_literal resolution left)
-          (resolve_literal resolution right)
+        join resolution (resolve_literal resolution left) (resolve_literal resolution right)
       in
       if Type.is_concrete annotation then annotation else Type.Any
-
-  | Call { callee = ({ Node.value = Name name; _ } as callee); _ }
+  | Call { callee = { Node.value = Name name; _ } as callee; _ }
     when Expression.is_simple_name name ->
       let class_type = parse_annotation resolution callee in
       if is_concrete_constructable class_type then
         class_type
       else
         Type.Top
-
   | Call _
-  | Name _ when Expression.has_identifier_base expression ->
+  | Name _
+    when Expression.has_identifier_base expression ->
       let class_type = parse_annotation resolution expression in
       (* None is a special type that doesn't have a constructor. *)
       if Type.is_none class_type then
@@ -614,17 +489,12 @@ let rec resolve_literal resolution expression =
         Type.meta class_type
       else
         Type.Top
-
-  | Complex _ ->
-      Type.complex
-
+  | Complex _ -> Type.complex
   | Dictionary { Dictionary.entries; keywords = [] } ->
       let key_annotation, value_annotation =
         let join_entry (key_annotation, value_annotation) { Dictionary.key; value } =
-          (
-            join resolution key_annotation (resolve_literal resolution key),
-            join resolution value_annotation (resolve_literal resolution value)
-          )
+          ( join resolution key_annotation (resolve_literal resolution key),
+            join resolution value_annotation (resolve_literal resolution value) )
         in
         List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
       in
@@ -632,41 +502,25 @@ let rec resolve_literal resolution expression =
         Type.dictionary ~key:key_annotation ~value:value_annotation
       else
         Type.Any
-
-  | False ->
-      Type.bool
-
-  | Float _ ->
-      Type.float
-
-  | Integer _ ->
-      Type.integer
-
+  | False -> Type.bool
+  | Float _ -> Type.float
+  | Integer _ -> Type.integer
   | List elements ->
       let parameter =
-        let join sofar element =
-          join resolution sofar (resolve_literal resolution element)
-        in
+        let join sofar element = join resolution sofar (resolve_literal resolution element) in
         List.fold ~init:Type.Bottom ~f:join elements
       in
       if Type.is_concrete parameter then Type.list parameter else Type.Any
-
   | Set elements ->
       let parameter =
-        let join sofar element =
-          join resolution sofar (resolve_literal resolution element)
-        in
+        let join sofar element = join resolution sofar (resolve_literal resolution element) in
         List.fold ~init:Type.Bottom ~f:join elements
       in
       if Type.is_concrete parameter then Type.set parameter else Type.Any
-
-  | String { StringLiteral.kind; _ } ->
-      begin
-        match kind with
-        | StringLiteral.Bytes -> Type.bytes
-        | _ -> Type.string
-      end
-
+  | String { StringLiteral.kind; _ } -> (
+    match kind with
+    | StringLiteral.Bytes -> Type.bytes
+    | _ -> Type.string )
   | Ternary { Ternary.target; alternative; _ } ->
       let annotation =
         join
@@ -675,52 +529,36 @@ let rec resolve_literal resolution expression =
           (resolve_literal resolution alternative)
       in
       if Type.is_concrete annotation then annotation else Type.Any
-
-  | True ->
-      Type.bool
-
-  | Tuple elements ->
-      Type.tuple (List.map elements ~f:(resolve_literal resolution))
-
-  | Expression.Yield _ ->
-      Type.yield Type.Any
-
-  | _ ->
-      Type.Any
+  | True -> Type.bool
+  | Tuple elements -> Type.tuple (List.map elements ~f:(resolve_literal resolution))
+  | Expression.Yield _ -> Type.yield Type.Any
+  | _ -> Type.Any
 
 
 let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparator =
   match expression, expected with
   | Some { Node.value = Expression.List _; _ }, _
-  | Some { Node.value = Expression.ListComprehension _; _ }, _ ->
-      begin
-        match resolved, expected with
-        | Type.Parametric { name = actual_name; parameters = [actual] },
-          Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-          when Identifier.equal actual_name "list" &&
-               Identifier.equal expected_name "list" &&
-               comparator ~left:actual ~right:expected_parameter ->
-            expected
-        | _ ->
-            resolved
-      end
-
+  | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
+    match resolved, expected with
+    | ( Type.Parametric { name = actual_name; parameters = [actual] },
+        Type.Parametric { name = expected_name; parameters = [expected_parameter] } )
+      when Identifier.equal actual_name "list"
+           && Identifier.equal expected_name "list"
+           && comparator ~left:actual ~right:expected_parameter ->
+        expected
+    | _ -> resolved )
   | Some { Node.value = Expression.Set _; _ }, _
-  | Some { Node.value = Expression.SetComprehension _; _ }, _ ->
-      begin
-        match resolved, expected with
-        | Type.Parametric { name = actual_name; parameters = [actual] },
-          Type.Parametric { name = expected_name; parameters = [expected_parameter] }
-          when Identifier.equal actual_name "set" &&
-               Identifier.equal expected_name "set" &&
-               comparator ~left:actual ~right:expected_parameter ->
-            expected
-        | _ ->
-            resolved
-      end
-
-  | Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _},
-    Type.TypedDictionary { total; fields; _ } ->
+  | Some { Node.value = Expression.SetComprehension _; _ }, _ -> (
+    match resolved, expected with
+    | ( Type.Parametric { name = actual_name; parameters = [actual] },
+        Type.Parametric { name = expected_name; parameters = [expected_parameter] } )
+      when Identifier.equal actual_name "set"
+           && Identifier.equal expected_name "set"
+           && comparator ~left:actual ~right:expected_parameter ->
+        expected
+    | _ -> resolved )
+  | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
+      Type.TypedDictionary { total; fields; _ } ) ->
       let resolve_entry { Expression.Dictionary.key; value } =
         let key = resolve resolution key in
         match key with
@@ -736,59 +574,36 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
                 else
                   resolved
               in
-              List.find fields ~f:matching_name
-              >>| relax
-              |> Option.value ~default:resolved
+              List.find fields ~f:matching_name >>| relax |> Option.value ~default:resolved
             in
             Some { Type.name; annotation }
-        | _ ->
-            None
+        | _ -> None
       in
       List.map entries ~f:resolve_entry
       |> Option.all
       >>| Type.TypedDictionary.anonymous ~total
       |> Option.value ~default:resolved
-
   | Some { Node.value = Expression.Dictionary _; _ }, _
-  | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ ->
-      begin
-        match resolved, expected with
-        | Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
-          Type.Parametric {
-            name = expected_name;
-            parameters = [expected_key; expected_value];
-          }
-          when Identifier.equal actual_name "dict" &&
-               Identifier.equal expected_name "dict" &&
-               comparator ~left:actual_key ~right:expected_key &&
-               comparator
-                 ~left:actual_value
-                 ~right:expected_value ->
-            expected
-        | _ ->
-            resolved
-      end
-
-  | _ ->
-      resolved
+  | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ -> (
+    match resolved, expected with
+    | ( Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
+        Type.Parametric { name = expected_name; parameters = [expected_key; expected_value] } )
+      when Identifier.equal actual_name "dict"
+           && Identifier.equal expected_name "dict"
+           && comparator ~left:actual_key ~right:expected_key
+           && comparator ~left:actual_value ~right:expected_value ->
+        expected
+    | _ -> resolved )
+  | _ -> resolved
 
 
 let resolve_mutable_literals resolution =
-  weaken_mutable_literals
-    resolution
-    ~comparator:(constraints_solution_exists resolution)
+  weaken_mutable_literals resolution ~comparator:(constraints_solution_exists resolution)
 
 
 let is_consistent_with resolution left right ~expression =
-  let comparator ~left ~right =
-    consistent_solution_exists resolution left right
-  in
+  let comparator ~left ~right = consistent_solution_exists resolution left right in
   let left =
-    weaken_mutable_literals
-      resolution
-      ~expression
-      ~resolved:left
-      ~expected:right
-      ~comparator
+    weaken_mutable_literals resolution ~expression ~resolved:left ~expected:right ~comparator
   in
   comparator ~left ~right

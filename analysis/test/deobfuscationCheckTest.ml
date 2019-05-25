@@ -5,11 +5,9 @@
 
 open Core
 open OUnit2
-
 open Ast
 open Analysis
 open Test
-
 
 let assert_deobfuscation source expected =
   let environment = environment () in
@@ -23,68 +21,51 @@ let assert_deobfuscation source expected =
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
-  assert_equal
-    ~cmp:Source.equal
-    ~printer:Source.show
-    (parse ~qualifier expected)
-    actual
+  assert_equal ~cmp:Source.equal ~printer:Source.show (parse ~qualifier expected) actual
 
 
 let test_forward _ =
   (* Basic propagation. *)
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = 1
       b = a
       c = b
       c
-    |}
-    {|
+    |} {|
       1
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = 'string'
       a
-    |}
-    {|
+    |} {|
       'string'
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = True
       a
-    |}
-    {|
+    |} {|
       True
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = None
       a
-    |}
-    {|
+    |} {|
       None
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = 1
       a = 2
       a
-    |}
-    {|
+    |} {|
       a = 1
       2
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = 1
       foo(a)
-    |}
-    {|
+    |} {|
       foo(1)
     |};
-
   (* Deletion. *)
   assert_deobfuscation
     {|
@@ -109,7 +90,6 @@ let test_forward _ =
       a = 1 + 1
       a
     |};
-
   (* Control flow. *)
   assert_deobfuscation
     {|
@@ -139,14 +119,11 @@ let test_forward _ =
         pass
       1
     |};
-
   (* Assertions. *)
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = False
       assert a
-    |}
-    {|
+    |} {|
       assert False
     |};
   assert_deobfuscation
@@ -170,33 +147,25 @@ let test_forward _ =
       if False:
         foo(1)
     |};
-
   (* Functions. *)
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = len
       a
-    |}
-    {|
+    |} {|
       len
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = len
       a(b)
-    |}
-    {|
+    |} {|
       len(b)
     |};
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = len
       a(b).imag
-    |}
-    {|
+    |} {|
       len(b).imag
     |};
-
   (* Constructors. *)
   assert_deobfuscation
     {|
@@ -208,7 +177,6 @@ let test_forward _ =
       import threading
       threading.Thread()
     |};
-
   (* Global constants. *)
   assert_deobfuscation
     {|
@@ -285,12 +253,10 @@ let test_scheduling _ =
 
 
 let test_dead_store_elimination _ =
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       a = 1
       a
-    |}
-    {|
+    |} {|
       1
     |};
   assert_deobfuscation
@@ -306,7 +272,6 @@ let test_dead_store_elimination _ =
         pass
       1
     |};
-
   assert_deobfuscation
     {|
       f = foo()
@@ -338,7 +303,6 @@ let test_fixup _ =
       def foo():
         pass
     |};
-
   (* Remove docstrings. *)
   assert_deobfuscation
     {|
@@ -350,13 +314,10 @@ let test_fixup _ =
       def foo():
         pass
     |};
-
   (* Sanitize accesses. *)
-  assert_deobfuscation
-    {|
+  assert_deobfuscation {|
       $local_qualifier$variable
-    |}
-    {|
+    |} {|
       variable
     |};
   assert_deobfuscation
@@ -388,8 +349,6 @@ let test_fixup _ =
       except Exception as e:
         pass
     |};
-
-
   (* Drop qualifier. *)
   assert_deobfuscation
     {|
@@ -400,7 +359,6 @@ let test_fixup _ =
       def foo():
         bar()
     |};
-
   (* Naming heuristics. *)
   assert_deobfuscation
     {|
@@ -514,7 +472,6 @@ let test_fixup _ =
       def a():
         pass
     |};
-
   (* For. *)
   assert_deobfuscation
     {|
@@ -525,7 +482,6 @@ let test_fixup _ =
       for a in []:
         a
     |};
-
   (* Globals. *)
   assert_deobfuscation
     {|
@@ -548,10 +504,9 @@ let test_fixup _ =
 
 
 let () =
-  "deobfuscation">:::[
-    "forward">::test_forward;
-    "scheduling">::test_scheduling;
-    "dead_store_elimination">::test_dead_store_elimination;
-    "fixup">::test_fixup;
-  ]
+  "deobfuscation"
+  >::: [ "forward" >:: test_forward;
+         "scheduling" >:: test_scheduling;
+         "dead_store_elimination" >:: test_dead_store_elimination;
+         "fixup" >:: test_fixup ]
   |> Test.run

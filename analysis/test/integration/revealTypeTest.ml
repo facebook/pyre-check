@@ -6,17 +6,13 @@
 open OUnit2
 open IntegrationTest
 
-
 let test_reveal_type _ =
   assert_type_errors
     {|
       def foo(x: str) -> None:
         reveal_type(x)
     |}
-    [
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
-    ];
-
+    ["Revealed type [-1]: Revealed type for `x` is `str`."];
   assert_default_type_errors
     {|
       def foo(x) -> None:
@@ -36,7 +32,6 @@ let test_reveal_type _ =
         reveal_type(int_to_str(x))
     |}
     ["Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`."];
-
   assert_type_errors
     {|
       def foo() -> int:
@@ -45,7 +40,6 @@ let test_reveal_type _ =
         return bar
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."];
-
   assert_type_errors
     {|
       def foo(s: typing.Sequence[float]) -> list[float]:
@@ -55,7 +49,6 @@ let test_reveal_type _ =
         return l
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `float`."];
-
   assert_type_errors
     {|
       def foo() -> dict[str, int]:
@@ -65,11 +58,8 @@ let test_reveal_type _ =
         reveal_type(bar)
         return d
     |}
-    [
-      "Revealed type [-1]: Revealed type for `d` is `typing.Dict[str, int]`.";
-      "Revealed type [-1]: Revealed type for `bar` is `int`.";
-    ];
-
+    [ "Revealed type [-1]: Revealed type for `d` is `typing.Dict[str, int]`.";
+      "Revealed type [-1]: Revealed type for `bar` is `int`." ];
   assert_type_errors
     {|
       def foo(map: typing.Mapping[str, int]) -> dict[str, int]:
@@ -79,7 +69,6 @@ let test_reveal_type _ =
         return d
     |}
     ["Revealed type [-1]: Revealed type for `bar` is `int`."];
-
   assert_type_errors
     {|
       def foo(t: typing.Iterable[typing.Tuple[str, int]]) -> dict[str, int]:
@@ -91,8 +80,4 @@ let test_reveal_type _ =
     ["Revealed type [-1]: Revealed type for `bar` is `int`."]
 
 
-let () =
-  "revealType">:::[
-    "reveal_type">::test_reveal_type;
-  ]
-  |> Test.run
+let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run

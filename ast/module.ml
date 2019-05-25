@@ -4,17 +4,15 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
 open Pyre
 open Expression
 open Statement
-
 
 type t = {
   aliased_exports: Reference.t Reference.Map.Tree.t;
   empty_stub: bool;
   handle: File.Handle.t option;
-  wildcard_exports: Reference.t list;
+  wildcard_exports: Reference.t list
 }
 [@@deriving eq, sexp]
 
@@ -26,20 +24,18 @@ module Cache = struct
   let clear () = Reference.Table.clear cache
 end
 
-
 let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
   let aliased_exports =
     Map.Tree.to_alist aliased_exports
-    |> List.map
-      ~f:(fun (source, target) ->
-          Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
+    |> List.map ~f:(fun (source, target) ->
+           Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
     |> String.concat ~sep:", "
   in
   let wildcard_exports =
-    List.map wildcard_exports ~f:(Format.asprintf "%a" Reference.pp)
-    |> String.concat ~sep:", "
+    List.map wildcard_exports ~f:(Format.asprintf "%a" Reference.pp) |> String.concat ~sep:", "
   in
-  Format.fprintf format
+  Format.fprintf
+    format
     "%s: [%s, empty_stub = %b, __all__ = [%s]]"
     (Option.value ~default:"unknown path" (handle >>| File.Handle.show))
     aliased_exports
@@ -47,57 +43,43 @@ let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
     wildcard_exports
 
 
-let show =
-  Format.asprintf "%a" pp
+let show = Format.asprintf "%a" pp
 
-
-let empty_stub { empty_stub; _ } =
-  empty_stub
-
+let empty_stub { empty_stub; _ } = empty_stub
 
 let from_empty_stub ~reference ~module_definition =
   let rec is_empty_stub ~lead ~tail =
     match tail with
-    | head :: tail ->
-        begin
-          let lead = lead @ [head] in
-          let reference = Reference.create_from_list lead in
-          match module_definition reference with
-          | Some definition when empty_stub definition -> true
-          | Some _ -> is_empty_stub ~lead ~tail
-          | _ -> false
-        end
-    | _ ->
-        false
+    | head :: tail -> (
+        let lead = lead @ [head] in
+        let reference = Reference.create_from_list lead in
+        match module_definition reference with
+        | Some definition when empty_stub definition -> true
+        | Some _ -> is_empty_stub ~lead ~tail
+        | _ -> false )
+    | _ -> false
   in
   Hashtbl.find_or_add Cache.cache reference ~default:(fun _ ->
       is_empty_stub ~lead:[] ~tail:(Reference.as_list reference))
 
 
-let handle { handle; _ } =
-  handle
+let handle { handle; _ } = handle
 
-
-let wildcard_exports { wildcard_exports; _ } =
-  wildcard_exports
-
+let wildcard_exports { wildcard_exports; _ } = wildcard_exports
 
 let create ~qualifier ~local_mode ?handle ~stub statements =
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
-      | Assign {
-          Assign.target = { Node.value = Name (Name.Identifier target); _ };
-          value = { Node.value = Name value; _ };
-          _;
-        } ->
-          begin
-            match Reference.from_name value with
-            | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
-                Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
-            | _ ->
-                aliases
-          end
+      | Assign
+          { Assign.target = { Node.value = Name (Name.Identifier target); _ };
+            value = { Node.value = Name value; _ }
+          ; _
+          } -> (
+        match Reference.from_name value with
+        | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
+            Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
+        | _ -> aliases )
       | Import { Import.from = Some from; imports } ->
           let from = Source.expand_relative_import ?handle ~qualifier ~from in
           let export aliases { Import.name; alias } =
@@ -120,19 +102,16 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
             Map.set aliases ~key:source ~data:target
           in
           List.fold imports ~f:export ~init:aliases
-      | _ ->
-          aliases
+      | _ -> aliases
     in
-    List.fold statements ~f:aliased_exports ~init:Reference.Map.empty
-    |> Map.to_tree
+    List.fold statements ~f:aliased_exports ~init:Reference.Map.empty |> Map.to_tree
   in
   let toplevel_public, dunder_all =
     let gather_toplevel (public_values, dunder_all) { Node.value; _ } =
       let filter_private =
         let is_public name =
           let dequalified =
-            Reference.drop_prefix ~prefix:qualifier name
-            |> Reference.sanitize_qualified
+            Reference.drop_prefix ~prefix:qualifier name |> Reference.sanitize_qualified
           in
           if not (String.is_prefix ~prefix:"_" (Reference.show dequalified)) then
             Some dequalified
@@ -142,11 +121,12 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
         List.filter_map ~f:is_public
       in
       match value with
-      | Assign {
-          Assign.target = { Node.value = Name (Name.Identifier target); _ };
-          value = { Node.value = (Expression.List names); _ };
-          _;
-        } when String.equal (Identifier.sanitized target) "__all__" ->
+      | Assign
+          { Assign.target = { Node.value = Name (Name.Identifier target); _ };
+            value = { Node.value = Expression.List names; _ }
+          ; _
+          }
+        when String.equal (Identifier.sanitized target) "__all__" ->
           let to_reference = function
             | { Node.value = Expression.String { value = name; _ }; _ } ->
                 Reference.create name
@@ -158,24 +138,21 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
           public_values, Some (List.filter_map ~f:to_reference names)
       | Assign { Assign.target = { Node.value = Name target; _ }; _ }
         when Expression.is_simple_name target ->
-          public_values @ (filter_private [target |> Reference.from_name_exn]), dunder_all
-      | Class { Record.Class.name; _ } ->
-          public_values @ (filter_private [name]), dunder_all
+          public_values @ filter_private [target |> Reference.from_name_exn], dunder_all
+      | Class { Record.Class.name; _ } -> public_values @ filter_private [name], dunder_all
       | Define { Define.signature = { name; _ }; _ } ->
-          public_values @ (filter_private [name]), dunder_all
+          public_values @ filter_private [name], dunder_all
       | Import { Import.imports; _ } ->
           let get_import_name { Import.alias; name } = Option.value alias ~default:name in
-          public_values @ (filter_private (List.map imports ~f:get_import_name)), dunder_all
-      | _ ->
-          public_values, dunder_all
+          public_values @ filter_private (List.map imports ~f:get_import_name), dunder_all
+      | _ -> public_values, dunder_all
     in
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
-  {
-    aliased_exports;
+  { aliased_exports;
     empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
     handle;
-    wildcard_exports = (Option.value dunder_all ~default:toplevel_public);
+    wildcard_exports = Option.value dunder_all ~default:toplevel_public
   }
 
 
