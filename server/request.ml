@@ -223,7 +223,7 @@ type response = {
   response: Protocol.response option
 }
 
-module AnnotationEdit = struct
+module MissingAnnotationEdit = struct
   type t = {
     new_text: string;
     position: LanguageServer.Types.Position.t
@@ -233,13 +233,21 @@ module AnnotationEdit = struct
 
   let new_text { new_text; _ } = new_text
 
-  let create_location ~error ~file LanguageServer.Types.Position.{ line = start_line; _ } =
+  let position { position; _ } = position
+
+  let create_location ~error ~file =
     let token =
       match Error.kind error with
       | Error.MissingReturnAnnotation _ -> Some "):"
+      | Error.MissingAttributeAnnotation { missing_annotation = { name; _ }; _ }
+      | Error.MissingParameterAnnotation { name; _ }
       | Error.MissingGlobalAnnotation { name; _ } ->
           Some (Format.asprintf "%a" Reference.pp_sanitized name)
       | _ -> None
+    in
+    let start_line =
+      let line = Error.location error |> Location.line in
+      line - 1
     in
     let get_position lines token =
       List.findi lines ~f:(fun _ line -> Option.is_some (String.substr_index line ~pattern:token))
@@ -260,19 +268,21 @@ module AnnotationEdit = struct
 
 
   let create ~file
-             ~error
-             { LanguageServer.Types.Diagnostic.range = { start; _ }; message = _; _ } =
+             ~error =
     error
     >>| (fun error ->
           let new_text =
             match Error.kind error with
             | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
                 Some (" -> " ^ Type.show (Type.weaken_literals annotation))
+            | Error.MissingAttributeAnnotation
+                { missing_annotation = { annotation = Some annotation; _ }; _ }
+            | Error.MissingParameterAnnotation { annotation = Some annotation; _ }
             | Error.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
                 Some (": " ^ Type.show (Type.weaken_literals annotation))
             | _ -> None
           in
-          let position = create_location ~error ~file start in
+          let position = create_location ~error ~file in
           match position, new_text with
           | Some position, Some new_text -> Some { new_text; position }
           | _, _ -> None)
@@ -1035,7 +1045,7 @@ let rec process
                        List.find (errors file) ~f:(fun { location; _ } ->
                            is_range_equal_location range location)
                      in
-                     AnnotationEdit.create ~file ~error diagnostic
+                     MissingAnnotationEdit.create ~file ~error
                      >>| (fun edit ->
                            Some
                              { LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
@@ -1044,8 +1054,8 @@ let rec process
                                    { title = "Fix it";
                                      command = "add_annotation";
                                      arguments =
-                                       [ { range = AnnotationEdit.range edit;
-                                           newText = AnnotationEdit.new_text edit;
+                                       [ { range = MissingAnnotationEdit.range edit;
+                                           newText = MissingAnnotationEdit.new_text edit;
                                            uri
                                          } ]
                                    };

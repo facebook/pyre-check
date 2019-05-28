@@ -501,6 +501,83 @@ let test_process_get_definition_request context =
   OUnit2.with_bracket_chdir context temporary_directory run_test
 
 
+let test_create_annotation_edit _ =
+  let missing_annotation : Analysis.Error.missing_annotation =
+    { name = Reference.create "x";
+      annotation = Some (Type.Literal (Integer 1));
+      given_annotation = None;
+      evidence_locations = [Location.Instantiated.any];
+      thrown_at_source = true
+    }
+  in
+  let location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
+  let assert_edit ~source ~error ~expected_text ~expected_position =
+    let file = write_file ("test.py", source) in
+    let edit = Request.MissingAnnotationEdit.create ~file ~error in
+    assert_is_some edit;
+    edit
+    >>| Request.MissingAnnotationEdit.new_text
+    >>| assert_equal expected_text
+    |> Option.value ~default:();
+    edit
+    >>| Request.MissingAnnotationEdit.position
+    >>| assert_equal expected_position
+    |> Option.value ~default:()
+  in
+  assert_edit
+    ~source:{|
+        def foo():
+          return 1
+      |}
+    ~expected_text:" -> int"
+    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 9 }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind = Analysis.Error.MissingReturnAnnotation missing_annotation;
+           signature = +mock_signature
+         });
+  assert_edit
+    ~source:{|
+      x = foo()
+    |}
+    ~expected_text:": int"
+    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 1 }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind = Analysis.Error.MissingGlobalAnnotation missing_annotation;
+           signature = +mock_signature
+         });
+  assert_edit
+    ~source:{|
+      def foo(x) -> int:
+        return 1
+    |}
+    ~expected_text:": int"
+    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 9 }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind = Analysis.Error.MissingParameterAnnotation missing_annotation;
+           signature = +mock_signature
+         });
+  assert_edit
+    ~source:{|
+        Class A:
+            x = foo()
+    |}
+    ~expected_text:": int"
+    ~expected_position:{ LanguageServer.Types.Position.line = 1; character = 5 }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind =
+             Analysis.Error.MissingAttributeAnnotation { parent = Type.Any; missing_annotation };
+           signature = +mock_signature
+         })
+
+
 let () =
   "request"
   >::: [ "generate_lsp_response" >:: test_generate_lsp_response;
@@ -508,5 +585,6 @@ let () =
          "process_type_query_request" >:: test_process_type_query_request;
          "process_display_type_errors_request" >:: test_process_display_type_errors_request;
          "process_type_check_request" >:: test_process_type_check_request;
-         "process_get_definition_request" >:: test_process_get_definition_request ]
+         "process_get_definition_request" >:: test_process_get_definition_request;
+         "create_annotation_edit" >:: test_create_annotation_edit ]
   |> Test.run

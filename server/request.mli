@@ -15,6 +15,20 @@ type response = {
   response: Protocol.response option
 }
 
+(* Exposed for testing. *)
+module MissingAnnotationEdit : sig
+  type t = {
+    new_text: string;
+    position: LanguageServer.Types.Position.t
+  }
+
+  val position : t -> LanguageServer.Types.Position.t
+
+  val new_text : t -> string
+
+  val create : file:File.t -> error:Analysis.Error.t option -> t option
+end
+
 val process_client_shutdown_request
   :  state:State.t ->
   id:LanguageServer.Types.RequestId.t ->
