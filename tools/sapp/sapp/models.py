@@ -489,6 +489,8 @@ class SharedTextKind(enum.Enum):
     sink = enum.auto()
     callable = enum.auto()
     filename = enum.auto()
+    source_detail = enum.auto()
+    sink_detail = enum.auto()
 
     @classproperty
     def FEATURE(cls):
@@ -513,6 +515,14 @@ class SharedTextKind(enum.Enum):
     @classproperty
     def FILENAME(cls):
         return cls.filename
+
+    @classproperty
+    def SOURCE_DETAIL(cls):
+        return cls.source_detail
+
+    @classproperty
+    def SINK_DETAIL(cls):
+        return cls.sink_detail
 
 
 class SharedText(Base, PrepareMixin, RecordMixin):  # noqa

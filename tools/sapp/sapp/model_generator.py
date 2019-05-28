@@ -132,15 +132,37 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         callable = entry["callable"]
         handle = self._get_issue_handle(entry)
-        # TODO: record depth in issue_sink and issue_source assoc, but this can
-        # be different per instance, so should be stored with the instance.
         initial_sources = {
-            self._get_shared_text(SharedTextKind.SOURCE, s)
-            for (s, _) in entry["initial_sources"]
+            self._get_shared_text(SharedTextKind.SOURCE, kind)
+            for (_name, kind, _depth) in entry["initial_sources"]
         }
         final_sinks = {
-            self._get_shared_text(SharedTextKind.SINK, s)
-            for (s, _) in entry["final_sinks"]
+            self._get_shared_text(SharedTextKind.SINK, kind)
+            for (_name, kind, _depth) in entry["final_sinks"]
+        }
+
+        # Additional leaf details are stored as SharedTextKind.SOURCE/SINK
+        # in addition to SharedTextKind.*_DETAIL to maintain backward
+        # compatibility with anything that reads existing data and expects the
+        # details (such as the leaf's callable name) to be found in the
+        # SOURCE/SINK object. Once existing references are updated, the
+        # leaf name will be stored as a SharedTextKind.*_DETAIL while
+        # SOURCE/SINK stores only the abstract kind of a leaf.
+        source_details = {
+            (
+                self._get_shared_text(SharedTextKind.SOURCE, name),
+                self._get_shared_text(SharedTextKind.SOURCE_DETAIL, name),
+            )
+            for (name, _kind, _depth) in entry["initial_sources"]
+            if name
+        }
+        sink_details = {
+            (
+                self._get_shared_text(SharedTextKind.SINK, name),
+                self._get_shared_text(SharedTextKind.SINK_DETAIL, name),
+            )
+            for (name, _kind, _depth) in entry["final_sinks"]
+            if name
         }
 
         issue = Issue.Record(
@@ -189,8 +211,14 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         for sink in final_sinks:
             self.graph.add_issue_instance_shared_text_assoc(instance, sink)
+        for (sink, detail) in sink_details:
+            self.graph.add_issue_instance_shared_text_assoc(instance, sink)
+            self.graph.add_issue_instance_shared_text_assoc(instance, detail)
         for source in initial_sources:
             self.graph.add_issue_instance_shared_text_assoc(instance, source)
+        for (source, detail) in source_details:
+            self.graph.add_issue_instance_shared_text_assoc(instance, source)
+            self.graph.add_issue_instance_shared_text_assoc(instance, detail)
 
         if fix_info is not None:
             self.graph.add_issue_instance_fix_info(instance, fix_info)

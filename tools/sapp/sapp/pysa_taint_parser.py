@@ -155,7 +155,14 @@ class Parser(BaseParser):
         for trace in traces:
             for fragment in self._parse_trace_fragment(leaf_port, trace):
                 fragments.append(fragment)
-                leaf_distances.update(fragment["leaves"])
+                # Leaf distances should be represented as:
+                #   (leaf_detail, leaf_kind, depth)
+                # For now, no additional leaf details are attached so
+                # leaf_detail is empty. The leaf name identifies its kind.
+                leaf_info = [
+                    (None, name, depth) for (name, depth) in fragment["leaves"]
+                ]
+                leaf_distances.update(leaf_info)
                 all_features.extend(fragment["features"])
 
         return (fragments, leaf_distances, all_features)
