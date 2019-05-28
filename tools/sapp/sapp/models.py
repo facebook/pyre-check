@@ -483,6 +483,10 @@ class IssueInstanceTraceFrameAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
 
 class SharedTextKind(enum.Enum):
+    # Do NOT reorder the enums. Depending on the type of database, existing
+    # DBs may have these enums represented internally as ints based on the
+    # order shown here, and changing it here messes up existing data. This
+    # also means that new enums should be added AT THE END of the list.
     feature = enum.auto()
     message = enum.auto()
     source = enum.auto()
@@ -620,6 +624,10 @@ class IssueInstanceSharedTextAssoc(Base, PrepareMixin, RecordMixin):  # noqa
 
 
 class TraceKind(enum.Enum):
+    # Do NOT reorder the enums. Depending on the type of database, existing
+    # DBs may have these enums represented internally as ints based on the
+    # order shown here, and changing it here messes up existing data. This
+    # also means that new enums should be added AT THE END of the list.
     precondition = enum.auto()
     postcondition = enum.auto()
 
@@ -750,6 +758,10 @@ class IssueStatus(enum.Enum):
     """Issues are born uncategorized. Humans can
     set it to FALSE_POSITIVE or VALID_BUG upon review."""
 
+    # Do NOT reorder the enums. Depending on the type of database, existing
+    # DBs may have these enums represented internally as ints based on the
+    # order shown here, and changing it here messes up existing data. This
+    # also means that new enums should be added AT THE END of the list.
     """An issue that hasn't been marked as a bug or FP"""
     uncategorized = enum.auto()
 
@@ -858,6 +870,10 @@ class Issue(Base, PrepareMixin, MutableRecordMixin):  # noqa
 
 
 class RunStatus(enum.Enum):
+    # Do NOT reorder the enums. Depending on the type of database, existing
+    # DBs may have these enums represented internally as ints based on the
+    # order shown here, and changing it here messes up existing data. This
+    # also means that new enums should be added AT THE END of the list.
     finished = enum.auto()
     incomplete = enum.auto()
     skipped = enum.auto()
@@ -1235,6 +1251,10 @@ class WarningMessage(Base):  # noqa
 
 
 class WarningCodeCategory(enum.Enum):
+    # Do NOT reorder the enums. Depending on the type of database, existing
+    # DBs may have these enums represented internally as ints based on the
+    # order shown here, and changing it here messes up existing data. This
+    # also means that new enums should be added AT THE END of the list.
     bug = enum.auto()
     code_smell = enum.auto()
 
