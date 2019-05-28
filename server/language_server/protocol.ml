@@ -212,6 +212,13 @@ module CodeActionResponse = struct
   let create ~id ~code_actions = { jsonrpc = "2.0"; id; result = Some code_actions; error = None }
 end
 
+module TypeCoverageResponse = struct
+  include Types.TypeCoverageResponse
+
+  let create ~id ~covered_percent =
+    { jsonrpc = "2.0"; id; result = Some { coveredPercent = covered_percent }; error = None }
+end
+
 module RageResponse = struct
   include Types.RageResponse
 

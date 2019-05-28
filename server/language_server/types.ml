@@ -216,6 +216,10 @@ module CodeActionParameters = struct
   [@@deriving yojson]
 end
 
+module TypeCoverageParameters = struct
+  type t = { textDocument: TextDocumentIdentifier.t } [@@deriving yojson]
+end
+
 module CommandArguments = struct
   type t = {
     uri: DocumentUri.t;
@@ -754,6 +758,7 @@ module HandshakeServer = NotificationMessage.Make (HandshakeServerParameters)
 module HandshakeClient = NotificationMessage.Make (HandshakeClientParameters)
 module UpdateFiles = NotificationMessage.Make (UpdateFilesParameters)
 module DisplayTypeErrors = NotificationMessage.Make (DisplayTypeErrorsParameters)
+module TypeCoverage = RequestMessage.Make (TypeCoverageParameters)
 
 (** Responses *)
 
@@ -809,6 +814,15 @@ module CodeActionResponse = struct
 
   module CodeActionError = ResponseError.Make (Null)
   include ResponseMessage.Make (CodeActionResult) (CodeActionError)
+end
+
+module TypeCoverageResponse = struct
+  module TypeCoverageResult = struct
+    type t = { coveredPercent: int } [@@deriving yojson]
+  end
+
+  module TypeCoverageError = ResponseError.Make (Null)
+  include ResponseMessage.Make (TypeCoverageResult) (TypeCoverageError)
 end
 
 module RageResponse = struct

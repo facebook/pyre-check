@@ -164,6 +164,19 @@ let parse_lsp ~configuration ~request =
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
           None )
+    | "textDocument/typeCoverage" -> (
+      match TypeCoverage.of_yojson request with
+      | Ok
+          { TypeCoverage.parameters =
+              Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
+            id
+          ; _
+          } ->
+          uri_to_path ~uri >>| File.create >>| fun file -> TypeCoverageRequest { file; id }
+      | Ok _ -> None
+      | Error yojson_error ->
+          Log.log ~section:`Server "Error: %s" yojson_error;
+          None )
     | "workspace/executeCommand" -> (
       match ExecuteCommandRequest.of_yojson request with
       | Ok
@@ -1111,6 +1124,26 @@ let rec process
           else (
             Log.log ~section:`Server "Explicitly ignoring didSave request";
             { state; response = None } )
+      | TypeCoverageRequest { file; id } ->
+          let response =
+            File.handle ~configuration file
+            |> fun handle ->
+            match Coverage.get ~handle with
+            | Some { Coverage.full; partial; untyped; _ } ->
+                let total = Float.of_int (full + partial + untyped) in
+                let covered_percent =
+                  if total > 0.0 then
+                    Int.of_float (Float.of_int full /. total *. 100.0)
+                  else
+                    0
+                in
+                LanguageServer.Protocol.TypeCoverageResponse.create ~id ~covered_percent
+                |> LanguageServer.Protocol.TypeCoverageResponse.to_yojson
+                |> Yojson.Safe.to_string
+                |> fun response -> Some (LanguageServerProtocolResponse response)
+            | _ -> None
+          in
+          { state; response }
       (* Requests that cannot be fulfilled here. *)
       | ClientConnectionRequest _ ->
           Log.warning "Explicitly ignoring ClientConnectionRequest request";

@@ -89,6 +89,12 @@ module CodeActionResponse : sig
   val create : id:Types.RequestId.t -> code_actions:Types.CodeAction.t list -> t
 end
 
+module TypeCoverageResponse : sig
+  type t [@@deriving to_yojson]
+
+  val create : id:Types.RequestId.t -> covered_percent:int -> t
+end
+
 module RageResponse : sig
   type t [@@deriving to_yojson]
 
