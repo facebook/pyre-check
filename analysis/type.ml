@@ -2744,12 +2744,17 @@ module TypedDictionary = struct
 
 
   let constructor ~name ~fields ~total =
+    let annotation = TypedDictionary { name; fields; total } in
     { Callable.kind = Named (Reference.create "__init__");
-      implementation =
-        { annotation = TypedDictionary { name; fields; total };
-          parameters = field_named_parameters ~default:(not total) fields
-        };
-      overloads = [];
+      implementation = { annotation = Top; parameters = Undefined };
+      overloads =
+        [ { annotation; parameters = field_named_parameters ~default:(not total) fields };
+          { annotation;
+            parameters =
+              Defined
+                [ Record.Callable.RecordParameter.Anonymous
+                    { index = 0; annotation; default = false } ]
+          } ];
       implicit = None
     }
 

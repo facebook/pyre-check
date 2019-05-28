@@ -288,7 +288,34 @@ let test_check_typed_dictionaries _ =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Too many arguments [19]: Call `__init__` expects 0 positional arguments, 2 were provided."];
+    ["Too many arguments [19]: Call `__init__` expects 1 positional argument, 2 were provided."];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie('Blade Runner')
+        return movie['year']
+    |}
+    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
+       int)` for 1st anonymous parameter to call `__init__` but got `str`." ];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie({ "name": "Blade Runner", "year": 1982 })
+        return movie['year']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
+      def foo() -> int:
+        movie = Movie({ "name": 1982, "year": "Blade Runner" })
+        return movie['year']
+    |}
+    [ "Incompatible parameter type [6]: Expected `TypedDict `Movie` with fields (name: str, year: \
+       int)` for 1st anonymous parameter to call `__init__` but got `TypedDict with fields (name: \
+       int, year: str)`." ];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
