@@ -9,6 +9,7 @@ open Pyre
 open Analysis
 open TypeConstraints
 open Test
+open Type.Variable
 
 let child = Type.Primitive "Child"
 
@@ -54,96 +55,62 @@ module DiamondOrderedConstraints = OrderedConstraints (DiamondOrder)
 
 let variable ?(name = "_V") constraints = Type.Variable.Unary.create name ~constraints
 
-let add_bound constraints (variable, kind, bound) =
-  let pair = Type.Variable.UnaryPair (variable, bound) in
+let add_bound constraints bound =
   let order = () in
   constraints
   >>= fun constraints ->
-  match kind with
-  | `Lower -> DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
-  | `Upper -> DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
-
-
-let add_parameter_variadic_bound constraints (variable, kind, bound) =
-  let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
-  let order = () in
-  constraints
-  >>= fun constraints ->
-  match kind with
-  | `Lower -> DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
-  | `Upper -> DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
+  match bound with
+  | `Lower pair -> DiamondOrderedConstraints.add_lower_bound constraints ~order ~pair
+  | `Upper pair -> DiamondOrderedConstraints.add_upper_bound constraints ~order ~pair
 
 
 let test_add_bound _ =
-  let assert_bound_result ?(preconstraints = Some empty) ~variable ~kind ~bound expected_is_some =
-    let result = add_bound preconstraints (variable, kind, bound) |> Option.is_some in
+  let assert_add_bound_has_result ?(preconstraints = Some empty) bound ~expected_is_some =
+    let result = add_bound preconstraints bound |> Option.is_some in
     assert_equal ~printer:(Printf.sprintf "%B") expected_is_some result
   in
+  let assert_add_bound_succeeds = assert_add_bound_has_result ~expected_is_some:true in
+  let assert_add_bound_fails = assert_add_bound_has_result ~expected_is_some:false in
   let unconstrained = variable Type.Variable.Unary.Unconstrained in
-  assert_bound_result ~variable:unconstrained ~kind:`Lower ~bound:child true;
-  assert_bound_result
-    ~preconstraints:(add_bound (Some empty) (unconstrained, `Lower, left_parent))
-    ~variable:unconstrained
-    ~kind:`Upper
-    ~bound:right_parent
-    false;
-  assert_bound_result
-    ~variable:(variable (Type.Variable.Unary.Bound child))
-    ~kind:`Lower
-    ~bound:left_parent
-    false;
-  assert_bound_result
-    ~variable:(variable (Type.Variable.Unary.Bound child))
-    ~kind:`Lower
-    ~bound:child
-    true;
-  assert_bound_result
-    ~variable:(variable (Type.Variable.Unary.Bound child))
-    ~kind:`Upper
-    ~bound:left_parent
-    true;
+  assert_add_bound_succeeds (`Lower (UnaryPair (unconstrained, child)));
+  assert_add_bound_fails
+    ~preconstraints:(add_bound (Some empty) (`Lower (UnaryPair (unconstrained, left_parent))))
+    (`Upper (UnaryPair (unconstrained, right_parent)));
+  assert_add_bound_fails
+    (`Lower (UnaryPair (variable (Type.Variable.Unary.Bound child), left_parent)));
+  assert_add_bound_succeeds
+    (`Lower (UnaryPair (variable (Type.Variable.Unary.Bound child), child)));
+  assert_add_bound_succeeds
+    (`Upper (UnaryPair (variable (Type.Variable.Unary.Bound child), left_parent)));
   let explicit_parent_a_parent_b =
     variable (Type.Variable.Unary.Explicit [left_parent; right_parent])
   in
-  assert_bound_result ~variable:explicit_parent_a_parent_b ~kind:`Lower ~bound:left_parent true;
-  assert_bound_result ~variable:explicit_parent_a_parent_b ~kind:`Lower ~bound:right_parent true;
-  assert_bound_result
-    ~preconstraints:(add_bound (Some empty) (explicit_parent_a_parent_b, `Lower, left_parent))
-    ~variable:explicit_parent_a_parent_b
-    ~kind:`Lower
-    ~bound:right_parent
-    false;
-  let assert_bound_result ?(preconstraints = empty) ~variable ~kind ~bound expected_is_some =
-    let result =
-      add_parameter_variadic_bound (Some preconstraints) (variable, kind, bound) |> Option.is_some
-    in
-    assert_equal ~printer:(Printf.sprintf "%B") expected_is_some result
-  in
+  assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent)));
+  assert_add_bound_succeeds (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
+  assert_add_bound_fails
+    ~preconstraints:
+      (add_bound (Some empty) (`Lower (UnaryPair (explicit_parent_a_parent_b, left_parent))))
+    (`Lower (UnaryPair (explicit_parent_a_parent_b, right_parent)));
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
   (* Adding a constraint to a parameter variadic with no preconstraints should always work *)
-  assert_bound_result
-    ~variable:parameter_variadic
-    ~kind:`Lower
-    ~bound:(Type.Callable.Defined [])
-    true;
+  assert_add_bound_succeeds
+    (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
   let preconstraints =
-    add_parameter_variadic_bound (Some empty) (parameter_variadic, `Lower, Type.Callable.Defined [])
-    |> fun preconstraints -> Option.value_exn preconstraints
+    add_bound
+      (Some empty)
+      (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])))
   in
   (* Adding the same constraint twice should be permitted *)
-  assert_bound_result
+  assert_add_bound_succeeds
     ~preconstraints
-    ~variable:parameter_variadic
-    ~kind:`Lower
-    ~bound:(Type.Callable.Defined [])
-    true;
+    (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
   (* We currently always reject adding a different bound to something with a bound already *)
-  assert_bound_result
+  assert_add_bound_fails
     ~preconstraints
-    ~variable:parameter_variadic
-    ~kind:`Lower
-    ~bound:(Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0])
-    false;
+    (`Lower
+      (ParameterVariadicPair
+         ( parameter_variadic,
+           Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0] )));
   ()
 
 
@@ -156,56 +123,64 @@ let optional_map_compare left right =
 
 let optional_map_print map = map >>| TypeConstraints.Solution.show |> Option.value ~default:"None"
 
-let expect_sequence_solution
-    ?callable_parameters_bounds
-    bounds
-    ?callable_parameters_solution
-    expected
-  =
+let assert_solution ~sequentially_applied_bounds
+                    expected =
   let result =
-    let add_callable_parameters_bounds init =
-      match callable_parameters_bounds with
-      | Some bounds -> List.fold bounds ~init ~f:add_parameter_variadic_bound
-      | None -> init
-    in
-    List.fold bounds ~init:(Some empty) ~f:add_bound
-    |> add_callable_parameters_bounds
+    List.fold sequentially_applied_bounds ~init:(Some empty) ~f:add_bound
     >>= DiamondOrderedConstraints.solve ~order:()
   in
-  let expected =
-    expected >>| TypeConstraints.Solution.create ?callable_parameters:callable_parameters_solution
-  in
+  let expected = expected >>| TypeConstraints.Solution.create in
   assert_equal ~cmp:optional_map_compare ~printer:optional_map_print expected result
 
 
 let test_single_variable_solution _ =
-  expect_sequence_solution [] (Some []);
+  assert_solution ~sequentially_applied_bounds:[] (Some []);
   let unconstrained = variable Type.Variable.Unary.Unconstrained in
-  expect_sequence_solution [unconstrained, `Lower, child] (Some [unconstrained, child]);
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained, child))]
+    (Some [UnaryPair (unconstrained, child)]);
   (* Solving unconstrained to bottom would be sound as it fulfills the bound, but we want to
      eliminate bottoms whenever possible, so this should be fine *)
-  expect_sequence_solution [unconstrained, `Upper, child] (Some [unconstrained, child]);
-  expect_sequence_solution
-    [unconstrained, `Lower, child; unconstrained, `Lower, left_parent]
-    (Some [unconstrained, left_parent]);
-  expect_sequence_solution
-    [unconstrained, `Lower, left_parent; unconstrained, `Lower, right_parent]
-    (Some [unconstrained, grandparent]);
-  expect_sequence_solution
-    [unconstrained, `Upper, left_parent; unconstrained, `Lower, grandparent]
+  assert_solution
+    ~sequentially_applied_bounds:[`Upper (UnaryPair (unconstrained, child))]
+    (Some [UnaryPair (unconstrained, child)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Lower (UnaryPair (unconstrained, child)); `Lower (UnaryPair (unconstrained, left_parent))]
+    (Some [UnaryPair (unconstrained, left_parent)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (UnaryPair (unconstrained, left_parent));
+        `Lower (UnaryPair (unconstrained, right_parent)) ]
+    (Some [UnaryPair (unconstrained, grandparent)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Upper (UnaryPair (unconstrained, left_parent));
+        `Lower (UnaryPair (unconstrained, grandparent)) ]
     None;
-  expect_sequence_solution [unconstrained, `Upper, Type.Variable unconstrained] (Some []);
-  expect_sequence_solution [unconstrained, `Upper, Type.list (Type.Variable unconstrained)] None;
+  assert_solution
+    ~sequentially_applied_bounds:[`Upper (UnaryPair (unconstrained, Type.Variable unconstrained))]
+    (Some []);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Upper (UnaryPair (unconstrained, Type.list (Type.Variable unconstrained)))]
+    None;
   let bounded_by_parent_A = variable (Type.Variable.Unary.Bound left_parent) in
-  expect_sequence_solution [bounded_by_parent_A, `Lower, child] (Some [bounded_by_parent_A, child]);
-  expect_sequence_solution [bounded_by_parent_A, `Lower, right_parent] None;
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, child))]
+    (Some [UnaryPair (bounded_by_parent_A, child)]);
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (bounded_by_parent_A, right_parent))]
+    None;
   let explicit_int_string_parent_A =
     variable (Type.Variable.Unary.Explicit [Type.integer; Type.string; left_parent])
   in
-  expect_sequence_solution
-    [explicit_int_string_parent_A, `Lower, child]
-    (Some [explicit_int_string_parent_A, left_parent]);
-  expect_sequence_solution [explicit_int_string_parent_A, `Lower, grandparent] None;
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, child))]
+    (Some [UnaryPair (explicit_int_string_parent_A, left_parent)]);
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (explicit_int_string_parent_A, grandparent))]
+    None;
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
   let empty_parameters = Type.Callable.Defined [] in
   let one_named_parameter =
@@ -213,18 +188,16 @@ let test_single_variable_solution _ =
   in
   (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to
      a variable yields a solution of a replacement of that variable with empty parameters *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:[parameter_variadic, `Lower, empty_parameters]
-    []
-    ~callable_parameters_solution:[parameter_variadic, empty_parameters]
-    (Some []);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Lower (ParameterVariadicPair (parameter_variadic, empty_parameters))]
+    (Some [ParameterVariadicPair (parameter_variadic, empty_parameters)]);
   (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
      fails *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:
-      [ parameter_variadic, `Lower, empty_parameters;
-        parameter_variadic, `Lower, one_named_parameter ]
-    []
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ParameterVariadicPair (parameter_variadic, empty_parameters));
+        `Lower (ParameterVariadicPair (parameter_variadic, one_named_parameter)) ]
     None;
   ()
 
@@ -232,47 +205,60 @@ let test_single_variable_solution _ =
 let test_multiple_variable_solution _ =
   let unconstrained_a = variable ~name:"A" Type.Variable.Unary.Unconstrained in
   let unconstrained_b = variable ~name:"B" Type.Variable.Unary.Unconstrained in
-  expect_sequence_solution
-    [unconstrained_a, `Lower, Type.Variable unconstrained_b; unconstrained_b, `Lower, child]
-    (Some [unconstrained_a, child; unconstrained_b, child]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, child)) ]
+    (Some [UnaryPair (unconstrained_a, child); UnaryPair (unconstrained_b, child)]);
   (* Could be solvable, choosing not to deal with this yet *)
-  expect_sequence_solution
-    [ unconstrained_a, `Lower, Type.Variable unconstrained_b;
-      unconstrained_b, `Lower, Type.Variable unconstrained_a ]
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a)) ]
     None;
   let unconstrained_c = variable ~name:"C" Type.Variable.Unary.Unconstrained in
-  expect_sequence_solution
-    [ unconstrained_a, `Lower, Type.Variable unconstrained_b;
-      unconstrained_b, `Lower, Type.Variable unconstrained_c;
-      unconstrained_c, `Lower, child ]
-    (Some [unconstrained_a, child; unconstrained_b, child; unconstrained_c, child]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_c));
+        `Lower (UnaryPair (unconstrained_c, child)) ]
+    (Some
+       [ UnaryPair (unconstrained_a, child);
+         UnaryPair (unconstrained_b, child);
+         UnaryPair (unconstrained_c, child) ]);
   let unrelated = variable ~name:"unrelated" Type.Variable.Unary.Unconstrained in
-  expect_sequence_solution
-    [unconstrained_a, `Lower, Type.Variable unrelated]
-    (Some [unconstrained_a, Type.Variable unrelated]);
-  expect_sequence_solution
-    [ unconstrained_a, `Lower, Type.Variable unconstrained_b;
-      unconstrained_b, `Lower, Type.Variable unconstrained_a;
-      unconstrained_c, `Lower, child ]
+  assert_solution
+    ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained_a, Type.Variable unrelated))]
+    (Some [UnaryPair (unconstrained_a, Type.Variable unrelated)]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a));
+        `Lower (UnaryPair (unconstrained_c, child)) ]
     None;
   let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
   let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
   let empty_parameters = Type.Callable.Defined [] in
   (* A is greater than B, and B is greater than empty => both A and B solve to empty *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:
-      [ parameters_a, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_b;
-        parameters_b, `Lower, empty_parameters ]
-    []
-    ~callable_parameters_solution:[parameters_a, empty_parameters; parameters_b, empty_parameters]
-    (Some []);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower
+          (ParameterVariadicPair
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+        `Lower (ParameterVariadicPair (parameters_b, empty_parameters)) ]
+    (Some
+       [ ParameterVariadicPair (parameters_a, empty_parameters);
+         ParameterVariadicPair (parameters_b, empty_parameters) ]);
   (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
      this yet *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:
-      [ parameters_a, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_b;
-        parameters_b, `Lower, Type.Callable.ParameterVariadicTypeVariable parameters_a ]
-    []
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower
+          (ParameterVariadicPair
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+        `Lower
+          (ParameterVariadicPair
+             (parameters_b, Type.Callable.ParameterVariadicTypeVariable parameters_a)) ]
     None;
   let parameters_with_unconstrained_a =
     Type.Callable.Defined
@@ -283,21 +269,25 @@ let test_multiple_variable_solution _ =
   in
   (* A is greater than [T] and T is greater than int => T solves to int and A solves to [int]. This
      is a test of unaries and parameter variadics getting along *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:[parameters_a, `Lower, parameters_with_unconstrained_a]
-    [unconstrained_a, `Lower, Type.integer]
-    ~callable_parameters_solution:[parameters_a, parameters_with_integer]
-    (Some [unconstrained_a, Type.integer]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ParameterVariadicPair (parameters_a, parameters_with_unconstrained_a));
+        `Lower (UnaryPair (unconstrained_a, Type.integer)) ]
+    (Some
+       [ ParameterVariadicPair (parameters_a, parameters_with_integer);
+         UnaryPair (unconstrained_a, Type.integer) ]);
   (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to
      be greater than typing.Callable[A, int]. *)
-  expect_sequence_solution
-    ~callable_parameters_bounds:[parameters_a, `Lower, parameters_with_unconstrained_a]
-    [ ( unconstrained_a,
-        `Lower,
-        Type.Callable.create
-          ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameters_a)
-          ~annotation:Type.integer
-          () ) ]
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ParameterVariadicPair (parameters_a, parameters_with_unconstrained_a));
+        `Lower
+          (UnaryPair
+             ( unconstrained_a,
+               Type.Callable.create
+                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameters_a)
+                 ~annotation:Type.integer
+                 () )) ]
     None;
   ()
 
@@ -313,11 +303,7 @@ let test_partial_solution _ =
             Some partial_solution, DiamondOrderedConstraints.solve ~order:() remainder)
       |> Option.value ~default:(None, None)
     in
-    let parse expected =
-      expected
-      >>| List.map ~f:(fun (variable, solution) -> variable, solution)
-      >>| TypeConstraints.Solution.create
-    in
+    let parse expected = expected >>| TypeConstraints.Solution.create in
     let double_compare (left_first, left_second) (right_first, right_second) =
       optional_map_compare left_first right_first && optional_map_compare left_second right_second
     in
@@ -336,24 +322,24 @@ let test_partial_solution _ =
   expect_split_solution
     ~variables:[Type.Variable.Unary unconstrained_a]
     ~bounds:
-      [ unconstrained_a, `Lower, Type.Variable unconstrained_b;
-        unconstrained_b, `Lower, Type.Variable unconstrained_a ]
-    (Some [unconstrained_a, Type.Variable unconstrained_b])
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a)) ]
+    (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
     (Some []);
   expect_split_solution
     ~variables:[Type.Variable.Unary unconstrained_a]
     ~bounds:
-      [ unconstrained_a, `Lower, Type.list (Type.Variable unconstrained_b);
-        unconstrained_b, `Lower, Type.Variable unconstrained_a ]
-    (Some [unconstrained_a, Type.list (Type.Variable unconstrained_b)])
+      [ `Lower (UnaryPair (unconstrained_a, Type.list (Type.Variable unconstrained_b)));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_a)) ]
+    (Some [UnaryPair (unconstrained_a, Type.list (Type.Variable unconstrained_b))])
     None;
   expect_split_solution
     ~variables:[Type.Variable.Unary unconstrained_a]
     ~bounds:
-      [ unconstrained_a, `Lower, Type.Variable unconstrained_b;
-        unconstrained_b, `Lower, Type.Variable unconstrained_c;
-        unconstrained_c, `Lower, Type.Variable unconstrained_b ]
-    (Some [unconstrained_a, Type.Variable unconstrained_b])
+      [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
+        `Lower (UnaryPair (unconstrained_b, Type.Variable unconstrained_c));
+        `Lower (UnaryPair (unconstrained_c, Type.Variable unconstrained_b)) ]
+    (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
     None;
   ()
 

@@ -20,10 +20,7 @@ module Solution : sig
   val instantiate_single_variable : t -> Type.Variable.Unary.t -> Type.t option
 
   (* For testing *)
-  val create
-    :  ?callable_parameters:(Type.Variable.Variadic.Parameters.t * Type.Callable.parameters) list ->
-    (Type.Variable.Unary.t * Type.t) list ->
-    t
+  val create : Type.Variable.pair list -> t
 
   val show : t -> string
 end

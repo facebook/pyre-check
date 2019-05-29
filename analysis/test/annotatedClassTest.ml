@@ -854,6 +854,9 @@ let test_constraints _ =
            | _ -> failwith "Last statement was not a class")
       |> Class.constraints ~target ~resolution ?parameters ~instantiated
     in
+    let expected =
+      List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))
+    in
     assert_equal
       ~printer:TypeConstraints.Solution.show
       ~cmp:TypeConstraints.Solution.equal

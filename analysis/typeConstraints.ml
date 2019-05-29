@@ -138,15 +138,6 @@ module Solution = struct
 
   let instantiate_single_variable { unaries; _ } = UnaryVariable.Map.find unaries
 
-  let create ?callable_parameters unaries =
-    let callable_parameters =
-      callable_parameters
-      >>| ParameterVariable.Map.of_alist_exn
-      |> Option.value ~default:ParameterVariable.Map.empty
-    in
-    { unaries = UnaryVariable.Map.of_alist_exn unaries; callable_parameters }
-
-
   let set ({ unaries; callable_parameters } as solution) = function
     | Type.Variable.UnaryPair (key, data) ->
         { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
@@ -154,6 +145,9 @@ module Solution = struct
         { solution with
           callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data
         }
+
+
+  let create = List.fold ~f:set ~init:empty
 end
 
 module type OrderedConstraintsType = sig

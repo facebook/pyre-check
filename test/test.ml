@@ -1162,6 +1162,6 @@ let assert_errors
     descriptions
 
 
-let create_true_alias_table true_aliases =
-  let aliases primitive = true_aliases primitive >>| fun alias -> Type.TypeAlias alias in
+let create_type_alias_table type_aliases =
+  let aliases primitive = type_aliases primitive >>| fun alias -> Type.TypeAlias alias in
   aliases

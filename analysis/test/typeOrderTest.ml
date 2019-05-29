@@ -763,7 +763,7 @@ let test_less_or_equal _ =
         | "_T" -> Some (Type.variable "_T")
         | _ -> None
       in
-      let aliases = create_true_alias_table aliases in
+      let aliases = create_type_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
     connect
@@ -962,7 +962,7 @@ let test_less_or_equal _ =
                ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.bool]))
       | _ -> None
     in
-    let aliases = create_true_alias_table aliases in
+    let aliases = create_type_alias_table aliases in
     less_or_equal
       ?attributes
       ?is_protocol
@@ -1222,7 +1222,7 @@ let test_less_or_equal _ =
       | "_T" -> Some (Type.variable "_T")
       | _ -> None
     in
-    let aliases = create_true_alias_table aliases in
+    let aliases = create_type_alias_table aliases in
     parse_callable ~aliases
   in
   let is_protocol = function
@@ -1811,7 +1811,7 @@ let test_join _ =
         | "_T" -> Some (Type.variable "_T")
         | _ -> None
       in
-      let aliases = create_true_alias_table aliases in
+      let aliases = create_type_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
     connect order ~predecessor:Type.Bottom ~successor:!"ParametricCallableToStr";
@@ -1832,7 +1832,7 @@ let test_join _ =
       ["_1", Type.variable "_1"; "_2", Type.variable "_2"; "_T", Type.variable "_T"]
     |> Identifier.Table.find
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_join
     ~order
     ~aliases
@@ -2081,7 +2081,7 @@ let test_join _ =
         "_T_contra", Type.variable "_T_contra" ~variance:Contravariant ]
     |> Identifier.Table.find
   in
-  let variance_aliases = create_true_alias_table variance_aliases in
+  let variance_aliases = create_type_alias_table variance_aliases in
   assert_join
     ~order:variance_order
     ~aliases:variance_aliases
@@ -2823,7 +2823,7 @@ let test_is_instantiated _ =
 
 
 let test_solve_less_or_equal _ =
-  let resolution =
+  let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
       let environment =
@@ -2850,6 +2850,7 @@ let test_solve_less_or_equal _ =
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
+      V = typing_extensions.CallableParameterTypeVariable("V")
 
       T = typing.TypeVar('T')
       T1 = typing.TypeVar('T1')
@@ -2866,9 +2867,8 @@ let test_solve_less_or_equal _ =
         def Constructable.__init__(self, x: int) -> None:
           pass
     |}
-    |> fun environment -> TypeCheck.resolution environment ()
   in
-  let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
+  let resolution = TypeCheck.resolution environment () in
   let assert_solve
       ~left
       ~right
@@ -2877,7 +2877,6 @@ let test_solve_less_or_equal _ =
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.Variable.mark_all_variables_as_bound)
-      ?callable_parameters_solution
       expected
     =
     let handler =
@@ -2895,28 +2894,12 @@ let test_solve_less_or_equal _ =
       }
     in
     let parse_annotation annotation =
-      let constraints = function
-        | Type.Parametric
-            { name = "CallableWithVariadicGenericParameters"; parameters = [annotation] } ->
-            Some
-              (Type.Callable.create
-                 ~parameters:(Type.Callable.ParameterVariadicTypeVariable parameter_variadic)
-                 ~annotation
-                 ())
-        | _ -> None
-      in
       annotation
       |> parse_single_expression
       |> Resolution.parse_annotation
            ~allow_untracked:true
            ~allow_invalid_type_parameters:true
            resolution
-      |> Type.instantiate ~constraints
-    in
-    let parse_variable variable =
-      match parse_annotation variable with
-      | Type.Variable variable -> variable
-      | _ -> failwith "not a variable"
     in
     let left =
       let constraints annotation =
@@ -2930,13 +2913,27 @@ let test_solve_less_or_equal _ =
     in
     let right = parse_annotation right in
     let expected =
-      let parse_pairs =
-        List.map ~f:(fun (key, value) -> parse_variable key, parse_annotation value |> postprocess)
+      let parse_pairs pairs =
+        let parse_pair (variable, value) =
+          match parse_annotation variable with
+          | Type.Variable variable ->
+              Type.Variable.UnaryPair (variable, parse_annotation value |> postprocess)
+          | Type.Primitive primitive -> (
+              let (module Handler : Environment.Handler) = environment in
+              let variable =
+                match Handler.aliases primitive with
+                | Some (Type.VariableAlias variable) -> variable
+                | _ -> failwith "not available"
+              in
+              match parse_annotation (Printf.sprintf "typing.Callable[%s, typing.Any]" value) with
+              | Type.Callable { implementation = { parameters; _ }; _ } ->
+                  Type.Variable.ParameterVariadicPair (variable, parameters)
+              | _ -> failwith "impossible" )
+          | _ -> failwith "not a variable"
+        in
+        List.map pairs ~f:parse_pair
       in
-      expected
-      |> List.map ~f:parse_pairs
-      |> List.map
-           ~f:(TypeConstraints.Solution.create ?callable_parameters:callable_parameters_solution)
+      List.map expected ~f:parse_pairs |> List.map ~f:TypeConstraints.Solution.create
     in
     let constraints =
       let add_bounds sofar (key, (lower_bound, upper_bound)) =
@@ -3174,41 +3171,21 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Tuple[typing.Callable[[T], T], int]"
     ~right:"typing.Tuple[typing.Callable[[T1], T2], T1]"
     [["T2", "int"; "T1", "int"]];
-  let parameters_with_two_anonymous_integers =
-    Type.Callable.Defined
-      [ Type.Callable.Parameter.create ~annotation:Type.integer "__x" 0;
-        Type.Callable.Parameter.create ~annotation:Type.integer "__y" 1 ]
-  in
-  (* CallableWithVariadicGenericParameters[return_type] is a magic alias right now for
-     typing.Callable[parameter_variadic, return_type]. This is necessary until we build support for
-     declaring parameter variadics *)
-
-  (* Solving Callable[[int, int], int] against Callable[Ts, int] should give you Ts => [int, int] *)
   assert_solve
     ~left:"typing.Callable[[int, int], int]"
-    ~right:"CallableWithVariadicGenericParameters[int]"
-    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
-    [[]];
+    ~right:"typing.Callable[V, int]"
+    [["V", "[int, int]"]];
   (* We need to ensure that return values are still checked *)
+  assert_solve ~left:"typing.Callable[[int, int], int]" ~right:"typing.Callable[V, str]" [];
   assert_solve
     ~left:"typing.Callable[[int, int], int]"
-    ~right:"CallableWithVariadicGenericParameters[str]"
-    [];
-  (* Solving Callable[[int, int], int] against Callable[Ts, T] should give you Ts => [int, int] and
-     T => int *)
-  assert_solve
-    ~left:"typing.Callable[[int, int], int]"
-    ~right:"CallableWithVariadicGenericParameters[T1]"
-    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
-    [["T1", "int"]];
+    ~right:"typing.Callable[V, T1]"
+    [["T1", "int"; "V", "[int, int]"]];
   (* We should be able to capture the same parameter set twice *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, int], int]]"
-    ~right:
-      ( "typing.Tuple[CallableWithVariadicGenericParameters[int], "
-      ^ "CallableWithVariadicGenericParameters[int]]" )
-    ~callable_parameters_solution:[parameter_variadic, parameters_with_two_anonymous_integers]
-    [[]];
+    ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
+    [["V", "[int, int]"]];
   (* We currently do not find a way to take both [int, int] and [int, str]. A correct solution
      would be [int, Intersection[int, str]]. This is probably not desired *)
   assert_solve

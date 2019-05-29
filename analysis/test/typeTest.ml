@@ -140,20 +140,20 @@ let test_create _ =
     | "B" -> Some (Type.Primitive "C")
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.Primitive "C");
   (* Recursion with loop. *)
   let aliases = function
     | "A" -> Some (Type.Primitive "A")
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.Primitive "A");
   let aliases = function
     | "A" -> Some (Type.list (Type.Primitive "A"))
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.list (Type.Primitive "A"));
   (* Nested aliasing. *)
   let aliases = function
@@ -162,7 +162,7 @@ let test_create _ =
     | "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ())
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
   assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
   (* Aliasing of subclasses through imports. *)
@@ -171,7 +171,7 @@ let test_create _ =
     | "module.R" -> Some (Type.Primitive "module.R.R")
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.Primitive "B");
   assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
   assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" [Type.integer]);
@@ -185,7 +185,7 @@ let test_create _ =
     | "A" -> Some (Type.union [Type.string; Type.bytes])
     | _ -> None
   in
-  let aliases = create_true_alias_table aliases in
+  let aliases = create_type_alias_table aliases in
   assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
   (* Callables. *)
   let open Type.Callable in
@@ -911,7 +911,7 @@ let test_variables _ =
       let aliases = Identifier.Map.of_alist_exn ["T", Type.variable "T"; "S", Type.variable "S"] in
       Map.find aliases
     in
-    let aliases = create_true_alias_table aliases in
+    let aliases = create_type_alias_table aliases in
     let variables =
       Type.create ~aliases (parse_single_expression source)
       |> Type.Variable.all_free_variables
