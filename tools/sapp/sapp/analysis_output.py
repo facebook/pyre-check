@@ -9,8 +9,7 @@ from typing import IO, Iterable, NamedTuple, Optional
 from .sharded_files import ShardedFile
 
 
-METADATA_FILE = "metadata.json"
-METADATA_GLOB = "*_metadata.json"
+METADATA_GLOB = "*metadata.json"
 
 
 class Metadata(NamedTuple):
@@ -71,15 +70,20 @@ class AnalysisOutput(object):
 
     @classmethod
     def from_directory(cls, directory: str) -> "AnalysisOutput":
-        with open(os.path.join(directory, METADATA_FILE)) as f:
-            metadata = json.load(f)
+        metadata = {}
         for file in glob(os.path.join(directory, METADATA_GLOB)):
             with open(file) as f:
                 metadata.update(json.load(f))
 
-        filename_spec = os.path.join(
-            directory, os.path.basename(metadata["filenames"][0])
-        )
+        if "filename_spec" in metadata:
+            filename_spec = os.path.join(
+                directory, os.path.basename(metadata["filename_spec"])
+            )
+        else:
+            # Legacy
+            filename_spec = os.path.join(
+                directory, os.path.basename(metadata["filenames"][0])
+            )
 
         return cls(
             directory=directory,
