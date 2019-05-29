@@ -684,7 +684,8 @@ let union parameters =
     let parameters = Set.of_list (flattened parameters) in
     let filter_redundant_annotations sofar annotation =
       match annotation with
-      | Primitive _ when Set.mem parameters (optional annotation) -> sofar
+      | Optional _ -> annotation :: sofar
+      | _ when Set.mem parameters (Optional annotation) -> sofar
       | _ -> annotation :: sofar
     in
     Set.fold ~init:[] ~f:filter_redundant_annotations parameters |> List.sort ~compare

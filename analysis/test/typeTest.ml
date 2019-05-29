@@ -507,7 +507,14 @@ let test_union _ =
   (* Flatten unions. *)
   assert_equal
     (Type.union [Type.float; Type.union [Type.string; Type.bytes]])
-    (Type.union [Type.float; Type.string; Type.bytes])
+    (Type.union [Type.float; Type.string; Type.bytes]);
+  assert_equal
+    (Type.union [Type.Optional (Type.list Type.integer); Type.list Type.integer])
+    (Type.Optional (Type.list Type.integer));
+  assert_equal
+    (Type.union [Type.Optional (Type.variable "A"); Type.variable "A"])
+    (Type.Optional (Type.variable "A"));
+  ()
 
 
 let test_primitives _ =

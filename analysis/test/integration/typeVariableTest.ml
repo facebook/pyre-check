@@ -122,6 +122,18 @@ let test_check_unbounded_variables _ =
         return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Optional[Variable[T]]`."];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Generic, Optional
+      T1 = TypeVar("T1")
+      class Lol(Generic[T1]):
+          def bar(self, x: Optional[T1]) -> None:
+              if x is not None and self.bop(x):
+                  return
+          def bop(self, x: T1) -> bool:
+              return True
+    |}
+    [];
   ()
 
 
