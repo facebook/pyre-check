@@ -1564,6 +1564,13 @@ let test_expand_implicit_returns _ =
       def foo():
         while True:
           pass
+    |};
+  assert_expand {|
+      def foo():
+        ...
+    |} {|
+      def foo():
+        ...
     |}
 
 

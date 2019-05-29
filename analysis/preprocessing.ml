@@ -1250,6 +1250,7 @@ let expand_implicit_returns source =
     let statement state statement =
       match statement with
       (* Insert implicit return statements at the end of function bodies. *)
+      | { Node.value = Define define; _ } when Define.is_stub define -> state, [statement]
       | { Node.location; value = Define define } ->
           let define =
             let has_yield =
