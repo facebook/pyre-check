@@ -21,7 +21,7 @@ let test_transform_ast _ =
     |}
     {|
       class qualifier.T(typing.NamedTuple):
-        def qualifier.T.__init__(self): ...
+        def qualifier.T.__new__(cls): ...
         qualifier.T._fields: typing.Tuple[()] = ()
     |};
   assert_expand
@@ -30,7 +30,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
-        def T.__init__(self, $parameter$a: typing.Any): ...
+        def T.__new__(cls, $parameter$a: typing.Any): ...
         T._fields: typing.Tuple[str] = ('a',)
         T.a: typing.Any
     |};
@@ -40,7 +40,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
-        def T.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
+        def T.__new__(cls, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
         T._fields: typing.Tuple[str, str] = ('one', 'two')
         T.one: typing.Any
         T.two: typing.Any
@@ -51,7 +51,7 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
-        def T.__init__(self, $parameter$one: int, $parameter$two: str): ...
+        def T.__new__(cls, $parameter$one: int, $parameter$two: str): ...
         T._fields: typing.Tuple[str, str] = ('one', 'two')
         T.one: int
         T.two: str
@@ -62,8 +62,8 @@ let test_transform_ast _ =
     |}
     {|
       class T(typing.NamedTuple):
-        def T.__init__(
-          self,
+        def T.__new__(
+          cls,
           $parameter$a: typing.Any,
           $parameter$b: typing.Any,
           $parameter$c: typing.Any): ...
@@ -79,7 +79,7 @@ let test_transform_ast _ =
     |}
     {|
       class Foo(Bar, typing.NamedTuple):
-        def Foo.__init__(self, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
+        def Foo.__new__(cls, $parameter$one: typing.Any, $parameter$two: typing.Any): ...
         Foo._fields: typing.Tuple[str, str] = ('one', 'two')
         Foo.one: typing.Any
         Foo.two: typing.Any
@@ -94,7 +94,7 @@ let test_transform_ast _ =
     |}
     {|
       class Foo(typing.NamedTuple):
-        def Foo.__init__(self, $parameter$a: int, $parameter$b: str, $parameter$c: int = 3): ...
+        def Foo.__new__(cls, $parameter$a: int, $parameter$b: str, $parameter$c: int = 3): ...
         Foo._fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
         Foo.a: int
         Foo.b: str
@@ -107,8 +107,8 @@ let test_transform_ast _ =
     |}
     {|
       class Foo(typing.NamedTuple):
-         def Foo.__init__(
-           self,
+         def Foo.__new__(
+           cls,
            $parameter$op: typing.Any,
            $parameter$path: typing.Any,
            $parameter$value: typing.Any,
@@ -131,7 +131,7 @@ let test_transform_ast _ =
     {|
       class Foo:
         class T(typing.NamedTuple):
-          def T.__init__(self, $parameter$a: typing.Any, $parameter$b: typing.Any): ...
+          def T.__new__(cls, $parameter$a: typing.Any, $parameter$b: typing.Any): ...
           T._fields: typing.Tuple[str, str] = ('a', 'b')
           T.a: typing.Any
           T.b: typing.Any
@@ -144,20 +144,23 @@ let test_transform_ast _ =
     {|
       def foo():
         class T(typing.NamedTuple):
-          def T.__init__(self): ...
+          def T.__new__(cls): ...
           T._fields: typing.Tuple[()] = ()
     |};
-  (* TODO (T42893621): properly handle this case *)
   assert_expand
     {|
       class Foo:
-        def __init__($parameter$self):
-          $parameter$self.t = typing.NamedTuple('T', 'a')
+        def __new__(cls):
+          cls.t = typing.NamedTuple('T', 'a')
     |}
     {|
       class Foo:
-        def __init__($parameter$self):
-          $parameter$self.t = typing.NamedTuple('T', 'a')
+        def __new__(cls):
+          class cls.t(typing.NamedTuple):
+            def cls.t.__new__(cls, $parameter$a: typing.Any):
+              ...
+            cls.t._fields: typing.Tuple[str] = ("a",)
+            cls.t.a: typing.Any = ...
     |}
 
 

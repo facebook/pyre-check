@@ -115,7 +115,7 @@ let transform_ast ({ Source.statements; _ } as source) =
     in
     let tuple_constructor ~parent ~location attributes =
       let parameters =
-        let self_parameter = Parameter.create ~name:"self" () in
+        let self_parameter = Parameter.create ~name:"cls" () in
         let to_parameter (name, annotation, value) =
           let value =
             match value with
@@ -128,7 +128,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       in
       Statement.Define
         { signature =
-            { name = Reference.create ~prefix:parent "__init__";
+            { name = Reference.create ~prefix:parent "__new__";
               parameters;
               decorators = [];
               docstring = None;
