@@ -490,11 +490,11 @@ let create_attribute
             |> Option.value ~default:[]
           in
           let parameters =
-            let parameter generic =
-              Type.Callable.Parameter.Named
-                { name = "$"; annotation = Type.meta generic; default = false }
+            let parameter index generic =
+              Type.Callable.Parameter.Anonymous
+                { index; annotation = Type.meta generic; default = false }
             in
-            List.map generics ~f:parameter
+            List.mapi generics ~f:parameter
           in
           { Type.Callable.annotation = Type.meta (Type.Parametric { name; parameters = generics });
             parameters = Defined parameters

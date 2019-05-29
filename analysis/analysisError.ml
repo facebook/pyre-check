@@ -784,10 +784,10 @@ let messages ~concise ~signature location kind =
       in
       let parameter =
         match parameter with
-        | Anonymous index -> Printf.sprintf "%d" index
-        | Named name -> Format.asprintf "%a" pp_identifier name
+        | Anonymous index -> Printf.sprintf "in position %d" index
+        | Named name -> Format.asprintf "`%a`" pp_identifier name
       in
-      [Format.asprintf "%s expects argument `%s`." callee parameter]
+      [Format.asprintf "%s expects argument %s." callee parameter]
   | MissingAttributeAnnotation { missing_annotation = { given_annotation; _ }; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
         ["Attribute annotation cannot be `Any`."]

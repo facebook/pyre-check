@@ -109,6 +109,14 @@ let test_check_method_parameters _ =
     [];
   assert_strict_type_errors
     {|
+      # adding `or` to avoid triggering type alias validation
+      x = typing.Mapping[int] or None
+    |}
+    [ "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
+      "Missing argument [20]: Call `typing.GenericMeta.__getitem__` expects argument in position 1."
+    ];
+  assert_strict_type_errors
+    {|
       class Meta:
           def foo(self) -> None: ...
 
