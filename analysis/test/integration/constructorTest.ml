@@ -21,7 +21,13 @@ let test_check_invalid_constructor _ =
           return 0
     |}
     [ "Incompatible constructor annotation [17]: `__init__` is annotated as "
-      ^ "returning `int`, but it should return `None`." ]
+      ^ "returning `int`, but it should return `None`." ];
+  (* TODO(T45018328): We should error here. *)
+  assert_type_errors {|
+      class C:
+        def __new__(cls) -> None:
+          ...
+    |} []
 
 
 let test_check_init _ =

@@ -330,6 +330,7 @@ module Define = struct
         false
       else
         String.equal name "__init__"
+        || String.equal name "__new__"
         || in_test
            && List.mem
                 ~equal:String.equal

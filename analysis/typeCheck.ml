@@ -1272,15 +1272,22 @@ module State (Context : Context) = struct
         state
       else
         match return_annotation with
-        | Some ({ Node.location; _ } as annotation) ->
-            let annotation = Resolution.parse_annotation resolution annotation in
-            if Type.is_none annotation then
+        | Some ({ Node.location; _ } as annotation) -> (
+          match define with
+          | { Statement.Define.signature = { Statement.Define.name; _ }; _ }
+            when String.equal (Reference.last name) "__new__" ->
+              (* TODO(T45018328): Error here. `__new__` is a special undecorated class method, and
+                 we really ought to be checking its return type against typing.Type[Cls]. *)
               state
-            else
-              emit_error
-                ~state
-                ~location
-                ~kind:(Error.IncompatibleConstructorAnnotation annotation)
+          | _ ->
+              let annotation = Resolution.parse_annotation resolution annotation in
+              if Type.is_none annotation then
+                state
+              else
+                emit_error
+                  ~state
+                  ~location
+                  ~kind:(Error.IncompatibleConstructorAnnotation annotation) )
         | _ -> state
     in
     create ~resolution:(Resolution.with_parent resolution ~parent) ()
