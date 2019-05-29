@@ -180,6 +180,14 @@ let test_check_tuple _ =
       "Undefined attribute [16]: `T` has no attribute `d`." ];
   assert_type_errors
     {|
+      class C(collections.namedtuple('T', 'a b')):
+        def __new__(cls, a: int) -> typing.Type[C]:
+          ...
+      C(1,2)
+    |}
+    ["Too many arguments [19]: Call `C.__new__` expects 1 positional argument, 2 were provided."];
+  assert_type_errors
+    {|
       T = collections.namedtuple('T', 'a b c')
       def foo(t: T) -> None:
         x, y = t

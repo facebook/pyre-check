@@ -216,9 +216,19 @@ let transform_ast ({ Source.statements; _ } as source) =
               =
               match extract_attributes value with
               | Some attributes ->
-                  let constructor = tuple_constructor ~parent:name ~location attributes in
+                  let constructor =
+                    let is_dunder_new = function
+                      | { Node.value = Define { Define.signature = { Define.name; _ }; _ }; _ } ->
+                          Reference.last name = "__new__"
+                      | _ -> false
+                    in
+                    if List.exists body ~f:is_dunder_new then
+                      []
+                    else
+                      [tuple_constructor ~parent:name ~location attributes]
+                  in
                   let attributes = tuple_attributes ~parent:name ~location attributes in
-                  tuple_base ~location :: bases, attributes_sofar @ (constructor :: attributes)
+                  tuple_base ~location :: bases, attributes_sofar @ constructor @ attributes
               | None -> base :: bases, attributes_sofar
             in
             let reversed_bases, attributes =

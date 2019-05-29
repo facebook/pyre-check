@@ -159,6 +159,20 @@ let test_transform_ast _ =
       class Foo:
         def __new__(cls):
           cls.t = typing.NamedTuple('T', 'a')
+    |};
+  assert_expand
+    {|
+      class Foo(collections.namedtuple('T', ['one', 'two'])):
+        def __new__(cls, one):
+          return super(Foo, cls).__new__(cls, one, two=0)
+    |}
+    {|
+      class Foo(typing.NamedTuple):
+        _fields: typing.Tuple[str, str] = ('one', 'two')
+        one: typing.Any
+        two: typing.Any
+        def __new__(cls, one):
+          return super(Foo, cls).__new__(cls, one, two=0)
     |}
 
 
