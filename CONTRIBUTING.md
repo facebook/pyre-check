@@ -43,8 +43,7 @@ clear and has sufficient instructions to be able to reproduce the issue.
 ## Coding Style
 We value consistent code. Please follow the style of the surrounding code. Useful rules of thumb for all languages are
 * avoid abbreviations.
-* avoid variable indentations (e.g. lining up parameters with the opening parenthesis of a function). It tends to mess up the git blame and quickly results with conflicts with the line length limit.
-* add a trailing colon/semi-colon for multi-line lists and records, and have the closing bracket on the line after the semicolon.
+* use autoformatters to minimize debates about spacing, indentation and line breaks.
 * prefer snake_case over camelCase for variables and function names, and prefer CamelCase over Snake_case for modules and classes.
 
 ### Python
@@ -57,8 +56,8 @@ You can install the latest release via `pip install black`, and you run it over 
 More information are available at: https://github.com/ambv/black
 
 ### OCaml
-- we don't use type annotations outside of interface files unless necessary
-- use ocp-indent for formatting
+We use the `ocamlformat` code formatter for all OCaml files.
+You can install the latest release via `opam install ocamlformat`, and run it on changed files via `ocamlformat -i affectedFile.ml`.
 
 ## Architecture
 On a high level, Pyre goes through the following steps to when "pyre" is called from the command line:
