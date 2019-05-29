@@ -210,6 +210,23 @@ let test_check_method_parameters _ =
     [];
   assert_type_errors
     {|
+    class Foo:
+      @staticmethod
+      def __new__(cls) -> typing.Type[Foo]: ...
+    Foo()
+  |}
+    [];
+  (* TODO(T45029821): Eliminate special casing so that calls to Foo() error here. *)
+  assert_type_errors
+    {|
+    class Foo:
+      @staticmethod
+      def __new__() -> typing.Type[Foo]: ...
+    Foo()
+  |}
+    [];
+  assert_type_errors
+    {|
       class Foo:
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x

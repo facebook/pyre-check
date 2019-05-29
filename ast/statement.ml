@@ -303,7 +303,11 @@ module Define = struct
       has_decorator signature "overload" || has_decorator signature "typing.overload"
 
 
-    let is_static_method signature = has_decorator signature "staticmethod"
+    let is_static_method signature =
+      (* `__new__` is always a static method. See
+         `https://docs.python.org/3/reference/datamodel.html#object.__new__`. *)
+      String.equal (unqualified_name signature) "__new__" || has_decorator signature "staticmethod"
+
 
     let is_final_method signature = has_decorator signature "typing.final"
 

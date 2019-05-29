@@ -428,7 +428,13 @@ let create_attribute
     match defines with
     | Some (({ Define.signature = { Define.name; _ }; _ } as define) :: _ as defines) ->
         let parent =
-          if Define.is_static_method define then
+          (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play well
+             with our logic here - we should clean up the call logic to handle passing the extra
+             argument, and eliminate the special fields from here. *)
+          if
+            Define.is_static_method define
+            && not (String.equal (Define.unqualified_name define) "__new__")
+          then
             None
           else if Define.is_class_method define then
             Some (Type.meta instantiated)

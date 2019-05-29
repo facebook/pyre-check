@@ -843,7 +843,12 @@ module State (Context : Context) = struct
           let state, { Annotation.annotation; mutability } =
             match index, parent with
             | 0, Some parent
-              when not (Define.is_class_toplevel define || Define.is_static_method define) -> (
+            (* __new__ does not require an annotation for __cls__, even though it is a static
+               method. *)
+              when not
+                     ( Define.is_class_toplevel define
+                     || Define.is_static_method define
+                        && not (String.equal (Define.unqualified_name define) "__new__") ) -> (
                 let resolved, is_class_method =
                   let parent_annotation =
                     let parent_name = Reference.show parent in
