@@ -45,7 +45,7 @@ We value consistent code. Please follow the style of the surrounding code. Usefu
 * avoid abbreviations.
 * avoid variable indentations (e.g. lining up parameters with the opening parenthesis of a function). It tends to mess up the git blame and quickly results with conflicts with the line length limit.
 * add a trailing colon/semi-colon for multi-line lists and records, and have the closing bracket on the line after the semicolon.
-* prefer snake_case over camelCase for variables and function names, and prefer CamelCase over Snake_case for modules and classes.
+* prefer snake_case over camelCase for variables and function names, and prefer CamelCase over snake_case for modules and classes.
 
 ### Python
 <p>
@@ -75,9 +75,12 @@ The modules that do the heavy lifting here can be found under `analysis/environm
 
 5. Once the environment is built, pyre will start type checking all files under the source root in parallel. The key property here is that building the environment in the above step allows pyre to type check each function in parallel. The type checker will not go beyond function call boundaries, which is possible because we will have accumulated the parameter and return annotations of all functions before this step.
 
-During analysis, each function will be processed into a control flow graph to represent the flow of typing information (https://en.wikipedia.org/wiki/Control_flow_graph is a nice introduction to CFG's). The bird's eye view of the algorithm is that we initialize the analysis with the type information from the function's parameter, and follow the control flow of the function to annotate local variables that are encountered. When encountering an attribute access, call, etc., the propagated type information is checked against the already present signature, and an error is generated if the two aren't compatible. The `Abstract Interpretation` section provides a theoretical background for the analysis.
+During analysis, each function will be processed into a control flow graph to represent the flow of typing information (https://en.wikipedia.org/wiki/Control_flow_graph is a nice introduction to CFG's). The bird's eye view of the algorithm is that we initialize the analysis with the type information from the function's parameter, and follow the control flow of the function to annotate local variables that are encountered. When encountering an attribute access, call, etc., the propagated type information is checked against the already present signature, and an error is generated if the two aren't compatible. 
+
+We use abstract interpretation for our typechecking. The module type for our abstract domains is simply called `State`, and lives in `analysis/fixpoint.ml`. The intermediate representation of our types can be found in `analysis.type.ml`. For expected behavior, check `analysis/test/`. For information on how to extend the Pyre codebase with your own static analyses, look at `docs/developer.md`.
 
 6. TypeCheckService will collect all the errors and return them to the caller. In the case of `pyre check`, all errors will be reported to stdout.
+
 
 ## License
 By contributing to Pyre, you agree that your contributions will be licensed
