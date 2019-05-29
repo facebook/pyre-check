@@ -1,4 +1,4 @@
-(*
+(**
  * Copyright (c) 2015, Facebook, Inc.
  * All rights reserved.
  *
@@ -6,27 +6,20 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- *)
+*)
 
 exception Invalid_Int_Size_Exception
-
 exception Payload_Size_Too_Large_Exception
-
 exception Malformed_Preamble_Exception
-
 exception Writing_Preamble_Exception
-
 exception Writing_Payload_Exception
-
 exception Reading_Preamble_Exception
-
 exception Reading_Payload_Exception
 
 type remote_exception_data = {
-  message: string;
-  stack: string
+  message : string;
+  stack : string;
 }
 
-val to_fd_with_preamble : Unix.file_descr -> 'a -> unit
-
-val from_fd_with_preamble : Unix.file_descr -> 'a
+val to_fd_with_preamble: Unix.file_descr -> 'a -> unit
+val from_fd_with_preamble: Unix.file_descr -> 'a

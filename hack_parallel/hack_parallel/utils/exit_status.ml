@@ -1,4 +1,4 @@
-(*
+(**
  * Copyright (c) 2015, Facebook, Inc.
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- *)
+*)
 
 type t =
   | No_error
@@ -28,7 +28,8 @@ type t =
   | Lost_parent_monitor
   | Interrupted
   | Worker_oomed
-  | Worker_busy  (** An uncaught Not_found exception in the worker. *)
+  | Worker_busy
+  (** An uncaught Not_found exception in the worker. *)
   | Worker_not_found_exception
   | Worker_failed_to_send_job
   | Socket_error
@@ -40,9 +41,10 @@ type t =
   | EventLogger_broken_pipe
   | CantRunAI
   | Watchman_failed
-      (** It is faster to exit the server (and have the Monitor restart the server) * on a Watchman
-          fresh instance than to compute the files that have been * deleted and do an incremental
-          check. *)
+  (** It is faster to exit the server (and have the Monitor restart the server)
+   * on a Watchman fresh instance than to compute the files that have been
+   * deleted and do an incremental check.
+  *)
   | Watchman_fresh_instance
   | File_heap_stale
   | Hhconfig_deleted
@@ -74,70 +76,69 @@ type t =
 exception Exit_with of t
 
 let exit_code = function
-  | Interrupted -> -6
-  | No_error -> 0
-  | Build_terminated -> 1
-  | Kill_error -> 1
-  | Server_initializing -> 1
-  | Server_shutting_down -> 1
-  | Build_error -> 2 (* used in clientBuild *)
-  | Type_error -> 2 (* used in clientCheck *)
-  | Uncaught_exception -> 2 (* used in server *)
-  | Hhconfig_changed -> 4
-  | Unused_server -> 5
-  | No_server_running -> 6
-  | Out_of_time -> 7
-  | Out_of_retries -> 7
-  | Checkpoint_error -> 8
-  | Build_id_mismatch -> 9
-  | Monitor_connection_failure -> 9
-  | Input_error -> 10
-  | Lock_stolen -> 11
-  | Lost_parent_monitor -> 12
+  | Interrupted ->                 -6
+  | No_error ->                     0
+  | Build_terminated ->             1
+  | Kill_error ->                   1
+  | Server_initializing ->          1
+  | Server_shutting_down ->         1
+  | Build_error ->                  2 (* used in clientBuild *)
+  | Type_error ->                   2 (* used in clientCheck *)
+  | Uncaught_exception ->           2 (* used in server *)
+  | Hhconfig_changed ->             4
+  | Unused_server ->                5
+  | No_server_running ->            6
+  | Out_of_time ->                  7
+  | Out_of_retries ->               7
+  | Checkpoint_error ->             8
+  | Build_id_mismatch ->            9
+  | Monitor_connection_failure ->   9
+  | Input_error ->                  10
+  | Lock_stolen ->                  11
+  | Lost_parent_monitor ->          12
   | Shared_mem_assertion_failure -> 14
-  | Out_of_shared_memory -> 15
-  | Hash_table_full -> 16
-  | Heap_full -> 17
-  | Worker_oomed -> 30
-  | Worker_busy -> 31
-  | Worker_not_found_exception -> 32
-  | Worker_failed_to_send_job -> 33
-  | Server_already_exists -> 77
-  | Missing_hhi -> 97
-  | Socket_error -> 98
-  | Dfind_died -> 99
-  | Dfind_unresponsive -> 100
-  | EventLogger_Timeout -> 101
-  | CantRunAI -> 102
-  | Watchman_failed -> 103
-  | Hhconfig_deleted -> 104
-  | Server_name_not_found -> 105
-  | EventLogger_broken_pipe -> 106
-  | Redecl_heap_overflow -> 107
+  | Out_of_shared_memory ->         15
+  | Hash_table_full ->              16
+  | Heap_full ->                    17
+  | Worker_oomed ->                 30
+  | Worker_busy ->                  31
+  | Worker_not_found_exception ->   32
+  | Worker_failed_to_send_job ->    33
+  | Server_already_exists ->        77
+  | Missing_hhi ->                  97
+  | Socket_error ->                 98
+  | Dfind_died ->                   99
+  | Dfind_unresponsive ->           100
+  | EventLogger_Timeout ->          101
+  | CantRunAI ->                    102
+  | Watchman_failed ->              103
+  | Hhconfig_deleted ->             104
+  | Server_name_not_found ->        105
+  | EventLogger_broken_pipe ->      106
+  | Redecl_heap_overflow ->         107
   | EventLogger_restart_out_of_retries -> 108
-  | Watchman_fresh_instance -> 109
-  | IDE_malformed_request -> 201
-  | IDE_no_server -> 202
-  | IDE_out_of_retries -> 203
-  | Nfs_root -> 204
-  | IDE_init_failure -> 205
-  | IDE_typechecker_died -> 206
-  | IDE_new_client_connected -> 207
-  | Lazy_decl_bug -> 208
-  | Decl_heap_elems_bug -> 209
-  | Parser_heap_build_error -> 210
-  | File_heap_stale -> 211
-  | Sql_assertion_failure -> 212
-  | Local_type_env_stale -> 213
-  | Sql_cantopen -> 214
-  | Sql_corrupt -> 215
-  | Sql_misuse -> 216
+  | Watchman_fresh_instance ->      109
+  | IDE_malformed_request ->        201
+  | IDE_no_server ->                202
+  | IDE_out_of_retries ->           203
+  | Nfs_root ->                     204
+  | IDE_init_failure ->             205
+  | IDE_typechecker_died ->         206
+  | IDE_new_client_connected ->     207
+  | Lazy_decl_bug ->                208
+  | Decl_heap_elems_bug ->          209
+  | Parser_heap_build_error ->      210
+  | File_heap_stale ->              211
+  | Sql_assertion_failure ->        212
+  | Local_type_env_stale ->         213
+  | Sql_cantopen ->                 214
+  | Sql_corrupt ->                  215
+  | Sql_misuse ->                   216
 
 
 let exit t =
   let ec = exit_code t in
   Pervasives.exit ec
-
 
 let to_string = function
   | No_error -> "Ok"

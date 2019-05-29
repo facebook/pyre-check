@@ -1,4 +1,4 @@
-(*
+(**
  * Copyright (c) 2015, Facebook, Inc.
  * All rights reserved.
  *
@@ -6,7 +6,7 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- *)
+*)
 
 open Hack_core
 
@@ -19,34 +19,35 @@ open Hack_core
  * writing those buffers twice as well. *)
 let pre_fork_callbacks : (unit -> unit) list ref = ref [flush_all]
 
-(** Sometimes it is more convenient to clear buffers in the children (to * avoid the double writing
-    of data) instead of the parent on a successful * fork. We store those callbacks here. *)
+(** Sometimes it is more convenient to clear buffers in the children (to
+ * avoid the double writing of data) instead of the parent on a successful
+ * fork. We store those callbacks here. *)
 let post_fork_child_callbacks : (unit -> unit) list ref = ref []
 
 let on_fork f = pre_fork_callbacks := f :: !pre_fork_callbacks
 
-let post_fork_child f = post_fork_child_callbacks := f :: !post_fork_child_callbacks
+let post_fork_child f =
+  post_fork_child_callbacks := f :: !post_fork_child_callbacks
 
 (* You should always use this instead of Unix.fork, so that the callbacks get
  * invoked *)
 let fork () =
-  List.iter !pre_fork_callbacks ~f:(fun f -> f ());
+  List.iter !pre_fork_callbacks ~f:(fun f -> f());
   match Unix.fork () with
   | 0 ->
-      List.iter !post_fork_child_callbacks ~f:(fun f -> f ());
+      List.iter !post_fork_child_callbacks ~f:(fun f -> f());
       0
-  | i -> i
-
+  | i ->
+      i
 
 (* should only be called from hh_server, which initializes the PidLog *)
 let fork_and_log ?reason () =
-  let result = fork () in
-  ( match result with
-  | -1 -> ()
-  | 0 -> PidLog.close ()
-  | pid -> PidLog.log ?reason pid );
+  let result = fork() in
+  (match result with
+   | -1  -> ()
+   | 0   -> PidLog.close ();
+   | pid -> PidLog.log ?reason pid);
   result
-
 
 let fork_and_may_log ?reason () =
   match reason with

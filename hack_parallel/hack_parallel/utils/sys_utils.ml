@@ -1,4 +1,4 @@
-(*
+(**
  * Copyright (c) 2015, Facebook, Inc.
  * All rights reserved.
  *
@@ -6,21 +6,19 @@
  * LICENSE file in the "hack" directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- *)
+*)
 
 open Hack_core
 
 exception NotADirectory of string
 
-external realpath : string -> string option = "hh_realpath"
-
-external is_nfs : string -> bool = "hh_is_nfs"
+external realpath: string -> string option = "hh_realpath"
+external is_nfs: string -> bool = "hh_is_nfs"
 
 (** Hack_option type intead of exception throwing. *)
 let get_env name =
   try Some (Sys.getenv name) with
   | Not_found -> None
-
 
 let getenv_user () =
   let user_var = if Sys.win32 then "USERNAME" else "USER" in
@@ -29,77 +27,62 @@ let getenv_user () =
   let logname = get_env logname_var in
   Hack_option.first_some user logname
 
-
 let getenv_home () =
   let home_var = if Sys.win32 then "APPDATA" else "HOME" in
   get_env home_var
 
-
 let getenv_term () =
-  let term_var = "TERM" in
-  (* This variable does not exist on windows. *)
+  let term_var = "TERM" in (* This variable does not exist on windows. *)
   get_env term_var
 
-
 let path_sep = if Sys.win32 then ";" else ":"
-
 let null_path = if Sys.win32 then "nul" else "/dev/null"
-
-let temp_dir_name = if Sys.win32 then Filename.get_temp_dir_name () else "/tmp"
+let temp_dir_name =
+  if Sys.win32 then Filename.get_temp_dir_name () else "/tmp"
 
 let getenv_path () =
-  let path_var = "PATH" in
-  (* Same variable on windows *)
+  let path_var = "PATH" in (* Same variable on windows *)
   get_env path_var
 
-
 let open_in_no_fail fn =
-  try open_in fn with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not open_in: '%s' (%s)\n" fn e;
-      exit 3
-
+  try open_in fn
+  with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not open_in: '%s' (%s)\n" fn e;
+    exit 3
 
 let open_in_bin_no_fail fn =
-  try open_in_bin fn with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not open_in_bin: '%s' (%s)\n" fn e;
-      exit 3
-
+  try open_in_bin fn
+  with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not open_in_bin: '%s' (%s)\n" fn e;
+    exit 3
 
 let close_in_no_fail fn ic =
-  try close_in ic with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not close: '%s' (%s)\n" fn e;
-      exit 3
-
+  try close_in ic with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not close: '%s' (%s)\n" fn e;
+    exit 3
 
 let open_out_no_fail fn =
-  try open_out fn with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not open_out: '%s' (%s)\n" fn e;
-      exit 3
-
+  try open_out fn
+  with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not open_out: '%s' (%s)\n" fn e;
+    exit 3
 
 let open_out_bin_no_fail fn =
-  try open_out_bin fn with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not open_out_bin: '%s' (%s)\n" fn e;
-      exit 3
-
+  try open_out_bin fn
+  with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not open_out_bin: '%s' (%s)\n" fn e;
+    exit 3
 
 let close_out_no_fail fn oc =
-  try close_out oc with
-  | e ->
-      let e = Printexc.to_string e in
-      Printf.fprintf stderr "Could not close: '%s' (%s)\n" fn e;
-      exit 3
-
+  try close_out oc with e ->
+    let e = Printexc.to_string e in
+    Printf.fprintf stderr "Could not close: '%s' (%s)\n" fn e;
+    exit 3
 
 let cat = Disk.cat
 
@@ -112,18 +95,14 @@ let cat_no_fail filename =
   close_in_no_fail filename ic;
   content
 
-
 let nl_regexp = Str.regexp "[\r\n]"
-
 let split_lines = Str.split nl_regexp
 
 (** Returns true if substring occurs somewhere inside str. *)
 let string_contains str substring =
   (* regexp_string matches only this string and nothing else. *)
   let re = Str.regexp_string substring in
-  try Str.search_forward re str 0 >= 0 with
-  | Not_found -> false
-
+  try (Str.search_forward re str 0) >= 0 with Not_found -> false
 
 let exec_read cmd =
   let ic = Unix.open_process_in cmd in
@@ -131,24 +110,21 @@ let exec_read cmd =
   assert (Unix.close_process_in ic = Unix.WEXITED 0);
   result
 
-
-let exec_read_lines ?(reverse = false) cmd =
+let exec_read_lines ?(reverse=false) cmd =
   let ic = Unix.open_process_in cmd in
   let result = ref [] in
-  ( try
-      while true do
-        result := input_line ic :: !result
-      done
-    with
-  | End_of_file -> () );
+  (try
+     while true do
+       result := input_line ic :: !result
+     done;
+   with End_of_file -> ());
   assert (Unix.close_process_in ic = Unix.WEXITED 0);
   if not reverse then List.rev !result else !result
 
-
-(** Deletes the file given by "path". If it is a directory, recursively * deletes all its contents
-    then removes the directory itself. *)
+(** Deletes the file given by "path". If it is a directory, recursively
+ * deletes all its contents then removes the directory itself. *)
 let rec rm_dir_tree path =
-  try
+  try begin
     let stats = Unix.lstat path in
     match stats.Unix.st_kind with
     | Unix.S_DIR ->
@@ -157,54 +133,42 @@ let rec rm_dir_tree path =
             let name = Filename.concat path name in
             rm_dir_tree name);
         Unix.rmdir path
-    | Unix.S_LNK
-    | Unix.S_REG
-    | Unix.S_CHR
-    | Unix.S_BLK
-    | Unix.S_FIFO
+    | Unix.S_LNK | Unix.S_REG | Unix.S_CHR | Unix.S_BLK | Unix.S_FIFO
     | Unix.S_SOCK ->
         Unix.unlink path
-  with
+  end with
   (* Path has been deleted out from under us - can ignore it. *)
-  | Sys_error s when s = Printf.sprintf "%s: No such file or directory" path -> ()
-  | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
-
+  | Sys_error(s) when s = Printf.sprintf "%s: No such file or directory" path ->
+      ()
+  | Unix.Unix_error(Unix.ENOENT, _, _) ->
+      ()
 
 let restart () =
   let cmd = Sys.argv.(0) in
   let argv = Sys.argv in
   Unix.execv cmd argv
 
-
 let logname_impl () =
   match getenv_user () with
   | Some user -> user
-  | None -> (
-      (* If this function is generally useful, it can be lifted to toplevel in this file, but this
-         is the only place we need it for now. *)
+  | None ->
+      (* If this function is generally useful, it can be lifted to toplevel
+         in this file, but this is the only place we need it for now. *)
       let exec_try_read cmd =
         let ic = Unix.open_process_in cmd in
-        let out =
-          try Some (input_line ic) with
-          | End_of_file -> None
-        in
+        let out = try Some (input_line ic) with End_of_file -> None in
         let status = Unix.close_process_in ic in
         match out, status with
         | Some _, Unix.WEXITED 0 -> out
-        | _ -> None
-      in
-      try Utils.unsafe_opt (exec_try_read "logname") with
-      | Invalid_argument _ -> (
-        try Utils.unsafe_opt (exec_try_read "id -un") with
-        | Invalid_argument _ -> "[unknown]" ) )
-
+        | _ -> None in
+      try Utils.unsafe_opt (exec_try_read "logname") with Invalid_argument _ ->
+      try Utils.unsafe_opt (exec_try_read "id -un") with Invalid_argument _ ->
+        "[unknown]"
 
 let logname_ref = ref None
-
 let logname () =
   if !logname_ref = None then logname_ref := Some (logname_impl ());
   Utils.unsafe_opt !logname_ref
-
 
 let with_umask umask f =
   let old_umask = ref 0 in
@@ -212,9 +176,8 @@ let with_umask umask f =
     ~enter:(fun () -> old_umask := Unix.umask umask)
     ~exit:(fun () -> ignore (Unix.umask !old_umask))
     ~do_:f
-
-
-let with_umask umask f = if Sys.win32 then f () else with_umask umask f
+let with_umask umask f =
+  if Sys.win32 then f () else with_umask umask f
 
 let read_stdin_to_string () =
   let buf = Buffer.create 4096 in
@@ -224,50 +187,54 @@ let read_stdin_to_string () =
       Buffer.add_char buf '\n'
     done;
     assert false
-  with
-  | End_of_file -> Buffer.contents buf
+  with End_of_file ->
+    Buffer.contents buf
 
-
-let read_all ?(buf_size = 4096) ic =
+let read_all ?(buf_size=4096) ic =
   let buf = Buffer.create buf_size in
-  ( try
-      while true do
-        let data = Bytes.create buf_size in
-        let bytes_read = input ic data 0 buf_size in
-        if bytes_read = 0 then raise Exit;
-        Buffer.add_subbytes buf data 0 bytes_read
-      done
-    with
-  | Exit -> () );
+  (try
+     while true do
+       let data = Bytes.create buf_size in
+       let bytes_read = input ic data 0 buf_size in
+       if bytes_read = 0 then raise Exit;
+       Buffer.add_subbytes buf data 0 bytes_read;
+     done
+   with Exit -> ());
   Buffer.contents buf
 
-
-(** * Like Python's os.path.expanduser, though probably doesn't cover some cases. * Roughly
-    follow's bash's tilde expansion: *
-    http://www.gnu.org/software/bash/manual/html_node/Tilde-Expansion.html * * ~/foo ->
-    /home/bob/foo if $HOME = "/home/bob" * ~joe/foo -> /home/joe/foo if joe's home is /home/joe *)
+(**
+ * Like Python's os.path.expanduser, though probably doesn't cover some cases.
+ * Roughly follow's bash's tilde expansion:
+ * http://www.gnu.org/software/bash/manual/html_node/Tilde-Expansion.html
+ *
+ * ~/foo -> /home/bob/foo if $HOME = "/home/bob"
+ * ~joe/foo -> /home/joe/foo if joe's home is /home/joe
+*)
 let expanduser path =
   Str.substitute_first
     (Str.regexp "^~\\([^/]*\\)")
-    (fun s ->
+    begin fun s ->
       match Str.matched_group 1 s with
-      | "" -> (
-        match getenv_home () with
-        | None -> (Unix.getpwuid (Unix.getuid ())).Unix.pw_dir
-        | Some home -> home )
-      | unixname -> (
-        try (Unix.getpwnam unixname).Unix.pw_dir with
-        | Not_found -> Str.matched_string s ))
+      | "" ->
+          begin
+            match getenv_home () with
+            | None -> (Unix.getpwuid (Unix.getuid())).Unix.pw_dir
+            | Some home -> home
+          end
+      | unixname ->
+          try (Unix.getpwnam unixname).Unix.pw_dir
+          with Not_found -> Str.matched_string s end
     path
 
+(* Turns out it's surprisingly complex to figure out the path to the current
+   executable, which we need in order to extract its embedded libraries. If
+   argv[0] is a path, then we can use that; sometimes it's just the exe name,
+   so we have to search $PATH for it the same way shells do. for example:
+   https://www.gnu.org/software/bash/manual/html_node/Command-Search-and-Execution.html
 
-(* Turns out it's surprisingly complex to figure out the path to the current executable, which we
-   need in order to extract its embedded libraries. If argv[0] is a path, then we can use that;
-   sometimes it's just the exe name, so we have to search $PATH for it the same way shells do. for
-   example: https://www.gnu.org/software/bash/manual/html_node/Command-Search-and-Execution.html
-
-   There are other options which might be more reliable when they exist, like using the `_` env var
-   set by bash, or /proc/self/exe on Linux, but they are not portable. *)
+   There are other options which might be more reliable when they exist, like
+   using the `_` env var set by bash, or /proc/self/exe on Linux, but they are
+   not portable. *)
 let executable_path : unit -> string =
   let executable_path_ = ref None in
   let dir_sep = Filename.dir_sep.[0] in
@@ -275,23 +242,19 @@ let executable_path : unit -> string =
     let paths =
       match getenv_path () with
       | None -> failwith "Unable to determine executable path"
-      | Some paths -> Str.split (Str.regexp_string path_sep) paths
-    in
-    let path =
-      List.fold_left
-        paths
-        ~f:(fun acc p ->
-          match acc with
-          | Some _ -> acc
-          | None -> realpath (expanduser (Filename.concat p path)))
-        ~init:None
+      | Some paths ->
+          Str.split (Str.regexp_string path_sep) paths in
+    let path = List.fold_left paths ~f:begin fun acc p ->
+        match acc with
+        | Some _ -> acc
+        | None -> realpath (expanduser (Filename.concat p path))
+      end ~init:None
     in
     match path with
     | Some path -> path
     | None -> failwith "Unable to determine executable path"
   in
-  fun () ->
-    match !executable_path_ with
+  fun () -> match !executable_path_ with
     | Some path -> path
     | None ->
         let path = Sys.executable_name in
@@ -300,24 +263,18 @@ let executable_path : unit -> string =
             match realpath path with
             | Some path -> path
             | None -> failwith "Unable to determine executable path"
-          else
-            search_path path
+          else search_path path
         in
         executable_path_ := Some path;
         path
 
-
 let lines_of_in_channel ic =
   let rec loop accum =
-    match
-      try Some (input_line ic) with
-      | _e -> None
-    with
+    match try Some(input_line ic) with _e -> None with
     | None -> List.rev accum
-    | Some line -> loop (line :: accum)
+    | Some(line) -> loop (line::accum)
   in
   loop []
-
 
 let lines_of_file filename =
   let ic = open_in filename in
@@ -325,79 +282,65 @@ let lines_of_file filename =
     let result = lines_of_in_channel ic in
     let _ = close_in ic in
     result
-  with
-  | _ ->
-      close_in ic;
-      []
+  with _ ->
+    close_in ic;
+    []
 
 
 let read_file file =
-  let ic = open_in_bin file in
+  let ic = open_in_bin file  in
   let size = in_channel_length ic in
   let buf = String.create size in
   really_input ic buf 0 size;
   close_in ic;
   buf
 
-
 let write_file ~file s =
   let chan = open_out file in
-  output_string chan s;
-  close_out chan
-
+  (output_string chan s; close_out chan)
 
 let append_file ~file s =
   let chan = open_out_gen [Open_wronly; Open_append; Open_creat] 0o666 file in
-  output_string chan s;
-  close_out chan
-
+  (output_string chan s; close_out chan)
 
 (* could be in control section too *)
 
-let filemtime file = (Unix.stat file).Unix.st_mtime
+let filemtime file =
+  (Unix.stat file).Unix.st_mtime
 
 external lutimes : string -> unit = "hh_lutimes"
 
 let try_touch ~follow_symlinks file =
   try
-    if follow_symlinks then
-      Unix.utimes file 0.0 0.0
-    else
-      lutimes file
-  with
-  | _ -> ()
-
+    if follow_symlinks then Unix.utimes file 0.0 0.0
+    else lutimes file
+  with _ ->
+    ()
 
 let rec mkdir_p = function
   | "" -> failwith "Unexpected empty directory, should never happen"
   | d when not (Sys.file_exists d) ->
       mkdir_p (Filename.dirname d);
-      Unix.mkdir d 0o770
+      Unix.mkdir d 0o770;
   | d when Sys.is_directory d -> ()
   | d -> raise (NotADirectory d)
 
-
 (* Emulate "mkdir -p", i.e., no error if already exists. *)
 let mkdir_no_fail dir =
-  with_umask 0 (fun () ->
-      (* Don't set sticky bit since the socket opening code wants to remove any
-       * old sockets it finds, which may be owned by a different user. *)
-      try Unix.mkdir dir 0o777 with
-      | Unix.Unix_error (Unix.EEXIST, _, _) -> ())
-
+  with_umask 0 begin fun () ->
+    (* Don't set sticky bit since the socket opening code wants to remove any
+     * old sockets it finds, which may be owned by a different user. *)
+    try Unix.mkdir dir 0o777 with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+  end
 
 let unlink_no_fail fn =
-  try Unix.unlink fn with
-  | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
-
+  try Unix.unlink fn with Unix.Unix_error (Unix.ENOENT, _, _) -> ()
 
 let readlink_no_fail fn =
   if Sys.win32 && Sys.file_exists fn then
     cat fn
   else
-    try Unix.readlink fn with
-    | _ -> fn
-
+    try Unix.readlink fn with _ -> fn
 
 let splitext filename =
   let root = Filename.chop_extension filename in
@@ -407,25 +350,24 @@ let splitext filename =
   let ext = String.sub filename (root_length + 1) ext_length in
   root, ext
 
-
 let is_test_mode () =
   try
     ignore @@ Sys.getenv "HH_TEST_MODE";
     true
-  with
-  | _ -> false
-
+  with _ -> false
 
 let symlink =
-  (* Dummy implementation of `symlink` on Windows: we create a text file containing the
-     targeted-file's path. Symlink are available on Windows since Vista, but until Seven
-     (included), one should have administratrive rights in order to create symlink. *)
+  (* Dummy implementation of `symlink` on Windows: we create a text
+     file containing the targeted-file's path. Symlink are available
+     on Windows since Vista, but until Seven (included), one should
+     have administratrive rights in order to create symlink. *)
   let win32_symlink source dest = write_file ~file:dest source in
-  if Sys.win32 then
-    win32_symlink
-  else (* 4.03 adds an optional argument to Unix.symlink that we want to ignore *)
+  if Sys.win32
+  then win32_symlink
+  else
+    (* 4.03 adds an optional argument to Unix.symlink that we want to ignore
+    *)
     fun source dest -> Unix.symlink source dest
-
 
 (* Creates a symlink at <dir>/<linkname.ext> to
  * <dir>/<pluralized ext>/<linkname>-<timestamp>.<ext> *)
@@ -439,66 +381,51 @@ let make_link_of_timestamped linkname =
   mkdir_no_fail dir;
   let tm = localtime (time ()) in
   let year = tm.tm_year + 1900 in
-  let time_str =
-    Printf.sprintf
-      "%d-%02d-%02d-%02d-%02d-%02d"
-      year
-      (tm.tm_mon + 1)
-      tm.tm_mday
-      tm.tm_hour
-      tm.tm_min
-      tm.tm_sec
-  in
-  let filename = Filename.concat dir (Printf.sprintf "%s-%s.%s" base time_str ext) in
+  let time_str = Printf.sprintf "%d-%02d-%02d-%02d-%02d-%02d"
+      year (tm.tm_mon + 1) tm.tm_mday tm.tm_hour tm.tm_min tm.tm_sec in
+  let filename = Filename.concat dir
+      (Printf.sprintf "%s-%s.%s" base time_str ext) in
   unlink_no_fail linkname;
   symlink filename linkname;
   filename
-
 
 let setsid =
   (* Not implemented on Windows. Let's just return the pid *)
   if Sys.win32 then Unix.getpid else Unix.setsid
 
-
-let set_signal = if not Sys.win32 then Sys.set_signal else fun _ _ -> ()
-
+let set_signal = if not Sys.win32 then Sys.set_signal else (fun _ _ -> ())
 let signal =
-  if not Sys.win32 then
-    fun a b -> ignore (Sys.signal a b)
-  else
-    fun _ _ -> ()
-
+  if not Sys.win32
+  then (fun a b -> ignore (Sys.signal a b))
+  else (fun _ _ -> ())
 
 external get_total_ram : unit -> int = "hh_sysinfo_totalram"
-
 external uptime : unit -> int = "hh_sysinfo_uptime"
-
-external nproc : unit -> int = "nproc"
+external nproc: unit -> int = "nproc"
 
 let total_ram = get_total_ram ()
-
 let nbr_procs = nproc ()
 
-external set_priorities : cpu_priority:int -> io_priority:int -> unit = "hh_set_priorities"
+external set_priorities : cpu_priority:int -> io_priority:int -> unit =
+  "hh_set_priorities"
 
-external pid_of_handle : int -> int = "pid_of_handle"
-
-external handle_of_pid_for_termination : int -> int = "handle_of_pid_for_termination"
+external pid_of_handle: int -> int = "pid_of_handle"
+external handle_of_pid_for_termination: int -> int =
+  "handle_of_pid_for_termination"
 
 let terminate_process pid = Unix.kill pid Sys.sigkill
 
 let lstat path =
-  (* WTF, on Windows `lstat` fails if a directory path ends with an '/' (or a '\', whatever) *)
-  Unix.lstat
-  @@
+  (* WTF, on Windows `lstat` fails if a directory path ends with an
+     '/' (or a '\', whatever) *)
+  Unix.lstat @@
   if Sys.win32 && String_utils.string_ends_with path Filename.dir_sep then
     String.sub path 0 (String.length path - 1)
   else
     path
 
-
 let normalize_filename_dir_sep =
-  let dir_sep_char = Filename.dir_sep.[0] in
+  let dir_sep_char = String.get Filename.dir_sep 0 in
   String.map (fun c -> if c = dir_sep_char then '/' else c)
 
 
