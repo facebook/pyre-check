@@ -113,8 +113,15 @@ let test_check_method_parameters _ =
       x = typing.Mapping[int] or None
     |}
     [ "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Missing argument [20]: Call `typing.GenericMeta.__getitem__` expects argument in position 1."
-    ];
+      "Incompatible parameter type [6]: Expected `typing.Tuple[typing.Type[Variable[typing._KT]], \
+       typing.Type[Variable[typing._VT_co](covariant)]]` for 1st anonymous parameter to call \
+       `typing.GenericMeta.__getitem__` but got `typing.Type[int]`." ];
+  assert_strict_type_errors
+    {|
+      x = typing.Mapping[int, str]
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.Mapping[int, str]]`."];
   assert_strict_type_errors
     {|
       class Meta:
