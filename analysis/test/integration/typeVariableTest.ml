@@ -65,7 +65,7 @@ let test_check_unbounded_variables _ =
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[float]`.";
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[str]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st anonymous "
-      ^ "parameter to call `typing.Generic.__getitem__` but got `str`." ];
+      ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`." ];
   assert_type_errors
     {|
       X = typing.TypeVar("X")
@@ -282,8 +282,8 @@ let test_check_variable_bindings _ =
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[C]`.";
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[D]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
-      ^ "1st anonymous parameter to call `typing.Generic.__getitem__` but got `typing.Type[int]`."
-    ];
+      ^ "1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got \
+         `typing.Type[int]`." ];
   assert_type_errors
     {|
       X = typing.TypeVar("X", Mineral, Animal)
@@ -304,7 +304,7 @@ let test_check_variable_bindings _ =
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Mineral]`.";
       "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Animal]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
-      ^ "for 1st anonymous parameter to call `typing.Generic.__getitem__` but got "
+      ^ "for 1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got "
       ^ "`typing.Type[int]`." ];
   assert_type_errors
     {|

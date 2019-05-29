@@ -97,6 +97,12 @@ let test_check_method_parameters _ =
     [];
   assert_strict_type_errors
     {|
+      def foo(x: typing.Iterable[int]) -> int:
+        return x[0]
+    |}
+    ["Undefined attribute [16]: `typing.Iterable` has no attribute `__getitem__`."];
+  assert_strict_type_errors
+    {|
       def foo(x: typing.Type[int], y: object) -> bool:
         return x == y
     |}

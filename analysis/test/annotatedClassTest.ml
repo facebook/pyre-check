@@ -589,7 +589,6 @@ let test_class_attributes _ =
       "__eq__";
       "__format__";
       "__getattribute__";
-      "__getitem__";
       "__hash__";
       "__init__";
       "__name__";
@@ -622,7 +621,6 @@ let test_class_attributes _ =
       "__eq__";
       "__format__";
       "__getattribute__";
-      "__getitem__";
       "__hash__";
       "__init__";
       "__name__";

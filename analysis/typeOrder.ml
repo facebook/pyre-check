@@ -2291,6 +2291,7 @@ module Builder = struct
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
       singleton Type.generic_primitive;
+      singleton (Type.Primitive "typing.GenericMeta");
       singleton (Type.Primitive "typing.Protocol");
       singleton (Type.Primitive "typing.Callable");
       singleton (Type.Primitive "typing.FrozenSet");

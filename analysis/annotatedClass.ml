@@ -481,7 +481,7 @@ let create_attribute
     | ( Some (Parametric { name = "type"; parameters = [Type.Primitive name] }),
         "__getitem__",
         Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
-      when String.equal (Reference.show callable_name) "typing.Generic.__getitem__" ->
+      when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
         let implementation =
           let generics =
             Resolution.class_definition resolution (Type.Primitive name)

@@ -946,13 +946,18 @@ module Builder = struct
     Hashtbl.set globals ~key:(Reference.create "...") ~data:(annotation Type.Any);
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
        the stubs. *)
-    let add_special_class ~name ~bases ~body =
+    let add_special_class ~name ~bases ~metaclasses ~body =
       let definition =
-        let create_argument annotation =
+        let create_base annotation =
           { Expression.Call.Argument.name = None; value = Type.expression annotation }
         in
+        let create_metaclass annotation =
+          { Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
+            value = Type.expression annotation
+          }
+        in
         { Class.name = Reference.create name;
-          bases = List.map bases ~f:create_argument;
+          bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
           body;
           decorators = [];
           docstring = None
@@ -970,34 +975,41 @@ module Builder = struct
     in
     let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
     List.iter
-      ~f:(fun (name, bases, body) -> add_special_class ~name ~bases ~body)
-      [ "None", [], [];
-        "typing.Optional", [], [];
-        "typing.Undeclared", [], [];
-        "typing.NoReturn", [], [];
-        "typing.Type", [Type.parametric "typing.Generic" [Type.variable "typing._T"]], [];
-        ( "typing.Generic",
+      ~f:(fun (name, bases, metaclasses, body) ->
+        add_special_class ~name ~bases ~metaclasses ~body)
+      [ "None", [], [], [];
+        "typing.Optional", [], [], [];
+        "typing.Undeclared", [], [], [];
+        "typing.NoReturn", [], [], [];
+        "typing.Type", [Type.parametric "typing.Generic" [Type.variable "typing._T"]], [], [];
+        ( "typing.GenericMeta",
+          [],
           [],
           [ Define
               { signature =
-                  { name = Reference.create "typing.Generic.__getitem__";
+                  { name = Reference.create "typing.GenericMeta.__getitem__";
                     parameters =
-                      [ { Parameter.name = "*args"; value = None; annotation = None }
+                      [ { Parameter.name = "cls"; value = None; annotation = None }
+                        |> Node.create_with_default_location;
+                        { Parameter.name = "arg"; value = None; annotation = None }
                         |> Node.create_with_default_location ];
                     decorators = [];
                     docstring = None;
                     return_annotation = None;
                     async = false;
-                    parent = Some (Reference.create "typing.Generic")
+                    parent = Some (Reference.create "typing.GenericMeta")
                   };
                 body = []
               }
             |> Node.create_with_default_location ] );
+        "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
         ( "TypedDictionary",
           [Type.parametric "typing.Mapping" [Type.string; Type.Any]],
+          [],
           Type.TypedDictionary.defines ~t_self_expression ~total:true );
         ( "NonTotalTypedDictionary",
           [Type.Primitive "TypedDictionary"],
+          [],
           Type.TypedDictionary.defines ~t_self_expression ~total:false ) ];
     (* Register hardcoded aliases. *)
     Hashtbl.set
