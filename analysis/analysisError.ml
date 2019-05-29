@@ -2201,51 +2201,6 @@ let filter ~configuration ~resolution errors =
         | _ -> false )
       | _ -> false
     in
-    let is_special_method_arity_error { kind; _ } =
-      let special_method_names =
-        (* TODO(T35601774): Remove filter when these are handled properly. *)
-        (* https://docs.python.org/3/reference/datamodel.html#special-method-names *)
-        [ "__new__";
-          "__init__";
-          "__del__";
-          "__repr__";
-          "__str__";
-          "__bytes__";
-          "__format__";
-          "__lt__";
-          "__le__";
-          "__eq__";
-          "__ne__";
-          "__gt__";
-          "__ge__";
-          "__hash__";
-          "__bool__";
-          "__call__";
-          "__getitem__";
-          "__add__";
-          "__sub__";
-          "__mul__";
-          "__matmul__";
-          "__truediv__";
-          "__floordiv__";
-          "__mod__";
-          "__divmod__";
-          "__pow__";
-          "__lshift__";
-          "__rshift__";
-          "__and__";
-          "__xor__";
-          "__or__" ]
-      in
-      match kind with
-      | MissingArgument { callee = Some access; _ }
-      | TooManyArguments { callee = Some access; _ }
-      | UnexpectedKeyword { callee = Some access; _ } -> (
-        match Reference.prefix access, Reference.last access with
-        | None, _ -> false
-        | _, name -> List.mem ~equal:String.equal special_method_names name )
-      | _ -> false
-    in
     let is_stub_error { kind; location; _ } =
       let is_stub_path () = Location.path location |> String.is_suffix ~suffix:".pyi" in
       match kind with
@@ -2261,7 +2216,6 @@ let filter ~configuration ~resolution errors =
     || is_override_on_dunder_method error
     || is_unnecessary_missing_annotation_error error
     || is_unknown_callable_error error
-    || is_special_method_arity_error error
   in
   match configuration with
   | { Configuration.Analysis.debug = true; _ } -> errors
