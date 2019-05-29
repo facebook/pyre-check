@@ -115,7 +115,7 @@ let transform_ast ({ Source.statements; _ } as source) =
     in
     let tuple_constructor ~parent ~location attributes =
       let parameters =
-        let self_parameter = Parameter.create ~name:"cls" () in
+        let self_parameter = Parameter.create ~name:"$parameter$cls" () in
         let to_parameter (name, annotation, value) =
           let value =
             match value with
@@ -156,7 +156,7 @@ let transform_ast ({ Source.statements; _ } as source) =
           match extract_attributes expression, name with
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)
-            when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$self") name) ->
+            when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
               let constructor = tuple_constructor ~parent:name ~location attributes in
               let attributes = tuple_attributes ~parent:name ~location attributes in
               Class
