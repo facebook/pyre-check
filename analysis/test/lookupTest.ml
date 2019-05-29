@@ -143,10 +143,11 @@ let test_lookup_pick_narrowest _ =
       "2:8-2:12/bool";
       "3:17-3:27/bool";
       "3:21-3:27/typing.Optional[bool]";
-      "3:7-3:11/bool" ];
+      "3:7-3:11/bool";
+      "3:7-3:27/bool" ];
   let assert_annotation = assert_annotation ~lookup ~path:"test.py" in
-  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:None;
-  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:None;
+  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:27/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 17 }
     ~annotation:(Some "3:17-3:27/bool");

@@ -292,8 +292,6 @@
 %token FINALLY
 %token IN
 
-%right OR
-%right AND
 %left NOT
 %left BAR
 %left HAT
@@ -1032,12 +1030,12 @@ handler:
       { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
     }
   | start = EXCEPT;
-    kind = test_without_ternary; COLON; handler_body = block {
+    kind = or_test; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
       { Try.kind = Some kind; name = None; handler_body = snd handler_body }
     }
   | start = EXCEPT;
-    kind = test_without_ternary; AS; name = identifier;
+    kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
       { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
@@ -1397,9 +1395,10 @@ mixed_string:
     }
   ;
 
-test_without_ternary:
+comparison:
   | expression = expression { expression }
-  | left = expression; comparisons = nonempty_list(comparison) {
+
+  | left = expression; comparisons = nonempty_list(comparison_operator) {
       let rec comparison ({ Node.location; _ } as left) comparisons =
         match comparisons with
         | (operator, right) :: comparisons when List.length comparisons > 0 ->
@@ -1422,12 +1421,51 @@ test_without_ternary:
       in
       comparison left comparisons
     }
-  | left = test_without_ternary; operator = boolean_operator; right = test_without_ternary {
+  ;
+
+not_test:
+  | comparison = comparison { comparison }
+  | start = NOT; not_test = not_test {
+      let location = location_create_with_stop ~start ~stop:(Node.stop not_test) in
       {
-        Node.location = left.Node.location;
-        value = BooleanOperator { BooleanOperator.left; operator; right };
+        Node.location;
+        value = UnaryOperator {
+          UnaryOperator.operator = UnaryOperator.Not;
+          operand = not_test;
+        }
       }
-    };
+  }
+  ;
+
+and_test:
+  | not_test = not_test { not_test }
+  | left = not_test; AND; right = and_test {
+      let location = { (Node.location left) with Location.stop = Node.stop right } in
+      {
+        Node.location;
+        value = BooleanOperator {
+          BooleanOperator.left;
+          operator = BooleanOperator.And;
+          right;
+        }
+      }
+   }
+  ;
+
+or_test:
+  | and_test = and_test { and_test }
+  | left = and_test; OR; right = or_test {
+      let location = { (Node.location left) with Location.stop = Node.stop right } in
+      {
+        Node.location;
+        value = BooleanOperator {
+          BooleanOperator.left;
+          operator = BooleanOperator.Or;
+          right;
+        }
+      }
+   }
+  ;
 
 test_with_generator:
   | generator = generator { generator }
@@ -1435,9 +1473,9 @@ test_with_generator:
   ;
 
 test:
-  | test_without_ternary = test_without_ternary { test_without_ternary }
+  | or_test = or_test { or_test }
 
-  | target = test_without_ternary;
+  | target = or_test;
     IF;
     test = test_list;
     ELSE;
@@ -1496,11 +1534,6 @@ yield:
     }
   ;
 
-%inline boolean_operator:
-  | AND { BooleanOperator.And }
-  | OR { BooleanOperator.Or }
-  ;
-
 %inline binary_operator:
   | PLUS { Add }
   | AT { At }
@@ -1515,6 +1548,25 @@ yield:
   | ASTERIKS { Multiply }
   | RIGHTANGLERIGHTANGLE { RightShift }
   | MINUS { Subtract }
+  ;
+
+comparison_operator:
+  | DOUBLEEQUALS; operand = expression { ComparisonOperator.Equals, operand }
+  | RIGHTANGLE; operand = expression { ComparisonOperator.GreaterThan, operand }
+  | RIGHTANGLEEQUALS; operand = expression {
+      ComparisonOperator.GreaterThanOrEquals, operand
+    }
+  | IN; operand = expression { ComparisonOperator.In, operand }
+  | IS; operand = expression { ComparisonOperator.Is, operand }
+  | ISNOT; operand = expression { ComparisonOperator.IsNot, operand }
+  | LEFTANGLE; operand = expression { ComparisonOperator.LessThan, operand }
+  | LEFTANGLEEQUALS; operand = expression {
+      ComparisonOperator.LessThanOrEquals, operand
+    }
+  | EXCLAMATIONMARK; EQUALS; operand = expression {
+      ComparisonOperator.NotEquals, operand
+    }
+  | NOT; IN; operand = expression { ComparisonOperator.NotIn, operand }
   ;
 
 %inline compound_operator:
@@ -1538,25 +1590,6 @@ yield:
   | position = MINUS { position, UnaryOperator.Negative }
   | position = NOT { position, UnaryOperator.Not }
   | position = PLUS { position, UnaryOperator.Positive }
-  ;
-
-comparison:
-  | DOUBLEEQUALS; operand = expression { ComparisonOperator.Equals, operand }
-  | RIGHTANGLE; operand = expression { ComparisonOperator.GreaterThan, operand }
-  | RIGHTANGLEEQUALS; operand = expression {
-      ComparisonOperator.GreaterThanOrEquals, operand
-    }
-  | IN; operand = expression { ComparisonOperator.In, operand }
-  | IS; operand = expression { ComparisonOperator.Is, operand }
-  | ISNOT; operand = expression { ComparisonOperator.IsNot, operand }
-  | LEFTANGLE; operand = expression { ComparisonOperator.LessThan, operand }
-  | LEFTANGLEEQUALS; operand = expression {
-      ComparisonOperator.LessThanOrEquals, operand
-    }
-  | EXCLAMATIONMARK; EQUALS; operand = expression {
-      ComparisonOperator.NotEquals, operand
-    }
-  | NOT; IN; operand = expression { ComparisonOperator.NotIn, operand }
   ;
 
 arguments:
@@ -1597,7 +1630,7 @@ set_or_dictionary_entry:
   | key = expression; COLON; value = test {
       Entry { Dictionary.key = key; value = value; }
     }
-  | key = test_without_ternary; COLON; value = test {
+  | key = or_test; COLON; value = test {
       Entry { Dictionary.key = key; value = value; }
     }
   ;
@@ -1612,14 +1645,14 @@ generator:
   ;
 
 comprehension:
-  | async = ASYNC?; FOR; target = expression_list; IN; iterator = test_without_ternary;
+  | async = ASYNC?; FOR; target = expression_list; IN; iterator = or_test;
     conditions = list(condition) {
       { Comprehension.target; iterator; conditions; async = Option.is_some async }
     }
   ;
 
 condition:
-  | IF; test = test_without_ternary { test }
+  | IF; test = or_test { test }
   ;
 
 (* Helper rule dumping ground. *)
