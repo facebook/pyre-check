@@ -77,7 +77,17 @@ let test_reveal_type _ =
         reveal_type(bar)
         return d
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `int`."]
+    ["Revealed type [-1]: Revealed type for `bar` is `int`."];
+  assert_type_errors
+    {|
+      def foo(bar: typing.Union[int, str]) -> None:
+        if type(bar) is int:
+          reveal_type(bar)
+        else:
+          reveal_type(bar)
+    |}
+    [ "Revealed type [-1]: Revealed type for `bar` is `int`.";
+      "Revealed type [-1]: Revealed type for `bar` is `str`." ]
 
 
 let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run

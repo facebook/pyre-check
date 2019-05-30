@@ -3311,7 +3311,7 @@ module State (Context : Context) = struct
         let ({ resolution; _ } as state) =
           forward_expression ~state ~expression:test |> fun { state; _ } -> state
         in
-        let parse_isinstance_annotation annotation =
+        let parse_refinement_annotation annotation =
           let parse_meta annotation =
             match parse_and_check_annotation ~state annotation |> snd with
             | Type.Top -> (
@@ -3363,6 +3363,19 @@ module State (Context : Context) = struct
         | False ->
             (* Explicit bottom. *)
             { state with bottom = true }
+        | ComparisonOperator
+            { left =
+                { Node.value =
+                    Call
+                      { callee = { Node.value = Name (Name.Identifier "type"); _ };
+                        arguments =
+                          [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }]
+                      }
+                ; _
+                };
+              operator = ComparisonOperator.Is;
+              right = annotation
+            }
         | Call
             { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
               arguments =
@@ -3371,7 +3384,7 @@ module State (Context : Context) = struct
             }
           when Expression.is_simple_name name ->
             let reference = Reference.from_name_exn name in
-            let annotation = parse_isinstance_annotation annotation in
+            let annotation = parse_refinement_annotation annotation in
             let updated_annotation =
               let refinement_unnecessary existing_annotation =
                 Refinement.less_or_equal
@@ -3403,12 +3416,33 @@ module State (Context : Context) = struct
               Resolution.set_local resolution ~reference ~annotation:updated_annotation
             in
             { state with resolution }
+        | ComparisonOperator
+            { left =
+                { Node.value =
+                    Call
+                      { callee =
+                          { Node.value =
+                              Name (Name.Identifier ("type" as type_refinement_function_name))
+                          ; _
+                          };
+                        arguments = [{ Call.Argument.name = None; value }]
+                      }
+                ; _
+                };
+              operator = ComparisonOperator.IsNot;
+              right = annotation_expression
+            }
         | UnaryOperator
             { UnaryOperator.operator = UnaryOperator.Not;
               operand =
                 { Node.value =
                     Call
-                      { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
+                      { callee =
+                          { Node.value =
+                              Name
+                                (Name.Identifier ("isinstance" as type_refinement_function_name))
+                          ; _
+                          };
                         arguments =
                           [ { Call.Argument.name = None; value }
                           ; { Call.Argument.name = None; value = annotation_expression } ]
@@ -3416,7 +3450,7 @@ module State (Context : Context) = struct
                 ; _
                 }
             } -> (
-            let annotation = parse_isinstance_annotation annotation_expression in
+            let annotation = parse_refinement_annotation annotation_expression in
             let contradiction_error =
               match annotation with
               | Type.Top ->
@@ -3430,7 +3464,7 @@ module State (Context : Context) = struct
                          (Error.IncompatibleParameterType
                             { name = None;
                               position = 1;
-                              callee = Some (Reference.create "isinstance");
+                              callee = Some (Reference.create type_refinement_function_name);
                               mismatch =
                                 { Error.expected = Type.meta (Type.variable "T");
                                   actual = resolved;
