@@ -514,6 +514,24 @@ let test_name_to_identifiers _ =
     None
 
 
+let test_name_equals _ =
+  let create_base name = Node.create_with_default_location (Name name) in
+  let assert_name_equals name expression = assert_true (name_is ~name (create_base expression)) in
+  let assert_name_not_equals name expression =
+    assert_false (name_is ~name (create_base expression))
+  in
+  assert_name_equals "a" (Name.Identifier "a");
+  assert_name_equals
+    "a.b"
+    (Name.Attribute { base = create_base (Name.Identifier "a"); attribute = "b"; special = false });
+  assert_name_not_equals
+    "a.b.c"
+    (Name.Attribute { base = create_base (Name.Identifier "a"); attribute = "b"; special = false });
+  assert_name_not_equals "a" (Name.Identifier "b");
+  assert_name_not_equals "a.b" (Name.Identifier "a");
+  assert_name_not_equals "" (Name.Identifier "a")
+
+
 let () =
   "expression"
   >::: [ "negate" >:: test_negate;
@@ -528,5 +546,6 @@ let () =
          "exists_in_list" >:: test_exists_in_list;
          "convert_accesses" >:: test_convert_accesses;
          "create_name" >:: test_create_name;
-         "name_to_identifiers" >:: test_name_to_identifiers ]
+         "name_to_identifiers" >:: test_name_to_identifiers;
+         "name_equals" >:: test_name_equals ]
   |> Test.run

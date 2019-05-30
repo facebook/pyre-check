@@ -1337,19 +1337,8 @@ let rec create_logic
             let modifiers, implementation_signature, overload_signatures =
               let get_from_base base implementation_argument overloads_argument =
                 match Node.value base with
-                | Call
-                    { callee =
-                        { Node.value =
-                            Name
-                              (Name.Attribute
-                                { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                  attribute = "Callable"
-                                ; _
-                                })
-                        ; _
-                        };
-                      arguments
-                    } ->
+                | Call { callee; arguments } when Expression.name_is ~name:"typing.Callable" callee
+                  ->
                     Some arguments, implementation_argument, overloads_argument
                 | Name
                     (Name.Attribute
@@ -1508,22 +1497,14 @@ let rec create_logic
           in
           match expression with
           | Call
-              { callee =
-                  { Node.value =
-                      Name
-                        (Name.Attribute
-                          { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "TypeVar"
-                          ; _
-                          })
-                  ; _
-                  };
+              { callee;
                 arguments =
                   { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
                   ; _
                   }
                   :: arguments
-              } ->
+              }
+            when Expression.name_is ~name:"typing.TypeVar" callee ->
               let constraints =
                 let explicits =
                   let explicit = function
@@ -1567,45 +1548,16 @@ let rec create_logic
               in
               variable value ~constraints ~variance
           | Call
-              { callee =
-                  { Node.value =
-                      Name
-                        (Name.Attribute
-                          { base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
-                            attribute = "IntVar"
-                          ; _
-                          })
-                  ; _
-                  };
+              { callee;
                 arguments =
                   [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
                     ; _
                     } ]
-              } ->
+              }
+            when Expression.name_is ~name:"typing_extensions.IntVar" callee ->
               variable value ~constraints:LiteralIntegers
           | Call
-              { callee =
-                  { Node.value =
-                      Name
-                        (Name.Attribute
-                          { base =
-                              { Node.value =
-                                  Name
-                                    (Name.Attribute
-                                      { base =
-                                          { Node.value = Name (Name.Identifier "mypy_extensions")
-                                          ; _
-                                          };
-                                        attribute = "TypedDict"
-                                      ; _
-                                      })
-                              ; _
-                              };
-                            attribute = "__getitem__"
-                          ; _
-                          })
-                  ; _
-                  };
+              { callee;
                 arguments =
                   [ { Call.Argument.name = None;
                       value =
@@ -1619,7 +1571,8 @@ let rec create_logic
                         ; _
                         }
                     } ]
-              } ->
+              }
+            when Expression.name_is ~name:"mypy_extensions.TypedDict.__getitem__" callee ->
               let total =
                 match true_or_false with
                 | Expression.True -> Some true
@@ -1646,31 +1599,8 @@ let rec create_logic
                 Primitive (Expression.show (Node.create_with_default_location expression))
               in
               total >>| parse_typed_dictionary |> Option.value ~default:undefined_primitive
-          | Call
-              { callee =
-                  { Node.value =
-                      Name
-                        (Name.Attribute
-                          { base =
-                              { Node.value =
-                                  Name
-                                    (Name.Attribute
-                                      { base =
-                                          { Node.value = Name (Name.Identifier "typing_extensions")
-                                          ; _
-                                          };
-                                        attribute = "Literal"
-                                      ; _
-                                      })
-                              ; _
-                              };
-                            attribute = "__getitem__"
-                          ; _
-                          })
-                  ; _
-                  };
-                arguments
-              } ->
+          | Call { callee; arguments }
+            when Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee ->
               let arguments =
                 match arguments with
                 | [ { Call.Argument.name = None;

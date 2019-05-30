@@ -999,6 +999,25 @@ let rec has_identifier_base expression =
   | _ -> false
 
 
+let name_is ~name expression =
+  let identifiers =
+    if String.equal name "" then
+      []
+    else if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  let rec check_match = function
+    | [name], Name (Name.Identifier identifier) when Identifier.equal name identifier -> true
+    | name :: remaining, Name (Name.Attribute { base; attribute; _ })
+      when Identifier.equal name attribute ->
+        check_match (remaining, Node.value base)
+    | _ -> false
+  in
+  check_match (List.rev identifiers, Node.value expression)
+
+
 let rec sanitized ({ Node.value; location } as expression) =
   match value with
   | Name (Name.Identifier identifier) ->

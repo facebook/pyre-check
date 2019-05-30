@@ -188,19 +188,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
         | Call { callee = { Node.value = Name (Name.Identifier "cast"); _ } as callee; arguments }
           ->
             Call { callee; arguments = transform_arguments arguments }
-        | Call
-            { callee =
-                { Node.value =
-                    Name
-                      (Name.Attribute
-                        { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                          attribute = "cast"
-                        ; _
-                        })
-                ; _
-                } as callee;
-              arguments
-            } ->
+        | Call { callee; arguments } when Expression.name_is ~name:"typing.cast" callee ->
             Call { callee; arguments = transform_arguments arguments }
         | value -> value
       in
@@ -919,32 +907,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           let callee = qualify_expression ~qualify_strings ~scope callee in
           let qualify_argument { Call.Argument.name; value } =
             let qualify_strings =
-              match Node.value callee with
-              | Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "TypeVar"
-                    ; _
-                    }) ->
-                  true
-              | Name
-                  (Name.Attribute
-                    { base =
-                        { Node.value =
-                            Name
-                              (Name.Attribute
-                                { base =
-                                    { Node.value = Name (Name.Identifier "typing_extensions"); _ };
-                                  attribute = "Literal"
-                                ; _
-                                })
-                        ; _
-                        };
-                      attribute = "__getitem__"
-                    ; _
-                    }) ->
-                  false
-              | _ -> qualify_strings
+              if Expression.name_is ~name:"typing.TypeVar" callee then
+                true
+              else if Expression.name_is ~name:"typing_extensions.Literal.__getitem__" callee then
+                false
+              else
+                qualify_strings
             in
             let name =
               let rename identifier = "$parameter$" ^ identifier in

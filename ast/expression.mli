@@ -345,6 +345,8 @@ val is_simple_name : expression_t Name.t -> bool
 
 val has_identifier_base : t -> bool
 
+val name_is : name:string -> t -> bool
+
 val sanitized : t -> t
 
 val delocalize : t -> t
