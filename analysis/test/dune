@@ -11,24 +11,24 @@
 
 (tests
  (names
-  AwaitableCheckTest
-  CoverageTest
+  awaitableCheckTest
+  coverageTest
   abstractDomainTest
-  CfgTest
-  DeobfuscationCheckTest
-  DependentTest
-  EnvironmentTest
+  cfgTest
+  deobfuscationCheckTest
+  dependentTest
+  environmentTest
   analysisErrorTest
-  FixpointTest
-  InferenceTest
-  LookupTest
-  PreprocessingTest
-  RefinementTest
-  ResolutionTest
-  TypeCheckTest
-  TypeConstraintsTest
-  TypeOrderTest
-  TypeTest
+  fixpointTest
+  inferenceTest
+  lookupTest
+  preprocessingTest
+  refinementTest
+  resolutionTest
+  typeCheckTest
+  typeConstraintsTest
+  typeOrderTest
+  typeTest
   annotatedCallableTest
   annotatedClassTest
   annotatedDefineTest
