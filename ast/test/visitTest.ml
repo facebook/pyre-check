@@ -93,31 +93,6 @@ let test_collect _ =
         +Expression (+Float 3.0) ] )
 
 
-let test_collect_accesses _ =
-  let source = {|
-       s = ham.egg(cheese).bake
-    |} |> parse_single_statement ~convert:true in
-  let instantiate location =
-    let lookup_table = Int.Table.of_alist_exn [String.hash "test.py", "test.py"] in
-    Location.instantiate ~lookup:(Hashtbl.find lookup_table) location
-  in
-  let assert_collected_accesses source expected_accesses =
-    assert_equal
-      ~printer:(String.concat ~sep:", ")
-      expected_accesses
-      (List.map
-         ~f:(fun node ->
-           Format.sprintf
-             "%s|%s"
-             (Node.location node |> instantiate |> Location.Instantiated.show)
-             (Expression.show (Node.create_with_default_location (Access (Node.value node)))))
-         (Visit.collect_accesses source))
-  in
-  assert_collected_accesses
-    source
-    ["test.py:2:4-2:24|ham.egg(cheese).bake"; "test.py:2:12-2:18|cheese"; "test.py:2:0-2:1|s"]
-
-
 let test_statement_visitor _ =
   let module StatementVisitor = struct
     type t = int String.Table.t
@@ -185,9 +160,9 @@ let test_statement_visitor_source _ =
 
 
 let () =
-  "visit"
-  >::: [ "collect" >:: test_collect;
-         "collect_accesses_with_location" >:: test_collect_accesses;
-         "statement_visitor" >:: test_statement_visitor;
-         "statement_visitor_source" >:: test_statement_visitor_source ]
+  "visit">:::[
+    "collect">::test_collect;
+    "statement_visitor">::test_statement_visitor;
+    "statement_visitor_source">::test_statement_visitor_source;
+  ]
   |> Test.run

@@ -306,19 +306,6 @@ module StatementCollector (Predicate : StatementPredicate) = struct
   let collect source = CollectingVisit.visit [] source
 end
 
-let collect_accesses statement =
-  let open Expression in
-  let module Collector = ExpressionCollector (struct
-    type t = Access.general_access Node.t
-
-    let predicate expression =
-      match expression with
-      | { Node.location; value = Access access } -> Some { Node.location; value = access }
-      | _ -> None
-  end)
-  in
-  Collector.collect (Source.create [statement])
-
 
 let collect_calls statement =
   let open Expression in
