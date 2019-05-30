@@ -26,7 +26,7 @@ let create_callgraph ~environment ~source =
       dependencies
       ({ Node.value = { Define.signature = { name = caller; parent; _ }; _ }; _ } as define)
     =
-    let cfg = Cfg.create ~convert:true define.value in
+    let cfg = Cfg.create define.value in
     let caller_callable = Callable.create define in
     let fold_cfg ~key:node_id ~data:node callees =
       let statements = Cfg.Node.statements node in
@@ -38,7 +38,7 @@ let create_callgraph ~environment ~source =
             ~name:caller
             ~key:(Some ([%hash: int * int] (node_id, index)))
         in
-        let process_access callees access =
+        let process_call callees call =
           let add_call_edge callees (callee, _implicit) =
             Log.log
               ~section:`DependencyGraph
@@ -49,12 +49,12 @@ let create_callgraph ~environment ~source =
               callee;
             callee :: callees
           in
-          let new_callees = CallResolution.resolve_call_targets ~resolution access in
+          let new_callees = CallResolution.resolve_call_targets ~resolution call in
           List.fold new_callees ~f:add_call_edge ~init:callees
         in
-        Visit.collect_accesses statement
+        Visit.collect_calls statement
         |> List.map ~f:Node.value
-        |> List.fold ~init:callees ~f:process_access
+        |> List.fold ~init:callees ~f:process_call
       in
       List.foldi statements ~init:callees ~f:fold_statements
     in
@@ -63,9 +63,7 @@ let create_callgraph ~environment ~source =
     in
     Callable.RealMap.set dependencies ~key:caller_callable ~data:callees
   in
-  Preprocessing.convert source
-  |> Preprocessing.defines
-  |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
+  Preprocessing.defines source |> List.fold ~init:Callable.RealMap.empty ~f:fold_defines
 
 
 (* Returns forest of nodes in reverse finish time order. *)
@@ -201,7 +199,10 @@ let create_overrides ~environment ~source =
       Annotated.Class.overrides class_ ~name:method_name ~resolution
       >>| fun ancestor ->
       let ancestor_parent =
-        Annotated.Attribute.parent ancestor |> Type.access |> Reference.from_access
+        Annotated.Attribute.parent ancestor
+        |> Type.expression
+        |> Expression.show
+        |> Reference.create
       in
       Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
     in
@@ -217,8 +218,7 @@ let create_overrides ~environment ~source =
     Reference.Map.update map ancestor_method ~f:update_types
   in
   let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
-  Preprocessing.convert source
-  |> Preprocessing.classes
+  Preprocessing.classes source
   |> List.map ~f:class_method_overrides
   |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
 

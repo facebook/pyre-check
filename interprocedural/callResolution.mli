@@ -29,5 +29,5 @@ val normalize_global
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets
   :  resolution:Resolution.t ->
-  Access.general_access ->
+  Expression.t Expression.Call.t ->
   (Callable.t * Type.Callable.implicit option) list

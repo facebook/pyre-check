@@ -991,13 +991,15 @@ let name_to_identifiers name =
 
 let is_simple_name name = Option.is_some (name_to_identifiers name)
 
-let rec has_identifier_base expression =
+let rec get_identifier_base expression =
   match Node.value expression with
-  | Call { callee; _ } -> has_identifier_base callee
-  | Name (Name.Attribute { base; _ }) -> has_identifier_base base
-  | Name (Name.Identifier _) -> true
-  | _ -> false
+  | Call { callee; _ } -> get_identifier_base callee
+  | Name (Name.Attribute { base; _ }) -> get_identifier_base base
+  | Name (Name.Identifier identifier) -> Some identifier
+  | _ -> None
 
+
+let has_identifier_base expression = get_identifier_base expression |> Option.is_some
 
 let name_is ~name expression =
   let identifiers =

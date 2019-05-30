@@ -27,24 +27,6 @@ let normalize_global ~resolution access =
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
-let is_class ~resolution access =
-  Reference.from_access access
-  |> (fun reference -> Type.Primitive (Reference.show reference))
-  |> Resolution.class_definition resolution
-  |> Option.is_some
-
-
-let is_global ~resolution access =
-  match access with
-  | Access.SimpleAccess (Access.Identifier head :: _ as access)
-    when (not (is_local head))
-         && (not (String.equal head "super"))
-         && not (String.equal head "type") ->
-      Reference.from_access access |> Resolution.global resolution |> Option.is_some
-      && not (is_class ~resolution (Access.prefix access))
-  | _ -> false
-
-
 (* Figure out what target to pick for an indirect call that resolves to target_name.
    E.g., if the receiver type is A, and A derives from Base, and the target is Base.method, then
    targetting the override tree of Base.method is wrong, as it would include all siblings for A.
@@ -97,7 +79,92 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             List.map subtypes ~f:create_override_target )
 
 
-let resolve_target ~resolution ?receiver_type function_access =
+let resolve_target ~resolution ?receiver_type callee =
+  let callable_type = Resolution.resolve resolution callee in
+  let is_global =
+    match Expression.get_identifier_base callee, Node.value callee with
+    | Some "super", _
+    | Some "type", _ ->
+        false
+    | Some base, Name name when Expression.is_simple_name name && not (is_local base) ->
+        let global =
+          Reference.from_name_exn name |> Resolution.global resolution |> Option.is_some
+        in
+        let is_class =
+          match Node.value callee with
+          | Name (Name.Attribute { base; _ }) ->
+              Resolution.resolve resolution base
+              |> Resolution.class_definition resolution
+              |> Option.is_some
+          | _ -> false
+        in
+        global && not is_class
+    | _ -> false
+  in
+  let is_super_call =
+    let rec is_super callee =
+      match Node.value callee with
+      | Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+      | Call { callee; _ } -> is_super callee
+      | Name (Name.Attribute { base; _ }) -> is_super base
+      | _ -> false
+    in
+    is_super callee
+  in
+  let is_all_names =
+    let rec is_all_names = function
+      | Name (Name.Identifier identifier) when not (is_local identifier) -> true
+      | Name (Name.Attribute { base; attribute; _ }) when not (is_local attribute) ->
+          is_all_names (Node.value base)
+      | _ -> false
+    in
+    is_all_names (Node.value callee)
+  in
+  let rec resolve_type callable_type =
+    match callable_type, receiver_type with
+    | Type.Callable { implicit; kind = Named name; _ }, _ when is_global ->
+        [Callable.create_function name, implicit]
+    | Type.Callable { implicit; kind = Named name; _ }, _ when is_super_call ->
+        [Callable.create_method name, implicit]
+    | Type.Callable { implicit = None; kind = Named name; _ }, None when is_all_names ->
+        [Callable.create_function name, None]
+    | Type.Callable { implicit; kind = Named name; _ }, _ when is_all_names ->
+        [Callable.create_method name, implicit]
+    | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
+        compute_indirect_targets ~resolution ~receiver_type:type_or_class name
+        |> List.map ~f:(fun target -> target, implicit)
+    | callable_type, _ when Type.is_meta callable_type && is_global ->
+        let global_access =
+          match Expression.convert callee with
+          | { Node.value = Access (Access.SimpleAccess access); _ } -> access
+          | _ -> failwith "is_global should be used before calling this"
+        in
+        let access, _ = normalize_global ~resolution global_access in
+        [ ( Callable.create_method (Reference.from_access access),
+            Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
+    | Type.Union annotations, _ -> List.concat_map ~f:resolve_type annotations
+    | _ -> []
+  in
+  resolve_type callable_type
+
+
+let resolve_target_old ~resolution ?receiver_type function_access =
+  let is_global ~resolution access =
+    let is_class ~resolution access =
+      Reference.from_access access
+      |> (fun reference -> Type.Primitive (Reference.show reference))
+      |> Resolution.class_definition resolution
+      |> Option.is_some
+    in
+    match access with
+    | Access.SimpleAccess (Access.Identifier head :: _ as access)
+      when (not (is_local head))
+           && (not (String.equal head "super"))
+           && not (String.equal head "type") ->
+        Reference.from_access access |> Resolution.global resolution |> Option.is_some
+        && not (is_class ~resolution (Access.prefix access))
+    | _ -> false
+  in
   let is_super_call = function
     | Access.SimpleAccess (Access.Identifier name :: Access.Call _ :: _) -> name = "super"
     | _ -> false
@@ -147,37 +214,17 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
   let receiver_node = Node.create_with_default_location (Access receiver) in
   let receiver_type = Resolution.resolve resolution receiver_node in
   let access = Access.combine receiver_node [Access.Identifier method_name] in
-  resolve_target ~resolution ~receiver_type access
+  resolve_target_old ~resolution ~receiver_type access
 
 
 let get_global_targets ~resolution ~global =
-  resolve_target ~resolution (Access.SimpleAccess global)
+  resolve_target_old ~resolution (Access.SimpleAccess global)
 
 
-let resolve_call_targets ~resolution (access : Access.general_access) =
-  let rec visit_each ~accumulator ?receiver_type ~access suffix =
-    let receiver = Node.create_with_default_location (Expression.Access access) in
-    match suffix with
-    | (Access.Call _ as next) :: tail ->
-        let targets = resolve_target ~resolution ?receiver_type access in
-        let accumulator = List.rev_append targets accumulator in
-        let call = Access.combine receiver [next] in
-        let call_node = Node.create_with_default_location (Expression.Access call) in
-        let receiver_type = Resolution.resolve resolution call_node in
-        visit_each ~accumulator ~receiver_type ~access:call tail
-    | (Access.Identifier _ as next) :: tail ->
-        let receiver_type = Resolution.resolve resolution receiver in
-        let member = Access.combine receiver [next] in
-        visit_each ~accumulator ~receiver_type ~access:member tail
-    | [] -> accumulator
+let resolve_call_targets ~resolution { Call.callee; _ } =
+  let receiver_type =
+    match Node.value callee with
+    | Name (Name.Attribute { base; _ }) -> Some (Resolution.resolve resolution base)
+    | _ -> None
   in
-  match access with
-  | Access.SimpleAccess (head :: tail) ->
-      let access = Access.SimpleAccess [head] in
-      visit_each ~accumulator:[] ~access tail
-  | Access.ExpressionAccess ({ access = tail; _ } as base_access) ->
-      let access = Access.ExpressionAccess { base_access with access = [] } in
-      visit_each ~accumulator:[] ~access tail
-  | Access.SimpleAccess [] ->
-      (* Probably impossible *)
-      []
+  resolve_target ~resolution ?receiver_type callee

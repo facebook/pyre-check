@@ -73,4 +73,6 @@ val collect_calls : Statement.t -> Expression.t Expression.Call.t Node.t list
 
 val collect_names : ?only_simple:bool -> Statement.t -> Expression.t Expression.Name.t Node.t list
 
+val collect_calls_and_names : Statement.t -> Expression.t list
+
 val collect_base_identifiers : Statement.t -> Identifier.t Node.t list

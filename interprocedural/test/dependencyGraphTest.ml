@@ -186,33 +186,26 @@ let test_type_collection _ =
     Test.populate ~configuration environment [source];
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     let defines =
-      Preprocessing.convert source
-      |> Preprocessing.defines ~include_toplevels:true
+      Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
     in
     let { Define.signature = { name; _ }; body = statements; _ } = List.nth_exn defines 2 in
     let lookup =
       ResolutionSharedMemory.get name |> (fun value -> Option.value_exn value) |> Int.Map.of_tree
     in
-    let test_expect (node_id, statement_index, test_access, expected_type) =
+    let test_expect (node_id, statement_index, test_expression, expected_type) =
       let key = [%hash: int * int] (node_id, statement_index) in
-      let test_access = Access.create test_access in
       let annotations =
         Map.find_exn lookup key
         |> fun { ResolutionSharedMemory.precondition; _ } -> Reference.Map.of_tree precondition
       in
       let resolution = TypeCheck.resolution environment ~annotations () in
       let statement = List.nth_exn statements statement_index in
-      let keep_access = function
-        | Access.SimpleAccess access -> Some access
-        | _ -> None
-      in
-      Visit.collect_accesses statement
-      |> List.map ~f:Ast.Node.value
-      |> List.filter_map ~f:keep_access
+      Visit.collect_calls_and_names statement
+      |> List.filter ~f:Expression.has_identifier_base
       |> List.hd_exn
-      |> fun access ->
-      if String.equal (Access.show access) (Access.show test_access) then
+      |> fun expression ->
+      if String.equal (Expression.show expression) test_expression then
         let module State = TypeCheck.State (struct
           let configuration = configuration
 
@@ -220,11 +213,6 @@ let test_type_collection _ =
         end)
         in
         let state = State.create ~resolution () in
-        let expression =
-          Expression.Access (Access.SimpleAccess access)
-          |> Node.create_with_default_location
-          |> Expression.convert_to_new
-        in
         let { State.resolved; _ } = State.forward_expression ~state ~expression in
         match resolved with
         | Type.Callable { Type.Callable.kind = Type.Callable.Named callable_type; _ } ->

@@ -352,6 +352,21 @@ let collect_names ?(only_simple = false) statement =
   Collector.collect (Source.create [statement])
 
 
+let collect_calls_and_names statement =
+  let open Expression in
+  let module Collector = ExpressionCollector (struct
+    type t = Expression.t
+
+    let predicate expression =
+      match expression with
+      | { Node.value = Call _; _ } -> Some expression
+      | { Node.value = Name _; _ } -> Some expression
+      | _ -> None
+  end)
+  in
+  Collector.collect (Source.create [statement])
+
+
 let collect_base_identifiers statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct
