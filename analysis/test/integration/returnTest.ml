@@ -156,9 +156,9 @@ let test_check_return_control_flow _ =
         if unknown_condition:
           return 1
     |}
-    [ "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
-       one control flow path that doesn't define `unknown_condition`." ];
+    [ "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+       one control flow path that doesn't define `unknown_condition`.";
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`." ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -167,9 +167,9 @@ let test_check_return_control_flow _ =
         else:
           x = 1
     |}
-    [ "Incompatible return type [7]: Expected `int` but got implicit return value of `None`.";
-      "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
-       one control flow path that doesn't define `unknown_condition`." ];
+    [ "Undefined name [18]: Global name `unknown_condition` is not defined, or there is at least \
+       one control flow path that doesn't define `unknown_condition`.";
+      "Incompatible return type [7]: Expected `int` but got implicit return value of `None`." ];
   assert_type_errors
     {|
       x: typing.List[int]

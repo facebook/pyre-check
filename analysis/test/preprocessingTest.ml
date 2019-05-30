@@ -1565,13 +1565,91 @@ let test_expand_implicit_returns _ =
         while True:
           pass
     |};
-  assert_expand {|
-      def foo():
-        ...
-    |} {|
-      def foo():
-        ...
-    |}
+  let assert_implicit_return_location source expected_location =
+    let expanded = Preprocessing.expand_implicit_returns (parse source) in
+    match List.rev (Source.statements expanded) with
+    | { Node.value = Define { body; _ }; _ } :: _ -> (
+      match List.rev body with
+      | return :: _ -> assert_equal return.location expected_location
+      | _ -> failwith "Preprocessed source's Define body is empty" )
+    | _ -> failwith "Preprocessed source failed"
+  in
+  assert_implicit_return_location
+    {|
+       def foo() -> int:
+         pass
+     |}
+    { Location.path = String.hash "test.py";
+      start = { Location.line = 3; Location.column = 2 };
+      stop = { Location.line = 3; Location.column = 6 }
+    };
+  assert_implicit_return_location
+    {|
+     def foo(x: bool) -> int:
+       for i in range(10):
+         if x:  # multiple
+           # lines
+           # of
+           # comments
+           return 1
+         elif x:
+           return 2
+     |}
+    { Location.path = String.hash "test.py";
+      start = { Location.line = 10; Location.column = 6 };
+      stop = { Location.line = 10; Location.column = 14 }
+    };
+  assert_implicit_return_location
+    {|
+       def foo(x: bool) -> int:
+         try:
+           if x:
+             y = 5/0
+         except ZeroDivisionError:
+           print "tried to divide by 0"
+         else:
+           pass
+       |}
+    { Location.path = String.hash "test.py";
+      start = { Location.line = 9; Location.column = 4 };
+      stop = { Location.line = 9; Location.column = 8 }
+    };
+  assert_implicit_return_location
+    {|
+       def foo(x: bool) -> int:
+         try:
+           if x:
+             y = 5/0
+         except ZeroDivisionError:
+           print "tried to divide by 0"
+         else:
+           return 2
+         finally:
+           for i in range(10):
+             if x:
+               pass
+       |}
+    { Location.path = String.hash "test.py";
+      start = { Location.line = 13; Location.column = 8 };
+      stop = { Location.line = 13; Location.column = 12 }
+    };
+  assert_implicit_return_location
+    {|
+       def foo(x: bool) -> int:
+         y = 10
+         while y > 0:
+           if x:
+             y -= 1
+         else:
+           if y > -1:
+             return 0
+           else:
+             pass
+       |}
+    { Location.path = String.hash "test.py";
+      start = { Location.line = 11; Location.column = 6 };
+      stop = { Location.line = 11; Location.column = 10 }
+    }
 
 
 let test_defines _ =

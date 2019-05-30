@@ -1254,10 +1254,36 @@ let expand_implicit_returns source =
               match List.last define.Define.body with
               | Some { Node.value = Return _; _ } -> define
               | Some statement ->
+                  let rec get_last statement =
+                    let rec get_last_in_block last_statement statement_block =
+                      match last_statement, List.rev statement_block with
+                      | None, last_statement_in_block :: _ -> get_last last_statement_in_block
+                      | _ -> last_statement
+                    in
+                    match Node.value statement with
+                    | For { body; orelse; _ } ->
+                        List.fold ~init:None ~f:get_last_in_block [orelse; body]
+                    | If { body; orelse; _ } ->
+                        List.fold ~init:None ~f:get_last_in_block [orelse; body]
+                    | Try { body; handlers; orelse; finally } ->
+                        let last_handler_body =
+                          match List.rev handlers with
+                          | { Try.handler_body; _ } :: _ -> handler_body
+                          | _ -> []
+                        in
+                        List.fold
+                          ~init:None
+                          ~f:get_last_in_block
+                          [finally; orelse; last_handler_body; body]
+                    | While { body; orelse; _ } ->
+                        List.fold ~init:None ~f:get_last_in_block [orelse; body]
+                    | _ -> Some statement
+                  in
+                  let last_statement = get_last statement |> Option.value ~default:statement in
                   { define with
                     Define.body =
                       define.Define.body
-                      @ [ { Node.location = statement.Node.location;
+                      @ [ { Node.location = last_statement.Node.location;
                             value = Return { Return.expression = None; is_implicit = true }
                           } ]
                   }
