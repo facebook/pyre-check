@@ -243,6 +243,7 @@ module ShowMessageParameters = struct
     | WarningMessage
     | InfoMessage
     | LogMessage
+  [@@deriving eq, show]
 
   let messageTypeNumber = function
     | ErrorMessage -> 1
@@ -253,6 +254,22 @@ module ShowMessageParameters = struct
 
   type t = {
     messageType: int; [@key "type"]
+    message: string
+  }
+  [@@deriving yojson]
+end
+
+module ShowStatusParameters = struct
+  type progress = {
+    numerator: int;
+    denominator: int
+  }
+  [@@deriving yojson]
+
+  type t = {
+    type_: int; [@key "type"]
+    actions: string list option;
+    progress: progress option;
     message: string
   }
   [@@deriving yojson]
@@ -669,7 +686,7 @@ module NotificationMessage = struct
   end
 end
 
-module EditMessage = struct
+module Message = struct
   module type S = sig
     type t = {
       jsonrpc: string;
@@ -759,6 +776,7 @@ module HandshakeClient = NotificationMessage.Make (HandshakeClientParameters)
 module UpdateFiles = NotificationMessage.Make (UpdateFilesParameters)
 module DisplayTypeErrors = NotificationMessage.Make (DisplayTypeErrorsParameters)
 module TypeCoverage = RequestMessage.Make (TypeCoverageParameters)
+module ShowStatus = Message.Make (ShowStatusParameters)
 
 (** Responses *)
 
@@ -849,7 +867,7 @@ end
 module PublishDiagnostics = NotificationMessage.Make (PublishDiagnosticsParameters)
 (** A PublishDiagnostics Notification *)
 
-module ApplyWorkspaceEdit = EditMessage.Make (ApplyWorkspaceEditParameters)
+module ApplyWorkspaceEdit = Message.Make (ApplyWorkspaceEditParameters)
 
 (** Namespaces *)
 

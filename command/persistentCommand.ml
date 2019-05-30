@@ -44,6 +44,9 @@ let communicate server_socket all_uris =
   Statistics.event ~flush:true ~name:"persistent_client_launch" ();
   (* Get all initial errors *)
   Socket.write server_socket (Protocol.Request.DisplayTypeErrors []);
+  display_status_message
+    ~content:"Connected."
+    ~message_type:LanguageServer.Types.ShowMessageParameters.InfoMessage;
   let rec listen server_socket () =
     let read =
       Unix.select ~read:[server_socket; Unix.stdin] ~write:[] ~except:[] ~timeout:`Immediately ()
@@ -88,6 +91,9 @@ let communicate server_socket all_uris =
         try process_server_socket () with
         | End_of_file ->
             display_nuclide_message "Pyre: Lost connection to server, exiting...";
+            display_status_message
+              ~content:"Disconnected."
+              ~message_type:LanguageServer.Types.ShowMessageParameters.ErrorMessage;
             raise (ClientExit ("unable to process socket", 0))
     in
     ( try List.iter read ~f:process_socket with
