@@ -934,7 +934,7 @@ let test_compute_hashes_to_keys context =
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.backedges ())
       ~key:16
-      ~data:[{ TypeOrder.Target.target = 15; parameters = [] }];
+      ~data:(TypeOrder.Target.Set.of_list [{ TypeOrder.Target.target = 15; parameters = [] }]);
     ResolutionSharedMemory.Keys.remove_batch
       (File.Handle.create "sample.py" |> ResolutionSharedMemory.Keys.KeySet.singleton);
     ResolutionSharedMemory.add

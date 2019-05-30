@@ -18,12 +18,42 @@ module Target : sig
   }
   [@@deriving compare, eq, sexp, show]
 
-  module Set : Set.S with type Elt.t = t
+  module type ListOrSet = sig
+    type record
+
+    val filter : record -> f:(t -> bool) -> record
+
+    val is_empty : record -> bool
+
+    val exists : record -> f:(t -> bool) -> bool
+
+    val iter : record -> f:(t -> unit) -> unit
+
+    val equal : record -> record -> bool
+
+    val mem : record -> t -> bool
+
+    val to_string : f:(t -> string) -> record -> string
+
+    val fold : record -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
+
+    val empty : record
+
+    val add : record -> t -> record
+  end
+
+  module Set : sig
+    include Set.S with type Elt.t = t
+
+    include ListOrSet with type record = t
+  end
+
+  module List : ListOrSet with type record = t list
 end
 
 type t = {
   edges: Target.t list Int.Table.t;
-  backedges: Target.t list Int.Table.t;
+  backedges: Target.Set.t Int.Table.t;
   indices: int Type.Table.t;
   annotations: Type.t Int.Table.t
 }
@@ -35,7 +65,7 @@ module type Handler = sig
 
   val edges : unit -> (int, Target.t list) lookup
 
-  val backedges : unit -> (int, Target.t list) lookup
+  val backedges : unit -> (int, Target.Set.t) lookup
 
   val indices : unit -> (Type.t, int) lookup
 
@@ -73,10 +103,6 @@ val connect
 (* Disconnect the annotations from all of its successors, including any backedges. It does not
    remove the annotations from the TypeOrder. *)
 val disconnect_successors : (module Handler) -> Type.t list -> unit
-
-(* Converts the type order representation into a canonical format in order to support comparing
-   type environment states. *)
-val normalize : (module Handler) -> unit
 
 (* Returns true if the type order contains the literal annotation. For example, if typing.List is
    in order, `contains order typing.List` will evaluate to true, whereas `contains order

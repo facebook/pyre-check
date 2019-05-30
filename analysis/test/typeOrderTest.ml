@@ -2480,14 +2480,20 @@ let test_deduplicate _ =
     order
   in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-  let assert_targets edges from target parameters =
-    assert_equal
-      ~printer:(List.to_string ~f:Target.show)
-      (Handler.find_unsafe edges (index_of !from))
-      [{ Target.target = index_of !target; parameters }]
+  let module TargetAsserter (ListOrSet : TypeOrder.Target.ListOrSet) = struct
+    let assert_targets edges from target parameters create =
+      assert_equal
+        ~cmp:ListOrSet.equal
+        ~printer:(ListOrSet.to_string ~f:Target.show)
+        (Handler.find_unsafe edges (index_of !from))
+        (create { Target.target = index_of !target; parameters })
+  end
   in
-  assert_targets (Handler.edges ()) "0" "1" [Type.Top];
-  assert_targets (Handler.backedges ()) "1" "0" [Type.Top]
+  let module ForwardAsserter = TargetAsserter (TypeOrder.Target.List) in
+  let module BackwardsAsserter = TargetAsserter (TypeOrder.Target.Set) in
+  ForwardAsserter.assert_targets (Handler.edges ()) "0" "1" [Type.Top] (fun target -> [target]);
+  BackwardsAsserter.assert_targets (Handler.backedges ()) "1" "0" [Type.Top] (fun target ->
+      TypeOrder.Target.Set.of_list [target])
 
 
 let test_remove_extra_edges _ =
@@ -2518,8 +2524,9 @@ let test_remove_extra_edges _ =
     (Handler.find_unsafe (Handler.edges ()) zero_index)
     [{ Target.target = one_index; parameters = [] }];
   assert_equal
+    ~cmp:TypeOrder.Target.Set.equal
     (Handler.find_unsafe (Handler.backedges ()) three_index)
-    [{ Target.target = two_index; parameters = [] }]
+    (TypeOrder.Target.Set.of_list [{ Target.target = two_index; parameters = [] }])
 
 
 let test_connect_annotations_to_top _ =
@@ -2581,43 +2588,6 @@ let test_sort_bottom_edges _ =
   (* We sort by target, which is not necessarily alphabetical. *)
   TypeOrder.sort_bottom_edges (module Handler) ~bottom:Type.Bottom;
   assert_bottom_edges ["1"; "2"; "3"; "0"]
-
-
-let test_backedges _ =
-  let (module Handler : TypeOrder.Handler) =
-    let order = Builder.create () |> TypeOrder.handler in
-    insert order Type.Bottom;
-    insert order Type.Top;
-    insert order !"0";
-    insert order !"1";
-    insert order !"2";
-    insert order !"3";
-    insert order !"4";
-    connect order ~predecessor:!"1" ~successor:!"0";
-    connect order ~predecessor:!"4" ~successor:!"0";
-    connect order ~predecessor:!"3" ~successor:!"0";
-    connect order ~predecessor:!"2" ~successor:!"0";
-    order
-  in
-  let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-  let assert_targets edges from targets =
-    let targets =
-      let create target = { Target.target = index_of !target; parameters = [] } in
-      List.map targets ~f:create
-    in
-    let printer targets =
-      targets
-      |> List.map ~f:(fun { Target.target; _ } ->
-             Handler.find_unsafe (Handler.annotations ()) target)
-      |> List.map ~f:Type.show
-      |> String.concat
-    in
-    assert_equal ~printer targets (Handler.find_unsafe edges (index_of !from))
-  in
-  (* After normalization, backedges are ordered by target comparison, not insertion order. *)
-  assert_targets (Handler.backedges ()) "0" ["2"; "3"; "4"; "1"];
-  TypeOrder.normalize (module Handler);
-  assert_targets (Handler.backedges ()) "0" ["3"; "2"; "4"; "1"]
 
 
 let test_check_integrity _ =
@@ -2703,66 +2673,6 @@ let test_to_dot _ =
      |}
     |> Test.trim_extra_indentation )
     ("\n" ^ TypeOrder.to_dot order)
-
-
-let test_normalize _ =
-  let assert_normalize ~edges ~expected_edges ~expected_backedges =
-    let nodes =
-      List.fold edges ~init:[] ~f:(fun edges (predecessor, successor) ->
-          predecessor :: successor :: edges)
-      |> Type.Set.of_list
-    in
-    let ((module Handler : TypeOrder.Handler) as order) = Builder.create () |> TypeOrder.handler in
-    Set.iter nodes ~f:(fun node -> insert order node);
-    List.iter edges ~f:(fun (predecessor, successor) -> connect order ~predecessor ~successor);
-    TypeOrder.normalize order;
-    let index annotation = Handler.find_unsafe (Handler.indices ()) annotation in
-    let assert_match edges (name, expected) =
-      let expected =
-        List.map expected ~f:(fun name -> { Target.target = index name; parameters = [] })
-      in
-      let show_targets targets =
-        let show_target { Target.target; _ } =
-          Handler.find_unsafe (Handler.annotations ()) target |> Type.show
-        in
-        List.to_string targets ~f:show_target
-      in
-      assert_equal
-        ~printer:show_targets
-        ~cmp:(List.equal ~equal:Target.equal)
-        expected
-        (Handler.find_unsafe edges (index name))
-    in
-    List.iter expected_edges ~f:(assert_match (Handler.edges ()));
-    List.iter expected_backedges ~f:(assert_match (Handler.backedges ()))
-  in
-  assert_normalize
-    ~edges:[!"1", !"2"]
-    ~expected_edges:[!"2", []; !"1", [!"2"]]
-    ~expected_backedges:[!"2", [!"1"]; !"1", []];
-  assert_normalize
-    ~edges:[!"1", !"2"; !"2", !"3"]
-    ~expected_edges:[!"1", [!"2"]; !"2", [!"3"]; !"3", []]
-    ~expected_backedges:[!"3", [!"2"]; !"2", [!"1"]; !"1", []];
-  assert_normalize
-    ~edges:[!"1", !"3"; !"2", !"3"]
-    ~expected_edges:[!"1", [!"3"]; !"2", [!"3"]; !"3", []]
-    ~expected_backedges:[!"3", [!"2"; !"1"]; !"2", []; !"1", []];
-  (* Order doesn't matter. *)
-  assert_normalize
-    ~edges:[!"2", !"3"; !"1", !"3"]
-    ~expected_edges:[!"1", [!"3"]; !"2", [!"3"]; !"3", []]
-    ~expected_backedges:[!"3", [!"2"; !"1"]; !"2", []; !"1", []];
-  assert_normalize
-    ~edges:[Type.Bottom, !"A"; Type.Bottom, !"B"; !"other", !"A"; !"other", !"B"]
-    ~expected_edges:[Type.Bottom, [!"B"; !"A"]; !"other", [!"B"; !"A"]]
-    ~expected_backedges:
-      [!"B", [Type.Bottom; !"other"]; !"A", [Type.Bottom; !"other"]; Type.Bottom, []; !"other", []];
-  assert_normalize
-    ~edges:[Type.Bottom, !"B"; Type.Bottom, !"A"; !"other", !"B"; !"other", !"A"]
-    ~expected_edges:[Type.Bottom, [!"A"; !"B"]; !"other", [!"A"; !"B"]]
-    ~expected_backedges:
-      [!"B", [Type.Bottom; !"other"]; !"A", [Type.Bottom; !"other"]; Type.Bottom, []; !"other", []]
 
 
 let test_variables _ =
@@ -3554,12 +3464,18 @@ let test_disconnect_successors _ =
     connect order ~predecessor:!"2" ~successor:Type.Top;
     order
   in
+  let assert_backedges_equal wrapped_left unwrapped_right =
+    assert_equal
+      ~cmp:TypeOrder.Target.Set.equal
+      wrapped_left
+      (TypeOrder.Target.Set.of_list unwrapped_right)
+  in
   let () =
     let (module Handler) = order () in
     let index key = Handler.find_unsafe (Handler.indices ()) !key in
     TypeOrder.disconnect_successors (module Handler) [!"1"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "1")) [];
-    assert_equal (Handler.find_unsafe (Handler.backedges ()) (index "2")) [];
+    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "2")) [];
     assert_equal
       (Handler.find_unsafe (Handler.edges ()) (index "a"))
       [{ Target.target = index "1"; parameters = [] }]
@@ -3569,7 +3485,7 @@ let test_disconnect_successors _ =
     let index key = Handler.find_unsafe (Handler.indices ()) !key in
     TypeOrder.disconnect_successors (module Handler) [!"a"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
-    assert_equal
+    assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
       [{ Target.target = index "b"; parameters = [] }]
   in
@@ -3578,7 +3494,7 @@ let test_disconnect_successors _ =
     let index key = Handler.find_unsafe (Handler.indices ()) !key in
     TypeOrder.disconnect_successors (module Handler) [!"b"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
-    assert_equal
+    assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
       [{ Target.target = index "a"; parameters = [] }]
   in
@@ -3588,7 +3504,7 @@ let test_disconnect_successors _ =
     TypeOrder.disconnect_successors (module Handler) [!"a"; !"b"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
-    assert_equal (Handler.find_unsafe (Handler.backedges ()) (index "1")) []
+    assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "1")) []
   in
   ()
 
@@ -3656,8 +3572,7 @@ let test_mark_escaped_as_escaped _ =
 
 let () =
   "order"
-  >::: [ "backedges" >:: test_backedges;
-         "check_integrity" >:: test_check_integrity;
+  >::: [ "check_integrity" >:: test_check_integrity;
          "connect_annotations_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;
          "default" >:: test_default;
@@ -3676,7 +3591,6 @@ let () =
          "sort_bottom_edges" >:: test_sort_bottom_edges;
          "successors" >:: test_successors;
          "to_dot" >:: test_to_dot;
-         "normalize" >:: test_normalize;
          "variables" >:: test_variables;
          "solve_less_or_equal" >:: test_solve_less_or_equal;
          "is_consistent_with" >:: test_is_consistent_with;

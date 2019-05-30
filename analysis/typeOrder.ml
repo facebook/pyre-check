@@ -23,15 +23,45 @@ module Target = struct
   }
   [@@deriving compare, eq, sexp, show]
 
-  module Set = Set.Make (struct
-    type nonrec t = t
+  module type ListOrSet = sig
+    type record
 
-    let compare = compare
+    val filter : record -> f:(t -> bool) -> record
 
-    let sexp_of_t = sexp_of_t
+    val is_empty : record -> bool
 
-    let t_of_sexp = t_of_sexp
-  end)
+    val exists : record -> f:(t -> bool) -> bool
+
+    val iter : record -> f:(t -> unit) -> unit
+
+    val equal : record -> record -> bool
+
+    val mem : record -> t -> bool
+
+    val to_string : f:(t -> string) -> record -> string
+
+    val fold : record -> init:'accum -> f:('accum -> t -> 'accum) -> 'accum
+
+    val empty : record
+
+    val add : record -> t -> record
+  end
+
+  module Set = struct
+    include Set.Make (struct
+      type nonrec t = t
+
+      let compare = compare
+
+      let sexp_of_t = sexp_of_t
+
+      let t_of_sexp = t_of_sexp
+    end)
+
+    type record = t
+
+    let to_string ~f set = to_list set |> List.to_string ~f
+  end
 
   let target { target; _ } = target
 
@@ -47,13 +77,30 @@ module Target = struct
       Queue.enqueue worklist { target; parameters }
     in
     List.iter targets ~f:enqueue
+
+
+  let target_equal = equal
+
+  module List = struct
+    type record = t list
+
+    include List
+
+    let mem = List.mem ~equal:target_equal
+
+    let equal = List.equal ~equal:target_equal
+
+    let add list element = element :: list
+
+    let empty = []
+  end
 end
 
 (* `edges` mapping from type index to a set of targets. `indices` mapping from annotation to its
    vertex index. `annotations` inverse of `indices`. *)
 type t = {
   edges: Target.t list Int.Table.t;
-  backedges: Target.t list Int.Table.t;
+  backedges: Target.Set.t Int.Table.t;
   indices: int Type.Table.t;
   annotations: Type.t Int.Table.t
 }
@@ -63,7 +110,7 @@ module type Handler = sig
 
   val edges : unit -> (int, Target.t list) lookup
 
-  val backedges : unit -> (int, Target.t list) lookup
+  val backedges : unit -> (int, Target.Set.t) lookup
 
   val indices : unit -> (Type.t, int) lookup
 
@@ -103,7 +150,7 @@ let pp format { edges; backedges; annotations; _ } =
   Format.fprintf format "Edges:\n";
   List.iter ~f:print_edge (Hashtbl.to_alist edges);
   Format.fprintf format "Back-edges:\n";
-  List.iter ~f:print_edge (Hashtbl.to_alist backedges)
+  Hashtbl.to_alist backedges |> List.Assoc.map ~f:Set.to_list |> List.iter ~f:print_edge
 
 
 let show order = Format.asprintf "%a" pp order
@@ -159,7 +206,7 @@ let insert (module Handler : Handler) annotation =
     Handler.set (Handler.indices ()) ~key:annotation ~data:index;
     Handler.set annotations ~key:index ~data:annotation;
     Handler.set (Handler.edges ()) ~key:index ~data:[];
-    Handler.set (Handler.backedges ()) ~key:index ~data:[] )
+    Handler.set (Handler.backedges ()) ~key:index ~data:Target.Set.empty )
 
 
 let connect ?(parameters = [])
@@ -180,16 +227,20 @@ let connect ?(parameters = [])
     let successor = index_of order successor in
     let edges = Handler.edges () in
     let backedges = Handler.backedges () in
-    let connect ~edges ~predecessor ~successor =
-      (* Add edges. *)
-      let successors = Handler.find edges predecessor |> Option.value ~default:[] in
-      Handler.set
-        edges
-        ~key:predecessor
-        ~data:({ Target.target = successor; parameters } :: successors)
+    (* Add edges. *)
+    let successors = Handler.find edges predecessor |> Option.value ~default:[] in
+    Handler.set
+      edges
+      ~key:predecessor
+      ~data:({ Target.target = successor; parameters } :: successors);
+    (* Add backedges. *)
+    let predecessors =
+      Handler.find backedges successor |> Option.value ~default:Target.Set.empty
     in
-    connect ~edges ~predecessor ~successor;
-    connect ~edges:backedges ~predecessor:successor ~successor:predecessor
+    Handler.set
+      backedges
+      ~key:successor
+      ~data:(Set.add predecessors { Target.target = predecessor; parameters })
 
 
 let disconnect_successors (module Handler : Handler) annotations =
@@ -213,7 +264,7 @@ let disconnect_successors (module Handler : Handler) annotations =
     Handler.find backedges successor
     >>| (fun current_predecessors ->
           let new_predecessors =
-            List.filter
+            Set.filter
               ~f:(fun { Target.target; _ } -> not (Hash_set.mem keys_to_remove target))
               current_predecessors
           in
@@ -227,19 +278,6 @@ let disconnect_successors (module Handler : Handler) annotations =
     | None -> ()
   in
   Hash_set.iter keys_to_remove ~f:clear_edges
-
-
-let normalize (module Handler : Handler) =
-  let backedges = Handler.backedges () in
-  let sort_backedges key =
-    let sorted =
-      Handler.find_unsafe backedges key
-      |> List.sort ~compare:Target.compare
-      |> List.remove_consecutive_duplicates ~equal:Target.equal
-    in
-    Handler.set backedges ~key ~data:sorted
-  in
-  List.iter (Handler.keys ()) ~f:sort_backedges
 
 
 let contains (module Handler : Handler) annotation =
@@ -1112,7 +1150,7 @@ module OrderImplementation = struct
     and greatest_lower_bound ((module Handler : Handler) as order) =
       let predecessors index =
         match Handler.find (Handler.backedges ()) index with
-        | Some targets -> targets |> List.map ~f:Target.target |> Int.Set.of_list
+        | Some targets -> Set.to_list targets |> List.map ~f:Target.target |> Int.Set.of_list
         | None -> Int.Set.empty
       in
       least_common_successor order ~successors:predecessors
@@ -1761,8 +1799,8 @@ module OrderImplementation = struct
               Some parameters
             else (
               Handler.find (Handler.backedges ()) target_index
+              >>| Set.to_list
               >>| get_instantiated_predecessors handler ~generic_index ~parameters
-              >>| List.sort ~compare:Target.compare
               >>| List.iter ~f:(Queue.enqueue worklist)
               |> ignore;
               iterate worklist )
@@ -2079,20 +2117,26 @@ let deduplicate (module Handler : Handler) ~annotations =
   let edges = Handler.edges () in
   let backedges = Handler.backedges () in
   let deduplicate_annotation index =
-    let deduplicate_edges edges =
-      let keep_first (visited, edges) ({ Target.target; _ } as edge) =
-        if Set.mem visited target then
-          visited, edges
-        else
-          Set.add visited target, edge :: edges
-      in
-      let deduplicate found = List.fold ~f:keep_first ~init:(Int.Set.empty, []) found |> snd in
-      match Handler.find edges index with
-      | Some found -> Handler.set edges ~key:index ~data:(deduplicate found)
-      | None -> ()
+    let module Deduplicator (ListOrSet : Target.ListOrSet) = struct
+      let deduplicate edges =
+        let keep_first (visited, edges) ({ Target.target; _ } as edge) =
+          if Set.mem visited target then
+            visited, edges
+          else
+            Set.add visited target, ListOrSet.add edges edge
+        in
+        let deduplicate found =
+          ListOrSet.fold found ~f:keep_first ~init:(Int.Set.empty, ListOrSet.empty) |> snd
+        in
+        match Handler.find edges index with
+        | Some found -> Handler.set edges ~key:index ~data:(deduplicate found)
+        | None -> ()
+    end
     in
-    deduplicate_edges edges;
-    deduplicate_edges backedges
+    let module EdgeDeduplicator = Deduplicator (Target.List) in
+    let module BackedgeDeduplicator = Deduplicator (Target.Set) in
+    EdgeDeduplicator.deduplicate edges;
+    BackedgeDeduplicator.deduplicate backedges
   in
   annotations
   |> List.map ~f:(Handler.find_unsafe (Handler.indices ()))
@@ -2100,35 +2144,40 @@ let deduplicate (module Handler : Handler) ~annotations =
 
 
 let remove_extra_edges (module Handler : Handler) ~bottom ~top annotations =
-  let disconnect keys ~edges ~backedges special_index =
-    let remove_extra_references key =
-      Handler.find edges key
-      >>| (fun connected ->
-            let disconnected =
-              List.filter ~f:(fun { Target.target; _ } -> target <> special_index) connected
+  let module Disconnector (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
+    let disconnect keys ~edges ~backedges special_index =
+      let remove_extra_references key =
+        Handler.find edges key
+        >>| (fun connected ->
+              let disconnected =
+                Edges.filter connected ~f:(fun { Target.target; _ } -> target <> special_index)
+              in
+              if Edges.is_empty disconnected then
+                []
+              else (
+                Handler.set edges ~key ~data:disconnected;
+                [key] ))
+        |> Option.value ~default:[]
+      in
+      let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
+      Handler.find backedges special_index
+      >>| (fun edges ->
+            let edges =
+              Backedges.filter edges ~f:(fun { Target.target; _ } ->
+                  not (Set.mem removed_indices target))
             in
-            if List.is_empty disconnected then
-              []
-            else (
-              Handler.set edges ~key ~data:disconnected;
-              [key] ))
-      |> Option.value ~default:[]
-    in
-    let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
-    Handler.find backedges special_index
-    >>| (fun edges ->
-          let edges =
-            List.filter ~f:(fun { Target.target; _ } -> not (Set.mem removed_indices target)) edges
-          in
-          Handler.set backedges ~key:special_index ~data:edges)
-    |> Option.value ~default:()
+            Handler.set backedges ~key:special_index ~data:edges)
+      |> Option.value ~default:()
+  end
   in
   let edges = Handler.edges () in
   let backedges = Handler.backedges () in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
   let keys = List.map annotations ~f:index_of in
-  disconnect keys ~edges ~backedges (index_of top);
-  disconnect keys ~edges:backedges ~backedges:edges (index_of bottom)
+  let module ForwardDisconnector = Disconnector (Target.List) (Target.Set) in
+  ForwardDisconnector.disconnect keys ~edges ~backedges (index_of top);
+  let module ReverseDisconnector = Disconnector (Target.Set) (Target.List) in
+  ReverseDisconnector.disconnect keys ~edges:backedges ~backedges:edges (index_of bottom)
 
 
 let connect_annotations_to_top ((module Handler : Handler) as handler)
@@ -2214,29 +2263,40 @@ let check_integrity (module Handler : Handler) =
   in
   Handler.keys () |> List.iter ~f:find_cycle;
   (* Check that backedges are complete. *)
-  let check_inverse ~get_keys ~edges ~backedges =
-    let check_backedge index =
-      let check_backedge { Target.target; _ } =
-        let has_backedge =
-          match Handler.find backedges target with
-          | Some targets -> List.exists ~f:(fun { Target.target; _ } -> target = index) targets
-          | None -> false
+  let module InverseChecker (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
+    let check_inverse ~get_keys ~edges ~backedges =
+      let check_backedge index =
+        let check_backedge { Target.target; _ } =
+          let has_backedge =
+            match Handler.find backedges target with
+            | Some targets ->
+                Backedges.exists ~f:(fun { Target.target; _ } -> target = index) targets
+            | None -> false
+          in
+          if not has_backedge then (
+            Log.error
+              "No back-edge found for %a -> %a"
+              Type.pp
+              (Handler.find_unsafe (Handler.annotations ()) index)
+              Type.pp
+              (Handler.find_unsafe (Handler.annotations ()) target);
+            raise Incomplete )
         in
-        if not has_backedge then (
-          Log.error
-            "No back-edge found for %a -> %a"
-            Type.pp
-            (Handler.find_unsafe (Handler.annotations ()) index)
-            Type.pp
-            (Handler.find_unsafe (Handler.annotations ()) target);
-          raise Incomplete )
+        Edges.iter ~f:check_backedge (Handler.find_unsafe edges index)
       in
-      List.iter ~f:check_backedge (Handler.find_unsafe edges index)
-    in
-    get_keys () |> List.iter ~f:check_backedge
+      get_keys () |> List.iter ~f:check_backedge
+  end
   in
-  check_inverse ~get_keys:Handler.keys ~edges:(Handler.edges ()) ~backedges:(Handler.backedges ());
-  check_inverse ~get_keys:Handler.keys ~edges:(Handler.backedges ()) ~backedges:(Handler.edges ())
+  let module ForwardCheckInverse = InverseChecker (Target.List) (Target.Set) in
+  ForwardCheckInverse.check_inverse
+    ~get_keys:Handler.keys
+    ~edges:(Handler.edges ())
+    ~backedges:(Handler.backedges ());
+  let module ReverseCheckInverse = InverseChecker (Target.Set) (Target.List) in
+  ReverseCheckInverse.check_inverse
+    ~get_keys:Handler.keys
+    ~edges:(Handler.backedges ())
+    ~backedges:(Handler.edges ())
 
 
 let to_dot (module Handler : Handler) =

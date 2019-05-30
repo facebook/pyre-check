@@ -384,8 +384,7 @@ let test_connect_definition _ =
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) predecessor_index)
          { TypeOrder.Target.target = successor_index; parameters = [] });
     assert_true
-      (List.mem
-         ~equal:TypeOrder.Target.equal
+      (TypeOrder.Target.Set.mem
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) successor_index)
          { TypeOrder.Target.target = predecessor_index; parameters = [] })
   in

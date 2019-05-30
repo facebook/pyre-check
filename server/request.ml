@@ -531,7 +531,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               Some (EdgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
           | OrderBackedges.Decoded (key, value) ->
               Some
-                (BackedgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
+                ( BackedgeValue.description,
+                  decode key,
+                  value
+                  >>| Analysis.TypeOrder.Target.Set.Tree.to_list
+                  >>| List.to_string ~f:decode_target )
           | OrderKeys.Decoded (key, value) ->
               Some
                 (OrderKeyValue.description, Int.to_string key, value >>| List.to_string ~f:decode)
@@ -622,7 +626,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
                         Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
                     | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
+                        Option.equal TypeOrder.Target.Set.Tree.equal first second
                     | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
                         Option.equal (List.equal ~equal:Int.equal) first second
                     | ( Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, first),

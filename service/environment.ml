@@ -464,7 +464,9 @@ let populate_shared_memory
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
     let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
       add_table OrderEdges.write_through edges;
-      add_table OrderBackedges.write_through backedges;
+      add_table
+        OrderBackedges.write_through
+        (Hashtbl.map ~f:TypeOrder.Target.Set.to_tree backedges);
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
       OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations)
@@ -499,7 +501,6 @@ let populate_shared_memory
 
 
 let normalize_shared_memory () =
-  TypeOrder.normalize (module SharedHandler.TypeOrderHandler);
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
      inline here. *)
   ( match OrderKeys.get SharedMemory.SingletonKey.key with

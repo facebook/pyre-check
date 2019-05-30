@@ -151,7 +151,7 @@ module EdgeValue = struct
 end
 
 module BackedgeValue = struct
-  type t = Analysis.TypeOrder.Target.t list
+  type t = Analysis.TypeOrder.Target.Set.Tree.t
 
   let prefix = Prefix.make ()
 

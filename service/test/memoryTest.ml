@@ -38,7 +38,7 @@ let test_decodable _ =
     BackedgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures])
-    (OrderBackedges.Decoded (1234, Some []));
+    (OrderBackedges.Decoded (1234, Some Analysis.TypeOrder.Target.Set.Tree.empty));
   assert_decode
     EdgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
