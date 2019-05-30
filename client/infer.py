@@ -569,7 +569,7 @@ def main():
             return ExitCode.SUCCESS
 
         analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration, prompt=False
+            arguments, commands, configuration
         )
         analysis_directory.prepare()
         Infer(arguments, configuration, analysis_directory).run()

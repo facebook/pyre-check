@@ -10,7 +10,6 @@ import sys
 from collections import namedtuple
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
-from . import log
 from .filesystem import BuckBuilder, find_root
 
 
@@ -25,18 +24,15 @@ class BuckException(Exception):
 
 
 class SimpleBuckBuilder(BuckBuilder):
-    def __init__(self, build: bool = True, prompt: bool = True) -> None:
+    def __init__(self, build: bool = True) -> None:
         self._build = build
-        self._prompt = prompt
 
     def build(self, targets: Iterable[str]) -> Iterable[str]:
         """
             Shell out to buck to build the targets, then yield the paths to the
             link trees.
         """
-        return generate_source_directories(
-            targets, build=self._build, prompt=self._prompt
-        )
+        return generate_source_directories(targets, build=self._build)
 
 
 def presumed_target_root(target):
@@ -246,7 +242,7 @@ def resolve_relative_paths(paths: List[str]) -> Dict[str, str]:
 
 
 def generate_source_directories(
-    original_targets: Iterable[str], build: bool, prompt: bool = True
+    original_targets: Iterable[str], build: bool
 ) -> Set[str]:
     original_targets = list(original_targets)
     targets_to_destinations = _normalize(original_targets)
@@ -257,7 +253,7 @@ def generate_source_directories(
     source_directories = buck_out.source_directories
 
     if buck_out.targets_not_found:
-        if (not build) and not prompt or log.get_yes_no_input("Build target?"):
+        if not build:
             # Build all targets to ensure buck doesn't remove some link trees as we go.
             _build_targets(targets, original_targets)
             buck_out = _find_built_source_directories(targets_to_destinations)

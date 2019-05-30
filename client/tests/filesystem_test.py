@@ -509,7 +509,7 @@ class FilesystemTest(unittest.TestCase):
             arguments.source_directories = ["arguments_source_directory"]
             configuration.source_directories = ["configuration_source_directory"]
 
-            buck_builder = buck.SimpleBuckBuilder(build=False, prompt=True)
+            buck_builder = buck.SimpleBuckBuilder(build=False)
             analysis_directory = SharedAnalysisDirectory(
                 ["some_source_directory"],
                 ["configuration_source_directory"],
@@ -519,7 +519,7 @@ class FilesystemTest(unittest.TestCase):
             )
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
-                {"configuration_source_directory"}, build=False, prompt=True
+                {"configuration_source_directory"}, build=False
             )
             self.assertEqual(
                 analysis_directory._source_directories, {"some_source_directory"}
@@ -533,13 +533,11 @@ class FilesystemTest(unittest.TestCase):
             configuration.source_directories = ["configuration_source_directory"]
 
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
-            buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=True, prompt=True
-            )
+            buck_source_directories.assert_called_with({"arguments_target"}, build=True)
             self.assertEqual(
                 analysis_directory._source_directories,
                 {"realpath(root/arguments_target)"},
@@ -552,12 +550,12 @@ class FilesystemTest(unittest.TestCase):
             arguments.command = commands.Start
 
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=False, prompt=True
+                {"arguments_target"}, build=False
             )
             self.assertEqual(
                 analysis_directory._source_directories,
@@ -570,22 +568,20 @@ class FilesystemTest(unittest.TestCase):
         ) as buck_source_directories:
             arguments.command = commands.Start
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
             buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=False, prompt=True
+                {"arguments_target"}, build=False
             )
             arguments.command = commands.Restart
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
-            buck_source_directories.assert_called_with(
-                {"arguments_target"}, build=True, prompt=True
-            )
+            buck_source_directories.assert_called_with({"arguments_target"}, build=True)
 
         # Configuration is picked up when no arguments provided.
         with patch.object(
@@ -601,13 +597,13 @@ class FilesystemTest(unittest.TestCase):
             configuration.source_directories = []
 
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()
 
             buck_source_directories.assert_called_with(
-                {"configuration_target"}, build=True, prompt=True
+                {"configuration_target"}, build=True
             )
             self.assertEqual(
                 analysis_directory._source_directories,
@@ -623,7 +619,7 @@ class FilesystemTest(unittest.TestCase):
             configuration.targets = ["."]
 
             analysis_directory = resolve_analysis_directory(
-                arguments, commands, configuration, prompt=True
+                arguments, commands, configuration
             )
             assert isinstance(analysis_directory, SharedAnalysisDirectory)
             analysis_directory._resolve_source_directories()

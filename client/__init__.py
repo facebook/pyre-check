@@ -127,7 +127,7 @@ def _resolve_filter_paths(arguments, configuration):
 
 
 def resolve_analysis_directory(
-    arguments, commands, configuration, isolate: bool = False, prompt: bool = True
+    arguments, commands, configuration, isolate: bool = False
 ) -> AnalysisDirectory:
     # Only read from the configuration if no explicit targets are passed in.
     if not arguments.source_directories and not arguments.targets:
@@ -176,7 +176,7 @@ def resolve_analysis_directory(
             commands.Check,
             commands.Restart,
         ]
-        buck_builder = buck.SimpleBuckBuilder(build=build, prompt=prompt)
+        buck_builder = buck.SimpleBuckBuilder(build=build)
         if use_buck_builder:
             buck_root = buck.find_buck_root(os.getcwd())
             if not buck_root:
@@ -189,7 +189,7 @@ def resolve_analysis_directory(
                 buck_root, fail_on_unbuilt_target=not ignore_unbuilt_dependencies
             )
         else:
-            buck_builder = buck.SimpleBuckBuilder(build=build, prompt=prompt)
+            buck_builder = buck.SimpleBuckBuilder(build=build)
 
         analysis_directory = SharedAnalysisDirectory(
             source_directories=source_directories,

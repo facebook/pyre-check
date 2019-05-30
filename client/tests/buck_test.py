@@ -151,10 +151,8 @@ class BuckTest(unittest.TestCase):
 
         with patch.object(buck, "_normalize") as mock_normalize:
             with self.assertRaises(buck.BuckException):
-                buck.generate_source_directories(["target"], build=False, prompt=True)
-                buck.generate_source_directories(
-                    ["target1", "target2"], build=False, prompt=True
-                )
+                buck.generate_source_directories(["target"], build=False)
+                buck.generate_source_directories(["target1", "target2"], build=False)
                 mock_normalize.assert_has_calls(
                     [call(["target"]), call(["target1", "target2"])], any_order=True
                 )
@@ -165,7 +163,7 @@ class BuckTest(unittest.TestCase):
         with patch.object(buck, "_normalize") as mock_normalize:
             with patch.object(buck, "_build_targets") as mock_build:
                 mock_normalize.return_value = [("normalized", "buck-out/normalized")]
-                buck.generate_source_directories(["target"], build=True, prompt=True)
+                buck.generate_source_directories(["target"], build=True)
                 mock_build.assert_has_calls([call(["normalized"], ["target"])])
 
     @patch.object(buck, "find_buck_root", return_value="/BUCK_ROOT")
