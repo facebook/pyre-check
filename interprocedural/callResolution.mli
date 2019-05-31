@@ -11,7 +11,7 @@ val is_local : Identifier.t -> bool
 
 val get_global_targets
   :  resolution:Resolution.t ->
-  global:Access.t ->
+  global:Reference.t ->
   (Callable.t * Type.Callable.implicit option) list
 
 val get_indirect_targets
@@ -23,8 +23,8 @@ val get_indirect_targets
 (* Returns a normalized path and optional addition parameter prefix, e.g. for constructor calls *)
 val normalize_global
   :  resolution:Resolution.t ->
-  Access.t ->
-  Access.t * Expression.t Argument.record list
+  Reference.t ->
+  Reference.t * Expression.t Argument.record list
 
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets

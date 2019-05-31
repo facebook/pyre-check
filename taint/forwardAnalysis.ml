@@ -297,12 +297,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution location ~callee arguments state =
       match callee with
-      | AccessPath.Global access ->
+      | AccessPath.Global reference ->
           let targets =
-            Interprocedural.CallResolution.get_global_targets ~resolution ~global:access
+            Interprocedural.CallResolution.get_global_targets ~resolution ~global:reference
           in
           let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution access
+            Interprocedural.CallResolution.normalize_global ~resolution reference
           in
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
@@ -444,7 +444,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call { callee; arguments } ->
           analyze_call ~resolution arguments.location ~callee arguments.value state
       | Expression expression -> analyze_expression ~resolution ~state ~expression
-      | Global access -> global_model (Reference.from_access access), state
+      | Global reference -> global_model reference, state
       | Local identifier ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
 

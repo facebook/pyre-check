@@ -232,12 +232,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_call ~resolution location ~callee arguments state taint =
       match callee with
-      | Global access ->
+      | Global reference ->
           let targets =
-            Interprocedural.CallResolution.get_global_targets ~resolution ~global:access
+            Interprocedural.CallResolution.get_global_targets ~resolution ~global:reference
           in
           let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution access
+            Interprocedural.CallResolution.normalize_global ~resolution reference
           in
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution arguments state taint targets

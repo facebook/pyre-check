@@ -46,7 +46,7 @@ type normalized_expression =
         original: Identifier.t;
         arguments: Expression.t Argument.record list Node.t
       }
-  | Global of Access.t
+  | Global of Reference.t
   | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving eq, show]

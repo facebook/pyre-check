@@ -6,7 +6,6 @@
 open OUnit2
 open Ast
 open Core
-open Expression
 open Taint
 open Test
 
@@ -42,7 +41,7 @@ let test_normalize_access _ =
       normalized
   in
   let local name = AccessPath.Local name in
-  let global access = AccessPath.Global (Access.create access) in
+  let global name = AccessPath.Global (Reference.create name) in
   let literal literal =
     Expression.String (Expression.StringLiteral.create literal)
     |> Node.create_with_default_location

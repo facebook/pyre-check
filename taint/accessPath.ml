@@ -200,7 +200,7 @@ type normalized_expression =
         original: Identifier.t;
         arguments: Expression.t Argument.record list Node.t
       }
-  | Global of Access.t
+  | Global of Reference.t
   | Local of Identifier.t
   | Expression of Expression.t
 [@@deriving eq, show { with_path = false }]
@@ -227,16 +227,15 @@ let normalize_access_list left = function
 let global_prefix ~resolution access =
   let rec module_prefix ~lead ~tail =
     match tail with
-    | (Access.Identifier _ as identifier) :: new_tail ->
-        let new_lead = lead @ [identifier] in
-        let reference = Reference.from_access lead in
-        if Resolution.module_definition resolution reference |> Option.is_some then
+    | Access.Identifier identifier :: new_tail ->
+        let new_lead = Reference.create ~prefix:lead identifier in
+        if Resolution.module_definition resolution lead |> Option.is_some then
           module_prefix ~lead:new_lead ~tail:new_tail
         else
           lead, tail
     | _ -> lead, tail
   in
-  module_prefix ~lead:[] ~tail:access
+  module_prefix ~lead:Reference.empty ~tail:access
 
 
 let split_root ~resolution = function
@@ -278,7 +277,7 @@ let normalize_access ~resolution (access : Access.general_access) =
 
 
 let rec as_access = function
-  | Global access -> Expression.Access.SimpleAccess access
+  | Global reference -> Expression.Access.SimpleAccess (Reference.access reference)
   | Local identifier ->
       Expression.Access.SimpleAccess (Access.create_from_identifiers [identifier])
   | Expression expression -> Expression.Access.ExpressionAccess { expression; access = [] }

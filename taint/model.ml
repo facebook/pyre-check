@@ -424,7 +424,7 @@ let get_global_model ~resolution ~expression =
   |> (function
        | Access access ->
            ( match AccessPath.normalize_access ~resolution access with
-           | Global access -> Some (Reference.from_access access)
+           | Global reference -> Some reference
            | Access { expression; member } ->
                AccessPath.as_access expression
                |> (fun access -> Expression.Access access)

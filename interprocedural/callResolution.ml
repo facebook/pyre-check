@@ -9,20 +9,20 @@ open Analysis
 open Expression
 open Pyre
 
-let normalize_global ~resolution access =
+let normalize_global ~resolution reference =
   (* Determine if this is a constructor call, as we need to add the uninitialized object argument
      for self. *)
-  let global_type = Resolution.resolve resolution (Access.expression access) in
+  let global_type = Resolution.resolve resolution (Reference.expression reference) in
   if Type.is_meta global_type then
     let dummy_self =
       { Expression.Argument.name = None;
         value = Node.create_with_default_location Expression.False
       }
     in
-    let full_access = Access.Identifier "__init__" :: List.rev access |> List.rev in
-    full_access, [dummy_self]
+    let full_reference = Reference.create ~prefix:reference "__init__" in
+    full_reference, [dummy_self]
   else
-    access, []
+    reference, []
 
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
@@ -81,15 +81,14 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
 
 let resolve_target ~resolution ?receiver_type callee =
   let callable_type = Resolution.resolve resolution callee in
-  let is_global =
+  let global =
     match Expression.get_identifier_base callee, Node.value callee with
     | Some "super", _
     | Some "type", _ ->
-        false
+        None
     | Some base, Name name when Expression.is_simple_name name && not (is_local base) ->
-        let global =
-          Reference.from_name_exn name |> Resolution.global resolution |> Option.is_some
-        in
+        let reference = Reference.from_name_exn name in
+        let global = reference |> Resolution.global resolution |> Option.is_some in
         let is_class =
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) ->
@@ -98,8 +97,8 @@ let resolve_target ~resolution ?receiver_type callee =
               |> Option.is_some
           | _ -> false
         in
-        global && not is_class
-    | _ -> false
+        Option.some_if (global && not is_class) reference
+    | _ -> None
   in
   let is_super_call =
     let rec is_super callee =
@@ -121,28 +120,23 @@ let resolve_target ~resolution ?receiver_type callee =
     is_all_names (Node.value callee)
   in
   let rec resolve_type callable_type =
-    match callable_type, receiver_type with
-    | Type.Callable { implicit; kind = Named name; _ }, _ when is_global ->
+    match callable_type, receiver_type, global with
+    | Type.Callable { implicit; kind = Named name; _ }, _, Some _ ->
         [Callable.create_function name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, _ when is_super_call ->
+    | Type.Callable { implicit; kind = Named name; _ }, _, _ when is_super_call ->
         [Callable.create_method name, implicit]
-    | Type.Callable { implicit = None; kind = Named name; _ }, None when is_all_names ->
+    | Type.Callable { implicit = None; kind = Named name; _ }, None, _ when is_all_names ->
         [Callable.create_function name, None]
-    | Type.Callable { implicit; kind = Named name; _ }, _ when is_all_names ->
+    | Type.Callable { implicit; kind = Named name; _ }, _, _ when is_all_names ->
         [Callable.create_method name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
+    | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class, _ ->
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, implicit)
-    | callable_type, _ when Type.is_meta callable_type && is_global ->
-        let global_access =
-          match Expression.convert callee with
-          | { Node.value = Access (Access.SimpleAccess access); _ } -> access
-          | _ -> failwith "is_global should be used before calling this"
-        in
-        let access, _ = normalize_global ~resolution global_access in
-        [ ( Callable.create_method (Reference.from_access access),
+    | callable_type, _, Some global when Type.is_meta callable_type ->
+        let reference, _ = normalize_global ~resolution global in
+        [ ( Callable.create_method reference,
             Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
-    | Type.Union annotations, _ -> List.concat_map ~f:resolve_type annotations
+    | Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
     | _ -> []
   in
   resolve_type callable_type
@@ -195,13 +189,13 @@ let resolve_target_old ~resolution ?receiver_type function_access =
         compute_indirect_targets ~resolution ~receiver_type:type_or_class name
         |> List.map ~f:(fun target -> target, implicit)
     | access_type, _ when Type.is_meta access_type && is_global ~resolution function_access ->
-        let global_access =
+        let global =
           match function_access with
-          | Access.SimpleAccess access -> access
+          | Access.SimpleAccess access -> Reference.from_access access
           | _ -> failwith "is_global should be used before calling this"
         in
-        let access, _ = normalize_global ~resolution global_access in
-        [ ( Callable.create_method (Reference.from_access access),
+        let reference, _ = normalize_global ~resolution global in
+        [ ( Callable.create_method reference,
             Some { Type.Callable.implicit_annotation = access_type; name = "self" } ) ]
     | Type.Union annotations, _ -> List.concat_map ~f:resolve_type annotations
     | _ -> []
@@ -218,7 +212,7 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
 
 
 let get_global_targets ~resolution ~global =
-  resolve_target_old ~resolution (Access.SimpleAccess global)
+  Name (Reference.name global) |> Node.create_with_default_location |> resolve_target ~resolution
 
 
 let resolve_call_targets ~resolution { Call.callee; _ } =
