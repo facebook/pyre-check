@@ -13,13 +13,16 @@ METADATA_GLOB = "*metadata.json"
 
 
 class Metadata(NamedTuple):
-    # analysis_root and SCM root should be separate, but right now we don't make
-    # the distinction.
-    root: str
+    analysis_root: str
+    repo_root: Optional[str] = None
 
     analysis_tool_version: Optional[str] = None
     commit_hash: Optional[str] = None
     job_instance: Optional[int] = None
+
+    @property
+    def root(self) -> str:
+        return self.repo_root or self.analysis_root
 
 
 class AnalysisOutputError(Exception):
@@ -85,13 +88,16 @@ class AnalysisOutput(object):
                 directory, os.path.basename(metadata["filenames"][0])
             )
 
+        repo_root = metadata.get("repo_root")
+        analysis_root = metadata["root"]
         return cls(
             directory=directory,
             filename_spec=filename_spec,
             metadata=Metadata(
                 analysis_tool_version=metadata["version"],
                 commit_hash=metadata.get("commit"),
-                root=metadata["root"],
+                analysis_root=analysis_root,
+                repo_root=repo_root,
                 job_instance=metadata.get("job_instance"),
             ),
         )
