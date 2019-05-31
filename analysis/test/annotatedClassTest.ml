@@ -139,15 +139,20 @@ type constructor = {
 
 let test_get_decorator _ =
   let assert_get_decorator source decorator expected =
+    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
     let assert_logic ~convert expected =
       match parse_last_statement ~convert source with
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
             Node.create_with_default_location definition
             |> Class.create
-            |> Class.get_decorator ~decorator
+            |> Class.get_decorator ~resolution ~decorator
           in
-          assert_equal ~cmp:(List.equal ~equal:Class.equal_decorator) expected actual
+          assert_equal
+            ~printer:(List.to_string ~f:Class.show_decorator)
+            ~cmp:(List.equal ~equal:Class.equal_decorator)
+            expected
+            actual
       | _ -> assert_true (List.is_empty expected)
     in
     let old_access_expected =
@@ -229,7 +234,16 @@ let test_get_decorator _ =
           Some
             [ { Argument.name = Some ~+"a"; value = +Name (Name.Identifier "b") };
               { Argument.name = Some ~+"c"; value = +Name (Name.Identifier "d") } ]
-      } ]
+      } ];
+  assert_get_decorator
+    (* `enum` imports `ABCMeta` from `abc`. *)
+    {|
+      @enum.ABCMeta
+      class A:
+        pass
+    |}
+    "abc.ABCMeta"
+    [{ name = "abc.ABCMeta"; arguments = None }]
 
 
 let test_constructors _ =

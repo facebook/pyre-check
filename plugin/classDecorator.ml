@@ -169,9 +169,11 @@ let transform_environment ~options (module Handler : Handler) resolution source 
   Visit.visit () source
 
 
-let extract_options_from_decorator ~names ~default ~init ~repr ~eq ~order annotated_class =
+let extract_options_from_decorator
+    ~resolution ~names ~default ~init ~repr ~eq ~order annotated_class
+  =
   let get_decorators ~names annotated =
-    let get_decorator decorator = Annotated.Class.get_decorator annotated ~decorator in
+    let get_decorator decorator = Annotated.Class.get_decorator annotated ~resolution ~decorator in
     names |> List.map ~f:get_decorator |> List.concat
   in
   let extract_options_from_arguments =
@@ -224,10 +226,11 @@ let extract_options_from_decorator ~names ~default ~init ~repr ~eq ~order annota
   | _ -> Some default
 
 
-let transform_dataclass =
+let transform_dataclass environment resolution source =
   (* TODO (T43210531): Warn about inconsistent annotations *)
   let options =
     extract_options_from_decorator
+      ~resolution
       ~names:["dataclasses.dataclass"; "dataclass"]
       ~default:{ init = true; repr = true; eq = true; order = false }
       ~init:"init"
@@ -235,13 +238,14 @@ let transform_dataclass =
       ~eq:"eq"
       ~order:"order"
   in
-  transform_environment ~options
+  transform_environment ~options environment resolution source
 
 
-let transform_attrs =
+let transform_attrs environment resolution source =
   (* TODO (T41039225): Add support for other methods *)
   let options =
     extract_options_from_decorator
+      ~resolution
       ~names:["attr.s"; "attr.attrs"]
       ~default:{ init = true; repr = true; eq = true; order = true }
       ~init:"init"
@@ -249,4 +253,4 @@ let transform_attrs =
       ~eq:"cmp"
       ~order:"cmp"
   in
-  transform_environment ~options
+  transform_environment ~options environment resolution source

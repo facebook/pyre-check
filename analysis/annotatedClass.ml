@@ -68,22 +68,28 @@ let name { Node.value = { Class.name; _ }; _ } = name
 
 let bases { Node.value = { Class.bases; _ }; _ } = bases
 
-let get_decorator { Node.value = { Class.decorators; _ }; _ } ~decorator =
+let get_decorator { Node.value = { Class.decorators; _ }; _ } ~resolution ~decorator =
   let matches target decorator =
+    let name_resolves_to_target ~name =
+      let name =
+        Resolution.resolve_exports resolution ~reference:(Reference.create name) |> Reference.show
+      in
+      String.equal name target
+    in
     match decorator with
     | { Node.value = Access (SimpleAccess access); _ } -> (
       match Expression.Access.name_and_arguments ~call:access with
-      | Some { callee = name; arguments } when String.equal name target ->
+      | Some { callee = name; arguments } when name_resolves_to_target ~name ->
           let convert_argument { Argument.name; value } = { Call.Argument.name; value } in
-          Some { name; arguments = Some (List.map ~f:convert_argument arguments) }
-      | None when String.equal (Access.show access) target ->
-          Some { name = Access.show access; arguments = None }
+          Some { name = target; arguments = Some (List.map ~f:convert_argument arguments) }
+      | None when name_resolves_to_target ~name:(Access.show access) ->
+          Some { name = target; arguments = None }
       | _ -> None )
     | { Node.value = Call { callee; arguments }; _ }
-      when String.equal target (Expression.show callee) ->
-        Some { name = Expression.show callee; arguments = Some arguments }
-    | { Node.value = Name _; _ } when String.equal target (Expression.show decorator) ->
-        Some { name = Expression.show decorator; arguments = None }
+      when name_resolves_to_target ~name:(Expression.show callee) ->
+        Some { name = target; arguments = Some arguments }
+    | { Node.value = Name _; _ } when name_resolves_to_target ~name:(Expression.show decorator) ->
+        Some { name = target; arguments = None }
     | _ -> None
   in
   List.filter_map ~f:(matches decorator) decorators
@@ -526,8 +532,8 @@ let create_attribute
         in
         let is_dataclass_attribute =
           let get_dataclass_decorator annotated =
-            get_decorator annotated ~decorator:"dataclasses.dataclass"
-            @ get_decorator annotated ~decorator:"dataclass"
+            get_decorator annotated ~resolution ~decorator:"dataclasses.dataclass"
+            @ get_decorator annotated ~resolution ~decorator:"dataclass"
           in
           not (List.is_empty (get_dataclass_decorator parent))
         in

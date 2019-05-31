@@ -29,7 +29,7 @@ val name : t -> Reference.t
 
 val bases : t -> Expression.t Expression.Call.Argument.t list
 
-val get_decorator : t -> decorator:string -> decorator list
+val get_decorator : t -> resolution:Resolution.t -> decorator:string -> decorator list
 
 val annotation : t -> Type.t
 
