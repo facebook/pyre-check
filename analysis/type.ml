@@ -463,7 +463,16 @@ let rec pp format annotation =
         else
           Format.sprintf " `%s`" name
       in
-      Format.fprintf format "TypedDict%s%s with fields (%s)" totality name fields
+      let fields =
+        let fields_message = Format.sprintf " with fields (%s)" fields in
+        if String.equal name "" then
+          fields_message
+        else if String.length fields_message < 80 then
+          fields_message
+        else
+          ""
+      in
+      Format.fprintf format "TypedDict%s%s%s" totality name fields
   | Union parameters ->
       Format.fprintf
         format

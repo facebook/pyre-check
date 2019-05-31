@@ -258,6 +258,24 @@ let test_check_typed_dictionaries _ =
     ["TypedDict accessed with a missing key [27]: TypedDict `Baz` has no key `foo`."];
   assert_test_typed_dictionary
     {|
+      Baz = mypy_extensions.TypedDict(
+        'Baz',
+        {
+           'first_very_long_field': int,
+           'second_very_long_field': int,
+           'third_very_long_field': int,
+           'fourth_very_long_field': int,
+           'fifth_very_long_field': int
+        })
+      def foo(a: Baz) -> int:
+        ...
+      def bar( **kwargs: int) -> None:
+        foo(kwargs)
+    |}
+    [ "Incompatible parameter type [6]: Expected `TypedDict `Baz`` for 1st anonymous parameter to \
+       call `foo` but got `typing.Dict[str, int]`." ];
+  assert_test_typed_dictionary
+    {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})
       def foo() -> int:
         movie = Movie(name='Blade Runner', year=1982)
