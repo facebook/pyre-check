@@ -540,21 +540,17 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
   | Some { Node.value = Expression.List _; _ }, _
   | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = actual_name; parameters = [actual] },
-        Type.Parametric { name = expected_name; parameters = [expected_parameter] } )
-      when Identifier.equal actual_name "list"
-           && Identifier.equal expected_name "list"
-           && comparator ~left:actual ~right:expected_parameter ->
+    | ( Type.Parametric { name = "list"; parameters = [actual] },
+        Type.Parametric { name = "list"; parameters = [expected_parameter] } )
+      when comparator ~left:actual ~right:expected_parameter ->
         expected
     | _ -> resolved )
   | Some { Node.value = Expression.Set _; _ }, _
   | Some { Node.value = Expression.SetComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = actual_name; parameters = [actual] },
-        Type.Parametric { name = expected_name; parameters = [expected_parameter] } )
-      when Identifier.equal actual_name "set"
-           && Identifier.equal expected_name "set"
-           && comparator ~left:actual ~right:expected_parameter ->
+    | ( Type.Parametric { name = "set"; parameters = [actual] },
+        Type.Parametric { name = "set"; parameters = [expected_parameter] } )
+      when comparator ~left:actual ~right:expected_parameter ->
         expected
     | _ -> resolved )
   | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
@@ -586,11 +582,9 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
   | Some { Node.value = Expression.Dictionary _; _ }, _
   | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = actual_name; parameters = [actual_key; actual_value] },
-        Type.Parametric { name = expected_name; parameters = [expected_key; expected_value] } )
-      when Identifier.equal actual_name "dict"
-           && Identifier.equal expected_name "dict"
-           && comparator ~left:actual_key ~right:expected_key
+    | ( Type.Parametric { name = "dict"; parameters = [actual_key; actual_value] },
+        Type.Parametric { name = "dict"; parameters = [expected_key; expected_value] } )
+      when comparator ~left:actual_key ~right:expected_key
            && comparator ~left:actual_value ~right:expected_value ->
         expected
     | _ -> resolved )
