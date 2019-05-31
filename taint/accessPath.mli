@@ -60,6 +60,8 @@ val normalize_access_list
 
 val as_access : normalized_expression -> Access.general_access
 
+val as_expression : normalized_expression -> Expression.t
+
 val to_json : t -> Yojson.Safe.json
 
 val is_property_access : resolution:Resolution.t -> expression:normalized_expression Node.t -> bool

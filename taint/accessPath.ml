@@ -294,6 +294,36 @@ let rec as_access = function
         [Access.Identifier original; Access.Call arguments]
 
 
+let rec as_expression = function
+  | Global reference ->
+      Expression.Name (Reference.name reference) |> Node.create_with_default_location
+  | Local identifier ->
+      Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
+  | Expression expression -> expression
+  | Call { callee; arguments } ->
+      let arguments =
+        let convert { Argument.name; value } = { Call.Argument.name; value } in
+        List.map ~f:convert (Node.value arguments)
+      in
+      Expression.Call { callee = as_expression callee; arguments }
+      |> Node.create_with_default_location
+  | Access { expression; member } ->
+      Expression.Name
+        (Name.Attribute { base = as_expression expression; attribute = member; special = false })
+      |> Node.create_with_default_location
+  | Index { expression; original; arguments; _ } ->
+      let arguments =
+        let convert { Argument.name; value } = { Call.Argument.name; value } in
+        List.map ~f:convert (Node.value arguments)
+      in
+      let callee =
+        Name
+          (Name.Attribute { base = as_expression expression; attribute = original; special = true })
+        |> Node.create_with_default_location
+      in
+      Expression.Call { callee; arguments } |> Node.create_with_default_location
+
+
 let to_json { root; path } =
   let open Root in
   let root_name = function
