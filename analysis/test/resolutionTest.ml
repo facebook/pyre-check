@@ -167,6 +167,46 @@ let test_resolve_literal _ =
   assert_resolve_literal "1 if i else i" Type.Any
 
 
+let test_resolve_exports _ =
+  let assert_resolve ~sources name expected =
+    let resolution =
+      let sources =
+        let to_source (qualifier, source) =
+          parse ~qualifier:!&qualifier ~handle:(qualifier ^ ".pyi") source
+          |> Preprocessing.preprocess
+        in
+        List.map sources ~f:to_source
+      in
+      AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
+      |> fun environment -> TypeCheck.resolution environment ()
+    in
+    let reference = Resolution.resolve_exports resolution ~reference:(Reference.create name) in
+    assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
+  in
+  assert_resolve ~sources:[] "a.b" "a.b";
+  assert_resolve ~sources:["a", "from b import foo"; "b", "foo = 1"] "a.foo" "b.foo";
+  assert_resolve
+    ~sources:
+      [ "a", "from b import foo";
+        "b", "from c import bar as foo";
+        "c", "from d import cow as bar";
+        "d", "cow = 1" ]
+    "a.foo"
+    "d.cow";
+  assert_resolve
+    ~sources:
+      [ "qualifier", "from qualifier.foo import foo";
+        (* __init__.py module. *)
+        "qualifier.foo", "foo = 1" ]
+    "qualifier.foo.foo"
+    "qualifier.foo.foo";
+  assert_resolve
+    ~sources:
+      ["placeholder", "# pyre-placeholder-stub"; "a", "from placeholder.nonexistent import foo"]
+    "a.foo"
+    "placeholder.nonexistent.foo"
+
+
 let test_resolve_mutable_literals _ =
   let resolution =
     make_resolution {|

@@ -8,8 +8,6 @@ open Ast
 open Statement
 module Error = AnalysisError
 
-val resolve_exports : resolution:Resolution.t -> Reference.t -> Reference.t
-
 module type Context = sig
   val configuration : Configuration.Analysis.t
 

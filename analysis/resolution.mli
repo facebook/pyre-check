@@ -79,6 +79,8 @@ val resolve_mutable_literals
   expected:Type.t ->
   Type.t
 
+val resolve_exports : t -> reference:Reference.t -> Reference.t
+
 val global : t -> Reference.t -> global option
 
 val module_definition : t -> Reference.t -> Module.t option
