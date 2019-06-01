@@ -56,7 +56,7 @@ let load
           |> Option.value ~default:[]
         in
         shared_memory_path, files
-    | Some (Load (LoadFromProject { project_name; _ })) -> (
+    | Some (Load (LoadFromProject { project_name; metadata })) -> (
         if Option.is_none expected_version then (
           Log.warning "An expected version must be passed in in order to load from saved states.";
           raise (IncompatibleState "version mismatch") );
@@ -69,6 +69,7 @@ let load
           FetchSavedState.load
             ~watchman_root
             ~project_name
+            ~project_metadata:metadata
             ~configuration_file_hash
             ~version:(Option.value_exn expected_version)
             ~target_path

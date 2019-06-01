@@ -16,6 +16,7 @@ val saved_state_query : watchman_root:Path.t -> project_name:string -> Yojson.Sa
 val load
   :  watchman_root:Path.t ->
   project_name:string ->
+  project_metadata:string option ->
   configuration_file_hash:string option ->
   version:string ->
   target_path:Path.t ->

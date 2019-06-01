@@ -12,5 +12,12 @@ type fetched_saved_state = {
 
 let saved_state_query ~watchman_root:_ ~project_name:_ = `Assoc []
 
-let load ~watchman_root:_ ~project_name:_ ~configuration_file_hash:_ ~version:_ ~target_path:_ =
+let load
+    ~watchman_root:_
+    ~project_name:_
+    ~project_metadata:_
+    ~configuration_file_hash:_
+    ~version:_
+    ~target_path:_
+  =
   None
