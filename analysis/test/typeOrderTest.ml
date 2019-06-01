@@ -1888,6 +1888,10 @@ let test_join _ =
     "typing.Callable[[Named(b, int)], int]"
     "typing.Callable[[Named(a, int)], int]"
     "typing.Union[typing.Callable[[Named(b, int)], int], typing.Callable[[Named(a, int)], int]]";
+  assert_join
+    "typing.Callable[..., typing.Any]"
+    "typing.Callable[[int], int]"
+    "typing.Callable[[int], typing.Any]";
   (* Classes with __call__ are callables. *)
   assert_join ~order "CallableClass" "typing.Callable[[int], str]" "typing.Callable[[int], str]";
   assert_join ~order "typing.Callable[[int], str]" "CallableClass" "typing.Callable[[int], str]";

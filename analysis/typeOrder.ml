@@ -1228,6 +1228,8 @@ module OrderImplementation = struct
             >>| fun parameters -> Defined parameters
           with
           | _ -> None )
+        | Undefined, Defined right -> Some (Defined right)
+        | Defined left, Undefined -> Some (Defined left)
         | _ -> None
       in
       parameters

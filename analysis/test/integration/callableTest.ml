@@ -59,4 +59,20 @@ let test_higher_order_callables _ =
     ["Revealed type [-1]: Revealed type for `foo.(...)` is `typing.Callable[..., str]`."]
 
 
-let () = "callable" >::: ["higher_order_callables" >:: test_higher_order_callables] |> Test.run
+let test_union_of_callables _ =
+  assert_type_errors
+    {|
+      def baz(x: typing.Union[typing.Callable[[int], typing.Any], typing.Callable[..., typing.Any]]) -> None:
+          reveal_type(x)
+          x(1)
+    |}
+    [ "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Union[typing.Callable[[int], \
+       typing.Any], typing.Callable[..., typing.Any]]`." ]
+
+
+let () =
+  "callable"
+  >::: [ "higher_order_callables" >:: test_higher_order_callables;
+         "union_of_callables" >:: test_union_of_callables ]
+  |> Test.run
