@@ -43,6 +43,10 @@ module Record : sig
       module RecordParameters : sig
         type record [@@deriving compare, eq, sexp, show, hash]
       end
+
+      module RecordList : sig
+        type record [@@deriving compare, eq, sexp, show, hash]
+      end
     end
   end
 
@@ -126,6 +130,12 @@ and t =
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show]
+
+type ordered_types =
+  | ConcreteList of t list
+  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
+  | AnyList
+[@@deriving compare, eq, sexp, show, hash]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
 
@@ -437,13 +447,20 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters
 
+  type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type list_variadic_domain = ordered_types
+
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
+    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   type t =
     | Unary of unary_t
     | ParameterVariadic of parameter_variadic_t
+    | ListVariadic of list_variadic_t
   [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
@@ -506,6 +523,14 @@ module Variable : sig
 
       val parse_declaration : Expression.t -> t option
     end
+
+    module List : sig
+      include VariableKind with type t = list_variadic_t and type domain = list_variadic_domain
+
+      val name : t -> Identifier.t
+
+      val create : string -> t
+    end
   end
 
   module GlobalTransforms : sig
@@ -518,18 +543,22 @@ module Variable : sig
 
       val collect_all : type_t -> t list
     end
+
+    module Unary : S with type t = unary_t and type domain = type_t
+
+    module ParameterVariadic :
+      S with type t = parameter_variadic_t and type domain = Callable.parameters
+
+    module ListVariadic : S with type t = list_variadic_t and type domain = list_variadic_domain
   end
-
-  module UnaryGlobalTransforms : GlobalTransforms.S with type t = unary_t and type domain = type_t
-
-  module ParameterVariadicGlobalTransforms :
-    GlobalTransforms.S with type t = parameter_variadic_t and type domain = Callable.parameters
 
   include module type of struct
     include Record.Variable
   end
 
   module Set : Core.Set.S with type Elt.t = t
+
+  val pp_concise : Format.formatter -> t -> unit
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 

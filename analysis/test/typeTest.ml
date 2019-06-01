@@ -1228,7 +1228,7 @@ let test_replace_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" [free_variable; Type.integer] in
   assert_equal
-    (Type.Variable.UnaryGlobalTransforms.replace_all (fun _ -> Some Type.integer) annotation)
+    (Type.Variable.GlobalTransforms.Unary.replace_all (fun _ -> Some Type.integer) annotation)
     (Type.parametric "p" [Type.integer; Type.integer]);
   ()
 
@@ -1237,7 +1237,7 @@ let test_collect_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
   let annotation = Type.parametric "p" [free_variable; Type.integer] in
   assert_equal
-    (Type.Variable.UnaryGlobalTransforms.collect_all annotation)
+    (Type.Variable.GlobalTransforms.Unary.collect_all annotation)
     [Type.Variable.Unary.create "T"];
   ()
 

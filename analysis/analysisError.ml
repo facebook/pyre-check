@@ -644,17 +644,11 @@ let messages ~concise ~signature location kind =
         [Format.asprintf "Parameter `%a` cannot be annotated with Final." pp_identifier name]
     | InvalidType annotation ->
         [Format.asprintf "Expression `%a` is not a valid type." pp_type annotation]
-    | NestedTypeVariables (Type.Variable.Unary variable) ->
+    | NestedTypeVariables variable ->
         [ Format.asprintf
             "Expression `%a` is not a valid type. Type variables cannot contain other type \
              variables in their constraints."
-            pp_type
-            (Type.Variable variable) ]
-    | NestedTypeVariables (Type.Variable.ParameterVariadic variable) ->
-        [ Format.asprintf
-            "Expression `%a` is not a valid type. Type variables cannot contain other type \
-             variables in their constraints."
-            Type.Variable.Variadic.Parameters.pp
+            Type.Variable.pp_concise
             variable ] )
   | InvalidTypeParameters
       { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual } } ->
@@ -697,6 +691,12 @@ let messages ~concise ~signature location kind =
             [ "Classes parameterized by callable parameter variadics are not supported at "
               ^ "this time" ]
           else
+            [Format.asprintf format name]
+      | Type.Variable.ListVariadic variable ->
+          let name = Type.Variable.Variadic.List.name variable in
+          if origin = ClassToplevel then
+            ["Classes parameterized by list variadics are not supported at this time"]
+          else
             [Format.asprintf format name] )
   | InvalidTypeVariable { annotation; origin } -> (
       (* The explicit annotation is necessary to appease the compiler. *)
@@ -717,6 +717,15 @@ let messages ~concise ~signature location kind =
             [ Format.asprintf
                 "Cannot propagate callable parameter variadic `%s`.  Classes parameterized by \
                  callable parameter variadics are not supported at this time"
+                name ]
+          else
+            [Format.asprintf format name]
+      | Type.Variable.ListVariadic variable ->
+          let name = Type.Variable.Variadic.List.name variable in
+          if origin = ClassToplevel then
+            [ Format.asprintf
+                "Cannot propagate list variadic `%s`.  Classes parameterized by list variadics \
+                 are not supported at this time"
                 name ]
           else
             [Format.asprintf format name] )

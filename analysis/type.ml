@@ -45,10 +45,56 @@ module Record = struct
 
       let create ?(constraints = Unconstrained) ?(variance = Invariant) name =
         { variable = name; constraints; variance; state = Free { escaped = false }; namespace = 0 }
+
+
+      let pp_concise format { variable; constraints; variance; _ } ~pp_type =
+        let name =
+          match constraints with
+          | Bound _
+          | Explicit _
+          | Unconstrained ->
+              "Variable"
+          | LiteralIntegers -> "IntegerVariable"
+        in
+        let constraints =
+          match constraints with
+          | Bound bound -> Format.asprintf " (bound to %a)" pp_type bound
+          | Explicit constraints ->
+              Format.asprintf
+                " <: [%a]"
+                (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
+                constraints
+          | Unconstrained -> ""
+          | LiteralIntegers -> ""
+        in
+        let variance =
+          match variance with
+          | Covariant -> "(covariant)"
+          | Contravariant -> "(contravariant)"
+          | Invariant -> ""
+        in
+        Format.fprintf
+          format
+          "%s[%s%s]%s"
+          name
+          (Identifier.sanitized variable)
+          constraints
+          variance
     end
 
     module RecordVariadic = struct
       module RecordParameters = struct
+        type record = {
+          name: Identifier.t;
+          state: state;
+          namespace: RecordNamespace.t
+        }
+        [@@deriving compare, eq, sexp, show, hash]
+
+        let create name = { name; state = Free { escaped = false }; namespace = 1 }
+      end
+
+      module RecordList = struct
         type record = {
           name: Identifier.t;
           state: state;
@@ -163,6 +209,12 @@ and t =
 let _ = show (* shadowed below *)
 
 type type_t = t [@@deriving compare, eq, sexp, show, hash]
+
+type ordered_types =
+  | ConcreteList of t list
+  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
+  | AnyList
+[@@deriving compare, eq, sexp, show, hash]
 
 let type_compare = compare
 
@@ -478,33 +530,7 @@ let rec pp format annotation =
         format
         "typing.Union[%s]"
         (List.map parameters ~f:show |> String.concat ~sep:", ")
-  | Variable { variable; constraints; variance; _ } ->
-      let name =
-        match constraints with
-        | Bound _
-        | Explicit _
-        | Unconstrained ->
-            "Variable"
-        | LiteralIntegers -> "IntegerVariable"
-      in
-      let constraints =
-        match constraints with
-        | Bound bound -> Format.asprintf " (bound to %a)" pp bound
-        | Explicit constraints ->
-            Format.asprintf
-              " <: [%a]"
-              (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp)
-              constraints
-        | Unconstrained -> ""
-        | LiteralIntegers -> ""
-      in
-      let variance =
-        match variance with
-        | Covariant -> "(covariant)"
-        | Contravariant -> "(contravariant)"
-        | Invariant -> ""
-      in
-      Format.fprintf format "%s[%s%s]%s" name (Identifier.sanitized variable) constraints variance
+  | Variable unary -> Record.Variable.RecordUnary.pp_concise format unary ~pp_type:pp
 
 
 and show annotation = Format.asprintf "%a" pp annotation
@@ -2029,13 +2055,20 @@ module Variable : sig
 
   type parameter_variadic_domain = Callable.parameters
 
+  type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type list_variadic_domain = ordered_types
+
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
+    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   type t =
     | Unary of unary_t
     | ParameterVariadic of parameter_variadic_t
+    | ListVariadic of list_variadic_t
   [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
@@ -2098,6 +2131,14 @@ module Variable : sig
 
       val parse_declaration : Expression.t -> t option
     end
+
+    module List : sig
+      include VariableKind with type t = list_variadic_t and type domain = list_variadic_domain
+
+      val name : t -> Identifier.t
+
+      val create : string -> t
+    end
   end
 
   module GlobalTransforms : sig
@@ -2110,18 +2151,22 @@ module Variable : sig
 
       val collect_all : type_t -> t list
     end
+
+    module Unary : S with type t = unary_t and type domain = type_t
+
+    module ParameterVariadic :
+      S with type t = parameter_variadic_t and type domain = Callable.parameters
+
+    module ListVariadic : S with type t = list_variadic_t and type domain = list_variadic_domain
   end
-
-  module UnaryGlobalTransforms : GlobalTransforms.S with type t = unary_t and type domain = type_t
-
-  module ParameterVariadicGlobalTransforms :
-    GlobalTransforms.S with type t = parameter_variadic_t and type domain = Callable.parameters
 
   include module type of struct
     include Record.Variable
   end
 
   module Set : Core.Set.S with type Elt.t = t
+
+  val pp_concise : Format.formatter -> t -> unit
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 
@@ -2168,16 +2213,15 @@ end = struct
 
   type parameter_variadic_domain = Callable.parameters
 
+  type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type list_variadic_domain = ordered_types
+
   type pair =
     | UnaryPair of unary_t * unary_domain
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
-
-  type t =
-    | Unary of unary_t
-    | ParameterVariadic of parameter_variadic_t
-  [@@deriving compare, eq, sexp, show, hash]
-
-  type variable_t = t
+    | ListVariadicPair of list_variadic_t * list_variadic_domain
 
   module type VariableKind = sig
     type t [@@deriving compare, eq, sexp, show, hash]
@@ -2203,99 +2247,6 @@ end = struct
     val self_reference : t -> domain
 
     val pair : t -> domain -> pair
-  end
-
-  module GlobalTransforms = struct
-    module type VariableKind = sig
-      include VariableKind
-
-      (* We don't want these to be part of the public interface for Unary or Variadic.Parameters *)
-      val local_replace : (t -> domain option) -> type_t -> type_t option
-
-      val local_collect : type_t -> t list
-    end
-
-    module Make (Variable : VariableKind) = struct
-      include Variable
-
-      let replace_all operation =
-        instantiate
-          ~visit_children_before:true
-          ~constraints:(Variable.local_replace operation)
-          ~widen:false
-
-
-      let map operation =
-        replace_all (fun variable -> operation variable |> Variable.self_reference |> Option.some)
-
-
-      let mark_all_as_bound = map Variable.mark_as_bound
-
-      let namespace_all_free_variables annotation ~namespace =
-        let namespace_if_free variable =
-          if Variable.is_free variable then
-            Variable.namespace variable ~namespace
-          else
-            variable
-        in
-        map namespace_if_free annotation
-
-
-      let mark_as_escaped annotation ~variables ~namespace =
-        let mark_as_escaped_if_in_list variable =
-          if List.mem variables variable ~equal:Variable.equal then
-            Variable.mark_as_escaped variable |> Variable.namespace ~namespace
-          else
-            variable
-        in
-        map mark_as_escaped_if_in_list annotation
-
-
-      (* Sets all of the variables of type Variable.t to the same namespace (-1). This should only
-         be used to implement namespace_insensitive_compare *)
-      let converge_all_variable_namespaces = map (Variable.namespace ~namespace:(-1))
-
-      let convert_all_escaped_free_variables_to_anys =
-        let convert_if_escaped variable =
-          if Variable.is_escaped_and_free variable then
-            Some Variable.any
-          else
-            Some (Variable.self_reference variable)
-        in
-        replace_all convert_if_escaped
-
-
-      let collect_all annotation =
-        let module CollectorTransform = Transform.Make (struct
-          type state = Variable.t list
-
-          let visit_children_before _ _ = true
-
-          let visit_children_after = false
-
-          let visit sofar annotation =
-            let new_state = Variable.local_collect annotation @ sofar in
-            { Transform.transformed_annotation = annotation; new_state }
-        end)
-        in
-        fst (CollectorTransform.visit [] annotation) |> List.rev
-
-
-      let all_free_variables annotation = collect_all annotation |> List.filter ~f:Variable.is_free
-
-      let contains_escaped_free_variable annotation =
-        collect_all annotation |> List.exists ~f:Variable.is_escaped_and_free
-    end
-
-    module type S = sig
-      type t
-
-      type domain
-
-      val replace_all : (t -> domain option) -> type_t -> type_t
-
-      val collect_all : type_t -> t list
-    end
   end
 
   module Unary = struct
@@ -2475,10 +2426,166 @@ end = struct
             Some (create value)
         | _ -> None
     end
+
+    module List = struct
+      include Record.Variable.RecordVariadic.RecordList
+
+      type t = record [@@deriving compare, eq, sexp, show, hash]
+
+      type domain = ordered_types [@@deriving compare, eq, sexp, show, hash]
+
+      module Map = Core.Map.Make (struct
+        type nonrec t = t
+
+        let compare = compare
+
+        let sexp_of_t = sexp_of_t
+
+        let t_of_sexp = t_of_sexp
+      end)
+
+      let name { name; _ } = name
+
+      let any = AnyList
+
+      let self_reference variable = ListVariadic variable
+
+      let pair variable value = ListVariadicPair (variable, value)
+
+      let is_free = function
+        | { state = Free _; _ } -> true
+        | _ -> false
+
+
+      let is_escaped_and_free = function
+        | { state = Free { escaped }; _ } -> escaped
+        | _ -> false
+
+
+      let mark_as_bound variable = { variable with state = InFunction }
+
+      let namespace variable ~namespace = { variable with namespace }
+
+      (* TODO(T45087986): Add entries here as we add hosts for these variables *)
+      let local_replace _ _ = None
+
+      let mark_as_escaped variable = { variable with state = Free { escaped = true } }
+
+      (* TODO(T45087986): Add entries here as we add hosts for these variables *)
+      let local_collect _ = []
+
+      let dequalify ({ name; _ } as variable) ~dequalify_map =
+        { variable with name = dequalify_identifier dequalify_map name }
+    end
   end
 
-  module UnaryGlobalTransforms = GlobalTransforms.Make (Unary)
-  module ParameterVariadicGlobalTransforms = GlobalTransforms.Make (Variadic.Parameters)
+  module GlobalTransforms = struct
+    module type VariableKind = sig
+      include VariableKind
+
+      (* We don't want these to be part of the public interface for Unary or Variadic.Parameters *)
+      val local_replace : (t -> domain option) -> type_t -> type_t option
+
+      val local_collect : type_t -> t list
+    end
+
+    module Make (Variable : VariableKind) = struct
+      include Variable
+
+      let replace_all operation =
+        instantiate
+          ~visit_children_before:true
+          ~constraints:(Variable.local_replace operation)
+          ~widen:false
+
+
+      let map operation =
+        replace_all (fun variable -> operation variable |> Variable.self_reference |> Option.some)
+
+
+      let mark_all_as_bound = map Variable.mark_as_bound
+
+      let namespace_all_free_variables annotation ~namespace =
+        let namespace_if_free variable =
+          if Variable.is_free variable then
+            Variable.namespace variable ~namespace
+          else
+            variable
+        in
+        map namespace_if_free annotation
+
+
+      let mark_as_escaped annotation ~variables ~namespace =
+        let mark_as_escaped_if_in_list variable =
+          if List.mem variables variable ~equal:Variable.equal then
+            Variable.mark_as_escaped variable |> Variable.namespace ~namespace
+          else
+            variable
+        in
+        map mark_as_escaped_if_in_list annotation
+
+
+      (* Sets all of the variables of type Variable.t to the same namespace (-1). This should only
+         be used to implement namespace_insensitive_compare *)
+      let converge_all_variable_namespaces = map (Variable.namespace ~namespace:(-1))
+
+      let convert_all_escaped_free_variables_to_anys =
+        let convert_if_escaped variable =
+          if Variable.is_escaped_and_free variable then
+            Some Variable.any
+          else
+            Some (Variable.self_reference variable)
+        in
+        replace_all convert_if_escaped
+
+
+      let collect_all annotation =
+        let module CollectorTransform = Transform.Make (struct
+          type state = Variable.t list
+
+          let visit_children_before _ _ = true
+
+          let visit_children_after = false
+
+          let visit sofar annotation =
+            let new_state = Variable.local_collect annotation @ sofar in
+            { Transform.transformed_annotation = annotation; new_state }
+        end)
+        in
+        fst (CollectorTransform.visit [] annotation) |> List.rev
+
+
+      let all_free_variables annotation = collect_all annotation |> List.filter ~f:Variable.is_free
+
+      let contains_escaped_free_variable annotation =
+        collect_all annotation |> List.exists ~f:Variable.is_escaped_and_free
+    end
+
+    module type S = sig
+      type t
+
+      type domain
+
+      val replace_all : (t -> domain option) -> type_t -> type_t
+
+      val collect_all : type_t -> t list
+    end
+
+    module Unary = Make (Unary)
+    module ParameterVariadic = Make (Variadic.Parameters)
+    module ListVariadic = Make (Variadic.List)
+  end
+
+  let pp_type = pp
+
+  type t =
+    | Unary of unary_t
+    | ParameterVariadic of parameter_variadic_t
+    | ListVariadic of list_variadic_t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  type variable_t = t
+
   include Record.Variable
 
   module Set = Core.Set.Make (struct
@@ -2491,10 +2598,18 @@ end = struct
     let t_of_sexp = t_of_sexp
   end)
 
+  let pp_concise format = function
+    | Unary variable -> Unary.pp_concise format variable ~pp_type
+    | ParameterVariadic { name; _ } ->
+        Format.fprintf format "CallableParameterTypeVariable[%s]" name
+    | ListVariadic { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
+
+
   let dequalify dequalify_map = function
     | Unary variable -> Unary (Unary.dequalify variable ~dequalify_map)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.dequalify variable ~dequalify_map)
+    | ListVariadic variable -> ListVariadic (Variadic.List.dequalify variable ~dequalify_map)
 
 
   let namespace variable ~namespace =
@@ -2502,28 +2617,35 @@ end = struct
     | Unary variable -> Unary (Unary.namespace variable ~namespace)
     | ParameterVariadic variable ->
         ParameterVariadic (Variadic.Parameters.namespace variable ~namespace)
+    | ListVariadic variable -> ListVariadic (Variadic.List.namespace variable ~namespace)
 
 
   let mark_all_variables_as_bound annotation =
-    UnaryGlobalTransforms.mark_all_as_bound annotation
-    |> ParameterVariadicGlobalTransforms.mark_all_as_bound
+    GlobalTransforms.Unary.mark_all_as_bound annotation
+    |> GlobalTransforms.ParameterVariadic.mark_all_as_bound
+    |> GlobalTransforms.ListVariadic.mark_all_as_bound
 
 
   let namespace_all_free_variables annotation ~namespace =
-    UnaryGlobalTransforms.namespace_all_free_variables annotation ~namespace
-    |> ParameterVariadicGlobalTransforms.namespace_all_free_variables ~namespace
+    GlobalTransforms.Unary.namespace_all_free_variables annotation ~namespace
+    |> GlobalTransforms.ParameterVariadic.namespace_all_free_variables ~namespace
+    |> GlobalTransforms.ListVariadic.namespace_all_free_variables ~namespace
 
 
   let all_free_variables annotation =
     let unaries =
-      UnaryGlobalTransforms.all_free_variables annotation
+      GlobalTransforms.Unary.all_free_variables annotation
       |> List.map ~f:(fun variable -> Unary variable)
     in
     let callable_variadics =
-      ParameterVariadicGlobalTransforms.all_free_variables annotation
+      GlobalTransforms.ParameterVariadic.all_free_variables annotation
       |> List.map ~f:(fun variable -> ParameterVariadic variable)
     in
-    unaries @ callable_variadics
+    let list_variadics =
+      GlobalTransforms.ListVariadic.all_free_variables annotation
+      |> List.map ~f:(fun variable -> ListVariadic variable)
+    in
+    unaries @ callable_variadics @ list_variadics
 
 
   let all_variables_are_resolved annotation = all_free_variables annotation |> List.is_empty
@@ -2538,16 +2660,20 @@ end = struct
     let partition = function
       | Unary variable -> `Fst variable
       | ParameterVariadic variable -> `Snd variable
+      | ListVariadic variable -> `Trd variable
     in
-    let specific_unaries, specific_parameters_variadics =
-      List.partition_map ~f:partition variables
+    let specific_unaries, specific_parameters_variadics, specific_list_variadics =
+      List.partition3_map ~f:partition variables
     in
-    UnaryGlobalTransforms.mark_as_escaped
+    GlobalTransforms.Unary.mark_as_escaped
       annotation
       ~variables:specific_unaries
       ~namespace:fresh_namespace
-    |> ParameterVariadicGlobalTransforms.mark_as_escaped
+    |> GlobalTransforms.ParameterVariadic.mark_as_escaped
          ~variables:specific_parameters_variadics
+         ~namespace:fresh_namespace
+    |> GlobalTransforms.ListVariadic.mark_as_escaped
+         ~variables:specific_list_variadics
          ~namespace:fresh_namespace
 
 
@@ -2577,18 +2703,21 @@ end = struct
 
 
   let contains_escaped_free_variable annotation =
-    UnaryGlobalTransforms.contains_escaped_free_variable annotation
-    || ParameterVariadicGlobalTransforms.contains_escaped_free_variable annotation
+    GlobalTransforms.Unary.contains_escaped_free_variable annotation
+    || GlobalTransforms.ParameterVariadic.contains_escaped_free_variable annotation
+    || GlobalTransforms.ListVariadic.contains_escaped_free_variable annotation
 
 
   let convert_all_escaped_free_variables_to_anys annotation =
-    UnaryGlobalTransforms.convert_all_escaped_free_variables_to_anys annotation
-    |> ParameterVariadicGlobalTransforms.convert_all_escaped_free_variables_to_anys
+    GlobalTransforms.Unary.convert_all_escaped_free_variables_to_anys annotation
+    |> GlobalTransforms.ParameterVariadic.convert_all_escaped_free_variables_to_anys
+    |> GlobalTransforms.ListVariadic.convert_all_escaped_free_variables_to_anys
 
 
   let converge_all_variable_namespaces annotation =
-    UnaryGlobalTransforms.converge_all_variable_namespaces annotation
-    |> ParameterVariadicGlobalTransforms.converge_all_variable_namespaces
+    GlobalTransforms.Unary.converge_all_variable_namespaces annotation
+    |> GlobalTransforms.ParameterVariadic.converge_all_variable_namespaces
+    |> GlobalTransforms.ListVariadic.converge_all_variable_namespaces
 end
 
 let namespace_insensitive_compare left right =

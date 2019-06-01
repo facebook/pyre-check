@@ -7,6 +7,7 @@ open Core
 open Pyre
 module ParameterVariable = Type.Variable.Variadic.Parameters
 module UnaryVariable = Type.Variable.Unary
+module ListVariadic = Type.Variable.Variadic.List
 
 type unary_interval = {
   upper_bound: Type.t;
@@ -20,9 +21,19 @@ type callable_parameter_interval =
   | Bottom
 [@@deriving show]
 
+(* This approach of making which bounds actually exist explicit allows us to avoid making
+   artificial Top and Bottom members of Type.ordered_types *)
+type list_variadic_interval =
+  | NoBounds
+  | OnlyUpperBound of Type.ordered_types
+  | OnlyLowerBound of Type.ordered_types
+  | BothBounds of { upper: Type.ordered_types; lower: Type.ordered_types }
+[@@deriving show]
+
 type t = {
   unaries: unary_interval UnaryVariable.Map.t;
-  callable_parameters: callable_parameter_interval ParameterVariable.Map.t
+  callable_parameters: callable_parameter_interval ParameterVariable.Map.t;
+  list_variadics: list_variadic_interval ListVariadic.Map.t
 }
 
 let show_map map ~show_key ~show_data ~short_name =
@@ -37,7 +48,7 @@ let show_map map ~show_key ~show_data ~short_name =
     |> Format.sprintf "%s: [%s]" short_name
 
 
-let pp format { unaries; callable_parameters } =
+let pp format { unaries; callable_parameters; list_variadics } =
   let unaries =
     show_map unaries ~show_key:UnaryVariable.show ~show_data:show_unary_interval ~short_name:"un"
   in
@@ -48,19 +59,29 @@ let pp format { unaries; callable_parameters } =
       ~show_data:show_callable_parameter_interval
       ~short_name:"cb"
   in
-  Format.fprintf format "{%s%s}" unaries callable_parameters
+  let list_variadics =
+    show_map
+      list_variadics
+      ~show_key:ListVariadic.show
+      ~show_data:show_list_variadic_interval
+      ~short_name:"lv"
+  in
+  Format.fprintf format "{%s%s%s}" unaries callable_parameters list_variadics
 
 
 let show annotation = Format.asprintf "%a" pp annotation
 
 let empty =
-  { unaries = UnaryVariable.Map.empty; callable_parameters = ParameterVariable.Map.empty }
+  { unaries = UnaryVariable.Map.empty;
+    callable_parameters = ParameterVariable.Map.empty;
+    list_variadics = ListVariadic.Map.empty
+  }
 
 
-let exists_in_bounds { unaries; callable_parameters } ~variables =
+let exists_in_bounds { unaries; callable_parameters; list_variadics } ~variables =
   let contains_variable annotation =
     let contains_unary =
-      Type.Variable.UnaryGlobalTransforms.collect_all annotation
+      Type.Variable.GlobalTransforms.Unary.collect_all annotation
       |> List.exists ~f:(fun variable ->
              List.mem variables (Type.Variable.Unary variable) ~equal:Type.Variable.equal)
     in
@@ -68,10 +89,17 @@ let exists_in_bounds { unaries; callable_parameters } ~variables =
       let parameter_variadic_contained_in_list variable =
         List.mem variables (Type.Variable.ParameterVariadic variable) ~equal:Type.Variable.equal
       in
-      Type.Variable.ParameterVariadicGlobalTransforms.collect_all annotation
+      Type.Variable.GlobalTransforms.ParameterVariadic.collect_all annotation
       |> List.exists ~f:parameter_variadic_contained_in_list
     in
-    contains_unary || contains_parameter_variadic
+    let contains_list_variadic =
+      let list_variadic_contained_in_list variable =
+        List.mem variables (Type.Variable.ListVariadic variable) ~equal:Type.Variable.equal
+      in
+      Type.Variable.GlobalTransforms.ListVariadic.collect_all annotation
+      |> List.exists ~f:list_variadic_contained_in_list
+    in
+    contains_unary || contains_parameter_variadic || contains_list_variadic
   in
   let exists_in_interval_bounds { upper_bound; lower_bound } =
     contains_variable upper_bound || contains_variable lower_bound
@@ -81,25 +109,44 @@ let exists_in_bounds { unaries; callable_parameters } ~variables =
         Type.Callable.create ~parameters ~annotation:Type.Any () |> contains_variable
     | _ -> false
   in
+  let exists_in_list_variadic_interval_bounds interval =
+    let exists = function
+      | Type.ConcreteList types -> List.exists types ~f:contains_variable
+      | Type.ListVariadic variable ->
+          List.mem variables (Type.Variable.ListVariadic variable) ~equal:Type.Variable.equal
+      | _ -> false
+    in
+    match interval with
+    | NoBounds -> false
+    | OnlyLowerBound bound
+    | OnlyUpperBound bound ->
+        exists bound
+    | BothBounds { upper; lower } -> exists upper || exists lower
+  in
   UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
   || ParameterVariable.Map.exists
        callable_parameters
        ~f:exists_in_callable_parameter_interval_bounds
+  || ListVariadic.Map.exists list_variadics ~f:exists_in_list_variadic_interval_bounds
 
 
-let is_empty { unaries; callable_parameters } =
-  UnaryVariable.Map.is_empty unaries && ParameterVariable.Map.is_empty callable_parameters
+let is_empty { unaries; callable_parameters; list_variadics } =
+  UnaryVariable.Map.is_empty unaries
+  && ParameterVariable.Map.is_empty callable_parameters
+  && ListVariadic.Map.is_empty list_variadics
 
 
-let contains_key { unaries; callable_parameters } = function
+let contains_key { unaries; callable_parameters; list_variadics } = function
   | Type.Variable.Unary unary -> Map.mem unaries unary
   | Type.Variable.ParameterVariadic parameters -> Map.mem callable_parameters parameters
+  | Type.Variable.ListVariadic variable -> Map.mem list_variadics variable
 
 
 module Solution = struct
   type t = {
     unaries: Type.t UnaryVariable.Map.t;
-    callable_parameters: Type.Callable.parameters ParameterVariable.Map.t
+    callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
+    list_variadics: Type.ordered_types ListVariadic.Map.t
   }
 
   let equal left right =
@@ -108,9 +155,10 @@ module Solution = struct
          Type.Callable.equal_parameters
          left.callable_parameters
          right.callable_parameters
+    && ListVariadic.Map.equal Type.equal_ordered_types left.list_variadics right.list_variadics
 
 
-  let show { unaries; callable_parameters } =
+  let show { unaries; callable_parameters; list_variadics } =
     let unaries =
       show_map unaries ~show_key:UnaryVariable.show ~show_data:Type.show ~short_name:"un"
     in
@@ -121,30 +169,44 @@ module Solution = struct
         ~show_data:Type.Callable.show_parameters
         ~short_name:"cb"
     in
-    Format.sprintf "{%s%s}" unaries callable_parameters
+    let list_variadics =
+      show_map
+        list_variadics
+        ~show_key:ListVariadic.show
+        ~show_data:Type.show_ordered_types
+        ~short_name:"lv"
+    in
+    Format.sprintf "{%s%s%s}" unaries callable_parameters list_variadics
 
 
   let empty =
-    { unaries = UnaryVariable.Map.empty; callable_parameters = ParameterVariable.Map.empty }
+    { unaries = UnaryVariable.Map.empty;
+      callable_parameters = ParameterVariable.Map.empty;
+      list_variadics = ListVariadic.Map.empty
+    }
 
 
-  let instantiate { unaries; callable_parameters } annotation =
-    Type.Variable.UnaryGlobalTransforms.replace_all
+  let instantiate { unaries; callable_parameters; list_variadics } annotation =
+    Type.Variable.GlobalTransforms.Unary.replace_all
       (fun variable -> UnaryVariable.Map.find unaries variable)
       annotation
-    |> Type.Variable.ParameterVariadicGlobalTransforms.replace_all (fun variable ->
+    |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all (fun variable ->
            ParameterVariable.Map.find callable_parameters variable)
+    |> Type.Variable.GlobalTransforms.ListVariadic.replace_all (fun variable ->
+           ListVariadic.Map.find list_variadics variable)
 
 
   let instantiate_single_variable { unaries; _ } = UnaryVariable.Map.find unaries
 
-  let set ({ unaries; callable_parameters } as solution) = function
+  let set ({ unaries; callable_parameters; list_variadics } as solution) = function
     | Type.Variable.UnaryPair (key, data) ->
         { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
     | Type.Variable.ParameterVariadicPair (key, data) ->
         { solution with
           callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data
         }
+    | Type.Variable.ListVariadicPair (key, data) ->
+        { solution with list_variadics = ListVariadic.Map.set list_variadics ~key ~data }
 
 
   let create = List.fold ~f:set ~init:empty
@@ -185,7 +247,7 @@ module OrderedConstraints (Order : OrderType) = struct
 
       val create : ?upper_bound:Variable.domain -> ?lower_bound:Variable.domain -> unit -> t
 
-      val intersection : t -> t -> order:Order.t -> t
+      val intersection : t -> t -> order:Order.t -> t option
 
       (* Returns the lowest non-bottom value within the interval, such that it fulfills the
          requirements potentially given in the variable *)
@@ -216,7 +278,8 @@ module OrderedConstraints (Order : OrderType) = struct
           let existing =
             Map.find container variable |> Option.value ~default:(Interval.create ())
           in
-          let intersection = Interval.intersection existing new_constraint ~order in
+          Interval.intersection existing new_constraint ~order
+          >>= fun intersection ->
           Interval.narrowest_valid_value intersection ~order ~variable
           >>| fun _ -> Map.set container ~key:variable ~data:intersection
 
@@ -260,9 +323,10 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
     let intersection left right ~order =
-      { upper_bound = Order.meet order left.upper_bound right.upper_bound;
-        lower_bound = Order.join order left.lower_bound right.lower_bound
-      }
+      Some
+        { upper_bound = Order.meet order left.upper_bound right.upper_bound;
+          lower_bound = Order.join order left.lower_bound right.lower_bound
+        }
 
 
     let narrowest_valid_value
@@ -304,7 +368,7 @@ module OrderedConstraints (Order : OrderType) = struct
           List.find ~f:(contains interval ~order) explicits
       | Bound exogenous_bound ->
           intersection interval (create ~upper_bound:exogenous_bound ()) ~order
-          |> lowest_non_bottom_member ~order
+          >>= lowest_non_bottom_member ~order
       | Unconstrained -> lowest_non_bottom_member interval ~order
       | LiteralIntegers -> (
           let is_literal_integer = function
@@ -366,13 +430,13 @@ module OrderedConstraints (Order : OrderType) = struct
       match left, right with
       | Top, _
       | _, Top ->
-          Top
+          Some Top
       | other, Bottom
       | Bottom, other ->
-          other
+          Some other
       | Singleton left, Singleton right when Type.Callable.equal_parameters left right ->
-          Singleton left
-      | _, _ -> Top
+          Some (Singleton left)
+      | _, _ -> Some Top
 
 
     let merge_solution_in target ~variable:_ ~solution =
@@ -404,12 +468,164 @@ module OrderedConstraints (Order : OrderType) = struct
           |> Type.Variable.all_free_variables
   end
 
+  module ListVariadicInterval = struct
+    module Variable = ListVariadic
+
+    type t = list_variadic_interval
+
+    let create ?upper_bound ?lower_bound () =
+      match upper_bound, lower_bound with
+      | None, None -> NoBounds
+      | Some upper, None -> OnlyUpperBound upper
+      | None, Some lower -> OnlyLowerBound lower
+      | Some upper, Some lower -> BothBounds { upper; lower }
+
+
+    let less_or_equal order ~left ~right =
+      if Type.equal_ordered_types left right then
+        true
+      else
+        match left, right with
+        | _, Type.AnyList
+        | Type.AnyList, _ ->
+            true
+        | _, Type.ListVariadic _
+        | Type.ListVariadic _, _ ->
+            false
+        | ConcreteList upper_bounds, ConcreteList lower_bounds ->
+            List.zip upper_bounds lower_bounds
+            >>| List.for_all ~f:(fun (left, right) -> Order.less_or_equal order ~left ~right)
+            |> Option.value ~default:false
+
+
+    let narrowest_valid_value interval ~order ~variable:_ =
+      match interval with
+      | NoBounds -> None
+      | OnlyLowerBound bound
+      | OnlyUpperBound bound ->
+          Some bound
+      | BothBounds { upper; lower } ->
+          Option.some_if (less_or_equal order ~left:lower ~right:upper) lower
+
+
+    let intersection left right ~order =
+      let meet left right =
+        if Type.equal_ordered_types left right then
+          Some left
+        else if less_or_equal order ~left ~right then
+          Some left
+        else if less_or_equal order ~left:right ~right:left then
+          Some right
+        else
+          match left, right with
+          | ConcreteList left, ConcreteList right ->
+              List.zip left right
+              >>| List.map ~f:(fun (left, right) -> Order.meet order left right)
+              >>| fun concrete_list -> Type.ConcreteList concrete_list
+          | _ -> None
+      in
+      let join left right =
+        if Type.equal_ordered_types left right then
+          Some left
+        else if less_or_equal order ~left ~right then
+          Some right
+        else if less_or_equal order ~left:right ~right:left then
+          Some left
+        else
+          match left, right with
+          | ConcreteList left, ConcreteList right ->
+              List.zip left right
+              >>| List.map ~f:(fun (left, right) -> Order.join order left right)
+              >>| fun concrete_list -> Type.ConcreteList concrete_list
+          | _ -> None
+      in
+      match left, right with
+      | NoBounds, other
+      | other, NoBounds ->
+          Some other
+      | OnlyLowerBound lower, OnlyUpperBound upper
+      | OnlyUpperBound upper, OnlyLowerBound lower ->
+          Some (BothBounds { lower; upper })
+      | OnlyLowerBound left, OnlyLowerBound right ->
+          join left right >>| fun lower -> OnlyLowerBound lower
+      | OnlyUpperBound left, OnlyUpperBound right ->
+          meet left right >>| fun upper -> OnlyUpperBound upper
+      | OnlyUpperBound upper, BothBounds both
+      | BothBounds both, OnlyUpperBound upper ->
+          meet upper both.upper >>| fun upper -> BothBounds { both with upper }
+      | OnlyLowerBound lower, BothBounds both
+      | BothBounds both, OnlyLowerBound lower ->
+          join lower both.lower >>| fun lower -> BothBounds { both with lower }
+      | BothBounds left, BothBounds right -> (
+        match meet left.upper right.upper, join left.lower right.lower with
+        | Some upper, Some lower -> Some (BothBounds { upper; lower })
+        | _ -> None )
+
+
+    let merge_solution_in interval ~variable ~solution =
+      let upper_bound, lower_bound =
+        match interval with
+        | NoBounds -> None, None
+        | OnlyUpperBound upper -> Some upper, None
+        | OnlyLowerBound lower -> None, Some lower
+        | BothBounds { upper; lower } -> Some upper, Some lower
+      in
+      let smart_instantiate = function
+        | Type.AnyList -> Some Type.AnyList
+        | ListVariadic variable_bound -> (
+          match ListVariadic.Map.find solution.Solution.list_variadics variable_bound with
+          | Some (ListVariadic variable_replacement)
+            when ListVariadic.equal variable variable_replacement ->
+              (* We don't want variables bounded by themselves *)
+              None
+          | result -> Some (Option.value result ~default:(Type.ListVariadic variable_bound)) )
+        | ConcreteList types ->
+            Some (ConcreteList (List.map types ~f:(Solution.instantiate solution)))
+      in
+      create
+        ?upper_bound:(upper_bound >>= smart_instantiate)
+        ?lower_bound:(lower_bound >>= smart_instantiate)
+        ()
+
+
+    let is_trivial interval ~variable:_ =
+      match interval with
+      | NoBounds -> true
+      | _ -> false
+
+
+    let free_variables interval =
+      let bounds =
+        match interval with
+        | NoBounds -> []
+        | OnlyUpperBound upper -> [upper]
+        | OnlyLowerBound lower -> [lower]
+        | BothBounds { upper; lower } -> [upper; lower]
+      in
+      let extract = function
+        | Type.AnyList -> []
+        | ListVariadic variable ->
+            if Type.Variable.Variadic.List.is_free variable then
+              [Type.Variable.ListVariadic variable]
+            else
+              []
+        | ConcreteList types -> List.concat_map types ~f:Type.Variable.all_free_variables
+      in
+      List.concat_map bounds ~f:extract
+  end
+
   module CallableParametersIntervalContainer = IntervalContainer.Make (CallableParametersInterval)
   module UnaryIntervalContainer = IntervalContainer.Make (UnaryTypeInterval)
+  module ListVariadicIntervalContainer = IntervalContainer.Make (ListVariadicInterval)
 
   type order = Order.t
 
-  let add_bound ({ unaries; callable_parameters } as constraints) ~order ~pair ~is_lower_bound =
+  let add_bound
+      ({ unaries; callable_parameters; list_variadics } as constraints)
+      ~order
+      ~pair
+      ~is_lower_bound
+    =
     match pair with
     | Type.Variable.UnaryPair (variable, bound) ->
         UnaryIntervalContainer.add_bound unaries ~order ~variable ~bound ~is_lower_bound
@@ -422,16 +638,25 @@ module OrderedConstraints (Order : OrderType) = struct
           ~bound
           ~is_lower_bound
         >>| fun callable_parameters -> { constraints with callable_parameters }
+    | Type.Variable.ListVariadicPair (variable, bound) ->
+        ListVariadicIntervalContainer.add_bound
+          list_variadics
+          ~order
+          ~variable
+          ~bound
+          ~is_lower_bound
+        >>| fun list_variadics -> { constraints with list_variadics }
 
 
   let add_lower_bound = add_bound ~is_lower_bound:true
 
   let add_upper_bound = add_bound ~is_lower_bound:false
 
-  let merge_solution { unaries; callable_parameters } solution =
+  let merge_solution { unaries; callable_parameters; list_variadics } solution =
     { unaries = UnaryIntervalContainer.merge_solution unaries ~solution;
       callable_parameters =
-        CallableParametersIntervalContainer.merge_solution callable_parameters ~solution
+        CallableParametersIntervalContainer.merge_solution callable_parameters ~solution;
+      list_variadics = ListVariadicIntervalContainer.merge_solution list_variadics ~solution
     }
 
 
@@ -448,8 +673,19 @@ module OrderedConstraints (Order : OrderType) = struct
             remaining_constraints.callable_parameters
             ~with_regards_to:remaining_constraints
         in
-        ( { unaries = independent_unaries; callable_parameters = independent_parameters },
-          { unaries = dependent_unaries; callable_parameters = dependent_parameters } )
+        let independent_list_variadics, dependent_list_variadics =
+          ListVariadicIntervalContainer.partition_independent_dependent
+            remaining_constraints.list_variadics
+            ~with_regards_to:remaining_constraints
+        in
+        ( { unaries = independent_unaries;
+            callable_parameters = independent_parameters;
+            list_variadics = independent_list_variadics
+          },
+          { unaries = dependent_unaries;
+            callable_parameters = dependent_parameters;
+            list_variadics = dependent_list_variadics
+          } )
       in
       let handle_dependent_constraints partial_solution =
         if is_empty dependent_constraints then
@@ -464,18 +700,22 @@ module OrderedConstraints (Order : OrderType) = struct
       >>= CallableParametersIntervalContainer.add_solution
             independent_constraints.callable_parameters
             ~order
+      >>= ListVariadicIntervalContainer.add_solution independent_constraints.list_variadics ~order
       >>= handle_dependent_constraints
     in
     build_solution ~remaining_constraints:constraints ~partial_solution:Solution.empty
 
 
-  let extract_partial_solution { unaries; callable_parameters } ~order ~variables =
+  let extract_partial_solution { unaries; callable_parameters; list_variadics } ~order ~variables =
     let extracted_constraints, remaining_constraints =
       let unary_matches ~key ~data:_ =
-        List.exists variables ~f:(( = ) (Type.Variable.Unary key))
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.Unary key))
       in
       let callable_parameters_matches ~key ~data:_ =
-        List.exists variables ~f:(( = ) (Type.Variable.ParameterVariadic key))
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.ParameterVariadic key))
+      in
+      let list_variadic_matches ~key ~data:_ =
+        List.exists variables ~f:(Type.Variable.equal (Type.Variable.ListVariadic key))
       in
       let extracted_unaries, remaining_unaries =
         UnaryVariable.Map.partitioni_tf unaries ~f:unary_matches
@@ -483,8 +723,17 @@ module OrderedConstraints (Order : OrderType) = struct
       let extracted_variadics, remaining_variadics =
         ParameterVariable.Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
       in
-      ( { unaries = extracted_unaries; callable_parameters = extracted_variadics },
-        { unaries = remaining_unaries; callable_parameters = remaining_variadics } )
+      let extracted_list_variadics, remaining_list_variadics =
+        ListVariadic.Map.partitioni_tf list_variadics ~f:list_variadic_matches
+      in
+      ( { unaries = extracted_unaries;
+          callable_parameters = extracted_variadics;
+          list_variadics = extracted_list_variadics
+        },
+        { unaries = remaining_unaries;
+          callable_parameters = remaining_variadics;
+          list_variadics = remaining_list_variadics
+        } )
     in
     solve extracted_constraints ~order
     >>| fun solution -> merge_solution remaining_constraints solution, solution

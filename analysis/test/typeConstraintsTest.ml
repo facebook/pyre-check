@@ -111,6 +111,23 @@ let test_add_bound _ =
       (ParameterVariadicPair
          ( parameter_variadic,
            Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0] )));
+  let list_variadic = Type.Variable.Variadic.List.create in
+  assert_add_bound_succeeds
+    (`Lower (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.integer; Type.string])));
+  assert_add_bound_succeeds
+    ~preconstraints:
+      (add_bound
+         (Some empty)
+         (`Lower
+           (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.integer; Type.string]))))
+    (`Lower (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.bool; Type.bool])));
+  assert_add_bound_fails
+    ~preconstraints:
+      (add_bound
+         (Some empty)
+         (`Lower
+           (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.integer; Type.string]))))
+    (`Lower (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.bool])));
   ()
 
 
@@ -198,6 +215,32 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:
       [ `Lower (ParameterVariadicPair (parameter_variadic, empty_parameters));
         `Lower (ParameterVariadicPair (parameter_variadic, one_named_parameter)) ]
+    None;
+  let list_variadic = Type.Variable.Variadic.List.create "Ts" in
+  assert_solution
+    ~sequentially_applied_bounds:
+      [`Lower (ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child]))]
+    (Some [ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child])]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child]));
+        `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [right_parent; child])) ]
+    (Some [ListVariadicPair (list_variadic, Type.ConcreteList [grandparent; child])]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child]));
+        `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [right_parent; child; child]))
+      ]
+    None;
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child]));
+        `Upper (ListVariadicPair (list_variadic, Type.ConcreteList [grandparent; child])) ]
+    (Some [ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child])]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic, Type.ConcreteList [left_parent; child]));
+        `Upper (ListVariadicPair (list_variadic, Type.ConcreteList [right_parent; child])) ]
     None;
   ()
 
@@ -289,6 +332,31 @@ let test_multiple_variable_solution _ =
                  ~annotation:Type.integer
                  () )) ]
     None;
+  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
+  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic_a, Type.ListVariadic list_variadic_b));
+        `Lower (ListVariadicPair (list_variadic_b, Type.ConcreteList [Type.integer; Type.string]))
+      ]
+    (Some
+       [ ListVariadicPair (list_variadic_a, Type.ConcreteList [Type.integer; Type.string]);
+         ListVariadicPair (list_variadic_b, Type.ConcreteList [Type.integer; Type.string]) ]);
+  (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
+     this yet *)
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower (ListVariadicPair (list_variadic_a, Type.ListVariadic list_variadic_b));
+        `Lower (ListVariadicPair (list_variadic_b, Type.ListVariadic list_variadic_a)) ]
+    None;
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower
+          (ListVariadicPair (list_variadic_a, Type.ConcreteList [Type.Variable unconstrained_a]));
+        `Lower (UnaryPair (unconstrained_a, Type.integer)) ]
+    (Some
+       [ ListVariadicPair (list_variadic_a, Type.ConcreteList [Type.integer]);
+         UnaryPair (unconstrained_a, Type.integer) ]);
   ()
 
 
@@ -341,6 +409,30 @@ let test_partial_solution _ =
         `Lower (UnaryPair (unconstrained_c, Type.Variable unconstrained_b)) ]
     (Some [UnaryPair (unconstrained_a, Type.Variable unconstrained_b)])
     None;
+  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  expect_split_solution
+    ~variables:[Type.Variable.ParameterVariadic parameters_a]
+    ~bounds:
+      [ `Lower
+          (ParameterVariadicPair
+             (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b));
+        `Lower
+          (ParameterVariadicPair
+             (parameters_b, Type.Callable.ParameterVariadicTypeVariable parameters_a)) ]
+    (Some
+       [ ParameterVariadicPair
+           (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b) ])
+    (Some []);
+  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
+  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
+  expect_split_solution
+    ~variables:[Type.Variable.ListVariadic list_variadic_a]
+    ~bounds:
+      [ `Lower (ListVariadicPair (list_variadic_a, Type.ListVariadic list_variadic_b));
+        `Lower (ListVariadicPair (list_variadic_b, Type.ListVariadic list_variadic_a)) ]
+    (Some [ListVariadicPair (list_variadic_a, Type.ListVariadic list_variadic_b)])
+    (Some []);
   ()
 
 
@@ -363,6 +455,43 @@ let test_exists _ =
     (TypeConstraints.exists_in_bounds
        constraints_with_unconstrained_b
        ~variables:[Type.Variable.Unary unconstrained_a]);
+  let parameters_a = Type.Variable.Variadic.Parameters.create "Ta" in
+  let parameters_b = Type.Variable.Variadic.Parameters.create "Tb" in
+  let constraints_with_parameters_b =
+    let pair =
+      Type.Variable.ParameterVariadicPair
+        (parameters_a, Type.Callable.ParameterVariadicTypeVariable parameters_b)
+    in
+    DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+    |> fun constraints_option -> Option.value_exn constraints_option
+  in
+  assert_true
+    (TypeConstraints.exists_in_bounds
+       constraints_with_parameters_b
+       ~variables:[Type.Variable.ParameterVariadic parameters_b]);
+  assert_false
+    (TypeConstraints.exists_in_bounds
+       constraints_with_parameters_b
+       ~variables:[Type.Variable.ParameterVariadic parameters_a]);
+  let list_variadic_a = Type.Variable.Variadic.List.create "TsA" in
+  let list_variadic_b = Type.Variable.Variadic.List.create "TsB" in
+  let constraints_with_list_variadic_b =
+    let pair =
+      Type.Variable.ListVariadicPair (list_variadic_a, Type.ListVariadic list_variadic_b)
+    in
+    DiamondOrderedConstraints.add_lower_bound TypeConstraints.empty ~order ~pair
+    |> function
+    | Some constraints -> constraints
+    | None -> failwith "add bound failed"
+  in
+  assert_true
+    (TypeConstraints.exists_in_bounds
+       constraints_with_list_variadic_b
+       ~variables:[Type.Variable.ListVariadic list_variadic_b]);
+  assert_false
+    (TypeConstraints.exists_in_bounds
+       constraints_with_list_variadic_b
+       ~variables:[Type.Variable.ListVariadic list_variadic_a]);
   ()
 
 
