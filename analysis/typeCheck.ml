@@ -2558,8 +2558,7 @@ module State (Context : Context) = struct
           | Expression.String _ -> false
           | _ -> (
             match parsed with
-            | Type.Top ->
-                Option.is_some (Type.Variable.Variadic.Parameters.parse_declaration value)
+            | Type.Top -> Option.is_some (Type.Variable.parse_declaration value)
             | Type.Optional Type.Bottom -> false
             | annotation -> not (Resolution.contains_untracked resolution annotation) )
         in

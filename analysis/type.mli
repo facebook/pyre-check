@@ -48,6 +48,12 @@ module Record : sig
         type record [@@deriving compare, eq, sexp, show, hash]
       end
     end
+
+    type 'a record =
+      | Unary of 'a RecordUnary.record
+      | ParameterVariadic of RecordVariadic.RecordParameters.record
+      | ListVariadic of RecordVariadic.RecordList.record
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Callable : sig
@@ -316,7 +322,7 @@ end
 
 type alias =
   | TypeAlias of t
-  | VariableAlias of Record.Variable.RecordVariadic.RecordParameters.record
+  | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
 val create : aliases:(primitive -> alias option) -> Expression.t -> t
@@ -457,11 +463,7 @@ module Variable : sig
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
     | ListVariadicPair of list_variadic_t * list_variadic_domain
 
-  type t =
-    | Unary of unary_t
-    | ParameterVariadic of parameter_variadic_t
-    | ListVariadic of list_variadic_t
-  [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
 
@@ -520,8 +522,6 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
-
-      val parse_declaration : Expression.t -> t option
     end
 
     module List : sig
@@ -559,6 +559,8 @@ module Variable : sig
   module Set : Core.Set.S with type Elt.t = t
 
   val pp_concise : Format.formatter -> t -> unit
+
+  val parse_declaration : Expression.t -> t option
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 

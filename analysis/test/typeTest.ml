@@ -1242,6 +1242,27 @@ let test_collect_all _ =
   ()
 
 
+let test_parse_type_variable_declarations _ =
+  let assert_parses_declaration expression expected =
+    assert_equal
+      (Some expected)
+      (Type.Variable.parse_declaration (parse_single_expression expression))
+  in
+  let assert_declaration_does_not_parse expression =
+    assert_equal None (Type.Variable.parse_declaration (parse_single_expression expression))
+  in
+  assert_parses_declaration
+    "typing_extensions.CallableParameterTypeVariable('Tparams')"
+    (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams"));
+  assert_declaration_does_not_parse
+    "typing_extensions.CallableParameterTypeVariable('Tparams', int, str)";
+  assert_parses_declaration
+    "typing_extensions.ListVariadic('Ts')"
+    (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts"));
+  assert_declaration_does_not_parse "typing_extensions.ListVariadic('Ts', int, str)";
+  ()
+
+
 let () =
   "type"
   >::: [ "create" >:: test_create;
@@ -1280,7 +1301,8 @@ let () =
          "convert_all_escaped_free_variables_to_anys"
          >:: test_convert_all_escaped_free_variables_to_anys;
          "replace_all" >:: test_replace_all;
-         "collect_all" >:: test_collect_all ]
+         "collect_all" >:: test_collect_all;
+         "parse_type_variable_declarations" >:: test_parse_type_variable_declarations ]
   |> Test.run;
   "callable"
   >::: [ "from_overloads" >:: test_from_overloads;

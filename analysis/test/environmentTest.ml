@@ -177,26 +177,23 @@ let test_register_class_metadata _ =
 
 
 let test_register_aliases _ =
-  let assert_resolved sources aliases =
-    let (module Handler) =
-      let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
-      let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
-      let register
-          ( { Source.handle;
-              qualifier;
-              statements;
-              metadata = { Source.Metadata.local_mode; _ }
-            ; _
-            } as source )
-        =
-        let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
-        Handler.register_module ~qualifier ~local_mode ~handle:(Some handle) ~stub ~statements;
-        Environment.register_class_definitions (module Handler) source |> ignore
-      in
-      List.iter sources ~f:register;
-      Environment.register_aliases (module Handler) sources;
-      (module Handler : Environment.Handler)
+  let register_all sources =
+    let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+    let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
+    let register
+        ( { Source.handle; qualifier; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
+        as source )
+      =
+      let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
+      Handler.register_module ~qualifier ~local_mode ~handle:(Some handle) ~stub ~statements;
+      Environment.register_class_definitions (module Handler) source |> ignore
     in
+    List.iter sources ~f:register;
+    Environment.register_aliases (module Handler) sources;
+    (module Handler : Environment.Handler)
+  in
+  let assert_resolved sources aliases =
+    let (module Handler) = register_all sources in
     let assert_alias (alias, target) =
       let parse_annotation handler source =
         parse_single_expression source |> parse_annotation handler
@@ -364,6 +361,28 @@ let test_register_aliases _ =
           import a
         |} ]
     ["b.a.Foo", "a.Foo"];
+  let assert_resolved sources aliases =
+    let (module Handler) = register_all sources in
+    let assert_alias (alias, target) =
+      match Handler.aliases alias with
+      | Some alias -> assert_equal ~printer:Type.show_alias target alias
+      | None -> failwith "Alias is missing"
+    in
+    List.iter aliases ~f:assert_alias
+  in
+  assert_resolved
+    [ parse
+        {|
+          Tparams = typing_extensions.CallableParameterTypeVariable('Tparams')
+          Ts = typing_extensions.ListVariadic('Ts')
+      |}
+    ]
+    [ ( "Tparams",
+        Type.VariableAlias
+          (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams")) );
+      ( "Ts",
+        Type.VariableAlias (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts")) )
+    ];
   ()
 
 

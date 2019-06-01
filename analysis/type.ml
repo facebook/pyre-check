@@ -105,6 +105,12 @@ module Record = struct
         let create name = { name; state = Free { escaped = false }; namespace = 1 }
       end
     end
+
+    type 'a record =
+      | Unary of 'a RecordUnary.record
+      | ParameterVariadic of RecordVariadic.RecordParameters.record
+      | ListVariadic of RecordVariadic.RecordList.record
+    [@@deriving compare, eq, sexp, show, hash]
   end
 
   module Callable = struct
@@ -1299,18 +1305,21 @@ let primitive_substitution_map =
   |> Identifier.Table.of_alist_exn
 
 
-let rec create_logic
-    ?(use_cache = true)
-    ~aliases
-    ~parameter_variadic_declarations
-    { Node.value = expression; _ }
-  =
+type alias =
+  | TypeAlias of t
+  | VariableAlias of t Record.Variable.record
+[@@deriving compare, eq, sexp, show, hash]
+
+let rec create_logic ?(use_cache = true)
+                     ~aliases
+                     ~variable_aliases
+                     { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result when use_cache -> result
   | _ ->
       let result =
         let result =
-          let create_logic = create_logic ~use_cache ~aliases ~parameter_variadic_declarations in
+          let create_logic = create_logic ~use_cache ~aliases ~variable_aliases in
           let resolve_aliases annotation =
             let visited = Hash_set.create () in
             let module ResolveTransform = Transform.Make (struct
@@ -1498,10 +1507,11 @@ let rec create_logic
                     in
                     match Node.value parameters with
                     | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
-                    | _ ->
-                        parameter_variadic_declarations (Expression.show parameters)
-                        >>| (fun variable -> ParameterVariadicTypeVariable variable)
-                        |> Option.value ~default:Undefined
+                    | _ -> (
+                      match variable_aliases (Expression.show parameters) with
+                      | Some (Record.Variable.ParameterVariadic variable) ->
+                          ParameterVariadicTypeVariable variable
+                      | _ -> Undefined )
                   in
                   { annotation = create_logic annotation; parameters }
               | _ -> undefined
@@ -1739,13 +1749,8 @@ let rec create_logic
       result
 
 
-type alias =
-  | TypeAlias of t
-  | VariableAlias of Record.Variable.RecordVariadic.RecordParameters.record
-[@@deriving compare, eq, sexp, show, hash]
-
 let create ~aliases =
-  let parameter_variadic_declarations name =
+  let variable_aliases name =
     match aliases name with
     | Some (VariableAlias variable) -> Some variable
     | _ -> None
@@ -1757,7 +1762,7 @@ let create ~aliases =
       | _ -> None )
     | _ -> None
   in
-  create_logic ~use_cache:true ~aliases ~parameter_variadic_declarations
+  create_logic ~use_cache:true ~aliases ~variable_aliases
 
 
 let contains_callable annotation = exists annotation ~predicate:is_callable
@@ -2065,11 +2070,7 @@ module Variable : sig
     | ParameterVariadicPair of parameter_variadic_t * parameter_variadic_domain
     | ListVariadicPair of list_variadic_t * list_variadic_domain
 
-  type t =
-    | Unary of unary_t
-    | ParameterVariadic of parameter_variadic_t
-    | ListVariadic of list_variadic_t
-  [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
 
@@ -2128,8 +2129,6 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
-
-      val parse_declaration : Expression.t -> t option
     end
 
     module List : sig
@@ -2167,6 +2166,8 @@ module Variable : sig
   module Set : Core.Set.S with type Elt.t = t
 
   val pp_concise : Format.formatter -> t -> unit
+
+  val parse_declaration : Expression.t -> t option
 
   val dequalify : Reference.t Reference.Map.t -> t -> t
 
@@ -2476,6 +2477,30 @@ end = struct
 
       let dequalify ({ name; _ } as variable) ~dequalify_map =
         { variable with name = dequalify_identifier dequalify_map name }
+
+
+      let parse_declaration = function
+        | { Node.value =
+              Call
+                { callee =
+                    { Node.value =
+                        Name
+                          (Name.Attribute
+                            { base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                              attribute = "ListVariadic";
+                              special = false
+                            })
+                    ; _
+                    };
+                  arguments =
+                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
+                      ; _
+                      } ]
+                }
+          ; _
+          } ->
+            Some (create value)
+        | _ -> None
     end
   end
 
@@ -2578,11 +2603,7 @@ end = struct
 
   let pp_type = pp
 
-  type t =
-    | Unary of unary_t
-    | ParameterVariadic of parameter_variadic_t
-    | ListVariadic of list_variadic_t
-  [@@deriving compare, eq, sexp, show, hash]
+  type t = type_t Record.Variable.record [@@deriving compare, eq, sexp, show, hash]
 
   type variable_t = t
 
@@ -2603,6 +2624,15 @@ end = struct
     | ParameterVariadic { name; _ } ->
         Format.fprintf format "CallableParameterTypeVariable[%s]" name
     | ListVariadic { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
+
+
+  let parse_declaration expression =
+    match Variadic.Parameters.parse_declaration expression with
+    | Some variable -> Some (ParameterVariadic variable)
+    | None -> (
+      match Variadic.List.parse_declaration expression with
+      | Some variable -> Some (ListVariadic variable)
+      | None -> None )
 
 
   let dequalify dequalify_map = function

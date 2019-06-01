@@ -2834,15 +2834,17 @@ let test_solve_less_or_equal _ =
               Type.Variable.UnaryPair (variable, parse_annotation value |> postprocess)
           | Type.Primitive primitive -> (
               let (module Handler : Environment.Handler) = environment in
-              let variable =
-                match Handler.aliases primitive with
-                | Some (Type.VariableAlias variable) -> variable
-                | _ -> failwith "not available"
+              let parse_parameters parameters =
+                match
+                  parse_annotation (Printf.sprintf "typing.Callable[%s, typing.Any]" parameters)
+                with
+                | Type.Callable { implementation = { parameters; _ }; _ } -> parameters
+                | _ -> failwith "impossible"
               in
-              match parse_annotation (Printf.sprintf "typing.Callable[%s, typing.Any]" value) with
-              | Type.Callable { implementation = { parameters; _ }; _ } ->
-                  Type.Variable.ParameterVariadicPair (variable, parameters)
-              | _ -> failwith "impossible" )
+              match Handler.aliases primitive with
+              | Some (Type.VariableAlias (ParameterVariadic variable)) ->
+                  Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
+              | _ -> failwith "not available" )
           | _ -> failwith "not a variable"
         in
         List.map pairs ~f:parse_pair

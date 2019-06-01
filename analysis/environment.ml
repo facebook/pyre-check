@@ -473,7 +473,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
         | Call _, None
         | Name _, None -> (
             let value = Expression.delocalize value in
-            match Type.Variable.Variadic.Parameters.parse_declaration value with
+            match Type.Variable.parse_declaration value with
             | Some variable ->
                 Handler.register_alias
                   ~handle
