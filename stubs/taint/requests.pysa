@@ -34,3 +34,69 @@ def requests.sessions.Session.request(self, method: TaintSink[RequestSend], url:
             cert = ...,
             json = ...,
             ): ...
+
+# SSRF [urllib.request]
+def urllib.request.urlopen(
+  url: TaintSink[RequestSend],
+  data = ...,
+  timeout = ...,
+  *,
+  cafile = ...,
+  capath = ...,
+  cadefault = ...,
+  context = ...
+): ...
+
+# SSRF [http.client]
+def http.client.HTTPConnection.__init__(
+  self,
+  host: TaintSink[RequestSend],
+  port: TaintSink[RequestSend] = ...,
+  timeout: TaintSink[RequestSend] = ...,
+  source_address = ...,
+  blocksize = ...
+): ...
+
+def http.client.HTTPSConnection.__init__(
+  self,
+  host: TaintSink[RequestSend],
+  port: TaintSink[RequestSend] = ...,
+  key_file: TaintSink[RequestSend] = ...,
+  cert_file: TaintSink[RequestSend] = ...,
+  timeout: TaintSink[RequestSend] = ...,
+  source_address = ...,
+  *,
+  context = ...,
+  check_hostname = ...
+): ...
+
+def http.client.HTTPConnection.request(
+  self,
+  method: TaintSink[RequestSend],
+  url: TaintSink[RequestSend],
+  body = ...,
+  headers: TaintSink[RequestSend] = ...,
+  *,
+  encode_chunked = ...
+): ...
+
+def http.client.HTTPConnection.set_tunnel(
+  self,
+  host: TaintSink[RequestSend],
+  port: TaintSink[RequestSend] = ...,
+  headers: TaintSink[RequestSend] = ...
+): ...
+
+def http.client.HTTPConnection.putrequest(
+  self,
+  method: TaintSink[RequestSend],
+  url: TaintSink[RequestSend],
+  skip_host = ...,
+  skip_accept_encoding = ...
+): ...
+
+def http.client.HTTPConnection.putheader(
+  self,
+  header: TaintSink[RequestSend],
+  argument: TaintSink[RequestSend]
+): ...
