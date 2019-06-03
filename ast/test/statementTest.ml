@@ -258,32 +258,32 @@ let test_is_unit_test _ =
 
 let test_attributes _ =
   let create_attribute
+      ~annotation
+      ?defines
+      ?(final = false)
+      ?(frozen = false)
+      ?(location = Location.Reference.any)
+      ~name
       ?(primitive = false)
       ?(property = false)
       ?(setter = false)
-      ?(toplevel = true)
-      ?(final = false)
       ?(static = false)
-      ?(location = Location.Reference.any)
-      ?(frozen = false)
-      ~name
-      ~annotation
-      ?defines
+      ?(toplevel = true)
       ~value
       ()
     =
-    { Attribute.name;
-      annotation;
-      defines;
-      value;
+    { Attribute.annotation;
       async = false;
-      setter;
-      property;
-      primitive;
-      toplevel;
+      defines;
       final;
+      frozen;
+      name;
+      primitive;
+      property;
+      setter;
       static;
-      frozen
+      toplevel;
+      value
     }
     |> Node.create ~location
   in

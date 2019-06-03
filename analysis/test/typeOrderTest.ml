@@ -20,17 +20,17 @@ let connect ?(parameters = []) handler ~predecessor ~successor =
 
 let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
-    { Attribute.name;
-      annotation = Annotation.create (parse_annotation annotation);
-      value = Ast.Node.create_with_default_location Ast.Expression.Ellipsis;
-      parent = Type.Primitive class_name;
-      defined = true;
-      class_attribute = false;
+    { Attribute.annotation = Annotation.create (parse_annotation annotation);
       async = false;
-      initialized = true;
-      property = None;
+      class_attribute = false;
+      defined = true;
       final = false;
-      static = false
+      initialized = true;
+      name;
+      parent = Type.Primitive class_name;
+      property = None;
+      static = false;
+      value = Ast.Node.create_with_default_location Ast.Expression.Ellipsis
     }
     |> Ast.Node.create_with_default_location
   in

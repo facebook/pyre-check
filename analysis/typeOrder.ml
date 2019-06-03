@@ -1915,17 +1915,17 @@ module OrderImplementation = struct
                 | Type.Callable _ as callable ->
                     let attributes =
                       [ Node.create_with_default_location
-                          { AnnotatedAttribute.name = "__call__";
-                            parent = callable;
-                            annotation = Annotation.create callable;
-                            value = Node.create_with_default_location Expression.Ellipsis;
-                            defined = true;
-                            class_attribute = false;
+                          { AnnotatedAttribute.annotation = Annotation.create callable;
                             async = false;
-                            initialized = true;
-                            property = None;
+                            class_attribute = false;
+                            defined = true;
                             final = false;
-                            static = false
+                            initialized = true;
+                            name = "__call__";
+                            property = None;
+                            parent = callable;
+                            static = false;
+                            value = Node.create_with_default_location Expression.Ellipsis
                           } ]
                       |> Option.some
                     in

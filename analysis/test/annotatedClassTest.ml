@@ -478,31 +478,31 @@ let test_class_attributes _ =
       |}
   in
   let create_attribute
-      ?value
       ?(annotation = Some !"int")
-      ?defines
       ?(async = false)
-      ?(setter = false)
-      ?(property = false)
-      ?(primitive = false)
-      ?(toplevel = true)
+      ?defines
       ?(final = false)
-      ?(static = false)
       ?(frozen = false)
+      ?(primitive = false)
+      ?(property = false)
+      ?(setter = false)
+      ?(static = false)
+      ?(toplevel = true)
+      ?value
       name
     =
-    +{ Statement.Attribute.name;
-       annotation;
-       defines;
-       value;
+    +{ Statement.Attribute.annotation;
        async;
-       setter;
+       defines;
+       final;
+       frozen;
+       name;
        property;
        primitive;
-       toplevel;
-       final;
+       setter;
        static;
-       frozen
+       toplevel;
+       value
      }
   in
   (* Test `Class.attributes`. *)
@@ -691,17 +691,18 @@ let test_class_attributes _ =
       name
       callable
     =
-    { Class.Attribute.name;
-      parent;
-      annotation = Annotation.create_immutable ~global:true (parse_callable callable);
-      value = Node.create_with_default_location Ellipsis;
-      defined = true;
-      class_attribute = false;
+    { Class.Attribute.annotation =
+        Annotation.create_immutable ~global:true (parse_callable callable);
       async = false;
-      initialized = false;
+      class_attribute = false;
+      defined = true;
       final = false;
+      initialized = false;
+      name;
+      parent;
+      property;
       static = false;
-      property
+      value = Node.create_with_default_location Ellipsis
     }
   in
   assert_attribute

@@ -6,22 +6,22 @@
 open Ast
 
 type property =
-  | ReadWrite
   | ReadOnly
+  | ReadWrite
 [@@deriving eq, show]
 
 type attribute = {
+  annotation: Annotation.t;
+  async: bool;
+  class_attribute: bool;
+  defined: bool;
+  final: bool;
+  initialized: bool;
   name: Identifier.t;
   parent: Type.t;
-  annotation: Annotation.t;
-  value: Expression.t;
-  defined: bool;
-  class_attribute: bool;
-  async: bool;
-  initialized: bool;
   property: property option;
-  final: bool;
-  static: bool
+  static: bool;
+  value: Expression.t
 }
 [@@deriving eq, show]
 

@@ -171,18 +171,18 @@ type statement_t = t [@@deriving compare, eq, sexp, show, hash]
 
 module Attribute : sig
   type attribute = {
-    name: Identifier.t;
     annotation: Expression.t option;
-    defines: statement_t Record.Define.record list option;
-    value: Expression.t option;
     async: bool;
-    setter: bool;
-    property: bool;
-    primitive: bool;
-    toplevel: bool;
+    defines: statement_t Record.Define.record list option;
     final: bool;
+    frozen: bool;
+    name: Identifier.t;
+    primitive: bool;
+    property: bool;
+    setter: bool;
     static: bool;
-    frozen: bool
+    toplevel: bool;
+    value: Expression.t option
   }
   [@@deriving compare, eq, sexp, show, hash]
 
