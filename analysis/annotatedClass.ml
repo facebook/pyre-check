@@ -580,20 +580,26 @@ let create_attribute
       annotation
   in
   let value = Option.value value ~default:(Node.create Ellipsis ~location) in
+  let property =
+    match property, setter with
+    | true, true when not frozen -> Some Attribute.ReadWrite
+    | true, false -> Some Attribute.ReadOnly
+    | _, _ when frozen -> Some Attribute.ReadOnly
+    | _, _ -> None
+  in
   { Node.location;
     value =
-      { Attribute.name = attribute_name;
-        parent = class_annotation;
-        annotation;
-        value;
-        defined;
-        class_attribute;
+      { Attribute.annotation;
         async;
+        class_attribute;
+        defined;
         initialized;
-        property;
         final;
+        name = attribute_name;
+        parent = class_annotation;
+        property;
         static;
-        frozen
+        value
       }
   }
 

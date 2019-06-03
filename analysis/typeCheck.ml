@@ -2785,7 +2785,9 @@ module State (Context : Context) = struct
                     in
                     let check_is_readonly_property state =
                       match attribute with
-                      | Some ({ Node.value = { Annotated.Attribute.frozen = true; _ }; _ }, _)
+                      | Some
+                          ( { Node.value = { Annotated.Attribute.property = Some ReadOnly; _ }; _ },
+                            _ )
                         when Option.is_none original_annotation ->
                           emit_error
                             ~state

@@ -6,6 +6,11 @@
 open Core
 open Ast
 
+type property =
+  | ReadWrite
+  | ReadOnly
+[@@deriving eq, show]
+
 type attribute = {
   name: Identifier.t;
   parent: Type.t;
@@ -15,10 +20,9 @@ type attribute = {
   class_attribute: bool;
   async: bool;
   initialized: bool;
-  property: bool;
+  property: property option;
   final: bool;
-  static: bool;
-  frozen: bool
+  static: bool
 }
 [@@deriving eq, show]
 

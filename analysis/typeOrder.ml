@@ -1923,10 +1923,9 @@ module OrderImplementation = struct
                             class_attribute = false;
                             async = false;
                             initialized = true;
-                            property = false;
+                            property = None;
                             final = false;
-                            static = false;
-                            frozen = false
+                            static = false
                           } ]
                       |> Option.some
                     in

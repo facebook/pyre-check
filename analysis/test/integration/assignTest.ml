@@ -129,7 +129,30 @@ let test_check_assign _ =
       a = A()
       a.foo = 2
     |}
-    ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."]
+    ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."];
+  assert_type_errors
+    {|
+      class A:
+          @property
+          def foo(self) -> int:
+            ...
+      a = A()
+      a.foo = 1
+    |}
+    ["Invalid assignment [41]: `a.foo` cannot be reassigned. It is a read-only property."];
+  assert_type_errors
+    {|
+      class A:
+          @property
+          def foo(self) -> int:
+            ...
+          @foo.setter
+          def foo(self, value: int) -> None:
+            ...
+      a = A()
+      a.foo = 1
+    |}
+    []
 
 
 let () = "assign" >::: ["check_assign" >:: test_check_assign] |> Test.run

@@ -686,7 +686,7 @@ let test_class_attributes _ =
     |> parse_single_class ~convert:true
   in
   let create_expected_attribute
-      ?(property = false)
+      ?(property = None)
       ?(parent = Type.Primitive "Attributes")
       name
       callable
@@ -701,7 +701,6 @@ let test_class_attributes _ =
       initialized = false;
       final = false;
       static = false;
-      frozen = false;
       property
     }
   in
@@ -730,7 +729,7 @@ let test_class_attributes _ =
     ~parent
     ~parent_instantiated_type:(Type.meta (Type.Primitive "Attributes"))
     ~attribute_name:"property"
-    ~expected_attribute:(create_expected_attribute ~property:true "property" "str")
+    ~expected_attribute:(create_expected_attribute ~property:(Some ReadOnly) "property" "str")
 
 
 let test_fallback_attribute _ =

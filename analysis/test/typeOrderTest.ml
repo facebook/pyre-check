@@ -28,10 +28,9 @@ let parse_attributes ~parse_annotation ~class_name =
       class_attribute = false;
       async = false;
       initialized = true;
-      property = false;
+      property = None;
       final = false;
-      static = false;
-      frozen = false
+      static = false
     }
     |> Ast.Node.create_with_default_location
   in
