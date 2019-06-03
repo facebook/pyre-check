@@ -1434,6 +1434,24 @@ let test_dictionary _ =
                    } ]
              }) ];
   assert_parsed_equal
+    "{a.b or c: a for a in b}"
+    [ +Expression
+         (+DictionaryComprehension
+             { Comprehension.element =
+                 { Dictionary.key =
+                     +BooleanOperator
+                        { BooleanOperator.left =
+                            +Name
+                               (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                          operator = BooleanOperator.Or;
+                          right = !"c"
+                        };
+                   value = !"a"
+                 };
+               generators =
+                 [{ Comprehension.target = !"a"; iterator = !"b"; conditions = []; async = false }]
+             }) ];
+  assert_parsed_equal
     "{a: b for c, d in []}"
     [ +Expression
          (+DictionaryComprehension

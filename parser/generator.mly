@@ -25,18 +25,25 @@
     | Entry of Expression.t Dictionary.entry
     | Item of Expression.t
     | Keywords of Expression.t
+    | Comprehension of Expression.t Comprehension.generator
 
-  let extract_entries entries =
-    let extract_entries (entries, keywords, items) = function
-      | Entry entry ->
-          entry :: entries, keywords, items
-      | Item item ->
-          entries, keywords, item :: items
-      | Keywords keyword ->
-          entries, keyword :: keywords, items
-    in
-    let entries, keywords, items = List.fold ~init:([], [], []) ~f:extract_entries entries in
-    List.rev entries, List.rev keywords, List.rev items
+  type entries = {
+      entries: Expression.t Dictionary.entry list;
+      items: Expression.t list;
+      keywords: Expression.t list;
+      comprehensions: Expression.t Comprehension.generator list;
+    }
+
+
+  let add_entry so_far = function
+    | Entry entry ->
+        { so_far with entries = entry :: so_far.entries }
+    | Item item ->
+        { so_far with items = item :: so_far.items }
+    | Keywords keyword ->
+        { so_far with keywords = keyword :: so_far.keywords }
+    | Comprehension comprehension ->
+        { so_far with comprehensions = comprehension :: so_far.comprehensions }
 
   (* Helper function to combine a start position of type Lexing.position and
    * stop position of type Location.position. *)
@@ -1184,41 +1191,8 @@ atom:
       |> Node.create ~location:(name.Node.location)
     }
 
-  | start = LEFTCURLY;
-    entries = separated_list(COMMA, set_or_dictionary_entry);
-    stop = RIGHTCURLY {
-      let value =
-        match extract_entries entries with
-        | entries, keywords, [] -> Dictionary { Dictionary.entries; keywords }
-        | [], [], items -> Set items
-        | _ -> failwith "Invalid set or dictionary"
-      in
-      { Node.location = Location.create ~start ~stop; value }
-    }
-
-  | start = LEFTCURLY;
-    key = expression; COLON; value = test;
-    generators = comprehension+;
-    stop = RIGHTCURLY {
-      {
-        Node.location = Location.create ~start ~stop;
-        value = DictionaryComprehension {
-          Comprehension.element = { Dictionary.key; value };
-          generators;
-        };
-      }
-    }
-  | start = LEFTCURLY;
-    key = test; COLON; value = test;
-    generators = comprehension+;
-    stop = RIGHTCURLY {
-      {
-        Node.location = Location.create ~start ~stop;
-        value = DictionaryComprehension {
-          Comprehension.element = { Dictionary.key; value };
-          generators;
-        };
-      }
+  | set_or_dictionary = set_or_dictionary {
+      set_or_dictionary
     }
 
   | position = FALSE {
@@ -1627,13 +1601,51 @@ set_or_dictionary_entry:
       | _ ->
           Item test
     }
-  | key = expression; COLON; value = test {
-      Entry { Dictionary.key = key; value = value; }
-    }
-  | key = or_test; COLON; value = test {
+  | key = test; COLON; value = test {
       Entry { Dictionary.key = key; value = value; }
     }
   ;
+
+set_or_dictionary_maker:
+  | entry = set_or_dictionary_entry {
+      add_entry { entries = []; comprehensions = []; items = []; keywords = [] } entry
+    }
+  | items = set_or_dictionary_maker; COMMA; entry = set_or_dictionary_entry {
+      add_entry items entry
+    }
+  | items = set_or_dictionary_maker; comprehension = comprehension {
+      add_entry items (Comprehension comprehension)
+    }
+  ;
+
+set_or_dictionary:
+  | start = LEFTCURLY; stop = RIGHTCURLY {
+      {
+        Node.location = Location.create ~start ~stop;
+        value = Dictionary { Dictionary.entries = []; keywords = [] };
+      }
+    }
+  | start = LEFTCURLY; items = set_or_dictionary_maker; COMMA?; stop = RIGHTCURLY {
+      let value =
+        match items with
+        | { entries; keywords; comprehensions = []; items = [] } ->
+             Dictionary { Dictionary.entries = List.rev entries; keywords = List.rev keywords }
+        | { entries = [entry]; keywords = []; items = []; comprehensions  } ->
+              DictionaryComprehension {
+                Comprehension.element = entry;
+                generators = List.rev comprehensions;
+              }
+        | { items; entries = []; comprehensions = []; keywords = [] } ->
+               Set (List.rev items)
+        | { items = [item]; comprehensions; keywords = []; entries = [] } ->
+             SetComprehension {
+               Comprehension.element = item;
+               generators = List.rev comprehensions;
+             }
+        | _ -> failwith "Invalid dictionary or set"
+      in
+      { Node.location = Location.create ~start ~stop; value }
+    }
 
 generator:
   | element = test; generators = comprehension+ {
@@ -1645,10 +1657,15 @@ generator:
   ;
 
 comprehension:
-  | async = ASYNC?; FOR; target = expression_list; IN; iterator = or_test;
+  | ASYNC; FOR; target = expression_list; IN; iterator = or_test;
     conditions = list(condition) {
-      { Comprehension.target; iterator; conditions; async = Option.is_some async }
+      { Comprehension.target; iterator; conditions; async = true }
     }
+  | FOR; target = expression_list; IN; iterator = or_test;
+    conditions = list(condition) {
+      { Comprehension.target; iterator; conditions; async = false }
+    }
+
   ;
 
 condition:
