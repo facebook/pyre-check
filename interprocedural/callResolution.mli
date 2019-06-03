@@ -16,7 +16,7 @@ val get_global_targets
 
 val get_indirect_targets
   :  resolution:Resolution.t ->
-  receiver:Access.general_access ->
+  receiver:Expression.t ->
   method_name:Identifier.t ->
   (Callable.t * Type.Callable.implicit option) list
 

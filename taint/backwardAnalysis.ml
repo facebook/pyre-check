@@ -249,7 +249,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             receiver :: arguments
           in
-          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
+          let receiver_expression = AccessPath.as_expression expression in
+          Interprocedural.CallResolution.get_indirect_targets
+            ~resolution
+            ~receiver:receiver_expression
+            ~method_name
           |> apply_call_targets ~resolution arguments state taint
       | _ ->
           (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called

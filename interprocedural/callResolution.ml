@@ -142,73 +142,13 @@ let resolve_target ~resolution ?receiver_type callee =
   resolve_type callable_type
 
 
-let resolve_target_old ~resolution ?receiver_type function_access =
-  let is_global ~resolution access =
-    let is_class ~resolution access =
-      Reference.from_access access
-      |> (fun reference -> Type.Primitive (Reference.show reference))
-      |> Resolution.class_definition resolution
-      |> Option.is_some
-    in
-    match access with
-    | Access.SimpleAccess (Access.Identifier head :: _ as access)
-      when (not (is_local head))
-           && (not (String.equal head "super"))
-           && not (String.equal head "type") ->
-        Reference.from_access access |> Resolution.global resolution |> Option.is_some
-        && not (is_class ~resolution (Access.prefix access))
-    | _ -> false
-  in
-  let is_super_call = function
-    | Access.SimpleAccess (Access.Identifier name :: Access.Call _ :: _) -> name = "super"
-    | _ -> false
-  in
-  let is_all_names access =
-    let rec is_all_names = function
-      | [] -> true
-      | Access.Identifier name :: rest when not (is_local name) -> is_all_names rest
-      | _ -> false
-    in
-    match access with
-    | Access.SimpleAccess path -> is_all_names path
-    | _ -> false
-  in
-  let rec resolve_type callable_type =
-    match callable_type, receiver_type with
-    | Type.Callable { implicit; kind = Named name; _ }, _
-      when is_global ~resolution function_access ->
-        [Callable.create_function name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, _ when is_super_call function_access ->
-        [Callable.create_method name, implicit]
-    | Type.Callable { implicit = None; kind = Named name; _ }, None
-      when is_all_names function_access ->
-        [Callable.create_function name, None]
-    | Type.Callable { implicit; kind = Named name; _ }, _ when is_all_names function_access ->
-        [Callable.create_method name, implicit]
-    | Type.Callable { implicit; kind = Named name; _ }, Some type_or_class ->
-        compute_indirect_targets ~resolution ~receiver_type:type_or_class name
-        |> List.map ~f:(fun target -> target, implicit)
-    | access_type, _ when Type.is_meta access_type && is_global ~resolution function_access ->
-        let global =
-          match function_access with
-          | Access.SimpleAccess access -> Reference.from_access access
-          | _ -> failwith "is_global should be used before calling this"
-        in
-        let reference, _ = normalize_global ~resolution global in
-        [ ( Callable.create_method reference,
-            Some { Type.Callable.implicit_annotation = access_type; name = "self" } ) ]
-    | Type.Union annotations, _ -> List.concat_map ~f:resolve_type annotations
-    | _ -> []
-  in
-  let node = Node.create_with_default_location (Expression.Access function_access) in
-  resolve_type (Resolution.resolve resolution node)
-
-
 let get_indirect_targets ~resolution ~receiver ~method_name =
-  let receiver_node = Node.create_with_default_location (Access receiver) in
-  let receiver_type = Resolution.resolve resolution receiver_node in
-  let access = Access.combine receiver_node [Access.Identifier method_name] in
-  resolve_target_old ~resolution ~receiver_type access
+  let receiver_type = Resolution.resolve resolution receiver in
+  let callee =
+    Name (Name.Attribute { base = receiver; attribute = method_name; special = false })
+    |> Node.create_with_default_location
+  in
+  resolve_target ~resolution ~receiver_type callee
 
 
 let get_global_targets ~resolution ~global =
