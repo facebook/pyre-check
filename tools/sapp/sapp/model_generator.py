@@ -141,26 +141,13 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
             for (_name, kind, _depth) in entry["final_sinks"]
         }
 
-        # Additional leaf details are stored as SharedTextKind.SOURCE/SINK
-        # in addition to SharedTextKind.*_DETAIL to maintain backward
-        # compatibility with anything that reads existing data and expects the
-        # details (such as the leaf's callable name) to be found in the
-        # SOURCE/SINK object. Once existing references are updated, the
-        # leaf name will be stored as a SharedTextKind.*_DETAIL while
-        # SOURCE/SINK stores only the abstract kind of a leaf.
         source_details = {
-            (
-                self._get_shared_text(SharedTextKind.SOURCE, name),
-                self._get_shared_text(SharedTextKind.SOURCE_DETAIL, name),
-            )
+            self._get_shared_text(SharedTextKind.SOURCE_DETAIL, name)
             for (name, _kind, _depth) in entry["initial_sources"]
             if name
         }
         sink_details = {
-            (
-                self._get_shared_text(SharedTextKind.SINK, name),
-                self._get_shared_text(SharedTextKind.SINK_DETAIL, name),
-            )
+            self._get_shared_text(SharedTextKind.SINK_DETAIL, name)
             for (name, _kind, _depth) in entry["final_sinks"]
             if name
         }
@@ -211,13 +198,11 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
 
         for sink in final_sinks:
             self.graph.add_issue_instance_shared_text_assoc(instance, sink)
-        for (sink, detail) in sink_details:
-            self.graph.add_issue_instance_shared_text_assoc(instance, sink)
+        for detail in sink_details:
             self.graph.add_issue_instance_shared_text_assoc(instance, detail)
         for source in initial_sources:
             self.graph.add_issue_instance_shared_text_assoc(instance, source)
-        for (source, detail) in source_details:
-            self.graph.add_issue_instance_shared_text_assoc(instance, source)
+        for detail in source_details:
             self.graph.add_issue_instance_shared_text_assoc(instance, detail)
 
         if fix_info is not None:
