@@ -545,17 +545,14 @@ let run_start_command
                 { project_name; metadata = saved_state_metadata }))
     | None, None -> (
       match load_state_from, changed_files_path with
-      | Some shared_memory_path, Some changed_files_path ->
+      | Some shared_memory_path, _ ->
           Some
             (Load
                (Configuration.Server.LoadFromFiles
                   { Configuration.Server.shared_memory_path =
                       Path.create_absolute shared_memory_path;
-                    changed_files_path = Path.create_absolute changed_files_path
+                    changed_files_path = changed_files_path >>| Path.create_absolute
                   }))
-      | Some _, None ->
-          Log.error "-changed-files-path must be set when -load-state-from is passed in.";
-          exit 1
       | None, Some _ ->
           Log.error "-load-state-from must be set when -changed-files-path is passed in.";
           exit 1

@@ -82,7 +82,7 @@ end
 module Server : sig
   type load_parameters = {
     shared_memory_path: Path.t;
-    changed_files_path: Path.t
+    changed_files_path: Path.t option
   }
 
   type load =

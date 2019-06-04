@@ -42,8 +42,12 @@ let sample ?(integers = [])
               (Configuration.Server.Load
                 (Configuration.Server.LoadFromFiles
                   { Configuration.Server.shared_memory_path; changed_files_path })) ->
-              [ "shared_memory_path", Path.absolute shared_memory_path;
-                "changed_files_path", Path.absolute changed_files_path ]
+              let changed =
+                match changed_files_path with
+                | Some changed -> ["changed_files_path", Path.absolute changed]
+                | None -> []
+              in
+              ("shared_memory_path", Path.absolute shared_memory_path) :: changed
           | Some
               (Configuration.Server.Load
                 (Configuration.Server.LoadFromProject { project_name; _ })) ->

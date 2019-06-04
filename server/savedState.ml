@@ -110,10 +110,11 @@ let load
         let { Configuration.Server.shared_memory_path; changed_files_path } = parameters in
         let files =
           let to_path serialized = Path.create_absolute ~follow_symbolic_links:false serialized in
-          File.content (File.create changed_files_path)
+          changed_files_path
+          >>| File.create
+          >>= File.content
           >>| String.split_lines
           >>| List.map ~f:to_path
-          |> Option.value ~default:[]
         in
         shared_memory_path, files
     | Some (Load (LoadFromProject { project_name; metadata })) -> (
@@ -136,7 +137,7 @@ let load
         in
         match loaded_state with
         | Some { FetchSavedState.saved_state_path; changed_files } ->
-            saved_state_path, changed_files
+            saved_state_path, Some changed_files
         | None -> raise (IncompatibleState "unable to fetch state") )
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in
@@ -149,9 +150,12 @@ let load
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
   let changed_files =
-    restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
-        Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
-    |> List.map ~f:File.create
+    match changed_paths with
+    | Some changed_paths ->
+        restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
+            Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
+        |> List.map ~f:File.create
+    | None -> compute_locally_changed_files ~scheduler ~configuration
   in
   let errors =
     EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> File.Handle.Table.of_alist_exn
