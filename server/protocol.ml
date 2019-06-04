@@ -228,31 +228,31 @@ end
 
 module Request = struct
   type t =
-    | LanguageServerProtocolRequest of string
     | ClientConnectionRequest of client
     | ClientExitRequest of client
-    | RageRequest of LanguageServer.Types.RequestId.t
-    | DisplayTypeErrors of File.t list
-    | TypeCheckRequest of File.t list
-    | TypeQueryRequest of TypeQuery.request
-    | StopRequest
     | ClientShutdownRequest of LanguageServer.Types.RequestId.t
-    | GetDefinitionRequest of DefinitionRequest.t
-    | HoverRequest of DefinitionRequest.t
-    | OpenDocument of File.t
     | CloseDocument of File.t
-    | SaveDocument of File.t
-    | TypeCoverageRequest of { file: File.t; id: LanguageServer.Types.RequestId.t }
     | CodeActionRequest of
         { id: LanguageServer.Types.RequestId.t;
           uri: LanguageServer.Types.DocumentUri.t;
           diagnostics: LanguageServer.Types.Diagnostic.t list;
           file: File.t
         }
+    | DisplayTypeErrors of File.t list
     | ExecuteCommandRequest of
         { id: LanguageServer.Types.RequestId.t;
           arguments: LanguageServer.Types.CommandArguments.t list
         }
+    | GetDefinitionRequest of DefinitionRequest.t
+    | HoverRequest of DefinitionRequest.t
+    | LanguageServerProtocolRequest of string
+    | OpenDocument of File.t
+    | RageRequest of LanguageServer.Types.RequestId.t
+    | SaveDocument of File.t
+    | StopRequest
+    | TypeCheckRequest of File.t list
+    | TypeCoverageRequest of { file: File.t; id: LanguageServer.Types.RequestId.t }
+    | TypeQueryRequest of TypeQuery.request
   [@@deriving eq, show]
 
   type origin =
