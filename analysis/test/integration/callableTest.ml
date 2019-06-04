@@ -42,7 +42,7 @@ let test_higher_order_callables _ =
 
       reveal_type(foo(callme))
     |}
-    ["Revealed type [-1]: Revealed type for `foo.(...)` is `typing.Callable[[str], str]`."];
+    ["Revealed type [-1]: Revealed type for `foo(callme)` is `typing.Callable[[str], str]`."];
   assert_type_errors
     {|
       T = typing.TypeVar("T")
@@ -56,7 +56,7 @@ let test_higher_order_callables _ =
 
       reveal_type(foo(callme))
     |}
-    ["Revealed type [-1]: Revealed type for `foo.(...)` is `typing.Callable[..., str]`."]
+    ["Revealed type [-1]: Revealed type for `foo(callme)` is `typing.Callable[..., str]`."]
 
 
 let test_union_of_callables _ =

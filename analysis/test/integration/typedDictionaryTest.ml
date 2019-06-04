@@ -425,7 +425,7 @@ let test_check_typed_dictionaries _ =
         movie: Movie
         reveal_type(len(movie))
     |}
-    ["Revealed type [-1]: Revealed type for `len.(...)` is `int`."];
+    ["Revealed type [-1]: Revealed type for `len(movie)` is `int`."];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})

@@ -41,9 +41,9 @@ let test_check_unbounded_variables _ =
         reveal_type(mapping_get("A", "A"))
         reveal_type(mapping_get("A", 7))
     |}
-    [ "Revealed type [-1]: Revealed type for `mapping_get.(...)` is "
+    [ "Revealed type [-1]: Revealed type for `mapping_get(\"A\", \"A\")` is "
       ^ "`typing.Union[typing_extensions.Literal['A'], int]`.";
-      "Revealed type [-1]: Revealed type for `mapping_get.(...)` is `int`." ];
+      "Revealed type [-1]: Revealed type for `mapping_get(\"A\", 7)` is `int`." ];
   assert_type_errors
     {|
       T = typing.TypeVar('T')
@@ -61,9 +61,9 @@ let test_check_unbounded_variables _ =
       reveal_type(Foo[str]())
       Foo["str"]()
     |}
-    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is `typing.Type[Foo[float]]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[float]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[str]`.";
+    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__(float)` is `typing.Type[Foo[float]]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(float)()` is `Foo[float]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(str)()` is `Foo[str]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st anonymous "
       ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`." ];
   assert_type_errors
@@ -105,10 +105,14 @@ let test_check_unbounded_variables _ =
     |}
     [ "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
        implementation.";
-      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[int, str]`.";
-      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[bool, float]`.";
-      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[float, bool]`.";
-      "Revealed type [-1]: Revealed type for `generic.(...)` is `typing.Tuple[str, int]`.";
+      "Revealed type [-1]: Revealed type for `generic(overloaded, [1], [\"1\"])` is \
+       `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `generic(overloaded, [True], [1.000000])` is \
+       `typing.Tuple[bool, float]`.";
+      "Revealed type [-1]: Revealed type for `generic(overloaded, [1.000000], [False])` is \
+       `typing.Tuple[float, bool]`.";
+      "Revealed type [-1]: Revealed type for `generic(overloaded, [\"1\"], [7])` is \
+       `typing.Tuple[str, int]`.";
       "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd anonymous "
       ^ "parameter to call `generic` but got `List[int]`." ];
   assert_type_errors
@@ -278,9 +282,9 @@ let test_check_variable_bindings _ =
       reveal_type(Foo[D]())
       Foo[int]()
     |}
-    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is `typing.Type[Foo[C]]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[C]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[D]`.";
+    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__(C)` is `typing.Type[Foo[C]]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(C)()` is `Foo[C]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(D)()` is `Foo[D]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
       ^ "1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got \
          `typing.Type[int]`." ];
@@ -298,11 +302,11 @@ let test_check_variable_bindings _ =
       reveal_type(Foo[Fish]())
       Foo[int]()
     |}
-    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...)` is "
+    [ "Revealed type [-1]: Revealed type for `Foo.__getitem__(Animal)` is "
       ^ "`typing.Type[Foo[Animal]]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Animal]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Mineral]`.";
-      "Revealed type [-1]: Revealed type for `Foo.__getitem__.(...).(...)` is `Foo[Animal]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(Animal)()` is `Foo[Animal]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(Mineral)()` is `Foo[Mineral]`.";
+      "Revealed type [-1]: Revealed type for `Foo.__getitem__(Fish)()` is `Foo[Animal]`.";
       "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
       ^ "for 1st anonymous parameter to call `typing.GenericMeta.__getitem__` but got "
       ^ "`typing.Type[int]`." ];
@@ -500,7 +504,7 @@ let test_unbound_variables _ =
       def bar() -> int:
         return G().foo()
     |}
-    [ "Incomplete type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `G.(...)` "
+    [ "Incomplete type [37]: Type `G[Variable[T_Explicit <: [int, str]]]` inferred for `G()` "
       ^ "is incomplete, so attribute `foo` cannot be accessed. Separate the expression into an "
       ^ "assignment and give it an explicit annotation." ];
   assert_type_errors
@@ -670,7 +674,7 @@ let test_distinguish _ =
       def f() -> None:
         reveal_type(map(identity, [1, 2, 3]))
     |}
-    ["Revealed type [-1]: Revealed type for `map.(...)` is `typing.Iterator[int]`."];
+    ["Revealed type [-1]: Revealed type for `map(identity, [1, 2, 3])` is `typing.Iterator[int]`."];
   ()
 
 
@@ -732,9 +736,9 @@ let test_callable_parameter_variadics _ =
          reveal_type(f(foo))
          reveal_type(f(bar))
     |}
-    [ "Revealed type [-1]: Revealed type for `f.(...)` is `typing.Callable[[Named(x, int)], "
+    [ "Revealed type [-1]: Revealed type for `f(foo)` is `typing.Callable[[Named(x, int)], "
       ^ "typing.List[int]]`.";
-      "Revealed type [-1]: Revealed type for `f.(...)` is `typing.Callable[[Named(x, int), "
+      "Revealed type [-1]: Revealed type for `f(bar)` is `typing.Callable[[Named(x, int), "
       ^ "Named(y, str)], typing.List[int]]`." ];
   assert_type_errors
     {|
@@ -772,7 +776,7 @@ let test_list_variadics _ =
     def foo(x: int) -> None:
       reveal_type(duple((x, x)))
     |}
-    [ "Revealed type [-1]: Revealed type for `duple.(...)` is `typing.Tuple[typing.Tuple[int, \
+    [ "Revealed type [-1]: Revealed type for `duple((x, x))` is `typing.Tuple[typing.Tuple[int, \
        int], typing.Tuple[int, int]]`." ];
   assert_type_errors
     {|

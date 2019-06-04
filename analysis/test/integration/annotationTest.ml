@@ -350,7 +350,7 @@ let test_check_illegal_annotation_target _ =
         def foo(self) -> None:
           Bar(): int = 1
     |}
-    ["Illegal annotation target [35]: Target `Bar.(...)` cannot be annotated."];
+    ["Illegal annotation target [35]: Target `Bar()` cannot be annotated."];
   assert_type_errors
     {|
       class Bar: ...

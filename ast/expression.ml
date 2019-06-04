@@ -1407,7 +1407,21 @@ let rec show_sanitized { Node.location; value } =
   | Name (Name.Identifier identifier) -> Identifier.sanitized identifier
   | Name (Name.Attribute { base; attribute; _ }) ->
       Format.asprintf "%s.%s" (show_sanitized base) (Identifier.sanitized attribute)
-  | Call { callee; _ } -> Format.asprintf "%s.(...)" (show_sanitized callee)
+  | Call { callee; arguments } ->
+      let arguments =
+        let show_argument { Call.Argument.name; value } =
+          let value = show_sanitized value in
+          match name with
+          | None -> value
+          | Some { Node.value = name; _ } -> Format.sprintf "%s = %s" name value
+        in
+        arguments |> List.map ~f:show_argument |> String.concat ~sep:", "
+      in
+      Format.asprintf "%s(%s)" (show_sanitized callee) arguments
+  | Tuple items ->
+      List.map items ~f:show_sanitized
+      |> String.concat ~sep:", "
+      |> fun tuple_body -> Format.sprintf "(%s)" tuple_body
   | _ -> show { Node.location; value }
 
 

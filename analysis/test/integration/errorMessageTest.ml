@@ -76,7 +76,7 @@ let test_show_error_traces _ =
         b = 2
         reveal_type(a + b)
     |}
-    ["Revealed type [-1]: Revealed type for `a.__add__.(...)` is `int`."];
+    ["Revealed type [-1]: Revealed type for `a.__add__(b)` is `int`."];
   assert_type_errors
     ~show_error_traces:true
     {|

@@ -123,7 +123,7 @@ let test_check_callables _ =
         return ""
       reveal_type(foo(f))
     |}
-    ["Revealed type [-1]: Revealed type for `foo.(...)` is `str`."];
+    ["Revealed type [-1]: Revealed type for `foo(f)` is `str`."];
   (* Lambdas. *)
   assert_type_errors
     {|

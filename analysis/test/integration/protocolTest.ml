@@ -163,7 +163,7 @@ let test_check_protocol _ =
         reveal_type(foo(x))
         return foo(x)
     |}
-    ["Revealed type [-1]: Revealed type for `foo.(...)` is `int`."];
+    ["Revealed type [-1]: Revealed type for `foo(x)` is `int`."];
   assert_type_errors
     {|
       class Alpha:

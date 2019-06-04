@@ -24,14 +24,14 @@ let test_reveal_type _ =
       def foo(x: int, y: int) -> None:
         reveal_type(x + y)
     |}
-    ["Revealed type [-1]: Revealed type for `x.__add__.(...)` is `int`."];
+    ["Revealed type [-1]: Revealed type for `x.__add__(y)` is `int`."];
   assert_type_errors
     {|
       def foo(x: int) -> None:
 
         reveal_type(int_to_str(x))
     |}
-    ["Revealed type [-1]: Revealed type for `int_to_str.(...)` is `str`."];
+    ["Revealed type [-1]: Revealed type for `int_to_str(x)` is `str`."];
   assert_type_errors
     {|
       def foo() -> int:
