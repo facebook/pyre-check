@@ -31,7 +31,9 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
 
 (* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
    to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
-let compute_locally_changed_files ~scheduler ~configuration =
+let compute_locally_changed_files
+    ~scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
+  =
   let stubs, sources = Service.Parser.find_stubs_and_sources configuration in
   let changed_files changed new_paths =
     let changed_file path =
@@ -49,14 +51,42 @@ let compute_locally_changed_files ~scheduler ~configuration =
     in
     changed @ List.filter_map new_paths ~f:changed_file
   in
-  Scheduler.map_reduce
-    scheduler
-    ~configuration
-    ~initial:[]
-    ~map:changed_files
-    ~reduce:( @ )
-    ~inputs:(stubs @ sources)
-    ()
+  let changed_paths =
+    Scheduler.map_reduce
+      scheduler
+      ~configuration
+      ~initial:[]
+      ~map:changed_files
+      ~reduce:( @ )
+      ~inputs:(stubs @ sources)
+      ()
+  in
+  let removed_paths =
+    let new_handles =
+      let handle path =
+        try File.create path |> File.handle ~configuration |> Option.some with
+        | File.NonexistentHandle _ -> None
+      in
+      List.filter_map (stubs @ sources) ~f:handle |> File.Handle.Set.Tree.of_list
+    in
+    let old_handles = Ast.SharedMemory.HandleKeys.get () in
+    (* If a handle was present in the saved state creation (i.e. in old_handles) but is missing
+       from new_handles, it was either shadowed by a stub file or removed. In either case, it does
+       not exist in the Pyre server's eyes. *)
+    let removed_handles =
+      File.Handle.Set.Tree.diff old_handles new_handles |> File.Handle.Set.Tree.to_list
+    in
+    (* This is a bit of a hack: In general, it doesn't make sense to give a path to a removed
+       handle, as it might've originated anywhere in the search path. However, the server's
+       equipped to handle paths which no longer exist, so by assuming that the removed path lived
+       in the local root, we're able to express the idea that the handle needs to be removed and
+       its dependencies reanalyzed. *)
+    let to_file handle =
+      Path.create_relative ~root:local_root ~relative:(File.Handle.show handle) |> File.create
+    in
+    List.map removed_handles ~f:to_file
+  in
+  changed_paths @ removed_paths
 
 
 let load

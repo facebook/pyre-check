@@ -70,13 +70,16 @@ type locally_changed_file = {
 
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
+    (* Set up the HandleKeys as the parser would. *)
+    Ast.SharedMemory.HandleKeys.clear ();
     let root = Path.create_absolute (bracket_tmpdir context) in
     let add_file { relative; old_content; new_content } =
       (* Register old content in shared memory. *)
       ( match old_content with
       | Some content ->
-          Test.parse ~handle:relative content
-          |> Ast.SharedMemory.Sources.add (File.Handle.create relative)
+          let handle = File.Handle.create relative in
+          Test.parse ~handle:relative content |> Ast.SharedMemory.Sources.add handle;
+          Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton handle)
       | None -> () );
       (* Write new content to the file system if necessary. *)
       match new_content with
@@ -109,21 +112,37 @@ let test_compute_locally_changed_files context =
   assert_changed_files
     ~files:[{ relative = "a.py"; old_content = Some "a = 2"; new_content = Some "a = 2" }]
     ~expected:[];
-  (* We ignore changes to source files if stubs exist. *)
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = Some "'I used to exist'"; new_content = None }]
+    ~expected:["a.py"];
+  (* If a stub shadows a `.py` file that existed in the initial saved state generation, the server
+     will be passed both files (as `a.py` used to exist, but was now removed in the eyes of the
+     algorithm). *)
   assert_changed_files
     ~files:
       [ { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
         { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
-    ~expected:[];
+    ~expected:["a.py"];
+  assert_changed_files
+    ~files:
+      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" } ]
+    ~expected:["a.py"; "a.pyi"];
+  assert_changed_files
+    ~files:
+      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = None };
+        { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" } ]
+    ~expected:["a.py"; "a.pyi"];
+  assert_changed_files
+    ~files:
+      [ { relative = "a.py"; old_content = None; new_content = Some "a = 1" };
+        { relative = "a.pyi"; old_content = Some "a: int"; new_content = None } ]
+    ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
       [ { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" };
         { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
-    ~expected:["b.py"];
-  (* We currently do not handle files getting removed from the filesystem. *)
-  assert_changed_files
-    ~files:[{ relative = "a.py"; old_content = Some "'I used to exist'"; new_content = None }]
-    ~expected:[]
+    ~expected:["b.py"]
 
 
 let () =
