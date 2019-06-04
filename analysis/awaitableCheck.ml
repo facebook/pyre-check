@@ -82,10 +82,10 @@ module State (Context : Context) = struct
     let { unawaited } =
       List.fold
         conditions
-        ~f:(fun state expression -> { unawaited = forward_expression ~state ~expression })
+        ~f:(fun state expression -> forward_expression ~state ~expression)
         ~init:{ unawaited }
     in
-    { unawaited = forward_expression ~state:{ unawaited } ~expression:iterator }
+    forward_expression ~state:{ unawaited } ~expression:iterator
 
 
   and forward_expression ~state:{ unawaited }
@@ -93,45 +93,45 @@ module State (Context : Context) = struct
     let open Expression in
     match value with
     | Await { Node.value = Name name; _ } when Expression.is_simple_name name ->
-        Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
-    | Await _ -> unawaited
+        { unawaited = Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited }
+    | Await _ -> { unawaited }
     | BooleanOperator { BooleanOperator.left; right; _ } ->
-        let unawaited = forward_expression ~state:{ unawaited } ~expression:left in
-        forward_expression ~state:{ unawaited } ~expression:right
+        let state = forward_expression ~state:{ unawaited } ~expression:left in
+        forward_expression ~state ~expression:right
     | Call { Call.callee; arguments } ->
-        let unawaited = forward_expression ~state:{ unawaited } ~expression:callee in
-        let forward_argument unawaited { Call.Argument.value; _ } =
-          forward_expression ~state:{ unawaited } ~expression:value
+        let state = forward_expression ~state:{ unawaited } ~expression:callee in
+        let forward_argument state { Call.Argument.value; _ } =
+          forward_expression ~state ~expression:value
         in
-        List.fold arguments ~init:unawaited ~f:forward_argument
+        List.fold arguments ~init:state ~f:forward_argument
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let unawaited = forward_expression ~state:{ unawaited } ~expression:left in
-        forward_expression ~state:{ unawaited } ~expression:right
+        let state = forward_expression ~state:{ unawaited } ~expression:left in
+        forward_expression ~state ~expression:right
     | Dictionary { Dictionary.entries; keywords } ->
-        let forward_entry unawaited { Dictionary.key; value } =
-          let unawaited = forward_expression ~state:{ unawaited } ~expression:key in
-          forward_expression ~state:{ unawaited } ~expression:value
+        let forward_entry state { Dictionary.key; value } =
+          let state = forward_expression ~state ~expression:key in
+          forward_expression ~state ~expression:value
         in
-        let unawaited = List.fold entries ~init:unawaited ~f:forward_entry in
-        List.fold keywords ~init:unawaited ~f:(fun unawaited expression ->
-            forward_expression ~state:{ unawaited } ~expression)
+        let state = List.fold entries ~init:{ unawaited } ~f:forward_entry in
+        List.fold keywords ~init:state ~f:(fun state expression ->
+            forward_expression ~state ~expression)
     | Lambda { Lambda.body; _ } -> forward_expression ~state:{ unawaited } ~expression:body
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         forward_expression ~state:{ unawaited } ~expression
     | Ternary { Ternary.target; test; alternative } ->
-        let unawaited = forward_expression ~state:{ unawaited } ~expression:target in
-        let unawaited = forward_expression ~state:{ unawaited } ~expression:test in
-        forward_expression ~state:{ unawaited } ~expression:alternative
+        let state = forward_expression ~state:{ unawaited } ~expression:target in
+        let state = forward_expression ~state ~expression:test in
+        forward_expression ~state ~expression:alternative
     | List items
     | Set items
     | Tuple items ->
-        List.fold items ~init:unawaited ~f:(fun unawaited expression ->
-            forward_expression ~state:{ unawaited } ~expression)
+        List.fold items ~init:{ unawaited } ~f:(fun state expression ->
+            forward_expression ~state ~expression)
     | UnaryOperator { UnaryOperator.operand; _ } ->
         forward_expression ~state:{ unawaited } ~expression:operand
     | Yield (Some expression) -> forward_expression ~state:{ unawaited } ~expression
-    | Yield None -> unawaited
+    | Yield None -> { unawaited }
     | Generator { Expression.Comprehension.element; generators }
     | ListComprehension { Expression.Comprehension.element; generators }
     | SetComprehension { Expression.Comprehension.element; generators } ->
@@ -140,8 +140,8 @@ module State (Context : Context) = struct
     | DictionaryComprehension
         { Expression.Comprehension.element = { Expression.Dictionary.key; value }; generators } ->
         let state = List.fold generators ~init:{ unawaited } ~f:forward_generator in
-        let unawaited = forward_expression ~state ~expression:key in
-        forward_expression ~state:{ unawaited } ~expression:value
+        let state = forward_expression ~state ~expression:key in
+        forward_expression ~state ~expression:value
     (* Base cases. *)
     | Access _
     | Complex _
@@ -152,7 +152,7 @@ module State (Context : Context) = struct
     | True
     | Name _
     | Ellipsis ->
-        unawaited
+        { unawaited }
 
 
   let forward ?key
@@ -162,65 +162,64 @@ module State (Context : Context) = struct
     let resolution =
       TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key
     in
-    let unawaited =
-      let is_awaitable value =
-        try
-          let annotation = Resolution.resolve resolution value in
-          Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
-        with
-        | TypeOrder.Untracked _ -> false
-      in
-      let forward_return ~unawaited ~expression =
-        match Node.value expression with
-        | Expression.Name name when Expression.is_simple_name name ->
-            Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
-        | _ -> unawaited
-      in
-      match value with
-      | Assert { Assert.test; _ } -> forward_expression ~state ~expression:test
-      | Assign { target = { Node.value = Name name; location }; value; _ }
-        when Expression.is_simple_name name && is_awaitable value ->
-          Map.set unawaited ~key:(Reference.from_name_exn name) ~data:(Unawaited location)
-      | Assign { value = { Node.value = Await { Node.value = Name name; _ }; _ }; _ }
-        when Expression.is_simple_name name ->
-          Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited
-      | Delete expression
-      | Expression expression ->
-          forward_expression ~state ~expression
-      | Raise None -> unawaited
-      | Raise (Some expression) -> forward_expression ~state ~expression
-      | Return { expression = Some expression; _ } ->
-          let unawaited = forward_expression ~state ~expression in
-          forward_return ~unawaited ~expression
-      | Return { expression = None; _ } -> unawaited
-      | Yield { Node.value = Expression.Yield (Some expression); _ } ->
-          let unawaited = forward_expression ~state ~expression in
-          forward_return ~unawaited ~expression
-      | Yield _ -> unawaited
-      | YieldFrom { Node.value = Expression.Yield (Some expression); _ } ->
-          forward_expression ~state ~expression
-      | YieldFrom _ -> unawaited
-      (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
-      | If _
-      | Class _
-      | Define _
-      | For _
-      | While _
-      | With _
-      | Try _ ->
-          unawaited
-      (* Trivial cases. *)
-      | Break
-      | Continue
-      | Global _
-      | Import _
-      | Nonlocal _
-      | Pass ->
-          unawaited
-      (* Need to implement. *)
-      | Assign _ -> unawaited
+    let is_awaitable value =
+      try
+        let annotation = Resolution.resolve resolution value in
+        Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
+      with
+      | TypeOrder.Untracked _ -> false
     in
-    { state with unawaited }
+    let forward_return ~state:{ unawaited } ~expression =
+      match Node.value expression with
+      | Expression.Name name when Expression.is_simple_name name ->
+          { unawaited = Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited }
+      | _ -> { unawaited }
+    in
+    match value with
+    | Assert { Assert.test; _ } -> forward_expression ~state ~expression:test
+    | Assign { target = { Node.value = Name name; location }; value; _ }
+      when Expression.is_simple_name name && is_awaitable value ->
+        { unawaited =
+            Map.set unawaited ~key:(Reference.from_name_exn name) ~data:(Unawaited location)
+        }
+    | Assign { value = { Node.value = Await { Node.value = Name name; _ }; _ }; _ }
+      when Expression.is_simple_name name ->
+        { unawaited = Map.set unawaited ~key:(Reference.from_name_exn name) ~data:Awaited }
+    | Delete expression
+    | Expression expression ->
+        forward_expression ~state ~expression
+    | Raise None -> { unawaited }
+    | Raise (Some expression) -> forward_expression ~state ~expression
+    | Return { expression = Some expression; _ } ->
+        let state = forward_expression ~state ~expression in
+        forward_return ~state ~expression
+    | Return { expression = None; _ } -> { unawaited }
+    | Yield { Node.value = Expression.Yield (Some expression); _ } ->
+        let state = forward_expression ~state ~expression in
+        forward_return ~state ~expression
+    | Yield _ -> { unawaited }
+    | YieldFrom { Node.value = Expression.Yield (Some expression); _ } ->
+        forward_expression ~state ~expression
+    | YieldFrom _ -> { unawaited }
+    (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
+    | If _
+    | Class _
+    | Define _
+    | For _
+    | While _
+    | With _
+    | Try _ ->
+        { unawaited }
+    (* Trivial cases. *)
+    | Break
+    | Continue
+    | Global _
+    | Import _
+    | Nonlocal _
+    | Pass ->
+        { unawaited }
+    (* Need to implement. *)
+    | Assign _ -> { unawaited }
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"
