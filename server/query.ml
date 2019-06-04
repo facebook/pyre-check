@@ -109,6 +109,9 @@ let parse_query
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.TypeQueryRequest (Attributes (reference name))
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
+      | "coverage_in_file", [path] ->
+          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
+          Request.TypeQueryRequest (CoverageInFile file)
       | "decode_ocaml_values", values ->
           let parse_values_to_decode = function
             | { Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ }
@@ -202,9 +205,6 @@ let parse_query
       | "types_in_file", [path] ->
           let file = Path.create_relative ~root ~relative:(string path) |> File.create in
           Request.TypeQueryRequest (TypesInFile file)
-      | "coverage_in_file", [path] ->
-          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
-          Request.TypeQueryRequest (CoverageInFile file)
       | "type_check", arguments ->
           let files =
             arguments
