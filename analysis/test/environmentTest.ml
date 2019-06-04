@@ -373,8 +373,8 @@ let test_register_aliases _ =
   assert_resolved
     [ parse
         {|
-          Tparams = typing_extensions.CallableParameterTypeVariable('Tparams')
-          Ts = typing_extensions.ListVariadic('Ts')
+          Tparams = pyre_extensions.ParameterSpecification('Tparams')
+          Ts = pyre_extensions.ListVariadic('Ts')
       |}
     ]
     [ ( "Tparams",

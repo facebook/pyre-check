@@ -722,7 +722,7 @@ let test_callable_parameter_variadics _ =
   assert_type_errors
     {|
       from typing import Callable
-      V = typing_extensions.CallableParameterTypeVariable("V")
+      V = pyre_extensions.ParameterSpecification("V")
       def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]: ...
       def foo(x: int) -> int:
         return 7
@@ -738,7 +738,7 @@ let test_callable_parameter_variadics _ =
       ^ "Named(y, str)], typing.List[int]]`." ];
   assert_type_errors
     {|
-      V = typing_extensions.CallableParameterTypeVariable("V")
+      V = pyre_extensions.ParameterSpecification("V")
       class Propagating(typing.List[typing.Callable[V, int]]):
          def foo(self) -> int: ...
     |}
@@ -748,7 +748,7 @@ let test_callable_parameter_variadics _ =
   assert_type_errors
     {|
       from typing import Callable
-      V = typing_extensions.CallableParameterTypeVariable("V")
+      V = pyre_extensions.ParameterSpecification("V")
       def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
         def decorated( *args: object, **kwargs: object) -> typing.List[int]:
           return [x( *args, **kwargs)]
@@ -766,7 +766,7 @@ let test_list_variadics _ =
   assert_type_errors
     {|
     from typing import Tuple
-    Ts = typing_extensions.ListVariadic("Ts")
+    Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Tuple[Ts]) -> Tuple[Tuple[Ts], Tuple[Ts]]:
       return x, x
     def foo(x: int) -> None:
@@ -777,7 +777,7 @@ let test_list_variadics _ =
   assert_type_errors
     {|
     from typing import Tuple, Optional
-    Ts = typing_extensions.ListVariadic("Ts")
+    Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
     def foo() -> Tuple[int, str, bool]:
       x = duple()
@@ -790,7 +790,7 @@ let test_list_variadics _ =
   assert_type_errors
     {|
     from typing import Tuple, Optional
-    Ts = typing_extensions.ListVariadic("Ts")
+    Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
     def foo() -> Tuple[int, str, bool]:
       x: Tuple[int, str, bool] = duple()
@@ -803,7 +803,7 @@ let test_list_variadics _ =
   assert_type_errors
     {|
     from typing import Tuple, Optional
-    Ts = typing_extensions.ListVariadic("Ts")
+    Ts = pyre_extensions.ListVariadic("Ts")
     def strip_first(x: Tuple[object, Ts]) -> Tuple[Ts]: ...
     def foo() -> None:
       x = strip_first((1,2,3))

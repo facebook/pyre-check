@@ -1523,14 +1523,13 @@ let test_parse_type_variable_declarations _ =
     assert_equal None (Type.Variable.parse_declaration (parse_single_expression expression))
   in
   assert_parses_declaration
-    "typing_extensions.CallableParameterTypeVariable('Tparams')"
+    "pyre_extensions.ParameterSpecification('Tparams')"
     (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Tparams"));
-  assert_declaration_does_not_parse
-    "typing_extensions.CallableParameterTypeVariable('Tparams', int, str)";
+  assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
   assert_parses_declaration
-    "typing_extensions.ListVariadic('Ts')"
+    "pyre_extensions.ListVariadic('Ts')"
     (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts"));
-  assert_declaration_does_not_parse "typing_extensions.ListVariadic('Ts', int, str)";
+  assert_declaration_does_not_parse "pyre_extensions.ListVariadic('Ts', int, str)";
   ()
 
 

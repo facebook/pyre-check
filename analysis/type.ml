@@ -2432,8 +2432,8 @@ end = struct
                     { Node.value =
                         Name
                           (Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
-                              attribute = "CallableParameterTypeVariable";
+                            { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                              attribute = "ParameterSpecification";
                               special = false
                             })
                     ; _
@@ -2514,7 +2514,7 @@ end = struct
                     { Node.value =
                         Name
                           (Name.Attribute
-                            { base = { Node.value = Name (Name.Identifier "typing_extensions"); _ };
+                            { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                               attribute = "ListVariadic";
                               special = false
                             })

@@ -2796,9 +2796,9 @@ let test_solve_less_or_equal _ =
       T_C_Q = typing.TypeVar('T_C_Q', C, Q)
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
-      V = typing_extensions.CallableParameterTypeVariable("V")
-      Ts = typing_extensions.ListVariadic("Ts")
-      T2s = typing_extensions.ListVariadic("T2s")
+      V = pyre_extensions.ParameterSpecification("V")
+      Ts = pyre_extensions.ListVariadic("Ts")
+      T2s = pyre_extensions.ListVariadic("T2s")
 
       T = typing.TypeVar('T')
       T1 = typing.TypeVar('T1')
