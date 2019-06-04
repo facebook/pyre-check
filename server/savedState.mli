@@ -14,6 +14,11 @@ val restore_symbolic_links
   get_old_link_path:(Path.t -> Path.t option) ->
   Path.t list
 
+val compute_locally_changed_files
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  File.t list
+
 val load
   :  server_configuration:Configuration.Server.t ->
   lock:Mutex.t ->

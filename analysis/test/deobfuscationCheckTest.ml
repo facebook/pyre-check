@@ -21,7 +21,10 @@ let assert_deobfuscation source expected =
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"
   in
-  assert_equal ~cmp:Source.equal ~printer:Source.show (parse ~qualifier expected) actual
+  let source_equal left right =
+    Source.equal { left with Source.hash = -1 } { right with Source.hash = -1 }
+  in
+  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~qualifier expected) actual
 
 
 let test_forward _ =

@@ -61,4 +61,73 @@ let test_restore_symbolic_links context =
     ~expected:[Path.create_relative ~root:local_root ~relative:"unlinked.py"]
 
 
-let () = "saved_state" >::: ["restore_symbolic_links" >:: test_restore_symbolic_links] |> Test.run
+type locally_changed_file = {
+  relative: string;
+  old_content: string option;
+  (* Won't be written if content is None. *)
+  new_content: string option
+}
+
+let test_compute_locally_changed_files context =
+  let assert_changed_files ~files ~expected =
+    let root = Path.create_absolute (bracket_tmpdir context) in
+    let add_file { relative; old_content; new_content } =
+      (* Register old content in shared memory. *)
+      ( match old_content with
+      | Some content ->
+          Test.parse ~handle:relative content
+          |> Ast.SharedMemory.Sources.add (File.Handle.create relative)
+      | None -> () );
+      (* Write new content to the file system if necessary. *)
+      match new_content with
+      | Some content -> File.write (File.create ~content (Path.create_relative ~root ~relative))
+      | None -> ()
+    in
+    List.iter files ~f:add_file;
+    let actual =
+      Server.SavedState.compute_locally_changed_files
+        ~scheduler:(Scheduler.mock ())
+        ~configuration:(Configuration.Analysis.create ~local_root:root ())
+      |> List.map ~f:File.path
+      |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root ~path)
+    in
+    (* Ensure sources are cleaned up afterwards. *)
+    List.map files ~f:(fun { relative; _ } -> File.Handle.create relative)
+    |> fun handles ->
+    Ast.SharedMemory.Sources.remove ~handles;
+    assert_equal
+      ~printer:(List.to_string ~f:ident)
+      (List.sort ~compare:String.compare expected)
+      (List.sort ~compare:String.compare actual)
+  in
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = Some "a = 1"; new_content = Some "a = 2" }]
+    ~expected:["a.py"];
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = None; new_content = Some "a = 2" }]
+    ~expected:["a.py"];
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = Some "a = 2"; new_content = Some "a = 2" }]
+    ~expected:[];
+  (* We ignore changes to source files if stubs exist. *)
+  assert_changed_files
+    ~files:
+      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
+    ~expected:[];
+  assert_changed_files
+    ~files:
+      [ { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" };
+        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
+    ~expected:["b.py"];
+  (* We currently do not handle files getting removed from the filesystem. *)
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = Some "'I used to exist'"; new_content = None }]
+    ~expected:[]
+
+
+let () =
+  "saved_state"
+  >::: [ "restore_symbolic_links" >:: test_restore_symbolic_links;
+         "compute_locally_changed_files" >:: test_compute_locally_changed_files ]
+  |> Test.run

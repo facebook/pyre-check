@@ -16,6 +16,8 @@ val content : t -> string option
 
 val lines : t -> string list option
 
+val hash : t -> int option
+
 val write : t -> unit
 
 val append : lines:string list -> Path.t -> unit

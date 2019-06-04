@@ -1973,8 +1973,11 @@ let test_try_preprocess _ =
     let printer source =
       source >>| Format.asprintf "%a" Source.pp |> Option.value ~default:"(none)"
     in
+    let source_equal left right =
+      Source.equal { left with Source.hash = -1 } { right with Source.hash = -1 }
+    in
     assert_equal
-      ~cmp:(Option.equal Source.equal)
+      ~cmp:(Option.equal source_equal)
       ~printer
       expected
       (Preprocessing.try_preprocess parsed)

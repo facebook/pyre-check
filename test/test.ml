@@ -120,11 +120,13 @@ let parse_untrimmed
           ~number_of_lines:(-1)
           ()
       in
+      let hash = [%hash: string list] (String.split source ~on:'\n') in
       Source.create
         ~docstring
         ~metadata
         ~handle
         ~qualifier
+        ~hash
         (Generator.parse (Lexer.read state) buffer)
     in
     let convert = if convert then Preprocessing.convert else Fn.id in
@@ -281,11 +283,15 @@ let map_printer ~key_pp ~data_pp map =
   Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
-let assert_source_equal =
+let assert_source_equal left right =
+  let left = { left with Source.hash = -1 } in
+  let right = { right with Source.hash = -1 } in
   assert_equal
     ~cmp:Source.equal
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
     ~pp_diff:(diff ~print:Source.pp)
+    left
+    right
 
 
 let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal

@@ -29,6 +29,36 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
   new_paths @ removed_paths
 
 
+(* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
+   to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
+let compute_locally_changed_files ~scheduler ~configuration =
+  let stubs, sources = Service.Parser.find_stubs_and_sources configuration in
+  let changed_files changed new_paths =
+    let changed_file path =
+      try
+        let file = File.create path in
+        let handle = File.handle ~configuration file in
+        let old_hash = Ast.SharedMemory.Sources.get handle >>| Ast.Source.hash in
+        let current_hash = File.hash file in
+        if Option.equal Int.equal old_hash current_hash then
+          None
+        else
+          Some file
+      with
+      | File.NonexistentHandle _ -> None
+    in
+    changed @ List.filter_map new_paths ~f:changed_file
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~configuration
+    ~initial:[]
+    ~map:changed_files
+    ~reduce:( @ )
+    ~inputs:(stubs @ sources)
+    ()
+
+
 let load
     ~server_configuration:{ Configuration.Server.configuration =
                               { Configuration.Analysis.expected_version;

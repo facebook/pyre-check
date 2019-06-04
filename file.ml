@@ -26,6 +26,8 @@ let content { path; content } =
 
 let lines file = content file >>| String.split ~on:'\n'
 
+let hash file = lines file >>| fun lines -> [%hash: string list] lines
+
 let existing_directories = String.Table.create ()
 
 let write { path; content } =
