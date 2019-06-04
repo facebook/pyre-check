@@ -7,7 +7,7 @@ open Pyre
 
 type fetched_saved_state = {
   saved_state_path: Path.t;
-  changed_files: Path.t list
+  changed_files: Path.t list option
 }
 
 let saved_state_query ~watchman_root:_ ~project_name:_ = `Assoc []

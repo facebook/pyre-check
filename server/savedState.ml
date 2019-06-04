@@ -140,7 +140,9 @@ let load
         in
         match loaded_state with
         | Some { FetchSavedState.saved_state_path; changed_files } ->
-            saved_state_path, Some changed_files
+            (* Heuristic: If saved states with metadata are enabled, we need to deal with
+               non-checked in generated code, so ignore watchman's response. *)
+            saved_state_path, changed_files
         | None -> raise (IncompatibleState "unable to fetch state") )
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in

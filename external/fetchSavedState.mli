@@ -7,7 +7,7 @@ open Pyre
 
 type fetched_saved_state = {
   saved_state_path: Path.t;
-  changed_files: Path.t list
+  changed_files: Path.t list option
 }
 
 (* Exposed for testing. *)
