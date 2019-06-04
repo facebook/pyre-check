@@ -34,6 +34,8 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
 let compute_locally_changed_files
     ~scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
   =
+  Log.info "Computing files that changed since the saved state was created.";
+  let timer = Timer.start () in
   let stubs, sources = Service.Parser.find_stubs_and_sources configuration in
   let changed_files changed new_paths =
     let changed_file path =
@@ -86,6 +88,7 @@ let compute_locally_changed_files
     in
     List.map removed_handles ~f:to_file
   in
+  Statistics.performance ~name:"computed files to reanalyze" ~timer ();
   changed_paths @ removed_paths
 
 
