@@ -1824,7 +1824,7 @@ module State = struct
                   let { state; resolved } = forward_expression ~state ~expression in
                   let new_annotations =
                     match resolved with
-                    | Type.Tuple (Type.Bounded annotations) ->
+                    | Type.Tuple (Type.Bounded (ConcreteList annotations)) ->
                         List.map annotations ~f:(fun annotation ->
                             annotation, Node.location expression)
                     | Type.Tuple (Type.Unbounded annotation)
@@ -2563,7 +2563,8 @@ module State = struct
           let is_nonuniform_sequence ~minimum_length annotation =
             (* TODO(32692300): this should support tuple subclasses as well. *)
             match annotation with
-            | Type.Tuple (Type.Bounded parameters) when minimum_length <= List.length parameters ->
+            | Type.Tuple (Type.Bounded (Type.ConcreteList parameters))
+              when minimum_length <= List.length parameters ->
                 true
             | annotation
               when is_named_tuple annotation
@@ -2573,7 +2574,7 @@ module State = struct
           in
           let nonuniform_sequence_parameters annotation =
             match annotation with
-            | Type.Tuple (Type.Bounded parameters) -> parameters
+            | Type.Tuple (Type.Bounded (Type.ConcreteList parameters)) -> parameters
             | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
             | _ -> []
           in
@@ -3112,7 +3113,7 @@ module State = struct
               in
               let resolved =
                 match resolved with
-                | Type.Tuple (Type.Bounded annotations)
+                | Type.Tuple (Type.Bounded (ConcreteList annotations))
                   when List.length annotations = List.length elements ->
                     annotations
                 | _ -> List.map elements ~f:(fun _ -> Type.Top)
@@ -3143,7 +3144,7 @@ module State = struct
           | Tuple elements ->
               let kind =
                 match guide with
-                | Type.Tuple (Type.Bounded parameters) ->
+                | Type.Tuple (Type.Bounded (ConcreteList parameters)) ->
                     Error.Unpack
                       { expected_count = List.length elements;
                         unpack_problem = CountMismatch (List.length parameters)
@@ -3185,7 +3186,8 @@ module State = struct
               (* Try to resolve meta-types given as expressions. *)
               match Resolution.resolve resolution annotation with
               | annotation when Type.is_meta annotation -> Type.single_parameter annotation
-              | Type.Tuple (Bounded elements) when List.for_all ~f:Type.is_meta elements ->
+              | Type.Tuple (Bounded (ConcreteList elements))
+                when List.for_all ~f:Type.is_meta elements ->
                   List.map ~f:Type.single_parameter elements |> Type.union
               | Type.Tuple (Unbounded element) when Type.is_meta element ->
                   Type.single_parameter element
@@ -3809,7 +3811,7 @@ module State = struct
                     |> Option.value ~default:resolution
                 | Tuple arguments -> (
                   match parameter_annotation with
-                  | Type.Tuple (Type.Bounded parameter_annotations)
+                  | Type.Tuple (Type.Bounded (ConcreteList parameter_annotations))
                     when List.length arguments = List.length parameter_annotations ->
                       List.fold2_exn
                         ~init:resolution
@@ -3860,7 +3862,7 @@ module State = struct
             | Tuple values ->
                 let parameters =
                   match target_annotation with
-                  | Type.Tuple (Type.Bounded parameters) -> parameters
+                  | Type.Tuple (Type.Bounded (ConcreteList parameters)) -> parameters
                   | Type.Tuple (Type.Unbounded parameter) ->
                       List.map values ~f:(fun _ -> parameter)
                   | _ -> []

@@ -762,6 +762,62 @@ let test_callable_parameter_variadics _ =
   ()
 
 
+let test_list_variadics _ =
+  assert_type_errors
+    {|
+    from typing import Tuple
+    Ts = typing_extensions.ListVariadic("Ts")
+    def duple(x: Tuple[Ts]) -> Tuple[Tuple[Ts], Tuple[Ts]]:
+      return x, x
+    def foo(x: int) -> None:
+      reveal_type(duple((x, x)))
+    |}
+    [ "Revealed type [-1]: Revealed type for `duple.(...)` is `typing.Tuple[typing.Tuple[int, \
+       int], typing.Tuple[int, int]]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional
+    Ts = typing_extensions.ListVariadic("Ts")
+    def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
+    def foo() -> Tuple[int, str, bool]:
+      x = duple()
+      reveal_type(x)
+      return x
+    |}
+    [ "Incomplete type [37]: Type `typing.Tuple[ListVariadic[Ts]]` inferred for `x` is \
+       incomplete, add an explicit annotation.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[...]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional
+    Ts = typing_extensions.ListVariadic("Ts")
+    def duple(x: Optional[Tuple[Ts]] = None) -> Tuple[Ts]: ...
+    def foo() -> Tuple[int, str, bool]:
+      x: Tuple[int, str, bool] = duple()
+      reveal_type(x)
+      return x
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, str, bool]`."];
+  (* Concatenation isn't implemented yet, and I'm not even sure this is going to be the final
+   * syntax for it *)
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional
+    Ts = typing_extensions.ListVariadic("Ts")
+    def strip_first(x: Tuple[object, Ts]) -> Tuple[Ts]: ...
+    def foo() -> None:
+      x = strip_first((1,2,3))
+      reveal_type(x)
+    |}
+    [ "Undefined type [11]: Type `Ts` is not defined.";
+      "Invalid type variable [34]: The type variable `Ts` isn't present in the function's \
+       parameters.";
+      "Incomplete type [37]: Type `typing.Tuple[ListVariadic[Ts]]` inferred for `x` is \
+       incomplete, add an explicit annotation.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[...]`." ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [ "check_unbounded_variables" >:: test_check_unbounded_variables;
@@ -770,5 +826,6 @@ let () =
          "distinguish" >:: test_distinguish;
          "integer_variables" >:: test_integer_variables;
          "nested_variable_error" >:: test_nested_variable_error;
-         "callable_parameter_variadics" >:: test_callable_parameter_variadics ]
+         "callable_parameter_variadics" >:: test_callable_parameter_variadics;
+         "list_variadics" >:: test_list_variadics ]
   |> Test.run

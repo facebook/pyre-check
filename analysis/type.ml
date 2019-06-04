@@ -188,8 +188,14 @@ type literal =
   | String of string
 [@@deriving compare, eq, sexp, show, hash]
 
-type tuple =
-  | Bounded of t list
+type ordered_types =
+  | ConcreteList of t list
+  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
+  | AnyList
+[@@deriving compare, eq, sexp, show, hash]
+
+and tuple =
+  | Bounded of ordered_types
   | Unbounded of t
 
 and typed_dictionary_field = {
@@ -216,12 +222,6 @@ let _ = show (* shadowed below *)
 
 type type_t = t [@@deriving compare, eq, sexp, show, hash]
 
-type ordered_types =
-  | ConcreteList of t list
-  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
-  | AnyList
-[@@deriving compare, eq, sexp, show, hash]
-
 let type_compare = compare
 
 let type_sexp_of_t = sexp_of_t
@@ -237,6 +237,18 @@ module Map = Map.Make (struct
 
   let t_of_sexp = t_of_sexp
 end)
+
+let pp_ordered_types_concise format variable ~pp_type =
+  match variable with
+  | ConcreteList types ->
+      Format.fprintf
+        format
+        "%a"
+        (Format.pp_print_list ~pp_sep:(fun format () -> Format.fprintf format ", ") pp_type)
+        types
+  | ListVariadic { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
+  | AnyList -> Format.fprintf format "..."
+
 
 let default_to_bottom map keys =
   let to_bottom solution key =
@@ -504,7 +516,8 @@ let rec pp format annotation =
   | Tuple tuple ->
       let parameters =
         match tuple with
-        | Bounded parameters -> List.map parameters ~f:show |> String.concat ~sep:", "
+        | Bounded parameters ->
+            Format.asprintf "%a" (pp_ordered_types_concise ~pp_type:pp) parameters
         | Unbounded parameter -> Format.asprintf "%a, ..." pp parameter
       in
       Format.fprintf format "typing.Tuple[%s]" parameters
@@ -591,7 +604,8 @@ let rec pp_concise format annotation =
         Format.fprintf format "%s[%a]" name pp_comma_separated parameters
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
   | Top -> Format.fprintf format "unknown"
-  | Tuple (Bounded parameters) -> Format.fprintf format "Tuple[%a]" pp_comma_separated parameters
+  | Tuple (Bounded parameters) ->
+      Format.fprintf format "Tuple[%a]" (pp_ordered_types_concise ~pp_type:pp_concise) parameters
   | Tuple (Unbounded parameter) -> Format.fprintf format "Tuple[%a, ...]" pp_concise parameter
   | TypedDictionary { name = "$anonymous"; fields; _ } ->
       let fields =
@@ -705,11 +719,7 @@ let string = Primitive "str"
 
 let literal_string literal = Literal (String literal)
 
-let tuple parameters : t =
-  match parameters with
-  | [] -> Tuple (Bounded [])
-  | _ -> Tuple (Bounded parameters)
-
+let tuple parameters = Tuple (Bounded (ConcreteList parameters))
 
 let undeclared = Primitive "typing.Undeclared"
 
@@ -937,12 +947,14 @@ let rec expression ?(convert = false) annotation =
         get_item_call (reverse_substitute name) (List.map ~f:(expression ~convert) parameters)
     | Primitive name -> create_name name
     | Top -> create_name "$unknown"
-    | Tuple (Bounded []) ->
+    | Tuple (Bounded (ConcreteList [])) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
     | Tuple elements ->
         let parameters =
           match elements with
-          | Bounded parameters -> parameters
+          | Bounded AnyList -> [Primitive "..."]
+          | Bounded (ListVariadic { name; _ }) -> [Primitive name]
+          | Bounded (ConcreteList parameters) -> parameters
           | Unbounded parameter -> [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" (List.map ~f:(expression ~convert) parameters)
@@ -1040,8 +1052,11 @@ module Transform = struct
         | Optional annotation -> optional (visit_annotation annotation ~state)
         | Parametric { name; parameters } ->
             Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
-        | Tuple (Bounded annotations) ->
-            Tuple (Bounded (List.map annotations ~f:(visit_annotation ~state)))
+        | Tuple (Bounded AnyList)
+        | Tuple (Bounded (ListVariadic _)) ->
+            annotation
+        | Tuple (Bounded (ConcreteList annotations)) ->
+            Tuple (Bounded (ConcreteList (List.map annotations ~f:(visit_annotation ~state))))
         | Tuple (Unbounded annotation) -> Tuple (Unbounded (visit_annotation annotation ~state))
         | TypedDictionary ({ fields; _ } as typed_dictionary) ->
             let visit_field ({ annotation; _ } as field) =
@@ -1736,7 +1751,13 @@ let rec create_logic ?(use_cache = true)
                 let tuple : tuple =
                   match parameters with
                   | [parameter; Primitive "..."] -> Unbounded parameter
-                  | _ -> Bounded parameters
+                  | [Primitive "..."] -> Bounded AnyList
+                  | [Primitive parameter] -> (
+                    match variable_aliases parameter with
+                    | Some (Record.Variable.ListVariadic variable) ->
+                        Bounded (ListVariadic variable)
+                    | _ -> Bounded (ConcreteList parameters) )
+                  | _ -> Bounded (ConcreteList parameters)
                 in
                 Tuple tuple
             | "typing.Union" -> union parameters
@@ -1973,19 +1994,19 @@ let weaken_literals annotation =
 
 
 let split = function
-  | Optional parameter -> Primitive "typing.Optional", [parameter]
-  | Parametric { name; parameters } -> Primitive name, parameters
+  | Optional parameter -> Primitive "typing.Optional", ConcreteList [parameter]
+  | Parametric { name; parameters } -> Primitive name, ConcreteList parameters
   | Tuple tuple ->
       let parameters =
         match tuple with
         | Bounded parameters -> parameters
-        | Unbounded parameter -> [parameter]
+        | Unbounded parameter -> ConcreteList [parameter]
       in
       Primitive "tuple", parameters
-  | TypedDictionary { total = true; _ } -> Primitive "TypedDictionary", []
-  | TypedDictionary { total = false; _ } -> Primitive "NonTotalTypedDictionary", []
-  | Literal _ as literal -> weaken_literals literal, []
-  | annotation -> annotation, []
+  | TypedDictionary { total = true; _ } -> Primitive "TypedDictionary", ConcreteList []
+  | TypedDictionary { total = false; _ } -> Primitive "NonTotalTypedDictionary", ConcreteList []
+  | Literal _ as literal -> weaken_literals literal, ConcreteList []
+  | annotation -> annotation, ConcreteList []
 
 
 let class_name annotation =
@@ -2467,13 +2488,20 @@ end = struct
 
       let namespace variable ~namespace = { variable with namespace }
 
-      (* TODO(T45087986): Add entries here as we add hosts for these variables *)
-      let local_replace _ _ = None
+      (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
+      let local_replace replacement = function
+        | Tuple (Bounded (ListVariadic variable)) ->
+            replacement variable >>| fun ordered_types -> Tuple (Bounded ordered_types)
+        | _ -> None
+
 
       let mark_as_escaped variable = { variable with state = Free { escaped = true } }
 
-      (* TODO(T45087986): Add entries here as we add hosts for these variables *)
-      let local_collect _ = []
+      (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
+      let local_collect = function
+        | Tuple (Bounded (ListVariadic variable)) -> [variable]
+        | _ -> []
+
 
       let dequalify ({ name; _ } as variable) ~dequalify_map =
         { variable with name = dequalify_identifier dequalify_map name }

@@ -605,8 +605,7 @@ let test_forward_expression _ =
     ~errors:
       (`Specific
         [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call \
-           `foo` "
-          ^ "but got `unknown`.";
+           `foo` but got `unknown`.";
           "Undefined attribute [16]: Optional type has no attribute `attribute`." ])
     "foo(unknown).attribute"
     Type.Top;
@@ -1058,7 +1057,7 @@ let test_forward_statement _ =
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
   assert_forward [] "x, y = return_tuple()" ["x", Type.integer; "y", Type.integer];
-  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded [])];
+  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded (ConcreteList []))];
   (* Assignments with list. *)
   assert_forward
     ["x", Type.list Type.integer]

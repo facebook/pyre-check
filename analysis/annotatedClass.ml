@@ -472,7 +472,7 @@ let create_attribute
                      overloads
                    }))
         |> Option.value ~default:annotation
-    | ( Some (Type.Tuple (Bounded members)),
+    | ( Some (Type.Tuple (Bounded (ConcreteList members))),
         "__getitem__",
         Some (Type.Callable ({ overloads; _ } as callable)) ) ->
         let overload index member =

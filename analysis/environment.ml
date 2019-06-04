@@ -138,7 +138,7 @@ let connect_definition
     let value = Expression.delocalize value in
     match Node.value value with
     | Call _
-    | Name _ ->
+    | Name _ -> (
         let supertype, parameters =
           (* While building environment, allow untracked to parse into primitives *)
           Resolution.parse_annotation
@@ -158,7 +158,12 @@ let connect_definition
             ~normals:["unresolved name", Expression.show value]
             ()
         else
-          connect ~predecessor:primitive ~successor:supertype ~parameters
+          match parameters with
+          | ConcreteList parameters ->
+              connect ~predecessor:primitive ~successor:supertype ~parameters
+          | _ ->
+              (* TODO(T45097646): support propagating list variadics *)
+              () )
     | _ -> ()
   in
   let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
@@ -796,7 +801,7 @@ let register_values
           match target.Node.value, annotation with
           | Name name, _ when Expression.is_simple_name name ->
               register ~location:target.Node.location (Reference.from_name_exn name) annotation
-          | Tuple elements, Type.Tuple (Type.Bounded parameters)
+          | Tuple elements, Type.Tuple (Type.Bounded (ConcreteList parameters))
             when List.length elements = List.length parameters ->
               List.map2_exn
                 ~f:(fun target annotation -> register_assign ~target ~annotation)

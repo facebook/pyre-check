@@ -672,7 +672,7 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Type.Bounded [Type.integer; Type.integer]))
+       ~left:(Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.integer])))
        ~right:(Type.parametric "tuple" [Type.integer]));
   (* Union types *)
   assert_true
@@ -701,6 +701,29 @@ let test_less_or_equal _ =
        default
        ~left:(Type.tuple [Type.integer; Type.float])
        ~right:(Type.Tuple (Type.Unbounded Type.float)));
+  let list_variadic =
+    Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
+  in
+  assert_false
+    (less_or_equal
+       default
+       ~left:(Type.Tuple (Bounded (ListVariadic list_variadic)))
+       ~right:(Type.Tuple (Type.Unbounded Type.integer)));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.Tuple (Bounded (ListVariadic list_variadic)))
+       ~right:(Type.Tuple (Type.Unbounded Type.object_primitive)));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.Tuple (Bounded (ConcreteList [Type.integer; Type.string])))
+       ~right:(Type.Tuple (Bounded AnyList)));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.Tuple (Bounded AnyList))
+       ~right:(Type.Tuple (Bounded (ConcreteList [Type.integer; Type.string]))));
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
@@ -1703,6 +1726,16 @@ let test_join _ =
   assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
+  let bound_list_variadic =
+    Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
+  in
+  assert_join
+    ~aliases:(function
+      | "Ts" -> Some (Type.VariableAlias (ListVariadic bound_list_variadic))
+      | _ -> None)
+    "typing.Tuple[Ts]"
+    "typing.Tuple[float, ...]"
+    "typing.Tuple[object, ...]";
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
   assert_join "str" "typing.Optional[$bottom]" "typing.Optional[str]";
@@ -2764,6 +2797,8 @@ let test_solve_less_or_equal _ =
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
       V = typing_extensions.CallableParameterTypeVariable("V")
+      Ts = typing_extensions.ListVariadic("Ts")
+      T2s = typing_extensions.ListVariadic("T2s")
 
       T = typing.TypeVar('T')
       T1 = typing.TypeVar('T1')
@@ -2840,9 +2875,16 @@ let test_solve_less_or_equal _ =
                 | Type.Callable { implementation = { parameters; _ }; _ } -> parameters
                 | _ -> failwith "impossible"
               in
+              let parse_ordered_types ordered =
+                match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
+                | Type.Tuple (Bounded ordered) -> ordered
+                | _ -> failwith "impossible"
+              in
               match Handler.aliases primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
+              | Some (Type.VariableAlias (ListVariadic variable)) ->
+                  Type.Variable.ListVariadicPair (variable, parse_ordered_types value)
               | _ -> failwith "not available" )
           | _ -> failwith "not a variable"
         in
@@ -3105,18 +3147,36 @@ let test_solve_less_or_equal _ =
      would be [int, Intersection[int, str]]. This is probably not desired *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, str], int]]"
-    ~right:
-      ( "typing.Tuple[CallableWithVariadicGenericParameters[int], "
-      ^ "CallableWithVariadicGenericParameters[int]]" )
+    ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
     [];
   (* There is no common interface between a callable that requires exactly two arguments and one
      that requires exactly one *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int], int]]"
-    ~right:
-      ( "typing.Tuple[CallableWithVariadicGenericParameters[int], "
-      ^ "CallableWithVariadicGenericParameters[int]]" )
+    ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
     [];
+  assert_solve
+    ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int], int]]"
+    ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
+    [];
+  assert_solve
+    ~left:"typing.Tuple[int, str, bool]"
+    ~right:"typing.Tuple[Ts]"
+    [["Ts", "int, str, bool"]];
+  assert_solve
+    ~left:"typing.Tuple[Ts]"
+    ~right:"typing.Tuple[int, str, bool]"
+    [["Ts", "int, str, bool"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.Tuple[int, str], typing.Tuple[bool, str]]"
+    ~right:"typing.Tuple[typing.Tuple[Ts], typing.Tuple[Ts]]"
+    [["Ts", "typing.Union[bool, int], str"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.Tuple[int, str], typing.Tuple[bool, str, int]]"
+    ~right:"typing.Tuple[typing.Tuple[Ts], typing.Tuple[Ts]]"
+    [];
+  assert_solve ~left:"typing.Tuple[Ts]" ~right:"typing.Tuple[T2s]" [["T2s", "Ts"]; ["Ts", "T2s"]];
+  assert_solve ~left:"typing.Tuple[...]" ~right:"typing.Tuple[Ts]" [["Ts", "..."]];
   ()
 
 
@@ -3216,15 +3276,15 @@ let test_is_consistent_with _ =
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_true
     (is_consistent_with
-       (Type.Tuple (Type.Bounded [Type.integer; Type.Any]))
+       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.Any])))
        (Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
     (is_consistent_with
-       (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
+       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.string])))
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_false
     (is_consistent_with
-       (Type.Tuple (Type.Bounded [Type.integer; Type.string]))
+       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.string])))
        (Type.Tuple (Type.Unbounded Type.string)));
   assert_false
     (is_consistent_with

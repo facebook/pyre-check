@@ -779,14 +779,43 @@ module OrderImplementation = struct
           | left, Optional right
           | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
               solve_less_or_equal_throws order ~constraints ~left ~right
-          | Type.Tuple (Type.Bounded lefts), Type.Tuple (Type.Bounded rights) ->
+          | ( Type.Tuple (Type.Bounded (ConcreteList lefts)),
+              Type.Tuple (Type.Bounded (ConcreteList rights)) ) ->
               solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded rights) ->
+          | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded (ConcreteList rights)) ->
               let lefts = List.init (List.length rights) ~f:(fun _ -> left) in
               solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Bounded lefts), Type.Tuple (Type.Unbounded right) ->
+          | Type.Tuple (Type.Bounded (ConcreteList lefts)), Type.Tuple (Type.Unbounded right) ->
               let left = Type.union lefts in
               solve_less_or_equal_throws order ~constraints ~left ~right
+          | ( Type.Tuple (Type.Bounded (ListVariadic left_variable)),
+              Type.Tuple (Type.Bounded (ListVariadic right_variable)) )
+            when Type.Variable.Variadic.List.is_free left_variable
+                 && Type.Variable.Variadic.List.is_free right_variable ->
+              (* Just as with unaries, we need to consider both possibilities *)
+              let right_greater_than_left, left_less_than_right =
+                ( OrderedConstraints.add_lower_bound
+                    constraints
+                    ~order
+                    ~pair:
+                      (Type.Variable.ListVariadicPair (right_variable, ListVariadic left_variable))
+                  |> Option.to_list,
+                  OrderedConstraints.add_upper_bound
+                    constraints
+                    ~order
+                    ~pair:
+                      (Type.Variable.ListVariadicPair (left_variable, ListVariadic right_variable))
+                  |> Option.to_list )
+              in
+              right_greater_than_left @ left_less_than_right
+          | Type.Tuple (Type.Bounded (ListVariadic variable)), Type.Tuple (Type.Bounded bound)
+            when Type.Variable.Variadic.List.is_free variable ->
+              let pair = Type.Variable.ListVariadicPair (variable, bound) in
+              OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
+          | Type.Tuple (Type.Bounded bound), Type.Tuple (Type.Bounded (ListVariadic variable))
+            when Type.Variable.Variadic.List.is_free variable ->
+              let pair = Type.Variable.ListVariadicPair (variable, bound) in
+              OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
           | _, Type.Union rights ->
               List.concat_map rights ~f:(fun right ->
                   solve_less_or_equal_throws order ~constraints ~left ~right)
@@ -841,7 +870,8 @@ module OrderImplementation = struct
         | _, Type.Bottom -> false
         | _, Type.Primitive "object" -> true
         | _, Type.Variable _ -> false
-        | Type.Parametric { name = left_name; _ }, Type.Parametric _ ->
+        | ( Type.Parametric { name = left_name; parameters = left_parameters },
+            Type.Parametric { name = right_name; parameters = right_parameters } ) ->
             let compare_parameter left right variable =
               match left, right, variable with
               | Type.Bottom, _, _ ->
@@ -867,13 +897,11 @@ module OrderImplementation = struct
                     variable;
                   false
             in
-            let left_primitive, left_parameters = Type.split left in
-            let right_primitive, right_parameters = Type.split right in
-            raise_if_untracked handler left_primitive;
-            raise_if_untracked handler right_primitive;
+            raise_if_untracked handler (Type.Primitive left_name);
+            raise_if_untracked handler (Type.Primitive right_name);
             let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
             let left_variables = variables handler left in
-            if Type.equal left_primitive right_primitive then
+            if Identifier.equal left_name right_name then
               (* Left and right primitives coincide, a simple parameter comparison is enough. *)
               let compare_parameters ~left ~right variables =
                 List.length variables = List.length left
@@ -904,7 +932,7 @@ module OrderImplementation = struct
                   >>= fun primitive -> parametric ~primitive ~parameters
                 in
                 let successors =
-                  let left_index = index_of handler left_primitive in
+                  let left_index = index_of handler (Type.Primitive left_name) in
                   Handler.find (Handler.edges ()) left_index |> Option.value ~default:[]
                 in
                 get_instantiated_successors ~generic_index ~parameters:left_parameters successors
@@ -920,9 +948,12 @@ module OrderImplementation = struct
                   let right_propagated =
                     (* Create a "fake" primitive+variables type that we can propagate to the
                        target. *)
-                    parametric ~primitive:left_primitive ~parameters:left_variables
+                    parametric ~primitive:(Type.Primitive left_name) ~parameters:left_variables
                     >>= (fun source ->
-                          instantiate_successors_parameters order ~source ~target:right_primitive)
+                          instantiate_successors_parameters
+                            order
+                            ~source
+                            ~target:(Type.Primitive right_name))
                     |> Option.value ~default:[]
                   in
                   match
@@ -991,31 +1022,38 @@ module OrderImplementation = struct
         | Type.Variable variable, right ->
             less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+        | Type.Tuple _, Type.Tuple (Type.Bounded AnyList)
+        | Type.Tuple (Type.Bounded AnyList), Type.Tuple _ ->
+            true
+        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
+            Type.Tuple (Type.Bounded (ConcreteList right)) )
           when List.length left = List.length right ->
             List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
+        | Type.Tuple (Type.Bounded (ListVariadic _)), _ ->
+            less_or_equal order ~left:(Type.Tuple (Type.Unbounded Type.object_primitive)) ~right
+        | _, Type.Tuple (Type.Bounded (ListVariadic _)) -> false
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             less_or_equal order ~left ~right
-        | Type.Tuple (Type.Bounded []), Type.Tuple (Type.Unbounded _) -> true
-        | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right) ->
+        | Type.Tuple (Type.Bounded (ConcreteList [])), Type.Tuple (Type.Unbounded _) -> true
+        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
+            Type.Tuple (Type.Unbounded right) ) ->
             let left = List.fold tail ~init:left ~f:(join order) in
             less_or_equal order ~left ~right
-        | Type.Tuple _, Type.Parametric _ ->
+        | Type.Tuple tuple, Type.Parametric _ ->
             (* Join parameters to handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-            let parametric =
-              let primitive, parameters = Type.split left in
-              let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
-              let name =
-                match primitive with
-                | Type.Primitive name -> name
-                | _ -> "?"
-              in
-              Type.Parametric { name; parameters = [parameter] }
+            let parameter =
+              match tuple with
+              | Type.Unbounded parameter -> parameter
+              | Type.Bounded (ConcreteList parameters) ->
+                  List.fold ~init:Type.Bottom ~f:(join order) parameters
+              | Type.Bounded AnyList -> Type.Any
+              | Type.Bounded (ListVariadic _) -> Type.object_primitive
             in
+            let parametric = Type.parametric "tuple" [parameter] in
             less_or_equal order ~left:parametric ~right
         | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
             less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-        | Type.Tuple (Type.Bounded (left :: tail)), Type.Primitive _ ->
+        | Type.Tuple (Type.Bounded (ConcreteList (left :: tail))), Type.Primitive _ ->
             let parameter = List.fold ~f:(join order) ~init:left tail in
             less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
         | Type.Primitive name, Type.Tuple _ -> String.equal name "tuple"
@@ -1377,13 +1415,19 @@ module OrderImplementation = struct
         | Type.Optional parameter, other ->
             Type.optional (join order other parameter)
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+        | Type.Tuple (Type.Bounded (ListVariadic _)), other
+        | other, Type.Tuple (Type.Bounded (ListVariadic _)) ->
+            join order other (Type.Tuple (Type.Unbounded Type.object_primitive))
+        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
+            Type.Tuple (Type.Bounded (ConcreteList right)) )
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(join order) |> Type.tuple
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             Type.Tuple (Type.Unbounded (join order left right))
-        | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right)
-        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (left :: tail))
+        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
+            Type.Tuple (Type.Unbounded right) )
+        | ( Type.Tuple (Type.Unbounded right),
+            Type.Tuple (Type.Bounded (ConcreteList (left :: tail))) )
           when List.for_all ~f:(fun element -> Type.equal element left) tail
                && less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded right)
@@ -1392,7 +1436,7 @@ module OrderImplementation = struct
         | (Type.Parametric _ as annotation), Type.Tuple (Type.Unbounded parameter)
         | (Type.Primitive _ as annotation), Type.Tuple (Type.Unbounded parameter) ->
             join order (Type.parametric "tuple" [parameter]) annotation
-        | Type.Tuple (Type.Bounded parameters), (Type.Parametric _ as annotation) ->
+        | Type.Tuple (Type.Bounded (ConcreteList parameters)), (Type.Parametric _ as annotation) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [parameter]) annotation
@@ -1589,13 +1633,19 @@ module OrderImplementation = struct
             else
               Type.Bottom
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+        | Type.Tuple (Type.Bounded (ListVariadic _)), _
+        | _, Type.Tuple (Type.Bounded (ListVariadic _)) ->
+            Type.Bottom
+        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
+            Type.Tuple (Type.Bounded (ConcreteList right)) )
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(meet order) |> Type.tuple
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             Type.Tuple (Type.Unbounded (meet order left right))
-        | Type.Tuple (Type.Bounded (left :: tail)), Type.Tuple (Type.Unbounded right)
-        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (left :: tail))
+        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
+            Type.Tuple (Type.Unbounded right) )
+        | ( Type.Tuple (Type.Unbounded right),
+            Type.Tuple (Type.Bounded (ConcreteList (left :: tail))) )
           when List.for_all ~f:(fun element -> Type.equal element left) tail
                && less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded left) (* My brain hurts... *)
@@ -1751,36 +1801,40 @@ module OrderImplementation = struct
           |> Handler.find (Handler.edges ())
           >>= get_generic_parameters ~generic_index
           >>| List.map ~f:(fun _ -> Type.Any)
-      | _ ->
-          let primitive, parameters = Type.split source in
-          let parameters =
-            match primitive with
-            | Type.Primitive "tuple" ->
-                (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-                [List.fold ~init:Type.Bottom ~f:(join order) parameters]
-                |> List.map ~f:Type.weaken_literals
-            | _ -> parameters
-          in
-          raise_if_untracked handler primitive;
-          let worklist = Queue.create () in
-          Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
-          let rec iterate worklist =
-            match Queue.dequeue worklist with
-            | Some { Target.target = target_index; parameters } ->
-                let instantiated_successors =
-                  Handler.find (Handler.edges ()) target_index
-                  >>| get_instantiated_successors ~generic_index ~parameters
-                in
-                if target_index = index_of handler target then
-                  match target with
-                  | Type.Primitive "typing.Callable" -> Some parameters
-                  | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
-                else (
-                  instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
-                  iterate worklist )
-            | None -> None
-          in
-          iterate worklist
+      | _ -> (
+        match Type.split source with
+        | primitive, ConcreteList parameters ->
+            let parameters =
+              match primitive with
+              | Type.Primitive "tuple" ->
+                  (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+                  [List.fold ~init:Type.Bottom ~f:(join order) parameters]
+                  |> List.map ~f:Type.weaken_literals
+              | _ -> parameters
+            in
+            raise_if_untracked handler primitive;
+            let worklist = Queue.create () in
+            Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+            let rec iterate worklist =
+              match Queue.dequeue worklist with
+              | Some { Target.target = target_index; parameters } ->
+                  let instantiated_successors =
+                    Handler.find (Handler.edges ()) target_index
+                    >>| get_instantiated_successors ~generic_index ~parameters
+                  in
+                  if target_index = index_of handler target then
+                    match target with
+                    | Type.Primitive "typing.Callable" -> Some parameters
+                    | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
+                  else (
+                    instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
+                    iterate worklist )
+              | None -> None
+            in
+            iterate worklist
+        | _, _ ->
+            (* TODO(T45097646): we don't support propagating list variadics yet *)
+            None )
 
 
     and instantiate_predecessors_parameters
@@ -1791,24 +1845,29 @@ module OrderImplementation = struct
       let primitive, parameters = Type.split source in
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
-      let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
-      let worklist = Queue.create () in
-      Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
-      let rec iterate worklist =
-        match Queue.dequeue worklist with
-        | Some { Target.target = target_index; parameters } ->
-            if target_index = index_of handler target then
-              Some parameters
-            else (
-              Handler.find (Handler.backedges ()) target_index
-              >>| Set.to_list
-              >>| get_instantiated_predecessors handler ~generic_index ~parameters
-              >>| List.iter ~f:(Queue.enqueue worklist)
-              |> ignore;
-              iterate worklist )
-        | None -> None
-      in
-      iterate worklist
+      match parameters with
+      | ConcreteList parameters ->
+          let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
+          let worklist = Queue.create () in
+          Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+          let rec iterate worklist =
+            match Queue.dequeue worklist with
+            | Some { Target.target = target_index; parameters } ->
+                if target_index = index_of handler target then
+                  Some parameters
+                else (
+                  Handler.find (Handler.backedges ()) target_index
+                  >>| Set.to_list
+                  >>| get_instantiated_predecessors handler ~generic_index ~parameters
+                  >>| List.iter ~f:(Queue.enqueue worklist)
+                  |> ignore;
+                  iterate worklist )
+            | None -> None
+          in
+          iterate worklist
+      | _ ->
+          (* TODO(T45097646): we don't support propagating list variadics yet *)
+          None
 
 
     and diff_variables substitutions left right =
@@ -1846,7 +1905,8 @@ module OrderImplementation = struct
       | Optional left, Optional right -> diff_variables substitutions left right
       | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
           diff_variables_list substitutions left right
-      | Tuple (Bounded left), Tuple (Bounded right) -> diff_variables_list substitutions left right
+      | Tuple (Bounded (ConcreteList left)), Tuple (Bounded (ConcreteList right)) ->
+          diff_variables_list substitutions left right
       | Tuple (Unbounded left), Tuple (Unbounded right) -> diff_variables substitutions left right
       | ( TypedDictionary { fields = left_fields; total = left_total; _ },
           TypedDictionary { fields = right_fields; total = right_total; _ } ) ->
@@ -2074,10 +2134,10 @@ let rec is_compatible_with order ~left ~right =
   | _, Type.Optional parameter -> is_compatible_with order ~left ~right:parameter
   | Type.Optional _, _ -> false
   (* Tuple *)
-  | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right)
+  | Type.Tuple (Type.Bounded (ConcreteList left)), Type.Tuple (Type.Bounded (ConcreteList right))
     when List.length left = List.length right ->
       List.for_all2_exn left right ~f:(fun left right -> is_compatible_with order ~left ~right)
-  | Type.Tuple (Type.Bounded bounded), Type.Tuple (Type.Unbounded right) ->
+  | Type.Tuple (Type.Bounded (ConcreteList bounded)), Type.Tuple (Type.Unbounded right) ->
       List.for_all bounded ~f:(fun bounded_type ->
           is_compatible_with order ~left:bounded_type ~right)
   (* Union *)

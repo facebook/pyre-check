@@ -113,8 +113,13 @@ type literal =
   | String of string
 [@@deriving compare, eq, sexp, show, hash]
 
-type tuple =
-  | Bounded of t list
+type ordered_types =
+  | ConcreteList of t list
+  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
+  | AnyList
+
+and tuple =
+  | Bounded of ordered_types
   | Unbounded of t
 
 and typed_dictionary_field = {
@@ -136,12 +141,6 @@ and t =
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
 [@@deriving compare, eq, sexp, show]
-
-type ordered_types =
-  | ConcreteList of t list
-  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
-  | AnyList
-[@@deriving compare, eq, sexp, show, hash]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
 
@@ -415,7 +414,7 @@ val instantiate
 
 val weaken_literals : t -> t
 
-val split : t -> t * t list
+val split : t -> t * ordered_types
 
 val class_name : t -> Reference.t
 
