@@ -1,15 +1,15 @@
 # Pyre Extensions
 This module defines extensions to the standard “typing” module that are supported by the [Pyre typechecker](https://pypi.org/project/pyre-check/).
 
-## ArgSpec 
-ArgSpecs are a special kind of type variable that captures callable parameter specifications
-(known as argspecs in the runtime) instead of types, allowing the typing of decorators which 
-transform the return type of the given callable.  
+## ParameterSpecification
+`ParameterSpecification`s are a special kind of type variable that captures callable parameter 
+specifications (known as argspecs in the runtime and inspect library) instead of types, allowing 
+the typing of decorators which transform the return type of the given callable.  
 For example:
 ```
 from typing import TypeVar, Callable, List
-from pyre_extensions import ArgSpec
-Tparams = ArgSpec("Tparams")
+from pyre_extensions import ParameterSpecification
+Tparams = ParameterSpecification("Tparams")
 Treturn = TypeVar("Treturn")
 def unwrap(f: Callable[Tparams, List[Treturn]) -> Callable[Tparams, Treturn]: ...
 @unwrap
