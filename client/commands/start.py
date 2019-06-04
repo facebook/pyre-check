@@ -137,22 +137,11 @@ class Start(Reporting):
                 flags.extend(["-saved-state-metadata", relative.replace("/", "$")])
         if self._configuration_file_hash:
             flags.extend(["-configuration-file-hash", self._configuration_file_hash])
-        if (
-            self._load_initial_state_from is not None
-            and self._changed_files_path is not None
-        ):
-            flags.extend(
-                [
-                    "-load-state-from",
-                    self._load_initial_state_from,
-                    "-changed-files-path",
-                    self._changed_files_path,
-                ]
-            )
-        elif (
-            self._load_initial_state_from is None
-            and self._changed_files_path is not None
-        ):
+        if self._load_initial_state_from is not None:
+            flags.extend(["-load-state-from", self._load_initial_state_from])
+            if self._changed_files_path is not None:
+                flags.extend(["-changed-files-path", self._changed_files_path])
+        elif self._changed_files_path is not None:
             LOG.error(
                 "--load-initial-state-from must be set if --changed-files-path is set."
             )

@@ -331,8 +331,7 @@ class StartTest(unittest.TestCase):
                 "path1,path2,path3",
             ],
         )
-        # Both changed-files-path and load-initial-state-from must be not-None.
-        arguments = mock_arguments(changed_files_path="/tmp/changed_files")
+        arguments = mock_arguments(load_initial_state_from="/tmp/pyre_shared_memory")
         command = commands.Start(arguments, configuration, AnalysisDirectory("."))
         self.assertEqual(
             command._flags(),
@@ -341,6 +340,8 @@ class StartTest(unittest.TestCase):
                 "parser",
                 "-project-root",
                 ".",
+                "-load-state-from",
+                "/tmp/pyre_shared_memory",
                 "-workers",
                 "5",
                 "-expected-binary-version",
@@ -349,7 +350,6 @@ class StartTest(unittest.TestCase):
                 "path1,path2,path3",
             ],
         )
-        # Check load-initial-state-from.
         arguments = mock_arguments(changed_files_path="/tmp/changed_files")
         command = commands.Start(arguments, configuration, AnalysisDirectory("."))
         self.assertEqual(
