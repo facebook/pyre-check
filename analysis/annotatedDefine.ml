@@ -87,3 +87,31 @@ let is_constructor definition ~resolution =
       in
       Define.is_constructor ~in_test definition
   | None -> false
+
+
+let compatible_overload_parameters ~left
+                                   ~right
+                                   ~resolution =
+  let create_overload ~resolution
+                      ~define:{ Define.signature = { parameters; _ }; _ } =
+    let open Type.Callable in
+    let parameter index { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
+      let annotation =
+        annotation >>| Resolution.parse_annotation resolution |> Option.value ~default:Type.Top
+      in
+      Type.Callable.Parameter.create name index ~annotation ~default:(Option.is_some value)
+    in
+    { annotation = Type.Any; parameters = Defined (List.mapi parameters ~f:parameter) }
+  in
+  let create_callable ~define =
+    Type.Callable
+      { implementation = create_overload ~define ~resolution;
+        kind = Anonymous;
+        overloads = [];
+        implicit = None
+      }
+  in
+  Resolution.less_or_equal
+    resolution
+    ~left:(create_callable ~define:left)
+    ~right:(create_callable ~define:right)

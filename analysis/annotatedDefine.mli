@@ -22,3 +22,9 @@ val parent_definition : t -> resolution:Resolution.t -> Class.t option
 val decorate : t -> resolution:Resolution.t -> t
 
 val is_constructor : t -> resolution:Resolution.t -> bool
+
+val compatible_overload_parameters
+  :  left:Ast.Statement.t Define.record ->
+  right:Ast.Statement.t Define.record ->
+  resolution:Resolution.t ->
+  bool
