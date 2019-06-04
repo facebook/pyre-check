@@ -10,8 +10,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class GeneratedParserWrapperTest {
+
+  private static void expectSyntaxError(String code) {
+    try {
+      new GeneratedParserWrapper(code).getFileInputContext();
+      fail("Provided code below should get syntax error, but we don't get one.\n" + code);
+    } catch (SyntaxError error) {
+      // expected
+    }
+  }
+
+  @Test
+  public void badPythonFilesDoGetSyntaxErrors() {
+    // random characters
+    expectSyntaxError("42haha\n");
+    // indentation error
+    expectSyntaxError("if True:\npass\n");
+    // bad string literal
+    expectSyntaxError("hello_world = \"hello world\n");
+    // not balanced parentheses
+    expectSyntaxError("print(\"hello world\"\n");
+    // extra literal
+    expectSyntaxError("a = 3 + 5 7\n");
+    // bad function call
+    expectSyntaxError("function_call(a, b='ha, c)\n");
+  }
 
   /**
    * This test only ensures that the generated parser is correctly set up and we can write a simple
@@ -19,7 +45,7 @@ public class GeneratedParserWrapperTest {
    * expect.
    */
   @Test
-  public void canVisitSimpleFunctionDeclaration() {
+  public void canVisitSimpleFunctionDeclaration() throws SyntaxError {
     /*
      * Expected parse tree:
      * - root (file input context)
