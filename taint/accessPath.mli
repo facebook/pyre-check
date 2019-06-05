@@ -51,6 +51,8 @@ type normalized_expression =
 
 val normalize_access : resolution:Resolution.t -> Access.general_access -> normalized_expression
 
+val normalize_expression : resolution:Resolution.t -> Expression.t -> normalized_expression
+
 val normalize_access_list
   :  normalized_expression ->
   Expression.t Access.access ->

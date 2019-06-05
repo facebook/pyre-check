@@ -296,6 +296,46 @@ let normalize_access ~resolution (access : Access.general_access) =
       List.fold access ~init:(Expression expression) ~f:normalize_access_list
 
 
+let rec normalize_expression ~resolution expression =
+  match Node.value expression with
+  | Name name when Expression.is_simple_name name -> (
+      let reference = Reference.from_name_exn name in
+      let name =
+        Resolution.resolve_exports resolution ~reference
+        |> Reference.name ~location:(Node.location expression)
+      in
+      let is_module = function
+        | { Node.value = Name name; _ } ->
+            Reference.from_name_exn name
+            |> Resolution.module_definition resolution
+            |> Option.is_some
+        | _ -> false
+      in
+      match name with
+      | Name.Identifier identifier when Interprocedural.CallResolution.is_local identifier ->
+          Local identifier
+      | Name.Identifier identifier -> Global (Reference.create identifier)
+      | Name.Attribute { base; _ } when is_module base -> Global reference
+      | Name.Attribute { base; attribute; _ } ->
+          Access { expression = normalize_expression ~resolution base; member = attribute } )
+  | Name (Name.Attribute { base; attribute; _ }) ->
+      Access { expression = normalize_expression ~resolution base; member = attribute }
+  | Expression.Call
+      { callee = { Node.value = Name (Name.Attribute { base; attribute; _ }); _ };
+        arguments = [{ Call.Argument.value = argument_value; _ }] as arguments
+      }
+    when is_get_item attribute ->
+      Index
+        { expression = normalize_expression ~resolution base;
+          index = get_index argument_value;
+          original = attribute;
+          arguments
+        }
+  | Expression.Call { callee; arguments } ->
+      Call { callee = normalize_expression ~resolution callee; arguments }
+  | _ -> Expression expression
+
+
 let rec as_expression ?(location = Location.Reference.any) = function
   | Global reference -> Expression.Name (Reference.name reference) |> Node.create ~location
   | Local identifier -> Expression.Name (Name.Identifier identifier) |> Node.create ~location
