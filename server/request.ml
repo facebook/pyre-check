@@ -475,6 +475,26 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
+    | TypeQuery.CoverageInFile file ->
+        let default =
+          TypeQuery.Error
+            (Format.asprintf "Not able to get lookups in `%a`" Path.pp (File.path file))
+        in
+        let map_to_coverage (location, annotation) =
+          let coverage =
+            if Type.is_partially_typed annotation then
+              TypeQuery.Partial
+            else if Type.is_untyped annotation then
+              TypeQuery.Untyped
+            else
+              TypeQuery.Typed
+          in
+          { location; TypeQuery.coverage }
+        in
+        LookupCache.find_all_annotations ~state ~configuration ~file
+        >>| List.map ~f:map_to_coverage
+        >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
+        |> Option.value ~default
     | TypeQuery.DecodeOcamlValues values ->
         let open Service.EnvironmentSharedMemory in
         let decode key value =
@@ -923,26 +943,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         LookupCache.find_all_annotations ~state ~configuration ~file
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
-        |> Option.value ~default
-    | TypeQuery.CoverageInFile file ->
-        let default =
-          TypeQuery.Error
-            (Format.asprintf "Not able to get lookups in `%a`" Path.pp (File.path file))
-        in
-        let map_to_coverage (location, annotation) =
-          let coverage =
-            if Type.is_partially_typed annotation then
-              TypeQuery.Partial
-            else if Type.is_untyped annotation then
-              TypeQuery.Untyped
-            else
-              TypeQuery.Typed
-          in
-          { location; TypeQuery.coverage }
-        in
-        LookupCache.find_all_annotations ~state ~configuration ~file
-        >>| List.map ~f:map_to_coverage
-        >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
         |> Option.value ~default
   in
   let response =
