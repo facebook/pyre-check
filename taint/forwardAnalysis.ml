@@ -125,7 +125,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let rec analyze_argument
         ~resolution
         (taint_accumulator, state)
-        { Argument.value = argument; _ }
+        { Call.Argument.value = argument; _ }
       =
       analyze_expression ~resolution ~state ~expression:argument
       |>> ForwardState.Tree.join taint_accumulator
@@ -264,7 +264,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (* Side effect on argument n *)
                 match List.nth arguments n with
                 | None -> state
-                | Some { Argument.value = exp; _ } ->
+                | Some { Call.Argument.value = exp; _ } ->
                     let access_path = AccessPath.of_expression exp in
                     store_taint_option ~weak:true access_path taint state )
               | _ -> failwith "unexpected sink in tito"
@@ -309,7 +309,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | AccessPath.Access { expression; member = method_name } ->
           let receiver = AccessPath.as_expression ~location expression in
           let arguments =
-            let receiver = { Argument.name = None; value = receiver } in
+            let receiver = { Call.Argument.name = None; value = receiver } in
             receiver :: arguments
           in
           let add_index_breadcrumb_if_necessary taint =
@@ -386,8 +386,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Access { expression; _ }
         when AccessPath.is_property_access ~resolution ~expression:expression_node ->
           let property_call =
-            Call { callee = expression; arguments = { Node.location; value = [] } }
-            |> Node.create ~location
+            Call { callee = expression; arguments = [] } |> Node.create ~location
           in
           analyze_normalized_expression ~resolution ~state ~expression:property_call
       | Access { expression; member } ->
@@ -437,7 +436,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ForwardTaint.simple_feature_set
                 ~f:(add_first_index index)
       | Call { callee; arguments } ->
-          analyze_call ~resolution arguments.location ~callee arguments.value state
+          let location =
+            { Expression.Call.callee = AccessPath.as_expression ~location callee; arguments }
+            |> Expression.arguments_location
+          in
+          analyze_call ~resolution location ~callee arguments state
       | Expression expression -> analyze_expression ~resolution ~state ~expression
       | Global reference -> global_model reference, state
       | Local identifier ->

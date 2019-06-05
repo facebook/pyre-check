@@ -145,7 +145,7 @@ let match_actuals_to_formals arguments roots =
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Star _ | `Precise _ | `Approximate _), _ -> None
   in
-  let match_actual (position, matches) { Argument.name; value } =
+  let match_actual (position, matches) { Call.Argument.name; value } =
     match name, value.Node.value with
     | None, Starred (Once _) ->
         let formals = List.filter_map roots ~f:(filter_to_positional (`Star position)) in
@@ -203,12 +203,12 @@ let of_expression = function
 
 type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
-  | Call of { callee: normalized_expression; arguments: Argument.t list Node.t }
+  | Call of { callee: normalized_expression; arguments: Expression.t Call.Argument.t list }
   | Index of
       { expression: normalized_expression;
         index: AbstractTreeDomain.Label.t;
         original: Identifier.t;
-        arguments: Expression.t Argument.record list Node.t
+        arguments: Expression.t Call.Argument.t list
       }
   | Global of Reference.t
   | Local of Identifier.t
@@ -226,12 +226,22 @@ let get_index { Node.value = expression; _ } =
 
 let normalize_access_list left = function
   | Access.Identifier member -> Access { expression = left; member }
-  | Access.Call ({ value = [argument]; _ } as arguments) -> (
+  | Access.Call { value = [{ Argument.name; value }]; _ } -> (
     match left with
     | Access { expression; member } when is_get_item member ->
-        Index { expression; index = get_index argument.value; original = member; arguments }
-    | _ -> Call { callee = left; arguments } )
-  | Access.Call arguments -> Call { callee = left; arguments }
+        Index
+          { expression;
+            index = get_index value;
+            original = member;
+            arguments = [{ Call.Argument.name; value }]
+          }
+    | _ -> Call { callee = left; arguments = [{ Call.Argument.name; value }] } )
+  | Access.Call arguments ->
+      let arguments =
+        let convert { Argument.name; value } = { Call.Argument.name; value } in
+        List.map ~f:convert (Node.value arguments)
+      in
+      Call { callee = left; arguments }
 
 
 let global_prefix ~resolution access =
@@ -291,10 +301,6 @@ let rec as_expression ?(location = Location.Reference.any) = function
   | Local identifier -> Expression.Name (Name.Identifier identifier) |> Node.create ~location
   | Expression expression -> expression
   | Call { callee; arguments } ->
-      let arguments =
-        let convert { Argument.name; value } = { Call.Argument.name; value } in
-        List.map ~f:convert (Node.value arguments)
-      in
       Expression.Call { callee = as_expression ~location callee; arguments }
       |> Node.create ~location
   | Access { expression; member } ->
@@ -303,10 +309,6 @@ let rec as_expression ?(location = Location.Reference.any) = function
            { base = as_expression ~location expression; attribute = member; special = false })
       |> Node.create ~location
   | Index { expression; original; arguments; _ } ->
-      let arguments =
-        let convert { Argument.name; value } = { Call.Argument.name; value } in
-        List.map ~f:convert (Node.value arguments)
-      in
       let callee =
         Name
           (Name.Attribute

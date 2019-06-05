@@ -19,8 +19,8 @@
             "root": {
               "filename": "remote_code_execution.py",
               "line": 5,
-              "start": 8,
-              "end": 25
+              "start": 25,
+              "end": 27
             },
             "leaves": [
               { "kind": "UserControlled", "name": "__user_controlled" }

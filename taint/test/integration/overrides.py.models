@@ -20,8 +20,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 104,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
@@ -76,8 +76,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 104,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
@@ -132,8 +132,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 72,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
@@ -188,8 +188,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 72,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
@@ -244,8 +244,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 120,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
               "port": "result",
@@ -300,8 +300,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 136,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.D.methodB" ],
               "port": "result",
@@ -356,8 +356,8 @@
               "position": {
                 "filename": "overrides.py",
                 "line": 110,
-                "start": 8,
-                "end": 17
+                "start": 17,
+                "end": 19
               },
               "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
               "port": "result",
@@ -466,8 +466,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 39,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -476,8 +476,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 68,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -580,8 +580,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 39,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -590,8 +590,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 68,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -747,8 +747,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 39,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]
@@ -854,8 +854,8 @@
             "root": {
               "filename": "overrides.py",
               "line": 68,
-              "start": 15,
-              "end": 28
+              "start": 28,
+              "end": 30
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "special_source" } ]

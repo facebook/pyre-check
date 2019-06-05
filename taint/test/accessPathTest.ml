@@ -7,7 +7,6 @@ open OUnit2
 open Ast
 open Core
 open Taint
-open Test
 
 let test_normalize_access _ =
   let parse_access expression =
@@ -46,7 +45,7 @@ let test_normalize_access _ =
     |> Node.create_with_default_location
   in
   assert_normalized "a" (global "a");
-  assert_normalized "a()" (AccessPath.Call { callee = global "a"; arguments = +[] });
+  assert_normalized "a()" (AccessPath.Call { callee = global "a"; arguments = [] });
   assert_normalized
     ~modules:["a"]
     "a.b.c"
@@ -55,7 +54,7 @@ let test_normalize_access _ =
   assert_normalized
     ~modules:["a"; "a.b"]
     "a.b.c()"
-    (AccessPath.Call { callee = global "a.b.c"; arguments = +[] });
+    (AccessPath.Call { callee = global "a.b.c"; arguments = [] });
   assert_normalized
     ~modules:["a"; "a.b"]
     "a.b.c.d.e"
@@ -64,7 +63,7 @@ let test_normalize_access _ =
          member = "e"
        });
   assert_normalized "$a" (local "$a");
-  assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = +[] });
+  assert_normalized "$a()" (AccessPath.Call { callee = local "$a"; arguments = [] });
   assert_normalized "$a.b" (AccessPath.Access { expression = local "$a"; member = "b" });
   assert_normalized
     "'some string'.join"

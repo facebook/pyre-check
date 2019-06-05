@@ -15,7 +15,7 @@ let normalize_global ~resolution reference =
   let global_type = Resolution.resolve resolution (Reference.expression reference) in
   if Type.is_meta global_type then
     let dummy_self =
-      { Expression.Argument.name = None;
+      { Expression.Call.Argument.name = None;
         value = Node.create_with_default_location Expression.False
       }
     in

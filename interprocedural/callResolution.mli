@@ -24,7 +24,7 @@ val get_indirect_targets
 val normalize_global
   :  resolution:Resolution.t ->
   Reference.t ->
-  Reference.t * Expression.t Argument.record list
+  Reference.t * Expression.t Call.Argument.t list
 
 (* Returns all call targets from Call expressions in the given access *)
 val resolve_call_targets

@@ -91,7 +91,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       { taint = BackwardState.assign ~weak:true ~root ~path taint state_taint }
 
 
-    let rec analyze_argument ~resolution taint { Argument.value = argument; _ } state =
+    let rec analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
       analyze_expression ~resolution ~taint ~state ~expression:argument
 
 
@@ -161,7 +161,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   | Sinks.ParameterUpdate n -> (
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
-                    | Some { Argument.value = exp; _ } ->
+                    | Some { Call.Argument.value = exp; _ } ->
                         let access_path = of_expression exp in
                         get_taint access_path state )
                   | _ -> failwith "unexpected tito sink"
@@ -244,7 +244,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Access { expression; member = method_name } ->
           let receiver = AccessPath.as_expression ~location expression in
           let arguments =
-            let receiver = { Argument.name = None; value = receiver } in
+            let receiver = { Call.Argument.name = None; value = receiver } in
             receiver :: arguments
           in
           Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
@@ -279,8 +279,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Access { expression; _ }
         when AccessPath.is_property_access ~resolution ~expression:expression_node ->
           let property_call =
-            Call { callee = expression; arguments = { Node.location; value = [] } }
-            |> Node.create ~location
+            Call { callee = expression; arguments = [] } |> Node.create ~location
           in
           analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
       | Access { expression; member } ->
@@ -295,7 +294,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let expression = Node.create ~location expression in
           analyze_normalized_expression ~resolution ~taint ~state ~expression
       | Call { callee; arguments } ->
-          analyze_call ~resolution arguments.location ~callee arguments.value state taint
+          let location =
+            { Expression.Call.callee = AccessPath.as_expression ~location callee; arguments }
+            |> Expression.arguments_location
+          in
+          analyze_call ~resolution location ~callee arguments state taint
       | Expression expression -> analyze_expression ~resolution ~taint ~state ~expression
       | Global _ -> state
       | Local name -> store_weak_taint ~root:(Root.Variable name) ~path:[] taint state

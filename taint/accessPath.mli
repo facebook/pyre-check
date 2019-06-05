@@ -37,12 +37,12 @@ val get_index : Expression.t -> AbstractTreeDomain.Label.t
 
 type normalized_expression =
   | Access of { expression: normalized_expression; member: Identifier.t }
-  | Call of { callee: normalized_expression; arguments: Argument.t list Node.t }
+  | Call of { callee: normalized_expression; arguments: Expression.t Call.Argument.t list }
   | Index of
       { expression: normalized_expression;
         index: AbstractTreeDomain.Label.t;
         original: Identifier.t;
-        arguments: Expression.t Argument.record list Node.t
+        arguments: Expression.t Call.Argument.t list
       }
   | Global of Reference.t
   | Local of Identifier.t
@@ -70,6 +70,6 @@ type argument_match = {
 [@@deriving show]
 
 val match_actuals_to_formals
-  :  Expression.t Argument.record list ->
+  :  Expression.t Call.Argument.t list ->
   Root.t list ->
   (Expression.t * argument_match list) list

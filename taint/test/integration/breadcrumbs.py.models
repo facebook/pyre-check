@@ -36,8 +36,8 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 13,
-              "start": 11,
-              "end": 24
+              "start": 24,
+              "end": 26
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "type": "scalar" }, { "via": "special_source" } ]
@@ -86,8 +86,8 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 9,
-              "start": 11,
-              "end": 24
+              "start": 24,
+              "end": 26
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "type": "scalar" }, { "via": "special_source" } ]
@@ -136,8 +136,8 @@
             "root": {
               "filename": "breadcrumbs.py",
               "line": 5,
-              "start": 11,
-              "end": 24
+              "start": 24,
+              "end": 26
             },
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "type": "scalar" }, { "via": "special_source" } ]

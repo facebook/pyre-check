@@ -59,8 +59,8 @@
             "root": {
               "filename": "side_effects.py",
               "line": 12,
-              "start": 16,
-              "end": 29
+              "start": 29,
+              "end": 31
             },
             "tito": [ { "line": 12, "start": 16, "end": 29 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
@@ -85,8 +85,8 @@
             "root": {
               "filename": "side_effects.py",
               "line": 6,
-              "start": 19,
-              "end": 32
+              "start": 32,
+              "end": 34
             },
             "tito": [ { "line": 6, "start": 19, "end": 32 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
@@ -111,8 +111,8 @@
             "root": {
               "filename": "side_effects.py",
               "line": 18,
-              "start": 23,
-              "end": 36
+              "start": 36,
+              "end": 38
             },
             "tito": [ { "line": 18, "start": 23, "end": 36 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
@@ -142,8 +142,8 @@
             "root": {
               "filename": "side_effects.py",
               "line": 30,
-              "start": 13,
-              "end": 26
+              "start": 26,
+              "end": 28
             },
             "tito": [ { "line": 30, "start": 13, "end": 26 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
