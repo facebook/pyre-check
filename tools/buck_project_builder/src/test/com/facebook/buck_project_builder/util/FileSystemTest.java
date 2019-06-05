@@ -26,10 +26,11 @@ public class FileSystemTest {
     }
   }
 
-  private static void assertIsSymbolicLinkWithContent(Path symbolicLinkPath, String expectedContent) throws IOException {
+  private static void assertIsSymbolicLinkWithContent(Path symbolicLinkPath, String expectedContent)
+      throws IOException {
     assertTrue(
-            "after symbolic link creation, symbolicLinkPath should actually be a symbolic link",
-            Files.isSymbolicLink(symbolicLinkPath));
+        "after symbolic link creation, symbolicLinkPath should actually be a symbolic link",
+        Files.isSymbolicLink(symbolicLinkPath));
     try (BufferedReader reader = new BufferedReader(new FileReader(symbolicLinkPath.toFile()))) {
       assertEquals(reader.readLine(), expectedContent);
     }
@@ -37,9 +38,9 @@ public class FileSystemTest {
 
   @Test
   public void addSymbolicLinkTest() throws IOException {
-    Path tempDirPath = Files.createTempDirectory("symbolic_link_test");
-    Path actualPath = Paths.get(tempDirPath.toString(), "a.txt");
-    Path symbolicLinkPath = Paths.get(tempDirPath.toString(), "a/b/c/link");
+    String root = Files.createTempDirectory("symbolic_link_test").toString();
+    Path actualPath = Paths.get(root, "a.txt");
+    Path symbolicLinkPath = Paths.get(root, "a/b/c/link");
 
     assertFalse("symbolic link does not exist yet", symbolicLinkPath.toFile().exists());
     writeContent(actualPath.toFile(), "abc");

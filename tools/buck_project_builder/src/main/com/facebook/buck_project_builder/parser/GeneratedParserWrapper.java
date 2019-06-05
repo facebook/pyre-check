@@ -1,3 +1,5 @@
+// Copyright 2004-present Facebook. All Rights Reserved.
+
 package com.facebook.buck_project_builder.parser;
 
 import com.facebook.buck_project_builder.parser.generated.Python3Lexer;
