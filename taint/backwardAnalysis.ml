@@ -358,50 +358,32 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | Call { callee; arguments } -> (
-          let get_global = function
-            | { Node.value = Name (Name.Identifier identifier); _ }
-              when not (Interprocedural.CallResolution.is_local identifier) ->
-                Some (Reference.create identifier)
-            | { Node.value =
-                  Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name)
-              ; _
-              } ->
-                let name = Reference.from_name name in
-                let base_name = Reference.from_name base_name in
-                let is_module name =
-                  name >>= Resolution.module_definition resolution |> Option.is_some
-                in
-                name >>= Option.some_if (is_module base_name && not (is_module name))
-            | _ -> None
-          in
-          match get_global callee, Node.value callee with
-          | Some global, _ ->
-              let targets =
-                Interprocedural.CallResolution.get_global_targets ~resolution ~global
-              in
-              let _, extra_arguments =
-                Interprocedural.CallResolution.normalize_global ~resolution global
-              in
-              let arguments = extra_arguments @ arguments in
-              apply_call_targets ~resolution arguments state taint targets
-          | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
-              let arguments =
-                let receiver = { Call.Argument.name = None; value = receiver } in
-                receiver :: arguments
-              in
-              Interprocedural.CallResolution.get_indirect_targets
-                ~resolution
-                ~receiver
-                ~method_name:attribute
-              |> apply_call_targets ~resolution arguments state taint
-          | _ ->
-              (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is
-                 called here. For now, we propagate taint to all args implicitly, and to the
-                 function. *)
-              let state =
-                List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
-              in
-              analyze_expression ~resolution ~taint ~state ~expression:callee )
+        match AccessPath.get_global ~resolution callee, Node.value callee with
+        | Some global, _ ->
+            let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
+            let _, extra_arguments =
+              Interprocedural.CallResolution.normalize_global ~resolution global
+            in
+            let arguments = extra_arguments @ arguments in
+            apply_call_targets ~resolution arguments state taint targets
+        | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
+            let arguments =
+              let receiver = { Call.Argument.name = None; value = receiver } in
+              receiver :: arguments
+            in
+            Interprocedural.CallResolution.get_indirect_targets
+              ~resolution
+              ~receiver
+              ~method_name:attribute
+            |> apply_call_targets ~resolution arguments state taint
+        | _ ->
+            (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is
+               called here. For now, we propagate taint to all args implicitly, and to the
+               function. *)
+            let state =
+              List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
+            in
+            analyze_expression ~resolution ~taint ~state ~expression:callee )
       | Complex _ -> state
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
@@ -420,13 +402,15 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           List.foldi list ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution taint comprehension state
-      | Name _ ->
-          (* TODO: T37313693 *)
-          analyze_expression
-            ~resolution
-            ~taint
-            ~state
-            ~expression:(Expression.convert { Node.location; value = expression })
+      | Name _ when AccessPath.is_global ~resolution { Node.location; value = expression } -> state
+      | Name (Name.Identifier identifier) ->
+          store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
+      | Name (Name.Attribute { base; attribute; _ }) ->
+          let field = AbstractTreeDomain.Label.Field attribute in
+          let taint =
+            BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:base
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold

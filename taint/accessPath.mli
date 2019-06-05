@@ -64,6 +64,10 @@ val to_json : t -> Yojson.Safe.json
 
 val is_property_access : resolution:Resolution.t -> expression:normalized_expression Node.t -> bool
 
+val get_global : resolution:Resolution.t -> Expression.t -> Reference.t option
+
+val is_global : resolution:Resolution.t -> Expression.t -> bool
+
 type argument_match = {
   root: Root.t;
   actual_path: AbstractTreeDomain.Label.path;

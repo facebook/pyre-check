@@ -386,3 +386,19 @@ let is_property_access ~resolution ~expression:{ Node.value = expression; _ } =
             | _ -> false)
       |> Option.value ~default:false
   | _ -> false
+
+
+let get_global ~resolution name =
+  match Node.value name with
+  | Name (Name.Identifier identifier) when not (Interprocedural.CallResolution.is_local identifier)
+    ->
+      Some (Reference.create identifier)
+  | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
+      let name = Reference.from_name name in
+      let base_name = Reference.from_name base_name in
+      let is_module name = name >>= Resolution.module_definition resolution |> Option.is_some in
+      name >>= Option.some_if (is_module base_name && not (is_module name))
+  | _ -> None
+
+
+let is_global ~resolution name = Option.is_some (get_global ~resolution name)
