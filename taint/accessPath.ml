@@ -186,8 +186,18 @@ let of_accesses = function
   | _ -> None
 
 
+let rec of_new_expression path = function
+  | { Node.value = Name (Name.Identifier identifier); _ } ->
+      Some { root = Root.Variable identifier; path }
+  | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+      let path = AbstractTreeDomain.Label.Field attribute :: path in
+      of_new_expression path base
+  | _ -> None
+
+
 let of_expression = function
   | { Node.value = Access (SimpleAccess access); _ } -> of_accesses access
+  | { Node.value = Name _; _ } as expression -> of_new_expression [] expression
   | _ -> None
 
 

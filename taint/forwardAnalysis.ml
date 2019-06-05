@@ -265,7 +265,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 match List.nth arguments n with
                 | None -> state
                 | Some { Argument.value = exp; _ } ->
-                    let access_path = AccessPath.of_expression (Expression.convert exp) in
+                    let access_path = AccessPath.of_expression exp in
                     store_taint_option ~weak:true access_path taint state )
               | _ -> failwith "unexpected sink in tito"
             in
