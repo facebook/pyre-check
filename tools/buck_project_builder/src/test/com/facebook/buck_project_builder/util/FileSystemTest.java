@@ -12,12 +12,23 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class FileSystemTest {
+
+  private static final String COMMON_SOURCE_DIRECTORY = "/project";
+  private static final String COMMON_OUT_DIRECTORY = "/out";
+
+  private static void testResolveSourceMapping(
+      Map<String, String> sources, Map<String, String> expectedMapping) {
+    Map<String, String> actualMapping =
+        FileSystem.resolveSourceMapping(COMMON_SOURCE_DIRECTORY, COMMON_OUT_DIRECTORY, sources);
+    assertEquals(expectedMapping, actualMapping);
+  }
 
   private static void writeContent(File file, String content) throws IOException {
     try (FileWriter writer = new FileWriter(file)) {
@@ -34,6 +45,27 @@ public class FileSystemTest {
     try (BufferedReader reader = new BufferedReader(new FileReader(symbolicLinkPath.toFile()))) {
       assertEquals(reader.readLine(), expectedContent);
     }
+  }
+
+  @Test
+  public void resolveSourceMappingTest() {
+    // simple identity mapping case
+    testResolveSourceMapping(
+        Map.of(
+            "a.py", "a.py",
+            "b.py", "b.py"),
+        Map.of(
+            "/project/a.py", "/out/a.py",
+            "/project/b.py", "/out/b.py"));
+
+    // non-identity source mappings
+    testResolveSourceMapping(
+        Map.of(
+            "a.py", "foo/bar/a.py",
+            "b.py", "foo/bar/baz/b.py"),
+        Map.of(
+            "/project/a.py", "/out/foo/bar/a.py",
+            "/project/b.py", "/out/foo/bar/baz/b.py"));
   }
 
   @Test
