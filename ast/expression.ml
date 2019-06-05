@@ -1118,6 +1118,19 @@ let exists_in_list ?(match_prefix = false) ~expression_list target_string =
   |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 
 
+let arguments_location
+    { Call.callee = { Node.location = { Location.stop = callee_end; path; _ }; _ }; arguments }
+  =
+  match List.rev arguments with
+  | [] ->
+      { Location.path;
+        start = callee_end;
+        stop = { callee_end with column = callee_end.Location.column + 2 }
+      }
+  | { Call.Argument.value = { Node.location = { Location.stop; _ }; _ }; _ } :: _ ->
+      { Location.path; start = callee_end; stop = { stop with column = stop.Location.column + 1 } }
+
+
 module PrettyPrinter = struct
   let rec pp_expression_t formatter expression_t =
     match expression_t with

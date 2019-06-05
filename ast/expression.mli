@@ -357,6 +357,8 @@ val delocalize_qualified : t -> t
 
 val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> bool
 
+val arguments_location : expression_t Call.t -> Location.t
+
 val show_sanitized : t -> string
 
 val pp_sanitized : Format.formatter -> t -> unit

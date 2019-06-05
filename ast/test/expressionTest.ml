@@ -532,6 +532,27 @@ let test_name_equals _ =
   assert_name_not_equals "" (Name.Identifier "a")
 
 
+let test_arguments_location _ =
+  let assert_arguments_location expression expected_start expected_stop =
+    let expression = parse_single_expression expression in
+    let expected_location =
+      { expression.Node.location with
+        start = { Location.line = 1; column = expected_start };
+        stop = { Location.line = 1; column = expected_stop }
+      }
+    in
+    let actual_location =
+      match expression with
+      | { Node.value = Call call; _ } -> arguments_location call
+      | _ -> failwith "Expected a call expression."
+    in
+    assert_equal ~printer:Location.show expected_location actual_location
+  in
+  assert_arguments_location "call(1, 2)" 4 10;
+  assert_arguments_location "call(1, 2, 3)" 4 13;
+  assert_arguments_location "long_call()" 9 11
+
+
 let () =
   "expression"
   >::: [ "negate" >:: test_negate;
@@ -547,5 +568,6 @@ let () =
          "convert_accesses" >:: test_convert_accesses;
          "create_name" >:: test_create_name;
          "name_to_identifiers" >:: test_name_to_identifiers;
-         "name_equals" >:: test_name_equals ]
+         "name_equals" >:: test_name_equals;
+         "arguments_location" >:: test_arguments_location ]
   |> Test.run
