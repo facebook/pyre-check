@@ -426,9 +426,7 @@ let get_global_model ~resolution ~expression =
            ( match AccessPath.normalize_access ~resolution access with
            | Global reference -> Some reference
            | Access { expression; member } ->
-               AccessPath.as_access expression
-               |> (fun access -> Expression.Access access)
-               |> Node.create_with_default_location
+               AccessPath.as_expression expression
                |> Resolution.resolve resolution
                |> Type.class_name
                |> (fun class_name -> Reference.create ~prefix:class_name member)

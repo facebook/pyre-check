@@ -242,18 +242,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution arguments state taint targets
       | Access { expression; member = method_name } ->
-          let receiver = AccessPath.as_access expression in
+          let receiver = AccessPath.as_expression ~location expression in
           let arguments =
-            let receiver =
-              { Argument.name = None; value = Node.create (Expression.Access receiver) ~location }
-            in
+            let receiver = { Argument.name = None; value = receiver } in
             receiver :: arguments
           in
-          let receiver_expression = AccessPath.as_expression expression in
-          Interprocedural.CallResolution.get_indirect_targets
-            ~resolution
-            ~receiver:receiver_expression
-            ~method_name
+          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
           |> apply_call_targets ~resolution arguments state taint
       | _ ->
           (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called
@@ -362,7 +356,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | Call _ ->
           (* TODO: T37313693 *)
-          state
+          analyze_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:(Expression.convert { Node.location; value = expression })
       | Complex _ -> state
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
@@ -383,7 +381,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_comprehension ~resolution taint comprehension state
       | Name _ ->
           (* TODO: T37313693 *)
-          state
+          analyze_expression
+            ~resolution
+            ~taint
+            ~state
+            ~expression:(Expression.convert { Node.location; value = expression })
       | Set set ->
           let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
           List.fold

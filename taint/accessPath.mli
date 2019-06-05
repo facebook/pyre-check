@@ -58,9 +58,7 @@ val normalize_access_list
   Expression.t Access.access ->
   normalized_expression
 
-val as_access : normalized_expression -> Access.general_access
-
-val as_expression : normalized_expression -> Expression.t
+val as_expression : ?location:Location.Reference.t -> normalized_expression -> Expression.t
 
 val to_json : t -> Yojson.Safe.json
 

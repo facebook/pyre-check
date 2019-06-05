@@ -276,41 +276,22 @@ let normalize_access ~resolution (access : Access.general_access) =
       List.fold access ~init:(Expression expression) ~f:normalize_access_list
 
 
-let rec as_access = function
-  | Global reference -> Expression.Access.SimpleAccess (Reference.access reference)
-  | Local identifier ->
-      Expression.Access.SimpleAccess (Access.create_from_identifiers [identifier])
-  | Expression expression -> Expression.Access.ExpressionAccess { expression; access = [] }
-  | Call { callee; arguments } ->
-      let callee = Expression.Access (as_access callee) in
-      Expression.Access.combine (Node.create_with_default_location callee) [Access.Call arguments]
-  | Access { expression; member } ->
-      let left = Expression.Access (as_access expression) in
-      Expression.Access.combine (Node.create_with_default_location left) [Access.Identifier member]
-  | Index { expression; original; arguments; _ } ->
-      let left = Expression.Access (as_access expression) in
-      Expression.Access.combine
-        (Node.create_with_default_location left)
-        [Access.Identifier original; Access.Call arguments]
-
-
-let rec as_expression = function
-  | Global reference ->
-      Expression.Name (Reference.name reference) |> Node.create_with_default_location
-  | Local identifier ->
-      Expression.Name (Name.Identifier identifier) |> Node.create_with_default_location
+let rec as_expression ?(location = Location.Reference.any) = function
+  | Global reference -> Expression.Name (Reference.name reference) |> Node.create ~location
+  | Local identifier -> Expression.Name (Name.Identifier identifier) |> Node.create ~location
   | Expression expression -> expression
   | Call { callee; arguments } ->
       let arguments =
         let convert { Argument.name; value } = { Call.Argument.name; value } in
         List.map ~f:convert (Node.value arguments)
       in
-      Expression.Call { callee = as_expression callee; arguments }
-      |> Node.create_with_default_location
+      Expression.Call { callee = as_expression ~location callee; arguments }
+      |> Node.create ~location
   | Access { expression; member } ->
       Expression.Name
-        (Name.Attribute { base = as_expression expression; attribute = member; special = false })
-      |> Node.create_with_default_location
+        (Name.Attribute
+           { base = as_expression ~location expression; attribute = member; special = false })
+      |> Node.create ~location
   | Index { expression; original; arguments; _ } ->
       let arguments =
         let convert { Argument.name; value } = { Call.Argument.name; value } in
@@ -318,10 +299,11 @@ let rec as_expression = function
       in
       let callee =
         Name
-          (Name.Attribute { base = as_expression expression; attribute = original; special = true })
-        |> Node.create_with_default_location
+          (Name.Attribute
+             { base = as_expression ~location expression; attribute = original; special = true })
+        |> Node.create ~location
       in
-      Expression.Call { callee; arguments } |> Node.create_with_default_location
+      Expression.Call { callee; arguments } |> Node.create ~location
 
 
 let to_json { root; path } =
@@ -337,13 +319,10 @@ let to_json { root; path } =
   `String (root_name root ^ AbstractTreeDomain.Label.show_path path)
 
 
-let is_property_access ~resolution ~expression:{ Node.location; value = expression } =
+let is_property_access ~resolution ~expression:{ Node.value = expression; _ } =
   match expression with
   | Access { expression; member } ->
-      let access = as_access expression in
-      let annotation =
-        Node.create ~location (Expression.Access access) |> Resolution.resolve resolution
-      in
+      let annotation = as_expression expression |> Resolution.resolve resolution in
       let is_property define =
         String.Set.exists ~f:(Statement.Define.has_decorator define) Recognized.property_decorators
       in

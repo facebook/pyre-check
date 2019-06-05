@@ -265,7 +265,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 match List.nth arguments n with
                 | None -> state
                 | Some { Argument.value = exp; _ } ->
-                    let access_path = AccessPath.of_expression exp in
+                    let access_path = AccessPath.of_expression (Expression.convert exp) in
                     store_taint_option ~weak:true access_path taint state )
               | _ -> failwith "unexpected sink in tito"
             in
@@ -307,11 +307,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let arguments = extra_arguments @ arguments in
           apply_call_targets ~resolution location arguments state targets
       | AccessPath.Access { expression; member = method_name } ->
-          let receiver = AccessPath.as_access expression in
+          let receiver = AccessPath.as_expression ~location expression in
           let arguments =
-            let receiver =
-              { Argument.name = None; value = Node.create (Expression.Access receiver) ~location }
-            in
+            let receiver = { Argument.name = None; value = receiver } in
             receiver :: arguments
           in
           let add_index_breadcrumb_if_necessary taint =
@@ -327,11 +325,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     taint
               | _ -> taint
           in
-          let receiver_expression = AccessPath.as_expression expression in
-          Interprocedural.CallResolution.get_indirect_targets
-            ~resolution
-            ~receiver:receiver_expression
-            ~method_name
+          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
           |> apply_call_targets ~resolution location arguments state
           |>> add_index_breadcrumb_if_necessary
       | callee ->
@@ -397,10 +391,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           analyze_normalized_expression ~resolution ~state ~expression:property_call
       | Access { expression; member } ->
-          let access = AccessPath.as_access expression in
-          let annotation =
-            Node.create (Expression.Access access) ~location |> Resolution.resolve resolution
-          in
+          let annotation = AccessPath.as_expression expression |> Resolution.resolve resolution in
           let attribute_taint =
             let annotations =
               let successors =
@@ -517,7 +508,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           ForwardState.Tree.join left_taint right_taint, state
       | Call _ ->
           (* TODO: T37313693 *)
-          ForwardState.Tree.empty, state
+          analyze_expression ~resolution ~state ~expression:(Expression.convert expression)
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
           List.fold
@@ -542,7 +533,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension -> analyze_comprehension ~resolution comprehension state
       | Name _ ->
           (* TODO: T37313693 *)
-          ForwardState.Tree.empty, state
+          analyze_expression ~resolution ~state ~expression:(Expression.convert expression)
       | Set set ->
           List.fold ~f:(analyze_set_element ~resolution) set ~init:(ForwardState.Tree.empty, state)
       | SetComprehension comprehension -> analyze_comprehension ~resolution comprehension state

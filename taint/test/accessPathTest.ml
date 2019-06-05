@@ -28,12 +28,11 @@ let test_normalize_access _ =
       Test.resolution ?sources ()
     in
     let normalized = AccessPath.normalize_access access ~resolution in
-    let re_accessed = AccessPath.as_access normalized in
     assert_equal
-      ~cmp:Expression.Access.equal_general_access
-      ~printer:Expression.Access.show_general_access
-      access
-      re_accessed;
+      ~cmp:Expression.equal
+      ~printer:Expression.show
+      (Node.create_with_default_location (Expression.Access access))
+      (AccessPath.as_expression normalized |> Expression.convert);
     assert_equal
       ~cmp:AccessPath.equal_normalized_expression
       ~printer:AccessPath.show_normalized_expression
