@@ -266,6 +266,34 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> analyze_expression ~resolution ~taint ~state ~expression
 
 
+    and analyze_call ~resolution ~taint ~state callee arguments =
+      match AccessPath.get_global ~resolution callee, Node.value callee with
+      | Some global, _ ->
+          let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
+          let _, extra_arguments =
+            Interprocedural.CallResolution.normalize_global ~resolution global
+          in
+          let arguments = extra_arguments @ arguments in
+          apply_call_targets ~resolution arguments state taint targets
+      | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
+          let arguments =
+            let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
+            receiver :: arguments
+          in
+          Interprocedural.CallResolution.get_indirect_targets
+            ~resolution
+            ~receiver
+            ~method_name:attribute
+          |> apply_call_targets ~resolution arguments state taint
+      | _ ->
+          (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called
+             here. For now, we propagate taint to all args implicitly, and to the function. *)
+          let state =
+            List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:callee
+
+
     and analyze_expression
         ~resolution
         ~taint
@@ -288,35 +316,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let index = AccessPath.get_index argument_value in
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
-      | Call { callee; arguments } -> (
-          match AccessPath.get_global ~resolution callee, Node.value callee with
-          | Some global, _ ->
-              let targets =
-                Interprocedural.CallResolution.get_global_targets ~resolution ~global
-              in
-              let _, extra_arguments =
-                Interprocedural.CallResolution.normalize_global ~resolution global
-              in
-              let arguments = extra_arguments @ arguments in
-              apply_call_targets ~resolution arguments state taint targets
-          | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
-              let arguments =
-                let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
-                receiver :: arguments
-              in
-              Interprocedural.CallResolution.get_indirect_targets
-                ~resolution
-                ~receiver
-                ~method_name:attribute
-              |> apply_call_targets ~resolution arguments state taint
-          | _ ->
-              (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is
-                 called here. For now, we propagate taint to all args implicitly, and to the
-                 function. *)
-              let state =
-                List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
-              in
-              analyze_expression ~resolution ~taint ~state ~expression:callee )
+      | Call { callee; arguments } -> analyze_call ~resolution ~taint ~state callee arguments
       | Complex _ -> state
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
