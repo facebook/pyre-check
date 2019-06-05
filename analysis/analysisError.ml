@@ -198,7 +198,7 @@ type kind =
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | Deobfuscation of Source.t
-  | UnawaitedAwaitable of Reference.t
+  | UnawaitedAwaitable of Expression.t
 [@@deriving compare, eq, show, sexp, hash]
 
 let code = function
@@ -1191,9 +1191,10 @@ let messages ~concise ~signature location kind =
             Format.sprintf "%d values" actual_count
         in
         [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
-  | UnawaitedAwaitable name ->
-      [ Format.asprintf "`%a` is never awaited." pp_reference name;
-        Format.asprintf "`%a` is defined on line %d" pp_reference name start_line ]
+  | UnawaitedAwaitable expression ->
+      [ Format.asprintf "`%a` is never awaited." Expression.pp_sanitized expression;
+        Format.asprintf "`%a` is defined on line %d" Expression.pp_sanitized expression start_line
+      ]
   | UndefinedAttribute { attribute; origin } ->
       let target =
         match origin with
@@ -1725,7 +1726,7 @@ let less_or_equal ~resolution left right =
   | UninitializedAttribute left, UninitializedAttribute right
     when String.equal left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
-  | UnawaitedAwaitable left, UnawaitedAwaitable right -> Reference.equal_sanitized left right
+  | UnawaitedAwaitable left, UnawaitedAwaitable right -> Expression.equal left right
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
     match left.origin, right.origin with
@@ -1982,8 +1983,7 @@ let join ~resolution left right =
       match join_mismatch left.mismatch right.mismatch with
       | Some mismatch -> UninitializedAttribute { left with mismatch }
       | None -> Top )
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when Reference.equal_sanitized left right
-      ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when Expression.equal left right ->
         UnawaitedAwaitable left
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )

@@ -189,7 +189,7 @@ type kind =
   | UnusedIgnore of int list
   (* Additional errors. *)
   | Deobfuscation of Source.t
-  | UnawaitedAwaitable of Reference.t
+  | UnawaitedAwaitable of Expression.t
 [@@deriving compare, eq, show, hash]
 
 include BaseError.Error with type kind := kind

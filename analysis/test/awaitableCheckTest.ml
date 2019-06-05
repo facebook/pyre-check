@@ -22,7 +22,7 @@ let test_forward _ =
       def awaitable() -> typing.Awaitable[int]: ...
       unawaited = awaitable()
     |}
-    ["Unawaited awaitable [101]: `unawaited` is never awaited."];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
@@ -51,7 +51,7 @@ let test_forward _ =
       awaited = awaitable()
       assert awaited
     |}
-    ["Unawaited awaitable [101]: `awaited` is never awaited."];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   (* Delete. *)
   assert_awaitable_errors
     {|
@@ -103,7 +103,7 @@ let test_forward _ =
         awaited = awaitable()
         yield from (await awaited)
     |}
-    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   (* Tuples. *)
   assert_awaitable_errors
     {|
@@ -139,7 +139,7 @@ let test_forward _ =
         awaited = awaitable()
         takes_awaitable(awaited)
     |}
-    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   (* Comparison operators. *)
   assert_awaitable_errors
     {|
@@ -290,6 +290,49 @@ let test_forward _ =
       ((await awaited) for i in [1, 2, 3])
     |}
     [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      def other_awaitable() -> typing.Awaitable[int]: ...
+      unawaited = awaitable()
+      other_unawaited = other_awaitable()
+      if True > False:
+        unawaited = other_unawaited
+    |}
+    [ "Unawaited awaitable [101]: `awaitable()` is never awaited.";
+      "Unawaited awaitable [101]: `other_awaitable()` is never awaited." ];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      def other_awaitable() -> typing.Awaitable[int]: ...
+      unawaited = awaitable()
+      other_unawaited = other_awaitable()
+      unawaited = other_unawaited
+      await unawaited
+    |}
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      def other_awaitable() -> typing.Awaitable[int]: ...
+      unawaited = awaitable()
+      other_unawaited = other_awaitable()
+      if 1 > 2:
+        unawaited = other_unawaited
+      await unawaited
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+      def other_awaitable() -> typing.Awaitable[int]: ...
+      unawaited = awaitable()
+      other_unawaited = other_awaitable()
+      if 1 > 2:
+        unawaited = other_unawaited
+      await other_unawaited
+    |}
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
@@ -298,7 +341,7 @@ let test_forward _ =
         awaited = awaitable()
         return awaited, 1
     |}
-    ["Unawaited awaitable [101]: `meta_awaitable.awaited` is never awaited."]
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."]
 
 
 let test_state _ =
@@ -309,7 +352,7 @@ let test_state _ =
       if True:
         unawaited = awaitable()
     |}
-    ["Unawaited awaitable [101]: `unawaited` is never awaited."];
+    ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
   assert_awaitable_errors
     {|
       def awaitable() -> typing.Awaitable[int]: ...
