@@ -509,9 +509,63 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
-      | Call _ ->
-          (* TODO: T37313693 *)
-          analyze_expression ~resolution ~state ~expression:(Expression.convert expression)
+      | Call { callee; arguments } -> (
+          let get_global = function
+            | { Node.value = Name (Name.Identifier identifier); _ }
+              when not (Interprocedural.CallResolution.is_local identifier) ->
+                Some (Reference.create identifier)
+            | { Node.value =
+                  Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name)
+              ; _
+              } ->
+                let name = Reference.from_name name in
+                let base_name = Reference.from_name base_name in
+                let is_module name =
+                  name >>= Resolution.module_definition resolution |> Option.is_some
+                in
+                name >>= Option.some_if (is_module base_name && not (is_module name))
+            | _ -> None
+          in
+          match get_global callee, Node.value callee with
+          | Some global, _ ->
+              let targets =
+                Interprocedural.CallResolution.get_global_targets ~resolution ~global
+              in
+              let _, extra_arguments =
+                Interprocedural.CallResolution.normalize_global ~resolution global
+              in
+              let arguments = extra_arguments @ arguments in
+              apply_call_targets ~resolution location arguments state targets
+          | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
+              let arguments =
+                let receiver = { Call.Argument.name = None; value = receiver } in
+                receiver :: arguments
+              in
+              let add_index_breadcrumb_if_necessary taint =
+                if not (String.equal method_name "get") then
+                  taint
+                else
+                  match arguments with
+                  | _receiver :: index :: _ ->
+                      let label = get_index index.value in
+                      ForwardState.Tree.transform
+                        ForwardTaint.simple_feature_set
+                        ~f:(add_first_index label)
+                        taint
+                  | _ -> taint
+              in
+              Interprocedural.CallResolution.get_indirect_targets
+                ~resolution
+                ~receiver
+                ~method_name
+              |> apply_call_targets ~resolution location arguments state
+              |>> add_index_breadcrumb_if_necessary
+          | _ ->
+              (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
+              let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
+              (* For now just join all argument and receiver taint and propagate to result. *)
+              List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
+          )
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
           List.fold
