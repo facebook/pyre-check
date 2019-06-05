@@ -127,6 +127,12 @@ type incompatible_overload_kind =
       }
 [@@deriving compare, eq, sexp, show, hash]
 
+type unawaited_awaitable = {
+  references: Reference.t list;
+  expression: Expression.t
+}
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
@@ -198,7 +204,7 @@ type kind =
   (* Additional errors. *)
   (* TODO(T38384376): split this into a separate module. *)
   | Deobfuscation of Source.t
-  | UnawaitedAwaitable of Expression.t
+  | UnawaitedAwaitable of unawaited_awaitable
 [@@deriving compare, eq, show, sexp, hash]
 
 let code = function
@@ -1191,8 +1197,18 @@ let messages ~concise ~signature location kind =
             Format.sprintf "%d values" actual_count
         in
         [Format.sprintf "Unable to unpack %s, %d were expected." value_message expected_count] )
-  | UnawaitedAwaitable expression ->
+  | UnawaitedAwaitable { references = []; expression } ->
       [ Format.asprintf "`%a` is never awaited." Expression.pp_sanitized expression;
+        Format.asprintf "`%a` is defined on line %d" Expression.pp_sanitized expression start_line
+      ]
+  | UnawaitedAwaitable { references; expression } ->
+      let name =
+        references
+        |> List.map ~f:(fun reference ->
+               Format.asprintf "`%s`" (Reference.show_sanitized reference))
+        |> String.concat ~sep:", "
+      in
+      [ Format.asprintf "Awaitable assigned to %s is never awaited." name;
         Format.asprintf "`%a` is defined on line %d" Expression.pp_sanitized expression start_line
       ]
   | UndefinedAttribute { attribute; origin } ->
@@ -1726,7 +1742,7 @@ let less_or_equal ~resolution left right =
   | UninitializedAttribute left, UninitializedAttribute right
     when String.equal left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
-  | UnawaitedAwaitable left, UnawaitedAwaitable right -> Expression.equal left right
+  | UnawaitedAwaitable left, UnawaitedAwaitable right -> equal_unawaited_awaitable left right
   | UndefinedAttribute left, UndefinedAttribute right
     when Identifier.equal_sanitized left.attribute right.attribute -> (
     match left.origin, right.origin with
@@ -1983,7 +1999,8 @@ let join ~resolution left right =
       match join_mismatch left.mismatch right.mismatch with
       | Some mismatch -> UninitializedAttribute { left with mismatch }
       | None -> Top )
-    | UnawaitedAwaitable left, UnawaitedAwaitable right when Expression.equal left right ->
+    | UnawaitedAwaitable left, UnawaitedAwaitable right when equal_unawaited_awaitable left right
+      ->
         UnawaitedAwaitable left
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )

@@ -51,17 +51,30 @@ module State (Context : Context) = struct
 
   let initial = { unawaited = Location.Reference.Map.empty; locals = Reference.Map.empty }
 
-  let errors { unawaited; _ } =
-    let error (location, state) =
-      match state with
-      | Unawaited expression ->
-          [ Error.create
-              ~location
-              ~kind:(Error.UnawaitedAwaitable expression)
-              ~define:Context.define ]
-      | _ -> []
+  let errors { unawaited; locals } =
+    let errors =
+      let keep_unawaited = function
+        | Unawaited expression -> Some { Error.references = []; expression }
+        | Awaited -> None
+      in
+      Map.filter_map unawaited ~f:keep_unawaited
     in
-    Map.to_alist unawaited |> List.concat_map ~f:error
+    let add_reference ~key:name ~data:locations errors =
+      let add_reference errors location =
+        match Map.find errors location with
+        | Some { Error.references; expression } ->
+            Map.set errors ~key:location ~data:{ references = name :: references; expression }
+        | None -> errors
+      in
+      Location.Reference.Set.fold locations ~init:errors ~f:add_reference
+    in
+    let error (location, unawaited_awaitable) =
+      Error.create
+        ~location
+        ~kind:(Error.UnawaitedAwaitable unawaited_awaitable)
+        ~define:Context.define
+    in
+    Map.fold locals ~init:errors ~f:add_reference |> Map.to_alist |> List.map ~f:error
 
 
   let less_or_equal ~left ~right =
