@@ -230,80 +230,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> List.fold ~init:(FixpointState.create ()) ~f:FixpointState.join
 
 
-    and analyze_call ~resolution location ~callee arguments state taint =
-      match callee with
-      | Global reference ->
-          let targets =
-            Interprocedural.CallResolution.get_global_targets ~resolution ~global:reference
-          in
-          let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution reference
-          in
-          let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution arguments state taint targets
-      | Access { expression; member = method_name } ->
-          let receiver = AccessPath.as_expression ~location expression in
-          let arguments =
-            let receiver = { Call.Argument.name = None; value = receiver } in
-            receiver :: arguments
-          in
-          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-          |> apply_call_targets ~resolution arguments state taint
-      | _ ->
-          (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called
-             here. For now, we propagate taint to all args implicitly, and to the function. *)
-          let state =
-            List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
-          in
-          analyze_normalized_expression
-            ~resolution
-            ~taint
-            ~state
-            ~expression:(Node.create ~location callee)
-
-
-    and analyze_normalized_expression
-        ~resolution
-        ~taint
-        ~state
-        ~expression:({ Node.location; value = expression } as expression_node)
-      =
-      Log.log
-        ~section:`Taint
-        "analyze_normalized_expression: %a\n  under taint %a"
-        pp_normalized_expression
-        expression
-        BackwardState.Tree.pp
-        taint;
-      match expression with
-      | Access { expression; _ }
-        when AccessPath.is_property_access ~resolution ~expression:expression_node ->
-          let property_call =
-            Call { callee = expression; arguments = [] } |> Node.create ~location
-          in
-          analyze_normalized_expression ~resolution ~taint ~state ~expression:property_call
-      | Access { expression; member } ->
-          let field = AbstractTreeDomain.Label.Field member in
-          let taint =
-            BackwardState.Tree.assign [field] ~tree:BackwardState.Tree.empty ~subtree:taint
-          in
-          let expression = Node.create ~location expression in
-          analyze_normalized_expression ~resolution ~taint ~state ~expression
-      | Index { expression; index; _ } ->
-          let taint = BackwardState.Tree.prepend [index] taint in
-          let expression = Node.create ~location expression in
-          analyze_normalized_expression ~resolution ~taint ~state ~expression
-      | Call { callee; arguments } ->
-          let location =
-            { Expression.Call.callee = AccessPath.as_expression ~location callee; arguments }
-            |> Expression.arguments_location
-          in
-          analyze_call ~resolution location ~callee arguments state taint
-      | Expression expression -> analyze_expression ~resolution ~taint ~state ~expression
-      | Global _ -> state
-      | Local name -> store_weak_taint ~root:(Root.Variable name) ~path:[] taint state
-
-
     and analyze_dictionary_entry ~resolution taint state { Dictionary.key; value } =
       let field_name = AccessPath.get_index key in
       let value_taint = read_tree [field_name] taint in
@@ -348,10 +274,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
-      | Access access ->
-          normalize_access access ~resolution
-          |> Node.create ~location
-          |> fun expression -> analyze_normalized_expression ~resolution ~taint ~state ~expression
+      | Access _ -> failwith "Access variant is deprecated."
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator = _; right } ->
@@ -366,32 +289,34 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint = BackwardState.Tree.prepend [index] taint in
           analyze_expression ~resolution ~taint ~state ~expression:base
       | Call { callee; arguments } -> (
-        match AccessPath.get_global ~resolution callee, Node.value callee with
-        | Some global, _ ->
-            let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
-            let _, extra_arguments =
-              Interprocedural.CallResolution.normalize_global ~resolution global
-            in
-            let arguments = extra_arguments @ arguments in
-            apply_call_targets ~resolution arguments state taint targets
-        | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
-            let arguments =
-              let receiver = { Call.Argument.name = None; value = receiver } in
-              receiver :: arguments
-            in
-            Interprocedural.CallResolution.get_indirect_targets
-              ~resolution
-              ~receiver
-              ~method_name:attribute
-            |> apply_call_targets ~resolution arguments state taint
-        | _ ->
-            (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is
-               called here. For now, we propagate taint to all args implicitly, and to the
-               function. *)
-            let state =
-              List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
-            in
-            analyze_expression ~resolution ~taint ~state ~expression:callee )
+          match AccessPath.get_global ~resolution callee, Node.value callee with
+          | Some global, _ ->
+              let targets =
+                Interprocedural.CallResolution.get_global_targets ~resolution ~global
+              in
+              let _, extra_arguments =
+                Interprocedural.CallResolution.normalize_global ~resolution global
+              in
+              let arguments = extra_arguments @ arguments in
+              apply_call_targets ~resolution arguments state taint targets
+          | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
+              let arguments =
+                let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
+                receiver :: arguments
+              in
+              Interprocedural.CallResolution.get_indirect_targets
+                ~resolution
+                ~receiver
+                ~method_name:attribute
+              |> apply_call_targets ~resolution arguments state taint
+          | _ ->
+              (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is
+                 called here. For now, we propagate taint to all args implicitly, and to the
+                 function. *)
+              let state =
+                List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
+              in
+              analyze_expression ~resolution ~taint ~state ~expression:callee )
       | Complex _ -> state
       | Dictionary dictionary ->
           List.fold ~f:(analyze_dictionary_entry ~resolution taint) dictionary.entries ~init:state
@@ -633,7 +558,7 @@ let run ~environment ~define ~existing_model:_ =
   in
   let open AnalysisInstance in
   let initial = FixpointState.{ taint = initial_taint define.Node.value } in
-  let cfg = Cfg.create ~convert:true define.value in
+  let cfg = Cfg.create define.value in
   let entry_state = Analyzer.backward ~cfg ~initial |> Analyzer.entry in
   let () =
     match entry_state with

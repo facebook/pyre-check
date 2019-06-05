@@ -419,7 +419,6 @@ let get_callsite_model ~call_target =
 
 
 let get_global_model ~resolution ~expression =
-  let expression = Expression.convert_to_new expression in
   let call_target =
     match Node.value expression, AccessPath.get_global ~resolution expression with
     | _, Some global -> Some global

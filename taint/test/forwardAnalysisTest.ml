@@ -50,7 +50,7 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
   TypeCheck.run ~configuration ~environment ~source |> ignore;
-  let defines = source |> Preprocessing.convert |> Preprocessing.defines |> List.rev in
+  let defines = source |> Preprocessing.defines |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in

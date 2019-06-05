@@ -169,7 +169,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               (tito_effects, state)
               ((argument, sink_matches), (_dup, tito_matches))
             =
-            let { Node.location; _ } = argument in
+            let location = argument.Node.location in
             let argument_taint, state = analyze_unstarred_expression ~resolution argument state in
             let tito =
               let convert_tito_path
@@ -295,158 +295,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                  ForwardState.Tree.join taint new_taint, join state new_state)
 
 
-    and analyze_call ~resolution location ~callee arguments state =
-      match callee with
-      | AccessPath.Global reference ->
-          let targets =
-            Interprocedural.CallResolution.get_global_targets ~resolution ~global:reference
-          in
-          let _, extra_arguments =
-            Interprocedural.CallResolution.normalize_global ~resolution reference
-          in
-          let arguments = extra_arguments @ arguments in
-          apply_call_targets ~resolution location arguments state targets
-      | AccessPath.Access { expression; member = method_name } ->
-          let receiver = AccessPath.as_expression ~location expression in
-          let arguments =
-            let receiver = { Call.Argument.name = None; value = receiver } in
-            receiver :: arguments
-          in
-          let add_index_breadcrumb_if_necessary taint =
-            if not (String.equal method_name "get") then
-              taint
-            else
-              match arguments with
-              | _receiver :: index :: _ ->
-                  let label = get_index index.value in
-                  ForwardState.Tree.transform
-                    ForwardTaint.simple_feature_set
-                    ~f:(add_first_index label)
-                    taint
-              | _ -> taint
-          in
-          Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-          |> apply_call_targets ~resolution location arguments state
-          |>> add_index_breadcrumb_if_necessary
-      | callee ->
-          (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
-          let callee_taint, state =
-            analyze_normalized_expression
-              ~resolution
-              ~state
-              ~expression:(Node.create ~location callee)
-          in
-          (* For now just join all argument and receiver taint and propagate to result. *)
-          List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
-
-
-    and analyze_normalized_expression ~resolution
-                                      ~state
-                                      ~expression =
-      let result, state = analyze_normalized_expression_internal ~resolution ~state ~expression in
-      let () =
-        log
-          "Expression taint: %a:\n  result taint: %a"
-          AccessPath.pp_normalized_expression
-          expression.value
-          ForwardState.Tree.pp
-          result
-      in
-      result, state
-
-
-    and analyze_normalized_expression_internal
-        ~resolution
-        ~state
-        ~expression:({ Node.location; value = expression } as expression_node)
-      =
-      let global_model reference =
-        (* Fields are handled like methods *)
-        let target_candidates =
-          [ Interprocedural.Callable.create_method reference;
-            Interprocedural.Callable.create_object reference ]
-        in
-        let merge_models result candidate =
-          let model =
-            Interprocedural.Fixpoint.get_model candidate
-            >>= Interprocedural.Result.get_model TaintResult.kind
-          in
-          match model with
-          | None -> result
-          | Some { forward = { source_taint }; _ } ->
-              ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-              |> ForwardState.Tree.apply_call
-                   location
-                   ~callees:[candidate]
-                   ~port:AccessPath.Root.LocalResult
-        in
-        List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
-      in
-      match expression with
-      | Access { expression; _ }
-        when AccessPath.is_property_access ~resolution ~expression:expression_node ->
-          let property_call =
-            Call { callee = expression; arguments = [] } |> Node.create ~location
-          in
-          analyze_normalized_expression ~resolution ~state ~expression:property_call
-      | Access { expression; member } ->
-          let annotation = AccessPath.as_expression expression |> Resolution.resolve resolution in
-          let attribute_taint =
-            let annotations =
-              let successors =
-                Resolution.class_metadata resolution annotation
-                >>| (fun { Resolution.successors; _ } -> successors)
-                |> Option.value ~default:[]
-                |> List.map ~f:(fun name -> Type.Primitive name)
-              in
-              let base_annotation =
-                (* Our model definitions are ambiguous. Models could either refer to a class
-                   variable or an instance variable. We explore both. *)
-                if Type.is_meta annotation then
-                  [Type.single_parameter annotation]
-                else
-                  []
-              in
-              (annotation :: successors) @ base_annotation
-            in
-            let attribute_taint sofar annotation =
-              Reference.create ~prefix:(Type.class_name annotation) member
-              |> global_model
-              |> ForwardState.Tree.join sofar
-            in
-            List.fold annotations ~init:ForwardState.Tree.empty ~f:attribute_taint
-          in
-          let field = AbstractTreeDomain.Label.Field member in
-          analyze_normalized_expression
-            ~resolution
-            ~state
-            ~expression:(Node.create ~location expression)
-          |>> ForwardState.Tree.read [field]
-          |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature_set
-                ~f:(add_first Features.Breadcrumb.FirstField member)
-          |>> ForwardState.Tree.join attribute_taint
-      | Index { expression; index; _ } ->
-          analyze_normalized_expression
-            ~resolution
-            ~state
-            ~expression:(Node.create ~location expression)
-          |>> ForwardState.Tree.read [index]
-          |>> ForwardState.Tree.transform
-                ForwardTaint.simple_feature_set
-                ~f:(add_first_index index)
-      | Call { callee; arguments } ->
-          let location =
-            { Expression.Call.callee = AccessPath.as_expression ~location callee; arguments }
-            |> Expression.arguments_location
-          in
-          analyze_call ~resolution location ~callee arguments state
-      | Expression expression -> analyze_expression ~resolution ~state ~expression
-      | Global reference -> global_model reference, state
-      | Local identifier ->
-          ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
-
-
     and analyze_dictionary_entry ~resolution (taint, state) { Dictionary.key; value } =
       let field_name =
         match key.Node.value with
@@ -520,11 +368,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
         List.fold target_candidates ~f:merge_models ~init:ForwardState.Tree.empty
       in
       match expression.Node.value with
-      | Access access ->
-          let expression =
-            AccessPath.normalize_access access ~resolution |> Node.create ~location
-          in
-          analyze_normalized_expression ~resolution ~state ~expression
+      | Access _ -> failwith "Access variant is deprecated."
       | Await expression -> analyze_expression ~resolution ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator = _; right } ->
@@ -543,41 +387,47 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 ForwardTaint.simple_feature_set
                 ~f:(add_first_index index)
       | Call { callee; arguments } -> (
-        match AccessPath.get_global ~resolution callee, Node.value callee with
-        | Some global, _ ->
-            let targets = Interprocedural.CallResolution.get_global_targets ~resolution ~global in
-            let _, extra_arguments =
-              Interprocedural.CallResolution.normalize_global ~resolution global
-            in
-            let arguments = extra_arguments @ arguments in
-            apply_call_targets ~resolution location arguments state targets
-        | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
-            let arguments =
-              let receiver = { Call.Argument.name = None; value = receiver } in
-              receiver :: arguments
-            in
-            let add_index_breadcrumb_if_necessary taint =
-              if not (String.equal method_name "get") then
-                taint
-              else
-                match arguments with
-                | _receiver :: index :: _ ->
-                    let label = get_index index.value in
-                    ForwardState.Tree.transform
-                      ForwardTaint.simple_feature_set
-                      ~f:(add_first_index label)
-                      taint
-                | _ -> taint
-            in
-            Interprocedural.CallResolution.get_indirect_targets ~resolution ~receiver ~method_name
-            |> apply_call_targets ~resolution location arguments state
-            |>> add_index_breadcrumb_if_necessary
-        | _ ->
-            (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
-            let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
-            (* For now just join all argument and receiver taint and propagate to result. *)
-            List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
-        )
+          let location = Expression.arguments_location { callee; arguments } in
+          match AccessPath.get_global ~resolution callee, Node.value callee with
+          | Some global, _ ->
+              let targets =
+                Interprocedural.CallResolution.get_global_targets ~resolution ~global
+              in
+              let _, extra_arguments =
+                Interprocedural.CallResolution.normalize_global ~resolution global
+              in
+              let arguments = extra_arguments @ arguments in
+              apply_call_targets ~resolution location arguments state targets
+          | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
+              let arguments =
+                let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
+                receiver :: arguments
+              in
+              let add_index_breadcrumb_if_necessary taint =
+                if not (String.equal method_name "get") then
+                  taint
+                else
+                  match arguments with
+                  | _receiver :: index :: _ ->
+                      let label = get_index index.value in
+                      ForwardState.Tree.transform
+                        ForwardTaint.simple_feature_set
+                        ~f:(add_first_index label)
+                        taint
+                  | _ -> taint
+              in
+              Interprocedural.CallResolution.get_indirect_targets
+                ~resolution
+                ~receiver
+                ~method_name
+              |> apply_call_targets ~resolution location arguments state
+              |>> add_index_breadcrumb_if_necessary
+          | _ ->
+              (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
+              let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
+              (* For now just join all argument and receiver taint and propagate to result. *)
+              List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
+          )
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
           List.fold
@@ -850,7 +700,7 @@ let run ~environment
     "Starting analysis of %a"
     Interprocedural.Callable.pp
     (Interprocedural.Callable.create define);
-  let cfg = Cfg.create ~convert:true define.value in
+  let cfg = Cfg.create define.value in
   let initial =
     let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
     FixpointState.create ~existing_model normalized_parameters

@@ -10,14 +10,6 @@ open Taint
 
 let test_normalize _ =
   let assert_normalized ?(modules = []) access expected =
-    let old_access =
-      let parse_access expression =
-        match Test.parse_single_expression ~convert:true expression with
-        | { Node.value = Expression.Access access; _ } -> access
-        | _ -> failwith "not an access"
-      in
-      parse_access access
-    in
     let resolution =
       let sources =
         if List.is_empty modules then
@@ -28,17 +20,6 @@ let test_normalize _ =
       in
       Test.resolution ?sources ()
     in
-    let normalized = AccessPath.normalize_access old_access ~resolution in
-    assert_equal
-      ~cmp:Expression.equal
-      ~printer:Expression.show
-      (Node.create_with_default_location (Expression.Access old_access))
-      (AccessPath.as_expression normalized |> Expression.convert);
-    assert_equal
-      ~cmp:AccessPath.equal_normalized_expression
-      ~printer:AccessPath.show_normalized_expression
-      expected
-      normalized;
     let expression = Test.parse_single_expression access in
     let normalized = AccessPath.normalize_expression expression ~resolution in
     assert_equal

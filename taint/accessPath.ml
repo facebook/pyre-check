@@ -173,31 +173,17 @@ type t = {
 
 let create root path = { root; path }
 
-let of_access path access_element =
-  match path, access_element with
-  | Some path, Access.Identifier id -> Some (AbstractTreeDomain.Label.Field id :: path)
-  | _ -> None
-
-
-let of_accesses = function
-  | Access.Identifier root :: rest ->
-      List.fold ~init:(Some []) ~f:of_access rest
-      >>| fun path -> { root = Root.Variable root; path }
-  | _ -> None
-
-
-let rec of_new_expression path = function
-  | { Node.value = Name (Name.Identifier identifier); _ } ->
-      Some { root = Root.Variable identifier; path }
-  | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-      let path = AbstractTreeDomain.Label.Field attribute :: path in
-      of_new_expression path base
-  | _ -> None
-
-
 let of_expression = function
-  | { Node.value = Access (SimpleAccess access); _ } -> of_accesses access
-  | { Node.value = Name _; _ } as expression -> of_new_expression [] expression
+  | { Node.value = Name _; _ } as expression ->
+      let rec of_expression path = function
+        | { Node.value = Name (Name.Identifier identifier); _ } ->
+            Some { root = Root.Variable identifier; path }
+        | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+            let path = AbstractTreeDomain.Label.Field attribute :: path in
+            of_expression path base
+        | _ -> None
+      in
+      of_expression [] expression
   | _ -> None
 
 
@@ -222,78 +208,6 @@ let get_index { Node.value = expression; _ } =
   | String literal -> AbstractTreeDomain.Label.Field literal.value
   | Integer i -> AbstractTreeDomain.Label.Field (string_of_int i)
   | _ -> AbstractTreeDomain.Label.Any
-
-
-let normalize_access_list left = function
-  | Access.Identifier member -> Access { expression = left; member }
-  | Access.Call { value = [{ Argument.name; value }]; _ } -> (
-    match left with
-    | Access { expression; member } when is_get_item member ->
-        Index
-          { expression;
-            index = get_index value;
-            original = member;
-            arguments = [{ Call.Argument.name; value }]
-          }
-    | _ -> Call { callee = left; arguments = [{ Call.Argument.name; value }] } )
-  | Access.Call arguments ->
-      let arguments =
-        let convert { Argument.name; value } = { Call.Argument.name; value } in
-        List.map ~f:convert (Node.value arguments)
-      in
-      Call { callee = left; arguments }
-
-
-let global_prefix ~resolution access =
-  let rec module_prefix ~lead ~tail =
-    match tail with
-    | Access.Identifier identifier :: new_tail ->
-        let new_lead = Reference.create ~prefix:lead identifier in
-        if Resolution.module_definition resolution lead |> Option.is_some then
-          module_prefix ~lead:new_lead ~tail:new_tail
-        else
-          lead, tail
-    | _ -> lead, tail
-  in
-  module_prefix ~lead:Reference.empty ~tail:access
-
-
-let split_root ~resolution = function
-  | Access.Identifier identifier :: rest when Interprocedural.CallResolution.is_local identifier ->
-      Local identifier, rest
-  | Access.Identifier _ :: _ as access ->
-      let prefix, rest = global_prefix access ~resolution in
-      Global prefix, rest
-  | Access.Call _ :: _ -> failwith "invalid root (call) in access"
-  | _ -> failwith "empty access"
-
-
-let resolve_exports ~resolution = function
-  | Access.SimpleAccess access ->
-      let simple_prefix, suffix =
-        List.split_while
-          ~f:(function
-            | Access.Identifier _ -> true
-            | _ -> false)
-          access
-      in
-      let prefix =
-        Reference.from_access simple_prefix
-        |> (fun reference -> Resolution.resolve_exports resolution ~reference)
-        |> Reference.access
-      in
-      Access.SimpleAccess (prefix @ suffix)
-  | expression -> expression
-
-
-let normalize_access ~resolution (access : Access.general_access) =
-  (* TODO(T42218730): should we also handle redirects here? *)
-  match resolve_exports ~resolution access with
-  | Access.SimpleAccess access ->
-      let root, rest = split_root access ~resolution in
-      List.fold rest ~init:root ~f:normalize_access_list
-  | Access.ExpressionAccess { expression; access; _ } ->
-      List.fold access ~init:(Expression expression) ~f:normalize_access_list
 
 
 let rec normalize_expression ~resolution expression =
@@ -371,23 +285,6 @@ let to_json { root; path } =
   `String (root_name root ^ AbstractTreeDomain.Label.show_path path)
 
 
-let is_property_access ~resolution ~expression:{ Node.value = expression; _ } =
-  match expression with
-  | Access { expression; member } ->
-      let annotation = as_expression expression |> Resolution.resolve resolution in
-      let is_property define =
-        String.Set.exists ~f:(Statement.Define.has_decorator define) Recognized.property_decorators
-      in
-      Type.access annotation @ [Identifier member]
-      |> Reference.from_access
-      |> Resolution.function_definitions resolution
-      >>| (function
-            | [{ Node.value = define; _ }] -> is_property define
-            | _ -> false)
-      |> Option.value ~default:false
-  | _ -> false
-
-
 let is_property ~resolution = function
   | Name (Name.Attribute { base; attribute; _ }) ->
       let annotation = Resolution.resolve resolution base in
@@ -403,17 +300,27 @@ let is_property ~resolution = function
       |> Option.value ~default:false
   | _ -> false
 
+
+let create_receiver ~call receiver =
+  { Call.Argument.name = None;
+    value = { receiver with Node.location = Expression.arguments_location call }
+  }
+
+
 let get_global ~resolution name =
-  match Node.value name with
-  | Name (Name.Identifier identifier) when not (Interprocedural.CallResolution.is_local identifier)
-    ->
-      Some (Reference.create identifier)
-  | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
-      let name = Reference.from_name name in
-      let base_name = Reference.from_name base_name in
-      let is_module name = name >>= Resolution.module_definition resolution |> Option.is_some in
-      name >>= Option.some_if (is_module base_name && not (is_module name))
-  | _ -> None
+  let global =
+    match Node.value name with
+    | Name (Name.Identifier identifier)
+      when not (Interprocedural.CallResolution.is_local identifier) ->
+        Some (Reference.create identifier)
+    | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
+        let name = Reference.from_name name in
+        let base_name = Reference.from_name base_name in
+        let is_module name = name >>= Resolution.module_definition resolution |> Option.is_some in
+        name >>= Option.some_if (is_module base_name && not (is_module name))
+    | _ -> None
+  in
+  global >>| fun reference -> Resolution.resolve_exports resolution ~reference
 
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)

@@ -49,20 +49,16 @@ type normalized_expression =
   | Expression of Expression.t
 [@@deriving eq, show]
 
-val normalize_access : resolution:Resolution.t -> Access.general_access -> normalized_expression
-
 val normalize_expression : resolution:Resolution.t -> Expression.t -> normalized_expression
-
-val normalize_access_list
-  :  normalized_expression ->
-  Expression.t Access.access ->
-  normalized_expression
 
 val as_expression : ?location:Location.Reference.t -> normalized_expression -> Expression.t
 
 val to_json : t -> Yojson.Safe.json
 
-val is_property_access : resolution:Resolution.t -> expression:normalized_expression Node.t -> bool
+val create_receiver
+  :  call:Expression.t Expression.Call.t ->
+  Expression.t ->
+  Expression.t Call.Argument.t
 
 val get_global : resolution:Resolution.t -> Expression.t -> Reference.t option
 

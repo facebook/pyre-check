@@ -33,9 +33,7 @@ let assert_taint ?(qualifier = "qualifier") source expected =
   let environment = Test.environment ~configuration () in
   Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment [source];
   TypeCheck.run ~configuration ~environment ~source |> ignore;
-  let defines =
-    source |> Preprocessing.convert |> Preprocessing.defines ~include_stubs:true |> List.rev
-  in
+  let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =
     let call_target = Callable.create define in

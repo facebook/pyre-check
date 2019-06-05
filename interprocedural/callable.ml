@@ -135,9 +135,7 @@ let get_definition ~resolution = function
       |> Reference.create
       |> SharedMemory.Sources.get_for_qualifier
       >>| fun { Source.handle; qualifier; statements; _ } ->
-      Define.create_toplevel
-        ~qualifier:(Some qualifier)
-        ~statements:(List.map statements ~f:Statement.convert)
+      Define.create_toplevel ~qualifier:(Some qualifier) ~statements
       |> Node.create ~location:(Location.Reference.create_with_handle ~handle)
   | `Function name ->
       Reference.create name
@@ -145,7 +143,7 @@ let get_definition ~resolution = function
       >>= List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_method value))
   | `Method { class_name; method_name } when String.equal method_name "$class_toplevel" -> (
       Type.Primitive class_name
-      |> (fun annotation -> Resolution.class_definition resolution ~convert:true annotation)
+      |> (fun annotation -> Resolution.class_definition resolution annotation)
       |> function
       | Some { Node.location; value = { Class.name; body; _ }; _ } ->
           Define.create_class_toplevel ~parent:name ~statements:body
@@ -154,7 +152,7 @@ let get_definition ~resolution = function
       | None -> None )
   | `Method { class_name; method_name } ->
       Type.Primitive class_name
-      |> Resolution.class_definition ~convert:true resolution
+      |> Resolution.class_definition resolution
       >>| Node.value
       >>= Class.find_define ~method_name
 

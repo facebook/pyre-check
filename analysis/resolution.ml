@@ -217,7 +217,6 @@ let function_definitions resolution reference =
       in
       let result =
         Ast.SharedMemory.Sources.get_for_qualifier qualifier
-        >>| Preprocessing.convert
         >>| Preprocessing.defines ~include_stubs:true ~include_nested:true
         >>| List.filter ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
                 Reference.equal reference name)
