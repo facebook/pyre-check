@@ -35,24 +35,6 @@ val of_expression : Expression.t -> t option
 
 val get_index : Expression.t -> AbstractTreeDomain.Label.t
 
-type normalized_expression =
-  | Access of { expression: normalized_expression; member: Identifier.t }
-  | Call of { callee: normalized_expression; arguments: Expression.t Call.Argument.t list }
-  | Index of
-      { expression: normalized_expression;
-        index: AbstractTreeDomain.Label.t;
-        original: Identifier.t;
-        arguments: Expression.t Call.Argument.t list
-      }
-  | Global of Reference.t
-  | Local of Identifier.t
-  | Expression of Expression.t
-[@@deriving eq, show]
-
-val normalize_expression : resolution:Resolution.t -> Expression.t -> normalized_expression
-
-val as_expression : ?location:Location.Reference.t -> normalized_expression -> Expression.t
-
 val to_json : t -> Yojson.Safe.json
 
 val create_receiver
