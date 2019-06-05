@@ -23,6 +23,7 @@ class Start(Reporting):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Start, self).__init__(arguments, configuration, analysis_directory)
+        self._taint_models_path = configuration.taint_models_path  # Optional[str]
         self._terminal = arguments.terminal  # type: bool
         self._store_type_check_resolution = arguments.store_type_check_resolution
         self._use_watchman = not arguments.no_watchman  # type: bool
@@ -119,6 +120,8 @@ class Start(Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
+        if self._taint_models_path:
+            flags.extend(["-taint-models", self._taint_models_path])
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         if self._terminal:

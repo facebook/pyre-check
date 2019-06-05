@@ -487,6 +487,7 @@ let run_start_command
     profiling_output
     project_root
     search_path
+    taint_models_directory
     typeshed
     excludes
     extensions
@@ -527,6 +528,7 @@ let run_start_command
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map search_path ~f:Path.SearchPath.create)
+      ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
       ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
       ~extensions

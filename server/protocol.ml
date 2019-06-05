@@ -52,6 +52,7 @@ module TypeQuery = struct
     | Type of Expression.t
     | TypeAtPosition of { file: File.t; position: Location.position }
     | TypesInFile of File.t
+    | ValidateTaintModels
   [@@deriving eq, show]
 
   type coverage_level =
@@ -146,7 +147,7 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Path of Path.t
-    | Success of unit
+    | Success of string
     | Superclasses of Type.t list
     | Type of Type.t
     | TypeAtLocation of type_at_location
@@ -208,7 +209,7 @@ module TypeQuery = struct
     | FoundPath path -> `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
-    | Success () -> `Assoc []
+    | Success message -> `Assoc ["message", `String message]
     | Superclasses classes -> `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation

@@ -47,6 +47,7 @@ let help () =
         Some "type_at_position('path', line, column): Returns the type for the given cursor."
     | TypesInFile _ ->
         Some "types_in_file('path'): Returns the list of all types for a given path."
+    | ValidateTaintModels -> Some "validate_taint_models(): Validates models and returns errors."
   in
   let path = Path.current_working_directory () in
   let file = File.create path in
@@ -71,7 +72,8 @@ let help () =
       Superclasses empty;
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { file; position = Location.any_position };
-      TypesInFile file ]
+      TypesInFile file;
+      ValidateTaintModels ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
   |> Format.sprintf "Possible queries:\n  %s"
@@ -213,6 +215,7 @@ let parse_query
             |> List.map ~f:File.create
           in
           Request.TypeCheckRequest files
+      | "validate_taint_models", [] -> Request.TypeQueryRequest ValidateTaintModels
       | _ -> raise (InvalidQuery "unexpected query call") )
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error message ->

@@ -30,6 +30,7 @@ let run
     profiling_output
     project_root
     search_path
+    _taint_models_directory
     typeshed
     excludes
     extensions

@@ -67,6 +67,10 @@ let base_command_line_arguments =
          "-search-path"
          (optional_with_default [] (Arg_type.comma_separated string))
          ~doc:"DIRECTORY1,... Directories containing external modules to include."
+    +> flag
+         "-taint-models-directory"
+         (optional string)
+         ~doc:"DIRECTORY containing models for the taint analysis."
     +> flag "-typeshed" (optional string) ~doc:"DIRECTORY Typeshed root directory."
     +> flag
          "-exclude"

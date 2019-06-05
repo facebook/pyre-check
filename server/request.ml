@@ -753,7 +753,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           with
           | File.NonexistentHandle _ -> ()
         in
-        TypeQuery.Response (TypeQuery.Success ())
+        TypeQuery.Response (TypeQuery.Success "Dependencies dumped.")
     | TypeQuery.DumpMemoryToSqlite path ->
         let path = Path.absolute path in
         let () =
@@ -850,7 +850,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let path = Path.absolute path in
         Log.info "Saving server state into `%s`" path;
         Memory.save_shared_memory ~path;
-        TypeQuery.Response (TypeQuery.Success ())
+        TypeQuery.Response (TypeQuery.Success (Format.sprintf "Saved state."))
     | TypeQuery.Signature function_name -> (
         let keep_known_annotation annotation =
           match annotation with
@@ -944,6 +944,32 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
         |> Option.value ~default
+    | TypeQuery.ValidateTaintModels -> (
+      try
+        let directory =
+          configuration.Configuration.Analysis.taint_models_directory
+          |> fun value -> Option.value_exn value
+        in
+        let configuration = Taint.TaintConfiguration.create ~directory in
+        let create_models sources =
+          let create_model source =
+            Taint.Model.parse
+              ~resolution:(TypeCheck.resolution environment ())
+              ~source
+              ~configuration
+              Interprocedural.Callable.Map.empty
+            |> ignore
+          in
+          List.iter sources ~f:create_model
+        in
+        Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root:directory ()
+        |> List.map ~f:File.create
+        |> List.filter_map ~f:File.content
+        |> create_models;
+        TypeQuery.Response
+          (TypeQuery.Success (Format.asprintf "Models in `%a` are valid." Path.pp directory))
+      with
+      | error -> TypeQuery.Error (Exn.to_string error) )
   in
   let response =
     try process_request () with

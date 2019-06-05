@@ -52,6 +52,7 @@ module TypeQuery : sig
     | Type of Expression.t
     | TypeAtPosition of { file: File.t; position: Location.position }
     | TypesInFile of File.t
+    | ValidateTaintModels
   [@@deriving eq, show]
 
   type coverage_level =
@@ -144,7 +145,7 @@ module TypeQuery : sig
     | FoundPath of string
     | FoundSignature of found_signature list
     | Path of Pyre.Path.t
-    | Success of unit
+    | Success of string
     | Superclasses of Type.t list
     | Type of Type.t
     | TypeAtLocation of type_at_location

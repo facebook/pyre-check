@@ -8,7 +8,6 @@ open Pyre
 
 let run_analysis
     _taint
-    taint_models_directory
     result_json_path
     dump_call_graph
     verbose
@@ -30,6 +29,7 @@ let run_analysis
     profiling_output
     project_root
     search_path
+    taint_models_directory
     typeshed
     excludes
     extensions
@@ -127,10 +127,6 @@ let command =
     Command.Spec.(
       empty
       +> flag "-taint" no_arg ~doc:"Run the taint analysis."
-      +> flag
-           "-taint-models"
-           (optional file)
-           ~doc:"directory A directory containing models to introduce taint."
       +> flag
            "-save-results-to"
            (optional file)

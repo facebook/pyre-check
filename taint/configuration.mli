@@ -3,6 +3,8 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Pyre
+
 type rule = {
   sources: Sources.t list;
   sinks: Sinks.t list;
@@ -25,3 +27,5 @@ val parse : string -> t
 val register : t -> unit
 
 val default : t
+
+val create : directory:Path.t -> t

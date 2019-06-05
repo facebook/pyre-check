@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 module SharedMemory = Memory
 module Json = Yojson.Safe
 
@@ -147,3 +148,12 @@ let get () =
   match SharedConfig.get key with
   | None -> default
   | Some configuration -> configuration
+
+
+let create ~directory =
+  if not (Path.is_directory directory) then
+    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+  let configuration_path = Path.append directory ~element:"taint.config" in
+  if not (Path.file_exists configuration_path) then
+    raise (Invalid_argument (Format.asprintf "`%a` is not a file" Path.pp configuration_path));
+  configuration_path |> File.create |> File.content |> Option.value ~default:"" |> parse

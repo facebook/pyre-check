@@ -887,7 +887,7 @@ let test_query context =
   assert_type_query_response
     ~source:""
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
-    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success ()));
+    (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success "Saved state."));
   assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
   Path.create_relative ~root:local_root ~relative:"a.py"
   |> File.create ~content:"pass"
