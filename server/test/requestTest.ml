@@ -510,6 +510,13 @@ let test_create_annotation_edit _ =
       thrown_at_source = true
     }
   in
+  let mock_mismatch : Analysis.Error.mismatch =
+    { actual = Type.integer;
+      actual_expressions = [];
+      expected = Type.string;
+      due_to_invariance = false
+    }
+  in
   let location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
   let assert_edit ~source ~error ~expected_text ~expected_range =
     let file = write_file ("test.py", source) in
@@ -604,16 +611,28 @@ let test_create_annotation_edit _ =
          { Analysis.Error.location;
            kind =
              Analysis.Error.IncompatibleReturnType
-               { mismatch =
-                   { actual = Type.integer;
-                     actual_expressions = [];
-                     expected = Type.string;
-                     due_to_invariance = false
-                   };
+               { mismatch = mock_mismatch;
                  is_implicit = false;
                  is_unimplemented = false;
                  define_location = { Location.Reference.any with start = { line = 0; column = 0 } }
                };
+           signature = +mock_signature
+         });
+  assert_edit
+    ~source:{|
+          x: str = 1234
+      |}
+    ~expected_text:": int "
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 0; character = 1 };
+        end_ = { line = 0; character = 7 }
+      }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind =
+             Analysis.Error.IncompatibleVariableType
+               { name = !&"x"; mismatch = mock_mismatch; declare_location = location };
            signature = +mock_signature
          })
 

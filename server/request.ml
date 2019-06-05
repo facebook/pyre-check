@@ -251,7 +251,9 @@ module AnnotationEdit = struct
 
   let is_replacement_edit kind =
     match kind with
-    | Error.IncompatibleReturnType _ -> true
+    | Error.IncompatibleVariableType _
+    | Error.IncompatibleReturnType _ ->
+        true
     | _ -> false
 
 
@@ -266,12 +268,15 @@ module AnnotationEdit = struct
           Some (Format.asprintf "%a" Reference.pp_sanitized name)
       | Error.IncompatibleReturnType { mismatch = { expected; _ }; _ } ->
           Some (Format.asprintf " -> %s" (Type.show expected))
+      | Error.IncompatibleVariableType { name; mismatch = { expected; _ }; _ } ->
+          Some (Format.asprintf "%a: %s" Reference.pp_sanitized name (Type.show expected))
       | _ -> None
     in
     let start_line =
       let line =
         match error_kind with
         | Error.IncompatibleReturnType { define_location; _ } -> Location.line define_location
+        | Error.IncompatibleVariableType { declare_location; _ } -> Location.line declare_location
         | _ -> Error.location error |> Location.line
       in
       line - 1
@@ -318,6 +323,8 @@ module AnnotationEdit = struct
                 Some (": " ^ Type.show (Type.weaken_literals annotation))
             | Error.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
                 Some (Format.asprintf "-> %s:" @@ Type.show (Type.weaken_literals annotation))
+            | Error.IncompatibleVariableType { mismatch = { actual = annotation; _ }; _ } ->
+                Some (Format.asprintf ": %s " @@ Type.show (Type.weaken_literals annotation))
             | _ -> None
           in
           let range = create_range ~error ~file in
