@@ -531,6 +531,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let left_taint, state = analyze_expression ~resolution ~state ~expression:left in
           let right_taint, state = analyze_expression ~resolution ~state ~expression:right in
           ForwardState.Tree.join left_taint right_taint, state
+      | Call
+          { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            arguments = [{ Call.Argument.value = argument_value; _ }]
+          } ->
+          let index = AccessPath.get_index argument_value in
+          analyze_expression ~resolution ~state ~expression:base
+          |>> ForwardState.Tree.read [index]
+          |>> ForwardState.Tree.transform
+                ForwardTaint.simple_feature_set
+                ~f:(add_first_index index)
       | Call { callee; arguments } -> (
         match AccessPath.get_global ~resolution callee, Node.value callee with
         | Some global, _ ->

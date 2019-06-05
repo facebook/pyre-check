@@ -357,6 +357,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | ComparisonOperator { left; operator = _; right } ->
           analyze_expression ~resolution ~taint ~state ~expression:right
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
+      | Call
+          { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            arguments = [{ Call.Argument.value = argument_value; _ }]
+          } ->
+          let index = AccessPath.get_index argument_value in
+          let taint = BackwardState.Tree.prepend [index] taint in
+          analyze_expression ~resolution ~taint ~state ~expression:base
       | Call { callee; arguments } -> (
         match AccessPath.get_global ~resolution callee, Node.value callee with
         | Some global, _ ->
