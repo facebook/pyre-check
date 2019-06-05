@@ -594,6 +594,12 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           global_model global, state
       | Name (Name.Identifier identifier) ->
           ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint, state
+      | Name (Name.Attribute { base; _ })
+        when AccessPath.is_property ~resolution expression.Node.value ->
+          let property_call =
+            Expression.Call { callee = base; arguments = [] } |> Node.create ~location
+          in
+          analyze_expression ~resolution ~state ~expression:property_call
       | Name (Name.Attribute { base; attribute; _ }) ->
           let annotation = Resolution.resolve resolution base in
           let attribute_taint =

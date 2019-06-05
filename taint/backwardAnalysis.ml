@@ -405,6 +405,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name _ when AccessPath.is_global ~resolution { Node.location; value = expression } -> state
       | Name (Name.Identifier identifier) ->
           store_weak_taint ~root:(Root.Variable identifier) ~path:[] taint state
+      | Name (Name.Attribute { base; _ }) when AccessPath.is_property ~resolution expression ->
+          let property_call =
+            Expression.Call { callee = base; arguments = [] } |> Node.create ~location
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:property_call
       | Name (Name.Attribute { base; attribute; _ }) ->
           let field = AbstractTreeDomain.Label.Field attribute in
           let taint =

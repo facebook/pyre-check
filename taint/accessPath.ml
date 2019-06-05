@@ -388,6 +388,21 @@ let is_property_access ~resolution ~expression:{ Node.value = expression; _ } =
   | _ -> false
 
 
+let is_property ~resolution = function
+  | Name (Name.Attribute { base; attribute; _ }) ->
+      let annotation = Resolution.resolve resolution base in
+      let is_property define =
+        String.Set.exists ~f:(Statement.Define.has_decorator define) Recognized.property_decorators
+      in
+      Type.access annotation @ [Identifier attribute]
+      |> Reference.from_access
+      |> Resolution.function_definitions resolution
+      >>| (function
+            | [{ Node.value = define; _ }] -> is_property define
+            | _ -> false)
+      |> Option.value ~default:false
+  | _ -> false
+
 let get_global ~resolution name =
   match Node.value name with
   | Name (Name.Identifier identifier) when not (Interprocedural.CallResolution.is_local identifier)
