@@ -16,13 +16,14 @@ type response = {
 }
 
 (* Exposed for testing. *)
-module MissingAnnotationEdit : sig
+module AnnotationEdit : sig
   type t = {
     new_text: string;
-    position: LanguageServer.Types.Position.t
+    range: LanguageServer.Types.Range.t;
+    title: string
   }
 
-  val position : t -> LanguageServer.Types.Position.t
+  val range : t -> LanguageServer.Types.Range.t
 
   val new_text : t -> string
 

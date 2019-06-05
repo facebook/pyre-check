@@ -502,7 +502,7 @@ let test_process_get_definition_request context =
 
 
 let test_create_annotation_edit _ =
-  let missing_annotation : Analysis.Error.missing_annotation =
+  let mock_missing_annotation : Analysis.Error.missing_annotation =
     { name = Reference.create "x";
       annotation = Some (Type.Literal (Integer 1));
       given_annotation = None;
@@ -511,17 +511,17 @@ let test_create_annotation_edit _ =
     }
   in
   let location = { Location.Instantiated.any with start = { line = 0; column = 0 } } in
-  let assert_edit ~source ~error ~expected_text ~expected_position =
+  let assert_edit ~source ~error ~expected_text ~expected_range =
     let file = write_file ("test.py", source) in
-    let edit = Request.MissingAnnotationEdit.create ~file ~error in
+    let edit = Request.AnnotationEdit.create ~file ~error in
     assert_is_some edit;
     edit
-    >>| Request.MissingAnnotationEdit.new_text
+    >>| Request.AnnotationEdit.new_text
     >>| assert_equal expected_text
     |> Option.value ~default:();
     edit
-    >>| Request.MissingAnnotationEdit.position
-    >>| assert_equal expected_position
+    >>| Request.AnnotationEdit.range
+    >>| assert_equal expected_range
     |> Option.value ~default:()
   in
   assert_edit
@@ -530,11 +530,14 @@ let test_create_annotation_edit _ =
           return 1
       |}
     ~expected_text:" -> int"
-    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 9 }
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 0; character = 9 };
+        end_ = { line = 0; character = 9 }
+      }
     ~error:
       (Some
          { Analysis.Error.location;
-           kind = Analysis.Error.MissingReturnAnnotation missing_annotation;
+           kind = Analysis.Error.MissingReturnAnnotation mock_missing_annotation;
            signature = +mock_signature
          });
   assert_edit
@@ -542,11 +545,14 @@ let test_create_annotation_edit _ =
       x = foo()
     |}
     ~expected_text:": int"
-    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 1 }
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 0; character = 1 };
+        end_ = { line = 0; character = 1 }
+      }
     ~error:
       (Some
          { Analysis.Error.location;
-           kind = Analysis.Error.MissingGlobalAnnotation missing_annotation;
+           kind = Analysis.Error.MissingGlobalAnnotation mock_missing_annotation;
            signature = +mock_signature
          });
   assert_edit
@@ -555,11 +561,14 @@ let test_create_annotation_edit _ =
         return 1
     |}
     ~expected_text:": int"
-    ~expected_position:{ LanguageServer.Types.Position.line = 0; character = 9 }
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 0; character = 9 };
+        end_ = { line = 0; character = 9 }
+      }
     ~error:
       (Some
          { Analysis.Error.location;
-           kind = Analysis.Error.MissingParameterAnnotation missing_annotation;
+           kind = Analysis.Error.MissingParameterAnnotation mock_missing_annotation;
            signature = +mock_signature
          });
   assert_edit
@@ -568,12 +577,43 @@ let test_create_annotation_edit _ =
             x = foo()
     |}
     ~expected_text:": int"
-    ~expected_position:{ LanguageServer.Types.Position.line = 1; character = 5 }
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 1; character = 5 };
+        end_ = { line = 1; character = 5 }
+      }
     ~error:
       (Some
          { Analysis.Error.location;
            kind =
-             Analysis.Error.MissingAttributeAnnotation { parent = Type.Any; missing_annotation };
+             Analysis.Error.MissingAttributeAnnotation
+               { parent = Type.Any; missing_annotation = mock_missing_annotation };
+           signature = +mock_signature
+         });
+  assert_edit
+    ~source:{|
+      def foo(x) -> str:
+        return 1234
+    |}
+    ~expected_text:"-> int:"
+    ~expected_range:
+      { LanguageServer.Types.Range.start = { line = 0; character = 11 };
+        end_ = { line = 0; character = 18 }
+      }
+    ~error:
+      (Some
+         { Analysis.Error.location;
+           kind =
+             Analysis.Error.IncompatibleReturnType
+               { mismatch =
+                   { actual = Type.integer;
+                     actual_expressions = [];
+                     expected = Type.string;
+                     due_to_invariance = false
+                   };
+                 is_implicit = false;
+                 is_unimplemented = false;
+                 define_location = { Location.Reference.any with start = { line = 0; column = 0 } }
+               };
            signature = +mock_signature
          })
 

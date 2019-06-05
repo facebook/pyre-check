@@ -140,7 +140,12 @@ type kind =
         callee: Reference.t option;
         mismatch: mismatch
       }
-  | IncompatibleReturnType of { mismatch: mismatch; is_implicit: bool; is_unimplemented: bool }
+  | IncompatibleReturnType of
+      { mismatch: mismatch;
+        is_implicit: bool;
+        is_unimplemented: bool;
+        define_location: Location.t
+      }
   | IncompatibleVariableType of incompatible_type
   | IncompatibleOverload of incompatible_overload_kind
   | IncompleteType of
@@ -1903,7 +1908,8 @@ let join ~resolution left right =
           IncompatibleReturnType
             { mismatch;
               is_implicit = left.is_implicit && right.is_implicit;
-              is_unimplemented = left.is_unimplemented && right.is_unimplemented
+              is_unimplemented = left.is_unimplemented && right.is_unimplemented;
+              define_location = right.define_location
             }
       | None -> Top )
     | IncompatibleAttributeType left, IncompatibleAttributeType right

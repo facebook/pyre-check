@@ -236,47 +236,69 @@ type response = {
   response: Protocol.response option
 }
 
-module MissingAnnotationEdit = struct
+module AnnotationEdit = struct
   type t = {
     new_text: string;
-    position: LanguageServer.Types.Position.t
+    range: LanguageServer.Types.Range.t;
+    title: string
   }
 
-  let range { position; _ } = { LanguageServer.Types.Range.start = position; end_ = position }
+  let range { range; _ } = range
 
   let new_text { new_text; _ } = new_text
 
-  let position { position; _ } = position
+  let title { title; _ } = title
 
-  let create_location ~error ~file =
+  let is_replacement_edit kind =
+    match kind with
+    | Error.IncompatibleReturnType _ -> true
+    | _ -> false
+
+
+  let create_range ~error ~file =
+    let error_kind = Error.kind error in
     let token =
-      match Error.kind error with
+      match error_kind with
       | Error.MissingReturnAnnotation _ -> Some "):"
       | Error.MissingAttributeAnnotation { missing_annotation = { name; _ }; _ }
       | Error.MissingParameterAnnotation { name; _ }
       | Error.MissingGlobalAnnotation { name; _ } ->
           Some (Format.asprintf "%a" Reference.pp_sanitized name)
+      | Error.IncompatibleReturnType { mismatch = { expected; _ }; _ } ->
+          Some (Format.asprintf " -> %s" (Type.show expected))
       | _ -> None
     in
     let start_line =
-      let line = Error.location error |> Location.line in
+      let line =
+        match error_kind with
+        | Error.IncompatibleReturnType { define_location; _ } -> Location.line define_location
+        | _ -> Error.location error |> Location.line
+      in
       line - 1
     in
-    let get_position lines token =
+    let get_range lines token =
       List.findi lines ~f:(fun _ line -> Option.is_some (String.substr_index line ~pattern:token))
       >>| (fun (index, line) ->
-            Some
-              LanguageServer.Types.Position.
-                { line = index + start_line;
-                  character = String.substr_index_exn line ~pattern:token + 1
-                })
+            let position =
+              { LanguageServer.Types.Position.line = index + start_line;
+                character = String.substr_index_exn line ~pattern:token + 1
+              }
+            in
+            let end_ =
+              if is_replacement_edit error_kind then
+                let { LanguageServer.Types.Position.character; _ } = position in
+                { position with character = character + String.length token }
+              else
+                position
+            in
+            Some { LanguageServer.Types.Range.start = position; end_ })
       |> Option.value ~default:None
     in
     let lines = File.lines file in
     match token, lines with
     | Some token, Some lines ->
         let _, lines = List.split_n lines start_line in
-        get_position lines token
+        get_range lines token
     | _, _ -> None
 
 
@@ -284,8 +306,9 @@ module MissingAnnotationEdit = struct
              ~error =
     error
     >>| (fun error ->
+          let error_kind = Error.kind error in
           let new_text =
-            match Error.kind error with
+            match error_kind with
             | Error.MissingReturnAnnotation { annotation = Some annotation; _ } ->
                 Some (" -> " ^ Type.show (Type.weaken_literals annotation))
             | Error.MissingAttributeAnnotation
@@ -293,11 +316,19 @@ module MissingAnnotationEdit = struct
             | Error.MissingParameterAnnotation { annotation = Some annotation; _ }
             | Error.MissingGlobalAnnotation { annotation = Some annotation; _ } ->
                 Some (": " ^ Type.show (Type.weaken_literals annotation))
+            | Error.IncompatibleReturnType { mismatch = { actual = annotation; _ }; _ } ->
+                Some (Format.asprintf "-> %s:" @@ Type.show (Type.weaken_literals annotation))
             | _ -> None
           in
-          let position = create_location ~error ~file in
-          match position, new_text with
-          | Some position, Some new_text -> Some { new_text; position }
+          let range = create_range ~error ~file in
+          let title =
+            if is_replacement_edit error_kind then
+              "Fix annotation"
+            else
+              "Add annotation"
+          in
+          match range, new_text with
+          | Some range, Some new_text -> Some { new_text; range; title }
           | _, _ -> None)
     |> Option.value ~default:None
 end
@@ -1062,7 +1093,7 @@ let rec process
                        List.find (errors file) ~f:(fun { location; _ } ->
                            is_range_equal_location range location)
                      in
-                     MissingAnnotationEdit.create ~file ~error
+                     AnnotationEdit.create ~file ~error
                      >>| (fun edit ->
                            Some
                              { LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
@@ -1071,12 +1102,12 @@ let rec process
                                    { title = "Fix it";
                                      command = "add_annotation";
                                      arguments =
-                                       [ { range = MissingAnnotationEdit.range edit;
-                                           newText = MissingAnnotationEdit.new_text edit;
+                                       [ { range = AnnotationEdit.range edit;
+                                           newText = AnnotationEdit.new_text edit;
                                            uri
                                          } ]
                                    };
-                               title = "Add annotation";
+                               title = AnnotationEdit.title edit;
                                kind = Some "refactor.rewrite"
                              })
                      |> Option.value ~default:None)

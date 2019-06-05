@@ -66,7 +66,8 @@ let incompatible_return_type
   Error.IncompatibleReturnType
     { mismatch = { Error.actual; actual_expressions; expected; due_to_invariance };
       is_implicit = false;
-      is_unimplemented
+      is_unimplemented;
+      define_location = Node.location mock_define
     }
 
 
@@ -308,7 +309,8 @@ let test_due_to_analysis_limitations _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
@@ -319,7 +321,8 @@ let test_due_to_analysis_limitations _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   assert_not_due_to_analysis_limitations
     (Error.IncompatibleReturnType
@@ -330,7 +333,8 @@ let test_due_to_analysis_limitations _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   (* UndefinedType. *)
   assert_not_due_to_analysis_limitations (Error.UndefinedType Type.Top);
@@ -415,7 +419,8 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
@@ -426,7 +431,8 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   assert_not_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
@@ -437,7 +443,8 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            };
          is_implicit = false;
-         is_unimplemented = false
+         is_unimplemented = false;
+         define_location = Node.location mock_define
        });
   (* IncompatibleVariableType *)
   assert_due_to_mismatch_with_any

@@ -2536,7 +2536,8 @@ module State (Context : Context) = struct
                        ~expected:return_annotation
                        ~covariant:true;
                    is_implicit;
-                   is_unimplemented = check_unimplemented body
+                   is_unimplemented = check_unimplemented body;
+                   define_location
                  })
         else
           state
