@@ -192,9 +192,9 @@ module State (Context : Context) = struct
     let resolution =
       TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key
     in
-    let is_awaitable value =
+    let is_awaitable expression =
       try
-        let annotation = Resolution.resolve resolution value in
+        let annotation = Resolution.resolve resolution expression in
         Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
       with
       | TypeOrder.Untracked _ -> false
@@ -232,6 +232,15 @@ module State (Context : Context) = struct
         mark_name_as_awaited state ~name
     | Delete expression
     | Expression expression ->
+        let state =
+          if is_awaitable expression then
+            { unawaited =
+                Map.set unawaited ~key:(Node.location expression) ~data:(Unawaited expression);
+              locals
+            }
+          else
+            state
+        in
         forward_expression ~state ~expression
     | Raise None -> state
     | Raise (Some expression) -> forward_expression ~state ~expression
