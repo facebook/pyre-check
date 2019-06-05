@@ -243,9 +243,7 @@ let test_invalid_models _ =
     ~expect:"Invalid model for `sink`: Invalid TaintInTaintOut annotation `Test`";
   assert_invalid_model
     ~model_source:"def sink(parameter: InvalidTaintDirection[Test]): ..."
-    ~expect:
-      ( "Invalid model for `sink`: Unrecognized taint annotation "
-      ^ "`InvalidTaintDirection.__getitem__.(...)`" );
+    ~expect:"Invalid model for `sink`: Unrecognized taint annotation `InvalidTaintDirection[Test]`";
   assert_invalid_model
     ~model_source:"def not_in_the_environment(parameter: InvalidTaintDirection[Test]): ..."
     ~expect:

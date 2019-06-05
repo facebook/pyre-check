@@ -144,32 +144,38 @@ let rec parse_annotations ~configuration ~parameters annotation =
   let rec extract_breadcrumbs expression =
     let open Configuration in
     match expression.Node.value with
-    | Access (SimpleAccess [Identifier breadcrumb]) ->
+    | Name (Name.Identifier breadcrumb) ->
         [Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions -> List.concat_map ~f:extract_breadcrumbs expressions
     | _ -> []
   in
   let rec extract_names expression =
     match expression.Node.value with
-    | Access (SimpleAccess [Identifier name]) -> [name]
+    | Name (Name.Identifier name) -> [name]
     | Tuple expressions -> List.concat_map ~f:extract_names expressions
     | _ -> []
   in
+  let base_matches expected = function
+    | { Node.value =
+          Name (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ })
+      ; _
+      } ->
+        Identifier.equal expected identifier
+    | _ -> false
+  in
   let rec extract_kinds expression =
     match expression.Node.value with
-    | Access (SimpleAccess [Identifier taint_kind]) -> [Leaf taint_kind]
-    | Access
-        (SimpleAccess
-          (Identifier "Via"
-          :: _ :: Call { value = { Argument.value = expression; _ } :: _; _ } :: _)) ->
+    | Name (Name.Identifier taint_kind) -> [Leaf taint_kind]
+    | Name (Name.Attribute { base; _ }) -> extract_kinds base
+    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+      when base_matches "Via" callee ->
         [Breadcrumbs (extract_breadcrumbs expression)]
-    | Access
-        (SimpleAccess
-          (Identifier "Updates"
-          :: _ :: Call { value = { Argument.value = expression; _ } :: _; _ } :: _)) ->
+    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+      when base_matches "Updates" callee ->
         extract_names expression
         |> List.map ~f:(fun name ->
                Leaf (Format.sprintf "ParameterUpdate%d" (get_parameter_position name)))
+    | Call { callee; _ } -> extract_kinds callee
     | Tuple expressions -> List.concat_map ~f:extract_kinds expressions
     | _ -> []
   in
@@ -204,33 +210,34 @@ let rec parse_annotations ~configuration ~parameters annotation =
             Tito { tito = Sinks.parse ~allowed:configuration.sinks kind; breadcrumbs })
   in
   match annotation with
-  | Some { Node.value = Expression.Access (SimpleAccess access); _ } -> (
-    match access with
-    | Identifier "Union"
-      :: _
-         :: Call { value = { Argument.value = { value = Tuple expressions; _ }; _ } :: _; _ } :: _
-      ->
-        List.concat_map expressions ~f:(fun expression ->
-            parse_annotations ~configuration ~parameters (Some expression))
-    | Identifier "TaintSink"
-      :: _ :: Call { value = { Argument.value = expression; _ } :: _; _ } :: _ ->
-        get_sink_kinds expression
-    | Identifier "TaintSource"
-      :: _ :: Call { value = { Argument.value = expression; _ } :: _; _ } :: _ ->
-        get_source_kinds expression
-    | [Identifier "TaintInTaintOut"] -> [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
-    | Identifier "TaintInTaintOut"
-      :: _ :: Call { value = { Argument.value = expression; _ } :: _; _ } :: _ ->
-        get_taint_in_taint_out expression
-    | [Identifier "SkipAnalysis"] -> [SkipAnalysis]
-    | [Identifier "Sanitize"] -> [Sanitize]
-    | _ ->
-        Format.asprintf "Unrecognized taint annotation `%s`" (Expression.Access.show access)
-        |> raise_invalid_model )
+  | Some ({ Node.value; _ } as expression) ->
+      let rec parse_annotation = function
+        | Call
+            { callee;
+              arguments = { Call.Argument.value = { value = Tuple expressions; _ }; _ } :: _
+            }
+          when base_matches "Union" callee ->
+            List.concat_map expressions ~f:(fun expression ->
+                parse_annotations ~configuration ~parameters (Some expression))
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "TaintSink" callee ->
+            get_sink_kinds expression
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "TaintSource" callee ->
+            get_source_kinds expression
+        | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ }
+          when base_matches "TaintInTaintOut" callee ->
+            get_taint_in_taint_out expression
+        | Name (Name.Identifier "TaintInTaintOut") ->
+            [Tito { tito = Sinks.LocalReturn; breadcrumbs = [] }]
+        | Name (Name.Identifier "SkipAnalysis") -> [SkipAnalysis]
+        | Name (Name.Identifier "Sanitize") -> [Sanitize]
+        | _ ->
+            Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show expression)
+            |> raise_invalid_model
+      in
+      parse_annotation value
   | None -> []
-  | Some value ->
-      Format.asprintf "Unrecognized taint annotation `%s`" (Expression.show value)
-      |> raise_invalid_model
 
 
 let taint_parameter ~configuration ~parameters model (root, _name, parameter) =
@@ -283,10 +290,7 @@ let create ~resolution ?(verify = true) ~configuration source =
           in
           List.find_map bases ~f:class_sink_base
           >>= (fun base ->
-                Resolution.class_definition
-                  ~convert:true
-                  resolution
-                  (Type.Primitive (Reference.show name))
+                Resolution.class_definition resolution (Type.Primitive (Reference.show name))
                 >>| fun { Node.value = { Class.body; _ }; _ } ->
                 let sink_signature { Node.value; _ } =
                   match value with
@@ -310,14 +314,12 @@ let create ~resolution ?(verify = true) ~configuration source =
           |> Option.value ~default:[]
       | { Node.value =
             Assign
-              { Assign.target = { Node.value = Access (SimpleAccess target); _ };
-                annotation = Some annotation
-              ; _
-              }
+              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
         ; _
         }
-        when Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          let name = Reference.from_access target in
+        when Expression.is_simple_name name
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
+          let name = Reference.from_name_exn name in
           let signature =
             { Define.name;
               parameters = [];
@@ -331,14 +333,12 @@ let create ~resolution ?(verify = true) ~configuration source =
           [signature, Callable.create_object name]
       | { Node.value =
             Assign
-              { Assign.target = { Node.value = Access (SimpleAccess target); _ };
-                annotation = Some annotation
-              ; _
-              }
+              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
         ; _
         }
-        when Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
-          let name = Reference.from_access target in
+        when Expression.is_simple_name name
+             && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
+          let name = Reference.from_name_exn name in
           let signature =
             { Define.name;
               parameters = [Parameter.create ~annotation ~name:"$global" ()];
@@ -355,7 +355,6 @@ let create ~resolution ?(verify = true) ~configuration source =
     String.split ~on:'\n' source
     |> Parser.parse
     |> Source.create
-    |> Preprocessing.convert
     |> Source.statements
     |> List.concat_map ~f:filter_define_signature
   in
@@ -420,21 +419,18 @@ let get_callsite_model ~call_target =
 
 
 let get_global_model ~resolution ~expression =
-  Node.value expression
-  |> (function
-       | Access access ->
-           ( match AccessPath.normalize_access ~resolution access with
-           | Global reference -> Some reference
-           | Access { expression; member } ->
-               AccessPath.as_expression expression
-               |> Resolution.resolve resolution
-               |> Type.class_name
-               |> (fun class_name -> Reference.create ~prefix:class_name member)
-               |> Option.some
-           | _ -> None )
-           >>| Callable.create_object
-       | _ -> None)
-  >>| fun call_target -> get_callsite_model ~call_target
+  let expression = Expression.convert_to_new expression in
+  let call_target =
+    match Node.value expression, AccessPath.get_global ~resolution expression with
+    | _, Some global -> Some global
+    | Name (Name.Attribute { base; attribute; _ }), _ ->
+        Resolution.resolve resolution base
+        |> Type.class_name
+        |> (fun class_name -> Reference.create ~prefix:class_name attribute)
+        |> Option.some
+    | _ -> None
+  in
+  call_target >>| Callable.create_object >>| fun call_target -> get_callsite_model ~call_target
 
 
 let parse ~resolution ~source ~configuration models =
