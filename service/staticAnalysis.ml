@@ -51,7 +51,6 @@ let callables ~resolution ~source =
 
 
 let analyze
-    ?(taint_models_directory = "")
     ~scheduler
     ~configuration:( { Configuration.StaticAnalysis.configuration; dump_call_graph; _ } as
                    analysis_configuration )
@@ -144,6 +143,11 @@ let analyze
      indicate which analysis to run (taint vs others), and also contain particular analysis options
      passed the the analysis initialization code. *)
   let configuration_json =
+    let taint_models_directory =
+      configuration.Configuration.Analysis.taint_models_directory
+      >>| Path.absolute
+      |> Option.value ~default:""
+    in
     `Assoc ["taint", `Assoc ["model_directory", `String taint_models_directory]]
   in
   let analyses = [Taint.Analysis.abstract_kind] in

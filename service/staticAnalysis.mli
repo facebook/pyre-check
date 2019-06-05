@@ -23,8 +23,7 @@ val callables
   (Callable.real_target * Define.t Node.t) list
 
 val analyze
-  :  ?taint_models_directory:string ->
-  scheduler:Scheduler.t ->
+  :  scheduler:Scheduler.t ->
   configuration:Configuration.StaticAnalysis.t ->
   environment:(module Environment.Handler) ->
   handles:File.Handle.t list ->

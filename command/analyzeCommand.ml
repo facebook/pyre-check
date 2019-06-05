@@ -69,6 +69,7 @@ let run_analysis
       ?ignore_all_errors
       ~number_of_workers
       ~search_path:(List.map search_path ~f:Path.SearchPath.create)
+      ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
       ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
       ~extensions
@@ -96,7 +97,6 @@ let run_analysis
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
       |> fun { handles; environment; _ } ->
       Service.StaticAnalysis.analyze
-        ?taint_models_directory
         ~scheduler
         ~configuration:
           { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
