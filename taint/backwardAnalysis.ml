@@ -302,7 +302,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       Log.log ~section:`Taint "analyze_expression: %a" Expression.pp_expression expression;
       match expression with
-      | Access _ -> failwith "Access variant is deprecated."
       | Await expression -> analyze_expression ~resolution ~taint ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator = _; right } ->

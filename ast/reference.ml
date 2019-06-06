@@ -82,10 +82,6 @@ let combine prefix suffix =
   | _ -> prefix @ suffix
 
 
-let from_access access = Access.show access |> create
-
-let access = List.map ~f:(fun identifier -> Access.Identifier identifier)
-
 let from_name name =
   let rec get_reversed_identifiers = function
     | Name.Identifier identifier -> Some [identifier]

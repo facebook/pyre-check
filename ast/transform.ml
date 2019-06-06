@@ -58,10 +58,7 @@ module Make (Transformer : Transformer) = struct
       let accumulate list element = f element :: list in
       List.fold_left list ~f:accumulate ~init:[] |> List.rev
     in
-    let transform_argument { Argument.name; value } ~transform_expression =
-      { Argument.name; value = transform_expression value }
-    in
-    let transform_new_argument { Expression.Call.Argument.name; value } ~transform_expression =
+    let transform_argument { Expression.Call.Argument.name; value } ~transform_expression =
       { Expression.Call.Argument.name; value = transform_expression value }
     in
     let transform_parameter
@@ -90,25 +87,8 @@ module Make (Transformer : Transformer) = struct
       { Dictionary.key = transform_expression key; value = transform_expression value }
     in
     let rec transform_expression expression =
-      let transform_access access =
-        match access with
-        | Access.Call { Node.value = arguments; location } ->
-            Access.Call
-              { Node.value = transform_list arguments ~f:(transform_argument ~transform_expression);
-                location
-              }
-        | Access.Identifier _ -> access
-      in
       let transform_children value =
         match value with
-        | Access (SimpleAccess access) ->
-            Access (SimpleAccess (transform_list access ~f:transform_access))
-        | Access (ExpressionAccess { expression; access }) ->
-            Access
-              (ExpressionAccess
-                 { expression = transform_expression expression;
-                   access = transform_list access ~f:transform_access
-                 })
         | Await expression -> Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right } ->
             BooleanOperator
@@ -228,7 +208,7 @@ module Make (Transformer : Transformer) = struct
         | Class { Class.name; bases; body; decorators; docstring } ->
             Class
               { Class.name;
-                bases = transform_list bases ~f:(transform_new_argument ~transform_expression);
+                bases = transform_list bases ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
                 decorators = transform_list decorators ~f:transform_expression;
                 docstring

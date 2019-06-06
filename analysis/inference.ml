@@ -1660,9 +1660,6 @@ module State = struct
       | _ -> false
     in
     match value with
-    | Access _ ->
-        (* Deprecated *)
-        { state; resolved = Type.Top }
     | Await expression ->
         let { state; resolved } = forward_expression ~state ~expression in
         let state =

@@ -77,14 +77,6 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~resolution ~decor
       String.equal name target
     in
     match decorator with
-    | { Node.value = Access (SimpleAccess access); _ } -> (
-      match Expression.Access.name_and_arguments ~call:access with
-      | Some { callee = name; arguments } when name_resolves_to_target ~name ->
-          let convert_argument { Argument.name; value } = { Call.Argument.name; value } in
-          Some { name = target; arguments = Some (List.map ~f:convert_argument arguments) }
-      | None when name_resolves_to_target ~name:(Access.show access) ->
-          Some { name = target; arguments = None }
-      | _ -> None )
     | { Node.value = Call { callee; arguments }; _ }
       when name_resolves_to_target ~name:(Expression.show callee) ->
         Some { name = target; arguments = Some arguments }
@@ -317,9 +309,6 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
 let is_protocol { Node.value = { Class.bases; _ }; _ } =
   let is_protocol { Call.Argument.name; value = { Node.value; _ } } =
     match name, value with
-    | None, Access (SimpleAccess (Identifier "typing" :: Identifier "Protocol" :: _))
-    | None, Access (SimpleAccess (Identifier "typing_extensions" :: Identifier "Protocol" :: _)) ->
-        true
     | ( None,
         Call
           { callee =

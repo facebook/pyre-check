@@ -186,7 +186,6 @@ module State (Context : Context) = struct
         let state = forward_expression ~state ~expression:key in
         forward_expression ~state ~expression:value
     (* Base cases. *)
-    | Access _
     | Complex _
     | False
     | Float _

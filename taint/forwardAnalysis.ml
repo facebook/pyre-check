@@ -443,7 +443,6 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_expression ~resolution ~state ~expression:({ Node.location; _ } as expression) =
       match expression.Node.value with
-      | Access _ -> failwith "Access variant is deprecated."
       | Await expression -> analyze_expression ~resolution ~state ~expression
       | BooleanOperator { left; operator = _; right }
       | ComparisonOperator { left; operator = _; right } ->

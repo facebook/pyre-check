@@ -24,9 +24,7 @@ module type StatementVisitor = sig
 end
 
 module Make (Visitor : Visitor) = struct
-  let visit_argument { Argument.value; _ } ~visit_expression = visit_expression value
-
-  let visit_new_argument { Expression.Call.Argument.value; _ } ~visit_expression =
+  let visit_argument { Expression.Call.Argument.value; _ } ~visit_expression =
     visit_expression value
 
 
@@ -49,17 +47,7 @@ module Make (Visitor : Visitor) = struct
       visit_expression value
     in
     let visit_children value =
-      let visit_access access =
-        match access with
-        | Access.Call { Node.value = arguments; _ } ->
-            List.iter arguments ~f:(visit_argument ~visit_expression)
-        | Access.Identifier _ -> ()
-      in
       match value with
-      | Access (SimpleAccess access) -> List.iter access ~f:visit_access
-      | Access (ExpressionAccess { expression; access }) ->
-          visit_expression expression;
-          List.iter access ~f:visit_access
       | Await expression -> visit_expression expression
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
@@ -129,7 +117,7 @@ module Make (Visitor : Visitor) = struct
           visit_expression test;
           Option.iter ~f:visit_expression message
       | Class { Class.bases; body; decorators; _ } ->
-          List.iter bases ~f:(visit_new_argument ~visit_expression);
+          List.iter bases ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; body } ->

@@ -35,28 +35,6 @@ module BooleanOperator = struct
 end
 
 module Record = struct
-  module Argument = struct
-    type 'expression record = {
-      name: Identifier.t Node.t option;
-      value: 'expression
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module Access = struct
-    type 'expression access =
-      | Call of 'expression Argument.record list Node.t
-      | Identifier of Identifier.t
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression record = 'expression access list [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression general_access_record =
-      | SimpleAccess of 'expression record
-      | ExpressionAccess of { expression: 'expression; access: 'expression record }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
   module ComparisonOperator = struct
     type operator =
       | Equals
@@ -276,7 +254,6 @@ module StringLiteral = struct
 end
 
 type expression =
-  | Access of t Record.Access.general_access_record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -308,246 +285,6 @@ and t = expression Node.t [@@deriving compare, eq, sexp, show, hash]
 let _ = show (* shadowed below *)
 
 type expression_t = t [@@deriving compare, eq, sexp, show, hash]
-
-module Argument = struct
-  include Record.Argument
-
-  type t = expression_t Record.Argument.record [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Access = struct
-  include Record.Access
-
-  type t = expression_t Record.Access.record [@@deriving compare, eq, sexp, hash]
-
-  type general_access = expression_t Record.Access.general_access_record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  module Set = Set.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
-  end)
-
-  module Map = Map.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
-  end)
-
-  module SerializableMap = SerializableMap.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-  end)
-
-  include Hashable.Make (struct
-    type nonrec t = t
-
-    let compare = compare
-
-    let hash = hash
-
-    let hash_fold_t = hash_fold_t
-
-    let sexp_of_t = sexp_of_t
-
-    let t_of_sexp = t_of_sexp
-  end)
-
-  let create_from_identifiers identifiers =
-    List.map identifiers ~f:(fun identifier -> Identifier identifier)
-
-
-  let create name =
-    let identifier_names name =
-      if String.equal name "..." then
-        [name]
-      else
-        String.split ~on:'.' name
-    in
-    identifier_names name |> create_from_identifiers
-
-
-  let pp format access =
-    let identifier (element : expression_t Record.Access.access) : string =
-      match element with
-      | Identifier identifier -> identifier
-      | Call _ -> Format.asprintf "(...)"
-    in
-    List.map access ~f:identifier |> String.concat ~sep:"." |> Format.fprintf format "%s"
-
-
-  let show access = Format.asprintf "%a" pp access
-
-  let expression ?(location = Location.Reference.any) access =
-    Access (SimpleAccess access) |> Node.create ~location
-
-
-  let sanitized access =
-    let sanitized element =
-      match element with
-      | Identifier identifier -> Identifier (Identifier.sanitized identifier)
-      | Call arguments ->
-          let sanitize_argument ({ Argument.name; _ } as argument) =
-            { argument with Argument.name = name >>| Node.map ~f:Identifier.sanitized }
-          in
-          Call (Node.map arguments ~f:(List.map ~f:sanitize_argument))
-    in
-    List.map access ~f:sanitized
-
-
-  let equal_sanitized left_access right_access =
-    equal (sanitized left_access) (sanitized right_access)
-
-
-  let pp_sanitized format access =
-    let identifier (element : expression_t Record.Access.access) : string =
-      match element with
-      | Identifier identifier -> identifier
-      | Call _ -> Format.asprintf "(...)"
-    in
-    sanitized access
-    |> List.map ~f:identifier
-    |> String.concat ~sep:"."
-    |> Format.fprintf format "%s"
-
-
-  let show_sanitized access = Format.asprintf "%a" pp_sanitized access
-
-  let pp format access = Format.fprintf format "%s" (show access)
-
-  let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z_0-9\\?]+\\)\\$"
-
-  let delocalize access =
-    match access with
-    | Identifier identifier :: tail when identifier |> String.is_prefix ~prefix:"$local_" ->
-        let qualifier =
-          let name = identifier in
-          if Str.string_match local_qualifier_pattern name 0 then
-            Str.matched_group 1 name |> String.substr_replace_all ~pattern:"?" ~with_:"." |> create
-          else (
-            Log.debug "Unable to extract qualifier from %s" name;
-            [] )
-        in
-        let identifier = Identifier.sanitized identifier in
-        qualifier @ [Identifier identifier] @ tail
-    | _ -> access
-
-
-  let delocalize_qualified access =
-    List.rev access
-    |> (function
-         | Identifier identifier :: tail -> Identifier (Identifier.sanitized identifier) :: tail
-         | access -> access)
-    |> List.rev
-
-
-  let rec is_strict_prefix ~prefix access =
-    match prefix, access with
-    | [], _ :: _ -> true
-    | prefix_head :: prefix, head :: access when equal [prefix_head] [head] ->
-        is_strict_prefix ~prefix access
-    | _ -> false
-
-
-  let drop_prefix access ~prefix =
-    let rec strip access prefix =
-      match prefix, access with
-      | prefix_head :: prefix_tail, head :: tail when equal [prefix_head] [head] ->
-          strip tail prefix_tail
-      | [], access -> Some access
-      | _ -> None
-    in
-    strip access prefix |> Option.value ~default:access
-
-
-  let prefix access =
-    match List.rev access with
-    | _head :: prefix_reversed -> List.rev prefix_reversed
-    | _ -> []
-
-
-  let last access = List.last access
-
-  let call ?(arguments = []) ~location ~name () =
-    [Identifier name; Call { Node.location; value = arguments }]
-
-
-  type call = {
-    callee: string;
-    arguments: Argument.t list
-  }
-
-  let name_and_arguments ~call =
-    let is_identifier = function
-      | Identifier _ -> true
-      | _ -> false
-    in
-    match List.split_while ~f:is_identifier call with
-    | identifiers, [Call { Node.value = arguments; _ }] ->
-        Some { callee = show identifiers; arguments }
-    | _ -> None
-
-
-  let backup ~name =
-    match List.rev name with
-    | Identifier name :: _ -> (
-      (* cf. https://docs.python.org/3/reference/datamodel.html#object.__radd__ *)
-      match name with
-      | "__add__" -> Some "__radd__"
-      | "__sub__" -> Some "__rsub__"
-      | "__mul__" -> Some "__rmul__"
-      | "__matmul__" -> Some "__rmatmul__"
-      | "__truediv__" -> Some "__rtruediv__"
-      | "__floordiv__" -> Some "__rfloordiv__"
-      | "__mod__" -> Some "__rmod__"
-      | "__divmod__" -> Some "__rdivmod__"
-      | "__pow__" -> Some "__rpow__"
-      | "__lshift__" -> Some "__rlshift__"
-      | "__rshift__" -> Some "__rrshift__"
-      | "__and__" -> Some "__rand__"
-      | "__xor__" -> Some "__rxor__"
-      | "__or__" -> Some "__ror__"
-      | _ -> None )
-    | _ -> None
-
-
-  let combine { Node.location; value } access =
-    match value with
-    | Access (SimpleAccess head) -> SimpleAccess (head @ access)
-    | Access (ExpressionAccess { expression; access = head }) ->
-        ExpressionAccess { expression; access = head @ access }
-    | _ -> ExpressionAccess { expression = { Node.location; value }; access }
-
-
-  let redirect ~arguments ~location ~name =
-    match name, arguments with
-    | [Identifier name], [{ Argument.value; _ }] ->
-        ( match name with
-        | "abs" -> Some "__abs__"
-        | "repr" -> Some "__repr__"
-        | "str" -> Some "__str__"
-        | _ -> None )
-        >>| fun name -> combine value (call ~arguments:[] ~location ~name ())
-    | _ -> None
-
-
-  let is_assert_function access =
-    List.take_while access ~f:(function
-        | Identifier _ -> true
-        | _ -> false)
-    |> show
-    |> Core.Set.mem Recognized.assert_functions
-end
 
 module ComparisonOperator = struct
   include Record.ComparisonOperator
@@ -781,15 +518,6 @@ let rec delocalize ({ Node.value; location } as expression) =
   { expression with Node.value }
 
 
-let delocalize_qualified ({ Node.value; _ } as expression) =
-  let value =
-    match value with
-    | Access (SimpleAccess access) -> Access (SimpleAccess (Access.delocalize_qualified access))
-    | _ -> value
-  in
-  { expression with Node.value }
-
-
 let exists_in_list ?(match_prefix = false) ~expression_list target_string =
   let flatten =
     let rec flatten flattened expression =
@@ -836,36 +564,7 @@ module PrettyPrinter = struct
     | { Node.value = expression; _ } -> Format.fprintf formatter "%a" pp_expression expression
 
 
-  and pp_access formatter access =
-    match access with
-    | Access.Call { Node.value = arguments; _ } ->
-        Format.fprintf formatter "(%a)" pp_argument_list arguments
-    | Access.Identifier identifier -> Format.fprintf formatter "%s" @@ identifier
-
-
-  and pp_access_list formatter access_list =
-    match access_list with
-    | [] -> ()
-    | [access] -> Format.fprintf formatter "%a" pp_access access
-    | access
-      :: Access.Identifier identifier :: Access.Call { Node.value = arguments; _ } :: access_list
-      when Identifier.equal identifier "__getitem__" ->
-        Format.fprintf
-          formatter
-          (if List.is_empty access_list then "%a[%a]%a" else "%a[%a].%a")
-          pp_access
-          access
-          pp_argument_list
-          arguments
-          pp_access_list
-          access_list
-    | access :: (Access.Call _ :: _ as access_list) ->
-        Format.fprintf formatter "%a%a" pp_access access pp_access_list access_list
-    | access :: access_list ->
-        Format.fprintf formatter "%a.%a" pp_access access pp_access_list access_list
-
-
-  and pp_argument formatter { Argument.name; value } =
+  and pp_argument formatter { Call.Argument.name; value } =
     match name with
     | Some name -> Format.fprintf formatter "%s = %a" (Node.value name) pp_expression_t value
     | None -> Format.fprintf formatter "%a" pp_expression_t value
@@ -992,15 +691,6 @@ module PrettyPrinter = struct
 
   and pp_expression formatter expression =
     match expression with
-    | Access (SimpleAccess access_list) -> pp_access_list formatter access_list
-    | Access (ExpressionAccess { expression; access = access_list }) ->
-        Format.fprintf
-          formatter
-          "%a.%a"
-          pp_expression
-          (Node.value expression)
-          pp_access_list
-          access_list
     | Await expression -> Format.fprintf formatter "await %a" pp_expression_t expression
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         Format.fprintf
@@ -1015,22 +705,8 @@ module PrettyPrinter = struct
     | Call { Call.callee; arguments } -> (
       match Node.value callee with
       | Name (Name.Attribute { base; attribute = "__getitem__"; _ }) ->
-          Format.fprintf
-            formatter
-            "%a[%a]"
-            pp_expression_t
-            base
-            pp_argument_list
-            (List.map ~f:(fun { Call.Argument.name; value } -> { Argument.name; value }) arguments)
-      | _ ->
-          Format.fprintf
-            formatter
-            "%a(%a)"
-            pp_expression_t
-            callee
-            pp_argument_list
-            (List.map ~f:(fun { Call.Argument.name; value } -> { Argument.name; value }) arguments)
-      )
+          Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
+      | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments )
     | String { StringLiteral.value; kind } -> (
         let bytes =
           match kind with
@@ -1137,10 +813,6 @@ let pp_sanitized formatter expression = show_sanitized expression |> Format.fpri
 
 let pp_expression_list formatter expression_list =
   Format.fprintf formatter "%a" PrettyPrinter.pp_expression_list expression_list
-
-
-let pp_expression_access_list formatter expression_access_list =
-  Format.fprintf formatter "%a" PrettyPrinter.pp_access_list expression_access_list
 
 
 let pp_expression_argument_list formatter expression_argument_list =

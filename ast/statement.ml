@@ -5,8 +5,6 @@
 
 open Core
 open Pyre
-module Access = Expression.Access
-module Argument = Expression.Argument
 module Name = Expression.Name
 
 module Record = struct
@@ -1392,7 +1390,7 @@ module PrettyPrinter = struct
       Reference.pp
       name
       Expression.pp_expression_argument_list
-      (List.map ~f:(fun { name; value } -> { Argument.name; value }) bases)
+      bases
       pp_statement_list
       body
 

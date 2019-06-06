@@ -879,9 +879,6 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         scope, List.rev reversed_generators
       in
       match value with
-      | Access expression ->
-          (* Deprecated. *)
-          Access expression
       | Await expression -> Await (qualify_expression ~qualify_strings ~scope expression)
       | BooleanOperator { BooleanOperator.left; operator; right } ->
           BooleanOperator

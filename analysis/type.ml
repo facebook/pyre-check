@@ -1824,12 +1824,6 @@ module LiteralAnyVisitor = struct
     let expression state { Node.value; _ } =
       match state, value with
       | true, _ -> true
-      | false, Access (Access.SimpleAccess access) ->
-          Reference.from_access access
-          |> Reference.show
-          (* We also want to take into account annotations like `list`, `dict`, etc. *)
-          |> Hashtbl.find primitive_substitution_map
-          |> Option.value_map ~default:false ~f:contains_any
       | false, Name name ->
           Reference.from_name name
           >>| Reference.show

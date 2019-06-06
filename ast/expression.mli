@@ -3,8 +3,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Core
-
 module BooleanOperator : sig
   type operator =
     | And
@@ -20,28 +18,6 @@ module BooleanOperator : sig
 end
 
 module Record : sig
-  module Argument : sig
-    type 'expression record = {
-      name: Identifier.t Node.t option;
-      value: 'expression
-    }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
-  module Access : sig
-    type 'expression access =
-      | Call of 'expression Argument.record list Node.t
-      | Identifier of Identifier.t
-    [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression record = 'expression access list [@@deriving compare, eq, sexp, show, hash]
-
-    type 'expression general_access_record =
-      | SimpleAccess of 'expression record
-      | ExpressionAccess of { expression: 'expression; access: 'expression record }
-    [@@deriving compare, eq, sexp, show, hash]
-  end
-
   module ComparisonOperator : sig
     type operator =
       | Equals
@@ -198,7 +174,6 @@ module StringLiteral : sig
 end
 
 type expression =
-  | Access of t Record.Access.general_access_record
   | Await of t
   | BooleanOperator of t BooleanOperator.t
   | Call of t Call.t
@@ -228,84 +203,6 @@ type expression =
 and t = expression Node.t [@@deriving compare, eq, sexp, show, hash]
 
 and expression_t = t [@@deriving compare, eq, sexp, show, hash]
-
-module Argument : sig
-  include module type of struct
-    include Record.Argument
-  end
-
-  type t = expression_t Record.Argument.record [@@deriving compare, eq, sexp, show, hash]
-end
-
-module Access : sig
-  include module type of struct
-    include Record.Access
-  end
-
-  type t = expression_t Record.Access.record [@@deriving compare, eq, sexp, show, hash]
-
-  type general_access = expression_t Record.Access.general_access_record
-  [@@deriving compare, eq, sexp, show, hash]
-
-  module Set : Set.S with type Elt.t = t
-
-  module Map : Map.S with type Key.t = t
-
-  module SerializableMap : SerializableMap.S with type key = t
-
-  include Hashable with type t := t
-
-  val create : string -> t
-
-  val create_from_identifiers : Identifier.t list -> t
-
-  val combine : expression_t -> t -> general_access
-
-  val expression : ?location:Location.t -> t -> expression_t
-
-  val sanitized : t -> t
-
-  val equal_sanitized : t -> t -> bool
-
-  val pp_sanitized : Format.formatter -> t -> unit
-
-  val show_sanitized : t -> string
-
-  val delocalize : t -> t
-
-  val delocalize_qualified : t -> t
-
-  val is_strict_prefix : prefix:t -> t -> bool
-
-  val drop_prefix : t -> prefix:t -> t
-
-  (* Returns all but the last component in the access. *)
-  val prefix : t -> t
-
-  val last : t -> expression_t access option
-
-  val call : ?arguments:Argument.t list -> location:Location.t -> name:string -> unit -> t
-
-  type call = {
-    callee: string;
-    arguments: Argument.t list
-  }
-
-  (* If `call` is a simple function call, evaulates to the name and arguments. *)
-  val name_and_arguments : call:t -> call option
-
-  (* Calls like `__add__` have backups that are called on exceptions. *)
-  val backup : name:t -> Identifier.t option
-
-  (* Some calls are redirected to method calls, e.g. `repr(x)` will call `x.__repr__()`. *)
-  val redirect
-    :  arguments:Argument.t list ->
-    location:Location.t ->
-    name:t ->
-    general_access option
-
-  val is_assert_function : t -> bool
-end
 
 module ComparisonOperator : sig
   include module type of struct
@@ -349,8 +246,6 @@ val sanitized : t -> t
 
 val delocalize : t -> t
 
-val delocalize_qualified : t -> t
-
 val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> bool
 
 val arguments_location : expression_t Call.t -> Location.t
@@ -361,8 +256,6 @@ val pp_sanitized : Format.formatter -> t -> unit
 
 val pp_expression_list : Format.formatter -> t list -> unit
 
-val pp_expression_access_list : Format.formatter -> Access.t -> unit
-
-val pp_expression_argument_list : Format.formatter -> t Argument.record list -> unit
+val pp_expression_argument_list : Format.formatter -> t Call.Argument.t list -> unit
 
 val pp_expression_parameter_list : Format.formatter -> expression Node.t Parameter.t list -> unit

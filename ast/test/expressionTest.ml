@@ -205,29 +205,14 @@ let test_equality _ =
     let full_printer ({ Node.location; _ } as expression) =
       Format.asprintf "%s/%a" (Location.Reference.show location) Expression.pp expression
     in
-    let value = Access (SimpleAccess [Identifier "some_string"]) in
+    let value = Name (Name.Identifier "some_string") in
     let expression_left = Node.create ~location:left value in
     let expression_right = Node.create ~location:right value in
     assert_equal ~cmp:Expression.equal ~printer:full_printer expression_left expression_right;
     assert_equal
       ~printer:Int.to_string
       (Expression.hash expression_left)
-      (Expression.hash expression_right);
-    let extract_access = function
-      | { Node.value = Access (SimpleAccess access); _ } -> access
-      | _ -> failwith "Expected access."
-    in
-    let access_left = extract_access expression_left in
-    let access_right = extract_access expression_right in
-    assert_equal ~cmp:Access.equal access_left access_right;
-    assert_equal ~printer:Int.to_string (Access.hash access_left) (Access.hash access_right);
-    let set = Access.Set.add Access.Set.empty access_left in
-    assert_bool "Element should appear in the set" (Access.Set.mem set access_right);
-    let map = Access.Map.set Access.Map.empty ~key:access_left ~data:1 in
-    assert_bool "Element should appear in the map" (Access.Map.mem map access_right);
-    let table = Access.Table.create () in
-    Hashtbl.set table ~key:access_left ~data:1;
-    assert_bool "Element should appear in the table" (Hashtbl.mem table access_right)
+      (Expression.hash expression_right)
   in
   let location_1 =
     { Location.path = String.hash "some_path";
