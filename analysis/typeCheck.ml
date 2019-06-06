@@ -1950,7 +1950,7 @@ module State (Context : Context) = struct
                   let { state; resolved } = forward_expression ~state ~expression in
                   let new_annotations =
                     match resolved with
-                    | Type.Tuple (Type.Bounded (ConcreteList annotations)) ->
+                    | Type.Tuple (Type.Bounded (Concrete annotations)) ->
                         List.map annotations ~f:(fun annotation ->
                             annotation, Node.location expression)
                     | Type.Tuple (Type.Unbounded annotation)
@@ -2694,7 +2694,7 @@ module State (Context : Context) = struct
           let is_nonuniform_sequence ~minimum_length annotation =
             (* TODO(32692300): this should support tuple subclasses as well. *)
             match annotation with
-            | Type.Tuple (Type.Bounded (ConcreteList parameters))
+            | Type.Tuple (Type.Bounded (Concrete parameters))
               when minimum_length <= List.length parameters ->
                 true
             | annotation
@@ -2705,7 +2705,7 @@ module State (Context : Context) = struct
           in
           let nonuniform_sequence_parameters annotation =
             match annotation with
-            | Type.Tuple (Type.Bounded (ConcreteList parameters)) -> parameters
+            | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
             | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
             | _ -> []
           in
@@ -3254,7 +3254,7 @@ module State (Context : Context) = struct
               in
               let resolved =
                 match resolved with
-                | Type.Tuple (Type.Bounded (ConcreteList annotations))
+                | Type.Tuple (Type.Bounded (Concrete annotations))
                   when List.length annotations = List.length elements ->
                     annotations
                 | _ -> List.map elements ~f:(fun _ -> Type.Top)
@@ -3284,7 +3284,7 @@ module State (Context : Context) = struct
           | Tuple elements ->
               let kind =
                 match guide with
-                | Type.Tuple (Type.Bounded (ConcreteList parameters)) ->
+                | Type.Tuple (Type.Bounded (Concrete parameters)) ->
                     Error.Unpack
                       { expected_count = List.length elements;
                         unpack_problem = CountMismatch (List.length parameters)
@@ -3322,8 +3322,8 @@ module State (Context : Context) = struct
               (* Try to resolve meta-types given as expressions. *)
               match Resolution.resolve resolution annotation with
               | annotation when Type.is_meta annotation -> Type.single_parameter annotation
-              | Type.Tuple (Bounded (ConcreteList elements))
-                when List.for_all ~f:Type.is_meta elements ->
+              | Type.Tuple (Bounded (Concrete elements)) when List.for_all ~f:Type.is_meta elements
+                ->
                   List.map ~f:Type.single_parameter elements |> Type.union
               | Type.Tuple (Unbounded element) when Type.is_meta element ->
                   Type.single_parameter element

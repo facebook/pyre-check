@@ -672,7 +672,7 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.integer])))
+       ~left:(Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.integer])))
        ~right:(Type.parametric "tuple" [Type.integer]));
   (* Union types *)
   assert_true
@@ -707,23 +707,23 @@ let test_less_or_equal _ =
   assert_false
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded (ListVariadic list_variadic)))
+       ~left:(Type.Tuple (Bounded (Variable list_variadic)))
        ~right:(Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded (ListVariadic list_variadic)))
+       ~left:(Type.Tuple (Bounded (Variable list_variadic)))
        ~right:(Type.Tuple (Type.Unbounded Type.object_primitive)));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded (ConcreteList [Type.integer; Type.string])))
-       ~right:(Type.Tuple (Bounded AnyList)));
+       ~left:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string])))
+       ~right:(Type.Tuple (Bounded Any)));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.Tuple (Bounded AnyList))
-       ~right:(Type.Tuple (Bounded (ConcreteList [Type.integer; Type.string]))));
+       ~left:(Type.Tuple (Bounded Any))
+       ~right:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))));
   let order =
     let order = Builder.create () |> TypeOrder.handler in
     let add_simple annotation =
@@ -3276,15 +3276,15 @@ let test_is_consistent_with _ =
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_true
     (is_consistent_with
-       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.Any])))
+       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Any])))
        (Type.Tuple (Type.Unbounded Type.integer)));
   assert_true
     (is_consistent_with
-       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.string])))
+       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string])))
        (Type.Tuple (Type.Unbounded Type.Any)));
   assert_false
     (is_consistent_with
-       (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.string])))
+       (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string])))
        (Type.Tuple (Type.Unbounded Type.string)));
   assert_false
     (is_consistent_with

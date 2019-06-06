@@ -56,6 +56,14 @@ module Record : sig
     [@@deriving compare, eq, sexp, show, hash]
   end
 
+  module OrderedTypes : sig
+    type 'annotation t =
+      | Concrete of 'annotation list
+      | Variable of Variable.RecordVariadic.RecordList.record
+      | Any
+    [@@deriving compare, eq, sexp, show, hash]
+  end
+
   module Callable : sig
     module RecordParameter : sig
       type 'annotation named = {
@@ -115,13 +123,8 @@ type literal =
   | String of string
 [@@deriving compare, eq, sexp, show, hash]
 
-type ordered_types =
-  | ConcreteList of t list
-  | ListVariadic of Record.Variable.RecordVariadic.RecordList.record
-  | AnyList
-
-and tuple =
-  | Bounded of ordered_types
+type tuple =
+  | Bounded of t Record.OrderedTypes.t
   | Unbounded of t
 
 and typed_dictionary_field = {
@@ -418,7 +421,7 @@ val instantiate
 
 val weaken_literals : t -> t
 
-val split : t -> t * ordered_types
+val split : t -> t * t Record.OrderedTypes.t
 
 val class_name : t -> Reference.t
 
@@ -459,7 +462,7 @@ module Variable : sig
   type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type list_variadic_domain = ordered_types
+  type list_variadic_domain = t Record.OrderedTypes.t
 
   type pair =
     | UnaryPair of unary_t * unary_domain

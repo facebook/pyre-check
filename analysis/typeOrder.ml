@@ -784,17 +784,17 @@ module OrderImplementation = struct
           | left, Optional right
           | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
               solve_less_or_equal_throws order ~constraints ~left ~right
-          | ( Type.Tuple (Type.Bounded (ConcreteList lefts)),
-              Type.Tuple (Type.Bounded (ConcreteList rights)) ) ->
+          | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Bounded (Concrete rights))
+            ->
               solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded (ConcreteList rights)) ->
+          | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded (Concrete rights)) ->
               let lefts = List.init (List.length rights) ~f:(fun _ -> left) in
               solve_all constraints ~lefts ~rights
-          | Type.Tuple (Type.Bounded (ConcreteList lefts)), Type.Tuple (Type.Unbounded right) ->
+          | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Unbounded right) ->
               let left = Type.union lefts in
               solve_less_or_equal_throws order ~constraints ~left ~right
-          | ( Type.Tuple (Type.Bounded (ListVariadic left_variable)),
-              Type.Tuple (Type.Bounded (ListVariadic right_variable)) )
+          | ( Type.Tuple (Type.Bounded (Variable left_variable)),
+              Type.Tuple (Type.Bounded (Variable right_variable)) )
             when Type.Variable.Variadic.List.is_free left_variable
                  && Type.Variable.Variadic.List.is_free right_variable ->
               (* Just as with unaries, we need to consider both possibilities *)
@@ -802,22 +802,20 @@ module OrderImplementation = struct
                 ( OrderedConstraints.add_lower_bound
                     constraints
                     ~order
-                    ~pair:
-                      (Type.Variable.ListVariadicPair (right_variable, ListVariadic left_variable))
+                    ~pair:(Type.Variable.ListVariadicPair (right_variable, Variable left_variable))
                   |> Option.to_list,
                   OrderedConstraints.add_upper_bound
                     constraints
                     ~order
-                    ~pair:
-                      (Type.Variable.ListVariadicPair (left_variable, ListVariadic right_variable))
+                    ~pair:(Type.Variable.ListVariadicPair (left_variable, Variable right_variable))
                   |> Option.to_list )
               in
               right_greater_than_left @ left_less_than_right
-          | Type.Tuple (Type.Bounded (ListVariadic variable)), Type.Tuple (Type.Bounded bound)
+          | Type.Tuple (Type.Bounded (Variable variable)), Type.Tuple (Type.Bounded bound)
             when Type.Variable.Variadic.List.is_free variable ->
               let pair = Type.Variable.ListVariadicPair (variable, bound) in
               OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
-          | Type.Tuple (Type.Bounded bound), Type.Tuple (Type.Bounded (ListVariadic variable))
+          | Type.Tuple (Type.Bounded bound), Type.Tuple (Type.Bounded (Variable variable))
             when Type.Variable.Variadic.List.is_free variable ->
               let pair = Type.Variable.ListVariadicPair (variable, bound) in
               OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
@@ -1027,21 +1025,19 @@ module OrderImplementation = struct
         | Type.Variable variable, right ->
             less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
         (* Tuple variables are covariant. *)
-        | Type.Tuple _, Type.Tuple (Type.Bounded AnyList)
-        | Type.Tuple (Type.Bounded AnyList), Type.Tuple _ ->
+        | Type.Tuple _, Type.Tuple (Type.Bounded Any)
+        | Type.Tuple (Type.Bounded Any), Type.Tuple _ ->
             true
-        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
-            Type.Tuple (Type.Bounded (ConcreteList right)) )
+        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
           when List.length left = List.length right ->
             List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
-        | Type.Tuple (Type.Bounded (ListVariadic _)), _ ->
+        | Type.Tuple (Type.Bounded (Variable _)), _ ->
             less_or_equal order ~left:(Type.Tuple (Type.Unbounded Type.object_primitive)) ~right
-        | _, Type.Tuple (Type.Bounded (ListVariadic _)) -> false
+        | _, Type.Tuple (Type.Bounded (Variable _)) -> false
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             less_or_equal order ~left ~right
-        | Type.Tuple (Type.Bounded (ConcreteList [])), Type.Tuple (Type.Unbounded _) -> true
-        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
-            Type.Tuple (Type.Unbounded right) ) ->
+        | Type.Tuple (Type.Bounded (Concrete [])), Type.Tuple (Type.Unbounded _) -> true
+        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right) ->
             let left = List.fold tail ~init:left ~f:(join order) in
             less_or_equal order ~left ~right
         | Type.Tuple tuple, Type.Parametric _ ->
@@ -1049,16 +1045,16 @@ module OrderImplementation = struct
             let parameter =
               match tuple with
               | Type.Unbounded parameter -> parameter
-              | Type.Bounded (ConcreteList parameters) ->
+              | Type.Bounded (Concrete parameters) ->
                   List.fold ~init:Type.Bottom ~f:(join order) parameters
-              | Type.Bounded AnyList -> Type.Any
-              | Type.Bounded (ListVariadic _) -> Type.object_primitive
+              | Type.Bounded Any -> Type.Any
+              | Type.Bounded (Variable _) -> Type.object_primitive
             in
             let parametric = Type.parametric "tuple" [parameter] in
             less_or_equal order ~left:parametric ~right
         | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
             less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-        | Type.Tuple (Type.Bounded (ConcreteList (left :: tail))), Type.Primitive _ ->
+        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
             let parameter = List.fold ~f:(join order) ~init:left tail in
             less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
         | Type.Primitive name, Type.Tuple _ -> String.equal name "tuple"
@@ -1400,19 +1396,16 @@ module OrderImplementation = struct
         | Type.Optional parameter, other ->
             Type.optional (join order other parameter)
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded (ListVariadic _)), other
-        | other, Type.Tuple (Type.Bounded (ListVariadic _)) ->
+        | Type.Tuple (Type.Bounded (Variable _)), other
+        | other, Type.Tuple (Type.Bounded (Variable _)) ->
             join order other (Type.Tuple (Type.Unbounded Type.object_primitive))
-        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
-            Type.Tuple (Type.Bounded (ConcreteList right)) )
+        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(join order) |> Type.tuple
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             Type.Tuple (Type.Unbounded (join order left right))
-        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
-            Type.Tuple (Type.Unbounded right) )
-        | ( Type.Tuple (Type.Unbounded right),
-            Type.Tuple (Type.Bounded (ConcreteList (left :: tail))) )
+        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
+        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
           when List.for_all ~f:(fun element -> Type.equal element left) tail
                && less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded right)
@@ -1421,7 +1414,7 @@ module OrderImplementation = struct
         | (Type.Parametric _ as annotation), Type.Tuple (Type.Unbounded parameter)
         | (Type.Primitive _ as annotation), Type.Tuple (Type.Unbounded parameter) ->
             join order (Type.parametric "tuple" [parameter]) annotation
-        | Type.Tuple (Type.Bounded (ConcreteList parameters)), (Type.Parametric _ as annotation) ->
+        | Type.Tuple (Type.Bounded (Concrete parameters)), (Type.Parametric _ as annotation) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
             join order (Type.parametric "tuple" [parameter]) annotation
@@ -1618,19 +1611,16 @@ module OrderImplementation = struct
             else
               Type.Bottom
         (* Tuple variables are covariant. *)
-        | Type.Tuple (Type.Bounded (ListVariadic _)), _
-        | _, Type.Tuple (Type.Bounded (ListVariadic _)) ->
+        | Type.Tuple (Type.Bounded (Variable _)), _
+        | _, Type.Tuple (Type.Bounded (Variable _)) ->
             Type.Bottom
-        | ( Type.Tuple (Type.Bounded (ConcreteList left)),
-            Type.Tuple (Type.Bounded (ConcreteList right)) )
+        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
           when List.length left = List.length right ->
             List.map2_exn left right ~f:(meet order) |> Type.tuple
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             Type.Tuple (Type.Unbounded (meet order left right))
-        | ( Type.Tuple (Type.Bounded (ConcreteList (left :: tail))),
-            Type.Tuple (Type.Unbounded right) )
-        | ( Type.Tuple (Type.Unbounded right),
-            Type.Tuple (Type.Bounded (ConcreteList (left :: tail))) )
+        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
+        | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
           when List.for_all ~f:(fun element -> Type.equal element left) tail
                && less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded left) (* My brain hurts... *)
@@ -1788,7 +1778,7 @@ module OrderImplementation = struct
           >>| List.map ~f:(fun _ -> Type.Any)
       | _ -> (
         match Type.split source with
-        | primitive, ConcreteList parameters ->
+        | primitive, Concrete parameters ->
             let parameters =
               match primitive with
               | Type.Primitive "tuple" ->
@@ -1831,7 +1821,7 @@ module OrderImplementation = struct
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
       match parameters with
-      | ConcreteList parameters ->
+      | Concrete parameters ->
           let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
           let worklist = Queue.create () in
           Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
@@ -1890,7 +1880,7 @@ module OrderImplementation = struct
       | Optional left, Optional right -> diff_variables substitutions left right
       | Parametric { parameters = left; _ }, Parametric { parameters = right; _ } ->
           diff_variables_list substitutions left right
-      | Tuple (Bounded (ConcreteList left)), Tuple (Bounded (ConcreteList right)) ->
+      | Tuple (Bounded (Concrete left)), Tuple (Bounded (Concrete right)) ->
           diff_variables_list substitutions left right
       | Tuple (Unbounded left), Tuple (Unbounded right) -> diff_variables substitutions left right
       | ( TypedDictionary { fields = left_fields; total = left_total; _ },
@@ -2119,10 +2109,10 @@ let rec is_compatible_with order ~left ~right =
   | _, Type.Optional parameter -> is_compatible_with order ~left ~right:parameter
   | Type.Optional _, _ -> false
   (* Tuple *)
-  | Type.Tuple (Type.Bounded (ConcreteList left)), Type.Tuple (Type.Bounded (ConcreteList right))
+  | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
     when List.length left = List.length right ->
       List.for_all2_exn left right ~f:(fun left right -> is_compatible_with order ~left ~right)
-  | Type.Tuple (Type.Bounded (ConcreteList bounded)), Type.Tuple (Type.Unbounded right) ->
+  | Type.Tuple (Type.Bounded (Concrete bounded)), Type.Tuple (Type.Unbounded right) ->
       List.for_all bounded ~f:(fun bounded_type ->
           is_compatible_with order ~left:bounded_type ~right)
   (* Union *)

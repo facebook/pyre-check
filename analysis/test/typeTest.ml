@@ -302,8 +302,8 @@ let test_create _ =
       | "Ts" -> Some (Type.VariableAlias (ListVariadic (Type.Variable.Variadic.List.create "Ts")))
       | _ -> None)
     "typing.Tuple[Ts]"
-    (Type.Tuple (Bounded (ListVariadic (Type.Variable.Variadic.List.create "Ts"))));
-  assert_create "typing.Tuple[...]" (Type.Tuple (Bounded AnyList));
+    (Type.Tuple (Bounded (Variable (Type.Variable.Variadic.List.create "Ts"))));
+  assert_create "typing.Tuple[...]" (Type.Tuple (Bounded Any));
   ()
 
 
@@ -346,7 +346,7 @@ let test_expression _ =
     (Type.Parametric { name = "foo.bar"; parameters = [Type.Primitive "baz"] })
     "foo.bar.__getitem__(baz)";
   assert_expression
-    (Type.Tuple (Type.Bounded (Type.ConcreteList [Type.integer; Type.string])))
+    (Type.Tuple (Type.Bounded (Type.Record.OrderedTypes.Concrete [Type.integer; Type.string])))
     "typing.Tuple.__getitem__((int, str))";
   assert_expression
     (Type.Tuple (Type.Unbounded Type.integer))
@@ -709,9 +709,8 @@ let test_is_unknown _ =
   assert_true (Type.is_unknown (Type.Union [Type.integer; Type.Top]));
   assert_false (Type.is_unknown (Type.Union [Type.integer; Type.string]));
   assert_false (Type.is_unknown (Type.variable "derp"));
-  assert_true (Type.is_unknown (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.Top]))));
-  assert_false
-    (Type.is_unknown (Type.Tuple (Type.Bounded (ConcreteList [Type.integer; Type.string]))));
+  assert_true (Type.is_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.Top]))));
+  assert_false (Type.is_unknown (Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.string]))));
   assert_true (Type.is_unknown (Type.Tuple (Type.Unbounded Type.Top)));
   assert_false (Type.is_unknown (Type.Tuple (Type.Unbounded Type.integer)))
 
@@ -738,10 +737,10 @@ let test_is_resolved _ =
           ()));
   let list_variadic = Type.Variable.Variadic.List.create "Ts" in
   assert_false
-    (Type.Variable.all_variables_are_resolved (Type.Tuple (Bounded (ListVariadic list_variadic))));
+    (Type.Variable.all_variables_are_resolved (Type.Tuple (Bounded (Variable list_variadic))));
   let list_variadic = list_variadic |> Type.Variable.Variadic.List.mark_as_bound in
   assert_true
-    (Type.Variable.all_variables_are_resolved (Type.Tuple (Bounded (ListVariadic list_variadic))));
+    (Type.Variable.all_variables_are_resolved (Type.Tuple (Bounded (Variable list_variadic))));
   ()
 
 
@@ -1172,7 +1171,7 @@ let test_mark_all_variables_as_bound _ =
   assert_true (Type.Variable.all_variables_are_resolved callable);
   let tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_false (Type.Variable.all_variables_are_resolved tuple);
   let tuple = Type.Variable.mark_all_variables_as_bound tuple in
@@ -1231,13 +1230,13 @@ let test_namespace_all_free_variables _ =
     (Type.parametric "p" [namespaced_free_callable; bound_variable_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let bound_variable_tuple =
     let list_variadic =
       Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let annotation = Type.parametric "p" [free_variable_tuple; bound_variable_tuple] in
   let namespace = Type.Variable.Namespace.create_fresh () in
@@ -1245,7 +1244,7 @@ let test_namespace_all_free_variables _ =
     let list_variadic =
       Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.namespace ~namespace
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_equal
     (Type.Variable.namespace_all_free_variables annotation ~namespace)
@@ -1310,13 +1309,13 @@ let test_mark_all_free_variables_as_escaped _ =
     (Type.parametric "p" [escaped_free_callable; bound_variable_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let bound_variable_tuple =
     let list_variadic =
       Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_bound
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let annotation = Type.parametric "p" [free_variable_tuple; bound_variable_tuple] in
   Type.Variable.Namespace.reset ();
@@ -1327,7 +1326,7 @@ let test_mark_all_free_variables_as_escaped _ =
       |> Type.Variable.Variadic.List.mark_as_escaped
       |> Type.Variable.Variadic.List.namespace ~namespace
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   Type.Variable.Namespace.reset ();
   assert_equal
@@ -1366,14 +1365,14 @@ let test_contains_escaped_free_variable _ =
   assert_true (Type.Variable.contains_escaped_free_variable escaped_free_variable_callable);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_false (Type.Variable.contains_escaped_free_variable free_variable_tuple);
   let escaped_free_variable_tuple =
     let list_variadic =
       Type.Variable.Variadic.List.create "Ts" |> Type.Variable.Variadic.List.mark_as_escaped
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_true (Type.Variable.contains_escaped_free_variable escaped_free_variable_tuple);
   ()
@@ -1418,7 +1417,7 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     (Type.parametric "p" [free_variable_callable; any_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let escaped_free_tuple =
     let namespace = Type.Variable.Namespace.create_fresh () in
@@ -1427,12 +1426,12 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       |> Type.Variable.Variadic.List.mark_as_escaped
       |> Type.Variable.Variadic.List.namespace ~namespace
     in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   let annotation = Type.parametric "p" [free_variable_tuple; escaped_free_tuple] in
   assert_equal
     (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
-    (Type.parametric "p" [free_variable_tuple; Type.Tuple (Bounded AnyList)]);
+    (Type.parametric "p" [free_variable_tuple; Type.Tuple (Bounded Any)]);
   ()
 
 
@@ -1459,15 +1458,13 @@ let test_replace_all _ =
     (Type.parametric "p" [Type.integer; no_parameter_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
-       (fun _ -> Some (Type.ConcreteList [Type.integer; Type.string]))
+       (fun _ -> Some (Type.Record.OrderedTypes.Concrete [Type.integer; Type.string]))
        (Type.parametric "p" [Type.integer; free_variable_tuple]))
-    (Type.parametric
-       "p"
-       [Type.integer; Type.Tuple (Bounded (ConcreteList [Type.integer; Type.string]))]);
+    (Type.parametric "p" [Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
   ()
 
 
@@ -1490,7 +1487,7 @@ let test_collect_all _ =
     [Type.Variable.Variadic.Parameters.create "T"];
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
-    Type.Tuple (Bounded (ListVariadic list_variadic))
+    Type.Tuple (Bounded (Variable list_variadic))
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all

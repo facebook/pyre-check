@@ -1056,7 +1056,7 @@ let test_forward_statement _ =
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
   assert_forward [] "x, y = return_tuple()" ["x", Type.integer; "y", Type.integer];
-  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded (ConcreteList []))];
+  assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded (Concrete []))];
   (* Assignments with list. *)
   assert_forward
     ["x", Type.list Type.integer]

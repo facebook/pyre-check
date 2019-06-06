@@ -159,8 +159,7 @@ let connect_definition
             ()
         else
           match parameters with
-          | ConcreteList parameters ->
-              connect ~predecessor:primitive ~successor:supertype ~parameters
+          | Concrete parameters -> connect ~predecessor:primitive ~successor:supertype ~parameters
           | _ ->
               (* TODO(T45097646): support propagating list variadics *)
               () )
@@ -801,7 +800,7 @@ let register_values
           match target.Node.value, annotation with
           | Name name, _ when Expression.is_simple_name name ->
               register ~location:target.Node.location (Reference.from_name_exn name) annotation
-          | Tuple elements, Type.Tuple (Type.Bounded (ConcreteList parameters))
+          | Tuple elements, Type.Tuple (Type.Bounded (Concrete parameters))
             when List.length elements = List.length parameters ->
               List.map2_exn
                 ~f:(fun target annotation -> register_assign ~target ~annotation)

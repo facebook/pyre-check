@@ -22,12 +22,15 @@ type callable_parameter_interval =
 [@@deriving show]
 
 (* This approach of making which bounds actually exist explicit allows us to avoid making
-   artificial Top and Bottom members of Type.ordered_types *)
+   artificial Top and Bottom members of (Type.t Type.Record.OrderedTypes.t) *)
 type list_variadic_interval =
   | NoBounds
-  | OnlyUpperBound of Type.ordered_types
-  | OnlyLowerBound of Type.ordered_types
-  | BothBounds of { upper: Type.ordered_types; lower: Type.ordered_types }
+  | OnlyUpperBound of Type.t Type.Record.OrderedTypes.t
+  | OnlyLowerBound of Type.t Type.Record.OrderedTypes.t
+  | BothBounds of
+      { upper: Type.t Type.Record.OrderedTypes.t;
+        lower: Type.t Type.Record.OrderedTypes.t
+      }
 [@@deriving show]
 
 type t = {
@@ -111,8 +114,8 @@ let exists_in_bounds { unaries; callable_parameters; list_variadics } ~variables
   in
   let exists_in_list_variadic_interval_bounds interval =
     let exists = function
-      | Type.ConcreteList types -> List.exists types ~f:contains_variable
-      | Type.ListVariadic variable ->
+      | Type.Record.OrderedTypes.Concrete types -> List.exists types ~f:contains_variable
+      | Type.Record.OrderedTypes.Variable variable ->
           List.mem variables (Type.Variable.ListVariadic variable) ~equal:Type.Variable.equal
       | _ -> false
     in
@@ -146,7 +149,7 @@ module Solution = struct
   type t = {
     unaries: Type.t UnaryVariable.Map.t;
     callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
-    list_variadics: Type.ordered_types ListVariadic.Map.t
+    list_variadics: Type.t Type.Record.OrderedTypes.t ListVariadic.Map.t
   }
 
   let equal left right =
@@ -155,7 +158,10 @@ module Solution = struct
          Type.Callable.equal_parameters
          left.callable_parameters
          right.callable_parameters
-    && ListVariadic.Map.equal Type.equal_ordered_types left.list_variadics right.list_variadics
+    && ListVariadic.Map.equal
+         (Type.Record.OrderedTypes.equal Type.equal)
+         left.list_variadics
+         right.list_variadics
 
 
   let show { unaries; callable_parameters; list_variadics } =
@@ -173,7 +179,7 @@ module Solution = struct
       show_map
         list_variadics
         ~show_key:ListVariadic.show
-        ~show_data:Type.show_ordered_types
+        ~show_data:(Type.Record.OrderedTypes.show Type.pp)
         ~short_name:"lv"
     in
     Format.sprintf "{%s%s%s}" unaries callable_parameters list_variadics
@@ -482,17 +488,17 @@ module OrderedConstraints (Order : OrderType) = struct
 
 
     let less_or_equal order ~left ~right =
-      if Type.equal_ordered_types left right then
+      if Type.Record.OrderedTypes.equal Type.equal left right then
         true
       else
         match left, right with
-        | _, Type.AnyList
-        | Type.AnyList, _ ->
+        | _, Any
+        | Any, _ ->
             true
-        | _, Type.ListVariadic _
-        | Type.ListVariadic _, _ ->
+        | _, Variable _
+        | Variable _, _ ->
             false
-        | ConcreteList upper_bounds, ConcreteList lower_bounds ->
+        | Concrete upper_bounds, Concrete lower_bounds ->
             List.zip upper_bounds lower_bounds
             >>| List.for_all ~f:(fun (left, right) -> Order.less_or_equal order ~left ~right)
             |> Option.value ~default:false
@@ -510,7 +516,7 @@ module OrderedConstraints (Order : OrderType) = struct
 
     let intersection left right ~order =
       let meet left right =
-        if Type.equal_ordered_types left right then
+        if Type.Record.OrderedTypes.equal Type.equal left right then
           Some left
         else if less_or_equal order ~left ~right then
           Some left
@@ -518,14 +524,14 @@ module OrderedConstraints (Order : OrderType) = struct
           Some right
         else
           match left, right with
-          | ConcreteList left, ConcreteList right ->
+          | Concrete left, Concrete right ->
               List.zip left right
               >>| List.map ~f:(fun (left, right) -> Order.meet order left right)
-              >>| fun concrete_list -> Type.ConcreteList concrete_list
+              >>| fun concrete_list -> Type.Record.OrderedTypes.Concrete concrete_list
           | _ -> None
       in
       let join left right =
-        if Type.equal_ordered_types left right then
+        if Type.Record.OrderedTypes.equal Type.equal left right then
           Some left
         else if less_or_equal order ~left ~right then
           Some right
@@ -533,10 +539,10 @@ module OrderedConstraints (Order : OrderType) = struct
           Some left
         else
           match left, right with
-          | ConcreteList left, ConcreteList right ->
+          | Concrete left, Concrete right ->
               List.zip left right
               >>| List.map ~f:(fun (left, right) -> Order.join order left right)
-              >>| fun concrete_list -> Type.ConcreteList concrete_list
+              >>| fun concrete_list -> Type.Record.OrderedTypes.Concrete concrete_list
           | _ -> None
       in
       match left, right with
@@ -571,16 +577,17 @@ module OrderedConstraints (Order : OrderType) = struct
         | BothBounds { upper; lower } -> Some upper, Some lower
       in
       let smart_instantiate = function
-        | Type.AnyList -> Some Type.AnyList
-        | ListVariadic variable_bound -> (
+        | Type.Record.OrderedTypes.Any -> Some Type.Record.OrderedTypes.Any
+        | Variable variable_bound -> (
           match ListVariadic.Map.find solution.Solution.list_variadics variable_bound with
-          | Some (ListVariadic variable_replacement)
+          | Some (Variable variable_replacement)
             when ListVariadic.equal variable variable_replacement ->
               (* We don't want variables bounded by themselves *)
               None
-          | result -> Some (Option.value result ~default:(Type.ListVariadic variable_bound)) )
-        | ConcreteList types ->
-            Some (ConcreteList (List.map types ~f:(Solution.instantiate solution)))
+          | result ->
+              Some
+                (Option.value result ~default:(Type.Record.OrderedTypes.Variable variable_bound)) )
+        | Concrete types -> Some (Concrete (List.map types ~f:(Solution.instantiate solution)))
       in
       create
         ?upper_bound:(upper_bound >>= smart_instantiate)
@@ -603,13 +610,13 @@ module OrderedConstraints (Order : OrderType) = struct
         | BothBounds { upper; lower } -> [upper; lower]
       in
       let extract = function
-        | Type.AnyList -> []
-        | ListVariadic variable ->
+        | Type.Record.OrderedTypes.Any -> []
+        | Variable variable ->
             if Type.Variable.Variadic.List.is_free variable then
               [Type.Variable.ListVariadic variable]
             else
               []
-        | ConcreteList types -> List.concat_map types ~f:Type.Variable.all_free_variables
+        | Concrete types -> List.concat_map types ~f:Type.Variable.all_free_variables
       in
       List.concat_map bounds ~f:extract
   end
