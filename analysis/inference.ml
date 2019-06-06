@@ -761,13 +761,10 @@ module State = struct
                       parse_and_check_annotation ~state ~bind_variables:false annotation
                     in
                     let compatible =
-                      Resolution.less_or_equal resolution ~left:annotation ~right:resolved
-                      || (* TODO(T41994014) This should be reversed once solve_less_or_equal
-                            supports when the variable is on the left *)
-                         Resolution.constraints_solution_exists
-                           resolution
-                           ~left:resolved
-                           ~right:annotation
+                      Resolution.constraints_solution_exists
+                        resolution
+                        ~left:annotation
+                        ~right:resolved
                     in
                     let state =
                       let name = Identifier.sanitized name in
