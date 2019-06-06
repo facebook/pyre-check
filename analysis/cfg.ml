@@ -169,7 +169,7 @@ let error_index = 2
 
 let exit_index = 3
 
-let create ?(convert = false) define =
+let create define =
   Node.reset_count ();
   let graph = Int.Table.create () in
   let entry = Node.empty graph Node.Entry in
@@ -198,12 +198,7 @@ let create ?(convert = false) define =
         let join = Node.empty graph Node.Join in
         let loop_jumps = { jumps with break = join; continue = split } in
         Node.connect predecessor split;
-        let preamble =
-          if convert then
-            Statement.convert (For.preamble loop)
-          else
-            For.preamble loop
-        in
+        let preamble = For.preamble loop in
         let body = create (preamble :: body) loop_jumps split in
         Node.connect_option body split;
         let orelse = create orelse jumps split in
@@ -300,12 +295,7 @@ let create ?(convert = false) define =
         Node.connect_option body_orelse normal_entry;
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
-          let preamble =
-            if convert then
-              List.map ~f:Statement.convert (Try.preamble handler)
-            else
-              Try.preamble handler
-          in
+          let preamble = Try.preamble handler in
           create (preamble @ handler_body) local_jumps dispatch
           |> (Fn.flip Node.connect_option) normal_entry
         in
@@ -316,12 +306,7 @@ let create ?(convert = false) define =
     | { Ast.Node.value = With ({ With.body; _ } as block); _ } :: statements ->
         (* -> [split] -> [preamble; body] -> *)
         let split = Node.empty graph (Node.With block) in
-        let preamble =
-          if convert then
-            List.map ~f:Statement.convert (With.preamble block)
-          else
-            With.preamble block
-        in
+        let preamble = With.preamble block in
         Node.connect predecessor split;
         create (preamble @ body) jumps split >>= create statements jumps
     | { Ast.Node.value = While ({ While.test; body; orelse } as loop); _ } :: statements ->
