@@ -1292,11 +1292,7 @@ let test_overrides _ =
   let overrides = Class.overrides definition ~resolution ~name:"foo" in
   assert_is_some overrides;
   assert_equal ~cmp:String.equal (Attribute.name (Option.value_exn overrides)) "foo";
-  assert_equal
-    ~cmp:Access.equal
-    ~printer:Access.show
-    (Option.value_exn overrides |> Attribute.parent |> Type.show |> Access.create)
-    !+"Foo"
+  assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "Foo"
 
 
 let () =

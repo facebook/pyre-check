@@ -751,22 +751,7 @@ let rec sanitized ({ Node.value; location } as expression) =
 
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
-    let delocalize_element = function
-      | Access.Call ({ Node.value = arguments; _ } as call) ->
-          let delocalize_argument ({ Argument.value; _ } as argument) =
-            { argument with Argument.value = delocalize value }
-          in
-          Access.Call { call with Node.value = List.map arguments ~f:delocalize_argument }
-      | element -> element
-    in
     match value with
-    | Access (SimpleAccess access) ->
-        let access = Access.delocalize access |> List.map ~f:delocalize_element in
-        Access (SimpleAccess access)
-    | Access (ExpressionAccess { expression; access }) ->
-        Access
-          (ExpressionAccess
-             { expression = delocalize expression; access = List.map access ~f:delocalize_element })
     | Call { callee; arguments } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }
@@ -1127,10 +1112,6 @@ let show expression = Format.asprintf "%a" pp expression
 
 let rec show_sanitized { Node.location; value } =
   match value with
-  | Access (SimpleAccess access) -> Access.show_sanitized access
-  | Access (ExpressionAccess { expression; access = [] }) -> Format.asprintf "%a" pp expression
-  | Access (ExpressionAccess { expression; access }) ->
-      Format.asprintf "%a.%s" pp expression (Access.show_sanitized access)
   | Name (Name.Identifier identifier) -> Identifier.sanitized identifier
   | Name (Name.Attribute { base; attribute; _ }) ->
       Format.asprintf "%s.%s" (show_sanitized base) (Identifier.sanitized attribute)

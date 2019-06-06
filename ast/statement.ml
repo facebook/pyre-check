@@ -232,12 +232,6 @@ module Attribute = struct
   let name ~parent target =
     let open Expression in
     match Node.value target with
-    | Access (SimpleAccess access) -> (
-      match List.rev access with
-      | Access.Identifier identifier :: class_name
-        when Reference.equal parent (Reference.from_access (List.rev class_name)) ->
-          Some identifier
-      | _ -> None )
     | Name (Name.Attribute { base; attribute; _ })
       when Expression.equal base (Reference.expression parent) ->
         Some attribute
@@ -414,16 +408,6 @@ module Define = struct
       | { Node.value =
             Expression
               { Node.value =
-                  Expression.Access (SimpleAccess [Access.Identifier identifier; Access.Call _])
-              ; _
-              }
-        ; _
-        }
-        when String.equal identifier name ->
-          true
-      | { Node.value =
-            Expression
-              { Node.value =
                   Expression.Call
                     { callee =
                         { Node.value = Expression.Name (Expression.Name.Identifier identifier); _ }
@@ -471,9 +455,6 @@ module Define = struct
       | Assign { Assign.target; annotation; value; _ } -> (
           let attribute ~map ~target:({ Node.location; _ } as target) ~annotation =
             match target with
-            | { Node.value = Access (SimpleAccess [Access.Identifier self; Access.Identifier name])
-              ; _
-              }
             | { Node.value =
                   Name
                     (Name.Attribute
@@ -495,7 +476,6 @@ module Define = struct
             | _ -> map
           in
           match target with
-          | { Node.value = Access _; _ }
           | { Node.value = Name _; _ } ->
               let annotation =
                 let is_reassignment target value =
@@ -504,10 +484,6 @@ module Define = struct
                   String.equal target value || String.equal target ("_" ^ value)
                 in
                 match toplevel, annotation, target, value with
-                | ( true,
-                    None,
-                    { Node.value = Access (SimpleAccess [_; Access.Identifier target]); _ },
-                    { Node.value = Access (SimpleAccess [Access.Identifier value]); _ } )
                 | ( true,
                     None,
                     { Node.value =
@@ -597,12 +573,6 @@ module Define = struct
         | With { RecordWith.body; _ } -> gather_nested_statements ~toplevel:false body
         | Expression
             { Node.value =
-                Access
-                  (SimpleAccess [Access.Identifier self; Access.Identifier name; Access.Call _])
-            ; _
-            }
-        | Expression
-            { Node.value =
                 Call
                   { callee =
                       { Node.value =
@@ -668,18 +638,6 @@ module Define = struct
         let return_annotation =
           let open Expression in
           match return_annotation with
-          | Some ({ Node.location; value = Access _ } as access) ->
-              let argument = { Argument.name = None; value = access } in
-              Some
-                { Node.location;
-                  value =
-                    Access
-                      (SimpleAccess
-                         [ Access.Identifier "typing";
-                           Access.Identifier "ClassVar";
-                           Access.Identifier "__getitem__";
-                           Access.Call (Node.create_with_default_location [argument]) ])
-                }
           | Some ({ Node.location; value = Name _ } as name) ->
               Some
                 { Node.location;
@@ -829,13 +787,6 @@ module Class = struct
                 let value =
                   let index = Node.create ~location (Integer index) in
                   match value with
-                  | { Node.value = Access (SimpleAccess values); _ } ->
-                      let get_item =
-                        [ Access.Identifier "__getitem__";
-                          Access.Call
-                            (Node.create ~location [{ Argument.name = None; value = index }]) ]
-                      in
-                      Some { value with Node.value = Access (SimpleAccess (values @ get_item)) }
                   | { Node.value = Call _; _ }
                   | { Node.value = Name _; _ } ->
                       Some
@@ -1035,10 +986,6 @@ module Class = struct
       let slots_attributes map { Node.value; _ } =
         let open Expression in
         let is_slots = function
-          | Access (SimpleAccess access) -> (
-            match List.last access with
-            | Some (Access.Identifier "__slots__") -> true
-            | _ -> false )
           | Name (Name.Identifier "__slots__")
           | Name (Name.Attribute { attribute = "__slots__"; _ }) ->
               true
@@ -1169,10 +1116,8 @@ module Class = struct
   let is_abstract { bases; _ } =
     let abstract_metaclass { Expression.Call.Argument.value; _ } =
       match value with
-      | { Node.value = Expression.Access (SimpleAccess identifiers); _ } ->
-          String.equal "abc.ABCMeta" (Expression.Access.show identifiers)
       | { Node.value =
-            Name
+            Expression.Name
               (Name.Attribute
                 { base = { Node.value = Name (Name.Identifier "abc"); _ };
                   attribute = "ABCMeta"
@@ -1310,7 +1255,6 @@ module Try = struct
         } ]
     in
     match kind, name with
-    | Some ({ Node.location; value = Access _; _ } as annotation), Some name
     | Some ({ Node.location; value = Name _; _ } as annotation), Some name ->
         assume ~location ~target:{ Node.location; value = Name (Name.Identifier name) } ~annotation
     | Some { Node.location; value = Tuple values; _ }, Some name ->

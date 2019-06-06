@@ -125,12 +125,6 @@ let apply_decorators
       ({ Type.Callable.annotation; parameters } as overload)
       { Node.value = decorator; _ }
     =
-    let name decorator =
-      (* A decorator is either a call or a list of identifiers. *)
-      match Expression.Access.name_and_arguments ~call:decorator with
-      | Some { Expression.Access.callee; _ } -> callee
-      | None -> Expression.Access.show decorator
-    in
     let resolve_decorators name =
       match name with
       | "contextlib.contextmanager" ->
@@ -222,7 +216,6 @@ let apply_decorators
         | _ -> overload )
     in
     match decorator with
-    | Expression.Access (Expression.Access.SimpleAccess call) -> resolve_decorators (name call)
     | Expression.Call { callee = { Node.value = Expression.Name name; _ }; _ }
     | Expression.Name name ->
         Expression.name_to_identifiers name
