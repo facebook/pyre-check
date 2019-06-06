@@ -1,6 +1,6 @@
 // Copyright 2004-present Facebook. All Rights Reserved.
 
-package com.facebook.buck_project_builder.util;
+package com.facebook.buck_project_builder;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
