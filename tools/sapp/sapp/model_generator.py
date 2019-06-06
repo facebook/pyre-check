@@ -87,6 +87,7 @@ class ModelGenerator(PipelineStep[DictEntries, TraceGraph]):
         self, status=RunStatus.FINISHED, status_description=None
     ) -> Run:
         """setting boilerplate when creating a Run object"""
+        # pyre-fixme[28]: Unexpected keyword argument `job_id`.
         run = Run(
             job_id=self.summary["job_id"],
             issue_instances=[],
