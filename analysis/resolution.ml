@@ -47,7 +47,7 @@ type t = {
   global: Reference.t -> global option;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
   module_definition: Reference.t -> Module.t option;
-  class_definition: ?convert:bool -> Type.primitive -> Class.t Node.t option;
+  class_definition: Type.primitive -> Class.t Node.t option;
   class_metadata: Type.primitive -> class_metadata option;
   constructor: resolution:t -> Type.primitive -> Type.t option;
   generics: resolution:t -> Class.t Node.t -> Type.t list;
@@ -157,8 +157,8 @@ let primitive_name annotation =
   Type.primitive_name primitive
 
 
-let class_definition ?(convert = false) { class_definition; _ } annotation =
-  primitive_name annotation >>= class_definition ~convert
+let class_definition { class_definition; _ } annotation =
+  primitive_name annotation >>= class_definition
 
 
 let class_metadata { class_metadata; _ } annotation = primitive_name annotation >>= class_metadata

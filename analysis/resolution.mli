@@ -35,7 +35,7 @@ val create
   aliases:(Type.primitive -> Type.alias option) ->
   global:(Reference.t -> global option) ->
   module_definition:(Reference.t -> Module.t option) ->
-  class_definition:(?convert:bool -> Type.primitive -> Class.t Node.t option) ->
+  class_definition:(Type.primitive -> Class.t Node.t option) ->
   class_metadata:(Type.primitive -> class_metadata option) ->
   constructor:(resolution:t -> Type.primitive -> Type.t option) ->
   generics:(resolution:t -> Class.t Node.t -> Type.t list) ->
@@ -85,7 +85,7 @@ val global : t -> Reference.t -> global option
 
 val module_definition : t -> Reference.t -> Module.t option
 
-val class_definition : ?convert:bool -> t -> Type.t -> Class.t Node.t option
+val class_definition : t -> Type.t -> Class.t Node.t option
 
 val class_metadata : t -> Type.t -> class_metadata option
 

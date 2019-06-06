@@ -276,17 +276,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
       |> List.iter ~f:normalize_dependents
   end
 
-  let class_definition ?(convert = false) annotation =
-    match ClassDefinitions.get annotation with
-    | Some { Node.location; value } when convert ->
-        { Node.location; value = Statement.Class value }
-        |> Statement.convert
-        |> (function
-             | { Node.location; value = Statement.Class value } -> { Node.location; value }
-             | _ -> failwith "Impossible.")
-        |> Option.some
-    | result -> result
-
+  let class_definition annotation = ClassDefinitions.get annotation
 
   let class_metadata = ClassMetadata.get
 

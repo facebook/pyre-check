@@ -3916,7 +3916,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
         ~aliases:(fun _ -> None)
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
-        ~class_definition:(fun ?convert:_ _ -> None)
+        ~class_definition:(fun _ -> None)
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
         ~generics:(fun ~resolution:_ _ -> [])

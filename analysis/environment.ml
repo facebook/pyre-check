@@ -42,7 +42,7 @@ module type Handler = sig
 
   val purge : ?debug:bool -> File.Handle.t list -> unit
 
-  val class_definition : ?convert:bool -> Identifier.t -> Class.t Node.t option
+  val class_definition : Identifier.t -> Class.t Node.t option
 
   val class_metadata : Identifier.t -> Resolution.class_metadata option
 
@@ -278,17 +278,7 @@ let handler
         TypeOrder.check_integrity (TypeOrder.handler order)
 
 
-    let class_definition ?(convert = false) annotation =
-      match Hashtbl.find class_definitions annotation with
-      | Some { Node.location; value } when convert ->
-          { Node.location; value = Statement.Class value }
-          |> Statement.convert
-          |> (function
-               | { Node.location; value = Statement.Class value } -> { Node.location; value }
-               | _ -> failwith "Impossible.")
-          |> Option.some
-      | result -> result
-
+    let class_definition annotation = Hashtbl.find class_definitions annotation
 
     let class_metadata = Hashtbl.find class_metadata
 
