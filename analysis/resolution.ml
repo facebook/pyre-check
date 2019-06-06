@@ -393,7 +393,7 @@ let parse_annotation
     ({ aliases; module_definition; _ } as resolution)
     expression
   =
-  let expression = Expression.delocalize expression |> Expression.convert_to_new in
+  let expression = Expression.delocalize expression in
   let aliases name =
     if allow_invalid_type_parameters then
       aliases name

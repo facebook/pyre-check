@@ -3934,7 +3934,6 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
     }
   in
   let resolve ~resolution expression =
-    let expression = Expression.convert_to_new expression in
     let state = { state_without_resolution with State.resolution } in
     State.forward_expression ~state ~expression |> fun { State.resolved; _ } -> resolved
   in

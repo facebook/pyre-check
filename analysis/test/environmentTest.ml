@@ -7,12 +7,9 @@ open Core
 open OUnit2
 open Ast
 open Analysis
-open Expression
 open Pyre
 open Statement
 open Test
-
-let access names = List.concat_map names ~f:Access.create
 
 let value option = Option.value_exn option
 
@@ -810,9 +807,9 @@ let test_less_or_equal_type_order _ =
       class module.sub(module.super): ...
     |}
   in
-  let super = parse_annotation environment (+Access (SimpleAccess (access ["module.super"]))) in
+  let super = parse_annotation environment (parse_single_expression "module.super") in
   assert_equal super (Type.Primitive "module.super");
-  let sub = parse_annotation environment (+Access (SimpleAccess (access ["module.sub"]))) in
+  let sub = parse_annotation environment (parse_single_expression "module.sub") in
   assert_equal sub (Type.Primitive "module.sub");
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:Type.Top);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:Type.Top);
@@ -826,11 +823,11 @@ let test_less_or_equal_type_order _ =
         class module.top(): pass
     |}
   in
-  let super = parse_annotation environment (+Access (SimpleAccess (access ["module.super"]))) in
+  let super = parse_annotation environment (parse_single_expression "module.super") in
   assert_equal super (Type.Primitive "module.super");
-  let sub = parse_annotation environment (+Access (SimpleAccess (access ["module.sub"]))) in
-  let super = parse_annotation environment (+Access (SimpleAccess (access ["module.super"]))) in
-  let top = parse_annotation environment (+Access (SimpleAccess (access ["module.top"]))) in
+  let sub = parse_annotation environment (parse_single_expression "module.sub") in
+  let super = parse_annotation environment (parse_single_expression "module.super") in
+  let top = parse_annotation environment (parse_single_expression "module.top") in
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:top);
   (* Optionals. *)

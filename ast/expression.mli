@@ -331,8 +331,6 @@ val negate : t -> t
 
 val normalize : t -> t
 
-val convert_to_new : t -> t
-
 val create_name_from_identifiers : Identifier.t Node.t list -> expression_t Name.t
 
 val create_name : location:Location.t -> string -> expression_t Name.t
