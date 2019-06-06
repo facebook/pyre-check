@@ -215,6 +215,8 @@ let variance_order =
   insert order Type.Bottom;
   insert order Type.Any;
   insert order Type.Top;
+  insert order Type.object_primitive;
+  insert order Type.bool;
   add_simple Type.string;
   insert order Type.integer;
   insert order Type.float;
@@ -289,6 +291,8 @@ let multiplane_variance_order =
   add_simple Type.string;
   insert order Type.integer;
   insert order Type.float;
+  insert order Type.object_primitive;
+  insert order Type.bool;
   connect order ~predecessor:Type.Bottom ~successor:Type.integer;
   connect order ~predecessor:Type.integer ~successor:Type.float;
   connect order ~predecessor:Type.float ~successor:Type.Top;
@@ -356,6 +360,7 @@ let parallel_planes_variance_order =
   add_simple Type.string;
   insert order Type.integer;
   insert order Type.float;
+  insert order Type.object_primitive;
   connect order ~predecessor:Type.Bottom ~successor:Type.integer;
   connect order ~predecessor:Type.integer ~successor:Type.float;
   connect order ~predecessor:Type.float ~successor:Type.Top;

@@ -848,6 +848,14 @@ module OrderImplementation = struct
       | Untracked _ -> []
 
 
+    and solve_all_safe order ~lefts ~rights =
+      solve_less_or_equal_safe
+        order
+        ~constraints:TypeConstraints.empty
+        ~left:(Type.Tuple (Bounded (Concrete lefts)))
+        ~right:(Type.Tuple (Bounded (Concrete rights)))
+
+
     and less_or_equal
         ( { handler = (module Handler : Handler) as handler;
             constructor;
@@ -959,15 +967,10 @@ module OrderImplementation = struct
                             ~target:(Type.Primitive right_name))
                     |> Option.value ~default:[]
                   in
-                  match
-                    List.fold2
-                      right_propagated
-                      right_parameters
-                      ~init:Type.Map.empty
-                      ~f:diff_variables
-                  with
-                  | Ok result -> result
-                  | Unequal_lengths -> Type.Map.empty
+                  solve_all_safe order ~lefts:right_propagated ~rights:right_parameters
+                  |> List.filter_map ~f:(OrderedConstraints.solve ~order)
+                  |> List.hd
+                  |> Option.value ~default:TypeConstraints.Solution.empty
                 in
                 let propagate_with_substitutions index variable =
                   let replace_one_parameter replacement =
@@ -985,8 +988,8 @@ module OrderImplementation = struct
                         let parameters = head @ [replacement] @ tail in
                         Some (Type.Parametric { name = left_name; parameters })
                   in
-                  Map.find variable_substitutions variable
-                  >>= replace_one_parameter
+                  TypeConstraints.Solution.instantiate variable_substitutions variable
+                  |> replace_one_parameter
                   >>| (fun left -> less_or_equal order ~left ~right)
                   |> Option.value ~default:false
                 in
@@ -1724,7 +1727,7 @@ module OrderImplementation = struct
 
 
     and get_instantiated_predecessors
-        (module Handler : Handler)
+        ({ handler = (module Handler : Handler); _ } as order)
         ~generic_index
         ~parameters
         predecessors
@@ -1743,18 +1746,17 @@ module OrderImplementation = struct
            and an instantiated: Base[str, int, float] This mapping would include: { T1 => str; T2
            => float } *)
         let substitutions =
-          match
-            List.fold2 predecessor_variables parameters ~init:Type.Map.empty ~f:diff_variables
-          with
-          | Ok result -> result
-          | Unequal_lengths -> Type.Map.empty
+          solve_all_safe order ~lefts:predecessor_variables ~rights:parameters
+          |> List.filter_map ~f:(OrderedConstraints.solve ~order)
+          |> List.hd
+          |> Option.value ~default:TypeConstraints.Solution.empty
         in
         let propagated =
           let replace parameter =
-            Map.find substitutions parameter
+            TypeConstraints.Solution.instantiate substitutions parameter
             (* Use Bottom if we could not determine the value of the generic because the
                predecessor did not propagate it to the base class. *)
-            |> Option.value ~default:Type.Bottom
+            (*|> Option.value ~default:Type.Bottom*)
           in
           List.map generic_parameters ~f:replace
         in
@@ -1813,7 +1815,7 @@ module OrderImplementation = struct
 
 
     and instantiate_predecessors_parameters
-        { handler = (module Handler : Handler) as handler; _ }
+        ({ handler = (module Handler : Handler) as handler; _ } as order)
         ~source
         ~target
       =
@@ -1833,7 +1835,7 @@ module OrderImplementation = struct
                 else (
                   Handler.find (Handler.backedges ()) target_index
                   >>| Set.to_list
-                  >>| get_instantiated_predecessors handler ~generic_index ~parameters
+                  >>| get_instantiated_predecessors order ~generic_index ~parameters
                   >>| List.iter ~f:(Queue.enqueue worklist)
                   |> ignore;
                   iterate worklist )
@@ -1845,7 +1847,7 @@ module OrderImplementation = struct
           None
 
 
-    and diff_variables substitutions left right =
+    and diff_variables substitutions (left : Type.t) (right : Type.t) =
       match left, right with
       | ( Callable { implementation = left_implementation; overloads = left_overloads; _ },
           Callable { implementation = right_implementation; overloads = right_overloads; _ } ) -> (
