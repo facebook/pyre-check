@@ -139,11 +139,11 @@ class BuckTest(unittest.TestCase):
             ["//s:exact_target", "//t/...", "//unknown"],
         )
 
-    @patch.object(log, "get_yes_no_input", return_value=False)
+    @patch.object(buck, "_build_targets")
     @patch.object(buck, "_normalize")
     @patch.object(buck, "_find_built_source_directories")
     def test_generate_source_directories(
-        self, mock_find_built_source_directories, mock_normalize, mock_input
+        self, mock_find_built_source_directories, mock_normalize, build_targets
     ) -> None:
         mock_find_built_source_directories.return_value = BuckOut(  # noqa
             {"new_tree"}, {"empty_target"}
