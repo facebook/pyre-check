@@ -5,7 +5,6 @@
 
 open Core
 open Ast
-open Expression
 
 module Record : sig
   module Variable : sig
@@ -233,9 +232,7 @@ val union : t list -> t
 
 val yield : t -> t
 
-val expression : ?convert:bool -> t -> Expression.t
-
-val access : t -> Access.t
+val expression : t -> Expression.t
 
 module Transform : sig
   type 'state visit_result = {

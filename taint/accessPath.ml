@@ -212,18 +212,20 @@ let to_json { root; path } =
 
 
 let is_property ~resolution = function
-  | Name (Name.Attribute { base; attribute; _ }) ->
+  | Name (Name.Attribute { base; attribute; _ }) -> (
       let annotation = Resolution.resolve resolution base in
       let is_property define =
         String.Set.exists ~f:(Statement.Define.has_decorator define) Recognized.property_decorators
       in
-      Type.access annotation @ [Identifier attribute]
-      |> Reference.from_access
-      |> Resolution.function_definitions resolution
-      >>| (function
-            | [{ Node.value = define; _ }] -> is_property define
-            | _ -> false)
-      |> Option.value ~default:false
+      match Type.expression annotation with
+      | { Node.value = Name name; _ } when Expression.is_simple_name name ->
+          Reference.create ~prefix:(Reference.from_name_exn name) attribute
+          |> Resolution.function_definitions resolution
+          >>| (function
+                | [{ Node.value = define; _ }] -> is_property define
+                | _ -> false)
+          |> Option.value ~default:false
+      | _ -> false )
   | _ -> false
 
 

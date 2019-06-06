@@ -329,12 +329,6 @@ let test_expression _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression ~convert:true ~coerce_special_methods:true expression)
-      (Type.expression ~convert:true annotation);
-    (* Test new AST expression conversion *)
-    assert_equal
-      ~printer:Expression.show
-      ~cmp:Expression.equal
       (parse_single_expression ~coerce_special_methods:true expression)
       (Type.expression annotation)
   in

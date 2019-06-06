@@ -778,7 +778,7 @@ let parametric_substitution_map =
   |> Identifier.Table.of_alist_exn
 
 
-let rec expression ?(convert = false) annotation =
+let rec expression annotation =
   let location = Location.Reference.any in
   let create_name name = Name (Expression.create_name ~location name) in
   let get_item_call base arguments =
@@ -817,7 +817,7 @@ let rec expression ?(convert = false) annotation =
                   let call ?(default = false) ?name kind annotation =
                     let arguments =
                       let annotation =
-                        [{ Call.Argument.name = None; value = expression ~convert annotation }]
+                        [{ Call.Argument.name = None; value = expression annotation }]
                       in
                       let default =
                         if default then
@@ -856,8 +856,7 @@ let rec expression ?(convert = false) annotation =
             | ParameterVariadicTypeVariable { name; _ } -> Node.create ~location (create_name name)
           in
           { Call.Argument.name = None;
-            value =
-              Node.create ~location (Expression.Tuple [parameters; expression ~convert annotation])
+            value = Node.create ~location (Expression.Tuple [parameters; expression annotation])
           }
         in
         let base_callable =
@@ -928,10 +927,10 @@ let rec expression ?(convert = false) annotation =
         in
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
     | Optional Bottom -> create_name "None"
-    | Optional parameter -> get_item_call "typing.Optional" [expression ~convert parameter]
+    | Optional parameter -> get_item_call "typing.Optional" [expression parameter]
     | Parametric { name = "typing.Optional"; parameters = [Bottom] } -> create_name "None"
     | Parametric { name; parameters } ->
-        get_item_call (reverse_substitute name) (List.map ~f:(expression ~convert) parameters)
+        get_item_call (reverse_substitute name) (List.map ~f:expression parameters)
     | Primitive name -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Bounded (Concrete [])) ->
@@ -944,7 +943,7 @@ let rec expression ?(convert = false) annotation =
           | Bounded (Concrete parameters) -> parameters
           | Unbounded parameter -> [parameter; Primitive "..."]
         in
-        get_item_call "typing.Tuple" (List.map ~f:(expression ~convert) parameters)
+        get_item_call "typing.Tuple" (List.map ~f:expression parameters)
     | TypedDictionary { name; fields; total } ->
         let argument =
           let tail =
@@ -953,7 +952,7 @@ let rec expression ?(convert = false) annotation =
                 (Expression.Tuple
                    [ Node.create_with_default_location
                        (Expression.String { value = name; kind = StringLiteral.String });
-                     expression ~convert annotation ])
+                     expression annotation ])
             in
             List.map fields ~f:field_to_tuple
           in
@@ -967,8 +966,7 @@ let rec expression ?(convert = false) annotation =
           |> Node.create_with_default_location
         in
         get_item_call "mypy_extensions.TypedDict" [argument]
-    | Union parameters ->
-        get_item_call "typing.Union" (List.map ~f:(expression ~convert) parameters)
+    | Union parameters -> get_item_call "typing.Union" (List.map ~f:expression parameters)
     | Variable { variable; _ } -> create_name variable
   in
   let value =
@@ -976,16 +974,7 @@ let rec expression ?(convert = false) annotation =
     | Primitive "..." -> Ellipsis
     | _ -> convert_annotation annotation
   in
-  if convert then
-    Expression.convert (Node.create_with_default_location value)
-  else
-    Node.create_with_default_location value
-
-
-let access annotation =
-  match expression ~convert:true annotation with
-  | { Node.value = Access (SimpleAccess access); _ } -> access
-  | _ -> failwith "Annotation expression is not an access"
+  Node.create_with_default_location value
 
 
 module Transform = struct
@@ -2048,21 +2037,28 @@ let split annotation =
 
 
 let class_name annotation =
-  let open Expression in
+  let strip_calls =
+    let rec collect_identifiers identifiers = function
+      | { Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ }
+        ; _
+        } ->
+          collect_identifiers identifiers base
+      | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
+      | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+          collect_identifiers (attribute :: identifiers) base
+      | _ -> identifiers
+    in
+    collect_identifiers []
+  in
   split annotation
   |> fst
-  |> expression ~convert:true
-  |> Node.value
-  |> function
-  | Access (SimpleAccess access) ->
-      let rec remove_calls stripped = function
-        | []
-        | Access.Identifier _ :: Access.Call _ :: _ ->
-            List.rev stripped
-        | head :: tail -> remove_calls (head :: stripped) tail
-      in
-      Reference.from_access (remove_calls [] access)
-  | _ -> Reference.create "typing.Any"
+  |> expression
+  |> strip_calls
+  |> fun identifiers ->
+  if List.is_empty identifiers then
+    Reference.create "typing.Any"
+  else
+    Reference.create_from_list identifiers
 
 
 let class_variable annotation = parametric "typing.ClassVar" [annotation]
