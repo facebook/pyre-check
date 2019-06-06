@@ -264,13 +264,14 @@ module ShowStatusParameters = struct
     numerator: int;
     denominator: int
   }
-  [@@deriving yojson]
+  [@@deriving yojson, eq, show]
 
   type t = {
     type_: int; [@key "type"]
     actions: string list option;
     progress: progress option;
-    message: string
+    message: string;
+    shortMessage: string option
   }
   [@@deriving yojson]
 end

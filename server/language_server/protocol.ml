@@ -126,15 +126,16 @@ end
 module ShowStatus = struct
   include Types.ShowStatus
 
-  let create ~message_type ~content =
+  let create ~message_type ~content ~short_message ~progress =
     { jsonrpc = "2.0";
       method_ = "window/showStatus";
       parameters =
         Some
           { ShowStatusParameters.type_ = ShowMessageParameters.messageTypeNumber message_type;
-            progress = None;
+            progress;
             message = content;
-            actions = None
+            actions = None;
+            shortMessage = short_message
           };
       id = Int (Int.of_float (Unix.time ()))
     }
@@ -295,9 +296,3 @@ let read_message channel =
       >>| fun json_string ->
       Log.info "LSP message received:@.%s@." (Yojson.Safe.prettify json_string);
       Yojson.Safe.from_string json_string
-
-
-let display_status_message ~content ~message_type =
-  ShowStatus.create ~content ~message_type
-  |> ShowStatus.to_yojson
-  |> write_message Out_channel.stdout

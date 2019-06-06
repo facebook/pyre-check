@@ -73,6 +73,7 @@ let computation_thread request_queue configuration state =
       try
         match origin with
         | Protocol.Request.PersistentSocket socket ->
+            StatusUpdate.initialize socket;
             let write_or_forget socket responses =
               try List.iter ~f:(Socket.write socket) responses with
               | Unix.Unix_error (kind, _, _) -> (
@@ -92,10 +93,12 @@ let computation_thread request_queue configuration state =
             in
             let { Request.state; response } = process ~socket ~state in
             ( match response with
-            | Some (LanguageServerProtocolResponse _)
+            | Some (LanguageServerProtocolResponse _) ->
+                response >>| (fun response -> write_or_forget socket [response]) |> ignore
             | Some (ClientExitResponse Persistent) ->
                 response >>| (fun response -> write_or_forget socket [response]) |> ignore
             | Some (TypeCheckResponse error_map) ->
+                StatusUpdate.information ~message:"Done recheck.";
                 let responses = errors_to_lsp_responses error_map in
                 write_or_forget socket responses
             | Some _ -> Log.error "Unexpected response for persistent client request"

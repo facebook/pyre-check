@@ -51,7 +51,12 @@ end
 module ShowStatus : sig
   type t [@@deriving to_yojson]
 
-  val create : message_type:Types.ShowMessageParameters.messageType -> content:string -> t
+  val create
+    :  message_type:Types.ShowMessageParameters.messageType ->
+    content:string ->
+    short_message:string option ->
+    progress:Types.ShowStatusParameters.progress option ->
+    t
 end
 
 module InitializeResponse : sig
@@ -116,8 +121,3 @@ val write_message : Out_channel.t -> Yojson.Safe.json -> unit
 
 val read_message : In_channel.t -> Yojson.Safe.json option
 (** Read a language server protocol message from a channel (can raise End_of_file) *)
-
-val display_status_message
-  :  content:string ->
-  message_type:Types.ShowMessageParameters.messageType ->
-  unit
