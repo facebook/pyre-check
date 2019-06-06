@@ -79,13 +79,9 @@ let run ~configuration:_ ~environment ~source =
     in
     let module State = State (Context) in
     let module Fixpoint = Fixpoint.Make (State) in
-    Fixpoint.forward ~cfg:(Cfg.create ~convert:true (Node.value define)) ~initial:State.initial
+    Fixpoint.forward ~cfg:(Cfg.create (Node.value define)) ~initial:State.initial
     |> Fixpoint.exit
     >>| State.errors
     |> Option.value ~default:[]
   in
-  source
-  |> Preprocessing.convert
-  |> Preprocessing.defines ~include_toplevels:true
-  |> List.map ~f:check
-  |> List.concat
+  source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check |> List.concat

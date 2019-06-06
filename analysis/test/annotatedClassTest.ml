@@ -140,8 +140,8 @@ type constructor = {
 let test_get_decorator _ =
   let assert_get_decorator source decorator expected =
     let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
-    let assert_logic ~convert expected =
-      match parse_last_statement ~convert source with
+    let assert_logic expected =
+      match parse_last_statement source with
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
             Node.create_with_default_location definition
@@ -155,19 +155,7 @@ let test_get_decorator _ =
             actual
       | _ -> assert_true (List.is_empty expected)
     in
-    let old_access_expected =
-      let to_old ({ Class.arguments; _ } as decorator) =
-        let arguments =
-          arguments
-          >>| List.map ~f:(fun { Argument.name; value } ->
-                  { Argument.name; value = Expression.convert value })
-        in
-        { decorator with Class.arguments }
-      in
-      List.map ~f:to_old expected
-    in
-    assert_logic ~convert:true old_access_expected;
-    assert_logic ~convert:false expected
+    assert_logic expected
   in
   assert_get_decorator "class A: pass" "decorator" [];
   assert_get_decorator
@@ -422,13 +410,7 @@ let test_is_protocol _ =
       |> Class.create
       |> Class.is_protocol
     in
-    let old_access_bases =
-      List.map
-        ~f:(fun { Argument.name; value } -> { Argument.name; value = Expression.convert value })
-        bases
-    in
-    assert_equal expected (is_protocol bases);
-    assert_equal expected (is_protocol old_access_bases)
+    assert_equal expected (is_protocol bases)
   in
   let parse = parse_single_expression in
   assert_is_protocol [] false;
@@ -443,7 +425,7 @@ let test_is_protocol _ =
 let test_class_attributes _ =
   let setup source =
     let parent =
-      match parse_last_statement ~convert:true source with
+      match parse_last_statement source with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -548,7 +530,7 @@ let test_class_attributes _ =
       ~parent
       (create_attribute
          ~annotation:
-           (Some (Type.expression ~convert:true (Type.parametric "typing.ClassVar" [Type.integer])))
+           (Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
   assert_true (Attribute.class_attribute attribute);
@@ -683,7 +665,7 @@ let test_class_attributes _ =
       def Attributes.property(self) -> str:
         pass
     |}
-    |> parse_single_class ~convert:true
+    |> parse_single_class
   in
   let create_expected_attribute
       ?(property = None)
@@ -738,7 +720,7 @@ let test_fallback_attribute _ =
     Class.AttributeCache.clear ();
     let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
     let attribute =
-      parse_last_statement ~convert:true source
+      parse_last_statement source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
                Class.create (Node.create ~location definition)
@@ -861,7 +843,7 @@ let test_constraints _ =
       List.find_map ~f:target statements |> value
     in
     let constraints =
-      parse_last_statement ~convert:true source
+      parse_last_statement source
       |> (function
            | { Node.location; value = Statement.Class definition; _ } ->
                Class.create (Node.create ~location definition)

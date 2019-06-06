@@ -65,7 +65,7 @@ let assert_fixpoint body expected =
     ~printer:(fun fixpoint -> Format.asprintf "%a" CountingFixpoint.pp fixpoint)
     ~pp_diff:(diff ~print:CountingFixpoint.pp)
     expected
-    (CountingFixpoint.forward ~cfg:(Cfg.create ~convert:true define) ~initial:0)
+    (CountingFixpoint.forward ~cfg:(Cfg.create define) ~initial:0)
 
 
 let test_forward _ =

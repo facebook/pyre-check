@@ -9,6 +9,8 @@ open Ast
 open Pyre
 open Test
 
+let node = Node.create_with_default_location
+
 let test_create _ =
   let assert_create ?prefix input =
     let expected =
@@ -25,16 +27,28 @@ let test_create _ =
 
 let test_expression _ =
   let assert_expression reference expression =
-    let expected = Expression.Access expression |> Node.create_with_default_location in
-    let actual = Reference.create reference |> Reference.expression ~convert:true in
+    let expected = Expression.Name expression |> Node.create_with_default_location in
+    let actual = Reference.create reference |> Reference.expression in
     assert_equal ~printer:Expression.show expected actual
   in
-  assert_expression "a" (SimpleAccess [Identifier "a"]);
-  assert_expression "a.b.c" (SimpleAccess [Identifier "a"; Identifier "b"; Identifier "c"])
+  assert_expression "a" (Expression.Name.Identifier "a");
+  assert_expression
+    "a.b.c"
+    (Expression.Name.Attribute
+       { base =
+           Expression.Name
+             (Expression.Name.Attribute
+                { base = Expression.Name (Expression.Name.Identifier "a") |> node;
+                  attribute = "b";
+                  special = false
+                })
+           |> node;
+         attribute = "c";
+         special = false
+       })
 
 
 let test_name _ =
-  let node = Node.create_with_default_location in
   let assert_create_name_expression reference expression =
     let expected = Expression.Name expression |> node in
     let actual = Reference.create reference |> Reference.expression in

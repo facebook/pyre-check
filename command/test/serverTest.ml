@@ -136,7 +136,7 @@ let test_server_exits_on_directory_removal context =
       | Ok _
       (* I was only able to get non-zero exits in the OUnit test environment, doing the equivalent
          calls in the command line always resulted in an exit of 0. *)
-      
+
       | Error (`Exit_non_zero 2) ->
           assert true
       | _ -> assert false)
@@ -1118,8 +1118,7 @@ let test_decode_serialized_ocaml_values context =
   in
   assert_decode
     ~key:(ClassDefinitions.serialize_key "int")
-    ~value:
-      (Node.create_with_default_location (Test.parse_single_class ~convert:true "class C: pass"))
+    ~value:(Node.create_with_default_location (Test.parse_single_class "class C: pass"))
     ~response:
       ( "Class",
         "int",
@@ -1154,7 +1153,7 @@ let test_decode_serialized_ocaml_values context =
     ~response:("SymlinkSource", "symbolic_link.py", Some "actual_filename.py");
   assert_decode
     ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py"))
-    ~value:(Source.create [Test.parse_single_statement ~convert:true "x = 1 + 2"])
+    ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
     ~response:("AST", "handle.py", Some "x = 1.__add__(2)\n");
   assert_decode
     ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key !&"handle")

@@ -71,7 +71,6 @@ let test_decorate _ =
     in
     let define =
       Test.parse source
-      |> Preprocessing.convert
       |> Source.statements
       |> take_define
       |> Annotated.Define.create

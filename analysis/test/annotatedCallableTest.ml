@@ -89,12 +89,7 @@ let test_apply_decorators _ =
       applied_return_annotation;
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      let convert ({ Define.signature = { Define.decorators; _ } as signature; _ } as define) =
-        let decorators = List.map ~f:Expression.convert decorators in
-        { define with signature = { signature with decorators } }
-      in
-      convert define
-      |> (fun define -> Callable.apply_decorators ~define ~resolution)
+      Callable.apply_decorators ~define ~resolution
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -209,9 +204,7 @@ let test_create _ =
     let callable =
       let parent_annotation = parent >>| fun parent -> Type.Primitive parent in
       let parent = parent >>| Reference.create in
-      let defines =
-        parse ~convert:true source |> Preprocessing.defines ~include_stubs:true |> List.rev
-      in
+      let defines = parse source |> Preprocessing.defines ~include_stubs:true |> List.rev in
       let { Define.signature = { Define.name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
         Define.is_overloaded_method define, Callable.create_overload ~resolution ~define
