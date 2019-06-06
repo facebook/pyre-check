@@ -367,6 +367,7 @@ let create ~resolution ?(verify = true) ~configuration source =
         if Type.is_top annotation then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
+      let normalized = AccessPath.Root.normalize_parameters parameters in
       (* Check model matches callables primary signature. *)
       let () =
         match verify, annotation with
@@ -380,7 +381,7 @@ let create ~resolution ?(verify = true) ~configuration source =
                 ; _
                 } as callable ) ) ->
             let self_length = if Option.is_some implicit then 1 else 0 in
-            if List.length parameters <> self_length + List.length implementation_parameters then (
+            if List.length normalized <> self_length + List.length implementation_parameters then (
               let message =
                 Format.asprintf
                   "Model signature parameters do not match implementation `%a`"
@@ -391,7 +392,7 @@ let create ~resolution ?(verify = true) ~configuration source =
               raise_invalid_model message )
         | _ -> ()
       in
-      AccessPath.Root.normalize_parameters parameters
+      normalized
       |> List.fold ~init:TaintResult.empty_model ~f:(taint_parameter ~configuration ~parameters)
       |> (fun model -> taint_return ~configuration ~parameters model return_annotation)
       |> fun model -> { model; call_target; is_obscure = false }

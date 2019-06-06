@@ -110,7 +110,8 @@ let test_add_bound _ =
     (`Lower
       (ParameterVariadicPair
          ( parameter_variadic,
-           Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0] )));
+           Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
+         )));
   let list_variadic = Type.Variable.Variadic.List.create in
   assert_add_bound_succeeds
     (`Lower (ListVariadicPair (list_variadic "Ts", Type.ConcreteList [Type.integer; Type.string])));
@@ -201,7 +202,7 @@ let test_single_variable_solution _ =
   let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
   let empty_parameters = Type.Callable.Defined [] in
   let one_named_parameter =
-    Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0]
+    Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
   in
   (* The simplest case for parameter variadics: adding a single lower bound of empty parameters to
      a variable yields a solution of a replacement of that variable with empty parameters *)
@@ -305,10 +306,10 @@ let test_multiple_variable_solution _ =
     None;
   let parameters_with_unconstrained_a =
     Type.Callable.Defined
-      [Type.Callable.Parameter.create ~annotation:(Type.Variable unconstrained_a) "x" 0]
+      [Named { name = "x"; annotation = Type.Variable unconstrained_a; default = false }]
   in
   let parameters_with_integer =
-    Type.Callable.Defined [Type.Callable.Parameter.create ~annotation:Type.integer "x" 0]
+    Type.Callable.Defined [Named { name = "x"; annotation = Type.integer; default = false }]
   in
   (* A is greater than [T] and T is greater than int => T solves to int and A solves to [int]. This
      is a test of unaries and parameter variadics getting along *)

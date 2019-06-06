@@ -154,8 +154,9 @@ let select
       | _, [] ->
           (* Positional argument; parameters empty *)
           { signature_match with reasons = arity_mismatch ~arguments reasons }
+      | [], (Parameter.KeywordOnly { default = true; _ } as parameter) :: parameters_tail
       | [], (Parameter.Anonymous { default = true; _ } as parameter) :: parameters_tail
-      | [], (Parameter.Named { Parameter.default = true; _ } as parameter) :: parameters_tail ->
+      | [], (Parameter.Named { default = true; _ } as parameter) :: parameters_tail ->
           (* Arguments empty, default parameter *)
           let argument_mapping = update_mapping parameter Default in
           consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
@@ -182,7 +183,8 @@ let select
           let rec extract_matching_name searched to_search =
             match to_search with
             | [] -> None, List.rev searched
-            | (Parameter.Named { Parameter.name = parameter_name; _ } as head) :: tail
+            | (Parameter.KeywordOnly { name = parameter_name; _ } as head) :: tail
+            | (Parameter.Named { name = parameter_name; _ } as head) :: tail
               when Identifier.equal_sanitized parameter_name name ->
                 Some head, List.rev searched @ tail
             | (Parameter.Keywords _ as head) :: tail ->
@@ -240,21 +242,20 @@ let select
           consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
       | ( Argument ({ argument = { Call.Argument.name = None; _ }; _ } as argument)
           :: arguments_tail,
-          (Parameter.Variable { name; _ } as parameter) :: parameters_tail ) ->
+          (Parameter.Variable _ as parameter) :: _ ) ->
           (* Unlabeled argument, starred parameter *)
           let signature_match =
-            if String.equal (Identifier.sanitized name) "" then
-              let reasons =
-                arity_mismatch
-                  reasons
-                  ~unreachable_parameters:(parameter :: parameters_tail)
-                  ~arguments
-              in
-              { signature_match with reasons }
-            else
-              let argument_mapping = update_mapping parameter (Argument argument) in
-              { signature_match with argument_mapping }
+            let argument_mapping = update_mapping parameter (Argument argument) in
+            { signature_match with argument_mapping }
           in
+          consume ~arguments:arguments_tail ~parameters signature_match
+      | ( Argument
+            { argument = { Call.Argument.value = { Node.value = Starred (Starred.Once _); _ }; _ }
+            ; _
+            }
+          :: arguments_tail,
+          Type.Callable.Parameter.KeywordOnly _ :: _ ) ->
+          (* Starred argument, keyword only parameter *)
           consume ~arguments:arguments_tail ~parameters signature_match
       | ( Argument
             ( { argument =
@@ -272,6 +273,16 @@ let select
           (* Double starred or starred argument, parameter *)
           let argument_mapping = update_mapping parameter (Argument argument) in
           consume ~arguments ~parameters:parameters_tail { signature_match with argument_mapping }
+      | ( Argument { argument = { Call.Argument.name = None; _ }; _ } :: _,
+          (Parameter.KeywordOnly _ as parameter) :: parameters_tail ) ->
+          (* Unlabeled argument, keyword only parameter *)
+          let reasons =
+            arity_mismatch
+              reasons
+              ~unreachable_parameters:(parameter :: parameters_tail)
+              ~arguments
+          in
+          { signature_match with reasons }
       | ( Argument ({ argument = { Call.Argument.name = None; _ }; _ } as argument)
           :: arguments_tail,
           parameter :: parameters_tail ) ->
@@ -314,6 +325,7 @@ let select
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword
              arguments. *)
           signature_match
+      | Parameter.KeywordOnly { name; _ }, []
       | Parameter.Named { name; _ }, [] ->
           (* Parameter was not matched *)
           let reasons = { reasons with arity = MissingArgument (Named name) :: arity } in

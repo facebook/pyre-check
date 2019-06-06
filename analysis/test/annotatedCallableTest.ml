@@ -291,7 +291,21 @@ let test_create _ =
     {|
       def module.Foo.foo(self, a: int) -> int: ...
     |}
-    ~expected:"typing.Callable('module.Foo.foo')[[Named(a, int)], int]"
+    ~expected:"typing.Callable('module.Foo.foo')[[Named(a, int)], int]";
+  assert_callable "def foo(*) -> int: ..." ~expected:"typing.Callable('foo')[[], int]";
+  assert_callable
+    "def foo(*, a: int) -> int: ..."
+    ~expected:"typing.Callable('foo')[[KeywordOnly(a, int)], int]";
+  assert_callable
+    "def foo(*, a: int = 7) -> int: ..."
+    ~expected:"typing.Callable('foo')[[KeywordOnly(a, int, default)], int]";
+  assert_callable
+    "def foo(x: str, *, a: int = 7) -> int: ..."
+    ~expected:"typing.Callable('foo')[[Named(x, str), KeywordOnly(a, int, default)], int]";
+  assert_callable
+    "def foo(*var: int, a: int = 7) -> int: ..."
+    ~expected:"typing.Callable('foo')[[Variable(var, int), KeywordOnly(a, int, default)], int]";
+  ()
 
 
 let () =

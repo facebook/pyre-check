@@ -3599,8 +3599,7 @@ let test_mark_escaped_as_escaped _ =
   let left =
     let variable = Type.variable "T" in
     let parameters =
-      Type.Callable.Defined
-        [Type.Callable.Parameter.create ~annotation:variable ~default:true "a" 0]
+      Type.Callable.Defined [Named { name = "a"; annotation = variable; default = true }]
     in
     Type.Callable.create ~annotation:(Type.parametric "G_invariant" [variable]) ~parameters ()
   in

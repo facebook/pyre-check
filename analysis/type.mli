@@ -63,12 +63,14 @@ module Record : sig
         annotation: 'annotation;
         default: bool
       }
+      [@@deriving compare, eq, sexp, show, hash]
 
-      and 'annotation t =
+      type 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
+        | KeywordOnly of 'annotation named
       [@@deriving compare, eq, sexp, show, hash]
     end
 
@@ -265,11 +267,13 @@ module Callable : sig
       include Record.Callable.RecordParameter
     end
 
+    val show_concise : type_t t -> string
+
     type parameter = type_t t [@@deriving compare, eq, sexp, show, hash]
 
     module Map : Core.Map.S with type Key.t = parameter
 
-    val create : ?annotation:type_t -> ?default:bool -> Identifier.t -> int -> type_t t
+    val create : (Identifier.t * type_t * bool) list -> type_t t list
 
     val annotation : parameter -> type_t
 

@@ -38,6 +38,10 @@ module Root = struct
         ( true,
           excluded,
           (StarStarParameter { excluded }, prefixed_variable_name, original) :: normalized )
+      else if Identifier.equal (Identifier.sanitized prefixed_name_string) "*" then
+        (* This is not a real starred argument, but instead is just the indicator for the beginning
+         * of the keyword only arguments *)
+        true, excluded, normalized
       else if String.is_prefix ~prefix:"*" prefixed_name_string then
         let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"*" in
         ( true,

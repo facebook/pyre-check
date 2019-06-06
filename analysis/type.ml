@@ -133,7 +133,27 @@ module Record = struct
         | Named of 'annotation named
         | Variable of 'annotation named
         | Keywords of 'annotation named
+        | KeywordOnly of 'annotation named
       [@@deriving compare, eq, sexp, show, hash]
+
+      let show_concise ~pp_type parameter =
+        let print_named ~kind { name; annotation; default } =
+          let name = Identifier.sanitized name in
+          Format.asprintf
+            "%s(%s, %a%s)"
+            kind
+            name
+            pp_type
+            annotation
+            (if default then ", default" else "")
+        in
+        match parameter with
+        | Anonymous { default; annotation; _ } ->
+            Format.asprintf "%a%s" pp_type annotation (if default then ", default" else "")
+        | Named named -> print_named ~kind:"Named" named
+        | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
+        | Variable named -> print_named ~kind:"Variable" named
+        | Keywords named -> print_named ~kind:"Keywords" named
     end
 
     type kind =
@@ -462,23 +482,7 @@ let rec pp format annotation =
           | Undefined -> "..."
           | ParameterVariadicTypeVariable { name; _ } -> name
           | Defined parameters ->
-              let parameter = function
-                | Parameter.Anonymous { default; annotation; _ } ->
-                    Format.asprintf "%a%s" pp annotation (if default then ", default" else "")
-                | Parameter.Named { Parameter.name; annotation; default } ->
-                    let name = Identifier.sanitized name in
-                    Format.asprintf
-                      "Named(%s, %a%s)"
-                      name
-                      pp
-                      annotation
-                      (if default then ", default" else "")
-                | Parameter.Variable { Parameter.name; annotation; _ } ->
-                    Format.asprintf "Variable(%s, %a)" (Identifier.sanitized name) pp annotation
-                | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                    Format.asprintf "Keywords(%s, %a)" (Identifier.sanitized name) pp annotation
-              in
-              List.map parameters ~f:parameter
+              List.map parameters ~f:(Parameter.show_concise ~pp_type:pp)
               |> String.concat ~sep:", "
               |> fun parameters -> Format.asprintf "[%s]" parameters
         in
@@ -572,7 +576,8 @@ let rec pp_concise format annotation =
           | Defined parameters ->
               let parameter = function
                 | Parameter.Anonymous { annotation; _ }
-                | Parameter.Named { Parameter.annotation; _ } ->
+                | Parameter.KeywordOnly { annotation; _ }
+                | Parameter.Named { annotation; _ } ->
                     Format.asprintf "%a" pp_concise annotation
                 | Parameter.Variable { Parameter.annotation; _ } ->
                     Format.asprintf "*(%a)" pp_concise annotation
@@ -667,30 +672,6 @@ let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [pa
 
 let async_iterator parameter =
   Parametric { name = "typing.AsyncIterator"; parameters = [parameter] }
-
-
-let lambda ~parameters ~return_annotation =
-  Callable
-    { kind = Anonymous;
-      implementation =
-        { annotation = return_annotation;
-          parameters =
-            Defined
-              (List.map
-                 ~f:(fun (name, parameter) ->
-                   if String.is_prefix ~prefix:"**" name then
-                     let name = String.drop_prefix name 2 in
-                     Parameter.Keywords { Parameter.name; annotation = parameter; default = false }
-                   else if String.is_prefix ~prefix:"*" name then
-                     let name = String.drop_prefix name 1 in
-                     Parameter.Variable { Parameter.name; annotation = parameter; default = false }
-                   else
-                     Parameter.Named { Parameter.name; annotation = parameter; default = false })
-                 parameters)
-        };
-      overloads = [];
-      implicit = None
-    }
 
 
 let list parameter = Parametric { name = "list"; parameters = [parameter] }
@@ -863,6 +844,8 @@ let rec expression ?(convert = false) annotation =
                       call ~default ~name "Named" annotation
                   | Parameter.Variable { Parameter.name; annotation; _ } ->
                       call ~name "Variable" annotation
+                  | Parameter.KeywordOnly { name; annotation; default } ->
+                      call ~default ~name "KeywordOnly" annotation
                 in
                 List (List.map ~f:convert_parameter parameters) |> Node.create ~location
             | Undefined -> Node.create ~location Ellipsis
@@ -1030,6 +1013,8 @@ module Transform = struct
                 in
                 let visit_defined = function
                   | RecordParameter.Named named -> RecordParameter.Named (visit_named named)
+                  | RecordParameter.KeywordOnly named ->
+                      RecordParameter.KeywordOnly (visit_named named)
                   | RecordParameter.Variable named -> RecordParameter.Variable (visit_named named)
                   | RecordParameter.Keywords named -> RecordParameter.Keywords (visit_named named)
                   | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
@@ -1123,6 +1108,8 @@ let is_unknown annotation = exists annotation ~predicate:is_top
 
 let is_undeclared annotation = exists annotation ~predicate:(equal undeclared)
 
+let pp_type = pp
+
 module Callable = struct
   module Parameter = struct
     include Record.Callable.RecordParameter
@@ -1139,24 +1126,41 @@ module Callable = struct
       let t_of_sexp = t_of_sexp type_t_of_sexp
     end)
 
-    let create ?(annotation = Any) ?(default = false) name index =
-      let star, name = Identifier.split_star name in
-      match star with
-      | "**" -> Keywords { name; annotation; default = false }
-      | "*" -> Variable { name; annotation; default = false }
-      | _ ->
-          let sanitized = Identifier.sanitized name in
-          if
-            String.is_prefix sanitized ~prefix:"__"
-            && not (String.is_suffix sanitized ~suffix:"__")
-          then
-            Parameter.Anonymous { index; annotation; default }
-          else
-            Parameter.Named { name; annotation; default }
+    let create parameters =
+      let parameter index (keyword_only, sofar) (name, annotation, default) =
+        if String.equal (Identifier.sanitized name) "*" then
+          true, sofar
+        else
+          let star, name = Identifier.split_star name in
+          let keyword_only = keyword_only || Identifier.equal star "*" in
+          let new_parameter =
+            match star with
+            | "**" -> Keywords { annotation; name; default = false }
+            | "*" -> Variable { annotation; name; default = false }
+            | _ ->
+                let sanitized = Identifier.sanitized name in
+                if
+                  String.is_prefix sanitized ~prefix:"__"
+                  && not (String.is_suffix sanitized ~suffix:"__")
+                then
+                  Parameter.Anonymous { index; annotation; default }
+                else
+                  let named = { name; annotation; default } in
+                  if keyword_only then
+                    Parameter.KeywordOnly named
+                  else
+                    Parameter.Named named
+          in
+          keyword_only, new_parameter :: sofar
+      in
+      List.foldi parameters ~f:parameter ~init:(false, []) |> snd |> List.rev
 
+
+    let show_concise = show_concise ~pp_type
 
     let annotation = function
       | Anonymous { annotation; _ }
+      | KeywordOnly { annotation; _ }
       | Named { annotation; _ }
       | Variable { annotation; _ }
       | Keywords { annotation; _ } ->
@@ -1165,10 +1169,12 @@ module Callable = struct
 
     let default = function
       | Anonymous { default; _ }
-      | Named { default; _ }
-      | Variable { default; _ }
-      | Keywords { default; _ } ->
+      | KeywordOnly { default; _ }
+      | Named { default; _ } ->
           default
+      | Keywords _
+      | Variable _ ->
+          false
 
 
     let names_compatible left right =
@@ -1275,6 +1281,19 @@ module Callable = struct
   let create_from_implementation implementation =
     create ~parameters:implementation.parameters ~annotation:implementation.annotation ()
 end
+
+let lambda ~parameters ~return_annotation =
+  let parameters =
+    List.map parameters ~f:(fun (name, annotation) -> name, annotation, false)
+    |> Callable.Parameter.create
+  in
+  Callable
+    { kind = Anonymous;
+      implementation = { annotation = return_annotation; parameters = Defined parameters };
+      overloads = [];
+      implicit = None
+    }
+
 
 let primitive_substitution_map =
   let parametric_anys name number_of_anys =
@@ -1494,7 +1513,19 @@ let rec create_logic ?(use_cache = true)
                                 | _ -> false
                               in
                               Parameter.Named
-                                { Parameter.name;
+                                { name;
+                                  annotation =
+                                    create_logic (Node.create_with_default_location annotation);
+                                  default
+                                }
+                          | "KeywordOnly", Name (Name.Identifier name) :: annotation :: tail ->
+                              let default =
+                                match tail with
+                                | [Name (Name.Identifier "default")] -> true
+                                | _ -> false
+                              in
+                              Parameter.KeywordOnly
+                                { name;
                                   annotation =
                                     create_logic (Node.create_with_default_location annotation);
                                   default
@@ -2854,20 +2885,11 @@ module TypedDictionary = struct
 
 
   let field_named_parameters ~default fields =
-    let parameters =
-      let single_star =
-        Record.Callable.RecordParameter.Variable { name = ""; annotation = Top; default = false }
-      in
-      let field_arguments =
-        let field_to_argument { name; annotation } =
-          Record.Callable.RecordParameter.Named
-            { name = Format.asprintf "$parameter$%s" name; annotation; default }
-        in
-        List.map ~f:field_to_argument fields
-      in
-      single_star :: field_arguments
+    let field_to_argument { name; annotation } =
+      Record.Callable.RecordParameter.KeywordOnly
+        { name = Format.asprintf "$parameter$%s" name; annotation; default }
     in
-    Defined parameters
+    List.map ~f:field_to_argument fields |> fun parameters -> Defined parameters
 
 
   let constructor ~name ~fields ~total =

@@ -719,10 +719,7 @@ let test_populate _ =
           ~parameters:
             (Type.Callable.Defined
                [ Type.Callable.Parameter.Named
-                   { Type.Callable.Parameter.name = "self";
-                     annotation = Type.Top;
-                     default = false
-                   } ])
+                   { name = "self"; annotation = Type.Top; default = false } ])
           ~annotation:Type.Top
           ()));
   (* Properties. *)
@@ -744,10 +741,7 @@ let test_populate _ =
           ~parameters:
             (Type.Callable.Defined
                [ Type.Callable.Parameter.Named
-                   { Type.Callable.Parameter.name = "self";
-                     annotation = Type.Top;
-                     default = false
-                   } ])
+                   { name = "self"; annotation = Type.Top; default = false } ])
           ~annotation:Type.integer
           ()));
   (* Loops. *)

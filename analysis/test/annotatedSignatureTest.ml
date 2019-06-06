@@ -253,15 +253,17 @@ let test_select _ =
     "[[Variable(variable, int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, "*[\"string\"]", Type.integer, None, 1));
-  (* A single * is special. *)
+  (* KeywordOnly *)
+  assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "[[KeywordOnly(i, int)], int]");
+  assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 1));
   assert_select
-    "[[Variable($parameter$, int), Named(i, int)], int]"
-    "(i=1)"
-    (`Found "[[Variable($parameter$, int), Named(i, int)], int]");
+    "[[KeywordOnly(i, int)], int]"
+    "(**{'A': 7})"
+    (`Found "[[KeywordOnly(i, int)], int]");
   assert_select
-    "[[Variable($parameter$, int), Named(i, int)], int]"
-    "(2, i=1)"
-    (`NotFoundTooManyArguments (0, 1));
+    "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
+    "(*['a', 'b'])"
+    (`Found "[[Named(x, str), KeywordOnly(i, bool, default)], int]");
   (* Named arguments. *)
   assert_select
     "[[Named(i, int), Named(j, int)], int]"

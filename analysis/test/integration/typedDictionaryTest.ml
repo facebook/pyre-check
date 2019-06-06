@@ -306,7 +306,7 @@ let test_check_typed_dictionaries _ =
         movie = Movie('Blade Runner', 1982)
         return movie['year']
     |}
-    ["Too many arguments [19]: Call `__init__` expects 1 positional argument, 2 were provided."];
+    ["Too many arguments [19]: Call `__init__` expects 0 positional arguments, 2 were provided."];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': int})

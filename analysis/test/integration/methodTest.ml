@@ -605,7 +605,7 @@ let test_check_behavioral_subtyping _ =
               return ""
     |}
     [ "Inconsistent override [14]: `Bar.bar` overrides method defined in `Foo` "
-      ^ "inconsistently. Could not find parameter `y` in overriding signature." ];
+      ^ "inconsistently. Could not find parameter `_y` in overriding signature." ];
   (* Don't warn on constructors or class methods. *)
   assert_type_errors
     {|

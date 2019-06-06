@@ -1030,28 +1030,38 @@ module State = struct
                       let overriding_parameters =
                         Method.create ~define ~parent:(Annotated.Class.annotation definition)
                         |> Method.parameter_annotations ~resolution
-                        |> List.map ~f:(fun (name, annotation) ->
-                               Identifier.remove_leading_underscores name, annotation)
+                        |> List.map ~f:(fun (name, annotation) -> name, annotation, false)
+                        |> Type.Callable.Parameter.create
                       in
                       let check_parameter errors overridden_parameter =
                         let expected = Type.Callable.Parameter.annotation overridden_parameter in
-                        let name, found =
-                          let find_by_name name =
-                            ( name,
-                              List.Assoc.find overriding_parameters name ~equal:Identifier.equal )
-                          in
+                        let found =
                           match overridden_parameter with
                           | Type.Callable.Parameter.Anonymous { index; _ } ->
-                              ( Printf.sprintf "$%d" index,
-                                List.nth overriding_parameters index >>| snd )
-                          | Named { name; _ } ->
-                              find_by_name (Identifier.remove_leading_underscores name)
-                          | Variable { name; _ } ->
-                              (* TODO(T44178876): This should just search for other Variable *)
-                              find_by_name ("*" ^ name)
-                          | Keywords { name; _ } ->
-                              (* TODO(T44178876): This should just search for other Keywords *)
-                              find_by_name ("**" ^ name)
+                              List.nth overriding_parameters index
+                          | KeywordOnly { name = overridden_name; _ }
+                          | Named { name = overridden_name; _ } ->
+                              (* TODO(T44178876): ensure index match as well for named parameters *)
+                              let equal_name = function
+                                | Type.Callable.Parameter.Named { name; _ } ->
+                                    Identifier.equal
+                                      (Identifier.remove_leading_underscores name)
+                                      (Identifier.remove_leading_underscores overridden_name)
+                                | _ -> false
+                              in
+                              List.find overriding_parameters ~f:equal_name
+                          | Variable _ ->
+                              let find_variable_parameter = function
+                                | Type.Callable.Parameter.Variable _ -> true
+                                | _ -> false
+                              in
+                              List.find overriding_parameters ~f:find_variable_parameter
+                          | Keywords _ ->
+                              let find_variable_parameter = function
+                                | Type.Callable.Parameter.Keywords _ -> true
+                                | _ -> false
+                              in
+                              List.find overriding_parameters ~f:find_variable_parameter
                         in
                         match found with
                         | Some actual -> (
@@ -1060,7 +1070,7 @@ module State = struct
                               Resolution.constraints_solution_exists
                                 resolution
                                 ~left:expected
-                                ~right:actual
+                                ~right:(Type.Callable.Parameter.annotation actual)
                             in
                             try
                               if (not (Type.is_top expected)) && not is_compatible then
@@ -1081,7 +1091,8 @@ module State = struct
                                                (Error.Found
                                                   (Error.create_mismatch
                                                      ~resolution
-                                                     ~actual
+                                                     ~actual:
+                                                       (Type.Callable.Parameter.annotation actual)
                                                      ~actual_expression:None
                                                      ~expected
                                                      ~covariant:false))
@@ -1097,27 +1108,12 @@ module State = struct
                                 errors )
                         | None ->
                             let has_keyword_and_anonymous_starred_parameters =
-                              let starred =
-                                let collect_starred_parameters starred (key, _) =
-                                  if String.is_prefix key ~prefix:"*" then
-                                    key :: starred
-                                  else
-                                    starred
-                                in
-                                List.fold
-                                  ~f:collect_starred_parameters
-                                  ~init:[]
-                                  overriding_parameters
-                              in
-                              let count_stars parameter =
-                                parameter
-                                |> String.take_while ~f:(fun character -> Char.equal character '*')
-                                |> String.length
-                              in
-                              List.exists ~f:(fun parameter -> count_stars parameter = 1) starred
-                              && List.exists
-                                   ~f:(fun parameter -> count_stars parameter = 2)
-                                   starred
+                              List.exists overriding_parameters ~f:(function
+                                  | Keywords _ -> true
+                                  | _ -> false)
+                              && List.exists overriding_parameters ~f:(function
+                                     | Variable _ -> true
+                                     | _ -> false)
                             in
                             if has_keyword_and_anonymous_starred_parameters then
                               errors
@@ -1136,7 +1132,7 @@ module State = struct
                                            |> Reference.create;
                                          override =
                                            Error.StrengthenedPrecondition
-                                             (Error.NotFound (Identifier.sanitized name))
+                                             (Error.NotFound overridden_parameter)
                                        })
                                   ~define:define_node
                               in
@@ -2095,12 +2091,12 @@ module State = struct
            to write a function that take in callables with literal return types. If you really want
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
-        let create_parameter index { Node.value = { Parameter.name; value; _ }; _ } =
-          let default = Option.is_some value in
-          Type.Callable.Parameter.create ~default name index
+        let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
+          name, Type.Any, Option.is_some value
         in
         let parameters =
-          List.mapi parameters ~f:create_parameter
+          List.map parameters ~f:create_parameter
+          |> Type.Callable.Parameter.create
           |> fun parameters -> Type.Callable.Defined parameters
         in
         { state = { state with resolution };
@@ -3824,8 +3820,7 @@ module State = struct
                 | _ -> resolution
               in
               match parameters, arguments with
-              | ( Type.Callable.Parameter.Named { Type.Callable.Parameter.annotation; _ }
-                  :: parameters,
+              | ( Type.Callable.Parameter.Named { annotation; _ } :: parameters,
                   { Call.Argument.value = argument; _ } :: arguments ) ->
                   infer_annotation resolution annotation argument
                   |> infer_annotations_list parameters arguments

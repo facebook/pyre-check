@@ -51,25 +51,35 @@ let decorate
       let parameters =
         match parameters with
         | Defined parameters ->
-            let convert parameter =
-              match parameter with
-              | Type.Callable.Parameter.Anonymous { annotation; _ } ->
-                  (* This means it will be read back in as an anonymous *)
-                  Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"__" ()
-              | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                  Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
-              | Type.Callable.Parameter.Variable { name; annotation; _ } ->
-                  Ast.Parameter.create
-                    ~annotation:(Type.expression annotation)
-                    ~name:("*" ^ name)
-                    ()
-              | Type.Callable.Parameter.Keywords { name; annotation; _ } ->
-                  Ast.Parameter.create
-                    ~annotation:(Type.expression annotation)
-                    ~name:("**" ^ name)
-                    ()
+            let convert (placed_single_star, sofar) parameter =
+              let placed_single_star, sofar =
+                match placed_single_star, parameter with
+                | false, Type.Callable.Parameter.KeywordOnly _ ->
+                    true, Ast.Parameter.create ~name:"*" () :: sofar
+                | _ -> placed_single_star, sofar
+              in
+              let new_parameter =
+                match parameter with
+                | Type.Callable.Parameter.Anonymous { annotation; _ } ->
+                    (* This means it will be read back in as an anonymous *)
+                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"__" ()
+                | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
+                | Type.Callable.Parameter.Named { name; annotation; _ } ->
+                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
+                | Type.Callable.Parameter.Variable { name; annotation; _ } ->
+                    Ast.Parameter.create
+                      ~annotation:(Type.expression annotation)
+                      ~name:("*" ^ name)
+                      ()
+                | Type.Callable.Parameter.Keywords { name; annotation; _ } ->
+                    Ast.Parameter.create
+                      ~annotation:(Type.expression annotation)
+                      ~name:("**" ^ name)
+                      ()
+              in
+              placed_single_star, new_parameter :: sofar
             in
-            List.map parameters ~f:convert
+            List.fold parameters ~f:convert ~init:(false, []) |> snd |> List.rev
         | ParameterVariadicTypeVariable _
         | Undefined ->
             original_parameters
@@ -95,13 +105,15 @@ let compatible_overload_parameters ~left
   let create_overload ~resolution
                       ~define:{ Define.signature = { parameters; _ }; _ } =
     let open Type.Callable in
-    let parameter index { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
+    let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
       let annotation =
         annotation >>| Resolution.parse_annotation resolution |> Option.value ~default:Type.Top
       in
-      Type.Callable.Parameter.create name index ~annotation ~default:(Option.is_some value)
+      name, annotation, Option.is_some value
     in
-    { annotation = Type.Any; parameters = Defined (List.mapi parameters ~f:parameter) }
+    List.map parameters ~f:parameter
+    |> Type.Callable.Parameter.create
+    |> fun parameters -> { annotation = Type.Any; parameters = Defined parameters }
   in
   let create_callable ~define =
     Type.Callable

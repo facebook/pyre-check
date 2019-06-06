@@ -50,7 +50,7 @@ type invalid_argument =
 
 type precondition_mismatch =
   | Found of mismatch
-  | NotFound of Identifier.t
+  | NotFound of Type.t Type.Callable.Parameter.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type override =
@@ -637,11 +637,15 @@ let messages ~concise ~signature location kind =
               pp_type
               expected
               extra_detail
-        | StrengthenedPrecondition (NotFound name) ->
-            Format.asprintf
-              "Could not find parameter `%a` in overriding signature."
-              pp_identifier
-              name
+        | StrengthenedPrecondition (NotFound parameter) ->
+            let parameter =
+              match parameter with
+              | KeywordOnly { name; _ }
+              | Named { name; _ } ->
+                  Format.asprintf "%a" pp_identifier name
+              | _ -> Type.Callable.Parameter.show_concise parameter
+            in
+            Format.asprintf "Could not find parameter `%s` in overriding signature." parameter
       in
       [ Format.asprintf
           "`%a` overrides %s defined in `%a` inconsistently.%s"
@@ -1654,9 +1658,9 @@ let less_or_equal ~resolution left right =
       less_or_equal_mismatch left.mismatch right.mismatch
   | InconsistentOverride left, InconsistentOverride right -> (
     match left.override, right.override with
-    | ( StrengthenedPrecondition (NotFound left_access),
-        StrengthenedPrecondition (NotFound right_access) ) ->
-        Identifier.equal_sanitized left_access right_access
+    | ( StrengthenedPrecondition (NotFound left_parameter),
+        StrengthenedPrecondition (NotFound right_parameter) ) ->
+        Type.Callable.Parameter.equal Type.equal left_parameter right_parameter
     | ( StrengthenedPrecondition (Found left_mismatch),
         StrengthenedPrecondition (Found right_mismatch) )
     | WeakenedPostcondition left_mismatch, WeakenedPostcondition right_mismatch ->

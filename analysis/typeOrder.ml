@@ -503,6 +503,10 @@ module OrderImplementation = struct
                   ~left:right_annotation
                   ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
+            | ( Parameter.KeywordOnly ({ Parameter.annotation = left_annotation; _ } as left)
+                :: left_parameters,
+                Parameter.KeywordOnly ({ Parameter.annotation = right_annotation; _ } as right)
+                :: right_parameters )
             | ( Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
                 :: left_parameters,
                 Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
@@ -1224,15 +1228,11 @@ module OrderImplementation = struct
                                    parameter_join order named.annotation anonymous.annotation
                                })
                       | Parameter.Named left, Parameter.Named right
-                        when left.Parameter.default = right.Parameter.default ->
+                        when left.default = right.default ->
                           Some
                             (Parameter.Named
                                { left with
-                                 Parameter.annotation =
-                                   parameter_join
-                                     order
-                                     left.Parameter.annotation
-                                     right.Parameter.annotation
+                                 annotation = parameter_join order left.annotation right.annotation
                                })
                       | Parameter.Variable left, Parameter.Variable right ->
                           Some

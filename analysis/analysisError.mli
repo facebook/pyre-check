@@ -42,7 +42,7 @@ type invalid_argument =
 
 type precondition_mismatch =
   | Found of mismatch
-  | NotFound of Identifier.t
+  | NotFound of Type.t Type.Callable.Parameter.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type override =
