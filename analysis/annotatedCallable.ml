@@ -156,10 +156,7 @@ let apply_decorators
              generic parameter list. *)
           let parameters =
             Type.Callable.Defined
-              [ Type.Callable.Parameter.Variable
-                  { name = "args"; annotation = Type.Any; default = false };
-                Type.Callable.Parameter.Keywords
-                  { name = "kwargs"; annotation = Type.Any; default = false } ]
+              [Type.Callable.Parameter.Variable Type.Any; Type.Callable.Parameter.Keywords Type.Any]
           in
           { overload with Type.Callable.parameters }
       | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
@@ -185,8 +182,7 @@ let apply_decorators
             { Type.Callable.annotation = return_annotation;
               parameters =
                 Type.Callable.Defined
-                  [ Type.Callable.Parameter.Named
-                      { Type.Callable.Parameter.annotation = parameter_annotation; _ } ]
+                  [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }]
             } -> (
             let decorated_annotation =
               Resolution.solve_less_or_equal

@@ -232,7 +232,7 @@ let test_create _ =
          implicit = None
        });
   assert_create
-    "typing.Callable[[int, Named(a, int), Variable(variable), Keywords(keywords)], int]"
+    "typing.Callable[[int, Named(a, int), Variable(), Keywords()], int]"
     (Type.Callable
        { kind = Anonymous;
          implementation =
@@ -240,18 +240,15 @@ let test_create _ =
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Named
-                     { Parameter.name = "a"; annotation = Type.integer; default = false };
-                   Parameter.Variable
-                     { Parameter.name = "variable"; annotation = Type.Top; default = false };
-                   Parameter.Keywords
-                     { Parameter.name = "keywords"; annotation = Type.Top; default = false } ]
+                   Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+                   Parameter.Variable Type.Top;
+                   Parameter.Keywords Type.Top ]
            };
          overloads = [];
          implicit = None
        });
   assert_create
-    "typing.Callable[[int, Variable(variable, int), Keywords(keywords, str)], int]"
+    "typing.Callable[[int, Variable(int), Keywords(str)], int]"
     (Type.Callable
        { kind = Anonymous;
          implementation =
@@ -259,10 +256,8 @@ let test_create _ =
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Variable
-                     { Parameter.name = "variable"; annotation = Type.integer; default = false };
-                   Parameter.Keywords
-                     { Parameter.name = "keywords"; annotation = Type.string; default = false } ]
+                   Parameter.Variable Type.integer;
+                   Parameter.Keywords Type.string ]
            };
          overloads = [];
          implicit = None
@@ -274,9 +269,7 @@ let test_create _ =
          implementation =
            { annotation = Type.integer;
              parameters =
-               Defined
-                 [ Parameter.Named
-                     { Parameter.name = "a"; annotation = Type.integer; default = true } ]
+               Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }]
            };
          overloads = [];
          implicit = None
@@ -381,9 +374,8 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [ Parameter.Named { Parameter.name = "__0"; annotation = Type.integer; default = false };
-              Parameter.Named { Parameter.name = "__1"; annotation = Type.string; default = false }
-            ])
+            [ Parameter.Named { name = "__0"; annotation = Type.integer; default = false };
+              Parameter.Named { name = "__1"; annotation = Type.string; default = false } ])
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(__0, int), Named(__1, str)], int))";
@@ -391,9 +383,8 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [ Parameter.Named { Parameter.name = "a"; annotation = Type.integer; default = false };
-              Parameter.Named { Parameter.name = "b"; annotation = Type.string; default = false }
-            ])
+            [ Parameter.Named { name = "a"; annotation = Type.integer; default = false };
+              Parameter.Named { name = "b"; annotation = Type.string; default = false } ])
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(a, int), Named(b, str)], int))";
@@ -401,7 +392,7 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Type.Callable.Defined
-            [Parameter.Named { Parameter.name = "a"; annotation = Type.integer; default = true }])
+            [Parameter.Named { name = "a"; annotation = Type.integer; default = true }])
        ~annotation:Type.integer
        ())
     "typing.Callable.__getitem__(([Named(a, int, default)], int))";
@@ -409,15 +400,12 @@ let test_expression _ =
     (Type.Callable.create
        ~parameters:
          (Defined
-            [ Parameter.Named { Parameter.name = "$0"; annotation = Type.integer; default = false };
-              Parameter.Variable
-                { Parameter.name = "variable"; annotation = Type.integer; default = false };
-              Parameter.Keywords
-                { Parameter.name = "keywords"; annotation = Type.string; default = false } ])
+            [ Parameter.Named { name = "$0"; annotation = Type.integer; default = false };
+              Parameter.Variable Type.integer;
+              Parameter.Keywords Type.string ])
        ~annotation:Type.integer
        ())
-    ( "typing.Callable.__getitem__(([Named($0, int), Variable(variable, int), "
-    ^ "Keywords(keywords, str)], int))" );
+    ("typing.Callable.__getitem__(([Named($0, int), Variable(int), " ^ "Keywords(str)], int))");
   assert_expression
     (Type.TypedDictionary
        { name = "Movie";
@@ -457,10 +445,9 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [ Type.Callable.Parameter.Named
-                { Type.Callable.Parameter.name = "x"; annotation = Type.Any; default = true };
-              Type.Callable.Parameter.Named
-                { Type.Callable.Parameter.name = "y"; annotation = Type.float; default = true } ])
+            [ Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = true };
+              Type.Callable.Parameter.Named { name = "y"; annotation = Type.float; default = true }
+            ])
        ())
     "Callable[[Any, float], int]";
   assert_concise Type.Any "Any";
@@ -964,8 +951,7 @@ let test_variables _ =
 
 let test_parameter_name_compatibility _ =
   let parameter name =
-    Type.Callable.Parameter.Named
-      { Type.Callable.Parameter.name; annotation = Type.integer; default = false }
+    Type.Callable.Parameter.Named { name; annotation = Type.integer; default = false }
   in
   assert_true
     (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "argument"));
@@ -994,11 +980,11 @@ let test_lambda _ =
        (Type.lambda ~parameters:["x", Type.string] ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable "typing.Callable[[Keywords(kwargs, str)], int]")
+       (parse_callable "typing.Callable[[Keywords(str)], int]")
        (Type.lambda ~parameters:["**kwargs", Type.string] ~return_annotation:Type.integer));
   assert_true
     (Type.equal
-       (parse_callable "typing.Callable[[Variable(args, str)], int]")
+       (parse_callable "typing.Callable[[Variable(str)], int]")
        (Type.lambda ~parameters:["*args", Type.string] ~return_annotation:Type.integer))
 
 

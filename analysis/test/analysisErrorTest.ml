@@ -463,9 +463,7 @@ let test_due_to_mismatch_with_any _ =
     (InconsistentOverride
        { overridden_method = "foo";
          parent = !&(Type.show mock_parent);
-         override =
-           StrengthenedPrecondition
-             (NotFound (Keywords { name = "A"; annotation = Type.integer; default = false }));
+         override = StrengthenedPrecondition (NotFound (Keywords Type.integer));
          override_kind = Method
        });
   assert_not_due_to_mismatch_with_any
@@ -980,10 +978,7 @@ let test_filter _ =
   in
   (* Suppress parameter errors on override of dunder methods *)
   assert_unfiltered
-    (inconsistent_override
-       "foo"
-       (StrengthenedPrecondition
-          (NotFound (Keywords { name = "A"; annotation = Type.integer; default = false }))));
+    (inconsistent_override "foo" (StrengthenedPrecondition (NotFound (Keywords Type.integer))));
   assert_unfiltered
     (inconsistent_override
        "__foo__"
@@ -1004,10 +999,7 @@ let test_filter _ =
                due_to_invariance = false
              })));
   assert_filtered
-    (inconsistent_override
-       "__foo__"
-       (StrengthenedPrecondition
-          (NotFound (Keywords { name = "A"; annotation = Type.integer; default = false }))))
+    (inconsistent_override "__foo__" (StrengthenedPrecondition (NotFound (Keywords Type.integer))))
 
 
 let test_suppress _ =

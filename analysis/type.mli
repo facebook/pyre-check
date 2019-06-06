@@ -68,9 +68,9 @@ module Record : sig
       type 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
-        | Variable of 'annotation named
-        | Keywords of 'annotation named
         | KeywordOnly of 'annotation named
+        | Variable of 'annotation
+        | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
     end
 

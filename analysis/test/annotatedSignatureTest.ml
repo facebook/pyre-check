@@ -223,34 +223,28 @@ let test_select _ =
     (`NotFoundMismatch (Type.union [Type.integer; Type.string], "union", Type.integer, None, 1));
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
   (* Traverse variable arguments. *)
-  assert_select "[[Variable(variable)], int]" "()" (`Found "[[Variable(variable)], int]");
-  assert_select "[[Variable(variable)], int]" "(1, 2)" (`Found "[[Variable(variable)], int]");
+  assert_select "[[Variable()], int]" "()" (`Found "[[Variable()], int]");
+  assert_select "[[Variable()], int]" "(1, 2)" (`Found "[[Variable()], int]");
+  assert_select "[[Variable(int)], int]" "(1, 2)" (`Found "[[Variable(int)], int]");
   assert_select
-    "[[Variable(variable, int)], int]"
-    "(1, 2)"
-    (`Found "[[Variable(variable, int)], int]");
-  assert_select
-    "[[Variable(variable, str)], int]"
+    "[[Variable(str)], int]"
     "(1, 2)"
     (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, None, 1));
   assert_select
-    "[[Variable(variable, str)], int]"
+    "[[Variable(str)], int]"
     "('string', 2)"
     (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, None, 2));
+  assert_select "[[Variable(int)], int]" "(*[1, 2], 3)" (`Found "[[Variable(int)], int]");
   assert_select
-    "[[Variable(variable, int)], int]"
-    "(*[1, 2], 3)"
-    (`Found "[[Variable(variable, int)], int]");
-  assert_select
-    "[[Variable(variable, int), Named(a, str)], int]"
+    "[[Variable(int), Named(a, str)], int]"
     "(*[1, 2], a='string')"
-    (`Found "[[Variable(variable, int), Named(a, str)], int]");
+    (`Found "[[Variable(int), Named(a, str)], int]");
   assert_select
-    "[[Variable(variable, int), Named(a, str)], int]"
+    "[[Variable(int), Named(a, str)], int]"
     "(*[1, 2], *[3, 4], a='string')"
-    (`Found "[[Variable(variable, int), Named(a, str)], int]");
+    (`Found "[[Variable(int), Named(a, str)], int]");
   assert_select
-    "[[Variable(variable, int)], int]"
+    "[[Variable(int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, "*[\"string\"]", Type.integer, None, 1));
   (* KeywordOnly *)
@@ -356,22 +350,19 @@ let test_select _ =
         None,
         1 ));
   (* Keywords. *)
-  assert_select "[[Keywords(keywords)], int]" "()" (`Found "[[Keywords(keywords)], int]");
-  assert_select "[[Keywords(keywords)], int]" "(a=1, b=2)" (`Found "[[Keywords(keywords)], int]");
+  assert_select "[[Keywords()], int]" "()" (`Found "[[Keywords()], int]");
+  assert_select "[[Keywords()], int]" "(a=1, b=2)" (`Found "[[Keywords()], int]");
+  assert_select "[[Keywords(int)], int]" "(a=1, b=2)" (`Found "[[Keywords(int)], int]");
   assert_select
-    "[[Keywords(keywords, int)], int]"
-    "(a=1, b=2)"
-    (`Found "[[Keywords(keywords, int)], int]");
-  assert_select
-    "[[Named(a, int), Named(c, int), Keywords(keywords, int)], int]"
+    "[[Named(a, int), Named(c, int), Keywords(int)], int]"
     "(a=1, b=2, c=3)"
-    (`Found "[[Named(a, int), Named(c, int), Keywords(keywords, int)], int]");
+    (`Found "[[Named(a, int), Named(c, int), Keywords(int)], int]");
   assert_select
-    "[[Keywords(keywords, str)], int]"
+    "[[Keywords(str)], int]"
     "(a=1, b=2)"
     (`NotFoundMismatch (Type.literal_integer 1, "1", Type.string, Some "a", 1));
   assert_select
-    "[[Keywords(keywords, str)], int]"
+    "[[Keywords(str)], int]"
     "(a='string', b=2)"
     (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "b", 2));
   (* Constraint resolution. *)
@@ -466,14 +457,8 @@ let test_select _ =
     "[[typing.Type[_T]], _T]"
     "(typing.List[str])"
     (`Found "[[typing.Type[typing.List[str]]], typing.List[str]]");
-  assert_select
-    "[[Variable(variable, _T)], int]"
-    "(1, 2)"
-    (`Found "[[Variable(variable, int)], int]");
-  assert_select
-    "[[Keywords(keywords, _T)], int]"
-    "(a=1, b=2)"
-    (`Found "[[Keywords(keywords, int)], int]");
+  assert_select "[[Variable(_T)], int]" "(1, 2)" (`Found "[[Variable(int)], int]");
+  assert_select "[[Keywords(_T)], int]" "(a=1, b=2)" (`Found "[[Keywords(int)], int]");
   assert_select
     "[[_T_float_or_str], None]"
     "(union)"
@@ -522,7 +507,7 @@ let test_select _ =
       ("[[str], str]", Type.literal_integer 1, "1", Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, Keywords(keywords)], int][[int, str], int]]"
+    "[..., $unknown][[[int, Keywords()], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest
       ("[[int, str], int]", Type.literal_integer 1, "1", Type.string, None, 2));
@@ -534,10 +519,10 @@ let test_select _ =
       ("[[str], str]", Type.literal_integer 1, "1", Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str, Keywords(keywords)], int][[Keywords(keywords)], int]]"
+    "[..., $unknown][[[str, Keywords()], int][[Keywords()], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest
-      ("[[str, Keywords(keywords)], int]", Type.literal_integer 1, "1", Type.string, None, 1));
+      ("[[str, Keywords()], int]", Type.literal_integer 1, "1", Type.string, None, 1));
   assert_select
     ~allow_undefined:true
     "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
@@ -602,25 +587,24 @@ let test_select _ =
   (* Special dictionary constructor *)
   assert_select
     ~name:"dict.__init__"
-    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "[[Keywords(_S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords(kwargs, $literal_one)], dict[str, $literal_one]]");
+    (`Found "[[Keywords($literal_one)], dict[str, $literal_one]]");
   (* TODO(T41074174): Error here rather than defaulting back to the initial signature *)
   assert_select
     ~name:"dict.__init__"
-    "[[Named(map, typing.Mapping[_T, _S]), Keywords(kwargs, _S)], dict[_T, _S]]"
+    "[[Named(map, typing.Mapping[_T, _S]), Keywords(_S)], dict[_T, _S]]"
     "({1: 1}, a=1)"
-    (`Found
-      ("[[Named(map, typing.Mapping[int, int]), Keywords(kwargs, int)], " ^ "dict[int, int]]"));
+    (`Found ("[[Named(map, typing.Mapping[int, int]), Keywords(int)], " ^ "dict[int, int]]"));
   assert_select
     ~name:"dict.__init__"
-    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "[[Keywords(_S)], dict[_T, _S]]"
     "()"
-    (`Found "[[Keywords(kwargs, ESCAPED[_S])], dict[ESCAPED[_T], ESCAPED[_S]]]");
+    (`Found "[[Keywords(ESCAPED[_S])], dict[ESCAPED[_T], ESCAPED[_S]]]");
   assert_select
-    "[[Keywords(kwargs, _S)], dict[_T, _S]]"
+    "[[Keywords(_S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords(kwargs, $literal_one)], dict[ESCAPED[_T], $literal_one]]");
+    (`Found "[[Keywords($literal_one)], dict[ESCAPED[_T], $literal_one]]");
   assert_select
     "CallableWithVariadicGenericParameters[int]"
     "(a=1)"

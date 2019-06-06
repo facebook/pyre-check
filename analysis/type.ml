@@ -120,21 +120,24 @@ module Record = struct
         annotation: 'annotation;
         default: bool
       }
-      [@@deriving compare, sexp, show, hash]
-
-      let equal_named equal_annotation left right =
-        left.default = right.default
-        && Identifier.equal (Identifier.sanitized left.name) (Identifier.sanitized right.name)
-        && equal_annotation left.annotation right.annotation
-
+      [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
-        | Variable of 'annotation named
-        | Keywords of 'annotation named
         | KeywordOnly of 'annotation named
+        | Variable of 'annotation
+        | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
+
+      let equal equal_annotation left right =
+        match left, right with
+        | Named left, Named right ->
+            left.default = right.default
+            && Identifier.equal (Identifier.sanitized left.name) (Identifier.sanitized right.name)
+            && equal_annotation left.annotation right.annotation
+        | _ -> equal equal_annotation left right
+
 
       let show_concise ~pp_type parameter =
         let print_named ~kind { name; annotation; default } =
@@ -152,8 +155,8 @@ module Record = struct
             Format.asprintf "%a%s" pp_type annotation (if default then ", default" else "")
         | Named named -> print_named ~kind:"Named" named
         | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
-        | Variable named -> print_named ~kind:"Variable" named
-        | Keywords named -> print_named ~kind:"Keywords" named
+        | Variable annotation -> Format.asprintf "Variable(%a)" pp_type annotation
+        | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
     end
 
     type kind =
@@ -579,10 +582,8 @@ let rec pp_concise format annotation =
                 | Parameter.KeywordOnly { annotation; _ }
                 | Parameter.Named { annotation; _ } ->
                     Format.asprintf "%a" pp_concise annotation
-                | Parameter.Variable { Parameter.annotation; _ } ->
-                    Format.asprintf "*(%a)" pp_concise annotation
-                | Parameter.Keywords { Parameter.annotation; _ } ->
-                    Format.asprintf "**(%a)" pp_concise annotation
+                | Parameter.Variable annotation -> Format.asprintf "*(%a)" pp_concise annotation
+                | Parameter.Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
               List.map parameters ~f:parameter
               |> String.concat ~sep:", "
@@ -838,14 +839,12 @@ let rec expression ?(convert = false) annotation =
                   match parameter with
                   | Parameter.Anonymous { annotation; default; _ } ->
                       call ~default "Anonymous" annotation
-                  | Parameter.Keywords { Parameter.name; annotation; _ } ->
-                      call ~name "Keywords" annotation
-                  | Parameter.Named { Parameter.name; annotation; default } ->
+                  | Parameter.Keywords annotation -> call "Keywords" annotation
+                  | Parameter.Named { name; annotation; default } ->
                       call ~default ~name "Named" annotation
-                  | Parameter.Variable { Parameter.name; annotation; _ } ->
-                      call ~name "Variable" annotation
                   | Parameter.KeywordOnly { name; annotation; default } ->
                       call ~default ~name "KeywordOnly" annotation
+                  | Parameter.Variable annotation -> call "Variable" annotation
                 in
                 List (List.map ~f:convert_parameter parameters) |> Node.create ~location
             | Undefined -> Node.create ~location Ellipsis
@@ -1008,15 +1007,17 @@ module Transform = struct
             let open Record.Callable in
             let visit_overload { annotation; parameters } =
               let visit_parameters parameter =
-                let visit_named ({ RecordParameter.annotation; _ } as named) =
-                  { named with annotation = visit_annotation annotation ~state }
-                in
                 let visit_defined = function
-                  | RecordParameter.Named named -> RecordParameter.Named (visit_named named)
-                  | RecordParameter.KeywordOnly named ->
-                      RecordParameter.KeywordOnly (visit_named named)
-                  | RecordParameter.Variable named -> RecordParameter.Variable (visit_named named)
-                  | RecordParameter.Keywords named -> RecordParameter.Keywords (visit_named named)
+                  | RecordParameter.Named ({ annotation; _ } as named) ->
+                      RecordParameter.Named
+                        { named with annotation = visit_annotation annotation ~state }
+                  | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
+                      RecordParameter.KeywordOnly
+                        { named with annotation = visit_annotation annotation ~state }
+                  | RecordParameter.Variable annotation ->
+                      RecordParameter.Variable (visit_annotation annotation ~state)
+                  | RecordParameter.Keywords annotation ->
+                      RecordParameter.Keywords (visit_annotation annotation ~state)
                   | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
                       RecordParameter.Anonymous
                         { anonymous with annotation = visit_annotation annotation ~state }
@@ -1135,8 +1136,8 @@ module Callable = struct
           let keyword_only = keyword_only || Identifier.equal star "*" in
           let new_parameter =
             match star with
-            | "**" -> Keywords { annotation; name; default = false }
-            | "*" -> Variable { annotation; name; default = false }
+            | "**" -> Keywords annotation
+            | "*" -> Variable annotation
             | _ ->
                 let sanitized = Identifier.sanitized name in
                 if
@@ -1162,8 +1163,8 @@ module Callable = struct
       | Anonymous { annotation; _ }
       | KeywordOnly { annotation; _ }
       | Named { annotation; _ }
-      | Variable { annotation; _ }
-      | Keywords { annotation; _ } ->
+      | Variable annotation
+      | Keywords annotation ->
           annotation
 
 
@@ -1179,12 +1180,12 @@ module Callable = struct
 
     let names_compatible left right =
       match left, right with
+      | Variable _, Variable _
+      | Keywords _, Keywords _
       | _, Anonymous _
       | Anonymous _, _ ->
           true
-      | Named { name = left; _ }, Named { name = right; _ }
-      | Variable { name = left; _ }, Variable { name = right; _ }
-      | Keywords { name = left; _ }, Keywords { name = right; _ } ->
+      | Named { name = left; _ }, Named { name = right; _ } ->
           let left = Identifier.sanitized left in
           let right = Identifier.sanitized right in
           let left = Identifier.remove_leading_underscores left in
@@ -1530,22 +1531,22 @@ let rec create_logic ?(use_cache = true)
                                     create_logic (Node.create_with_default_location annotation);
                                   default
                                 }
-                          | "Variable", Name (Name.Identifier name) :: tail ->
+                          | "Variable", tail ->
                               let annotation =
                                 match tail with
                                 | annotation :: _ ->
                                     create_logic (Node.create_with_default_location annotation)
                                 | _ -> Top
                               in
-                              Parameter.Variable { Parameter.name; annotation; default = false }
-                          | "Keywords", Name (Name.Identifier name) :: tail ->
+                              Parameter.Variable annotation
+                          | "Keywords", tail ->
                               let annotation =
                                 match tail with
                                 | annotation :: _ ->
                                     create_logic (Node.create_with_default_location annotation)
                                 | _ -> Top
                               in
-                              Parameter.Keywords { Parameter.name; annotation; default = false }
+                              Parameter.Keywords annotation
                           | _ -> Parameter.Anonymous { index; annotation = Top; default = false } )
                       | _ ->
                           Parameter.Anonymous

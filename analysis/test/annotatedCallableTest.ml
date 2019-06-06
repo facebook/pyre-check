@@ -248,10 +248,10 @@ let test_create _ =
     ~expected:"typing.Callable('foo')[[int, Named(_b, str)], str]";
   assert_callable
     "def foo(a, *args, **kwargs) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Variable(args), Keywords(kwargs)], str]";
+    ~expected:"typing.Callable('foo')[[Named(a, $unknown), Variable(), Keywords()], str]";
   assert_callable
     "def foo(**kwargs: typing.Dict[str, typing.Any]) -> str: ..."
-    ~expected:"typing.Callable('foo')[[Keywords(kwargs, typing.Dict[str, typing.Any])], str]";
+    ~expected:"typing.Callable('foo')[[Keywords(typing.Dict[str, typing.Any])], str]";
   assert_callable
     ~parent:"module.Foo"
     "def module.Foo.foo(a: int, b) -> str: ..."
@@ -304,7 +304,7 @@ let test_create _ =
     ~expected:"typing.Callable('foo')[[Named(x, str), KeywordOnly(a, int, default)], int]";
   assert_callable
     "def foo(*var: int, a: int = 7) -> int: ..."
-    ~expected:"typing.Callable('foo')[[Variable(var, int), KeywordOnly(a, int, default)], int]";
+    ~expected:"typing.Callable('foo')[[Variable(int), KeywordOnly(a, int, default)], int]";
   ()
 
 

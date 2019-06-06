@@ -66,15 +66,12 @@ let decorate
                 | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
                 | Type.Callable.Parameter.Named { name; annotation; _ } ->
                     Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
-                | Type.Callable.Parameter.Variable { name; annotation; _ } ->
+                | Type.Callable.Parameter.Variable annotation ->
+                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"*args" ()
+                | Type.Callable.Parameter.Keywords annotation ->
                     Ast.Parameter.create
                       ~annotation:(Type.expression annotation)
-                      ~name:("*" ^ name)
-                      ()
-                | Type.Callable.Parameter.Keywords { name; annotation; _ } ->
-                    Ast.Parameter.create
-                      ~annotation:(Type.expression annotation)
-                      ~name:("**" ^ name)
+                      ~name:"**kwargs"
                       ()
               in
               placed_single_star, new_parameter :: sofar

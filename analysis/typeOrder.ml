@@ -503,22 +503,23 @@ module OrderImplementation = struct
                   ~left:right_annotation
                   ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
-            | ( Parameter.KeywordOnly ({ Parameter.annotation = left_annotation; _ } as left)
+            | ( Parameter.Variable left_annotation :: left_parameters,
+                Parameter.Variable right_annotation :: right_parameters )
+            | ( Parameter.Keywords left_annotation :: left_parameters,
+                Parameter.Keywords right_annotation :: right_parameters ) ->
+                solve_less_or_equal_safe
+                  order
+                  ~constraints
+                  ~left:right_annotation
+                  ~right:left_annotation
+                |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
+            | ( Parameter.KeywordOnly ({ annotation = left_annotation; _ } as left)
                 :: left_parameters,
-                Parameter.KeywordOnly ({ Parameter.annotation = right_annotation; _ } as right)
+                Parameter.KeywordOnly ({ annotation = right_annotation; _ } as right)
                 :: right_parameters )
-            | ( Parameter.Named ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Named ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters )
-            | ( Parameter.Keywords ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Keywords ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters )
-            | ( Parameter.Variable ({ Parameter.annotation = left_annotation; _ } as left)
-                :: left_parameters,
-                Parameter.Variable ({ Parameter.annotation = right_annotation; _ } as right)
-                :: right_parameters ) ->
+            | ( Parameter.Named ({ annotation = left_annotation; _ } as left) :: left_parameters,
+                Parameter.Named ({ annotation = right_annotation; _ } as right) :: right_parameters
+              ) ->
                 if Parameter.names_compatible (Parameter.Named left) (Parameter.Named right) then
                   solve_less_or_equal_safe
                     order
@@ -528,7 +529,7 @@ module OrderImplementation = struct
                   |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
                 else
                   []
-            | ( Parameter.Variable { Parameter.annotation = left_annotation; _ } :: _,
+            | ( Parameter.Variable left_annotation :: _,
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
                 solve_less_or_equal_safe
                   order
@@ -1235,25 +1236,9 @@ module OrderImplementation = struct
                                  annotation = parameter_join order left.annotation right.annotation
                                })
                       | Parameter.Variable left, Parameter.Variable right ->
-                          Some
-                            (Parameter.Variable
-                               { left with
-                                 Parameter.annotation =
-                                   parameter_join
-                                     order
-                                     left.Parameter.annotation
-                                     right.Parameter.annotation
-                               })
+                          Some (Parameter.Variable (parameter_join order left right))
                       | Parameter.Keywords left, Parameter.Keywords right ->
-                          Some
-                            (Parameter.Keywords
-                               { left with
-                                 Parameter.annotation =
-                                   parameter_join
-                                     order
-                                     left.Parameter.annotation
-                                     right.Parameter.annotation
-                               })
+                          Some (Parameter.Keywords (parameter_join order left right))
                       | _ -> None
                     else
                       None

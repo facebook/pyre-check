@@ -1060,12 +1060,12 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, object), Keywords(kwargs, object)], int]"
+       ~left:"typing.Callable[[Variable(object), Keywords(object)], int]"
        ~right:"typing.Callable[..., int]");
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, int), Keywords(kwargs, object)], int]"
+       ~left:"typing.Callable[[Variable(int), Keywords(object)], int]"
        ~right:"typing.Callable[..., int]");
   (* Callable classes. *)
   assert_true
@@ -1092,38 +1092,38 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~left:"typing.Callable[[Variable(int)], str]"
        ~right:"typing.Callable[[int], str]");
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~left:"typing.Callable[[Variable(int)], str]"
        ~right:"typing.Callable[[int, int], str]");
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, str)], str]"
+       ~left:"typing.Callable[[Variable(str)], str]"
        ~right:"typing.Callable[[int], str]");
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, int)], str]"
+       ~left:"typing.Callable[[Variable(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
   (* Callables with keyword arguments. *)
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[Keywords(kwargs, int)], str]"
+       ~left:"typing.Callable[[Keywords(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
   assert_true
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, int), Keywords(kwargs, int)], str]"
+       ~left:"typing.Callable[[Variable(int), Keywords(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
   assert_false
     (less_or_equal
        order
-       ~left:"typing.Callable[[Variable(args, str), Keywords(kwargs, int)], str]"
+       ~left:"typing.Callable[[Variable(str), Keywords(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
   (* Generic callables *)
   assert_false

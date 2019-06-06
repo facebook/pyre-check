@@ -866,8 +866,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 | Type.Callable.Defined parameters ->
                     let format parameter =
                       match parameter with
-                      | Type.Callable.Parameter.Named
-                          { Type.Callable.Parameter.name; annotation; _ } ->
+                      | Type.Callable.Parameter.Named { name; annotation; _ } ->
                           let name = Identifier.sanitized name in
                           Some
                             { TypeQuery.parameter_name = name;

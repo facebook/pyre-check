@@ -741,11 +741,10 @@ let test_forward_expression _ =
     let parameters =
       let open Type.Callable in
       let to_parameter (name, kind, default) =
-        let named = { Parameter.name; annotation = Type.Any; default } in
         match kind with
-        | NamedParameter -> Parameter.Named named
-        | VariableParameter -> Parameter.Variable named
-        | KeywordParameter -> Parameter.Keywords named
+        | NamedParameter -> Parameter.Named { name; annotation = Type.Any; default }
+        | VariableParameter -> Parameter.Variable Type.Any
+        | KeywordParameter -> Parameter.Keywords Type.Any
       in
       Defined (List.map parameters ~f:to_parameter)
     in

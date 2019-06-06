@@ -64,8 +64,8 @@ let test_check_contextmanager _ =
       def g() -> None:
         reveal_type(f)
     |}
-    [ "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(args, \
-       typing.Any), Keywords(kwargs, typing.Any)], contextlib.GeneratorContextManager[int]]`." ];
+    [ "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(typing.Any), \
+       Keywords(typing.Any)], contextlib.GeneratorContextManager[int]]`." ];
   assert_type_errors
     {|
       class C:
