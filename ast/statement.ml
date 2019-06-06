@@ -454,11 +454,9 @@ module Define = struct
 
   let implicit_attributes
       ({ body; signature = { parameters; _ } } as define)
-      ?(convert = false)
       ~definition:{ Record.Class.body = definition_body; _ }
       : Attribute.t Identifier.SerializableMap.t
     =
-    let convert_generated_ast = convert in
     let open Expression in
     let parameter_annotations =
       let add_parameter map = function
@@ -549,19 +547,6 @@ module Define = struct
                 in
                 if List.for_all ~f:(Expression.equal annotation) annotations then
                   Some annotation
-                else if convert_generated_ast then
-                  Some
-                    { Node.location;
-                      value =
-                        Access
-                          (SimpleAccess
-                             [ Access.Identifier "typing";
-                               Access.Identifier "Union";
-                               Access.Identifier "__getitem__";
-                               Access.Call
-                                 (Node.create_with_default_location
-                                    [{ Argument.name = None; value = argument_value }]) ])
-                    }
                 else
                   Some
                     { Node.location;
@@ -894,11 +879,8 @@ module Class = struct
     List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
 
 
-  let implicit_attributes
-      ?(in_test = false)
-      ?(convert = false)
-      ({ Record.Class.name; body; _ } as definition)
-    =
+  let implicit_attributes ?(in_test = false)
+                          ({ Record.Class.name; body; _ } as definition) =
     (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
     let merge _ left right =
       match right with
@@ -907,7 +889,7 @@ module Class = struct
     in
     let implicitly_assigned_attributes =
       constructors ~in_test definition
-      |> List.map ~f:(Define.implicit_attributes ~convert ~definition)
+      |> List.map ~f:(Define.implicit_attributes ~definition)
       |> List.fold
            ~init:Identifier.SerializableMap.empty
            ~f:(Identifier.SerializableMap.merge merge)
@@ -978,64 +960,9 @@ module Class = struct
       let callable_attributes map { Node.location; value } =
         match value with
         | Class { Record.Class.name; _ } ->
-            let convert_generated_ast = convert in
             let open Expression in
             let annotation =
-              if convert_generated_ast then
-                let meta_annotation =
-                  let argument =
-                    { Argument.name = None; value = Reference.expression ~convert:true name }
-                  in
-                  Node.create
-                    ~location
-                    (Access
-                       (SimpleAccess
-                          [ Access.Identifier "typing";
-                            Access.Identifier "Type";
-                            Access.Identifier "__getitem__";
-                            Access.Call (Node.create_with_default_location [argument]) ]))
-                in
-                let argument = { Argument.name = None; value = meta_annotation } in
-                Node.create
-                  ~location
-                  (Access
-                     (SimpleAccess
-                        [ Access.Identifier "typing";
-                          Access.Identifier "ClassVar";
-                          Access.Identifier "__getitem__";
-                          Access.Call (Node.create_with_default_location [argument]) ]))
-              else
-                let meta_annotation =
-                  { Node.location;
-                    value =
-                      Call
-                        { callee =
-                            { Node.location;
-                              value =
-                                Name
-                                  (Name.Attribute
-                                     { base =
-                                         { Node.location;
-                                           value =
-                                             Name
-                                               (Name.Attribute
-                                                  { base =
-                                                      { Node.location;
-                                                        value = Name (Name.Identifier "typing")
-                                                      };
-                                                    attribute = "Type";
-                                                    special = false
-                                                  })
-                                         };
-                                       attribute = "__getitem__";
-                                       special = true
-                                     })
-                            };
-                          arguments =
-                            [{ Call.Argument.name = None; value = Reference.expression name }]
-                        }
-                  }
-                in
+              let meta_annotation =
                 { Node.location;
                   value =
                     Call
@@ -1053,7 +980,7 @@ module Class = struct
                                                     { Node.location;
                                                       value = Name (Name.Identifier "typing")
                                                     };
-                                                  attribute = "ClassVar";
+                                                  attribute = "Type";
                                                   special = false
                                                 })
                                        };
@@ -1061,9 +988,39 @@ module Class = struct
                                      special = true
                                    })
                           };
-                        arguments = [{ Call.Argument.name = None; value = meta_annotation }]
+                        arguments =
+                          [{ Call.Argument.name = None; value = Reference.expression name }]
                       }
                 }
+              in
+              { Node.location;
+                value =
+                  Call
+                    { callee =
+                        { Node.location;
+                          value =
+                            Name
+                              (Name.Attribute
+                                 { base =
+                                     { Node.location;
+                                       value =
+                                         Name
+                                           (Name.Attribute
+                                              { base =
+                                                  { Node.location;
+                                                    value = Name (Name.Identifier "typing")
+                                                  };
+                                                attribute = "ClassVar";
+                                                special = false
+                                              })
+                                     };
+                                   attribute = "__getitem__";
+                                   special = true
+                                 })
+                        };
+                      arguments = [{ Call.Argument.name = None; value = meta_annotation }]
+                    }
+              }
             in
             let attribute_name = Reference.last name in
             Identifier.SerializableMap.set
@@ -1114,12 +1071,9 @@ module Class = struct
     |> Identifier.SerializableMap.merge merge slots_attributes
 
 
-  let attributes
-      ?(include_generated_attributes = true)
-      ?(in_test = false)
-      ?(convert = false)
-      definition
-    =
+  let attributes ?(include_generated_attributes = true)
+                 ?(in_test = false)
+                 definition =
     let explicit_attributes = explicitly_assigned_attributes definition in
     if not include_generated_attributes then
       explicit_attributes
@@ -1130,7 +1084,7 @@ module Class = struct
         | Some _ -> right
       in
       explicit_attributes
-      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test ~convert definition)
+      |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test definition)
 
 
   let update { Record.Class.body = stub; _ }

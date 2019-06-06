@@ -289,34 +289,29 @@ let test_attributes _ =
   in
   (* Test define field assigns. *)
   let assert_implicit_attributes source expected =
-    let assertion ~convert =
-      let expected =
-        let attribute (name, annotation, value, toplevel) =
-          create_attribute
-            ~name
-            ~annotation:(annotation >>| Type.expression ~convert)
-            ~value:(value >>| parse_single_expression ~convert)
-            ~toplevel
-            ~primitive:true
-            ()
-        in
-        List.map expected ~f:attribute
+    let expected =
+      let attribute (name, annotation, value, toplevel) =
+        create_attribute
+          ~name
+          ~annotation:(annotation >>| Type.expression)
+          ~value:(value >>| parse_single_expression)
+          ~toplevel
+          ~primitive:true
+          ()
       in
-      let definition =
-        { Record.Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
-      in
-      assert_equal
-        ~cmp:(List.equal ~equal:Attribute.equal)
-        ~printer:(fun attributes ->
-          List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
-        expected
-        ( parse_single_define ~convert source
-        |> Define.implicit_attributes ~convert ~definition
-        |> Identifier.SerializableMap.bindings
-        |> List.map ~f:snd )
+      List.map expected ~f:attribute
     in
-    assertion ~convert:true;
-    assertion ~convert:false
+    let definition =
+      { Record.Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:Attribute.equal)
+      ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
+      expected
+      ( parse_single_define source
+      |> Define.implicit_attributes ~definition
+      |> Identifier.SerializableMap.bindings
+      |> List.map ~f:snd )
   in
   assert_implicit_attributes "def foo(): pass" [];
   assert_implicit_attributes
@@ -406,30 +401,26 @@ let test_attributes _ =
     ["attribute", Some Type.integer, Some "value", true];
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
-    let assertion ~convert =
-      let expected =
-        expected
-        >>| fun (name, annotation, value, setter) ->
-        create_attribute
-          ~setter
-          ~name
-          ~annotation:(annotation >>| Type.expression ~convert)
-          ~value
-          ~property:true
-          ()
-      in
-      let define =
-        let define = parse_single_define ~convert source in
-        let signature = { define.signature with parent = Some !&"Parent" } in
-        { define with signature }
-      in
-      assert_equal
-        ~cmp:(Option.equal Attribute.equal)
-        expected
-        (Define.property_attribute define ~location:Location.Reference.any)
+    let expected =
+      expected
+      >>| fun (name, annotation, value, setter) ->
+      create_attribute
+        ~setter
+        ~name
+        ~annotation:(annotation >>| Type.expression)
+        ~value
+        ~property:true
+        ()
     in
-    assertion ~convert:true;
-    assertion ~convert:false
+    let define =
+      let define = parse_single_define source in
+      let signature = { define.signature with parent = Some !&"Parent" } in
+      { define with signature }
+    in
+    assert_equal
+      ~cmp:(Option.equal Attribute.equal)
+      expected
+      (Define.property_attribute define ~location:Location.Reference.any)
   in
   assert_property_attribute "def Parent.foo(): pass" None;
   assert_property_attribute "@property\ndef Parent.foo(): pass" (Some ("foo", None, None, false));
@@ -456,77 +447,71 @@ let test_attributes _ =
                         ?(include_generated_attributes = true)
                         source
                         expected =
-    let assertion ~convert =
-      let expected =
-        let attribute (name, location, annotation, value, setter, number_of_defines) =
-          let location =
-            match location with
-            | None -> None
-            | Some ((start_line, start_column), (stop_line, stop_column)) ->
-                Some
-                  { Location.path = String.hash "test.py";
-                    start = { Location.line = start_line; column = start_column };
-                    stop = { Location.line = stop_line; column = stop_column }
-                  }
-          in
-          let defines =
-            if number_of_defines > 0 then
-              let define =
-                { Statement.Define.signature =
-                    { name = !&"foo";
-                      parameters = [];
-                      decorators = [];
-                      docstring = None;
-                      return_annotation = Some !"int";
-                      async = false;
-                      parent = None
-                    };
-                  body = []
+    let expected =
+      let attribute (name, location, annotation, value, setter, number_of_defines) =
+        let location =
+          match location with
+          | None -> None
+          | Some ((start_line, start_column), (stop_line, stop_column)) ->
+              Some
+                { Location.path = String.hash "test.py";
+                  start = { Location.line = start_line; column = start_column };
+                  stop = { Location.line = stop_line; column = stop_column }
                 }
-              in
-              Some (List.init ~f:(fun _ -> define) number_of_defines)
-            else
-              None
-          in
-          create_attribute
-            ~name
-            ~annotation:(annotation >>| Type.expression ~convert)
-            ?location
-            ?defines
-            ~value:(value >>| parse_single_expression ~convert)
-            ~setter
-            ()
         in
-        List.map expected ~f:attribute
+        let defines =
+          if number_of_defines > 0 then
+            let define =
+              { Statement.Define.signature =
+                  { name = !&"foo";
+                    parameters = [];
+                    decorators = [];
+                    docstring = None;
+                    return_annotation = Some !"int";
+                    async = false;
+                    parent = None
+                  };
+                body = []
+              }
+            in
+            Some (List.init ~f:(fun _ -> define) number_of_defines)
+          else
+            None
+        in
+        create_attribute
+          ~name
+          ~annotation:(annotation >>| Type.expression)
+          ?location
+          ?defines
+          ~value:(value >>| parse_single_expression)
+          ~setter
+          ()
       in
-      let printer attributes =
-        List.map attributes ~f:Attribute.show |> String.concat ~sep:"\n\n"
-      in
-      let equal
-          { Node.value = left; location = left_location }
-          { Node.value = right; location = right_location }
-        =
-        let open Attribute in
-        left.async = right.async
-        && left.setter = right.setter
-        && String.equal left.name right.name
-        && Option.equal Expression.equal left.annotation right.annotation
-        && Option.equal Expression.equal left.value right.value
-        && Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
-        && ( Location.equal left_location Location.Reference.any
-           || Location.equal left_location right_location )
-      in
-      assert_equal
-        ~cmp:(List.equal ~equal)
-        ~printer
-        expected
-        ( parse_single_class ~convert source
-        |> Class.attributes ~in_test ~include_generated_attributes ~convert
-        |> Identifier.SerializableMap.bindings
-        |> List.map ~f:snd )
+      List.map expected ~f:attribute
     in
-    assertion ~convert:true;
-    assertion ~convert:false
+    let printer attributes = List.map attributes ~f:Attribute.show |> String.concat ~sep:"\n\n" in
+    let equal
+        { Node.value = left; location = left_location }
+        { Node.value = right; location = right_location }
+      =
+      let open Attribute in
+      left.async = right.async
+      && left.setter = right.setter
+      && String.equal left.name right.name
+      && Option.equal Expression.equal left.annotation right.annotation
+      && Option.equal Expression.equal left.value right.value
+      && Option.equal Int.equal (left.defines >>| List.length) (right.defines >>| List.length)
+      && ( Location.equal left_location Location.Reference.any
+         || Location.equal left_location right_location )
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal)
+      ~printer
+      expected
+      ( parse_single_class source
+      |> Class.attributes ~in_test ~include_generated_attributes
+      |> Identifier.SerializableMap.bindings
+      |> List.map ~f:snd )
   in
   let attribute ~name ?location ?annotation ?value ?(setter = false) ?(number_of_defines = 0) () =
     name, location, annotation, value, setter, number_of_defines

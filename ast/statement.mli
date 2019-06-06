@@ -288,7 +288,6 @@ module Define : sig
 
   val implicit_attributes
     :  t ->
-    ?convert:bool ->
     definition:statement_t Record.Class.record ->
     Attribute.t Identifier.SerializableMap.t
 
@@ -316,7 +315,6 @@ module Class : sig
 
   val implicit_attributes
     :  ?in_test:bool ->
-    ?convert:bool ->
     t ->
     Attribute.t Identifier.SerializableMap.t
 
@@ -325,7 +323,6 @@ module Class : sig
   val attributes
     :  ?include_generated_attributes:bool ->
     ?in_test:bool ->
-    ?convert:bool ->
     t ->
     Attribute.t Identifier.SerializableMap.t
 
