@@ -639,15 +639,13 @@ let test_check_constructors _ =
     |}
     [ "Undefined type [11]: Type `Clss` is not defined.";
       "Incompatible return type [7]: Expected `Class` but got `unknown`." ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x()
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x(42)

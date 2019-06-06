@@ -27,12 +27,18 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
+  let diagnostic_severity { Error.severity; _ } =
+    match severity with
+    | Error.Hint -> Some DiagnosticSeverity.Information
+    | _ -> Some DiagnosticSeverity.Error
+
+
   let of_errors ~configuration handle errors =
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } = TypeCheck.Error.location error in
       Diagnostic.
         { range = Range.create ~start ~stop;
-          severity = Some DiagnosticSeverity.Error;
+          severity = diagnostic_severity error;
           code = None;
           source = Some "Pyre";
           message = TypeCheck.Error.description error ~show_error_traces:true ~separator:"\n"

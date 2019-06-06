@@ -1052,7 +1052,9 @@ let rec process
           SharedMem.collect `aggressive;
           process_type_check_request ~state ~configuration ~files
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
-      | DisplayTypeErrors files -> process_display_type_errors_request ~state ~configuration ~files
+      | DisplayTypeErrors files ->
+          let configuration = { configuration with include_hints = true } in
+          process_display_type_errors_request ~state ~configuration ~files
       | StopRequest ->
           Socket.write socket StopResponse;
           Mutex.critical_section lock ~f:(fun () ->
@@ -1173,6 +1175,7 @@ let rec process
           LookupCache.evict ~state ~configuration file;
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
+          let configuration = { configuration with include_hints = true } in
           process_type_check_request ~state ~configuration ~files:[file]
       | CloseDocument file ->
           LookupCache.evict ~state ~configuration file;
@@ -1187,6 +1190,7 @@ let rec process
                 List.is_empty file_notifiers)
           in
           if check_on_save then
+            let configuration = { configuration with include_hints = true } in
             process_type_check_request ~state ~configuration ~files:[file]
           else (
             Log.log ~section:`Server "Explicitly ignoring didSave request";

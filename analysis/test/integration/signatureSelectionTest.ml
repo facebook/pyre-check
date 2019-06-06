@@ -940,8 +940,7 @@ let test_check_keyword_arguments _ =
     |}
     [ "Invalid argument [32]: Keyword argument `x` has type `int` "
       ^ "but must be a mapping with string keys." ];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       def foo(x: int, y: str) -> None:
         pass

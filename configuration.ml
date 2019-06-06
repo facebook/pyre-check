@@ -35,7 +35,8 @@ module Analysis = struct
     excludes: Str.regexp list; [@opaque]
     extensions: string list;
     store_type_check_resolution: bool;
-    incremental_transitive_dependencies: bool
+    incremental_transitive_dependencies: bool;
+    include_hints: bool
   }
   [@@deriving show]
 
@@ -78,6 +79,7 @@ module Analysis = struct
       ?(extensions = [])
       ?(store_type_check_resolution = true)
       ?(incremental_transitive_dependencies = false)
+      ?(include_hints = false)
       ()
     =
     { start_time;
@@ -107,7 +109,8 @@ module Analysis = struct
       excludes = List.map excludes ~f:Str.regexp;
       extensions;
       store_type_check_resolution;
-      incremental_transitive_dependencies
+      incremental_transitive_dependencies;
+      include_hints
     }
 
 

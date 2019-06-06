@@ -2116,7 +2116,7 @@ let join ~resolution left right =
     else
       right.location
   in
-  { location; kind; signature = left.signature }
+  { location; kind; signature = left.signature; severity = Error }
 
 
 let meet ~resolution:_ left _ =
@@ -2320,6 +2320,14 @@ let suppress ~mode ~resolution error =
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
         true
+    | MissingReturnAnnotation { annotation = Some annotation; given_annotation; _ }
+    | MissingAttributeAnnotation
+        { missing_annotation = { annotation = Some annotation; given_annotation; _ }; _ }
+    | MissingParameterAnnotation { annotation = Some annotation; given_annotation; _ }
+    | MissingGlobalAnnotation { annotation = Some annotation; given_annotation; _ }
+      when Type.is_concrete annotation
+           && given_annotation >>| Type.is_concrete |> Option.value ~default:false ->
+        false
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
     | MissingAttributeAnnotation _
@@ -2531,3 +2539,13 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
     due_to_invariance = Resolution.is_invariance_mismatch resolution ~left ~right;
     actual_expressions = Option.to_list actual_expression
   }
+
+
+let language_server_hint error =
+  match kind error with
+  | MissingReturnAnnotation _
+  | MissingAttributeAnnotation _
+  | MissingParameterAnnotation _
+  | MissingGlobalAnnotation _ ->
+      true
+  | _ -> false

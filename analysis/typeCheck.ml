@@ -4146,6 +4146,11 @@ let run
   ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
   let errors =
+    let mode error =
+      let (module Handler : Environment.Handler) = environment in
+      Handler.local_mode (Error.path error |> File.Handle.create)
+      |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
+    in
     let filter errors =
       if configuration.debug then
         errors
@@ -4155,19 +4160,27 @@ let run
           then
             false
           else
-            let mode =
-              let (module Handler : Environment.Handler) = environment in
-              Handler.local_mode (Error.path error |> File.Handle.create)
-              |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
-            in
-            not (Error.suppress ~mode ~resolution error)
+            not (Error.suppress ~mode:(mode error) ~resolution error)
         in
         List.filter ~f:keep_error errors
+    in
+    let mark_as_hint error =
+      match mode error with
+      | Default when Error.language_server_hint error -> { error with severity = Hint }
+      | _ -> error
+    in
+    let filter_hints { Error.severity; _ } =
+      let { Configuration.Analysis.include_hints; _ } = configuration in
+      match severity with
+      | Hint when not include_hints -> false
+      | _ -> true
     in
     List.map results ~f:(fun { errors; _ } -> errors)
     |> List.map ~f:filter
     |> List.concat
     |> Error.join_at_source ~resolution
+    |> List.map ~f:mark_as_hint
+    |> List.filter ~f:filter_hints
     |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution)
     |> List.sort ~compare:Error.compare
   in

@@ -39,7 +39,7 @@ let mock_define = define ()
 let mock_parent = Type.Primitive "foo"
 
 let error ?(signature = mock_signature) ?(location = Location.Instantiated.any) kind =
-  { Error.location; kind; signature }
+  { Error.location; kind; signature; severity = Error }
 
 
 let revealed_type access annotation =

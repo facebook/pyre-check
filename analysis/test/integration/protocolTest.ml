@@ -275,8 +275,7 @@ let test_check_protocol _ =
 
     |}
     [];
-  assert_type_errors
-    ~debug:false
+  assert_default_type_errors
     {|
       class P(typing.Protocol):
         def foo(self) -> int: ...

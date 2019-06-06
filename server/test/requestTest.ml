@@ -203,7 +203,8 @@ let test_process_display_type_errors_request _ =
                 let location = { Location.Instantiated.any with Location.path } in
                 { Analysis.Error.location;
                   kind = Analysis.Error.UndefinedName (Reference.create undefined);
-                  signature = +mock_signature
+                  signature = +mock_signature;
+                  severity = Error
                 }
               in
               List.map errors ~f:error
@@ -545,7 +546,8 @@ let test_create_annotation_edit _ =
       (Some
          { Analysis.Error.location;
            kind = Analysis.Error.MissingReturnAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          });
   assert_edit
     ~source:{|
@@ -560,7 +562,8 @@ let test_create_annotation_edit _ =
       (Some
          { Analysis.Error.location;
            kind = Analysis.Error.MissingGlobalAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          });
   assert_edit
     ~source:{|
@@ -576,7 +579,8 @@ let test_create_annotation_edit _ =
       (Some
          { Analysis.Error.location;
            kind = Analysis.Error.MissingParameterAnnotation mock_missing_annotation;
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          });
   assert_edit
     ~source:{|
@@ -594,7 +598,8 @@ let test_create_annotation_edit _ =
            kind =
              Analysis.Error.MissingAttributeAnnotation
                { parent = Type.Any; missing_annotation = mock_missing_annotation };
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          });
   assert_edit
     ~source:{|
@@ -616,7 +621,8 @@ let test_create_annotation_edit _ =
                  is_unimplemented = false;
                  define_location = { Location.Reference.any with start = { line = 0; column = 0 } }
                };
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          });
   assert_edit
     ~source:{|
@@ -633,7 +639,8 @@ let test_create_annotation_edit _ =
            kind =
              Analysis.Error.IncompatibleVariableType
                { name = !&"x"; mismatch = mock_mismatch; declare_location = location };
-           signature = +mock_signature
+           signature = +mock_signature;
+           severity = Error
          })
 
 
