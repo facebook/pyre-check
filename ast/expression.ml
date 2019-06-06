@@ -518,6 +518,16 @@ let rec delocalize ({ Node.value; location } as expression) =
   { expression with Node.value }
 
 
+let delocalize_qualified = function
+  | { Node.location; value = Name (Name.Identifier identifier) } ->
+      { Node.location; value = Name (Name.Identifier (Identifier.sanitized identifier)) }
+  | { Node.location; value = Name (Name.Attribute ({ attribute; _ } as name)) } ->
+      { Node.location;
+        value = Name (Name.Attribute { name with attribute = Identifier.sanitized attribute })
+      }
+  | expression -> expression
+
+
 let exists_in_list ?(match_prefix = false) ~expression_list target_string =
   let flatten =
     let rec flatten flattened expression =
@@ -540,7 +550,7 @@ let exists_in_list ?(match_prefix = false) ~expression_list target_string =
           matches expected_tail actual_tail
     | _ -> false
   in
-  List.map ~f:delocalize expression_list
+  List.map ~f:delocalize_qualified expression_list
   |> List.filter_map ~f:flatten
   |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 

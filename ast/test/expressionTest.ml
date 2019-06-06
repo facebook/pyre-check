@@ -244,7 +244,15 @@ let test_delocalize _ =
   assert_delocalized "$local_base64$b64encode" "base64.b64encode";
   assert_delocalized "$local_module?qualifier$variable" "module.qualifier.variable";
   (* Don't attempt to delocalize qualified expressions. *)
-  assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable"
+  assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable";
+  let assert_delocalize_qualified source expected =
+    assert_equal
+      ~printer:Expression.show
+      ~cmp:Expression.equal
+      (parse_single_expression expected)
+      (parse_single_expression source |> Expression.delocalize_qualified)
+  in
+  assert_delocalize_qualified "qualifier.$local_qualifier$variable" "qualifier.variable"
 
 
 let test_comparison_operator_override _ =
@@ -271,17 +279,16 @@ let test_comparison_operator_override _ =
 
 
 let test_exists_in_list _ =
-  let make_expression target_string = parse_single_expression target_string in
   let assert_exists ~match_prefix expression_list target_string =
     exists_in_list ~match_prefix ~expression_list target_string |> assert_true
   in
   let assert_not_exists ~match_prefix expression_list target_string =
     exists_in_list ~match_prefix ~expression_list target_string |> assert_false
   in
-  let simple = make_expression "a.b.c" in
-  let call_at_end = make_expression "a.b.c()" in
-  let call_in_the_middle = make_expression "a.b().c" in
-  let call_everywhere = make_expression "a().b().c()" in
+  let simple = parse_single_expression "a.b.c" in
+  let call_at_end = parse_single_expression "a.b.c()" in
+  let call_in_the_middle = parse_single_expression "a.b().c" in
+  let call_everywhere = parse_single_expression "a().b().c()" in
   assert_exists [simple] ~match_prefix:false "a.b.c";
   assert_exists [simple] ~match_prefix:true "a.b.c";
   assert_not_exists [simple] "a.b" ~match_prefix:false;
@@ -313,7 +320,12 @@ let test_exists_in_list _ =
   assert_not_exists [call_everywhere] "a.c" ~match_prefix:false;
   assert_not_exists [call_everywhere] "a.c" ~match_prefix:true;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:false;
-  assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true
+  assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true;
+  (* Qualified *)
+  assert_exists
+    [parse_single_expression "qualifier.$local_qualifier$property"]
+    ~match_prefix:false
+    "qualifier.property"
 
 
 let test_create_name _ =

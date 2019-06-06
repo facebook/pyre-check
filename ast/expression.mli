@@ -246,6 +246,8 @@ val sanitized : t -> t
 
 val delocalize : t -> t
 
+val delocalize_qualified : t -> t
+
 val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> bool
 
 val arguments_location : expression_t Call.t -> Location.t
