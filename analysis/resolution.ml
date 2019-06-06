@@ -554,28 +554,34 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
     | _ -> resolved )
   | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; _ },
       Type.TypedDictionary { total; fields; _ } ) ->
+      let find_matching_field ~name =
+        let matching_name { Type.name = expected_name; _ } = String.equal name expected_name in
+        List.find ~f:matching_name
+      in
       let resolve_entry { Expression.Dictionary.key; value } =
         let key = resolve resolution key in
         match key with
         | Type.Literal (Type.String name) ->
             let annotation =
               let resolved = resolve resolution value in
-              let matching_name { Type.name = expected_name; _ } =
-                String.equal name expected_name
-              in
               let relax { Type.annotation; _ } =
                 if comparator ~left:resolved ~right:annotation then
                   annotation
                 else
                   resolved
               in
-              List.find fields ~f:matching_name >>| relax |> Option.value ~default:resolved
+              find_matching_field fields ~name >>| relax |> Option.value ~default:resolved
             in
             Some { Type.name; annotation }
         | _ -> None
       in
+      let add_missing_fields sofar =
+        let is_missing { Type.name; _ } = Option.is_none (find_matching_field sofar ~name) in
+        sofar @ List.filter fields ~f:is_missing
+      in
       List.map entries ~f:resolve_entry
       |> Option.all
+      >>| (if total then Fn.id else add_missing_fields)
       >>| Type.TypedDictionary.anonymous ~total
       |> Option.value ~default:resolved
   | Some { Node.value = Expression.Dictionary _; _ }, _

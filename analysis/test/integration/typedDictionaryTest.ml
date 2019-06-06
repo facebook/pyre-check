@@ -719,6 +719,16 @@ let test_check_typed_dictionaries _ =
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
+      def f(x: bool) -> str:
+        movie: Movie = {'name' : "Blade Runner", 'year' : 1982, 'bonus' : x}
+        reveal_type(movie)
+        return movie['name']
+    |}
+    [ "Revealed type [-1]: Revealed type for `movie` is `TypedDict with fields (name: str, year: \
+       int, bonus: bool)`." ];
+  assert_test_typed_dictionary
+    {|
+      Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
       def f() -> str:
         movie: Movie = {'name' : "Blade Runner", 'year' : '1982'}
         return movie['name']
@@ -726,6 +736,30 @@ let test_check_typed_dictionaries _ =
     [ "Incompatible variable type [9]: movie is declared to have type "
       ^ "`TypedDict `Movie` with fields (name: str, year: int)` but is used as type "
       ^ "`TypedDict with fields (name: str, year: str)`." ];
+  assert_test_typed_dictionary
+    {|
+      class Movie(mypy_extensions.TypedDict, total=False):
+        name: str
+        year: int
+      def f() -> int:
+        movie: Movie = {'name' : "Blade Runner"}
+        # this will fail at runtime, but that's the cost of doing business with non-total
+        # typeddicts
+        return movie['year']
+    |}
+    [];
+  assert_test_typed_dictionary
+    {|
+      class Movie(mypy_extensions.TypedDict, total=False):
+        name: str
+        year: int
+      def f() -> int:
+        movie: Movie = {'name' : 1982}
+        return movie['year']
+    |}
+    [ "Incompatible variable type [9]: movie is declared to have type `TypedDict (non-total) \
+       `Movie` with fields (name: str, year: int)` but is used as type `TypedDict (non-total) \
+       with fields (name: int, year: int)`." ];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
