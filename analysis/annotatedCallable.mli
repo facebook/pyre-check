@@ -13,7 +13,8 @@ val return_annotation : define:Define.t -> resolution:Resolution.t -> Type.t
 val create_overload : resolution:Resolution.t -> define:Define.t -> Type.t Type.Callable.overload
 
 val create
-  :  parent:Type.t option ->
+  :  resolution:Resolution.t ->
+  parent:Type.t option ->
   name:Identifier.t ->
   (bool * Type.t Type.Callable.overload) list ->
   Type.Callable.t

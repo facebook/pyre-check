@@ -702,7 +702,7 @@ let register_values
           in
           Annotated.Callable.apply_decorators ~resolution ~define
           |> (fun overload -> [Define.is_overloaded_method define, overload])
-          |> Annotated.Callable.create ~parent ~name:(Reference.show name)
+          |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
           |> Node.create ~location
           |> collect_callable ~name callables
       | _ -> callables

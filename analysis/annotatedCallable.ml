@@ -66,7 +66,7 @@ let create_overload ~resolution
   }
 
 
-let create ~parent ~name overloads =
+let create ~resolution ~parent ~name overloads =
   let open Type.Callable in
   let implementation, overloads =
     let to_signature (implementation, overloads) (is_overload, signature) =
@@ -92,9 +92,18 @@ let create ~parent ~name overloads =
               let implicit = { implicit_annotation = parent; name } in
               { callable with implicit = Some implicit }
             in
-            let constraints = TypeOrder.diff_variables Type.Map.empty annotation parent in
+            let solution =
+              Resolution.solve_less_or_equal
+                resolution
+                ~left:parent
+                ~right:annotation
+                ~constraints:TypeConstraints.empty
+              |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+              |> List.hd
+              |> Option.value ~default:TypeConstraints.Solution.empty
+            in
             let instantiated =
-              Type.instantiate (Type.Callable callable) ~constraints:(Map.find constraints)
+              TypeConstraints.Solution.instantiate solution (Type.Callable callable)
             in
             match instantiated with
             | Type.Callable callable -> callable

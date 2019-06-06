@@ -215,7 +215,7 @@ let test_create _ =
              let signature = { define.Define.signature with parent } in
              { define with signature })
       |> (fun defines -> List.map defines ~f:to_overload)
-      |> Callable.create ~parent:parent_annotation ~name:(Reference.show name)
+      |> Callable.create ~resolution ~parent:parent_annotation ~name:(Reference.show name)
       |> (fun callable ->
            check_implicit callable;
            callable)

@@ -443,7 +443,7 @@ let create_attribute
           Define.is_overloaded_method define, Callable.apply_decorators ~define ~resolution
         in
         List.map defines ~f:apply_decorators
-        |> Callable.create ~parent ~name:(Reference.show name)
+        |> Callable.create ~resolution ~parent ~name:(Reference.show name)
         |> fun callable -> Some (Type.Callable callable)
     | _ -> annotation
   in
@@ -984,5 +984,5 @@ let inferred_callable_type definition ~resolution =
     let explicit_callables =
       List.map explicit_callables ~f:(fun (_, is_overload, callable) -> is_overload, callable)
     in
-    let callable = Callable.create ~parent:(Some parent) ~name explicit_callables in
+    let callable = Callable.create ~resolution ~parent:(Some parent) ~name explicit_callables in
     Some callable
