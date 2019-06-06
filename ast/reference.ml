@@ -117,11 +117,8 @@ let name ?(location = Location.Reference.any) reference =
   | _ -> failwith "Impossible."
 
 
-let expression ?(convert = false) ?(location = Location.Reference.any) reference =
-  if convert then
-    access reference |> Access.expression ~location
-  else
-    name ~location reference |> (fun name -> Name name) |> Node.create ~location
+let expression ?(location = Location.Reference.any) reference =
+  name ~location reference |> (fun name -> Name name) |> Node.create ~location
 
 
 let delocalize reference =

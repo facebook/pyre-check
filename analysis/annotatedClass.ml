@@ -829,9 +829,7 @@ let rec fallback_attribute
           let location = Attribute.location fallback in
           let arguments =
             let self_argument =
-              { Call.Argument.name = None;
-                value = Reference.expression ~convert:true ~location class_name
-              }
+              { Call.Argument.name = None; value = Reference.expression ~location class_name }
             in
             let name_argument =
               { Call.Argument.name = None;
@@ -853,7 +851,7 @@ let rec fallback_attribute
                { Node.location;
                  value =
                    { Statement.Attribute.name;
-                     annotation = Some (Type.expression ~convert:true return_annotation);
+                     annotation = Some (Type.expression return_annotation);
                      defines = None;
                      value = None;
                      async = false;

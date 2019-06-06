@@ -35,7 +35,7 @@ val from_name_exn : Expression.t Expression.Name.t -> t
 
 val name : ?location:Location.t -> t -> Expression.t Expression.Name.t
 
-val expression : ?convert:bool -> ?location:Location.t -> t -> Expression.t
+val expression : ?location:Location.t -> t -> Expression.t
 
 val delocalize : t -> t
 
