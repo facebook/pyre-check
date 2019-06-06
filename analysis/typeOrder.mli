@@ -169,8 +169,6 @@ val widen
   iteration:int ->
   Type.t
 
-val diff_variables : Type.t Type.Map.t -> Type.t -> Type.t -> Type.t Type.Map.t
-
 module OrderedConstraints : TypeConstraints.OrderedConstraintsType with type order = order
 
 val instantiate_protocol_parameters
