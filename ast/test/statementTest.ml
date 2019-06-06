@@ -822,27 +822,6 @@ let test_preamble _ =
     ["error=...\nassert isinstance(error, typing.Union[IOError, ValueError])"]
 
 
-let test_convert _ =
-  let assert_convert statement =
-    assert_equal
-      ~printer:Statement.show
-      ~cmp:Statement.equal
-      (parse_single_statement ~convert:true statement)
-      (Statement.convert (parse_single_statement statement))
-  in
-  assert_convert "x = 1";
-  assert_convert "assert a";
-  assert_convert "return a.b(c)";
-  assert_convert
-    {|
-      @decorator(x)
-      class Foo(Bar):
-        x = 1
-        def foo(self, x: int = 1, *args) -> None:
-          return
-    |}
-
-
 let test_assume _ =
   assert_equal
     (assume (+True))
@@ -1064,8 +1043,7 @@ let () =
          "is_unit_test" >:: test_is_unit_test ]
   |> Test.run;
   "statement"
-  >::: [ "convert" >:: test_convert;
-         "assume" >:: test_assume;
+  >::: [ "assume" >:: test_assume;
          "preamble" >:: test_preamble;
          "terminates" >:: test_terminates;
          "pp" >:: test_pp ]

@@ -372,5 +372,3 @@ val assume : ?origin:t Assert.origin -> Expression.t -> t
 val terminates : t list -> bool
 
 val extract_docstring : t list -> string option
-
-val convert : t -> t
