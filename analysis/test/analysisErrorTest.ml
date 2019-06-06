@@ -42,8 +42,8 @@ let error ?(signature = mock_signature) ?(location = Location.Instantiated.any) 
   { Error.location; kind; signature; severity = Error }
 
 
-let revealed_type access annotation =
-  Error.RevealedType { expression = Access.expression !+access; annotation }
+let revealed_type expression annotation =
+  Error.RevealedType { expression = parse_single_expression expression; annotation }
 
 
 let missing_return annotation =

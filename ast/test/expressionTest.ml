@@ -14,8 +14,6 @@ let assert_expression_equal =
   assert_equal ~printer:Expression.show ~pp_diff:(diff ~print:Expression.pp)
 
 
-let simple_access access = +Access (SimpleAccess access)
-
 let test_negate _ =
   let assert_negate ~expected ~negated =
     assert_equal
@@ -145,40 +143,61 @@ let test_pp _ =
         })
     {|lambda (x=1, y=2) ((x, "y"))|};
   assert_pp_equal
-    (simple_access
-       [ Access.Identifier "a";
-         Access.Identifier "b";
-         Access.Identifier "__getitem__";
-         Access.Call
-           (+[ { Argument.name = None;
-                 value =
-                   simple_access
-                     [ Access.Identifier "c";
-                       Access.Identifier "__getitem__";
-                       Access.Call (+[{ Argument.name = None; value = +Integer 1 }]) ]
-               } ]) ])
+    (+Call
+        { callee =
+            +Name
+               (Name.Attribute
+                  { base =
+                      +Name
+                         (Name.Attribute
+                            { base = +Name (Name.Identifier "a");
+                              attribute = "b";
+                              special = false
+                            });
+                    attribute = "__getitem__";
+                    special = true
+                  });
+          arguments =
+            [ { Call.Argument.name = None;
+                value =
+                  +Call
+                     { callee =
+                         +Name
+                            (Name.Attribute
+                               { base = +Name (Name.Identifier "c");
+                                 attribute = "__getitem__";
+                                 special = true
+                               });
+                       arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                     }
+              } ]
+        })
     "a.b[c[1]]";
   assert_pp_equal
-    (simple_access
-       [ Access.Identifier "a";
-         Access.Identifier "b";
-         Access.Identifier "__getitem__";
-         Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
-         Access.Identifier "c" ])
+    (+Name
+        (Name.Attribute
+           { base =
+               +Call
+                  { callee =
+                      +Name
+                         (Name.Attribute
+                            { base =
+                                +Name
+                                   (Name.Attribute
+                                      { base = +Name (Name.Identifier "a");
+                                        attribute = "b";
+                                        special = false
+                                      });
+                              attribute = "__getitem__";
+                              special = true
+                            });
+                    arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                  };
+             attribute = "c";
+             special = false
+           }))
     "a.b[1].c";
   assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)"
-
-
-let test_drop_prefix _ =
-  let assert_access_equal = assert_equal ~printer:Access.show ~pp_diff:(diff ~print:Access.pp) in
-  assert_access_equal (Access.drop_prefix ~prefix:!+"a.b" !+"a.b.c") !+"c";
-  assert_access_equal (Access.drop_prefix ~prefix:!+"b.c" !+"a.b.c") !+"a.b.c"
-
-
-let test_prefix _ =
-  let assert_access_equal = assert_equal ~printer:Access.show ~pp_diff:(diff ~print:Access.pp) in
-  assert_access_equal (Access.prefix !+"a.b.c") !+"a.b";
-  assert_access_equal (Access.prefix []) []
 
 
 let test_equality _ =
@@ -264,13 +283,6 @@ let test_comparison_operator_override _ =
   assert_override "a in b" None;
   assert_override "a not in b" None;
   assert_override "a is not b" None
-
-
-let test_is_assert_function _ =
-  let is_assert name = !+name |> Access.is_assert_function in
-  assert_true (is_assert "pyretestassert");
-  assert_false (is_assert "pyretestassert()");
-  assert_false (is_assert "notAssert")
 
 
 let test_exists_in_list _ =
@@ -423,11 +435,9 @@ let () =
   >::: [ "negate" >:: test_negate;
          "normalize" >:: test_normalize;
          "pp" >:: test_pp;
-         "drop_prefix" >:: test_drop_prefix;
          "equality" >:: test_equality;
          "delocalize" >:: test_delocalize;
          "comparison_operator_override" >:: test_comparison_operator_override;
-         "is_assert_function" >:: test_is_assert_function;
          "exists_in_list" >:: test_exists_in_list;
          "create_name" >:: test_create_name;
          "name_to_identifiers" >:: test_name_to_identifiers;

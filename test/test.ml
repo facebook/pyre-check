@@ -306,8 +306,6 @@ let ( !! ) name =
      (+Expression.Name (Expression.create_name ~location:Location.Reference.any name))
 
 
-let ( !+ ) name = Access.create name
-
 let ( !& ) name = Reference.create name
 
 (* Assertion helpers. *)
