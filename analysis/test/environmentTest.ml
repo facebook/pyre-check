@@ -48,9 +48,9 @@ let order_and_environment source =
   let environment = populate source in
   let module Handler = (val environment) in
   ( { TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
-      constructor = (fun _ -> None);
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      constructor = (fun _ ~protocol_assumptions:_ -> None);
+      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = TypeOrder.ProtocolAssumptions.empty
     },

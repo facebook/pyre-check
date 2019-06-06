@@ -38,9 +38,9 @@ let parse_attributes ~parse_annotation ~class_name =
 
 
 let less_or_equal
-    ?(constructor = fun _ -> None)
-    ?(attributes = fun _ -> None)
-    ?(is_protocol = fun _ -> false)
+    ?(constructor = fun _ ~protocol_assumptions:_ -> None)
+    ?(attributes = fun _ ~protocol_assumptions:_ -> None)
+    ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
     handler
   =
   less_or_equal
@@ -53,37 +53,37 @@ let less_or_equal
     }
 
 
-let is_compatible_with ?(constructor = fun _ -> None)
+let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None)
                        handler =
   is_compatible_with
     { handler;
       constructor;
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty
     }
 
 
-let join ?(constructor = fun _ -> None)
+let join ?(constructor = fun _ ~protocol_assumptions:_ -> None)
          handler =
   join
     { handler;
       constructor;
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty
     }
 
 
-let meet ?(constructor = fun _ -> None)
+let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None)
          handler =
   meet
     { handler;
       constructor;
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty
     }
@@ -1252,14 +1252,16 @@ let test_less_or_equal _ =
     let aliases = create_type_alias_table aliases in
     parse_callable ~aliases
   in
-  let is_protocol = function
+  let is_protocol annotation ~protocol_assumptions:_ =
+    match annotation with
     | Type.Primitive "MatchesProtocol"
     | Type.Primitive "DoesNotMatchProtocol"
     | Type.Parametric { name = "B"; _ } ->
         true
     | _ -> false
   in
-  let attributes = function
+  let attributes annotation ~protocol_assumptions:_ =
+    match annotation with
     | Type.Primitive "MatchesProtocol" ->
         Some
           (parse_attributes
@@ -2456,9 +2458,9 @@ let test_greatest_lower_bound _ =
 let test_instantiate_parameters _ =
   let order =
     { handler = default;
-      constructor = (fun _ -> None);
-      attributes = (fun _ -> None);
-      is_protocol = (fun _ -> false);
+      constructor = (fun _ ~protocol_assumptions:_ -> None);
+      attributes = (fun _ ~protocol_assumptions:_ -> None);
+      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       any_is_bottom = false;
       protocol_assumptions = ProtocolAssumptions.empty
     }
@@ -2825,15 +2827,15 @@ let test_solve_less_or_equal _ =
   let assert_solve
       ~left
       ~right
-      ?(is_protocol = fun _ -> false)
-      ?(attributes = fun _ -> None)
+      ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
+      ?(attributes = fun _ ~protocol_assumptions:_ -> None)
       ?constraints
       ?(leave_unbound_in_left = [])
       ?(postprocess = Type.Variable.mark_all_variables_as_bound)
       expected
     =
     let handler =
-      let constructor instantiated =
+      let constructor instantiated ~protocol_assumptions:_ =
         Resolution.class_definition resolution instantiated
         >>| Class.create
         >>| Class.constructor ~instantiated ~resolution
@@ -3075,11 +3077,13 @@ let test_solve_less_or_equal _ =
   let parse_annotation annotation =
     annotation |> parse_single_expression |> Resolution.parse_annotation resolution
   in
-  let is_protocol = function
+  let is_protocol annotation ~protocol_assumptions:_ =
+    match annotation with
     | Type.Parametric { name = "G_invariant"; _ } -> true
     | _ -> false
   in
-  let attributes = function
+  let attributes annotation ~protocol_assumptions:_ =
+    match annotation with
     | Type.Primitive "G_invariant" ->
         Some
           (parse_attributes
@@ -3189,9 +3193,9 @@ let test_is_consistent_with _ =
   let is_consistent_with =
     let order =
       { handler = default;
-        constructor = (fun _ -> None);
-        attributes = (fun _ -> None);
-        is_protocol = (fun _ -> false);
+        constructor = (fun _ ~protocol_assumptions:_ -> None);
+        attributes = (fun _ ~protocol_assumptions:_ -> None);
+        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty
       }
@@ -3379,18 +3383,19 @@ let test_instantiate_protocol_parameters _ =
     in
     let order =
       let classes, protocols = parse_attributes classes, parse_attributes protocols in
-      let attributes = function
+      let attributes annotation ~protocol_assumptions:_ =
+        match annotation with
         | Type.Primitive primitive ->
             List.Assoc.find (classes @ protocols) primitive ~equal:String.equal
         | _ -> None
       in
-      let is_protocol annotation =
+      let is_protocol annotation ~protocol_assumptions:_ =
         match Type.split annotation with
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
       { handler = Resolution.order resolution;
-        constructor = (fun _ -> None);
+        constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
         any_is_bottom = false;
@@ -3615,9 +3620,9 @@ let test_mark_escaped_as_escaped _ =
   let result =
     let handler =
       { handler = Resolution.order resolution;
-        constructor = (fun _ -> None);
-        attributes = (fun _ -> None);
-        is_protocol = (fun _ -> false);
+        constructor = (fun _ ~protocol_assumptions:_ -> None);
+        attributes = (fun _ ~protocol_assumptions:_ -> None);
+        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty
       }

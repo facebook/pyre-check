@@ -431,9 +431,10 @@ end
 
 type order = {
   handler: (module Handler);
-  constructor: Type.t -> Type.t option;
-  attributes: Type.t -> AnnotatedAttribute.t list option;
-  is_protocol: Type.t -> bool;
+  constructor: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> Type.t option;
+  attributes:
+    Type.t -> protocol_assumptions:ProtocolAssumptions.t -> AnnotatedAttribute.t list option;
+  is_protocol: Type.t -> protocol_assumptions:ProtocolAssumptions.t -> bool;
   any_is_bottom: bool;
   protocol_assumptions: ProtocolAssumptions.t
 }
@@ -664,7 +665,7 @@ module OrderImplementation = struct
        extract possible solutions to the constraints set you have built up with List.filter_map
        ~f:OrderedConstraints.solve *)
     and solve_less_or_equal_safe
-        ({ handler; constructor; any_is_bottom; is_protocol; _ } as order)
+        ({ handler; constructor; any_is_bottom; is_protocol; protocol_assumptions; _ } as order)
         ~constraints
         ~left
         ~right
@@ -724,12 +725,14 @@ module OrderImplementation = struct
           | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
               let pair = Type.Variable.UnaryPair (variable, bound) in
               OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
-          | Type.Callable _, Type.Primitive protocol when is_protocol right ->
+          | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions
+            ->
               if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then
                 [constraints]
               else
                 []
-          | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ->
+          | Type.Callable _, Type.Parametric { name; _ }
+            when is_protocol right ~protocol_assumptions ->
               instantiate_protocol_parameters order ~protocol:name ~candidate:left
               >>| Type.parametric name
               >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
@@ -769,7 +772,7 @@ module OrderImplementation = struct
                     ~target:(Type.Primitive right_name)
                 in
                 match parameters with
-                | None when is_protocol right ->
+                | None when is_protocol right ~protocol_assumptions ->
                     instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
                 | _ -> parameters
               in
@@ -838,7 +841,7 @@ module OrderImplementation = struct
               List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
           | _, Type.Callable _ when Type.is_meta left ->
               Type.single_parameter left
-              |> constructor
+              |> constructor ~protocol_assumptions
               >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
               |> Option.value ~default:[]
           | _ -> []
@@ -860,7 +863,8 @@ module OrderImplementation = struct
         ( { handler = (module Handler : Handler) as handler;
             constructor;
             any_is_bottom;
-            is_protocol
+            is_protocol;
+            protocol_assumptions
           ; _
           } as order )
         ~left
@@ -1081,7 +1085,7 @@ module OrderImplementation = struct
             List.for_all (implementation :: overloads) ~f:validate_overload
         | _, Type.Callable _ when Type.is_meta left ->
             Type.single_parameter left
-            |> constructor
+            |> constructor ~protocol_assumptions
             >>| (fun left -> less_or_equal order ~left ~right)
             |> Option.value ~default:false
         (* A[...] <= B iff A <= B. *)
@@ -1131,9 +1135,11 @@ module OrderImplementation = struct
       in
       let is_nominally_less_or_equal = nominally_less_or_equal ~left ~right in
       match right with
-      | Type.Primitive name when (not is_nominally_less_or_equal) && is_protocol right ->
+      | Type.Primitive name
+        when (not is_nominally_less_or_equal) && is_protocol right ~protocol_assumptions ->
           instantiate_protocol_parameters order ~candidate:left ~protocol:name = Some []
-      | Type.Parametric { name; _ } when (not is_nominally_less_or_equal) && is_protocol right ->
+      | Type.Parametric { name; _ }
+        when (not is_nominally_less_or_equal) && is_protocol right ~protocol_assumptions ->
           instantiate_protocol_parameters order ~candidate:left ~protocol:name
           >>| Type.parametric name
           >>| (fun left -> nominally_less_or_equal ~left ~right)
@@ -1260,7 +1266,12 @@ module OrderImplementation = struct
 
 
     and join
-        ({ handler = (module Handler : Handler) as handler; constructor; is_protocol; _ } as order)
+        ( { handler = (module Handler : Handler) as handler;
+            constructor;
+            is_protocol;
+            protocol_assumptions
+          ; _
+          } as order )
         left
         right
       =
@@ -1486,14 +1497,18 @@ module OrderImplementation = struct
               | _ -> Type.union [left; right]
             in
             Option.some_if (Type.is_meta other) other
-            >>= constructor
+            >>= constructor ~protocol_assumptions
             >>| join order (Type.Callable callable)
             |> Option.value ~default
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)
-        | _ when is_protocol right && less_or_equal order ~left ~right -> right
-        | _ when is_protocol left && less_or_equal order ~left:right ~right:left -> left
+        | _ when is_protocol right ~protocol_assumptions && less_or_equal order ~left ~right ->
+            right
+        | _
+          when is_protocol left ~protocol_assumptions
+               && less_or_equal order ~left:right ~right:left ->
+            left
         | _ -> (
           match List.hd (least_upper_bound handler left right) with
           | Some joined ->
@@ -1507,7 +1522,12 @@ module OrderImplementation = struct
 
 
     and meet
-        ({ handler = (module Handler : Handler) as handler; constructor; is_protocol; _ } as order)
+        ( { handler = (module Handler : Handler) as handler;
+            constructor;
+            is_protocol;
+            protocol_assumptions
+          ; _
+          } as order )
         left
         right
       =
@@ -1661,7 +1681,7 @@ module OrderImplementation = struct
         | Type.Callable callable, other
         | other, Type.Callable callable ->
             Option.some_if (Type.is_meta other) other
-            >>= constructor
+            >>= constructor ~protocol_assumptions
             >>| meet order (Type.Callable callable)
             |> Option.value ~default:Type.Bottom
         | ( Type.TypedDictionary { fields = left_fields; total = left_total; _ },
@@ -1689,8 +1709,12 @@ module OrderImplementation = struct
         | Type.Literal _, _
         | _, Type.Literal _ ->
             Type.Bottom
-        | _ when is_protocol right && less_or_equal order ~left ~right -> left
-        | _ when is_protocol left && less_or_equal order ~left:right ~right:left -> right
+        | _ when is_protocol right ~protocol_assumptions && less_or_equal order ~left ~right ->
+            left
+        | _
+          when is_protocol left ~protocol_assumptions
+               && less_or_equal order ~left:right ~right:left ->
+            right
         | _ -> (
           match List.hd (greatest_lower_bound handler left right) with
           | Some bound -> bound
@@ -1938,13 +1962,28 @@ module OrderImplementation = struct
           match assumed_protocol_parameters with
           | Some result -> Some result
           | None -> (
+              let protocol_generics =
+                find_generic_parameters protocol
+                >>| List.map ~f:(function
+                        | Type.Variable variable -> Some variable
+                        | _ -> None)
+                >>= Option.all
+                >>| List.map ~f:(fun variable -> Type.Variable variable)
+              in
+              let new_assumptions =
+                ProtocolAssumptions.add
+                  protocol_assumptions
+                  ~candidate
+                  ~protocol
+                  ~protocol_parameters:(Option.value protocol_generics ~default:[])
+              in
               let protocol_attributes =
                 let is_not_object_or_generic_method
                     { Node.value = { AnnotatedAttribute.parent; _ }; _ }
                   =
                   (not (Type.is_object parent)) && not (Type.is_generic_primitive parent)
                 in
-                attributes (Type.Primitive protocol)
+                attributes ~protocol_assumptions:new_assumptions (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
               let candidate_attributes, transformations =
@@ -1995,7 +2034,8 @@ module OrderImplementation = struct
                       in
                       SanitizeTransform.visit [] candidate
                     in
-                    attributes sanitized_candidate, transformations
+                    ( attributes ~protocol_assumptions:new_assumptions sanitized_candidate,
+                      transformations )
               in
               match candidate_attributes, protocol_attributes with
               | Some all_candidate_attributes, Some all_protocol_attributes ->
@@ -2015,23 +2055,8 @@ module OrderImplementation = struct
                     (* In protocol but not candidate *)
                     | `Right _ -> Some `Missing
                   in
-                  let protocol_generics =
-                    find_generic_parameters protocol
-                    >>| List.map ~f:(function
-                            | Type.Variable variable -> Some variable
-                            | _ -> None)
-                    >>= Option.all
-                    >>| List.map ~f:(fun variable -> Type.Variable variable)
-                  in
                   let order_with_new_assumption =
-                    { order with
-                      protocol_assumptions =
-                        ProtocolAssumptions.add
-                          protocol_assumptions
-                          ~candidate
-                          ~protocol
-                          ~protocol_parameters:(Option.value protocol_generics ~default:[])
-                    }
+                    { order with protocol_assumptions = new_assumptions }
                   in
                   let attribute_implements ~key:_ ~data constraints_set =
                     match data with
@@ -2227,9 +2252,9 @@ let connect_annotations_to_top ((module Handler : Handler) as handler)
     let annotation = Handler.find_unsafe (Handler.annotations ()) index in
     let order =
       { handler;
-        constructor = (fun _ -> None);
-        attributes = (fun _ -> None);
-        is_protocol = (fun _ -> false);
+        constructor = (fun _ ~protocol_assumptions:_ -> None);
+        attributes = (fun _ ~protocol_assumptions:_ -> None);
+        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         any_is_bottom = false;
         protocol_assumptions = ProtocolAssumptions.empty
       }

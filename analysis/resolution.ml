@@ -53,7 +53,8 @@ type t = {
   generics: resolution:t -> Class.t Node.t -> Type.t list;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
-  parent: Reference.t option
+  parent: Reference.t option;
+  protocol_assumptions: TypeOrder.ProtocolAssumptions.t
 }
 
 let create
@@ -87,7 +88,8 @@ let create
     undecorated_signature;
     attributes;
     is_protocol;
-    parent
+    parent;
+    protocol_assumptions = TypeOrder.ProtocolAssumptions.empty
   }
 
 
@@ -172,8 +174,6 @@ let generics ({ generics; class_definition; _ } as resolution) annotation =
       class_definition key >>| generics ~resolution)
 
 
-let attributes ({ attributes; _ } as resolution) = attributes ~resolution
-
 let is_protocol { is_protocol; _ } = is_protocol
 
 module FunctionDefinitionsCache = struct
@@ -241,13 +241,21 @@ let is_suppressed_module resolution reference =
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
-let full_order ({ order; _ } as resolution) =
-  let constructor instantiated = instantiated |> Type.primitive_name >>= constructor resolution in
+let full_order ({ order; attributes = a; protocol_assumptions; _ } as resolution) =
+  let constructor instantiated ~protocol_assumptions =
+    instantiated |> Type.primitive_name >>= constructor { resolution with protocol_assumptions }
+  in
+  let attributes t ~protocol_assumptions =
+    a ~resolution:{ resolution with protocol_assumptions } t
+  in
+  let is_protocol annotation ~protocol_assumptions =
+    is_protocol { resolution with protocol_assumptions } annotation
+  in
   { TypeOrder.handler = order;
     constructor;
-    attributes = attributes resolution;
-    is_protocol = is_protocol resolution;
-    protocol_assumptions = TypeOrder.ProtocolAssumptions.empty;
+    attributes;
+    is_protocol;
+    protocol_assumptions;
     any_is_bottom = false
   }
 
