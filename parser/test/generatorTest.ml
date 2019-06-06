@@ -142,7 +142,7 @@ let test_number _ =
 
 let test_await _ = assert_parsed_equal "await 1" [+Expression (+Await (+Integer 1))]
 
-let test_access _ =
+let test_name _ =
   assert_parsed_equal "a" [+Expression !"a"];
   assert_parsed_equal "$a" [+Expression !"$a"];
   assert_parsed_equal "_a" [+Expression !"_a"];
@@ -3427,7 +3427,7 @@ let () =
   >::: [ "lexer" >:: test_lexer;
          "number" >:: test_number;
          "await" >:: test_await;
-         "access" >:: test_access;
+         "access" >:: test_name;
          "starred" >:: test_starred;
          "compound" >:: test_compound;
          "define" >:: test_define;

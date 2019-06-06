@@ -119,7 +119,7 @@ let assert_summaries ~expected summaries =
 let test_unknown_function_analysis _ =
   let targets =
     List.map ~f:Reference.create ["fun_a"; "fun_b"; "fun_c"]
-    |> List.map ~f:(fun access -> Callable.create_function access)
+    |> List.map ~f:(fun name -> Callable.create_function name)
   in
   let step = Fixpoint.{ epoch = 1; iteration = 0 } in
   let environment = environment () in

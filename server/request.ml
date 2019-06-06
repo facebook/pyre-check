@@ -836,8 +836,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
     | TypeQuery.NormalizeType expression ->
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
-    | TypeQuery.PathOfModule module_access ->
-        Handler.module_definition module_access
+    | TypeQuery.PathOfModule module_name ->
+        Handler.module_definition module_name
         >>= Module.handle
         >>= File.Handle.to_path ~configuration
         >>| Path.absolute
@@ -845,7 +845,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> Option.value
              ~default:
                (TypeQuery.Error
-                  (Format.sprintf "No path found for module `%s`" (Reference.show module_access)))
+                  (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
     | TypeQuery.SaveServerState path ->
         let path = Path.absolute path in
         Log.info "Saving server state into `%s`" path;

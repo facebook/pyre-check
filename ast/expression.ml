@@ -398,7 +398,7 @@ let rec normalize { Node.location; value } =
 
 let create_name_from_identifiers identifiers =
   let rec create = function
-    | [] -> failwith "Access must have non-zero identifiers."
+    | [] -> failwith "Name must have non-zero identifiers."
     | [{ Node.location; value = identifier }] ->
         Name (Name.Identifier identifier) |> Node.create ~location
     | { Node.location; value = identifier } :: rest ->

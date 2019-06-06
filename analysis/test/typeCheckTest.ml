@@ -363,7 +363,7 @@ let assert_resolved sources expression expected =
 
 
 let test_module_exports _ =
-  let assert_exports_resolved access expected =
+  let assert_exports_resolved expression expected =
     [ ( "implementing.py",
         {|
         def implementing.function() -> int: ...
@@ -394,7 +394,7 @@ let test_module_exports _ =
       |} ]
     |> parse_list
     |> List.map ~f:(fun handle -> Option.value_exn (Ast.SharedMemory.Sources.get handle))
-    |> fun sources -> assert_resolved sources access expected
+    |> fun sources -> assert_resolved sources expression expected
   in
   assert_exports_resolved "implementing.constant" Type.integer;
   assert_exports_resolved "implementing.function()" Type.integer;
@@ -436,7 +436,7 @@ let test_module_exports _ =
 
 
 let test_object_callables _ =
-  let assert_resolved access annotation =
+  let assert_resolved expression annotation =
     assert_resolved
       [ parse
           ~qualifier:!&"module"
@@ -462,7 +462,7 @@ let test_object_callables _ =
             submodule: Submodule[int] = ...
           |}
         |> Preprocessing.qualify ]
-      access
+      expression
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
   assert_resolved "module.call" "module.Call[int, str]";
@@ -476,10 +476,10 @@ let test_object_callables _ =
 
 
 let test_callable_selection _ =
-  let assert_resolved source access annotation =
+  let assert_resolved source expression annotation =
     assert_resolved
       [parse source]
-      access
+      expression
       (Type.create ~aliases:(fun _ -> None) (parse_single_expression annotation))
   in
   assert_resolved "call: typing.Callable[[], int]" "call()" "int";

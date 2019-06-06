@@ -1227,7 +1227,7 @@ let messages ~concise ~signature location kind =
                 Format.asprintf "`%a`" pp_type annotation
             in
             name
-        | Module access -> Format.asprintf "Module `%a`" pp_reference access
+        | Module name -> Format.asprintf "Module `%a`" pp_reference name
       in
       let trace =
         match origin with
@@ -1237,20 +1237,23 @@ let messages ~concise ~signature location kind =
         | _ -> []
       in
       [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute] @ trace
-  | UndefinedName access when concise ->
-      [Format.asprintf "Global name `%a` is undefined." pp_reference access]
-  | UndefinedName access ->
+  | UndefinedName name when concise ->
+      [Format.asprintf "Global name `%a` is undefined." pp_reference name]
+  | UndefinedName name ->
       [ Format.asprintf
           "Global name `%a` is not defined, or there is at least one control flow path that \
            doesn't define `%a`."
           pp_reference
-          access
+          name
           pp_reference
-          access ]
-  | UndefinedImport access when concise ->
-      [Format.asprintf "Could not find `%a`." pp_reference access]
-  | UndefinedImport access ->
-      [Format.asprintf "Could not find a module corresponding to import `%a`." pp_reference access]
+          name ]
+  | UndefinedImport reference when concise ->
+      [Format.asprintf "Could not find `%a`." pp_reference reference]
+  | UndefinedImport reference ->
+      [ Format.asprintf
+          "Could not find a module corresponding to import `%a`."
+          pp_reference
+          reference ]
   | UndefinedType annotation -> [Format.asprintf "Type `%a` is not defined." pp_type annotation]
   | UnexpectedKeyword { name; _ } when concise ->
       [Format.asprintf "Unexpected keyword argument `%s`." (Identifier.sanitized name)]
@@ -2499,10 +2502,10 @@ let dequalify
           | _ -> origin
         in
         UndefinedAttribute { attribute; origin }
-    | UndefinedName access -> UndefinedName access
+    | UndefinedName name -> UndefinedName name
     | UndefinedType annotation -> UndefinedType (dequalify annotation)
-    | UndefinedImport access -> UndefinedImport access
-    | UnexpectedKeyword access -> UnexpectedKeyword access
+    | UndefinedImport reference -> UndefinedImport reference
+    | UnexpectedKeyword call -> UnexpectedKeyword call
     | MissingArgument missing_argument -> MissingArgument missing_argument
     | UnusedIgnore codes -> UnusedIgnore codes
     | Unpack unpack -> Unpack unpack

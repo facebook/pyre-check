@@ -71,8 +71,8 @@ module ConstantPropagationState (Context : Context) = struct
   let nested_defines { nested_defines; _ } = nested_defines
 
   let less_or_equal ~left:{ constants = left; _ } ~right:{ constants = right; _ } =
-    let less_or_equal (access, constant) =
-      match constant, Map.find right access with
+    let less_or_equal (reference, constant) =
+      match constant, Map.find right reference with
       | _, Some Top -> true
       | Constant left, Some (Constant right) when Expression.equal left right -> true
       | _ -> false

@@ -305,9 +305,9 @@ let handler
           modules
 
 
-    let is_module access = Hashtbl.mem modules access
+    let is_module name = Hashtbl.mem modules name
 
-    let module_definition access = Hashtbl.find modules access
+    let module_definition name = Hashtbl.find modules name
 
     let in_class_definition_keys = Hashtbl.mem class_definitions
 

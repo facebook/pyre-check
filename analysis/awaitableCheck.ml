@@ -78,8 +78,8 @@ module State (Context : Context) = struct
 
 
   let less_or_equal ~left ~right =
-    let less_or_equal_unawaited (access, state) =
-      match state, Map.find right.unawaited access with
+    let less_or_equal_unawaited (reference, state) =
+      match state, Map.find right.unawaited reference with
       | Unawaited _, Some _ -> true
       | Awaited, Some Awaited -> true
       | _ -> false
