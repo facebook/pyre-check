@@ -133,7 +133,7 @@ let test_is_constructor _ =
 
 let test_dump _ =
   let assert_dump source expected =
-    assert_equal expected (parse_single_define ~convert:true source |> Define.dump)
+    assert_equal expected (parse_single_define source |> Define.dump)
   in
   assert_dump "def foo(): pass" false;
   assert_dump "def foo(): pyre_dump()" true;
@@ -151,7 +151,7 @@ let test_dump _ =
 let test_constructor _ =
   let assert_constructor source ~exists =
     let definition =
-      match parse_single_statement ~convert:true source with
+      match parse_single_statement source with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -177,7 +177,7 @@ let test_constructor _ =
 let test_defines _ =
   let assert_define source ~method_name ~exists ~total =
     let definition =
-      match parse_single_statement ~convert:true source with
+      match parse_single_statement source with
       | { Node.value = Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
@@ -233,7 +233,6 @@ let test_is_unit_test _ =
   assert_true
     (Class.is_unit_test
        (parse_single_class
-          ~convert:true
           {|
           class unittest.TestCase(object):
             pass
@@ -241,7 +240,6 @@ let test_is_unit_test _ =
   assert_true
     (Class.is_unit_test
        (parse_single_class
-          ~convert:true
           {|
           class unittest.case.TestCase(object):
             pass
@@ -249,7 +247,6 @@ let test_is_unit_test _ =
   assert_false
     (Class.is_unit_test
        (parse_single_class
-          ~convert:true
           {|
           class a.TestCase(unittest.TestCase):
             pass
@@ -672,10 +669,8 @@ let test_update _ =
     assert_equal
       ~printer:Class.show
       ~cmp:Class.equal
-      (parse_single_class ~convert:true expected)
-      (Class.update
-         (parse_single_class ~convert:true stub)
-         ~definition:(parse_single_class ~convert:true definition))
+      (parse_single_class expected)
+      (Class.update (parse_single_class stub) ~definition:(parse_single_class definition))
   in
   assert_updated
     ~stub:{|
@@ -852,7 +847,6 @@ let test_terminates _ =
 let test_docstring _ =
   assert_equal
     ( parse_single_statement
-        ~convert:true
         {|
          def foo():
            """doc

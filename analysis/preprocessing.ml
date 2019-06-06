@@ -12,20 +12,6 @@ open Statement
 
 exception MissingWildcardImport
 
-let convert source =
-  let module Transform = Transform.Make (struct
-    include Transform.Identity
-
-    type t = unit
-
-    let transform_expression_children _ _ = false
-
-    let expression _ expression = Expression.convert expression
-  end)
-  in
-  Transform.transform () source |> Transform.source
-
-
 let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t

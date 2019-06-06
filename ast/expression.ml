@@ -659,139 +659,6 @@ let rec normalize { Node.location; value } =
   { Node.location; value = normalized }
 
 
-let rec convert { Node.location; value } =
-  (* Can't use `Visit` module due to circularity :( *)
-  let rec split expression =
-    let convert_argument { Call.Argument.name; value } =
-      { Argument.name; value = convert value }
-    in
-    let convert_generator { Comprehension.target; iterator; conditions; async } =
-      { Comprehension.target = convert target;
-        iterator = convert iterator;
-        conditions = List.map ~f:convert conditions;
-        async
-      }
-    in
-    let convert_entry { Dictionary.key; value } =
-      { Dictionary.key = convert key; value = convert value }
-    in
-    let convert_parameter { Node.value = { Parameter.value; annotation; name }; location } =
-      let value =
-        { Parameter.name; value = value >>| convert; annotation = annotation >>| convert }
-      in
-      { Node.location; value }
-    in
-    match expression with
-    | Access (SimpleAccess access) -> None, List.rev access
-    | Access (ExpressionAccess { expression; access }) ->
-        Some (convert expression |> Node.value), List.rev access
-    | Name (Name.Identifier identifier) -> None, [Access.Identifier identifier]
-    | Name
-        (Name.Attribute { base = { Node.value = Name (Name.Identifier base); _ }; attribute; _ })
-      ->
-        None, [Access.Identifier attribute; Access.Identifier base]
-    | Name (Name.Attribute { base; attribute; _ }) ->
-        let base_expression, access = split (Node.value base) in
-        base_expression, Access.Identifier attribute :: access
-    | Call { callee = { Node.value = Name (Name.Identifier callee); location }; arguments } ->
-        let arguments = { Node.location; value = List.map ~f:convert_argument arguments } in
-        None, [Call arguments; Access.Identifier callee]
-    | Call { callee; arguments } ->
-        let base_expression, access = split (Node.value callee) in
-        let arguments =
-          { Node.location = callee.Node.location; value = List.map ~f:convert_argument arguments }
-        in
-        base_expression, Call arguments :: access
-    | Await expression -> Await (convert expression) |> Option.some, []
-    | BooleanOperator { BooleanOperator.left; right; operator } ->
-        ( BooleanOperator { BooleanOperator.left = convert left; right = convert right; operator }
-          |> Option.some,
-          [] )
-    | ComparisonOperator { ComparisonOperator.left; right; operator } ->
-        ( ComparisonOperator
-            { ComparisonOperator.left = convert left; right = convert right; operator }
-          |> Option.some,
-          [] )
-    | Dictionary { Dictionary.entries; keywords } ->
-        ( Dictionary
-            { Dictionary.entries = List.map ~f:convert_entry entries;
-              keywords = List.map ~f:convert keywords
-            }
-          |> Option.some,
-          [] )
-    | DictionaryComprehension { Comprehension.element; generators } ->
-        ( DictionaryComprehension
-            { Comprehension.element = convert_entry element;
-              generators = List.map ~f:convert_generator generators
-            }
-          |> Option.some,
-          [] )
-    | Generator { Comprehension.element; generators } ->
-        ( Generator
-            { Comprehension.element = convert element;
-              generators = List.map ~f:convert_generator generators
-            }
-          |> Option.some,
-          [] )
-    | Lambda { Lambda.parameters; body } ->
-        ( Lambda
-            { Lambda.parameters = List.map ~f:convert_parameter parameters; body = convert body }
-          |> Option.some,
-          [] )
-    | List elements -> List (List.map ~f:convert elements) |> Option.some, []
-    | ListComprehension { Comprehension.element; generators } ->
-        ( ListComprehension
-            { Comprehension.element = convert element;
-              generators = List.map ~f:convert_generator generators
-            }
-          |> Option.some,
-          [] )
-    | Set elements -> Set (List.map ~f:convert elements) |> Option.some, []
-    | SetComprehension { Comprehension.element; generators } ->
-        ( SetComprehension
-            { Comprehension.element = convert element;
-              generators = List.map ~f:convert_generator generators
-            }
-          |> Option.some,
-          [] )
-    | Starred (Starred.Once expression) ->
-        Starred (Starred.Once (convert expression)) |> Option.some, []
-    | Starred (Starred.Twice expression) ->
-        Starred (Starred.Twice (convert expression)) |> Option.some, []
-    | String { StringLiteral.value; kind } ->
-        let kind =
-          match kind with
-          | StringLiteral.Format expressions ->
-              StringLiteral.Format (List.map expressions ~f:convert)
-          | _ -> kind
-        in
-        String { StringLiteral.value; kind } |> Option.some, []
-    | Ternary { Ternary.target; test; alternative } ->
-        ( Ternary
-            { Ternary.target = convert target;
-              test = convert test;
-              alternative = convert alternative
-            }
-          |> Option.some,
-          [] )
-    | Tuple elements -> Tuple (List.map ~f:convert elements) |> Option.some, []
-    | UnaryOperator { UnaryOperator.operand; operator } ->
-        UnaryOperator { UnaryOperator.operand = convert operand; operator } |> Option.some, []
-    | Yield expression -> Yield (expression >>| convert) |> Option.some, []
-    | _ -> Some expression, []
-  in
-  let value =
-    match split value with
-    | Some expression, [] -> expression
-    | Some expression, flattened ->
-        Access
-          (ExpressionAccess
-             { expression = Node.create ~location expression; access = List.rev flattened })
-    | None, flattened -> Access (SimpleAccess (List.rev flattened))
-  in
-  { Node.location; value }
-
-
 let rec convert_to_new ({ Node.location; value } as expression) =
   let rec convert expression access =
     let convert_arguments { Node.value = arguments; _ } =
@@ -1101,20 +968,29 @@ let delocalize_qualified ({ Node.value; _ } as expression) =
 
 
 let exists_in_list ?(match_prefix = false) ~expression_list target_string =
+  let flatten =
+    let rec flatten flattened expression =
+      match flattened, Node.value expression with
+      | Some flattened, Name (Name.Identifier identifier) -> Some (identifier :: flattened)
+      | Some flattened, Name (Name.Attribute { base; attribute; _ }) ->
+          flatten (Some (attribute :: flattened)) base
+      | Some flattened, Call { callee; _ } ->
+          flatten (Some ("$call_placeholder" :: flattened)) callee
+      | _ -> None
+    in
+    flatten (Some [])
+  in
   let rec matches expected actual =
-    match expected, delocalize_qualified actual with
-    | ( expected :: expected_tail,
-        { Node.location;
-          value = Access (SimpleAccess (Access.Identifier identifier :: identifiers))
-        } )
-      when String.equal identifier expected ->
-        if List.is_empty expected_tail && (match_prefix || List.is_empty identifiers) then
+    match expected, actual with
+    | expected :: expected_tail, actual :: actual_tail when String.equal expected actual ->
+        if List.is_empty expected_tail && (match_prefix || List.is_empty actual_tail) then
           true
         else
-          matches expected_tail { Node.location; value = Access (SimpleAccess identifiers) }
+          matches expected_tail actual_tail
     | _ -> false
   in
-  List.map ~f:convert expression_list
+  List.map ~f:delocalize expression_list
+  |> List.filter_map ~f:flatten
   |> List.exists ~f:(matches (String.split ~on:'.' target_string))
 
 

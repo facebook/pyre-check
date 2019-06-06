@@ -98,7 +98,6 @@ let parse_untrimmed
     ?(silent = false)
     ?(docstring = None)
     ?(ignore_lines = [])
-    ?(convert = false)
     ?(coerce_special_methods = false)
     source
   =
@@ -129,11 +128,10 @@ let parse_untrimmed
         ~hash
         (Generator.parse (Lexer.read state) buffer)
     in
-    let convert = if convert then Preprocessing.convert else Fn.id in
     let coerce_special_methods =
       if coerce_special_methods then coerce_special_methods_source else Fn.id
     in
-    source |> convert |> coerce_special_methods
+    source |> coerce_special_methods
   with
   | Pyre.ParserError _
   | Generator.Error ->
@@ -161,21 +159,13 @@ let parse
     ?(version = 3)
     ?(docstring = None)
     ?local_mode
-    ?(convert = false)
     ?(coerce_special_methods = false)
     source
   =
   Ast.SharedMemory.Handles.add_handle_hash ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed
-         ~handle
-         ~qualifier
-         ~debug
-         ~version
-         ~docstring
-         ~convert
-         ~coerce_special_methods
+    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~coerce_special_methods
   in
   match local_mode with
   | Some local_mode ->
@@ -200,48 +190,42 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement
-    ?(convert = false)
-    ?(preprocess = false)
-    ?(coerce_special_methods = false)
-    source
-  =
+let parse_single_statement ?(preprocess = false)
+                           ?(coerce_special_methods = false)
+                           source =
   let source =
     if preprocess then
-      Preprocessing.preprocess (parse ~convert ~coerce_special_methods source)
+      Preprocessing.preprocess (parse ~coerce_special_methods source)
     else
-      parse ~convert ~coerce_special_methods source
+      parse ~coerce_special_methods source
   in
   match source with
   | { Source.statements = [statement]; _ } -> statement
   | _ -> failwith "Could not parse single statement"
 
 
-let parse_last_statement ?(convert = false) source =
-  match parse ~convert source with
+let parse_last_statement source =
+  match parse source with
   | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
   | _ -> failwith "Could not parse last statement"
 
 
-let parse_single_define ?(convert = false) source =
-  match parse_single_statement ~convert source with
+let parse_single_define source =
+  match parse_single_statement source with
   | { Node.value = Statement.Define define; _ } -> define
   | _ -> failwith "Could not parse single define"
 
 
-let parse_single_class ?(convert = false) source =
-  match parse_single_statement ~convert source with
+let parse_single_class source =
+  match parse_single_statement source with
   | { Node.value = Statement.Class definition; _ } -> definition
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression
-    ?(convert = false)
-    ?(preprocess = false)
-    ?(coerce_special_methods = false)
-    source
-  =
-  match parse_single_statement ~convert ~preprocess ~coerce_special_methods source with
+let parse_single_expression ?(preprocess = false)
+                            ?(coerce_special_methods = false)
+                            source =
+  match parse_single_statement ~preprocess ~coerce_special_methods source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
 
@@ -315,10 +299,7 @@ let add_defaults_to_environment ~configuration environment_handler =
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
 
-let ( ! ) name =
-  let open Expression in
-  +Access (SimpleAccess (Access.create name))
-
+let ( ! ) name = +Expression.Name (Expression.create_name ~location:Location.Reference.any name)
 
 let ( !! ) name =
   +Statement.Expression

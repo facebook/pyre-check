@@ -166,9 +166,7 @@ let test_pp _ =
          Access.Call (+[{ Argument.name = None; value = +Integer 1 }]);
          Access.Identifier "c" ])
     "a.b[1].c";
-  assert_pp_equal
-    (parse_single_expression ~convert:true "'string {}'.format(1)")
-    "\"string {}\".format(1)"
+  assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)"
 
 
 let test_drop_prefix _ =
@@ -234,11 +232,6 @@ let test_delocalize _ =
     assert_equal
       ~printer:Expression.show
       ~cmp:Expression.equal
-      (parse_single_expression ~convert:true expected)
-      (parse_single_expression ~convert:true source |> Expression.delocalize);
-    assert_equal
-      ~printer:Expression.show
-      ~cmp:Expression.equal
       (parse_single_expression expected)
       (parse_single_expression source |> Expression.delocalize)
   in
@@ -273,42 +266,6 @@ let test_comparison_operator_override _ =
   assert_override "a is not b" None
 
 
-let test_name_and_arguments _ =
-  let assert_call ~call ?(expected_arguments = []) expected_name =
-    let { Expression.Access.callee = name; arguments } =
-      match parse_single_expression ~convert:true call with
-      | { Node.value = Access (SimpleAccess call); _ } ->
-          Option.value_exn (Expression.Access.name_and_arguments ~call)
-      | _ -> failwith "Unable to parse access"
-    in
-    assert_equal ~printer:ident expected_name name;
-    assert_equal
-      ~cmp:(List.equal ~equal:Argument.equal)
-      ~printer:(List.to_string ~f:Argument.show)
-      expected_arguments
-      arguments
-  in
-  let assert_not_call ~call =
-    match parse_single_expression ~convert:true call with
-    | { Node.value = Access (SimpleAccess call); _ } ->
-        assert_equal (Expression.Access.name_and_arguments ~call) None
-    | _ -> failwith "Unable to parse access"
-  in
-  let argument ?name value =
-    let name = name >>| Ast.Node.create_with_default_location in
-    { Argument.name; value }
-  in
-  assert_call ~call:"foo.bar()" "foo.bar";
-  assert_call ~call:"f(1)" ~expected_arguments:[argument (+Integer 1)] "f";
-  assert_not_call ~call:"foo.bar";
-  assert_not_call ~call:"foo.bar().baz";
-  assert_not_call ~call:"foo.bar().baz()";
-  assert_call
-    ~call:"foo.bar(1, x=2)"
-    ~expected_arguments:[argument (+Integer 1); argument ~name:"x" (+Integer 2)]
-    "foo.bar"
-
-
 let test_is_assert_function _ =
   let is_assert name = !+name |> Access.is_assert_function in
   assert_true (is_assert "pyretestassert");
@@ -317,15 +274,7 @@ let test_is_assert_function _ =
 
 
 let test_exists_in_list _ =
-  let make_expression target_string =
-    let make_access = function
-      | "()" -> Access.Call { Node.location = Location.Reference.any; value = [] }
-      | name -> Access.Identifier name
-    in
-    let elements = String.split ~on:'.' target_string in
-    let access = List.map elements ~f:make_access in
-    +Access (SimpleAccess access)
-  in
+  let make_expression target_string = parse_single_expression target_string in
   let assert_exists ~match_prefix expression_list target_string =
     exists_in_list ~match_prefix ~expression_list target_string |> assert_true
   in
@@ -333,9 +282,9 @@ let test_exists_in_list _ =
     exists_in_list ~match_prefix ~expression_list target_string |> assert_false
   in
   let simple = make_expression "a.b.c" in
-  let call_at_end = make_expression "a.b.c.()" in
-  let call_in_the_middle = make_expression "a.b.().c" in
-  let call_everywhere = make_expression "a.().b.().c.()" in
+  let call_at_end = make_expression "a.b.c()" in
+  let call_in_the_middle = make_expression "a.b().c" in
+  let call_everywhere = make_expression "a().b().c()" in
   assert_exists [simple] ~match_prefix:false "a.b.c";
   assert_exists [simple] ~match_prefix:true "a.b.c";
   assert_not_exists [simple] "a.b" ~match_prefix:false;
@@ -368,90 +317,6 @@ let test_exists_in_list _ =
   assert_not_exists [call_everywhere] "a.c" ~match_prefix:true;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:false;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true
-
-
-let test_convert_accesses _ =
-  let assert_convert_new_to_old new_access expected =
-    let converted = new_access |> Node.create_with_default_location |> convert in
-    assert_equal ~printer:Expression.show ~+expected converted
-  in
-  assert_convert_new_to_old (Name (Name.Identifier "a")) (Access (SimpleAccess [Identifier "a"]));
-  assert_convert_new_to_old
-    (Name
-       (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }))
-    (Access (SimpleAccess [Identifier "a"; Identifier "b"]));
-  assert_convert_new_to_old
-    (Name
-       (Name.Attribute
-          { base =
-              ~+(Name
-                   (Name.Attribute
-                      { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
-            attribute = "c";
-            special = false
-          }))
-    (Access (SimpleAccess [Identifier "a"; Identifier "b"; Identifier "c"]));
-  assert_convert_new_to_old
-    (Call
-       { callee = ~+(Name (Name.Identifier "a"));
-         arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }]
-       })
-    (Access (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]]));
-  assert_convert_new_to_old
-    (Call
-       { callee =
-           ~+(Name
-                (Name.Attribute
-                   { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
-         arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }]
-       })
-    (Access
-       (SimpleAccess
-          [Identifier "a"; Identifier "b"; Call ~+[{ Argument.name = None; value = !"x" }]]));
-  let assert_convert_old_to_new old_access expected =
-    let converted = Access old_access |> Node.create_with_default_location |> convert_to_new in
-    assert_equal ~printer:Expression.show ~+expected converted
-  in
-  assert_convert_old_to_new (SimpleAccess [Identifier "a"]) (Name (Name.Identifier "a"));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Identifier "b"])
-    (Name
-       (Name.Attribute { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Identifier "b"; Identifier "c"])
-    (Name
-       (Name.Attribute
-          { base =
-              ~+(Name
-                   (Name.Attribute
-                      { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
-            attribute = "c";
-            special = false
-          }));
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Call ~+[{ Argument.name = None; value = !"x" }]])
-    (Call
-       { callee = ~+(Name (Name.Identifier "a"));
-         arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }]
-       });
-  assert_convert_old_to_new
-    (SimpleAccess [Identifier "a"; Identifier "b"; Call ~+[{ Argument.name = None; value = !"x" }]])
-    (Call
-       { callee =
-           ~+(Name
-                (Name.Attribute
-                   { base = ~+(Name (Name.Identifier "a")); attribute = "b"; special = false }));
-         arguments = [{ Call.Argument.name = None; value = +Name (Name.Identifier "x") }]
-       });
-  assert_convert_old_to_new
-    (ExpressionAccess { expression = ~+(List []); access = [Identifier "a"; Identifier "b"] })
-    (Name
-       (Name.Attribute
-          { base =
-              ~+(Name (Name.Attribute { base = ~+(List []); attribute = "a"; special = false }));
-            attribute = "b";
-            special = false
-          }))
 
 
 let test_create_name _ =
@@ -562,10 +427,8 @@ let () =
          "equality" >:: test_equality;
          "delocalize" >:: test_delocalize;
          "comparison_operator_override" >:: test_comparison_operator_override;
-         "name_and_arguments" >:: test_name_and_arguments;
          "is_assert_function" >:: test_is_assert_function;
          "exists_in_list" >:: test_exists_in_list;
-         "convert_accesses" >:: test_convert_accesses;
          "create_name" >:: test_create_name;
          "name_to_identifiers" >:: test_name_to_identifiers;
          "name_equals" >:: test_name_equals;
