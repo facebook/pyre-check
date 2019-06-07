@@ -97,7 +97,11 @@ let from_name name =
 let from_name_exn name =
   match from_name name with
   | Some name -> name
-  | None -> failwith "Cannot convert expression with non-identifiers to reference."
+  | None ->
+      failwith
+        (Format.sprintf
+           "Cannot convert expression %s with non-identifiers to reference."
+           (Expression.Name.show Expression.pp name))
 
 
 let name ?(location = Location.Reference.any) reference =
