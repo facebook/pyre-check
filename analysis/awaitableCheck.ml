@@ -110,13 +110,16 @@ module State (Context : Context) = struct
   let widen ~previous ~next ~iteration:_ = join previous next
 
   let mark_name_as_awaited { unawaited; locals } ~name =
-    let unawaited =
-      let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
-      Map.find locals (Reference.from_name_exn name)
-      >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
-      |> Option.value ~default:unawaited
-    in
-    { unawaited; locals }
+    if Expression.is_simple_name name then
+      let unawaited =
+        let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
+        Map.find locals (Reference.from_name_exn name)
+        >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
+        |> Option.value ~default:unawaited
+      in
+      { unawaited; locals }
+    else (* Non-simple names cannot store awaitables. *)
+      { unawaited; locals }
 
 
   let rec forward_generator

@@ -341,6 +341,16 @@ let test_forward _ =
         awaitable()
     |}
     ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
+  (* Ensure that we don't crash when attempting to await a non-simple name. *)
+  assert_awaitable_errors
+    {|
+      class C:
+        def awaitable(self) -> typing.Awaitable[int]: ...
+
+      def foo():
+        await C().awaitable()
+    |}
+    [];
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
@@ -349,7 +359,16 @@ let test_forward _ =
         awaited = awaitable()
         return awaited, 1
     |}
-    ["Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited."]
+    ["Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> typing.Awaitable[int]: ...
+      class C:
+        a = awaitable()
+        def await_the_awaitable(self):
+          await self.a
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `C.a` is never awaited."]
 
 
 let test_state _ =
