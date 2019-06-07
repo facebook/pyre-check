@@ -137,9 +137,9 @@ let test_forward _ =
       async def takes_awaitable(x: typing.Awaitable[int]): ...
       def meta_awaitable():
         awaited = awaitable()
-        takes_awaitable(awaited)
+        await takes_awaitable(awaited)
     |}
-    ["Unawaited awaitable [101]: `takes_awaitable(awaited)` is never awaited."];
+    [];
   (* Comparison operators. *)
   assert_awaitable_errors
     {|

@@ -138,7 +138,7 @@ module State (Context : Context) = struct
     match value with
     | Await { Node.value = Name name; _ } when Expression.is_simple_name name ->
         mark_name_as_awaited state ~name
-    | Await _ -> state
+    | Await expression -> forward_expression ~state ~expression
     | BooleanOperator { BooleanOperator.left; right; _ } ->
         let state = forward_expression ~state ~expression:left in
         forward_expression ~state ~expression:right
