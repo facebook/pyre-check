@@ -474,7 +474,6 @@ module State (Context : Context) = struct
       check_implementation errors |> check_compatible_return_types
     in
     Map.data errors
-    |> Error.join_at_define ~resolution
     |> Error.deduplicate
     |> class_initialization_errors
     |> overload_errors
@@ -4126,17 +4125,11 @@ let run
       Handler.local_mode (Error.path error |> File.Handle.create)
       |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
     in
-    let filter errors =
+    let filter { errors; _ } =
       if configuration.debug then
         errors
       else
-        let keep_error error =
-          if Location.Instantiated.equal (Error.location error) Location.Instantiated.synthetic
-          then
-            false
-          else
-            not (Error.suppress ~mode:(mode error) ~resolution error)
-        in
+        let keep_error error = not (Error.suppress ~mode:(mode error) ~resolution error) in
         List.filter ~f:keep_error errors
     in
     let mark_as_hint error =
@@ -4150,8 +4143,8 @@ let run
       | Hint when not include_hints -> false
       | _ -> true
     in
-    List.map results ~f:(fun { errors; _ } -> errors)
-    |> List.map ~f:filter
+    List.map results ~f:filter
+    |> List.map ~f:(Error.join_at_define ~resolution)
     |> List.concat
     |> Error.join_at_source ~resolution
     |> List.map ~f:mark_as_hint

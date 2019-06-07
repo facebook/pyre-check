@@ -344,6 +344,17 @@ let test_check_attributes _ =
           return self.baz
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `baz`."];
+  (* Ensure synthetic attribute accesses don't mask errors on real ones. *)
+  assert_strict_type_errors
+    {|
+      class Foo:
+        pass
+
+      def derp(foo: Foo) -> None:
+        if not Foo.a:
+          pass
+    |}
+    ["Undefined attribute [16]: `Foo` has no attribute `a`."];
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|

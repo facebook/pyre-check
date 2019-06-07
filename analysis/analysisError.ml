@@ -2115,8 +2115,7 @@ let join_at_define ~resolution errors =
     | { kind = MissingParameterAnnotation { name; _ }; _ }
     | { kind = MissingReturnAnnotation { name; _ }; _ } ->
         add_error_to_map (Reference.show_sanitized name)
-    | { kind = UndefinedAttribute { attribute; origin = Class { annotation; _ } }; location; _ }
-      when not (Location.Instantiated.equal Location.Instantiated.synthetic location) ->
+    | { kind = UndefinedAttribute { attribute; origin = Class { annotation; _ } }; _ } ->
         (* Only error once per define on accesses or assigns to an undefined class attribute. *)
         add_error_to_map (attribute ^ Type.show annotation)
     | _ -> error :: errors
