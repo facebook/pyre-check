@@ -221,6 +221,15 @@ class TraceGraph(object):
         else:
             return []
 
+    def get_next_trace_frames(self, trace_frame: TraceFrame) -> Iterable[TraceFrame]:
+        return [
+            next_frame
+            for next_frame in self.get_trace_frames_from_caller(
+                trace_frame.callee_id, trace_frame.callee_port
+            )
+            if next_frame.kind == trace_frame.kind
+        ]
+
     def add_issue_instance_shared_text_assoc(
         self, instance: IssueInstance, shared_text: SharedText
     ) -> None:

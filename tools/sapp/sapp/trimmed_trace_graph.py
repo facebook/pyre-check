@@ -320,13 +320,11 @@ class TrimmedTraceGraph(TraceGraph):
             self._add_trace_frame(graph, trace_frame)
             self._visited_trace_frame_ids.add(trace_frame_id)
 
-            key = (trace_frame.callee_id.local_id, trace_frame.callee_port)
             trace_frame_ids.extend(
                 [
-                    trace_frame_id
-                    for trace_frame_id in graph._trace_frames_map[key]
-                    if trace_frame_id not in self._visited_trace_frame_ids
-                    and graph._trace_frames[trace_frame_id].kind == trace_frame.kind
+                    next_frame.id.local_id
+                    for next_frame in graph.get_next_trace_frames(trace_frame)
+                    if next_frame.id.local_id not in self._visited_trace_frame_ids
                 ]
             )
 
