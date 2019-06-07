@@ -587,15 +587,23 @@ let test_check_immutable_annotations _ =
     ["Incompatible return type [7]: Expected `int` but got `None`."];
   assert_type_errors
     {|
-      constant
       def foo() -> None:
         global constant
         constant = 1
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
       ^ "no type is specified." ];
+  (* Illustrate that merging an ellipses with a type results in Any (aka. no type suggestion on the
+     missing annotation error) *)
+  assert_type_errors
+    {|
+      constant = ...
+      def foo() -> None:
+        global constant
+        constant = 1
+    |}
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has no type specified."
+    ];
   assert_type_errors
     {|
       constant: typing.Any
@@ -607,15 +615,12 @@ let test_check_immutable_annotations _ =
        as type other than `Any`." ];
   assert_type_errors
     {|
-      constant
       def foo() -> int:
         global constant
         constant = 1
         return constant
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
       ^ "no type is specified." ];
   assert_type_errors
     {|
@@ -691,25 +696,14 @@ let test_check_immutable_annotations _ =
   assert_type_errors
     {|
       class Foo():
-        attribute
-      def bar() -> None:
+        attribute = ...
+      def bar() -> int:
         foo = Foo()
         foo.attribute = 1
+        return foo.attribute
     |}
-    [ "Undefined name [18]: Global name `attribute` is not defined, or there is at least one \
-       control flow path that doesn't define `attribute`.";
-      "Undefined attribute [16]: `Foo` has no attribute `attribute`." ];
-  assert_type_errors
-    {|
-      constant
-      def foo() -> None:
-        global constant
-        constant = 1
-    |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
-      ^ "no type is specified." ];
+    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified."
+    ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -727,7 +721,6 @@ let test_check_immutable_annotations _ =
     [];
   assert_type_errors
     {|
-      constant
       def foo() -> None:
         global constant
         constant = 1
@@ -735,13 +728,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = "hi"
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
       ^ "Union[int, str]` but no type is specified." ];
   assert_type_errors
     {|
-      constant
       def foo() -> None:
         global constant
         constant = 1
@@ -749,13 +739,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = None
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
       ^ "Optional[int]` but no type is specified." ];
   assert_type_errors
     {|
-      constant
       def foo() -> None:
         global constant
         constant = 1
@@ -763,13 +750,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = 1.0
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` "
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `float` "
       ^ "but no type is specified." ];
   assert_type_errors
     {|
-      constant
       def foo() -> None:
         global constant
         constant = A()
@@ -777,15 +761,12 @@ let test_check_immutable_annotations _ =
         global constant
         constant = B()
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but "
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but "
       ^ "no type is specified." ];
   assert_type_errors
     {|
-      constant
       class Foo():
-        constant
+        constant = ...
       def foo() -> None:
         foo = Foo()
         foo.constant = 1
@@ -793,9 +774,7 @@ let test_check_immutable_annotations _ =
         global constant
         constant = "hi"
     |}
-    [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
-       control flow path that doesn't define `constant`.";
-      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
+    [ "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but "
       ^ "no type is specified." ];
   assert_type_errors
