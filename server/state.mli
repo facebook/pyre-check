@@ -22,5 +22,6 @@ type t = {
   lock: Mutex.t;
   last_integrity_check: float;
   last_request_time: float;
-  connections: connections ref
+  connections: connections ref;
+  open_documents: PyrePath.Set.t
 }

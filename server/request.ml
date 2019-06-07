@@ -1175,11 +1175,17 @@ let rec process
           LookupCache.evict ~state ~configuration file;
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
-          let configuration = { configuration with include_hints = true } in
-          process_type_check_request ~state ~configuration ~files:[file]
+          let { State.open_documents; _ } = state in
+          let open_documents = Path.Set.add open_documents (File.path file) in
+          process_type_check_request
+            ~state:{ state with open_documents }
+            ~configuration
+            ~files:[file]
       | CloseDocument file ->
+          let { State.open_documents; _ } = state in
+          let open_documents = Path.Set.remove open_documents (File.path file) in
           LookupCache.evict ~state ~configuration file;
-          { state; response = None }
+          { state = { state with open_documents }; response = None }
       | SaveDocument file ->
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)

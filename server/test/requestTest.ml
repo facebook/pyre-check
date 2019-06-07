@@ -41,7 +41,24 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
           persistent_clients = Unix.File_descr.Table.create ();
           file_notifiers = []
         };
-    scheduler = Scheduler.mock ()
+    scheduler = Scheduler.mock ();
+    open_documents = Path.Set.empty
+  }
+
+
+let mock_server_configuration ~configuration =
+  let mock_path = Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"mock" in
+  let mock_socket_path : Configuration.Server.socket_path =
+    { path = mock_path; link = mock_path }
+  in
+  { Configuration.Server.socket = mock_socket_path;
+    json_socket = mock_socket_path;
+    daemonize = false;
+    saved_state_action = None;
+    lock_path = mock_path;
+    pid_path = mock_path;
+    log_path = mock_path;
+    configuration
   }
 
 
@@ -644,6 +661,36 @@ let test_create_annotation_edit _ =
          })
 
 
+let test_open_document_state _ =
+  let create_file name =
+    Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:name
+    |> File.create ~content:""
+  in
+  let mock_set name =
+    let set = Path.Set.empty in
+    let file = create_file name in
+    Path.Set.add set (File.path file)
+  in
+  let configuration, state = initialize [] in
+  let { State.connections = { contents = { State.socket; _ } }; _ } = state in
+  let assert_open_documents ~start ~request ~expected =
+    let state = { state with open_documents = start } in
+    let configuration = mock_server_configuration ~configuration in
+    let ({ state = { open_documents; _ }; _ } : Request.response) =
+      Request.process ~configuration ~state ~socket ~request
+    in
+    assert_true (Path.Set.equal open_documents expected)
+  in
+  assert_open_documents
+    ~start:Path.Set.empty
+    ~request:(Protocol.Request.OpenDocument (create_file "a.py"))
+    ~expected:(mock_set "a.py");
+  assert_open_documents
+    ~start:(mock_set "a.py")
+    ~request:(Protocol.Request.CloseDocument (create_file "a.py"))
+    ~expected:Path.Set.empty
+
+
 let () =
   "request"
   >::: [ "generate_lsp_response" >:: test_generate_lsp_response;
@@ -652,5 +699,6 @@ let () =
          "process_display_type_errors_request" >:: test_process_display_type_errors_request;
          "process_type_check_request" >:: test_process_type_check_request;
          "process_get_definition_request" >:: test_process_get_definition_request;
+         "open_document_state" >:: test_open_document_state;
          "create_annotation_edit" >:: test_create_annotation_edit ]
   |> Test.run

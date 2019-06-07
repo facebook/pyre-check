@@ -65,6 +65,8 @@ val readlink : t -> path option
 
 module Map : Map.S with type Key.t = t
 
+module Set : Set.S with type Elt.t = t
+
 module SearchPath : sig
   type t =
     | Root of path_t

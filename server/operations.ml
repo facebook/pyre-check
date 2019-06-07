@@ -101,7 +101,8 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     connections;
-    lookups = String.Table.create ()
+    lookups = String.Table.create ();
+    open_documents = Path.Set.empty
   }
 
 

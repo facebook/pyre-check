@@ -136,7 +136,7 @@ let test_server_exits_on_directory_removal context =
       | Ok _
       (* I was only able to get non-zero exits in the OUnit test environment, doing the equivalent
          calls in the command line always resulted in an exit of 0. *)
-
+      
       | Error (`Exit_non_zero 2) ->
           assert true
       | _ -> assert false)
@@ -244,7 +244,8 @@ let mock_server_state ~local_root
           persistent_clients = Unix.File_descr.Table.create ();
           file_notifiers = []
         };
-    scheduler = Scheduler.mock ()
+    scheduler = Scheduler.mock ();
+    open_documents = Path.Set.empty
   }
 
 

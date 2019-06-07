@@ -173,7 +173,8 @@ let load
       last_request_time = Unix.time ();
       last_integrity_check = Unix.time ();
       connections;
-      lookups = String.Table.create ()
+      lookups = String.Table.create ();
+      open_documents = Path.Set.empty
     }
   in
   Log.info "Reanalyzing %d files and their dependencies." (List.length changed_files);
