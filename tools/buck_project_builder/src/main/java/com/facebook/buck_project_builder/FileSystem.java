@@ -19,7 +19,7 @@ public final class FileSystem {
    * @return a mapping from absolute source path to absolute output path as specified by the sources
    *     object. Files are not guaranteed to exist.
    */
-  static Map<String, String> resolveSourceMapping(
+  public static Map<String, String> resolveSourceMapping(
       String sourceDirectory, String outputDirectory, Map<String, String> sources) {
     Map<String, String> result = new HashMap<>();
     for (Map.Entry<String, String> entry : sources.entrySet()) {

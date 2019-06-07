@@ -37,7 +37,7 @@ public class FileSystemTest {
     }
   }
 
-  private static void assertIsSymbolicLinkWithContent(Path symbolicLinkPath, String expectedContent)
+  public static void assertIsSymbolicLinkWithContent(Path symbolicLinkPath, String expectedContent)
       throws IOException {
     assertTrue(
         "after symbolic link creation, symbolicLinkPath should actually be a symbolic link",
@@ -84,5 +84,7 @@ public class FileSystemTest {
     writeContent(actualPath.toFile(), "def");
     FileSystem.addSymbolicLink(symbolicLinkPath, actualPath);
     assertIsSymbolicLinkWithContent(symbolicLinkPath, "def");
+
+    new File(root).delete();
   }
 }

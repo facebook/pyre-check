@@ -1,10 +1,12 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.FileSystem;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
@@ -27,8 +29,8 @@ final class PythonTarget {
     // exclude targets that has { labels: [ ..., "generated", ... ]}
     if (labelsField != null) {
       boolean containsGeneratedField =
-              StreamSupport.stream(labelsField.getAsJsonArray().spliterator(), false)
-                      .anyMatch(labelElement -> labelElement.getAsString().equals("generated"));
+          StreamSupport.stream(labelsField.getAsJsonArray().spliterator(), false)
+              .anyMatch(labelElement -> labelElement.getAsString().equals("generated"));
       if (containsGeneratedField) {
         return null;
       }
@@ -52,12 +54,21 @@ final class PythonTarget {
       }
     } else {
       throw new Error(
-              "The srcs field should either be map or list. "
-                      + "It's likely that buck changes it's behavior. "
-                      + "Unexpected srcs field: "
-                      + sourcesField);
+          "The srcs field should either be map or list. "
+              + "It's likely that buck changes it's behavior. "
+              + "Unexpected srcs field: "
+              + sourcesField);
     }
     return new PythonTarget(ruleName, basePath, sourcesBuilder.build());
+  }
+
+  public void build(String buckRoot, String outputDirectory) {
+    outputDirectory = Paths.get(outputDirectory, basePath).toString();
+    Map<String, String> sourceMapping =
+        FileSystem.resolveSourceMapping(basePath, outputDirectory, sources);
+    for (Map.Entry<String, String> entry : sourceMapping.entrySet()) {
+      FileSystem.addSymbolicLink(Paths.get(entry.getValue()), Paths.get(buckRoot, entry.getKey()));
+    }
   }
 
   @Override
