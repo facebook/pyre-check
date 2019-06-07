@@ -714,7 +714,7 @@ module PrettyPrinter = struct
           right
     | Call { Call.callee; arguments } -> (
       match Node.value callee with
-      | Name (Name.Attribute { base; attribute = "__getitem__"; _ }) ->
+      | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
           Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
       | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments )
     | String { StringLiteral.value; kind } -> (

@@ -147,6 +147,18 @@ let test_pp _ =
         { callee =
             +Name
                (Name.Attribute
+                  { base = +Name (Name.Identifier "a");
+                    attribute = "__getitem__";
+                    special = false
+                  });
+          arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+        })
+    "a.__getitem__(1)";
+  assert_pp_equal
+    (+Call
+        { callee =
+            +Name
+               (Name.Attribute
                   { base =
                       +Name
                          (Name.Attribute
