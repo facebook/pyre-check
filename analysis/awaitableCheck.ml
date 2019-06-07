@@ -145,7 +145,9 @@ module State (Context : Context) = struct
     | Call { Call.callee; arguments } ->
         let state = forward_expression ~state ~expression:callee in
         let forward_argument state { Call.Argument.value; _ } =
-          forward_expression ~state ~expression:value
+          match value with
+          | { Node.value = Name name; _ } -> mark_name_as_awaited state ~name
+          | _ -> forward_expression ~state ~expression:value
         in
         List.fold arguments ~init:state ~f:forward_argument
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->

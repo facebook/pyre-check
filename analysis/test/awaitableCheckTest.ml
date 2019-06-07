@@ -130,7 +130,7 @@ let test_forward _ =
         1 and (2 and (await awaited))
     |}
     [];
-  (* Calls are blocked on the access fold refactor to be complete. *)
+  (* We view parameters which flow into a call as having been awaited. *)
   assert_awaitable_errors
     {|
       async def awaitable() -> typing.Awaitable[int]: ...
@@ -139,8 +139,7 @@ let test_forward _ =
         awaited = awaitable()
         takes_awaitable(awaited)
     |}
-    [ "Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited.";
-      "Unawaited awaitable [101]: `takes_awaitable(awaited)` is never awaited." ];
+    ["Unawaited awaitable [101]: `takes_awaitable(awaited)` is never awaited."];
   (* Comparison operators. *)
   assert_awaitable_errors
     {|
