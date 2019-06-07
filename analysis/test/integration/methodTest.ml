@@ -252,7 +252,7 @@ let test_check_method_parameters _ =
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x
     |}
-    []
+    ["Undefined attribute [16]: `Foo` has no attribute `x`."]
 
 
 let test_check_abstract_methods _ =

@@ -359,7 +359,9 @@ let test_check_illegal_annotation_target _ =
           self.a: int = 1
           x.a: int = 1
     |}
-    ["Illegal annotation target [35]: Target `x.a` cannot be annotated."];
+    [ "Undefined attribute [16]: `Foo` has no attribute `a`.";
+      "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
+      "Undefined attribute [16]: `Bar` has no attribute `a`." ];
   assert_type_errors
     {|
       class Foo:
@@ -695,7 +697,8 @@ let test_check_immutable_annotations _ =
         foo.attribute = 1
     |}
     [ "Undefined name [18]: Global name `attribute` is not defined, or there is at least one \
-       control flow path that doesn't define `attribute`." ];
+       control flow path that doesn't define `attribute`.";
+      "Undefined attribute [16]: `Foo` has no attribute `attribute`." ];
   assert_type_errors
     {|
       constant
@@ -792,6 +795,7 @@ let test_check_immutable_annotations _ =
     |}
     [ "Undefined name [18]: Global name `constant` is not defined, or there is at least one \
        control flow path that doesn't define `constant`.";
+      "Undefined attribute [16]: `Foo` has no attribute `constant`.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but "
       ^ "no type is specified." ];
   assert_type_errors

@@ -140,7 +140,8 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `str`.";
+    [ "Undefined attribute [16]: `Foo` has no attribute `bar`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
   assert_type_errors
     {|
@@ -243,7 +244,8 @@ let test_check_attributes _ =
           self.bar = 'foo'
           return self.bar
     |}
-    [ "Incompatible return type [7]: Expected `int` but got `str`.";
+    [ "Undefined attribute [16]: `Foo` has no attribute `bar`.";
+      "Incompatible return type [7]: Expected `int` but got `str`.";
       "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
   assert_type_errors
     {|
@@ -344,6 +346,8 @@ let test_check_attributes _ =
           return self.baz
     |}
     [ (* TODO(T24330702): we should only report this once. *)
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
+      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
       "Undefined attribute [16]: `Foo` has no attribute `baz`.";
       "Undefined attribute [16]: `Foo` has no attribute `baz`." ];
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
@@ -450,6 +454,27 @@ let test_check_attributes _ =
           return self.attribute
     |}
     [];
+  (* Undefined attributes. *)
+  assert_strict_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.attribute = 1
+        def foo(self) -> None:
+          self.attribute = 2
+          self.undefined = 3
+    |}
+    ["Undefined attribute [16]: `Foo` has no attribute `undefined`."];
+  assert_strict_type_errors
+    {|
+      class Foo:
+        def __init__(self) -> None:
+          self.x = 1
+
+      foo = Foo()
+      foo.y = 1
+    |}
+    ["Undefined attribute [16]: `Foo` has no attribute `y`."];
   (* Class implements `__getattr__`. *)
   assert_type_errors
     {|
