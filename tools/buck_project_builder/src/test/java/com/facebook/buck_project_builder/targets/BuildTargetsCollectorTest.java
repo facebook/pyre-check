@@ -38,7 +38,7 @@ public class BuildTargetsCollectorTest {
   @Test
   public void parseToSingleExpectedBuildTarget() {
     String targetJson;
-    // Basic python_binary, python_library, python_unittest example.
+    // Basic python_binary, python_library, python_test example.
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -59,11 +59,11 @@ public class BuildTargetsCollectorTest {
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
-            + "  \"buck.type\": \"python_unittest\",\n"
+            + "  \"buck.type\": \"python_test\",\n"
             + "  \"srcs\": { \"a.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new PythonTarget("python_unittest", "PATH", ImmutableMap.of("a.py", "a.py")));
+        targetJson, new PythonTarget("python_test", "PATH", ImmutableMap.of("a.py", "a.py")));
 
     // We also need to support the case when srcs is an array.
     targetJson =
@@ -113,7 +113,7 @@ public class BuildTargetsCollectorTest {
             + "  },\n"
             + "  \"target3\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
-            + "    \"buck.type\": \"python_unittest\",\n"
+            + "    \"buck.type\": \"python_test\",\n"
             + "    \"srcs\": {\"a.py\": \"a.py\"}\n"
             + "  },\n"
             + "  \"target1_to_be_ignored\": {\n"
@@ -132,6 +132,6 @@ public class BuildTargetsCollectorTest {
             new PythonTarget("python_binary", "PATH", ImmutableMap.of("a.py", "a.py")),
             new PythonTarget(
                 "python_library", "PATH", ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
-            new PythonTarget("python_unittest", "PATH", ImmutableMap.of("a.py", "a.py"))));
+            new PythonTarget("python_test", "PATH", ImmutableMap.of("a.py", "a.py"))));
   }
 }

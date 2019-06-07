@@ -52,7 +52,7 @@ public final class BuildTargetsCollector {
     switch (type) {
       case "python_binary":
       case "python_library":
-      case "python_unittest":
+      case "python_test":
         return PythonTarget.parse(type, targetJsonObject);
       default:
         return null;
