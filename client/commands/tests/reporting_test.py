@@ -63,23 +63,6 @@ class ReportingTest(unittest.TestCase):
             self.assertFalse(error.ignore_error)
             self.assertFalse(error.external_to_global_root)
 
-        arguments.targets = []
-        configuration.ignore_all_errors = ["/test/auto/gen"]
-        handler = commands.Reporting(
-            arguments, configuration, AnalysisDirectory("/test/auto/gen")
-        )
-        json_errors["errors"][0]["path"] = "/test/auto/gen/generated.py"
-        with patch.object(json, "loads", return_value=json_errors):
-            errors = handler._get_errors(result, bypass_filtering=True)
-            self.assertEqual(len(errors), 1)
-            [error] = errors
-            self.assertTrue(error.ignore_error)
-            self.assertFalse(error.external_to_global_root)
-
-        with patch.object(json, "loads", return_value=json_errors):
-            errors = handler._get_errors(result, bypass_filtering=False)
-            self.assertEqual(len(errors), 0)
-
         arguments.original_directory = "/f/g/target"
         arguments.targets = ["//f/g:target"]
         configuration.targets = []

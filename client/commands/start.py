@@ -124,6 +124,13 @@ class Start(Reporting):
             flags.extend(["-taint-models", self._taint_models_path])
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
+        if len(self._configuration.ignore_all_errors):
+            flags.extend(
+                [
+                    "-ignore-all-errors",
+                    ";".join(sorted(self._configuration.ignore_all_errors)),
+                ]
+            )
         if self._terminal:
             flags.append("-terminal")
         if self._store_type_check_resolution:

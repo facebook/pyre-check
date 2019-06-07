@@ -473,3 +473,24 @@ class StartTest(unittest.TestCase):
                 "path1,path2,path3",
             ],
         )
+        arguments = mock_arguments()
+        configuration = mock_configuration(version_hash="hash")
+        configuration.ignore_all_errors = ["/absolute/a", "/root/b"]
+        command = commands.Start(arguments, configuration, AnalysisDirectory("."))
+        self.assertEqual(
+            command._flags(),
+            [
+                "-logging-sections",
+                "parser",
+                "-project-root",
+                ".",
+                "-ignore-all-errors",
+                "/absolute/a;/root/b",
+                "-workers",
+                "5",
+                "-expected-binary-version",
+                "hash",
+                "-search-path",
+                "path1,path2,path3",
+            ],
+        )
