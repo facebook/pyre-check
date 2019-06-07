@@ -141,8 +141,7 @@ let test_check_attributes _ =
           return self.bar
     |}
     [ "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
+      "Incompatible return type [7]: Expected `int` but got `str`." ];
   assert_type_errors
     {|
       class Foo:
@@ -245,8 +244,7 @@ let test_check_attributes _ =
           return self.bar
     |}
     [ "Undefined attribute [16]: `Foo` has no attribute `bar`.";
-      "Incompatible return type [7]: Expected `int` but got `str`.";
-      "Undefined attribute [16]: `Foo` has no attribute `bar`." ];
+      "Incompatible return type [7]: Expected `int` but got `str`." ];
   assert_type_errors
     {|
       class Foo:
@@ -345,11 +343,7 @@ let test_check_attributes _ =
             self.baz = 5
           return self.baz
     |}
-    [ (* TODO(T24330702): we should only report this once. *)
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: `Foo` has no attribute `baz`.";
-      "Undefined attribute [16]: `Foo` has no attribute `baz`." ];
+    ["Undefined attribute [16]: `Foo` has no attribute `baz`."];
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|
