@@ -244,9 +244,9 @@ module State (Context : Context) = struct
               ~key:(Reference.from_name_exn name)
               ~data:(Location.Reference.Set.singleton (Node.location value))
         }
-    | Assign { value = { Node.value = Await { Node.value = Name name; _ }; _ }; _ }
-      when Expression.is_simple_name name ->
-        mark_name_as_awaited state ~name
+    | Assign { value; _ } ->
+        (* TODO(T45559452): Need to support awaitables getting introduced in tuple assignments. *)
+        forward_expression ~state ~expression:value
     | Delete expression
     | Expression expression ->
         let state =
@@ -289,8 +289,6 @@ module State (Context : Context) = struct
     | Nonlocal _
     | Pass ->
         state
-    (* Need to implement. *)
-    | Assign _ -> state
 
 
   let backward ?key:_ _ ~statement:_ = failwith "Not implemented"

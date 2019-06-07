@@ -351,6 +351,16 @@ let test_forward _ =
         await C().awaitable()
     |}
     [];
+  assert_awaitable_errors
+    {|
+       async def awaitable() -> typing.Tuple[int, int]: ...
+       import asyncio
+       async def foo() -> int:
+         a = awaitable()
+         b = awaitable()
+         _, c = await asyncio.gather(a, b)
+    |}
+    [];
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|
