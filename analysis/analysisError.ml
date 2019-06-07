@@ -109,24 +109,6 @@ type invalid_type_kind =
   | NestedTypeVariables of Type.Variable.t
 [@@deriving compare, eq, sexp, show, hash]
 
-type missing_overload_kind =
-  | Implementation of Reference.t
-  | SingleOverload of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
-
-type incompatible_overload_kind =
-  | ReturnType of
-      { implementation_annotation: Type.t;
-        name: Reference.t;
-        overload_annotation: Type.t
-      }
-  | Unmatchable of
-      { name: Reference.t;
-        matched_location: Location.t;
-        unmatched_location: Location.t
-      }
-[@@deriving compare, eq, sexp, show, hash]
-
 type unawaited_awaitable = {
   references: Reference.t list;
   expression: Expression.t
@@ -153,7 +135,11 @@ type kind =
         define_location: Location.t
       }
   | IncompatibleVariableType of incompatible_type
-  | IncompatibleOverload of incompatible_overload_kind
+  | IncompatibleOverload of
+      { implementation_annotation: Type.t;
+        name: Reference.t;
+        overload_annotation: Type.t
+      }
   | IncompleteType of
       { target: Expression.t;
         annotation: Type.t;
@@ -453,31 +439,16 @@ let messages ~concise ~signature location kind =
           expected ]
   | IncompatibleAwaitableType actual ->
       [Format.asprintf "Expected an awaitable but got `%a`." pp_type actual]
-  | IncompatibleOverload kind -> (
-    match kind with
-    | ReturnType { implementation_annotation; name; overload_annotation } ->
-        [ Format.asprintf
-            "The return type of overloaded function `%a` (`%a`) is incompatible with the return \
-             type of the implementation (`%a`)."
-            pp_reference
-            name
-            pp_type
-            overload_annotation
-            pp_type
-            implementation_annotation ]
-    | Unmatchable { name; _ } when concise ->
-        [ Format.asprintf
-            "Signature of overloaded function `%a` will never be matched."
-            pp_reference
-            name ]
-    | Unmatchable { name; matched_location; unmatched_location } ->
-        [ Format.asprintf
-            "The overloaded function `%a` on line %d will never be matched. The signature of \
-             overload on line %d is the same or broader."
-            pp_reference
-            name
-            (Location.line unmatched_location)
-            (Location.line matched_location) ] )
+  | IncompatibleOverload { implementation_annotation; name; overload_annotation } ->
+      [ Format.asprintf
+          "The return type of overloaded function `%a` (`%a`) is incompatible with the return \
+           type of the implementation (`%a`)."
+          pp_reference
+          name
+          pp_type
+          overload_annotation
+          pp_type
+          implementation_annotation ]
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
       let trace =
@@ -1560,8 +1531,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
           | expressions -> List.map expressions ~f:Option.some
         in
         let check_consistent sofar expression =
-          sofar
-          && Resolution.is_consistent_with resolution ~left:actual ~right:expected ~expression
+          sofar && Resolution.is_consistent_with resolution actual expected ~expression
         in
         List.fold expressions ~init:true ~f:check_consistent
       in
@@ -1637,14 +1607,10 @@ let less_or_equal ~resolution left right =
       Resolution.less_or_equal resolution ~left ~right
   | IncompatibleReturnType left, IncompatibleReturnType right ->
       less_or_equal_mismatch left.mismatch right.mismatch
-  | IncompatibleOverload left, IncompatibleOverload right -> (
-    match left, right with
-    | ReturnType left, ReturnType right ->
-        Type.equal left.implementation_annotation right.implementation_annotation
-        && Type.equal left.overload_annotation right.overload_annotation
-        && Reference.equal left.name right.name
-    | Unmatchable left, Unmatchable right -> Reference.equal left.name right.name
-    | _, _ -> false )
+  | IncompatibleOverload left, IncompatibleOverload right ->
+      Type.equal left.implementation_annotation right.implementation_annotation
+      && Type.equal left.overload_annotation right.overload_annotation
+      && Reference.equal left.name right.name
   | ( IncompleteType
         { target = left_target; annotation = left; attempted_action = left_attempted_action },
       IncompleteType
@@ -2400,14 +2366,12 @@ let dequalify
     | IncompatibleAwaitableType actual -> IncompatibleAwaitableType (dequalify actual)
     | IncompatibleConstructorAnnotation annotation ->
         IncompatibleConstructorAnnotation (dequalify annotation)
-    | IncompatibleOverload (ReturnType { implementation_annotation; name; overload_annotation }) ->
+    | IncompatibleOverload { implementation_annotation; name; overload_annotation } ->
         IncompatibleOverload
-          (ReturnType
-             { implementation_annotation = dequalify implementation_annotation;
-               name;
-               overload_annotation = dequalify overload_annotation
-             })
-    | IncompatibleOverload kind -> IncompatibleOverload kind
+          { implementation_annotation = dequalify implementation_annotation;
+            name;
+            overload_annotation = dequalify overload_annotation
+          }
     | IncompleteType { target; annotation; attempted_action } ->
         IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->

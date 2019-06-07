@@ -383,8 +383,8 @@ module State = struct
                 if
                   Resolution.is_consistent_with
                     resolution
-                    ~left:annotation
-                    ~right:implementation_annotation
+                    annotation
+                    implementation_annotation
                     ~expression:None
                 then
                   sofar
@@ -394,8 +394,7 @@ module State = struct
                       ~location
                       ~kind:
                         (Error.IncompatibleOverload
-                           (ReturnType
-                              { implementation_annotation; overload_annotation = annotation; name }))
+                           { implementation_annotation; overload_annotation = annotation; name })
                       ~define:define_node
                   in
                   error :: sofar)
@@ -3201,7 +3200,7 @@ module State = struct
             in
             extract_union_members annotation
             |> List.partition_tf ~f:(fun left ->
-                   Resolution.is_consistent_with resolution ~left ~right:boundary ~expression:None)
+                   Resolution.is_consistent_with resolution left boundary ~expression:None)
           in
           let not_consistent_with_boundary =
             if List.is_empty not_consistent_with_boundary then

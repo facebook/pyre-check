@@ -608,7 +608,7 @@ let resolve_mutable_literals resolution =
   weaken_mutable_literals resolution ~comparator:(constraints_solution_exists resolution)
 
 
-let is_consistent_with resolution ~left ~right ~expression =
+let is_consistent_with resolution left right ~expression =
   let comparator ~left ~right = consistent_solution_exists resolution left right in
   let left =
     weaken_mutable_literals resolution ~expression ~resolved:left ~expected:right ~comparator

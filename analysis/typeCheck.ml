@@ -424,7 +424,7 @@ module State (Context : Context) = struct
     in
     let overload_errors errors =
       let annotation = Resolution.get_local resolution ~reference:name in
-      let check_implementation_exists errors =
+      let check_implementation errors =
         match annotation with
         | Some { annotation = Type.Callable { implementation; _ }; _ }
           when Statement.Define.is_overloaded_method define
@@ -447,12 +447,14 @@ module State (Context : Context) = struct
             ; _
             }
           when not (Statement.Define.is_overloaded_method define) ->
-            List.fold overloads ~init:errors ~f:(fun sofar { annotation; _ } ->
+            List.fold
+              ~init:errors
+              ~f:(fun sofar { annotation; _ } ->
                 if
                   Resolution.is_consistent_with
                     resolution
-                    ~left:annotation
-                    ~right:implementation_annotation
+                    annotation
+                    implementation_annotation
                     ~expression:None
                 then
                   sofar
@@ -460,58 +462,16 @@ module State (Context : Context) = struct
                   let error =
                     Error.create
                       ~location
-                      ~define:Context.define
                       ~kind:
                         (Error.IncompatibleOverload
-                           (ReturnType
-                              { implementation_annotation; overload_annotation = annotation; name }))
+                           { implementation_annotation; overload_annotation = annotation; name })
+                      ~define:Context.define
                   in
                   error :: sofar)
+              overloads
         | _ -> errors
       in
-      let check_unmatched_overload errors =
-        if not (Statement.Define.is_overloaded_method define) then
-          let overloads =
-            Resolution.function_definitions resolution name
-            >>| List.filter ~f:(fun { Node.value; _ } ->
-                    Statement.Define.is_overloaded_method value)
-            >>| List.rev
-            |> Option.value ~default:[]
-          in
-          let remaining_overloads overloads = List.tl overloads |> Option.value ~default:[] in
-          let create_unmatched_error
-              { Node.location = matched_location; _ }
-              sofar
-              { Node.location = unmatched_location; _ }
-            =
-            let error =
-              Error.create
-                ~location
-                ~define:Context.define
-                ~kind:
-                  (Error.IncompatibleOverload
-                     (Unmatchable { name; unmatched_location; matched_location }))
-            in
-            error :: sofar
-          in
-          let compare_parameters (sofar, overloads) overload =
-            let sofar =
-              List.filter overloads ~f:(fun right ->
-                  let right = Node.value right in
-                  let left = Node.value overload in
-                  AnnotatedDefine.compatible_overload_parameters ~left ~right ~resolution)
-              |> List.fold ~init:sofar ~f:(create_unmatched_error overload)
-            in
-            sofar, remaining_overloads overloads
-          in
-          List.fold overloads ~init:(errors, remaining_overloads overloads) ~f:compare_parameters
-          |> fst
-        else
-          errors
-      in
-      check_implementation_exists errors
-      |> check_compatible_return_types
-      |> check_unmatched_overload
+      check_implementation errors |> check_compatible_return_types
     in
     Map.data errors
     |> Error.join_at_define ~resolution
@@ -3360,7 +3320,7 @@ module State (Context : Context) = struct
             in
             extract_union_members annotation
             |> List.partition_tf ~f:(fun left ->
-                   Resolution.is_consistent_with resolution ~left ~right:boundary ~expression:None)
+                   Resolution.is_consistent_with resolution left boundary ~expression:None)
           in
           let not_consistent_with_boundary =
             if List.is_empty not_consistent_with_boundary then

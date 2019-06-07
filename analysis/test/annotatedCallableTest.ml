@@ -305,6 +305,6 @@ let () =
   "define"
   >::: [ "return_annotation" >:: test_return_annotation;
          "apply_decorators" >:: test_apply_decorators;
-         "create_overload" >:: test_create_overload;
+         "create_ovelroad" >:: test_create_overload;
          "create" >:: test_create ]
   |> Test.run

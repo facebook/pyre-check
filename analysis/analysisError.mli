@@ -101,24 +101,6 @@ type invalid_type_kind =
   | NestedTypeVariables of Type.Variable.t
 [@@deriving compare, eq, sexp, show, hash]
 
-type missing_overload_kind =
-  | Implementation of Reference.t
-  | SingleOverload of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
-
-type incompatible_overload_kind =
-  | ReturnType of
-      { implementation_annotation: Type.t;
-        name: Reference.t;
-        overload_annotation: Type.t
-      }
-  | Unmatchable of
-      { name: Reference.t;
-        matched_location: Location.t;
-        unmatched_location: Location.t
-      }
-[@@deriving compare, eq, sexp, show, hash]
-
 type unawaited_awaitable = {
   references: Reference.t list;
   expression: Expression.t
@@ -145,7 +127,11 @@ type kind =
         define_location: Location.t
       }
   | IncompatibleVariableType of incompatible_type
-  | IncompatibleOverload of incompatible_overload_kind
+  | IncompatibleOverload of
+      { implementation_annotation: Type.t;
+        name: Reference.t;
+        overload_annotation: Type.t
+      }
   | IncompleteType of
       { target: Expression.t;
         annotation: Type.t;

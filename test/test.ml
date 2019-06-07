@@ -1119,8 +1119,6 @@ let assert_errors
         |> Plugin.apply_to_ast
       in
       let source = parse ~qualifier ~handle ~source in
-      Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
-      Ast.SharedMemory.Sources.add (File.Handle.create handle) source;
       let environment =
         let sources =
           source

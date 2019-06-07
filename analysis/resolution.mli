@@ -121,12 +121,7 @@ val widen
   iteration:int ->
   Type.t
 
-val is_consistent_with
-  :  t ->
-  left:Type.t ->
-  right:Type.t ->
-  expression:Ast.Expression.t option ->
-  bool
+val is_consistent_with : t -> Type.t -> Type.t -> expression:Ast.Expression.t option -> bool
 
 val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 
