@@ -202,6 +202,37 @@ module State (Context : Context) = struct
         state
 
 
+  let forward_assign
+      ~resolution ~state:({ unawaited; locals } as state) ~annotation ~expression ~target
+    =
+    match target with
+    | { Node.value = Expression.Name target; _ } when Expression.is_simple_name target -> (
+      match expression with
+      | { Node.value = Expression.Name value; _ } when Expression.is_simple_name value ->
+          (* Aliasing. *)
+          let locals =
+            Map.find locals (Reference.from_name_exn value)
+            >>| (fun locations ->
+                  Map.set locals ~key:(Reference.from_name_exn target) ~data:locations)
+            |> Option.value ~default:locals
+          in
+          { unawaited; locals }
+      | _ ->
+          if Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
+          then
+            { unawaited =
+                Map.set unawaited ~key:(Node.location expression) ~data:(Unawaited expression);
+              locals =
+                Map.set
+                  locals
+                  ~key:(Reference.from_name_exn target)
+                  ~data:(Location.Reference.Set.singleton (Node.location expression))
+            }
+          else
+            state )
+    | _ -> state
+
+
   let forward ?key
               ({ unawaited; locals } as state)
               ~statement:{ Node.value; _ } =
@@ -224,29 +255,11 @@ module State (Context : Context) = struct
     in
     match value with
     | Assert { Assert.test; _ } -> forward_expression ~state ~expression:test
-    (* Aliasing. *)
-    | Assign
-        { target = { Node.value = Name target; _ }; value = { Node.value = Name value; _ }; _ }
-      when Expression.is_simple_name target && Expression.is_simple_name value ->
-        let locals =
-          Map.find locals (Reference.from_name_exn value)
-          >>| (fun locations ->
-                Map.set locals ~key:(Reference.from_name_exn target) ~data:locations)
-          |> Option.value ~default:locals
-        in
-        { unawaited; locals }
-    | Assign { target = { Node.value = Name name; _ }; value; _ }
-      when Expression.is_simple_name name && is_awaitable value ->
-        { unawaited = Map.set unawaited ~key:(Node.location value) ~data:(Unawaited value);
-          locals =
-            Map.set
-              locals
-              ~key:(Reference.from_name_exn name)
-              ~data:(Location.Reference.Set.singleton (Node.location value))
-        }
-    | Assign { value; _ } ->
+    | Assign { value; target; _ } ->
         (* TODO(T45559452): Need to support awaitables getting introduced in tuple assignments. *)
-        forward_expression ~state ~expression:value
+        let state = forward_expression ~state ~expression:value in
+        let annotation = Resolution.resolve resolution value in
+        forward_assign ~state ~resolution ~annotation ~expression:value ~target
     | Delete expression
     | Expression expression ->
         let state =
