@@ -361,6 +361,60 @@ let test_forward _ =
          _, c = await asyncio.gather(a, b)
     |}
     [];
+  assert_awaitable_errors
+    {|
+       async def awaitable() -> typing.Tuple[int, int]: ...
+       import asyncio
+       async def foo() -> int:
+         a = awaitable()
+         b = awaitable()
+         _, c = await asyncio.gather(a, b)
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+      async def foo():
+        a, b = awaitable(), awaitable()
+        await a
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `b` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+      async def foo():
+        a, b = awaitable(), awaitable()
+        await b
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `a` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+      async def foo():
+        [a, (b, [c, d], e)] = (awaitable(), (awaitable(), (awaitable(), awaitable()), awaitable()))
+    |}
+    [ "Unawaited awaitable [101]: Awaitable assigned to `a` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `b` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `c` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `d` is never awaited.";
+      "Unawaited awaitable [101]: Awaitable assigned to `e` is never awaited." ];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+      async def foo():
+        a, *b, c = awaitable(), awaitable(), awaitable(), awaitable(), awaitable()
+        await a
+    |}
+    ["Unawaited awaitable [101]: Awaitable assigned to `c` is never awaited."];
+  (* We don't validate that every expression in a starred one is awaited. *)
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+      async def foo():
+        a, *b, c = awaitable(), awaitable(), awaitable(), awaitable(), awaitable()
+        await asyncio.gather(a, c)
+    |}
+    [];
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|

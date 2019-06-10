@@ -202,11 +202,24 @@ module State (Context : Context) = struct
         state
 
 
-  let forward_assign
+  let rec forward_assign
       ~resolution ~state:({ unawaited; locals } as state) ~annotation ~expression ~target
     =
-    match target with
-    | { Node.value = Expression.Name target; _ } when Expression.is_simple_name target -> (
+    let open Expression in
+    let is_nonuniform_sequence ~minimum_length annotation =
+      match annotation with
+      | Type.Tuple (Type.Bounded (Concrete parameters))
+        when minimum_length <= List.length parameters ->
+          true
+      | _ -> false
+    in
+    let nonuniform_sequence_parameters annotation =
+      match annotation with
+      | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
+      | _ -> []
+    in
+    match Node.value target with
+    | Name target when Expression.is_simple_name target -> (
       match expression with
       | { Node.value = Expression.Name value; _ } when Expression.is_simple_name value ->
           (* Aliasing. *)
@@ -229,6 +242,55 @@ module State (Context : Context) = struct
                   ~data:(Location.Reference.Set.singleton (Node.location expression))
             }
           else
+            state )
+    | List elements
+    | Tuple elements
+      when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
+        let left, starred, right =
+          let is_starred { Node.value; _ } =
+            match value with
+            | Starred (Starred.Once _) -> true
+            | _ -> false
+          in
+          let left, tail =
+            List.split_while elements ~f:(fun element -> not (is_starred element))
+          in
+          let starred, right =
+            let starred, right = List.split_while tail ~f:is_starred in
+            let starred =
+              match starred with
+              | [{ Node.value = Starred (Starred.Once starred); _ }] -> [starred]
+              | _ -> []
+            in
+            starred, right
+          in
+          left, starred, right
+        in
+        match Node.value expression with
+        | Tuple items ->
+            let tuple_values =
+              let annotations = List.zip_exn (nonuniform_sequence_parameters annotation) items in
+              let left, tail = List.split_n annotations (List.length left) in
+              let starred, right = List.split_n tail (List.length tail - List.length right) in
+              let starred =
+                if not (List.is_empty starred) then
+                  let annotation =
+                    List.fold starred ~init:Type.Bottom ~f:(fun joined (annotation, _) ->
+                        Resolution.join resolution joined annotation)
+                    |> Type.list
+                  in
+                  [annotation, Node.create_with_default_location (List (List.map starred ~f:snd))]
+                else
+                  []
+              in
+              left @ starred @ right
+            in
+            List.zip_exn (left @ starred @ right) tuple_values
+            |> List.fold ~init:state ~f:(fun state (target, (annotation, expression)) ->
+                   forward_assign ~resolution ~state ~target ~annotation ~expression)
+        | _ ->
+            (* Right now, if we don't have a concrete tuple to break down, we won't introduce new
+               unawaited awaitables. *)
             state )
     | _ -> state
 
@@ -256,7 +318,6 @@ module State (Context : Context) = struct
     match value with
     | Assert { Assert.test; _ } -> forward_expression ~state ~expression:test
     | Assign { value; target; _ } ->
-        (* TODO(T45559452): Need to support awaitables getting introduced in tuple assignments. *)
         let state = forward_expression ~state ~expression:value in
         let annotation = Resolution.resolve resolution value in
         forward_assign ~state ~resolution ~annotation ~expression:value ~target
