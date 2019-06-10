@@ -3769,7 +3769,7 @@ module State = struct
 
 
   let backward ?key:_
-               ({ resolution; errors; _ } as state)
+               ({ resolution; _ } as state)
                ~statement =
     Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
@@ -3893,7 +3893,7 @@ module State = struct
             ~annotation:(Annotation.create return_annotation)
       | _ -> annotate_call_accesses statement resolution
     in
-    { state with errors; resolution }
+    { state with resolution }
 end
 
 module Fixpoint = Fixpoint.Make (State)
