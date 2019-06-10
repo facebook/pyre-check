@@ -7,37 +7,30 @@ open Ast
 open Statement
 module Error = AnalysisError
 
-module State : sig
+module type Context = sig
+  val configuration : Configuration.Analysis.t
+end
+
+module type Signature = sig
   type t [@@deriving eq]
 
   val create
-    :  ?configuration:Configuration.Analysis.t ->
-    ?bottom:bool ->
+    :  ?bottom:bool ->
     resolution:Resolution.t ->
     define:Statement.Define.t Node.t ->
     unit ->
     t
 
-  val initial
-    :  ?configuration:Configuration.Analysis.t ->
-    resolution:Resolution.t ->
-    Define.t Node.t ->
-    t
+  val initial : resolution:Resolution.t -> Define.t Node.t -> t
 
-  val initial_forward
-    :  configuration:Configuration.Analysis.t ->
-    resolution:Resolution.t ->
-    Statement.Define.t Node.t ->
-    t
+  val initial_forward : resolution:Resolution.t -> Statement.Define.t Node.t -> t
 
-  val initial_backward
-    :  ?configuration:Configuration.Analysis.t ->
-    Statement.Define.t Node.t ->
-    forward:t ->
-    t
+  val initial_backward : Statement.Define.t Node.t -> forward:t -> t
 
   include Fixpoint.State with type t := t
 end
+
+module State (Context : Context) : Signature
 
 val name : string
 

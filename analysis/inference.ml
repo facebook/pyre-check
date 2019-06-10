@@ -10,9 +10,31 @@ open Pyre
 open Statement
 module Error = AnalysisError
 
-module State = struct
+module type Context = sig
+  val configuration : Configuration.Analysis.t
+end
+
+module type Signature = sig
+  type t [@@deriving eq]
+
+  val create
+    :  ?bottom:bool ->
+    resolution:Resolution.t ->
+    define:Statement.Define.t Node.t ->
+    unit ->
+    t
+
+  val initial : resolution:Resolution.t -> Define.t Node.t -> t
+
+  val initial_forward : resolution:Resolution.t -> Statement.Define.t Node.t -> t
+
+  val initial_backward : Statement.Define.t Node.t -> forward:t -> t
+
+  include Fixpoint.State with type t := t
+end
+
+module State (Context : Context) = struct
   type t = {
-    configuration: Configuration.Analysis.t;
     resolution: Resolution.t;
     errors: Error.t TypeCheck.ErrorKey.Map.t;
     define: Define.t Node.t;
@@ -62,19 +84,15 @@ module State = struct
     && left.bottom = right.bottom
 
 
-  let create
-      ?(configuration = Configuration.Analysis.create ())
-      ?(bottom = false)
-      ~resolution
-      ~define
-      ()
-    =
-    { configuration; resolution; errors = TypeCheck.ErrorKey.Map.empty; define; bottom }
+  let create ?(bottom = false)
+             ~resolution
+             ~define
+             () =
+    { resolution; errors = TypeCheck.ErrorKey.Map.empty; define; bottom }
 
 
   let errors
-      { configuration;
-        resolution;
+      { resolution;
         errors;
         define =
           { Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node
@@ -273,7 +291,7 @@ module State = struct
     |> Error.deduplicate
     |> class_initialization_errors
     |> overload_errors
-    |> Error.filter ~configuration ~resolution
+    |> Error.filter ~configuration:Context.configuration ~resolution
 
 
   let coverage { resolution; _ } =
@@ -382,34 +400,25 @@ module State = struct
       }
 
 
-  let rec initial
-      ?(configuration = Configuration.Analysis.create ())
-      ~resolution
-      ({ Node.location; value = define } as define_node)
-    =
+  let rec initial ~resolution
+                  ({ Node.location; value = define } as define_node) =
     let module Context = struct
-      let configuration = configuration
+      let configuration = Context.configuration
 
       let define = { Node.location; value = define }
     end
     in
     let module TypeCheckState = TypeCheck.State (Context) in
     let initial = TypeCheckState.initial ~resolution in
-    { configuration;
-      resolution;
-      errors = TypeCheckState.error_map initial;
-      define = define_node;
-      bottom = false
-    }
+    { resolution; errors = TypeCheckState.error_map initial; define = define_node; bottom = false }
 
 
-  let forward ?key:_ ({ define; resolution; configuration; bottom; errors; _ } as state) ~statement
-    =
+  let forward ?key:_ ({ define; resolution; bottom; errors; _ } as state) ~statement =
     if bottom then
       state
     else
       let module Context = struct
-        let configuration = configuration
+        let configuration = Context.configuration
 
         let define = define
       end
@@ -428,12 +437,11 @@ module State = struct
   let return_reference = Reference.create "$return"
 
   let initial_forward
-      ~configuration
       ~resolution
       ( { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } as
       define_node )
     =
-    let state = initial ~configuration ~resolution define_node in
+    let state = initial ~resolution define_node in
     let annotations =
       let reset_parameter
           index
@@ -457,11 +465,8 @@ module State = struct
     { state with resolution = Resolution.with_annotations resolution ~annotations }
 
 
-  let initial_backward
-      ?(configuration = Configuration.Analysis.create ())
-      define
-      ~forward:{ resolution; errors; _ }
-    =
+  let initial_backward define
+                       ~forward:{ resolution; errors; _ } =
     let expected_return =
       Annotated.Callable.return_annotation ~define:(Node.value define) ~resolution
       |> Annotation.create
@@ -472,7 +477,7 @@ module State = struct
           resolution
           ~annotations:(Reference.Map.of_alist_exn [return_reference, expected_return])
       in
-      create ~configuration ~resolution ~define ()
+      create ~resolution ~define ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -564,7 +569,7 @@ module State = struct
 
 
   let backward ?key:_
-               ({ resolution; configuration; define; _ } as state)
+               ({ resolution; define; _ } as state)
                ~statement =
     Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
@@ -575,7 +580,7 @@ module State = struct
     in
     let forward_expression ~state:{ errors; resolution; _ } ~expression =
       let module Context = struct
-        let configuration = configuration
+        let configuration = Context.configuration
 
         let define = define
       end
@@ -703,32 +708,6 @@ module State = struct
     { state with resolution }
 end
 
-module Fixpoint = Fixpoint.Make (State)
-
-let rec backward_fixpoint cfg ~initial_forward ~initialize_backward =
-  let rec fixpoint cfg iteration ~initial_forward ~initialize_backward =
-    let invariants =
-      Fixpoint.forward ~cfg ~initial:initial_forward
-      |> Fixpoint.exit
-      >>| (fun forward_state -> initialize_backward ~forward:forward_state)
-      |> Option.value ~default:initial_forward
-      |> fun initial -> Fixpoint.backward ~cfg ~initial
-    in
-    let entry =
-      invariants
-      |> Fixpoint.entry
-      >>| State.update_only_existing_annotations initial_forward
-      >>| (fun post -> State.widen ~previous:initial_forward ~next:post ~iteration)
-      |> Option.value ~default:initial_forward
-    in
-    if State.less_or_equal ~left:entry ~right:initial_forward then
-      invariants
-    else
-      fixpoint cfg (iteration + 1) ~initial_forward:entry ~initialize_backward
-  in
-  fixpoint cfg 0 ~initial_forward ~initialize_backward
-
-
 module SingleSourceResult = struct
   type t = {
     errors: Error.t list;
@@ -751,6 +730,11 @@ let run ~configuration
   let check
       ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
     =
+    let module State = State (struct
+      let configuration = configuration
+    end)
+    in
+    let module Fixpoint = Fixpoint.Make (State) in
     Log.log ~section:`Check "Checking %a" Reference.pp name;
     let dump = Define.dump define in
     if dump then (
@@ -763,11 +747,33 @@ let run ~configuration
     in
     try
       let cfg = Cfg.create define in
+      let rec backward_fixpoint ~initial_forward ~initialize_backward =
+        let rec fixpoint iteration ~initial_forward ~initialize_backward =
+          let invariants =
+            Fixpoint.forward ~cfg ~initial:initial_forward
+            |> Fixpoint.exit
+            >>| (fun forward_state -> initialize_backward ~forward:forward_state)
+            |> Option.value ~default:initial_forward
+            |> fun initial -> Fixpoint.backward ~cfg ~initial
+          in
+          let entry =
+            invariants
+            |> Fixpoint.entry
+            >>| State.update_only_existing_annotations initial_forward
+            >>| (fun post -> State.widen ~previous:initial_forward ~next:post ~iteration)
+            |> Option.value ~default:initial_forward
+          in
+          if State.less_or_equal ~left:entry ~right:initial_forward then
+            invariants
+          else
+            fixpoint (iteration + 1) ~initial_forward:entry ~initialize_backward
+        in
+        fixpoint 0 ~initial_forward ~initialize_backward
+      in
       let exit =
         backward_fixpoint
-          cfg
-          ~initial_forward:(State.initial_forward ~configuration ~resolution define_node)
-          ~initialize_backward:(State.initial_backward ~configuration define_node)
+          ~initial_forward:(State.initial_forward ~resolution define_node)
+          ~initialize_backward:(State.initial_backward define_node)
         |> Fixpoint.entry
         >>| print_state "Entry"
         >>| State.check_entry
@@ -860,7 +866,8 @@ let run ~configuration
       |> Error.join_at_source ~resolution
     in
     let changed, newly_added_global_errors = add_errors_to_environment errors in
-    if changed && iterations <= State.widening_threshold then
+    let widening_threshold = 10 in
+    if changed && iterations <= widening_threshold then
       recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
     else
       errors @ added_global_errors

@@ -12,40 +12,43 @@ open Test
 
 let configuration = Configuration.Analysis.create ~infer:true ()
 
-let create
-    ?(define = Test.mock_define)
-    ?(expected_return = Type.Top)
-    ?(immutables = [])
-    annotations
-  =
-  let resolution =
-    let annotations =
-      let immutables = String.Map.of_alist_exn immutables in
-      let annotify (name, annotation) =
-        let annotation =
-          let create annotation =
-            match Map.find immutables name with
-            | Some global -> Annotation.create_immutable ~global annotation
-            | _ -> Annotation.create annotation
-          in
-          create annotation
-        in
-        !&name, annotation
-      in
-      List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
-    in
-    Resolution.with_annotations (Test.resolution ()) ~annotations
-  in
-  let define =
-    let signature =
-      { define.signature with return_annotation = Some (Type.expression expected_return) }
-    in
-    +{ define with signature }
-  in
-  State.create ~resolution ~define ()
-
-
 let assert_backward precondition statement postcondition =
+  let module State = State (struct
+    let configuration = configuration
+  end)
+  in
+  let create
+      ?(define = Test.mock_define)
+      ?(expected_return = Type.Top)
+      ?(immutables = [])
+      annotations
+    =
+    let resolution =
+      let annotations =
+        let immutables = String.Map.of_alist_exn immutables in
+        let annotify (name, annotation) =
+          let annotation =
+            let create annotation =
+              match Map.find immutables name with
+              | Some global -> Annotation.create_immutable ~global annotation
+              | _ -> Annotation.create annotation
+            in
+            create annotation
+          in
+          !&name, annotation
+        in
+        List.map annotations ~f:annotify |> Reference.Map.of_alist_exn
+      in
+      Resolution.with_annotations (Test.resolution ()) ~annotations
+    in
+    let define =
+      let signature =
+        { define.signature with return_annotation = Some (Type.expression expected_return) }
+      in
+      +{ define with signature }
+    in
+    State.create ~resolution ~define ()
+  in
   let assert_state_equal =
     assert_equal
       ~cmp:State.equal
