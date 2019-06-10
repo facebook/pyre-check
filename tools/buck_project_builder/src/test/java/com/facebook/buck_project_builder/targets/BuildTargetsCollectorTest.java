@@ -90,7 +90,7 @@ public class BuildTargetsCollectorTest {
         targetJson,
         new PythonTarget("python_binary", "PATH", "BASE_MODULE", ImmutableMap.of("a.py", "b.py")));
 
-    // Python library with label=["generated"] should be ignored.
+    // Python library with label=["generated"] should NOT be ignored.
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -98,7 +98,10 @@ public class BuildTargetsCollectorTest {
             + "  \"labels\": [\"is_fully_translated\", \"generated\"],\n"
             + "  \"srcs\": { \"generated_1.py\": \"generated_2.py\" }\n"
             + "}";
-    assertExpectedParsedBuildTarget(targetJson, null);
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget(
+            "python_library", "PATH", null, ImmutableMap.of("generated_1.py", "generated_2.py")));
 
     // Unsupported targets should be ignored
     assertExpectedParsedBuildTarget("{\"buck.type\": \"random_stuff\"}", null);
@@ -110,7 +113,7 @@ public class BuildTargetsCollectorTest {
 
   @Test
   public void parseToListOfExpectedBuildTargets() {
-    // The first 3 targets should be parsed to python rules, and the last two should be ignored.
+    // The first 4 targets should be parsed to python rules, and the last one should be ignored.
     String targetsJson =
         "{\n"
             + "  \"target1\": {\n"
@@ -130,7 +133,7 @@ public class BuildTargetsCollectorTest {
             + "    \"buck.type\": \"python_test\",\n"
             + "    \"srcs\": {\"a.py\": \"a.py\"}\n"
             + "  },\n"
-            + "  \"target1_to_be_ignored\": {\n"
+            + "  \"target4\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"python_binary\",\n"
             + "    \"labels\": [\"is_fully_translated\", \"generated\"],\n"
@@ -146,6 +149,7 @@ public class BuildTargetsCollectorTest {
             new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")),
             new PythonTarget(
                 "python_library", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
-            new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py"))));
+            new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py")),
+            new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py"))));
   }
 }

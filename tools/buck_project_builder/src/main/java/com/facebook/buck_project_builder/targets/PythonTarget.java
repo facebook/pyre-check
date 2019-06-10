@@ -31,16 +31,6 @@ public final class PythonTarget {
 
   static PythonTarget parse(String ruleName, JsonObject targetJsonObject) {
     String basePath = targetJsonObject.get("buck.base_path").getAsString();
-    JsonElement labelsField = targetJsonObject.get("labels");
-    // exclude targets that has { labels: [ ..., "generated", ... ]}
-    if (labelsField != null) {
-      boolean containsGeneratedField =
-          StreamSupport.stream(labelsField.getAsJsonArray().spliterator(), false)
-              .anyMatch(labelElement -> labelElement.getAsString().equals("generated"));
-      if (containsGeneratedField) {
-        return null;
-      }
-    }
     JsonElement sourcesField = targetJsonObject.get("srcs");
     // Ignore any target that does not have srcs
     if (sourcesField == null) {
