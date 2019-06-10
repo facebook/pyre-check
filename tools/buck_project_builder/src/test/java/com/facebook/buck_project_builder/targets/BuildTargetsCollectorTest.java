@@ -15,16 +15,16 @@ public class BuildTargetsCollectorTest {
   private static final JsonParser JSON_PARSER = new JsonParser();
 
   private static void assertExpectedParsedBuildTarget(
-      String targetJsonString, @Nullable PythonTarget expectedTarget) {
-    PythonTarget actualBuiltTarget =
+      String targetJsonString, @Nullable BuildTarget expectedTarget) {
+    BuildTarget actualBuiltTarget =
         BuildTargetsCollector.parseBuildTarget(
             JSON_PARSER.parse(targetJsonString).getAsJsonObject());
     assertEquals(expectedTarget, actualBuiltTarget);
   }
 
   private static void assertExpectedParsedBuildTargetList(
-      String targetsJsonString, ImmutableList<PythonTarget> expectedTargets) {
-    ImmutableList<PythonTarget> actualBuiltTarget =
+      String targetsJsonString, ImmutableList<BuildTarget> expectedTargets) {
+    ImmutableList<BuildTarget> actualBuiltTarget =
         BuildTargetsCollector.parseBuildTargetList(
             JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     assertEquals(expectedTargets, actualBuiltTarget);
@@ -102,6 +102,18 @@ public class BuildTargetsCollectorTest {
         targetJson,
         new PythonTarget(
             "python_library", "PATH", null, ImmutableMap.of("generated_1.py", "generated_2.py")));
+
+    // Thrift library parsing should be supported.
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py/compile\"],\n"
+            + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
 
     // Unsupported targets should be ignored
     assertExpectedParsedBuildTarget("{\"buck.type\": \"random_stuff\"}", null);

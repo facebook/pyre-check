@@ -9,9 +9,8 @@ import javax.annotation.Nullable;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.StreamSupport;
 
-public final class PythonTarget {
+public final class PythonTarget implements BuildTarget {
 
   private final String ruleName;
   private final String basePath;
@@ -29,7 +28,7 @@ public final class PythonTarget {
     this.sources = sources;
   }
 
-  static PythonTarget parse(String ruleName, JsonObject targetJsonObject) {
+  static @Nullable PythonTarget parse(String ruleName, JsonObject targetJsonObject) {
     String basePath = targetJsonObject.get("buck.base_path").getAsString();
     JsonElement sourcesField = targetJsonObject.get("srcs");
     // Ignore any target that does not have srcs
@@ -60,6 +59,7 @@ public final class PythonTarget {
     return new PythonTarget(ruleName, basePath, baseModule, sourcesBuilder.build());
   }
 
+  @Override
   public void build(String buckRoot, String outputDirectory) {
     String sourceDirectory = Paths.get(buckRoot, basePath).toString();
     String outputBasePath =

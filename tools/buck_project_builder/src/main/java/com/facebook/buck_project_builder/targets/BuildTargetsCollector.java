@@ -20,7 +20,7 @@ public final class BuildTargetsCollector {
    * @return an array that contains all of the buck targets (including the dependencies), given a
    *     list of targets we need to type check
    */
-  public static ImmutableList<PythonTarget> collectBuckTargets(ImmutableList<String> targets)
+  public static ImmutableList<BuildTarget> collectBuckTargets(ImmutableList<String> targets)
       throws BuilderException {
     return parseBuildTargetList(getBuildTargetJson(targets));
   }
@@ -30,11 +30,11 @@ public final class BuildTargetsCollector {
    *
    * @return a list of parsed json targets from target json.
    */
-  static ImmutableList<PythonTarget> parseBuildTargetList(JsonObject targetJsonMap) {
-    ImmutableList.Builder<PythonTarget> buildTargetListBuilder = ImmutableList.builder();
+  static ImmutableList<BuildTarget> parseBuildTargetList(JsonObject targetJsonMap) {
+    ImmutableList.Builder<BuildTarget> buildTargetListBuilder = ImmutableList.builder();
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
-      PythonTarget parsedTarget = parseBuildTarget(targetJsonObject);
+      BuildTarget parsedTarget = parseBuildTarget(targetJsonObject);
       if (parsedTarget != null) {
         buildTargetListBuilder.add(parsedTarget);
       }
@@ -47,13 +47,16 @@ public final class BuildTargetsCollector {
    *
    * @return the parsed build target, or null if it is a non-python related target.
    */
-  static @Nullable PythonTarget parseBuildTarget(JsonObject targetJsonObject) {
+  static @Nullable BuildTarget parseBuildTarget(JsonObject targetJsonObject) {
     String type = targetJsonObject.get("buck.type").getAsString();
     switch (type) {
       case "python_binary":
       case "python_library":
       case "python_test":
         return PythonTarget.parse(type, targetJsonObject);
+      case "genrule":
+        // Thrift library targets have genrule rule type.
+        return ThriftLibraryTarget.parse(targetJsonObject);
       default:
         return null;
     }
@@ -103,7 +106,7 @@ public final class BuildTargetsCollector {
         ImmutableList.<String>builder()
             .add("buck")
             .add("query")
-            .add("kind('python_binary|python_library|python_test', deps(%s))")
+            .add("kind('python_binary|python_library|python_test|genrule', deps(%s))")
             .addAll(targets)
             .add("--output-attributes")
             .add("buck.type")
@@ -111,6 +114,7 @@ public final class BuildTargetsCollector {
             .add("base_module")
             .add("labels")
             .add("srcs")
+            .add("cmd")
             .build();
     return CommandLine.getCommandLineOutput(command);
   }

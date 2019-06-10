@@ -2,8 +2,8 @@
 
 package com.facebook.buck_project_builder;
 
+import com.facebook.buck_project_builder.targets.BuildTarget;
 import com.facebook.buck_project_builder.targets.BuildTargetsCollector;
-import com.facebook.buck_project_builder.targets.PythonTarget;
 import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ public final class BuckProjectBuilder {
         }
       }
       String buckRoot = command.getBuckRoot();
-      ImmutableList<PythonTarget> targets =
+      ImmutableList<BuildTarget> targets =
           BuildTargetsCollector.collectBuckTargets(command.getTargets());
       // Use parallel stream to parallelize build.
       targets.parallelStream().forEach(target -> target.build(buckRoot, outputDirectory));
