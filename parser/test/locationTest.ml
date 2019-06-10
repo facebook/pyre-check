@@ -9,50 +9,6 @@ open Ast
 open Expression
 open Test
 
-let test_call_arguments_location _ =
-  let source_code = "fun(1, second = 2)" in
-  let statement = parse_single_statement source_code in
-  let arguments =
-    let print_argument { Call.Argument.name; value } =
-      Format.asprintf
-        "name=%s value=%a"
-        ( Option.map name ~f:(fun { Node.value; location } ->
-              Format.asprintf "%a/%s" String.pp value (Location.Reference.show location))
-        |> Option.value ~default:"(none)" )
-        Expression.pp
-        value
-    in
-    Visit.collect_calls statement
-    |> List.map ~f:Node.value
-    |> List.map ~f:(fun { Call.arguments; _ } -> arguments)
-    |> List.concat
-    |> List.map ~f:print_argument
-  in
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    [ "name=(none) value=1";
-      Format.sprintf "name=second/%d:1:7-1:13 value=2" (String.hash "test.py") ]
-    arguments
-
-
-let test_end_position _ =
-  let source_code = "def a():\n    return None" in
-  let statement = parse_single_statement source_code in
-  let location = statement.Node.location in
-  let expected_location =
-    { Location.path = String.hash "test.py";
-      start = { Location.line = 1; Location.column = 0 };
-      stop = { Location.line = 2; Location.column = 15 }
-    }
-  in
-  assert_equal
-    ~cmp:Location.Reference.equal
-    ~printer:(fun location -> Format.asprintf "%a" Location.Reference.pp location)
-    ~pp_diff:(diff ~print:Location.Reference.pp)
-    expected_location
-    location
-
-
 let assert_statement_location
     ~statement
     ~start:(start_line, start_column)
@@ -84,7 +40,7 @@ let test_string_locations _ =
   test_one "\"\"\"multiline\nliteral\"\"\"\n" ~start:(1, 0) ~stop:(2, 10)
 
 
-let test_multiline_strings_positions _ =
+let test_multiline_strings_locations _ =
   let test_one source_code =
     let statement = parse_last_statement source_code in
     assert_statement_location ~statement ~start:(5, 0) ~stop:(5, 4)
@@ -97,7 +53,14 @@ let test_multiline_strings_positions _ =
   test_one "\"\"\"\nAAA \\\nBBB\n\"\"\"\npass"
 
 
-let test_tuple_location _ =
+let test_define_locations _ =
+  let source_code = parse_single_statement "def a():\n    return None" in
+  assert_statement_location ~statement:source_code ~start:(1, 0) ~stop:(2, 15)
+
+
+(* Tests below need more granualer helper function for testing locations *)
+
+let test_tuple_locations _ =
   let parsed_source = parse_single_statement "(1, 2) = a" in
   match parsed_source with
   | { Node.value = Statement.Assign { target = { Node.location; _ }; _ }; _ } ->
@@ -111,11 +74,37 @@ let test_tuple_location _ =
   | _ -> assert_unreached ()
 
 
+let test_call_arguments_locations _ =
+  let source_code = "fun(1, second = 2)" in
+  let statement = parse_single_statement source_code in
+  let arguments =
+    let print_argument { Call.Argument.name; value } =
+      Format.asprintf
+        "name=%s value=%a"
+        ( Option.map name ~f:(fun { Node.value; location } ->
+              Format.asprintf "%a/%s" String.pp value (Location.Reference.show location))
+        |> Option.value ~default:"(none)" )
+        Expression.pp
+        value
+    in
+    Visit.collect_calls statement
+    |> List.map ~f:Node.value
+    |> List.map ~f:(fun { Call.arguments; _ } -> arguments)
+    |> List.concat
+    |> List.map ~f:print_argument
+  in
+  assert_equal
+    ~printer:(String.concat ~sep:", ")
+    [ "name=(none) value=1";
+      Format.sprintf "name=second/%d:1:7-1:13 value=2" (String.hash "test.py") ]
+    arguments
+
+
 let () =
   "parsing"
-  >::: [ "call_arguments_location" >:: test_call_arguments_location;
-         "tuple_location" >:: test_tuple_location;
-         "end_position" >:: test_end_position;
-         "string_locations" >:: test_string_locations;
-         "multiline_strings_positions" >:: test_multiline_strings_positions ]
+  >::: [ "string_locations" >:: test_string_locations;
+         "multiline_strings_positions" >:: test_multiline_strings_locations;
+         "define_locations" >:: test_define_locations;
+         "tuple_locations" >:: test_tuple_locations;
+         "call_arguments_locations" >:: test_call_arguments_locations ]
   |> Test.run
