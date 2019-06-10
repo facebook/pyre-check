@@ -56,7 +56,7 @@ module type Signature = sig
 
   val coverage : t -> Coverage.t
 
-  val initial : resolution:Resolution.t -> unit -> t
+  val initial : resolution:Resolution.t -> t
 
   (* Visible for testing. *)
   type resolved = {
@@ -671,8 +671,7 @@ module State (Context : Context) = struct
     resolved: Type.t
   }
 
-  let rec initial ~resolution
-                  () =
+  let rec initial ~resolution =
     let { Node.location;
           value =
             { Define.signature = { name; parent; parameters; return_annotation; decorators; _ }
@@ -3814,7 +3813,7 @@ module State (Context : Context) = struct
                     initial = { nested_resolution = resolution; nested_bottom = bottom }
                   }
             | None ->
-                let { resolution = initial_resolution; _ } = initial ~resolution () in
+                let { resolution = initial_resolution; _ } = initial ~resolution in
                 let nested_resolution =
                   let update ~key ~data initial_resolution =
                     Resolution.set_local initial_resolution ~reference:key ~annotation:data
@@ -4095,7 +4094,7 @@ let run
               { errors; coverage }
             in
             try
-              let initial = State.initial ~resolution () in
+              let initial = State.initial ~resolution in
               if Define.is_stub define then
                 { errors = State.errors initial; coverage = Coverage.create () }
               else

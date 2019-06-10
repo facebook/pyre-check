@@ -45,7 +45,7 @@ module type Signature = sig
 
   val coverage : t -> Coverage.t
 
-  val initial : resolution:Resolution.t -> unit -> t
+  val initial : resolution:Resolution.t -> t
 
   (* Visible for testing. *)
   type resolved = {

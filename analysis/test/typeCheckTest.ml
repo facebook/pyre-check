@@ -98,7 +98,7 @@ let test_initial _ =
       in
       let add_variable resolution variable = Resolution.add_type_variable resolution ~variable in
       let resolution = List.fold variables ~init:resolution ~f:add_variable in
-      State.initial ~resolution ()
+      State.initial ~resolution
     in
     assert_state_equal state initial;
     assert_equal

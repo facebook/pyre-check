@@ -394,7 +394,7 @@ module State = struct
     end
     in
     let module TypeCheckState = TypeCheck.State (Context) in
-    let initial = TypeCheckState.initial ~resolution () in
+    let initial = TypeCheckState.initial ~resolution in
     { configuration;
       resolution;
       errors = TypeCheckState.error_map initial;
