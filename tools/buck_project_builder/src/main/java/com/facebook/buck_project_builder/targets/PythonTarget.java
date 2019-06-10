@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
-final class PythonTarget {
+public final class PythonTarget {
 
   private final String ruleName;
   private final String basePath;
