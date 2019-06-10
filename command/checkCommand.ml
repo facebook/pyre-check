@@ -30,7 +30,6 @@ let run_check
     project_root
     search_path
     _taint_models_directory
-    typeshed
     excludes
     extensions
     local_root
@@ -69,7 +68,6 @@ let run_check
       ?ignore_all_errors
       ~number_of_workers
       ~search_path:(List.map search_path ~f:Path.SearchPath.create)
-      ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)

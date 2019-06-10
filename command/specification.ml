@@ -71,7 +71,6 @@ let base_command_line_arguments =
          "-taint-models-directory"
          (optional string)
          ~doc:"DIRECTORY containing models for the taint analysis."
-    +> flag "-typeshed" (optional string) ~doc:"DIRECTORY Typeshed root directory."
     +> flag
          "-exclude"
          (listed string)

@@ -40,10 +40,6 @@ let test_equal _ =
        (Configuration.Analysis.create ~search_path:[Path.SearchPath.Root root] ()));
   assert_true
     (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~typeshed:(Path.create_relative ~root ~relative:"a") ())
-       (Configuration.Analysis.create ~typeshed:(Path.create_relative ~root ~relative:"b") ()));
-  assert_true
-    (Configuration.Analysis.equal
        (Configuration.Analysis.create ~verbose:true ())
        (Configuration.Analysis.create ~verbose:false ()));
   assert_false
@@ -65,8 +61,7 @@ let test_equal _ =
 
 
 let test_search_path _ =
-  let assert_search_path ?typeshed ?(search_path = []) ~local_root expected =
-    let typeshed = typeshed >>| Path.create_absolute ~follow_symbolic_links:false in
+  let assert_search_path ?(search_path = []) ~local_root expected =
     let search_path =
       List.map search_path ~f:(Path.create_absolute ~follow_symbolic_links:false)
       |> List.map ~f:(fun root -> Path.SearchPath.Root root)
@@ -74,25 +69,21 @@ let test_search_path _ =
     let local_root = Path.create_absolute ~follow_symbolic_links:false local_root in
     let search_path =
       Configuration.Analysis.search_path
-        (Configuration.Analysis.create ?typeshed ~search_path ~local_root ())
+        (Configuration.Analysis.create ~search_path ~local_root ())
       |> List.map ~f:Path.SearchPath.show
     in
     assert_equal ~printer:(List.to_string ~f:ident) expected search_path
   in
   assert_search_path ~local_root:"/a" ["/a"];
-  assert_search_path
-    ~typeshed:"/typeshed"
-    ~local_root:"/a"
-    ["/typeshed/stdlib"; "/typeshed/third_party"; "/a"];
+  assert_search_path ~local_root:"/a" ["/a"];
   assert_search_path
     ~search_path:["/other"; "/another"]
     ~local_root:"/a"
     ["/other"; "/another"; "/a"];
   assert_search_path
-    ~typeshed:"/typeshed"
     ~search_path:["/other"; "/another"]
     ~local_root:"/a"
-    ["/other"; "/another"; "/typeshed/stdlib"; "/typeshed/third_party"; "/a"];
+    ["/other"; "/another"; "/a"];
   ()
 
 

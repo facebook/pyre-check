@@ -22,7 +22,6 @@ module Analysis : sig
     project_root: Path.t;
     search_path: Path.SearchPath.t list;
     taint_models_directory: Path.t option;
-    typeshed: Path.t option;
     verbose: bool;
     expected_version: string option;
     strict: bool;
@@ -54,7 +53,6 @@ module Analysis : sig
     ?project_root:Path.t ->
     ?search_path:Path.SearchPath.t list ->
     ?taint_models_directory:Path.t ->
-    ?typeshed:Path.t ->
     ?verbose:bool ->
     ?expected_version:string ->
     ?strict:bool ->

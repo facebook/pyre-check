@@ -491,7 +491,6 @@ let run_start_command
     project_root
     search_path
     taint_models_directory
-    typeshed
     excludes
     extensions
     local_root
@@ -532,7 +531,6 @@ let run_start_command
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map search_path ~f:Path.SearchPath.create)
       ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
-      ?typeshed:(typeshed >>| Path.create_absolute)
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)

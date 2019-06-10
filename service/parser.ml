@@ -208,42 +208,8 @@ let log_parse_errors ~syntax_error ~system_error ~description =
       () )
 
 
-let find_stubs
-    ({ Configuration.Analysis.local_root; typeshed; search_path; excludes; _ } as configuration)
-  =
+let find_stubs ({ Configuration.Analysis.local_root; search_path; excludes; _ } as configuration) =
   let stubs =
-    let typeshed_directories =
-      let list_subdirectories typeshed_path =
-        let root = Path.absolute typeshed_path in
-        let is_directory path =
-          match Core.Sys.is_directory path with
-          | `Yes -> true
-          | _ -> false
-        in
-        if is_directory root then (
-          match Core.Sys.ls_dir root with
-          | entries ->
-              let select_directories sofar path =
-                if
-                  is_directory (root ^/ path)
-                  && (not (String.equal path "tests"))
-                  && not (String.is_prefix path ~prefix:".")
-                then
-                  Path.SearchPath.Root (Path.create_relative ~root:typeshed_path ~relative:path)
-                  :: sofar
-                else
-                  sofar
-              in
-              List.fold ~init:[] ~f:select_directories entries
-          | exception Sys_error _ ->
-              Log.error "Could not list typeshed directory: `%s`" root;
-              [] )
-        else (
-          Log.info "Not a typeshed directory: `%s`" root;
-          [] )
-      in
-      Option.value_map ~default:[] ~f:(fun path -> list_subdirectories path) typeshed
-    in
     let stubs root =
       let search_root = Path.SearchPath.to_path root in
       Log.info "Finding type stubs in `%a`..." Path.pp search_root;
@@ -258,10 +224,10 @@ let find_stubs
         String.is_suffix path ~suffix:".pyi"
         && not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0))
       in
-      (* The typeshed resource cache and the search path might live under the local root. If that's
-         the case, we should make sure that we don't add these stubs when analyzing the local root,
-         as that would clobber the order. The method of solving this is by only adding handles that
-         correspond directly to the root. *)
+      (* The search path might live under the local root. If that's the case, we should make sure
+         that we don't add these stubs when analyzing the local root, as that would clobber the
+         order. The method of solving this is by only adding handles that correspond directly to
+         the root. *)
       let keep path =
         let reconstructed =
           File.create path
@@ -273,7 +239,7 @@ let find_stubs
       in
       Path.list ~file_filter ~directory_filter ~root:search_root () |> List.filter ~f:keep
     in
-    List.map ~f:stubs (Path.SearchPath.Root local_root :: (search_path @ typeshed_directories))
+    List.map ~f:stubs (Path.SearchPath.Root local_root :: search_path)
   in
   let modules =
     let modules root =

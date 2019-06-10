@@ -23,7 +23,6 @@ module Analysis = struct
     project_root: Path.t;
     search_path: Path.SearchPath.t list;
     taint_models_directory: Path.t option;
-    typeshed: Path.t option;
     verbose: bool;
     expected_version: string option;
     strict: bool;
@@ -65,7 +64,6 @@ module Analysis = struct
       ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
       ?taint_models_directory
-      ?typeshed
       ?(verbose = false)
       ?expected_version
       ?(strict = false)
@@ -97,7 +95,6 @@ module Analysis = struct
       project_root;
       search_path;
       taint_models_directory;
-      typeshed;
       verbose;
       expected_version;
       strict;
@@ -126,18 +123,10 @@ module Analysis = struct
 
   let pyre_root { local_root; _ } = Path.append local_root ~element:".pyre"
 
-  let search_path { local_root; search_path; typeshed; _ } =
-    (* Have an ordering of search_path > typeshed > local_root with the parser. search_path precedes
+  let search_path { local_root; search_path; _ } =
+    (* Have an ordering of search_path > local_root with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    let roots =
-      match typeshed with
-      | None -> [Path.SearchPath.Root local_root]
-      | Some typeshed ->
-          [ Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"stdlib");
-            Path.SearchPath.Root (Path.create_relative ~root:typeshed ~relative:"third_party");
-            Path.SearchPath.Root local_root ]
-    in
-    search_path @ roots
+    search_path @ [Path.SearchPath.Root local_root]
 end
 
 module Server = struct

@@ -50,8 +50,8 @@ let analyze_sources
       match path with
       | Some path ->
           (* Only analyze handles which live directly under the source root - in case we have a
-             search path or typeshed under the source root, we don't want to analyze them since
-             they're not part of a user's project. *)
+             search path under the source root, we don't want to analyze them since they're not
+             part of a user's project. *)
           Path.equal
             path
             (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle))
@@ -120,8 +120,8 @@ let analyze_sources
 
 let check
     ~scheduler:original_scheduler
-    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; typeshed; _ }
-                   as configuration )
+    ~configuration:( { Configuration.Analysis.project_root; local_root; search_path; _ } as
+                   configuration )
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
@@ -131,7 +131,6 @@ let check
   check_directory_exists local_root;
   check_directory_exists project_root;
   search_path |> List.map ~f:Path.SearchPath.to_path |> List.iter ~f:check_directory_exists;
-  Option.iter typeshed ~f:check_directory_exists;
   let scheduler =
     let bucket_multiplier =
       try

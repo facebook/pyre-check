@@ -44,9 +44,9 @@ let test_handle _ =
         ~search_path:
           [ Path.SearchPath.Root (path "/root/stubs");
             Path.SearchPath.Root (path "/external");
-            Path.SearchPath.Subdirectory { root = path "/virtualenv"; subdirectory = "importMe" }
-          ]
-        ~typeshed:(path "/typeshed")
+            Path.SearchPath.Subdirectory { root = path "/virtualenv"; subdirectory = "importMe" };
+            Path.SearchPath.Root (path "/typeshed/stdlib/3");
+            Path.SearchPath.Root (path "/typeshed/third_party/3") ]
         ()
     in
     match handle with
@@ -57,8 +57,8 @@ let test_handle _ =
               [ "/root/stubs";
                 "/external";
                 "/virtualenv/importMe";
-                "/typeshed/stdlib";
-                "/typeshed/third_party";
+                "/typeshed/stdlib/3";
+                "/typeshed/third_party/3";
                 "/root" ]
               ~f:ident
           in
@@ -75,8 +75,8 @@ let test_handle _ =
   assert_handle ~absolute:"/root/a.py" ~handle:(Some "a.py");
   assert_handle ~absolute:"/external/b/c.py" ~handle:(Some "b/c.py");
   assert_handle ~absolute:"/root/stubs/stub.pyi" ~handle:(Some "stub.pyi");
-  assert_handle ~absolute:"/typeshed/stdlib/3/builtins.pyi" ~handle:(Some "3/builtins.pyi");
-  assert_handle ~absolute:"/typeshed/third_party/3/django.pyi" ~handle:(Some "3/django.pyi");
+  assert_handle ~absolute:"/typeshed/stdlib/3/builtins.pyi" ~handle:(Some "builtins.pyi");
+  assert_handle ~absolute:"/typeshed/third_party/3/django.pyi" ~handle:(Some "django.pyi");
   assert_handle ~absolute:"/typeshed/3/whoops.pyi" ~handle:None;
   assert_handle ~absolute:"/untracked/a.py" ~handle:None;
   assert_handle ~absolute:"/virtualenv/importMe/a.py" ~handle:(Some "importMe/a.py")

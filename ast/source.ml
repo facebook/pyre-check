@@ -321,23 +321,7 @@ let qualifier ~handle =
     |> List.rev_map ~f:(String.split ~on:'.')
     |> List.concat
   in
-  let stripped_qualifier =
-    if File.Handle.is_stub handle then (* Drop version from qualifier. *)
-      let is_digit qualifier =
-        try
-          qualifier |> Int.of_string |> ignore;
-          true
-        with
-        | _ -> false
-      in
-      match qualifier with
-      | minor :: major :: tail when is_digit minor && is_digit major -> tail
-      | major :: tail when is_digit (String.prefix major 1) -> tail
-      | qualifier -> qualifier
-    else
-      qualifier
-  in
-  Reference.create_from_list stripped_qualifier
+  Reference.create_from_list qualifier
 
 
 let expand_relative_import ?handle ~qualifier ~from =

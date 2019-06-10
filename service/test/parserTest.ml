@@ -70,8 +70,8 @@ let test_parse_stubs_modules_list _ =
   in
   assert_stub_matches_name ~handle:0 "a.f";
   assert_stub_matches_name ~handle:1 "dir.b.f";
-  assert_stub_matches_name ~handle:2 "c.f";
-  assert_stub_matches_name ~handle:3 "d.f";
+  assert_stub_matches_name ~handle:2 "2.c.f";
+  assert_stub_matches_name ~handle:3 "2and3.d.f";
   assert_module_matches_name ~handle:4 "moda.f";
   assert_module_matches_name ~handle:5 "dir.modb.f";
   assert_module_matches_name ~handle:6 "2.modc.f";
@@ -215,32 +215,6 @@ let test_external_sources context =
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
     ["b.py"]
-    handles
-
-
-let test_parse_typeshed context =
-  let typeshed_root = Path.create_absolute (bracket_tmpdir context) in
-  let handles =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
-      |> File.write
-    in
-    write_file typeshed_root "stdlib/a.pyi";
-    write_file typeshed_root "stdlib/b.pyi";
-    write_file typeshed_root "third_party/c.pyi";
-    write_file typeshed_root "tests/d.pyi";
-    write_file typeshed_root ".skipme/e.pyi";
-    Service.Parser.find_stubs_and_sources
-      (Configuration.Analysis.create ~local_root ~typeshed:typeshed_root ())
-    |> fst
-    |> List.filter_map ~f:Path.relative
-    |> List.sort ~compare:String.compare
-  in
-  assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.pyi"]
     handles
 
 
@@ -437,7 +411,6 @@ let () =
          "find_stubs" >:: test_find_stubs;
          "find_sources" >:: test_find_sources;
          "external_sources" >:: test_external_sources;
-         "parse_typeshed" >:: test_parse_typeshed;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
          "register_modules" >:: test_register_modules ]
