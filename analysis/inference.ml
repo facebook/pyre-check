@@ -16,6 +16,12 @@ module type Context = sig
   val define : Define.t Node.t
 end
 
+module TypeCheckContext (Context : TypeCheck.Context) = struct
+  let configuration = Context.configuration
+
+  let define = Context.define
+end
+
 module type Signature = sig
   type t [@@deriving eq]
 
@@ -394,12 +400,7 @@ module State (Context : Context) = struct
 
 
   let rec initial ~resolution =
-    let module Context = struct
-      let configuration = Context.configuration
-
-      let define = Context.define
-    end
-    in
+    let module Context = TypeCheckContext (Context) in
     let module TypeCheckState = TypeCheck.State (Context) in
     let initial = TypeCheckState.initial ~resolution in
     { resolution; errors = TypeCheckState.error_map initial; bottom = false }
@@ -409,12 +410,7 @@ module State (Context : Context) = struct
     if bottom then
       state
     else
-      let module Context = struct
-        let configuration = Context.configuration
-
-        let define = Context.define
-      end
-      in
+      let module Context = TypeCheckContext (Context) in
       let module TypeCheckState = TypeCheck.State (Context) in
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
       let final_type_check_state =
@@ -564,12 +560,7 @@ module State (Context : Context) = struct
       | _ -> Some annotation
     in
     let forward_expression ~state:{ errors; resolution; _ } ~expression =
-      let module Context = struct
-        let configuration = Context.configuration
-
-        let define = Context.define
-      end
-      in
+      let module Context = TypeCheckContext (Context) in
       let module TypeCheckState = TypeCheck.State (Context) in
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
       let { TypeCheckState.resolved; _ } =
