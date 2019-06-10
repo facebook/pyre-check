@@ -39,14 +39,6 @@ module State : sig
   include Fixpoint.State with type t := t
 end
 
-module Fixpoint : Fixpoint.Fixpoint with type state := State.t
-
-val backward_fixpoint
-  :  Cfg.t ->
-  initial_forward:State.t ->
-  initialize_backward:(forward:State.t -> State.t) ->
-  Fixpoint.t
-
 val name : string
 
 val run

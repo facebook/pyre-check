@@ -126,90 +126,6 @@ let fixpoint_parse source =
   parse source |> Preprocessing.preprocess |> Preprocessing.defines |> List.hd_exn
 
 
-let test_fixpoint_backward _ =
-  let assert_fixpoint_backward source expected =
-    let ({ Node.value = define; _ } as define_node) = fixpoint_parse source in
-    assert_equal
-      ~cmp:(Fixpoint.equal ~f:State.equal)
-      ~printer:(fun fixpoint -> Format.asprintf "%a" Fixpoint.pp fixpoint)
-      ~pp_diff:(diff ~print:Fixpoint.pp)
-      expected
-      (Inference.backward_fixpoint
-         (Cfg.create define)
-         ~initial_forward:(State.initial ~resolution:(Test.resolution ()) define_node)
-         ~initialize_backward:(Inference.State.initial_backward define_node))
-  in
-  assert_fixpoint_backward
-    {| def foo(): pass |}
-    (Int.Table.of_alist_exn
-       [ 0, create ["$return", Type.Top];
-         (* Entry *)
-         1, create ["$return", Type.Top];
-         (* Normal *)
-         2, create ["$return", Type.Top];
-         (* Error *)
-         3, create ["$return", Type.Top];
-         (* Exit *)
-         5, create ["$return", Type.Top]
-         (* Pass *)
-        ]);
-  assert_fixpoint_backward
-    {| def foo() -> int: pass |}
-    (Int.Table.of_alist_exn
-       [ 0, create ~expected_return:Type.integer ["$return", Type.integer];
-         1, create ~expected_return:Type.integer ["$return", Type.integer];
-         2, create ~expected_return:Type.integer ["$return", Type.integer];
-         3, create ~expected_return:Type.integer ["$return", Type.integer];
-         5, create ~expected_return:Type.integer ["$return", Type.integer] ]);
-  assert_fixpoint_backward
-    {|
-     def foo() -> int:
-       x = y
-       return x
-    |}
-    (Int.Table.of_alist_exn
-       [ ( 0,
-           create
-             ~expected_return:Type.integer
-             ["$return", Type.integer; "$local_foo$x", Type.integer; "y", Type.integer] );
-         1, create ~expected_return:Type.integer ["$return", Type.integer];
-         2, create ~expected_return:Type.integer ["$return", Type.integer];
-         3, create ~expected_return:Type.integer ["$return", Type.integer];
-         5, create ~expected_return:Type.integer ["$return", Type.integer] ]);
-  assert_fixpoint_backward
-    {|
-     def foo() -> int:
-       z = y
-       x = y
-       return y
-    |}
-    (Int.Table.of_alist_exn
-       [ 0, create ~expected_return:Type.integer ["$return", Type.integer; "y", Type.integer];
-         1, create ~expected_return:Type.integer ["$return", Type.integer];
-         2, create ~expected_return:Type.integer ["$return", Type.integer];
-         3, create ~expected_return:Type.integer ["$return", Type.integer];
-         5, create ~expected_return:Type.integer ["$return", Type.integer] ]);
-  assert_fixpoint_backward
-    {|
-       def foo() -> int:
-         x = y
-         x = z
-         return x
-      |}
-    (Int.Table.of_alist_exn
-       [ ( 0,
-           create
-             ~expected_return:Type.integer
-             [ "$return", Type.integer;
-               "$local_foo$x", Type.integer;
-               "y", Type.integer;
-               "z", Type.integer ] );
-         1, create ~expected_return:Type.integer ["$return", Type.integer];
-         2, create ~expected_return:Type.integer ["$return", Type.integer];
-         3, create ~expected_return:Type.integer ["$return", Type.integer];
-         5, create ~expected_return:Type.integer ["$return", Type.integer] ])
-
-
 let test_check_missing_parameter _ =
   let assert_inference_errors = assert_errors ~debug:false ~infer:true ~check:Inference.run in
   assert_inference_errors
@@ -582,7 +498,6 @@ let test_recursive_infer _ =
 let () =
   "inference"
   >::: [ "backward" >:: test_backward;
-         "fixpoint_backward" >:: test_fixpoint_backward;
          "missing_parameter" >:: test_check_missing_parameter;
          "infer" >:: test_infer;
          "infer_backward" >:: test_infer_backward;
