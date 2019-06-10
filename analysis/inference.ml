@@ -12,23 +12,20 @@ module Error = AnalysisError
 
 module type Context = sig
   val configuration : Configuration.Analysis.t
+
+  val define : Define.t Node.t
 end
 
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create
-    :  ?bottom:bool ->
-    resolution:Resolution.t ->
-    define:Statement.Define.t Node.t ->
-    unit ->
-    t
+  val create : ?bottom:bool -> resolution:Resolution.t -> unit -> t
 
-  val initial : resolution:Resolution.t -> Define.t Node.t -> t
+  val initial : resolution:Resolution.t -> t
 
-  val initial_forward : resolution:Resolution.t -> Statement.Define.t Node.t -> t
+  val initial_forward : resolution:Resolution.t -> t
 
-  val initial_backward : Statement.Define.t Node.t -> forward:t -> t
+  val initial_backward : forward:t -> t
 
   include Fixpoint.State with type t := t
 end
@@ -37,13 +34,14 @@ module State (Context : Context) = struct
   type t = {
     resolution: Resolution.t;
     errors: Error.t TypeCheck.ErrorKey.Map.t;
-    define: Define.t Node.t;
     bottom: bool
   }
 
   let pp format
-         { resolution; errors; define = { Node.value = define; _ }; bottom; _ } =
-    let expected = Annotated.Callable.return_annotation ~define ~resolution in
+         { resolution; errors; bottom; _ } =
+    let expected =
+      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
+    in
     let annotations =
       let annotation_to_string (name, annotation) =
         Format.asprintf "    %a -> %a" Reference.pp name Annotation.pp annotation
@@ -86,19 +84,14 @@ module State (Context : Context) = struct
 
   let create ?(bottom = false)
              ~resolution
-             ~define
              () =
-    { resolution; errors = TypeCheck.ErrorKey.Map.empty; define; bottom }
+    { resolution; errors = TypeCheck.ErrorKey.Map.empty; bottom }
 
 
-  let errors
-      { resolution;
-        errors;
-        define =
-          { Node.value = { Define.signature = { name; _ }; _ } as define; location } as define_node
-      ; _
-      }
-    =
+  let errors { resolution; errors; _ } =
+    let { Node.value = { Define.signature = { name; _ }; _ } as define; location } =
+      Context.define
+    in
     let class_initialization_errors errors =
       (* Ensure non-nullable typed attributes are instantiated in init. This must happen after
          typechecking is finished to access the annotations added to resolution. *)
@@ -134,7 +127,7 @@ module State (Context : Context) = struct
                                      due_to_invariance = false
                                    }
                                })
-                          ~define:define_node
+                          ~define:Context.define
                       in
                       error :: errors
                 | name ->
@@ -172,7 +165,7 @@ module State (Context : Context) = struct
                                        ~covariant:false)
                               }
                         in
-                        Error.create ~location ~kind ~define:define_node :: errors
+                        Error.create ~location ~kind ~define:Context.define :: errors
                     in
                     Class.overrides ~resolution ~name definition
                     >>| check_override
@@ -195,7 +188,7 @@ module State (Context : Context) = struct
                 Error.create
                   ~location
                   ~kind:(Error.InvalidInheritance (Class (Expression.show value)))
-                  ~define:define_node
+                  ~define:Context.define
               in
               error :: errors
             else
@@ -246,7 +239,7 @@ module State (Context : Context) = struct
               Error.create
                 ~location
                 ~kind:(Error.MissingOverloadImplementation name)
-                ~define:define_node
+                ~define:Context.define
             in
             error :: errors
         | _ -> errors
@@ -278,7 +271,7 @@ module State (Context : Context) = struct
                       ~kind:
                         (Error.IncompatibleOverload
                            { implementation_annotation; overload_annotation = annotation; name })
-                      ~define:define_node
+                      ~define:Context.define
                   in
                   error :: sofar)
               overloads
@@ -400,27 +393,26 @@ module State (Context : Context) = struct
       }
 
 
-  let rec initial ~resolution
-                  ({ Node.location; value = define } as define_node) =
+  let rec initial ~resolution =
     let module Context = struct
       let configuration = Context.configuration
 
-      let define = { Node.location; value = define }
+      let define = Context.define
     end
     in
     let module TypeCheckState = TypeCheck.State (Context) in
     let initial = TypeCheckState.initial ~resolution in
-    { resolution; errors = TypeCheckState.error_map initial; define = define_node; bottom = false }
+    { resolution; errors = TypeCheckState.error_map initial; bottom = false }
 
 
-  let forward ?key:_ ({ define; resolution; bottom; errors; _ } as state) ~statement =
+  let forward ?key:_ ({ resolution; bottom; errors; _ } as state) ~statement =
     if bottom then
       state
     else
       let module Context = struct
         let configuration = Context.configuration
 
-        let define = define
+        let define = Context.define
       end
       in
       let module TypeCheckState = TypeCheck.State (Context) in
@@ -436,12 +428,11 @@ module State (Context : Context) = struct
 
   let return_reference = Reference.create "$return"
 
-  let initial_forward
-      ~resolution
-      ( { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } as
-      define_node )
-    =
-    let state = initial ~resolution define_node in
+  let initial_forward ~resolution =
+    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
+      Context.define
+    in
+    let state = initial ~resolution in
     let annotations =
       let reset_parameter
           index
@@ -465,10 +456,9 @@ module State (Context : Context) = struct
     { state with resolution = Resolution.with_annotations resolution ~annotations }
 
 
-  let initial_backward define
-                       ~forward:{ resolution; errors; _ } =
+  let initial_backward ~forward:{ resolution; errors; _ } =
     let expected_return =
-      Annotated.Callable.return_annotation ~define:(Node.value define) ~resolution
+      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
       |> Annotation.create
     in
     let backward_initial_state =
@@ -477,7 +467,7 @@ module State (Context : Context) = struct
           resolution
           ~annotations:(Reference.Map.of_alist_exn [return_reference, expected_return])
       in
-      create ~resolution ~define ()
+      create ~resolution ()
     in
     let combine_annotations left right =
       let add_annotation ~key ~data map =
@@ -522,15 +512,10 @@ module State (Context : Context) = struct
     { initial_state with resolution }
 
 
-  let check_entry
-      ( { resolution;
-          define =
-            { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ } as
-            define_node;
-          errors
-        ; _
-        } as state )
-    =
+  let check_entry ({ resolution; errors; _ } as state) =
+    let { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ } =
+      Context.define
+    in
     let add_parameter_errors errors
                              { Node.value = { Parameter.name; annotation; _ }; location } =
       let add_missing_parameter_error ~given_annotation =
@@ -548,7 +533,7 @@ module State (Context : Context) = struct
                          evidence_locations = [];
                          thrown_at_source = true
                        })
-                  ~define:define_node
+                  ~define:Context.define
               in
               TypeCheck.ErrorKey.add_error ~errors error)
         |> Option.value ~default:errors
@@ -569,7 +554,7 @@ module State (Context : Context) = struct
 
 
   let backward ?key:_
-               ({ resolution; define; _ } as state)
+               ({ resolution; _ } as state)
                ~statement =
     Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
@@ -582,7 +567,7 @@ module State (Context : Context) = struct
       let module Context = struct
         let configuration = Context.configuration
 
-        let define = define
+        let define = Context.define
       end
       in
       let module TypeCheckState = TypeCheck.State (Context) in
@@ -732,6 +717,8 @@ let run ~configuration
     =
     let module State = State (struct
       let configuration = configuration
+
+      let define = Node.create ~location define
     end)
     in
     let module Fixpoint = Fixpoint.Make (State) in
@@ -772,8 +759,8 @@ let run ~configuration
       in
       let exit =
         backward_fixpoint
-          ~initial_forward:(State.initial_forward ~resolution define_node)
-          ~initialize_backward:(State.initial_backward define_node)
+          ~initial_forward:(State.initial_forward ~resolution)
+          ~initialize_backward:State.initial_backward
         |> Fixpoint.entry
         >>| print_state "Entry"
         >>| State.check_entry

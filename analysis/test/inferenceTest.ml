@@ -15,14 +15,11 @@ let configuration = Configuration.Analysis.create ~infer:true ()
 let assert_backward precondition statement postcondition =
   let module State = State (struct
     let configuration = configuration
+
+    let define = +mock_define
   end)
   in
-  let create
-      ?(define = Test.mock_define)
-      ?(expected_return = Type.Top)
-      ?(immutables = [])
-      annotations
-    =
+  let create ?(immutables = []) annotations =
     let resolution =
       let annotations =
         let immutables = String.Map.of_alist_exn immutables in
@@ -41,13 +38,7 @@ let assert_backward precondition statement postcondition =
       in
       Resolution.with_annotations (Test.resolution ()) ~annotations
     in
-    let define =
-      let signature =
-        { define.signature with return_annotation = Some (Type.expression expected_return) }
-      in
-      +{ define with signature }
-    in
-    State.create ~resolution ~define ()
+    State.create ~resolution ()
   in
   let assert_state_equal =
     assert_equal

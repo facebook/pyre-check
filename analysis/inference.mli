@@ -9,23 +9,20 @@ module Error = AnalysisError
 
 module type Context = sig
   val configuration : Configuration.Analysis.t
+
+  val define : Define.t Node.t
 end
 
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create
-    :  ?bottom:bool ->
-    resolution:Resolution.t ->
-    define:Statement.Define.t Node.t ->
-    unit ->
-    t
+  val create : ?bottom:bool -> resolution:Resolution.t -> unit -> t
 
-  val initial : resolution:Resolution.t -> Define.t Node.t -> t
+  val initial : resolution:Resolution.t -> t
 
-  val initial_forward : resolution:Resolution.t -> Statement.Define.t Node.t -> t
+  val initial_forward : resolution:Resolution.t -> t
 
-  val initial_backward : Statement.Define.t Node.t -> forward:t -> t
+  val initial_backward : forward:t -> t
 
   include Fixpoint.State with type t := t
 end
