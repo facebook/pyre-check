@@ -278,7 +278,7 @@ let test_parse_source _ =
 let test_parse_sources context =
   let scheduler = Scheduler.mock () in
   let content = "def foo() -> int: ..." in
-  let stub_handles, source_handles =
+  let source_handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
@@ -302,24 +302,18 @@ let test_parse_sources context =
     let configuration =
       Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root module_root] ()
     in
-    let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
-    let stubs = stubs |> List.map ~f:File.Handle.show |> List.sort ~compare:String.compare in
-    let sources = sources |> List.map ~f:File.Handle.show |> List.sort ~compare:String.compare in
-    stubs, sources
+    Service.Parser.parse_all scheduler ~configuration
+    |> List.map ~f:File.Handle.show
+    |> List.sort ~compare:String.compare
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "d.pyi"]
-    stub_handles;
-  assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(String.concat ~sep:", ")
-    ["c.py"]
+    ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"]
     source_handles;
   let local_root = Path.create_absolute (bracket_tmpdir context) in
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
-  let stub_handles, source_handles =
+  let source_handles =
     let configuration =
       Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root stub_root] ()
     in
@@ -331,16 +325,14 @@ let test_parse_sources context =
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove
       ~handles:[File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
-    let { Service.Parser.stubs; sources } = Service.Parser.parse_all scheduler ~configuration in
-    stubs, sources
+    Service.Parser.parse_all scheduler ~configuration
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
   assert_equal
     ~printer:(List.to_string ~f:File.Handle.show)
-    stub_handles
-    [File.Handle.create "stub.pyi"];
-  assert_equal source_handles [File.Handle.create "a.py"];
+    source_handles
+    [File.Handle.create "stub.pyi"; File.Handle.create "a.py"];
   match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
   | Some { Source.hash; _ } ->
       assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
@@ -387,7 +379,7 @@ let test_register_modules _ =
     let qualifier = Option.value_exn (get_qualifier file) in
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
-    Test.populate_shared_memory ~configuration ~stubs:[] ~sources;
+    Test.populate_shared_memory ~configuration ~sources;
     assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
     let assert_exports ~qualifier =
       assert_equal

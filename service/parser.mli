@@ -18,9 +18,4 @@ val parse_sources
   files:File.t list ->
   parse_sources_result
 
-type result = {
-  stubs: File.Handle.t list;
-  sources: File.Handle.t list
-}
-
-val parse_all : Scheduler.t -> configuration:Configuration.Analysis.t -> result
+val parse_all : Scheduler.t -> configuration:Configuration.Analysis.t -> File.Handle.t list

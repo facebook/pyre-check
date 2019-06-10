@@ -78,13 +78,10 @@ let populate
   Resolution.Cache.clear ()
 
 
-let build
-    ((module Handler : Environment.Handler) as handler)
-    ~configuration
-    ~scheduler
-    ~stubs
-    ~sources
-  =
+let build ((module Handler : Environment.Handler) as handler)
+          ~configuration
+          ~scheduler
+          ~sources =
   Log.info "Building type environment...";
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
      sequentially until we find a way to build the environment in parallel. *)
@@ -95,20 +92,8 @@ let build
         | None -> handles)
   in
   let timer = Timer.start () in
-  let stubs = get_sources stubs in
-  List.iter ~f:(Environment.register_module (module Handler)) stubs;
-  let sources =
-    (* If a stub matching a handle's qualifier already exists, we shouldn't override. *)
-    let should_keep { Source.handle; qualifier; _ } =
-      Handler.module_definition qualifier
-      >>= Module.handle
-      >>| File.Handle.equal handle
-      |> Option.value ~default:true
-    in
-    let sources = get_sources sources in
-    List.filter ~f:should_keep sources
-  in
-  populate ~configuration ~scheduler handler (stubs @ sources);
+  let sources = get_sources sources in
+  populate ~configuration ~scheduler handler sources;
   Statistics.performance ~name:"full environment built" ~timer ();
   if Log.is_enabled `Dotty then (
     let type_order_file =
@@ -428,7 +413,6 @@ end
 let populate_shared_memory
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
-    ~stubs
     ~sources
   =
   let add_to_shared_memory
@@ -480,7 +464,7 @@ let populate_shared_memory
   in
   let environment = Environment.Builder.create () in
   add_to_shared_memory environment;
-  build (module SharedHandler) ~configuration ~scheduler ~stubs ~sources;
+  build (module SharedHandler) ~configuration ~scheduler ~sources;
   if debug then
     TypeOrder.check_integrity (module SharedHandler.TypeOrderHandler);
   Statistics.event

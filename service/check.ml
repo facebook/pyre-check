@@ -144,11 +144,11 @@ let check
     | Some scheduler -> scheduler
   in
   (* Parse sources. *)
-  let { Parser.stubs; sources } = Parser.parse_all scheduler ~configuration in
-  Postprocess.register_ignores ~configuration scheduler (sources @ stubs);
+  let sources = Parser.parse_all scheduler ~configuration in
+  Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
-  Environment.populate_shared_memory ~configuration ~scheduler ~stubs ~sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:(stubs @ sources) in
+  Environment.populate_shared_memory ~configuration ~scheduler ~sources;
+  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
@@ -186,4 +186,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { handles = stubs @ sources; environment; errors }
+  { handles = sources; environment; errors }

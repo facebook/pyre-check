@@ -201,7 +201,6 @@ let test_populate context =
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    ~stubs:[]
     ~sources:[File.Handle.create "a.py"];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
@@ -252,7 +251,6 @@ let test_purge context =
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    ~stubs:[]
     ~sources:[File.Handle.create "a.py"];
   assert_is_some (Handler.class_metadata "a.D");
   Handler.purge [File.Handle.create "a.py"];

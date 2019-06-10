@@ -46,7 +46,7 @@ let assert_errors ?(show_error_traces = false)
       ~preprocessing_state:None
       ~files:(create_files ~root input_source)
   in
-  Test.populate_shared_memory ~configuration ~stubs:[] ~sources:handles;
+  Test.populate_shared_memory ~configuration ~sources:handles;
   let ((module Handler : Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
   in

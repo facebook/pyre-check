@@ -333,11 +333,6 @@ let find_stubs_and_sources configuration =
   filter_interfering_sources ~configuration stubs sources
 
 
-type result = {
-  stubs: File.Handle.t list;
-  sources: File.Handle.t list
-}
-
 let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration) =
   let stub_paths, source_paths = find_stubs_and_sources configuration in
   let stubs =
@@ -375,4 +370,4 @@ let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ }
     Statistics.performance ~name:"sources parsed" ~timer ();
     parsed
   in
-  { stubs; sources }
+  stubs @ sources

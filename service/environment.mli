@@ -19,7 +19,6 @@ module SharedHandler : Environment.Handler
 val populate_shared_memory
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  stubs:File.Handle.t list ->
   sources:File.Handle.t list ->
   unit
 
