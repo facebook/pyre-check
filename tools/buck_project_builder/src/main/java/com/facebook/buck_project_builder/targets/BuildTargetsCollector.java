@@ -108,6 +108,7 @@ public final class BuildTargetsCollector {
             .add("--output-attributes")
             .add("buck.type")
             .add("buck.base_path")
+            .add("base_module")
             .add("labels")
             .add("srcs")
             .build();

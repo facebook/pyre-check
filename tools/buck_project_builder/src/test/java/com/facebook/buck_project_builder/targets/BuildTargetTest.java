@@ -31,11 +31,17 @@ public class BuildTargetTest {
     writer.write("print('hello world')\n");
     writer.flush();
 
-    PythonTarget pythonTarget =
-        new PythonTarget("python_binary", ".", ImmutableMap.of("a.py", "b.py"));
-    pythonTarget.build(buckRoot.getPath(), outputDirectory.getPath());
+    PythonTarget pythonTargetWithoutBaseModule =
+        new PythonTarget("python_binary", ".", null, ImmutableMap.of("a.py", "b.py"));
+    pythonTargetWithoutBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "b.py"), "print('hello world')");
+
+    PythonTarget pythonTargetWithBaseModule =
+        new PythonTarget("python_binary", ".", "foo.bar", ImmutableMap.of("a.py", "b.py"));
+    pythonTargetWithBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
+    FileSystemTest.assertIsSymbolicLinkWithContent(
+        Paths.get(outputDirectory.getPath(), "foo", "bar", "b.py"), "print('hello world')");
 
     new File(temporaryRoot).deleteOnExit();
   }

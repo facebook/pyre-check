@@ -47,7 +47,8 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": { \"a.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new PythonTarget("python_binary", "PATH", ImmutableMap.of("a.py", "a.py")));
+        targetJson,
+        new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -55,7 +56,8 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": { \"a.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new PythonTarget("python_library", "PATH", ImmutableMap.of("a.py", "a.py")));
+        targetJson,
+        new PythonTarget("python_library", "PATH", null, ImmutableMap.of("a.py", "a.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -63,7 +65,7 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": { \"a.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new PythonTarget("python_test", "PATH", ImmutableMap.of("a.py", "a.py")));
+        targetJson, new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py")));
 
     // We also need to support the case when srcs is an array.
     targetJson =
@@ -74,7 +76,19 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("python_binary", "PATH", ImmutableMap.of("a.py", "a.py", "b.py", "b.py")));
+        new PythonTarget(
+            "python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")));
+
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"base_module\": \"BASE_MODULE\",\n"
+            + "  \"buck.type\": \"python_binary\",\n"
+            + "  \"srcs\": { \"a.py\": \"b.py\" }\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget("python_binary", "PATH", "BASE_MODULE", ImmutableMap.of("a.py", "b.py")));
 
     // Python library with label=["generated"] should be ignored.
     targetJson =
@@ -129,9 +143,9 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTargetList(
         targetsJson,
         ImmutableList.of(
-            new PythonTarget("python_binary", "PATH", ImmutableMap.of("a.py", "a.py")),
+            new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")),
             new PythonTarget(
-                "python_library", "PATH", ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
-            new PythonTarget("python_test", "PATH", ImmutableMap.of("a.py", "a.py"))));
+                "python_library", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
+            new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py"))));
   }
 }
