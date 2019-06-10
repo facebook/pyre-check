@@ -10,6 +10,27 @@ open Expression
 open Statement
 module Error = AnalysisError
 
+module ErrorKey = struct
+  type t = {
+    location: Location.Instantiated.t;
+    kind: int
+  }
+  [@@deriving compare, sexp]
+
+  module Map = Map.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let add_error ~errors ({ Error.location; _ } as error) =
+    Map.set errors ~key:{ location; kind = Error.code error } ~data:error
+end
+
 module type Context = sig
   val configuration : Configuration.Analysis.t
 
@@ -21,10 +42,15 @@ module type Signature = sig
 
   val create
     :  ?bottom:bool ->
+    ?errors:Error.t ErrorKey.Map.t ->
     resolution:Resolution.t ->
     ?resolution_fixpoint:ResolutionSharedMemory.annotation_map Int.Map.Tree.t ->
     unit ->
     t
+
+  val resolution : t -> Resolution.t
+
+  val error_map : t -> Error.t ErrorKey.Map.t
 
   val errors : t -> Error.t list
 
@@ -57,27 +83,6 @@ module State (Context : Context) = struct
     nested: Define.t;
     initial: nested_define_state
   }
-
-  module ErrorKey = struct
-    type t = {
-      location: Location.Instantiated.t;
-      kind: int
-    }
-    [@@deriving compare, sexp]
-
-    module Map = Map.Make (struct
-      type nonrec t = t
-
-      let compare = compare
-
-      let sexp_of_t = sexp_of_t
-
-      let t_of_sexp = t_of_sexp
-    end)
-
-    let add_error ~errors ({ Error.location; _ } as error) =
-      Map.set errors ~key:{ location; kind = Error.code error } ~data:error
-  end
 
   type partitioned = {
     consistent_with_boundary: Type.t;
@@ -156,12 +161,15 @@ module State (Context : Context) = struct
     && left.bottom = right.bottom
 
 
-  let create ?(bottom = false)
-             ~resolution
-             ?(resolution_fixpoint = Int.Map.Tree.empty)
-             () =
+  let create
+      ?(bottom = false)
+      ?(errors = ErrorKey.Map.empty)
+      ~resolution
+      ?(resolution_fixpoint = Int.Map.Tree.empty)
+      ()
+    =
     { resolution;
-      errors = ErrorKey.Map.empty;
+      errors;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom;
@@ -281,6 +289,10 @@ module State (Context : Context) = struct
     in
     { state with errors }, annotation
 
+
+  let resolution { resolution; _ } = resolution
+
+  let error_map { errors; _ } = errors
 
   let errors { resolution; errors; _ } =
     let { Node.value = { Define.signature = { name; _ }; _ } as define; location } =
@@ -3900,7 +3912,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
         ~is_protocol:(fun _ -> false)
         ()
     in
-    { State.errors = State.ErrorKey.Map.empty;
+    { State.errors = ErrorKey.Map.empty;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;
