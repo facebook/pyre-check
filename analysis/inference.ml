@@ -16,12 +16,6 @@ module type Context = sig
   val define : Define.t Node.t
 end
 
-module TypeCheckContext (Context : TypeCheck.Context) = struct
-  let configuration = Context.configuration
-
-  let define = Context.define
-end
-
 module type Signature = sig
   type t [@@deriving eq]
 
@@ -37,6 +31,14 @@ module type Signature = sig
 end
 
 module State (Context : Context) = struct
+  module TypeCheckContext = struct
+    let configuration = Context.configuration
+
+    let define = Context.define
+  end
+
+  module TypeCheckState = TypeCheck.State (TypeCheckContext)
+
   type t = {
     resolution: Resolution.t;
     errors: Error.t TypeCheck.ErrorKey.Map.t;
@@ -95,8 +97,6 @@ module State (Context : Context) = struct
 
 
   let errors { resolution; errors; bottom } =
-    let module Context = TypeCheckContext (Context) in
-    let module TypeCheckState = TypeCheck.State (Context) in
     TypeCheckState.errors (TypeCheckState.create ~bottom ~errors ~resolution ())
 
 
@@ -207,8 +207,6 @@ module State (Context : Context) = struct
 
 
   let rec initial ~resolution =
-    let module Context = TypeCheckContext (Context) in
-    let module TypeCheckState = TypeCheck.State (Context) in
     let initial = TypeCheckState.initial ~resolution in
     { resolution; errors = TypeCheckState.error_map initial; bottom = false }
 
@@ -217,8 +215,6 @@ module State (Context : Context) = struct
     if bottom then
       state
     else
-      let module Context = TypeCheckContext (Context) in
-      let module TypeCheckState = TypeCheck.State (Context) in
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
       let final_type_check_state =
         TypeCheckState.forward_statement ~state:initial_type_check_state ~statement
@@ -367,8 +363,6 @@ module State (Context : Context) = struct
       | _ -> Some annotation
     in
     let forward_expression ~state:{ errors; resolution; _ } ~expression =
-      let module Context = TypeCheckContext (Context) in
-      let module TypeCheckState = TypeCheck.State (Context) in
       let initial_type_check_state = TypeCheckState.create ~errors ~resolution () in
       let { TypeCheckState.resolved; _ } =
         TypeCheckState.forward_expression ~state:initial_type_check_state ~expression
