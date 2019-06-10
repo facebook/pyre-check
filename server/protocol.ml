@@ -180,12 +180,12 @@ module TypeQuery = struct
           | DecodedPair { serialized_key; kind; actual_key; first_value; second_value; equal } ->
               let first_value =
                 match first_value with
-                | Some first_value -> ["value", `String first_value]
+                | Some first_value -> ["first_value", `String first_value]
                 | None -> []
               in
               let second_value =
                 match second_value with
-                | Some second_value -> ["value", `String second_value]
+                | Some second_value -> ["second_value", `String second_value]
                 | None -> []
               in
               `Assoc

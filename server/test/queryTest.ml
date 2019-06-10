@@ -180,6 +180,22 @@ let test_to_yojson _ =
                     first_value = Some "str";
                     second_value = Some "int";
                     equal = false
+                  };
+                TypeQuery.DecodedPair
+                  { serialized_key = "first_encoded";
+                    kind = "Type";
+                    actual_key = "first";
+                    first_value = None;
+                    second_value = Some "int";
+                    equal = false
+                  };
+                TypeQuery.DecodedPair
+                  { serialized_key = "first_encoded";
+                    kind = "Type";
+                    actual_key = "first";
+                    first_value = Some "str";
+                    second_value = None;
+                    equal = false
                   } ];
             undecodable_keys = ["no"]
           }))
@@ -204,8 +220,22 @@ let test_to_yojson _ =
              "kind": "Type",
              "key": "first",
              "equal": false,
-             "value": "str",
-             "value": "int"
+             "first_value": "str",
+             "second_value": "int"
+           },
+           {
+             "serialized_key": "first_encoded",
+             "kind": "Type",
+             "key": "first",
+             "equal": false,
+             "second_value": "int"
+           },
+           {
+             "serialized_key": "first_encoded",
+             "kind": "Type",
+             "key": "first",
+             "equal": false,
+             "first_value": "str"
            }
          ],
          "undecodable_keys": [ "no" ]
