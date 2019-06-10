@@ -160,7 +160,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
   List.fold result ~init:{ parsed = []; syntax_error = []; system_error = [] } ~f:categorize
 
 
-let log_parse_errors ~syntax_error ~system_error ~description =
+let log_parse_errors ~syntax_error ~system_error =
   let syntax_errors = List.length syntax_error in
   let system_errors = List.length system_error in
   let count = syntax_errors + system_errors in
@@ -189,22 +189,14 @@ let log_parse_errors ~syntax_error ~system_error ~description =
       else
         " due to system errors"
     in
-    Log.warning
-      "Could not parse %d %s%s%s!%s"
-      count
-      description
-      (if count > 1 then "s" else "")
-      details
-      hint;
+    Log.warning "Could not parse %d file%s%s!%s" count (if count > 1 then "s" else "") details hint;
     let trace list = List.map list ~f:File.Handle.show |> String.concat ~sep:";" in
     Statistics.event
       ~flush:true
       ~name:"parse errors"
       ~integers:["syntax errors", syntax_errors; "system errors", system_errors]
       ~normals:
-        [ "description", description;
-          "syntax errors trace", trace syntax_error;
-          "system errors trace", trace system_error ]
+        ["syntax errors trace", trace syntax_error; "system errors trace", trace system_error]
       () )
 
 
@@ -292,48 +284,31 @@ let find_stubs_and_sources configuration =
     in
     let stubs = List.filter ~f:keep stubs in
     let sources = List.filter ~f:keep sources in
-    stubs, sources
+    stubs @ sources
   in
   let stubs = find_stubs configuration in
   let sources = find_sources configuration in
   filter_interfering_sources ~configuration stubs sources
 
 
-let parse_all scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration) =
-  let stub_paths, source_paths = find_stubs_and_sources configuration in
-  let stubs =
-    let timer = Timer.start () in
-    Log.info "Parsing %d stubs and external sources..." (List.length stub_paths);
-    let { parsed; syntax_error; system_error } =
-      let preprocessing_state =
-        let to_handle path =
-          try File.create path |> File.handle ~configuration |> Option.some with
-          | File.NonexistentHandle _ -> None
-        in
-        ProjectSpecificPreprocessing.initial (List.filter_map stub_paths ~f:to_handle)
+let parse_all scheduler ~configuration =
+  let paths = find_stubs_and_sources configuration in
+  let timer = Timer.start () in
+  Log.info "Parsing %d stubs and sources..." (List.length paths);
+  let { parsed; syntax_error; system_error } =
+    let preprocessing_state =
+      let to_handle path =
+        try File.create path |> File.handle ~configuration |> Option.some with
+        | File.NonexistentHandle _ -> None
       in
-      parse_sources
-        ~configuration
-        ~scheduler
-        ~preprocessing_state:(Some preprocessing_state)
-        ~files:(List.map ~f:File.create stub_paths)
+      ProjectSpecificPreprocessing.initial (List.filter_map paths ~f:to_handle)
     in
-    log_parse_errors ~syntax_error ~system_error ~description:"external file";
-    Statistics.performance ~name:"stubs parsed" ~timer ();
-    parsed
+    parse_sources
+      ~configuration
+      ~scheduler
+      ~preprocessing_state:(Some preprocessing_state)
+      ~files:(List.map ~f:File.create paths)
   in
-  let sources =
-    let timer = Timer.start () in
-    Log.info "Parsing %d sources in `%a`..." (List.length source_paths) Path.pp local_root;
-    let { parsed; syntax_error; system_error } =
-      parse_sources
-        ~preprocessing_state:None
-        ~configuration
-        ~scheduler
-        ~files:(List.map ~f:File.create source_paths)
-    in
-    log_parse_errors ~syntax_error ~system_error ~description:"file";
-    Statistics.performance ~name:"sources parsed" ~timer ();
-    parsed
-  in
-  stubs @ sources
+  log_parse_errors ~syntax_error ~system_error;
+  Statistics.performance ~name:"sources parsed" ~timer ();
+  parsed

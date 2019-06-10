@@ -36,7 +36,7 @@ let compute_locally_changed_files
   =
   Log.info "Computing files that changed since the saved state was created.";
   let timer = Timer.start () in
-  let stubs, sources = Service.Parser.find_stubs_and_sources configuration in
+  let stubs_and_sources = Service.Parser.find_stubs_and_sources configuration in
   let changed_files changed new_paths =
     let changed_file path =
       try
@@ -60,7 +60,7 @@ let compute_locally_changed_files
       ~initial:[]
       ~map:changed_files
       ~reduce:( @ )
-      ~inputs:(stubs @ sources)
+      ~inputs:stubs_and_sources
       ()
   in
   let removed_paths =
@@ -69,7 +69,7 @@ let compute_locally_changed_files
         try File.create path |> File.handle ~configuration |> Option.some with
         | File.NonexistentHandle _ -> None
       in
-      List.filter_map (stubs @ sources) ~f:handle |> File.Handle.Set.Tree.of_list
+      List.filter_map stubs_and_sources ~f:handle |> File.Handle.Set.Tree.of_list
     in
     let old_handles = Ast.SharedMemory.HandleKeys.get () in
     (* If a handle was present in the saved state creation (i.e. in old_handles) but is missing

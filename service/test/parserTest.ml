@@ -78,11 +78,10 @@ let test_parse_stubs_modules_list _ =
   assert_module_matches_name ~handle:7 "2and3.modd.f"
 
 
-let test_find_stubs context =
-  let assert_stubs configuration expected =
+let test_find_stubs_and_sources context =
+  let assert_sources configuration expected =
     let handles =
       Service.Parser.find_stubs_and_sources configuration
-      |> fst
       |> List.map ~f:File.create
       |> List.map ~f:(File.handle ~configuration)
       |> List.map ~f:File.Handle.show
@@ -91,7 +90,7 @@ let test_find_stubs context =
     assert_equal
       ~cmp:(List.equal ~equal:String.equal)
       ~printer:(String.concat ~sep:", ")
-      expected
+      (List.sort ~compare:String.compare expected)
       handles
   in
   let local_root = Path.create_absolute (bracket_tmpdir context) in
@@ -128,11 +127,11 @@ let test_find_stubs context =
           Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" } ]
       ()
   in
-  assert_stubs
+  assert_sources
     configuration
-    ["a.pyi"; "b.pyi"; "c.py"; "package/virtual.pyi"; "stub.pyi"; "ttypes.pyi"];
+    ["a.pyi"; "b.pyi"; "c.py"; "d.py"; "package/virtual.pyi"; "stub.pyi"; "ttypes.pyi"];
   let configuration = { configuration with Configuration.Analysis.search_path = [] } in
-  assert_stubs configuration ["a.pyi"; "subdirectory/stub.pyi"; "ttypes.pyi"]
+  assert_sources configuration ["a.pyi"; "d.py"; "subdirectory/stub.pyi"; "ttypes.pyi"]
 
 
 let test_find_sources context =
@@ -167,7 +166,6 @@ let test_find_sources context =
         ()
     in
     Service.Parser.find_stubs_and_sources configuration
-    |> snd
     |> List.map ~f:File.create
     |> List.map ~f:(File.handle ~configuration)
     |> List.map ~f:File.Handle.show
@@ -176,12 +174,12 @@ let test_find_sources context =
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["c.cconf"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
+    ["a.pyi"; "b.pyi"; "c.cconf"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
     handles
 
 
 let test_external_sources context =
-  let handles =
+  let local_root, external_root, handles =
     let root = Path.create_absolute (bracket_tmpdir context) in
     let create_path name =
       let path_name = Path.absolute root ^ name in
@@ -204,17 +202,15 @@ let test_external_sources context =
         ~search_path:[Path.SearchPath.Root external_root]
         ()
     in
-    Service.Parser.find_stubs_and_sources configuration
-    |> snd
-    |> List.map ~f:File.create
-    |> List.map ~f:(File.handle ~configuration)
-    |> List.map ~f:File.Handle.show
-    |> List.sort ~compare:String.compare
+    ( local_root,
+      external_root,
+      Service.Parser.find_stubs_and_sources configuration |> List.sort ~compare:Path.compare )
   in
   assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(String.concat ~sep:", ")
-    ["b.py"]
+    ~cmp:(List.equal ~equal:Path.equal)
+    ~printer:(fun paths -> String.concat ~sep:", " (List.map paths ~f:Path.absolute))
+    [ Path.create_relative ~root:external_root ~relative:"a.py";
+      Path.create_relative ~root:local_root ~relative:"b.py" ]
     handles
 
 
@@ -313,10 +309,9 @@ let test_parse_sources context =
   | None -> assert_unreached ()
 
 
-let test_register_modules _ =
-  let configuration =
-    Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
-  in
+let test_register_modules context =
+  let local_root = Path.create_absolute (bracket_tmpdir context) in
+  let configuration = Configuration.Analysis.create ~local_root () in
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
       File.handle ~configuration file
@@ -326,22 +321,20 @@ let test_register_modules _ =
     let file =
       File.create
         ~content:(trim_extra_indentation raw_source)
-        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py")
+        (Path.create_relative ~root:local_root ~relative:"a.py")
     in
     (* Use a "canary" to inspect the exports of a.py between its module parsing stage and source
        parsing stage. *)
     let import_non_toplevel =
       File.create
         ~content:"from .a import *"
-        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"canary.py")
+        (Path.create_relative ~root:local_root ~relative:"canary.py")
     in
     let files = [file; import_non_toplevel] in
+    List.iter files ~f:File.write;
     (* Build environment. *)
     Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
-    let configuration =
-      Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
-    in
     let { Service.Parser.parsed = sources; _ } =
       Service.Parser.parse_sources
         ~configuration
@@ -405,13 +398,56 @@ let test_register_modules _ =
     ["foo"; "fooz"]
 
 
+let test_parse_repository context =
+  let assert_repository_parses_to repository ~expected =
+    let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let configuration = Configuration.Analysis.create ~local_root () in
+    let prepare_file (relative, content) =
+      Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create relative];
+      File.write (File.create ~content (Path.create_relative ~root:local_root ~relative))
+    in
+    List.iter repository ~f:prepare_file;
+    let actual =
+      let handles =
+        Service.Parser.parse_all (Scheduler.mock ()) ~configuration
+        |> List.sort ~compare:File.Handle.compare
+      in
+      List.map handles ~f:(fun handle ->
+          handle, Option.value_exn (Ast.SharedMemory.Sources.get handle))
+    in
+    let equal (expected_handle, expected_source) (handle, { Ast.Source.statements; _ }) =
+      File.Handle.equal expected_handle handle
+      && Ast.Source.equal expected_source { expected_source with Ast.Source.statements }
+    in
+    let printer (handle, source) =
+      Format.sprintf "%s: %s" (File.Handle.show handle) (Ast.Source.show source)
+    in
+    let expected =
+      List.map expected ~f:(fun (handle, parsed_source) ->
+          File.Handle.create handle, Test.parse parsed_source)
+    in
+    assert_equal ~cmp:(List.equal ~equal) ~printer:(List.to_string ~f:printer) expected actual
+  in
+  assert_repository_parses_to
+    ["a.py", "def foo() -> int: ..."]
+    ~expected:["a.py", "def a.foo() -> int: ..."];
+  assert_repository_parses_to
+    ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"]
+    ~expected:["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"];
+  assert_repository_parses_to
+    ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"; "c.py", "from b import *"]
+    ~expected:
+      ["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo"; "c.py", "from b import foo"]
+
+
 let () =
   "parser"
   >::: [ "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
-         "find_stubs" >:: test_find_stubs;
+         "find_stubs_and_sources" >:: test_find_stubs_and_sources;
          "find_sources" >:: test_find_sources;
          "external_sources" >:: test_external_sources;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
-         "register_modules" >:: test_register_modules ]
+         "register_modules" >:: test_register_modules;
+         "parse_repository" >:: test_parse_repository ]
   |> Test.run
