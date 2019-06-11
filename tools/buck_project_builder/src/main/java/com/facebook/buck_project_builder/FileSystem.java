@@ -2,14 +2,23 @@
 
 package com.facebook.buck_project_builder;
 
+import org.apache.commons.io.IOUtils;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public final class FileSystem {
 
@@ -40,5 +49,27 @@ public final class FileSystem {
     } catch (IOException exception) {
       Logger.getGlobal().log(Level.SEVERE, exception.getMessage());
     }
+  }
+
+  public static void unzipRemoteFile(String remoteUrl, File outputDirectory) throws IOException {
+    URL url = new URL(remoteUrl);
+    File temporaryZipFile = Files.createTempFile("remote-", ".zip").toFile();
+    try (InputStream remoteInputStream = url.openStream()) {
+      try (FileOutputStream zipFileOutputStream = new FileOutputStream(temporaryZipFile)) {
+        IOUtils.copy(remoteInputStream, zipFileOutputStream);
+      }
+    }
+    try (ZipFile zipFile = new ZipFile(temporaryZipFile)) {
+      Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+      while (zipEntries.hasMoreElements()) {
+        ZipEntry zipEntry = zipEntries.nextElement();
+        if (!zipEntry.isDirectory()) {
+          File outputFile = new File(outputDirectory, File.separator + zipEntry.getName());
+          outputFile.getParentFile().mkdirs();
+          IOUtils.copy(zipFile.getInputStream(zipEntry), new FileOutputStream(outputFile));
+        }
+      }
+    }
+    temporaryZipFile.delete();
   }
 }

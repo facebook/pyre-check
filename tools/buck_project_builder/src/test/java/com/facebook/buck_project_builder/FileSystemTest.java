@@ -2,17 +2,23 @@
 
 package com.facebook.buck_project_builder;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,14 +43,18 @@ public class FileSystemTest {
     }
   }
 
+  private static void assertContent(File file, String expectedContent) throws IOException {
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+      assertEquals(reader.readLine(), expectedContent);
+    }
+  }
+
   public static void assertIsSymbolicLinkWithContent(Path symbolicLinkPath, String expectedContent)
       throws IOException {
     assertTrue(
         "after symbolic link creation, symbolicLinkPath should actually be a symbolic link",
         Files.isSymbolicLink(symbolicLinkPath));
-    try (BufferedReader reader = new BufferedReader(new FileReader(symbolicLinkPath.toFile()))) {
-      assertEquals(reader.readLine(), expectedContent);
-    }
+    assertContent(symbolicLinkPath.toFile(), expectedContent);
   }
 
   @Test
@@ -84,6 +94,29 @@ public class FileSystemTest {
     writeContent(actualPath.toFile(), "def");
     FileSystem.addSymbolicLink(symbolicLinkPath, actualPath);
     assertIsSymbolicLinkWithContent(symbolicLinkPath, "def");
+
+    new File(root).delete();
+  }
+
+  @Test
+  public void unzipRemoteFileTest() throws IOException {
+    String root = Files.createTempDirectory("unzip_remote_test").toString();
+    File testFile = new File(root, "test.txt");
+    writeContent(testFile, "hello world");
+    File outputDirectory = Paths.get(root, "out").toFile();
+
+    File zipFile = Paths.get(root, "test.zip").toFile();
+    try (InputStream testFileInputStream = new FileInputStream(testFile)) {
+      try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile))) {
+        ZipEntry entry = new ZipEntry(Paths.get("foo", "bar", "test.txt").toString());
+        zipOutputStream.putNextEntry(entry);
+        IOUtils.copy(testFileInputStream, zipOutputStream);
+      }
+    }
+
+    // use file protocol to simulate remote file
+    FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+    assertContent(Paths.get(root, "out", "foo", "bar", "test.txt").toFile(), "hello world");
 
     new File(root).delete();
   }
