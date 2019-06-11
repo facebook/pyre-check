@@ -14,7 +14,7 @@ import traceback
 from argparse import Namespace
 from typing import Any, Dict, Optional
 
-from . import buck, buck_project_builder
+from . import buck
 from .exceptions import EnvironmentException
 from .filesystem import (  # noqa
     AnalysisDirectory,
@@ -160,10 +160,6 @@ def resolve_analysis_directory(
         )
 
     use_buck_builder = arguments.use_buck_builder or configuration.use_buck_builder
-    ignore_unbuilt_dependencies = use_buck_builder and (
-        arguments.ignore_unbuilt_dependencies
-        or configuration.ignore_unbuilt_dependencies
-    )
 
     if len(source_directories) == 1 and len(targets) == 0:
         analysis_directory = AnalysisDirectory(
@@ -185,9 +181,7 @@ def resolve_analysis_directory(
                         os.getcwd()
                     )
                 )
-            buck_builder = buck_project_builder.FastBuckBuilder(
-                buck_root, fail_on_unbuilt_target=not ignore_unbuilt_dependencies
-            )
+            buck_builder = buck.FastBuckBuilder(buck_root)
         else:
             buck_builder = buck.SimpleBuckBuilder(build=build)
 

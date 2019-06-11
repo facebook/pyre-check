@@ -13,13 +13,7 @@ from contextlib import contextmanager
 from typing import Dict  # noqa
 from unittest.mock import MagicMock, Mock, call, patch
 
-from .. import (
-    buck,
-    buck_project_builder,
-    commands,
-    filesystem,
-    resolve_analysis_directory,
-)
+from .. import buck, commands, filesystem, resolve_analysis_directory
 from ..exceptions import EnvironmentException  # noqa
 from ..filesystem import (  # noqa
     AnalysisDirectory,
@@ -452,24 +446,6 @@ class FilesystemTest(unittest.TestCase):
             shared_analysis_directory = SharedAnalysisDirectory(["first", "second"], [])
             acquire_lock.side_effect = acquire
             shared_analysis_directory.prepare()
-            merge.assert_has_calls([call()])
-            clear.assert_has_calls([call()])
-
-        with patch.object(
-            buck_project_builder.FastBuckBuilder,
-            "build",
-            return_value=["/tmp/pyre_tmp_xyz"],
-        ) as build, patch.object(
-            SharedAnalysisDirectory, "_clear"
-        ) as clear, patch.object(
-            SharedAnalysisDirectory, "_merge"
-        ) as merge:
-            buck_builder = buck_project_builder.FastBuckBuilder("/buck_root")
-            shared_analysis_directory = SharedAnalysisDirectory(
-                [], ["//target/..."], buck_builder=buck_builder
-            )
-            shared_analysis_directory.prepare()
-            build.assert_called_once_with({"//target/..."})
             merge.assert_has_calls([call()])
             clear.assert_has_calls([call()])
 

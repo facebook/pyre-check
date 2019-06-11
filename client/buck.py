@@ -7,6 +7,7 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
 from collections import namedtuple
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
@@ -21,6 +22,31 @@ BuckOut = namedtuple("BuckOut", "source_directories targets_not_found")
 
 class BuckException(Exception):
     pass
+
+
+class FastBuckBuilder(BuckBuilder):
+    def __init__(self, buck_root: str, output_directory: Optional[str] = None) -> None:
+        self._buck_root = buck_root
+        self._output_directory = output_directory or tempfile.mkdtemp(
+            prefix="pyre_tmp_"
+        )
+
+    def build(self, targets: Iterable[str]) -> List[str]:
+        command = [
+            "buck",
+            "run",
+            "//tools/pyre/tools/buck_project_builder",
+            "--",
+            "--buck_root",
+            self._buck_root,
+            "--output_directory",
+            self._output_directory,
+        ]
+        if subprocess.run(command + list(targets)).returncode != 0:
+            raise BuckException(
+                "Buck builder failure. Read the log printed above for more information."
+            )
+        return [self._output_directory]
 
 
 class SimpleBuckBuilder(BuckBuilder):

@@ -17,7 +17,7 @@ public final class BuckProjectBuilder {
   private BuckProjectBuilder() {}
 
   /**
-   * Prints the output directory of built python code if the build is successful. Otherwise, exit by
+   * Prints nothing if the build is successful. Otherwise, exit by
    * 1 then prints the failure reason in standard error.
    */
   public static void main(String[] arguments) {
@@ -38,7 +38,6 @@ public final class BuckProjectBuilder {
           BuildTargetsCollector.collectBuckTargets(command.getTargets());
       // Use parallel stream to parallelize build.
       targets.parallelStream().forEach(target -> target.build(buckRoot, outputDirectory));
-      System.out.println(outputDirectory);
     } catch (BuilderException exception) {
       LOGGER.severe(exception.getMessage());
       System.exit(1);

@@ -29,8 +29,6 @@ from . import (
     resolve_analysis_directory,
     switch_root,
 )
-from .buck_project_builder import BuilderException
-from .buck_project_builder.parser import ParserException
 from .commands import ExitCode, typeshed_search_path
 from .configuration import Configuration
 from .filesystem import AnalysisDirectory, SharedAnalysisDirectory
@@ -577,8 +575,6 @@ def main():
         buck.BuckException,
         commands.ClientException,
         EnvironmentException,
-        BuilderException,
-        ParserException,
     ) as error:
         error_message = str(error)
         LOG.error(error_message)

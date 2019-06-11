@@ -6,8 +6,6 @@
 import logging
 from typing import List
 
-from ..buck_project_builder import BuilderException
-from ..buck_project_builder.parser import ParserException
 from .command import ExitCode, typeshed_search_path
 from .reporting import Reporting
 
@@ -49,12 +47,7 @@ class Check(Reporting):
         return flags
 
     def _run(self, retries: int = 1) -> None:
-        try:
-            self._analysis_directory.prepare()
-        except (BuilderException, ParserException) as error:
-            LOG.error("Failure occurred while building Buck targets: %s", error)
-            self._exit_code = ExitCode.FAILURE
-            return
+        self._analysis_directory.prepare()
 
         result = self._call_client(command="check")
         errors = self._get_errors(result)
