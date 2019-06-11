@@ -67,8 +67,13 @@ let computation_thread
     Mutex.critical_section lock ~f:(fun () ->
         let ({ persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients =
-          Map.mapi ~f:(write_or_mark_failure responses) persistent_clients
-          |> Map.filter ~f:(fun failures -> failures < failure_threshold)
+          let keep failure = failure < failure_threshold in
+          let persistent_clients =
+            Map.mapi ~f:(write_or_mark_failure responses) persistent_clients
+          in
+          Map.iteri persistent_clients ~f:(fun ~key ~data ->
+              if not (keep data) then Unix.close key);
+          Map.filter persistent_clients ~f:keep
         in
         connections := { cached_connections with persistent_clients })
   in
@@ -83,7 +88,7 @@ let computation_thread
               | Unix.Unix_error (kind, _, _) -> (
                 match kind with
                 | Unix.EPIPE ->
-                    Log.warning "EPIPE while writing to a persistent client, removing.";
+                    Log.warning "EPIPE while writing to a persistent client.";
                     Mutex.critical_section state.lock ~f:(fun () ->
                         let { persistent_clients; _ } = !(state.connections) in
                         let persistent_clients =
@@ -91,8 +96,12 @@ let computation_thread
                           | Some failures ->
                               if failures < failure_threshold then
                                 Map.set persistent_clients ~key:socket ~data:(failures + 1)
-                              else
-                                Map.remove persistent_clients socket
+                              else (
+                                Log.info
+                                  "Closing socket with file descriptor `%s`."
+                                  (Unix.File_descr.to_string socket);
+                                Unix.close socket;
+                                Map.remove persistent_clients socket )
                           | None -> persistent_clients
                         in
                         state.connections := { !(state.connections) with persistent_clients })
@@ -238,6 +247,7 @@ let request_handler_thread
         Log.log ~section:`Server "Persistent client disconnected";
         Mutex.critical_section lock ~f:(fun () ->
             let ({ persistent_clients; _ } as cached_connections) = !connections in
+            Unix.close socket;
             connections :=
               { cached_connections with persistent_clients = Map.remove persistent_clients socket })
   in
