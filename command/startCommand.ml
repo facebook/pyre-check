@@ -49,7 +49,7 @@ let computation_thread request_queue configuration state =
       |> List.concat_map ~f:diagnostic_to_response
     in
     (* Decides what to broadcast to persistent clients after a request is processed. *)
-    let broadcast_response lock persistent_clients response =
+    let broadcast_response { lock; connections; _ } response =
       match response with
       | TypeCheckResponse error_map ->
           let responses = errors_to_lsp_responses error_map in
@@ -63,10 +63,12 @@ let computation_thread request_queue configuration state =
                 failures + 1
           in
           Mutex.critical_section lock ~f:(fun () ->
-              Hashtbl.mapi_inplace ~f:(write_or_mark_failure responses) persistent_clients;
-              Hashtbl.filter_inplace
-                ~f:(fun failures -> failures < failure_threshold)
-                persistent_clients)
+              let ({ persistent_clients; _ } as cached_connections) = !connections in
+              let persistent_clients =
+                Map.mapi ~f:(write_or_mark_failure responses) persistent_clients
+                |> Map.filter ~f:(fun failures -> failures < failure_threshold)
+              in
+              connections := { cached_connections with persistent_clients })
       | _ -> ()
     in
     let rec handle_request ?(retries = 2) state ~origin ~process =
@@ -82,13 +84,16 @@ let computation_thread request_queue configuration state =
                     Log.warning "EPIPE while writing to a persistent client, removing.";
                     Mutex.critical_section state.lock ~f:(fun () ->
                         let { persistent_clients; _ } = !(state.connections) in
-                        match Hashtbl.find persistent_clients socket with
-                        | Some failures ->
-                            if failures < failure_threshold then
-                              Hashtbl.set persistent_clients ~key:socket ~data:(failures + 1)
-                            else
-                              Hashtbl.remove persistent_clients socket
-                        | None -> ())
+                        let persistent_clients =
+                          match Map.find persistent_clients socket with
+                          | Some failures ->
+                              if failures < failure_threshold then
+                                Map.set persistent_clients ~key:socket ~data:(failures + 1)
+                              else
+                                Map.remove persistent_clients socket
+                          | None -> persistent_clients
+                        in
+                        state.connections := { !(state.connections) with persistent_clients })
                 | _ -> () )
             in
             let { Request.state; response } = process ~socket ~state in
@@ -106,23 +111,20 @@ let computation_thread request_queue configuration state =
             state
         | Protocol.Request.FileNotifier
         | Protocol.Request.Background ->
-            let { socket; persistent_clients; _ } =
+            let { socket; _ } =
               Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
             in
             let { Request.state; response } = process ~socket ~state in
             ( match response with
-            | Some response -> broadcast_response state.lock persistent_clients response
+            | Some response -> broadcast_response state response
             | None -> () );
             state
         | Protocol.Request.NewConnectionSocket socket ->
-            let { persistent_clients; _ } =
-              Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
-            in
             let { Request.state; response } = process ~socket ~state in
             ( match response with
             | Some response ->
                 Socket.write_ignoring_epipe socket response;
-                broadcast_response state.lock persistent_clients response
+                broadcast_response state response
             | None -> () );
             state
       with
@@ -208,10 +210,14 @@ let request_handler_thread
       ->
         Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section lock ~f:(fun () ->
-            let { persistent_clients; _ } = !connections in
+            let ({ persistent_clients; _ } as cached_connections) = !connections in
             Socket.write socket (ClientConnectionResponse client);
             match client with
-            | Persistent -> Hashtbl.set persistent_clients ~key:socket ~data:0
+            | Persistent ->
+                connections :=
+                  { cached_connections with
+                    persistent_clients = Map.set persistent_clients ~key:socket ~data:0
+                  }
             | _ -> ())
     | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
@@ -229,8 +235,9 @@ let request_handler_thread
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "Persistent client disconnected";
         Mutex.critical_section lock ~f:(fun () ->
-            let persistent_clients = !connections.persistent_clients in
-            Hashtbl.remove persistent_clients socket)
+            let ({ persistent_clients; _ } as cached_connections) = !connections in
+            connections :=
+              { cached_connections with persistent_clients = Map.remove persistent_clients socket })
   in
   let handle_readable_file_notifier socket =
     try
@@ -276,7 +283,7 @@ let request_handler_thread
     let readable =
       Unix.select
         ~restart:true
-        ~read:((server_socket :: json_socket :: Hashtbl.keys persistent_clients) @ file_notifiers)
+        ~read:((server_socket :: json_socket :: Map.keys persistent_clients) @ file_notifiers)
         ~write:[]
         ~except:[]
         ~timeout:(`After (Time.of_sec 5.0))
@@ -330,7 +337,7 @@ let request_handler_thread
         | Sys_error error
         | Yojson.Json_error error ->
             Log.warning "Failed to complete handshake: %s" error
-      else if Mutex.critical_section lock ~f:(fun () -> Hashtbl.mem persistent_clients socket) then
+      else if Mutex.critical_section lock ~f:(fun () -> Map.mem persistent_clients socket) then
         handle_readable_persistent socket
       else
         handle_readable_file_notifier socket
@@ -364,12 +371,7 @@ let serve
     let request_queue = Squeue.create 25 in
     let lock = Mutex.create () in
     let connections =
-      ref
-        { socket;
-          json_socket;
-          persistent_clients = Unix.File_descr.Table.create ();
-          file_notifiers = []
-        }
+      ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] }
     in
     (* Register signal handlers. *)
     Signal.Expert.handle Signal.int (fun _ ->

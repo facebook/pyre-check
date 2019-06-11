@@ -8,7 +8,7 @@ open Pyre
 
 type t = Unix.File_descr.t
 
-module Table = Unix.File_descr.Table
+module Map : Map.S with type Key.t = t
 
 val initialize_unix_socket : Path.t -> t
 

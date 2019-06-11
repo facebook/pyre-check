@@ -9,7 +9,15 @@ open Pyre
 
 type t = Unix.File_descr.t
 
-module Table = Unix.File_descr.Table
+module Map = Map.Make (struct
+  type nonrec t = t
+
+  let compare = Unix.File_descr.compare
+
+  let sexp_of_t = Unix.File_descr.sexp_of_t
+
+  let t_of_sexp = Unix.File_descr.t_of_sexp
+end)
 
 let initialize_unix_socket path = Socket.unix_socket (Path.absolute path)
 

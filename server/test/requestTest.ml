@@ -38,7 +38,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
       ref
         { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          persistent_clients = Unix.File_descr.Table.create ();
+          persistent_clients = Network.Socket.Map.empty;
           file_notifiers = []
         };
     scheduler = Scheduler.mock ();
