@@ -3,10 +3,10 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-val initialize : Unix.file_descr -> unit
+val initialize : (State.t -> Protocol.response -> unit) -> unit
 
-val information : message:string -> unit
+val information : message:string -> state:State.t -> unit
 
-val warning : message:string -> unit
+val warning : message:string -> state:State.t -> unit
 
-val error : message:string -> unit
+val error : message:string -> state:State.t -> unit
