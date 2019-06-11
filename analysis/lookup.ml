@@ -182,6 +182,7 @@ let create_of_source environment source =
       List.iteri statements ~f:(walk_statement node_id)
     in
     Hashtbl.iteri cfg ~f:walk_cfg_node;
+
     (* Special-case define signature processing, since this is not included in the define's cfg. *)
     let define_signature = { define_node with value = Define { define with Define.body = [] } } in
     walk_statement Cfg.entry_index 0 define_signature

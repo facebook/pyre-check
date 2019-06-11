@@ -540,6 +540,7 @@ let test_check_typed_dictionaries _ =
       "Revealed type [-1]: Revealed type for `v` is "
       ^ "`typing.Union[typing_extensions.Literal[False], str]`.";
       "TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`." ];
+
   (* You can't pop an item from a total typeddict *)
   assert_test_typed_dictionary
     {|
@@ -549,6 +550,7 @@ let test_check_typed_dictionaries _ =
         movie.pop("name")
     |}
     ["Undefined attribute [16]: `TypedDictionary` has no attribute `pop`."];
+
   (* TODO(T41338881) the del operator is not currently supported *)
   assert_test_typed_dictionary
     {|
@@ -559,6 +561,7 @@ let test_check_typed_dictionaries _ =
         movieNonTotal.__delitem__("nae")
     |}
     ["TypedDict accessed with a missing key [27]: TypedDict `Movie` has no key `nae`."];
+
   (* You can't delete an item from a total typeddict *)
   assert_test_typed_dictionary
     {|
@@ -643,6 +646,7 @@ let test_check_typed_dictionaries _ =
         return baz['alpha']
     |}
     [];
+
   (* TODO T37629490 Better error messages for typeddict declaration errors *)
   assert_test_typed_dictionary
     {|

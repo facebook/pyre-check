@@ -255,6 +255,7 @@ let test_delocalize _ =
   assert_delocalized "$local_qualifier$variable" "qualifier.variable";
   assert_delocalized "$local_base64$b64encode" "base64.b64encode";
   assert_delocalized "$local_module?qualifier$variable" "module.qualifier.variable";
+
   (* Don't attempt to delocalize qualified expressions. *)
   assert_delocalized "qualifier.$local_qualifier$variable" "qualifier.$local_qualifier$variable";
   let assert_delocalize_qualified source expected =
@@ -333,6 +334,7 @@ let test_exists_in_list _ =
   assert_not_exists [call_everywhere] "a.c" ~match_prefix:true;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:false;
   assert_not_exists [call_everywhere] "a.b.c.d" ~match_prefix:true;
+
   (* Qualified *)
   assert_exists
     [parse_single_expression "qualifier.$local_qualifier$property"]

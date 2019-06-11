@@ -183,6 +183,7 @@ let create define =
   let yield = Node.empty graph Node.Yield in
   Node.connect normal exit;
   Node.connect error exit;
+
   (* Forward creation of the control flow for a list of statements. Returns the last node or `None`
      if the flow has ended in a jump. *)
   let rec create statements jumps predecessor =
@@ -293,6 +294,7 @@ let create define =
           create body body_jumps split >>= create orelse local_jumps
         in
         Node.connect_option body_orelse normal_entry;
+
         (* Exception handling. *)
         let handler ({ Try.handler_body; _ } as handler) =
           let preamble = Try.preamble handler in
@@ -300,6 +302,7 @@ let create define =
           |> (Fn.flip Node.connect_option) normal_entry
         in
         List.iter handlers ~f:handler;
+
         (* `normal` might legitimately not have an exit point if there is a return in the `finally`
            clause. *)
         normal_exit >>= create statements jumps

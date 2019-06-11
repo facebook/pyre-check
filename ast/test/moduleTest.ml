@@ -100,6 +100,7 @@ let test_aliased_export _ =
       from other import thing
     |}
     ["thing", "other.thing"];
+
   (* Exports through assignments. *)
   assert_aliased_exports
     ~qualifier:(Reference.create "requests")

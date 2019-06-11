@@ -22,6 +22,7 @@ let test_check_invalid_constructor _ =
     |}
     [ "Incompatible constructor annotation [17]: `__init__` is annotated as "
       ^ "returning `int`, but it should return `None`." ];
+
   (* TODO(T45018328): We should error here. *)
   assert_type_errors {|
       class C:
@@ -172,6 +173,7 @@ let test_check_init _ =
        control flow path that doesn't define `unknown`.";
       "Undefined name [18]: Global name `unknown2` is not defined, or there is at least one \
        control flow path that doesn't define `unknown2`." ];
+
   (* No need to initialize properties. *)
   assert_type_errors
     {|
@@ -301,6 +303,7 @@ let test_check_init _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `Foo.__new__` but got `str`." ];
+
   (* Prefer init over new if both exist. *)
   assert_type_errors
     {|
@@ -323,6 +326,7 @@ let test_check_init _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `Super.__new__` but got `str`." ];
+
   (* We look at both __init__ and __new__ in the inheritance structure. *)
   assert_type_errors
     {|
@@ -421,6 +425,7 @@ let test_check_constructors _ =
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Optional[str]` for 2nd anonymous parameter to call `Foo.__init__` "
       ^ "but got `int`." ];
+
   (* Check abstract methods *)
   assert_type_errors
     {|
@@ -577,6 +582,7 @@ let test_check_constructors _ =
       B()
     |}
     [];
+
   (* Explicit call. *)
   assert_type_errors
     {|
@@ -588,6 +594,7 @@ let test_check_constructors _ =
     |}
     [ "Incompatible parameter type [6]: Expected `int` for 2nd anonymous parameter to call \
        `Foo.__init__` but got `str`." ];
+
   (* Super calls. *)
   assert_type_errors
     {|
@@ -611,6 +618,7 @@ let test_check_constructors _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`." ];
+
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating to
      the subclass, regardless of order. *)
   assert_type_errors

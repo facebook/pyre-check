@@ -61,6 +61,7 @@ let assert_backward precondition statement postcondition =
 
 let test_backward _ =
   assert_backward ["y", Type.integer] "pass" ["y", Type.integer];
+
   (* Assignments. *)
   assert_backward ["x", Type.integer] "x = y" ["x", Type.integer; "y", Type.integer];
   assert_backward ["y", Type.integer] "x = z" ["y", Type.integer];
@@ -72,6 +73,7 @@ let test_backward _ =
     ["x", Type.Primitive "B"; "y", Type.Primitive "C"; "z", Type.Primitive "B"];
   assert_backward ["a", Type.integer] "a, b = c, d" ["a", Type.integer; "c", Type.integer];
   assert_backward ["a", Type.Top; "b", Type.integer] "a = b" ["a", Type.Top; "b", Type.integer];
+
   (* Tuples *)
   assert_backward
     ["x", Type.integer; "y", Type.string]
@@ -81,11 +83,13 @@ let test_backward _ =
     ["x", Type.tuple [Type.integer; Type.string]]
     "x = y, z"
     ["x", Type.tuple [Type.integer; Type.string]; "y", Type.integer; "z", Type.string];
+
   (* Literals. *)
   assert_backward [] "x = 1.0" [];
   assert_backward [] "x = 'string'" [];
   assert_backward ["x", Type.Primitive "Foo"] "x = 'string'" ["x", Type.Primitive "Foo"];
   assert_backward ["x", Type.Primitive "Foo"] "x = 'string'" ["x", Type.Primitive "Foo"];
+
   (* Calls *)
   assert_backward [] "int_to_str(x)" ["x", Type.integer];
   assert_backward [] "str_float_to_int(x, y)" ["x", Type.string; "y", Type.float];
@@ -106,10 +110,13 @@ let test_backward _ =
     []
     "nested_tuple_to_int(((x, y), z))"
     ["x", Type.string; "y", Type.float; "z", Type.float];
+
   (* TODO(T25072735): Extend implementation to pass starred and unstarred tests *)
   assert_backward [] "str_float_to_int(*(x, y))" [];
+
   (* "x", Type.string; "y", Type.float *)
   assert_backward [] "str_float_to_int(**{'s': x, 'f': y})" [];
+
   (* "x", Type.string; "y", Type.float *)
   assert_backward [] "star_int_to_int(*[], y)" []
 
@@ -346,6 +353,7 @@ let test_infer _ =
           return 5
     |}
     [{|true|}];
+
   (* Forward-backward iteration *)
   assert_infer
     ~fields:["inference.parameters"]
@@ -356,6 +364,7 @@ let test_infer _ =
           return x
     |}
     [];
+
   (* TODO(T37338460): We should be inferring tuples. *)
   assert_infer
     ~fields:["inference.parameters"]
@@ -366,6 +375,7 @@ let test_infer _ =
           return (x, z)
     |}
     [];
+
   (* TODO(T37338460): We should be inferring tuples. *)
   assert_infer
     ~fields:["inference.parameters"]
@@ -386,6 +396,7 @@ let test_infer _ =
           return 5
     |}
     [{|[{"name":"x","type":"C","value":null}]|}];
+
   (* Should be A.C *)
 
   (* The next illustrates where we mess up with current simple dequalify implementation *)

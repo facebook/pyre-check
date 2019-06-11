@@ -233,6 +233,7 @@ let connect ?(parameters = [])
       edges
       ~key:predecessor
       ~data:({ Target.target = successor; parameters } :: successors);
+
     (* Add backedges. *)
     let predecessors =
       Handler.find backedges successor |> Option.value ~default:Target.Set.empty
@@ -2295,6 +2296,7 @@ let check_integrity (module Handler : Handler) =
   if not (contains Type.Bottom && contains Type.Top) then (
     Log.error "Order is missing either Bottom or Top:\n%s" (Handler.show ());
     raise Incomplete );
+
   (* Ensure keys are consistent. *)
   let key_consistent key =
     let raise_if_none value =
@@ -2309,6 +2311,7 @@ let check_integrity (module Handler : Handler) =
     raise_if_none (Handler.find (Handler.indices ()) annotation)
   in
   List.iter ~f:key_consistent (Handler.keys ());
+
   (* Check for cycles. *)
   let started_from = ref Int.Set.empty in
   let find_cycle start =
@@ -2336,6 +2339,7 @@ let check_integrity (module Handler : Handler) =
       visit [] start
   in
   Handler.keys () |> List.iter ~f:find_cycle;
+
   (* Check that backedges are complete. *)
   let module InverseChecker (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
     let check_inverse ~get_keys ~edges ~backedges =
@@ -2468,6 +2472,7 @@ module Builder = struct
       | _ -> ()
     in
     List.iter ~f:connect_primitive_chain default_annotations;
+
     (* Since the builtin type hierarchy is not primitive, it's special cased. *)
     let type_builtin = Type.Primitive "type" in
     let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in

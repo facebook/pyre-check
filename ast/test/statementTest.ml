@@ -375,6 +375,7 @@ let test_attributes _ =
         self.argument = unknown
     |}
     ["argument", None, Some "unknown", true];
+
   (* Implicit arguments in branches. *)
   assert_implicit_attributes
     {|
@@ -389,6 +390,7 @@ let test_attributes _ =
     [ "attribute", None, Some "value", true;
       "nested", None, Some "value", false;
       "other", None, Some "value", false ];
+
   (* `self` isn't special cased if a self parameter is passed into the function. *)
   assert_implicit_attributes
     {|
@@ -396,6 +398,7 @@ let test_attributes _ =
       renamed_self.attribute: int = value
   |}
     ["attribute", Some Type.integer, Some "value", true];
+
   (* Test define field assigns. *)
   let assert_property_attribute source expected =
     let expected =
@@ -439,6 +442,7 @@ let test_attributes _ =
       def Parent.foo() -> int: pass
     |}
     (Some ("foo", Some Type.integer, None, false));
+
   (* Test class attributes. *)
   let assert_attributes ?(in_test = false)
                         ?(include_generated_attributes = true)
@@ -606,6 +610,7 @@ let test_attributes _ =
         def Foo.x(self, value:str) -> None: ...
     |}
     [attribute ~name:"x" ~annotation:Type.string ~value:"int" ~setter:true ()];
+
   (* Simultaneous assignment *)
   assert_attributes
     {|
@@ -620,6 +625,7 @@ let test_attributes _ =
     |}
     [ "a", None, None, Some "list(range(2))[0]", false, 0;
       "b", None, None, Some "list(range(2))[1]", false, 0 ];
+
   (* Implicit attributes in tests. *)
   assert_attributes
     ~in_test:true
@@ -642,6 +648,7 @@ let test_attributes _ =
       attribute ~name:"context" ~value:"value" ();
       attribute ~name:"setUp" ~number_of_defines:1 ();
       attribute ~name:"with_context" ~number_of_defines:1 () ];
+
   (* __slot__ attributes *)
   assert_attributes
     {|
@@ -886,6 +893,7 @@ let test_pp _ =
       def foo(bar):
         x = "hello world"
     |};
+
   (* Test 2 : def with multiple decorators *)
   assert_pretty_print
     {|
@@ -900,6 +908,7 @@ let test_pp _ =
       def foo(bar):
         x = "hello world"
     |};
+
   (* Test 3 : multiple defs and statements *)
   assert_pretty_print
     {|
@@ -924,6 +933,7 @@ let test_pp _ =
         x = "hello squirrel"
         y = 5
     |};
+
   (* Test 4 : cover classes, for loops, compound statements *)
   assert_pretty_print
     {|
@@ -943,6 +953,7 @@ let test_pp _ =
             i = 1
           i = 2
     |};
+
   (* Test 5 : try/except/finally blocks *)
   assert_pretty_print
     {|
@@ -976,6 +987,7 @@ let test_pp _ =
       finally:
         pass
     |};
+
   (* Test 6 : while and if/then/else and list access *)
   assert_pretty_print
     {|

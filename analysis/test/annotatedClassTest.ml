@@ -261,6 +261,7 @@ let test_constructors _ =
   (* Undefined constructors. *)
   assert_constructor "class Foo: pass" "Foo" (Some "typing.Callable('object.__init__')[[], Foo]");
   assert_constructor "class Foo: ..." "Foo" (Some "typing.Callable('object.__init__')[[], Foo]");
+
   (* Statement.Defined constructors. *)
   assert_constructor
     {|
@@ -278,6 +279,7 @@ let test_constructors _ =
     |}
     "Foo"
     (Some ("typing.Callable('Foo.__init__')[[Named(a, int)], Foo]" ^ "[[[Named(b, str)], Foo]]"));
+
   (* Generic classes. *)
   assert_constructor
     {|
@@ -297,6 +299,7 @@ let test_constructors _ =
     |}
     "Foo[int, str]"
     (Some "typing.Callable('Foo.__init__')[[Named(x, int), Named(y, str)], Foo[int, str]]");
+
   (* Tuples. *)
   assert_constructor
     {|
@@ -306,6 +309,7 @@ let test_constructors _ =
     |}
     "tuple"
     (Some "typing.Callable('tuple.__init__')[[], typing.Tuple[typing.TypeVar('_T'), ...]]");
+
   (* Constructors, both __init__ and __new__, are inherited from parents. *)
   assert_constructor
     {|
@@ -515,6 +519,7 @@ let test_class_attributes _ =
       Class.create_attribute ~resolution ~parent (create_attribute "implicit");
       Class.create_attribute ~resolution ~parent (create_attribute "second");
       Class.create_attribute ~resolution ~parent (create_attribute "third" ~value:(+Integer 1)) ];
+
   (* Test `Attribute`. *)
   let attribute =
     Class.create_attribute ~resolution ~parent (create_attribute ~annotation:(Some !"int") "first")
@@ -529,11 +534,11 @@ let test_class_attributes _ =
       ~resolution
       ~parent
       (create_attribute
-         ~annotation:
-           (Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
+         ~annotation:(Some (Type.expression (Type.parametric "typing.ClassVar" [Type.integer])))
          "first")
   in
   assert_true (Attribute.class_attribute attribute);
+
   (* Test `attribute_fold`. *)
   let assert_fold ?(class_attributes = false) source fold =
     Annotated.Class.AttributeCache.clear ();
@@ -627,6 +632,7 @@ let test_class_attributes _ =
       "__setattr__";
       "__sizeof__";
       "__str__" ];
+
   (* Test 'attribute' *)
   let assert_attribute ~parent ~parent_instantiated_type ~attribute_name ~expected_attribute =
     let instantiated, class_attributes =
@@ -1229,6 +1235,7 @@ let test_metaclasses _ =
     |}
     ~target:"D"
     "MoreMeta";
+
   (* If we don't have a "most derived metaclass", pick an arbitrary one. *)
   assert_metaclass
     ~source:

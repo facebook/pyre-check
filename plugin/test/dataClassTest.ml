@@ -242,6 +242,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   (* Dataclass boolean arguments *)
   PluginTest.assert_environment_contains
     {|
@@ -371,6 +372,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   (* Dataclass inheritance *)
   PluginTest.assert_environment_contains
     {|

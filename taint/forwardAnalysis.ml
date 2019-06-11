@@ -567,6 +567,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Option.value ~default:BackwardState.Tree.empty
           in
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;
+
           (* Propagate taint. *)
           let access_path = AccessPath.of_expression target in
           store_taint_option access_path taint state

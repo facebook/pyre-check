@@ -87,6 +87,7 @@ let test_apply_decorators _ =
       ~printer:Type.show
       expected_return_annotation
       applied_return_annotation;
+
     (* Test decorators with old AST. *)
     let applied_return_annotation =
       Callable.apply_decorators ~define ~resolution
@@ -114,6 +115,7 @@ let test_apply_decorators _ =
        ~return_annotation:
          (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
     (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
+
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
@@ -147,6 +149,7 @@ let test_apply_decorators _ =
     ~parameters:[Parameter.create ~name:"test" ()]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:2;
+
   (* Custom decorators. *)
   let resolution = resolution () in
   create_define

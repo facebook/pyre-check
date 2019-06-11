@@ -1173,6 +1173,7 @@ let rec process
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
           LookupCache.evict ~state ~configuration file;
+
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
           let { State.open_documents; _ } = state in

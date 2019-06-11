@@ -133,6 +133,7 @@ let connect_definition
         ~successor:(Type.Primitive "typing.Callable")
         ~parameters:[Type.Callable callable]
   | None -> () );
+
   (* Register normal annotations. *)
   let register_supertype { Expression.Call.Argument.value; _ } =
     let value = Expression.delocalize value in
@@ -682,6 +683,7 @@ let register_values
                            callables
                            callable =
         Handler.DependencyHandler.add_function_key ~handle name;
+
         (* Register callable global. *)
         let change callable = function
           | None -> Some [callable]
@@ -721,6 +723,7 @@ let register_values
     |> ignore
   in
   CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:(register_callables handle);
+
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
@@ -932,12 +935,14 @@ module Builder = struct
            ~local_mode:Ast.Source.PlaceholderStub
            ~stub:true
            []);
+
     (* Add `None` constant to globals. *)
     let annotation annotation =
       Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
     in
     Hashtbl.set globals ~key:(Reference.create "None") ~data:(annotation Type.none);
     Hashtbl.set globals ~key:(Reference.create "...") ~data:(annotation Type.Any);
+
     (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
        the stubs. *)
     let add_special_class ~name ~bases ~metaclasses ~body =
@@ -1005,12 +1010,14 @@ module Builder = struct
           [Type.Primitive "TypedDictionary"],
           [],
           Type.TypedDictionary.defines ~t_self_expression ~total:false ) ];
+
     (* Register hardcoded aliases. *)
     Hashtbl.set
       aliases
       ~key:"typing.DefaultDict"
       ~data:(Type.TypeAlias (Type.Primitive "collections.defaultdict"));
     Hashtbl.set aliases ~key:"None" ~data:(Type.TypeAlias (Type.Optional Type.Bottom));
+
     (* This is broken in typeshed:
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set aliases ~key:"PathLike" ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));

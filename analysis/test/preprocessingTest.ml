@@ -168,6 +168,7 @@ let test_expand_format_string _ =
              +Name (Name.Attribute { base = +Integer 1; attribute = "__add__"; special = true });
            arguments = [{ Call.Argument.name = None; value = +Integer 2 }]
          } ];
+
   (* Ensure we fix up locations. *)
   let assert_locations_equal source expected_locations =
     let construct_location ((start_line, start_column), (stop_line, stop_column)) =
@@ -214,6 +215,7 @@ let test_qualify _ =
   assert_qualify "from a import b as c; c" "from a import b as c; a.b";
   assert_qualify "from builtins import b; b" "from builtins import b; b";
   assert_qualify "b; import a as b; b" "b; import a as b; a";
+
   (* Qualification in different places. *)
   let assert_qualify_statement actual expected =
     let import = "import a as b;" in
@@ -259,6 +261,7 @@ let test_qualify _ =
   assert_qualify_statement "\nwhile b: b" "\nwhile a: a";
   assert_qualify_statement "yield b" "yield a";
   assert_qualify_statement "yield from b" "yield from a";
+
   (* Always pick conditional imports. *)
   assert_qualify
     {|
@@ -286,6 +289,7 @@ let test_qualify _ =
         import a as b
       a
     |};
+
   (* Qualify assignments. *)
   assert_qualify
     {|
@@ -312,6 +316,7 @@ let test_qualify _ =
     {|
       [*$local_qualifier$a, $local_qualifier$b] = [1]
     |};
+
   (* Qualify classes. *)
   assert_qualify
     {|
@@ -431,6 +436,7 @@ let test_qualify _ =
          qualifier.C.INDENT = 1
          qualifier.C.INDENT, qualifier.C.other = (2, 3)
     |};
+
   (* Treat special forms like class definitions. *)
   assert_qualify
     ~handle:"typing.pyi"
@@ -442,6 +448,7 @@ let test_qualify _ =
       Type: _SpecialForm = ...
       def typing.foo($parameter$l: typing.Type[int]): ...
     |};
+
   (* Only qualify strings for annotations and potential type aliases. *)
   assert_qualify
     {|
@@ -520,6 +527,7 @@ let test_qualify _ =
         qualifier.C.T = "C"
         qualifier.C.TSelf = typing.TypeVar("TSelf", "qualifier.C", qualifier.X, "qualifier.A")
     |};
+
   (* Qualify parameters *)
   assert_qualify
     {|
@@ -541,6 +549,7 @@ let test_qualify _ =
       class qualifier.A(): pass
       def qualifier.foo($parameter$x: typing_extensions.Literal['A']): ...
     |};
+
   (* Qualify functions. *)
   assert_qualify
     {|
@@ -608,6 +617,7 @@ let test_qualify _ =
       from typing import List
       def qualifier.foo() -> typing.List[int]: pass
     |};
+
   (* Nested defines. *)
   assert_qualify
     {|
@@ -635,6 +645,7 @@ let test_qualify _ =
         def qualifier.foo.nested($parameter$a):
           def qualifier.foo.nested.a(): pass
     |};
+
   (* SSA-gutted. *)
   assert_qualify
     {|
@@ -874,6 +885,7 @@ let test_qualify _ =
         def qualifier.C.g($parameter$x: qualifier.C.alias):
           pass
     |};
+
   (* Decorator qualification tests *)
   assert_qualify
     {|
@@ -1376,6 +1388,7 @@ let test_expand_type_checking_imports _ =
       from whoops import TYPE_CHECKING
       pass
     |};
+
   (* Nested. *)
   assert_expanded
     {|
@@ -1387,6 +1400,7 @@ let test_expand_type_checking_imports _ =
       def foo():
         pass
     |};
+
   (* Inverted. *)
   assert_expanded
     {|
@@ -1545,6 +1559,7 @@ let test_expand_implicit_returns _ =
     |}
     [ +Try { Try.body = [+Pass]; handlers = []; orelse = []; finally = [+Pass] };
       +Return { Return.expression = None; is_implicit = true } ];
+
   (* Lol termination analysis. *)
   assert_expand_implicit_returns
     {|
@@ -1730,6 +1745,7 @@ let test_defines _ =
     }
   in
   assert_defines [+Define define] [create_toplevel [+Define define]; define];
+
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in
   let define_bar = create_define "bar" in
@@ -1907,6 +1923,7 @@ let test_expand_typed_dictionaries _ =
     ( "Movie: "
     ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
     ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" );
+
   (* Invalid TypedDicts *)
   assert_expand
     {|

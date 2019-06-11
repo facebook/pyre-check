@@ -29,6 +29,7 @@ let test_check_missing_parameter _ =
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+
   (* typing.Any given *)
   assert_strict_type_errors
     {|
@@ -64,6 +65,7 @@ let test_check_missing_parameter _ =
     |}
     [ "Missing parameter annotation [2]: Parameter `x` must have a type "
       ^ "that does not contain `Any`." ];
+
   (* Special cases *)
   assert_type_errors
     {|
@@ -235,6 +237,7 @@ let test_check_missing_return _ =
     |}
     [ "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
+
   (* Don't report in non-debug mode. *)
   assert_default_type_errors {|
       def foo():
@@ -293,6 +296,7 @@ let test_check_missing_return _ =
     |}
     [ "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` "
       ^ "but no return type is specified." ];
+
   (* Joining. *)
   assert_type_errors
     {|

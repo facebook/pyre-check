@@ -193,6 +193,7 @@ let test_concise _ =
     |}
     [ "Illegal annotation target [35]: Target cannot be annotated.";
       "Undefined attribute [16]: `Foo` has no attribute `a`." ];
+
   (* Impossible Isinstance *)
   assert_type_errors
     ~concise:true
@@ -201,6 +202,7 @@ let test_concise _ =
         assert not isinstance(x, int)
     |}
     ["Impossible isinstance check [25]: isinstance check will always fail."];
+
   (* Incompatible Awaitable *)
   assert_type_errors
     ~concise:true
@@ -215,6 +217,7 @@ let test_concise _ =
     await foo
   |}
     ["Incompatible awaitable type [12]: Expected an awaitable but got `Callable[[int], None]`."];
+
   (* Prohibited Any *)
   assert_type_errors
     ~concise:true
@@ -223,6 +226,7 @@ let test_concise _ =
         x: typing.Any = 1
     |}
     ["Prohibited any [33]: Given annotation cannot be `Any`."];
+
   (* Missing Annotation *)
   assert_type_errors
     ~concise:true
@@ -244,6 +248,7 @@ let test_concise _ =
         return
     |}
     ["Missing parameter annotation [2]: Parameter must be annotated."];
+
   (* Incompatible Annotation *)
   assert_type_errors
     ~concise:true
@@ -291,6 +296,7 @@ let test_concise _ =
       export.a = "string"
     |}
     ["Incompatible variable type [9]: a has type `int`; used as `str`."];
+
   (* Inconsistent Override *)
   assert_type_errors
     ~concise:true
@@ -322,6 +328,7 @@ let test_concise _ =
           return "string"
     |}
     ["Inconsistent override [15]: `foo` overrides method defined in `Foo` inconsistently."];
+
   (* Invalid Type *)
   assert_type_errors
     ~concise:true
@@ -331,6 +338,7 @@ let test_concise _ =
         return
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
+
   (* Argument Errors *)
   assert_type_errors
     ~concise:true
@@ -356,6 +364,7 @@ let test_concise _ =
       foo(1)
     |}
     ["Missing argument [20]: Argument `y` expected."];
+
   (* Not Callable *)
   assert_type_errors
     ~concise:true
@@ -364,6 +373,7 @@ let test_concise _ =
       x()
     |}
     ["Call error [29]: `int` is not a function."];
+
   (* TypedDict *)
   assert_type_errors
     ~concise:true
@@ -373,6 +383,7 @@ let test_concise _ =
           y = x["year"]
     |}
     ["TypedDict accessed with a missing key [27]: TypedDict `Cat` has no key `year`."];
+
   (* Redundant Cast *)
   assert_type_errors
     ~concise:true
@@ -381,6 +392,7 @@ let test_concise _ =
       y: int = typing.cast(int, x)
     |}
     ["Redundant cast [22]: The cast is redundant."];
+
   (* Undefined Import, Name, Type *)
   assert_type_errors
     ~concise:true
@@ -402,6 +414,7 @@ let test_concise _ =
         return
     |}
     ["Undefined type [11]: Type `X` is not defined."];
+
   (* Uninitialized Attribute *)
   assert_type_errors
     ~concise:true
@@ -410,6 +423,7 @@ let test_concise _ =
         x: int
     |}
     ["Uninitialized attribute [13]: Attribute `x` is never initialized."];
+
   (* ClassVar *)
   assert_type_errors
     ~concise:true

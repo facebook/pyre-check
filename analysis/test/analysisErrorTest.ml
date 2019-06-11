@@ -132,6 +132,7 @@ let test_due_to_analysis_limitations _ =
              declare_location = Location.Instantiated.any
            }
        });
+
   (* Initialization *)
   assert_due_to_analysis_limitations
     (Error.UninitializedAttribute
@@ -155,6 +156,7 @@ let test_due_to_analysis_limitations _ =
              due_to_invariance = false
            }
        });
+
   (* MissingParameterAnnotation. *)
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
@@ -180,6 +182,7 @@ let test_due_to_analysis_limitations _ =
          evidence_locations = [];
          thrown_at_source = true
        });
+
   (* MissingReturnAnnotation. *)
   assert_not_due_to_analysis_limitations
     (Error.MissingReturnAnnotation
@@ -205,6 +208,7 @@ let test_due_to_analysis_limitations _ =
          evidence_locations = [];
          thrown_at_source = true
        });
+
   (* MissingAttributeAnnotation *)
   assert_not_due_to_analysis_limitations
     (Error.MissingAttributeAnnotation
@@ -250,6 +254,7 @@ let test_due_to_analysis_limitations _ =
              thrown_at_source = true
            }
        });
+
   (* Parameter. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleParameterType
@@ -299,6 +304,7 @@ let test_due_to_analysis_limitations _ =
              due_to_invariance = false
            }
        });
+
   (* Return. *)
   assert_due_to_analysis_limitations
     (Error.IncompatibleReturnType
@@ -336,9 +342,11 @@ let test_due_to_analysis_limitations _ =
          is_unimplemented = false;
          define_location = Node.location mock_define
        });
+
   (* UndefinedType. *)
   assert_not_due_to_analysis_limitations (Error.UndefinedType Type.Top);
   assert_not_due_to_analysis_limitations (Error.UndefinedType Type.string);
+
   (* Unpack. *)
   assert_not_due_to_analysis_limitations
     (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
@@ -367,6 +375,7 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            }
        });
+
   (* IncompatibleAttributeType. *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleAttributeType
@@ -382,8 +391,10 @@ let test_due_to_mismatch_with_any _ =
              declare_location = Location.Instantiated.any
            }
        });
+
   (* IncompatibleAwaitableType *)
   assert_due_to_mismatch_with_any (Error.IncompatibleAwaitableType Type.Any);
+
   (* IncompatibleParameterType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleParameterType
@@ -409,6 +420,7 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            }
        });
+
   (* IncompatibleReturnType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleReturnType
@@ -446,6 +458,7 @@ let test_due_to_mismatch_with_any _ =
          is_unimplemented = false;
          define_location = Node.location mock_define
        });
+
   (* IncompatibleVariableType *)
   assert_due_to_mismatch_with_any
     (Error.IncompatibleVariableType
@@ -458,6 +471,7 @@ let test_due_to_mismatch_with_any _ =
            };
          declare_location = Location.Instantiated.any
        });
+
   (* InconsistentOverride *)
   assert_not_due_to_mismatch_with_any
     (InconsistentOverride
@@ -520,6 +534,7 @@ let test_due_to_mismatch_with_any _ =
                 });
          override_kind = Method
        });
+
   (* InvalidArgument *)
   assert_not_due_to_mismatch_with_any
     (InvalidArgument (Keyword { expression = !"name"; annotation = Type.integer }));
@@ -533,9 +548,11 @@ let test_due_to_mismatch_with_any _ =
     (InvalidArgument
        (Keyword
           { expression = !"name"; annotation = Type.dictionary ~key:Type.Any ~value:Type.Any }));
+
   (* NotCallable *)
   assert_due_to_mismatch_with_any (Error.NotCallable Type.Any);
   assert_not_due_to_mismatch_with_any (Error.NotCallable Type.Top);
+
   (* UndefinedAttribute *)
   assert_due_to_mismatch_with_any
     (Error.UndefinedAttribute
@@ -544,6 +561,7 @@ let test_due_to_mismatch_with_any _ =
        });
   assert_not_due_to_mismatch_with_any
     (Error.UndefinedAttribute { attribute = "foo"; origin = Error.Module !&"module" });
+
   (* Uninitialized Attribute *)
   assert_due_to_mismatch_with_any
     (Error.UninitializedAttribute
@@ -567,6 +585,7 @@ let test_due_to_mismatch_with_any _ =
              due_to_invariance = false
            }
        });
+
   (* Unpack *)
   assert_not_due_to_mismatch_with_any
     (Error.Unpack { expected_count = 2; unpack_problem = CountMismatch 3 });
@@ -574,6 +593,7 @@ let test_due_to_mismatch_with_any _ =
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.integer });
   assert_due_to_mismatch_with_any
     (Error.Unpack { expected_count = 2; unpack_problem = UnacceptableType Type.Any });
+
   (* Missing X errors *)
   assert_not_due_to_mismatch_with_any
     (Error.MissingParameterAnnotation
@@ -951,6 +971,7 @@ let test_filter _ =
   assert_unfiltered
     ~location:Location.Instantiated.any
     (undefined_attribute (Type.Primitive "Foo"));
+
   (* Suppress mock errors. *)
   assert_filtered (incompatible_return_type (Type.Primitive "unittest.mock.Mock") Type.integer);
   assert_unfiltered (incompatible_return_type Type.integer (Type.Primitive "unittest.mock.Mock"));
@@ -961,9 +982,11 @@ let test_filter _ =
   assert_unfiltered (incompatible_return_type (Type.Optional Type.Bottom) Type.integer);
   assert_filtered (unexpected_keyword "foo" (Some "unittest.mock.call"));
   assert_unfiltered (unexpected_keyword "foo" None);
+
   (* Suppress return errors in unimplemented defines. *)
   assert_unfiltered (incompatible_return_type Type.integer Type.float);
   assert_filtered (incompatible_return_type Type.integer Type.float ~is_unimplemented:true);
+
   (* Suppress errors due to importing builtins. *)
   let undefined_import import = UndefinedImport !&import in
   assert_filtered (undefined_import "builtins");
@@ -1047,9 +1070,11 @@ let test_suppress _ =
   in
   assert_suppressed suppress_missing_return (missing_return Type.integer);
   assert_suppressed suppress_missing_return (missing_return Type.Any);
+
   (* Defer to Default policy if not specifically suppressed *)
   assert_not_suppressed suppress_missing_return (incompatible_return_type Type.integer Type.float);
   assert_suppressed suppress_missing_return (Error.UndefinedName !&"reveal_type");
+
   (* Always suppress synthetic locations. *)
   assert_suppressed
     Source.Infer

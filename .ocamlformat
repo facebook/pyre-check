@@ -16,6 +16,7 @@ ocp-indent-compat
 parens-tuple=multi-line-only
 parens-tuple-patterns=multi-line-only
 sequence-style=terminator
+sequence-blank-line=preserve-one
 single-case=sparse
 space-around-records
 space-around-variants

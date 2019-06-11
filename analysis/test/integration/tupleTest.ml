@@ -266,6 +266,7 @@ let test_tuple_literal_access _ =
         return x[i]
     |}
     [];
+
   (* TODO(T41500114): This should trigger a separate error *)
   assert_type_errors
     {|
@@ -274,6 +275,7 @@ let test_tuple_literal_access _ =
         return x[3]
     |}
     ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+
   (* TODO(T41500251): This would ideally work as well *)
   assert_type_errors
     {|

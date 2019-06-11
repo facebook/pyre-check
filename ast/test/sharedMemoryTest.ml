@@ -10,6 +10,7 @@ let test_normalize_handle_keys context =
   (* Ensure shared memory gets cleaned up afterwards. *)
   let tear_down _ _ = Ast.SharedMemory.HandleKeys.clear () in
   bracket (fun _ -> ()) tear_down context;
+
   (* Ensure that the structural representation of the keys is identical for all possible
      permutations. *)
   let assert_normalized keys =

@@ -31,6 +31,7 @@ let test_create _ =
   assert_create
     "typing.Dict.__getitem__((int, str))"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
+
   (* Type aliases in typeshed. *)
   assert_create "typing.Counter" (Type.parametric "collections.Counter" [Type.Any]);
   assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" [Type.integer]);
@@ -42,6 +43,7 @@ let test_create _ =
     "typing_extensions.Protocol[int]"
     (Type.parametric "typing.Protocol" [Type.integer]);
   assert_create "typing_extensions.Protocol" (Type.Primitive "typing.Protocol");
+
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
   assert_create "typing.List" (Type.list Type.Any);
@@ -69,9 +71,11 @@ let test_create _ =
   assert_create
     "typing.Union[typing.Optional[int], str]"
     (Type.optional (Type.union [Type.integer; Type.string]));
+
   (* Nested renaming. *)
   assert_create "typing.Set[typing.Any]" (Type.set Type.Any);
   assert_create "typing.Dict[str, typing.Any]" (Type.dictionary ~key:Type.string ~value:Type.Any);
+
   (* Check variables. *)
   assert_create "typing.TypeVar('_T')" (Type.variable "_T");
   assert_create
@@ -105,6 +109,7 @@ let test_create _ =
     (Type.variable
        ~constraints:(Type.Variable.Unary.Bound (Type.Callable.create ~annotation:Type.Any ()))
        "_CallableT");
+
   (* Check that type aliases are resolved. *)
   let assert_alias source resolved =
     let aliases primitive =
@@ -124,16 +129,19 @@ let test_create _ =
   assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
   assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.Primitive "Aliased"]);
   assert_alias "Alias[int]" (Type.parametric "Aliased" [Type.integer]);
+
   (* TODO(T44787675): Implement actual generic aliases *)
   assert_alias
     "_Future[int]"
     (Type.union [Type.parametric "Future" [Type.integer]; Type.awaitable Type.integer]);
+
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
   assert_create "'foo.bar'" (Type.Primitive "foo.bar");
   assert_create "foo['bar']" (Type.parametric "foo" [Type.Primitive "bar"]);
   assert_create "'Type[str]'" (Type.parametric "Type" [Type.Primitive "str"]);
   assert_create "'Type[[[]str]'" (Type.Primitive "Type[[[]str]");
+
   (* Recursive aliasing. *)
   let aliases = function
     | "A" -> Some (Type.Primitive "B")
@@ -142,6 +150,7 @@ let test_create _ =
   in
   let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.Primitive "C");
+
   (* Recursion with loop. *)
   let aliases = function
     | "A" -> Some (Type.Primitive "A")
@@ -155,6 +164,7 @@ let test_create _ =
   in
   let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.list (Type.Primitive "A"));
+
   (* Nested aliasing. *)
   let aliases = function
     | "A" -> Some (Type.list (Type.Primitive "B"))
@@ -165,6 +175,7 @@ let test_create _ =
   let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
   assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
+
   (* Aliasing of subclasses through imports. *)
   let aliases = function
     | "A" -> Some (Type.Primitive "B")
@@ -180,6 +191,7 @@ let test_create _ =
     ~aliases
     "A.InnerClass.InnerInnerClass"
     (Type.Primitive "B.InnerClass.InnerInnerClass");
+
   (* Aliases with Unions. *)
   let aliases = function
     | "A" -> Some (Type.union [Type.string; Type.bytes])
@@ -187,6 +199,7 @@ let test_create _ =
   in
   let aliases = create_type_alias_table aliases in
   assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
+
   (* Callables. *)
   let open Type.Callable in
   assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
@@ -338,6 +351,7 @@ let test_instantiate _ =
       (Type.instantiate ~constraints:(Map.find map) generic)
   in
   assert_instantiate [] ~generic:(Type.Primitive "foo") ~expected:(Type.Primitive "foo");
+
   (* Union[_T, _VT] + (_T = int, _VT = None) -> Optional[int] *)
   assert_instantiate
     [Type.variable "_T", Type.integer; Type.variable "_VT", Type.Optional Type.Bottom]
@@ -369,6 +383,7 @@ let test_expression _ =
   assert_expression
     (Type.Parametric { name = "list"; parameters = [Type.integer] })
     "typing.List.__getitem__(int)";
+
   (* Callables. *)
   let open Type.Callable in
   assert_expression
@@ -514,6 +529,7 @@ let test_union _ =
   assert_true (Type.equal (Type.union [Type.float]) Type.float);
   assert_true (Type.equal (Type.union [Type.float; Type.Bottom]) Type.float);
   assert_true (Type.equal (Type.union [Type.Bottom; Type.Bottom]) Type.Bottom);
+
   (* Flatten unions. *)
   assert_equal
     (Type.union [Type.float; Type.union [Type.string; Type.bytes]])
@@ -974,6 +990,7 @@ let test_parameter_name_compatibility _ =
   assert_true (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "$0"));
   assert_true (Type.Callable.Parameter.names_compatible (parameter "$0") (parameter "argument"));
   assert_true (Type.Callable.Parameter.names_compatible (parameter "$0") (parameter "$1"));
+
   (* Underscores are ignored for the purposes of typechecking parameter compatibility. *)
   assert_true
     (Type.Callable.Parameter.names_compatible (parameter "argument") (parameter "_argument"));

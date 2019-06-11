@@ -54,6 +54,7 @@ let test_check_contextmanager _ =
           return number
     |}
     [];
+
   (* Decorators are chained properly. *)
   assert_type_errors
     {|
@@ -326,6 +327,7 @@ let test_check_user_decorators _ =
       reveal_type(f)
     |}
     ["Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[str], int]`."];
+
   (* We currently ignore decorating decorators. *)
   assert_type_errors
     {|
@@ -404,6 +406,7 @@ let test_check_callable_class_decorators _ =
        contain `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], str]`." ];
+
   (* We don't support overloaded callable classes. *)
   assert_type_errors
     {|

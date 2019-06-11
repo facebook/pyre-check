@@ -42,6 +42,7 @@ let test_transform_ast _ =
         def qualifier.T.__init__(self, input: typing.Dict[str, typing.List[int]]):
           pass
     |};
+
   (* Don't transform non-toplevel statements. *)
   assert_expand
     {|

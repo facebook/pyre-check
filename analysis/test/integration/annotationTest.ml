@@ -14,6 +14,7 @@ let test_check_undefined_type _ =
     |}
     [ "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined." ];
+
   (* Don't crash when returning a bad type. *)
   assert_default_type_errors
     {|
@@ -41,6 +42,7 @@ let test_check_undefined_type _ =
         return x
     |}
     ["Undefined type [11]: Type `Herp` is not defined."];
+
   (* TODO(T44482498): Fix our locations for types to throw twice for Herp. *)
   assert_default_type_errors
     {|
@@ -74,6 +76,7 @@ let test_check_undefined_type _ =
         pass
     |}
     ["Undefined type [11]: Type `Optional` is not defined."];
+
   (* TODO(T44482498): We should error on both Optional and Any. *)
   assert_default_type_errors
     {|
@@ -109,6 +112,7 @@ let test_check_undefined_type _ =
         return x
     |}
     [];
+
   (* Ensure other errors are not missed when undefined type is thrown. *)
   assert_strict_type_errors
     {|
@@ -142,6 +146,7 @@ let test_check_undefined_type _ =
     |}
     [ "Missing parameter annotation [2]: Parameter `other` has no type specified.";
       "Undefined type [11]: Type `Herp` is not defined." ];
+
   (* Attributes *)
   assert_type_errors
     {|
@@ -154,6 +159,7 @@ let test_check_undefined_type _ =
     |}
     [ "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Herp` is not defined." ];
+
   (* Class bases *)
   assert_type_errors
     {|
@@ -185,6 +191,7 @@ let test_check_undefined_type _ =
     [ "Undefined type [11]: Type `BB` is not defined.";
       "Undefined type [11]: Type `BB` is not defined.";
       "Undefined type [11]: Type `DD` is not defined." ];
+
   (* Globals *)
   assert_type_errors
     {|
@@ -195,6 +202,7 @@ let test_check_undefined_type _ =
     [ "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Derp` is not defined." ];
+
   (* Assigns *)
   assert_type_errors
     {|
@@ -206,6 +214,7 @@ let test_check_undefined_type _ =
     [ "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Derp` is not defined.";
       "Undefined type [11]: Type `Derp` is not defined." ];
+
   (* cast, isinstance *)
   assert_type_errors
     {|
@@ -269,6 +278,7 @@ let test_check_invalid_type _ =
       x: MyType = 1
     |}
     ["Invalid type [31]: Expression `MyType` is not a valid type."];
+
   (* Type aliases to Any *)
   assert_type_errors
     {|
@@ -284,6 +294,7 @@ let test_check_invalid_type _ =
     |}
     [ "Missing global annotation [5]: Globally accessible variable `MyType` "
       ^ "must be specified as type other than `Any`." ];
+
   (* Un-parseable expressions *)
   assert_type_errors
     {|
@@ -297,6 +308,7 @@ let test_check_invalid_type _ =
         return
     |}
     ["Invalid type [31]: Expression `int.__add__(str)` is not a valid type."];
+
   (* Using expressions of type meta-type: only OK in isinstance *)
   assert_type_errors
     {|
@@ -593,6 +605,7 @@ let test_check_immutable_annotations _ =
     |}
     [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
       ^ "no type is specified." ];
+
   (* Illustrate that merging an ellipses with a type results in Any (aka. no type suggestion on the
      missing annotation error) *)
   assert_type_errors
@@ -1005,6 +1018,7 @@ let test_check_invalid_type_variables _ =
     |}
     [ "Invalid type variable [34]: The type variable `Variable[T]` can only be used to annotate \
        generic classes or functions." ];
+
   (* We don't error for inferred generics. *)
   assert_type_errors
     {|
@@ -1015,6 +1029,7 @@ let test_check_invalid_type_variables _ =
         pass
     |}
     [];
+
   (* This is fact valid, but not for the reason it looks like here, as the Ts are in different
      scopes. This means that changing the return value to Callable[[int], int] or anything else
      should work because of behavioral subtyping. *)
@@ -1027,6 +1042,7 @@ let test_check_invalid_type_variables _ =
         return g
     |}
     [];
+
   (* Check invalid type variables in parameters and returns. *)
   assert_type_errors
     {|

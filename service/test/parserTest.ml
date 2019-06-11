@@ -332,6 +332,7 @@ let test_register_modules context =
     in
     let files = [file; import_non_toplevel] in
     List.iter files ~f:File.write;
+
     (* Build environment. *)
     Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
     Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);

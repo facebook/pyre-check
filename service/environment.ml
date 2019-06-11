@@ -30,6 +30,7 @@ let populate
     in
     Environment.register_aliases (module Handler) sources;
     List.iter ~f:(Environment.register_dependencies (module Handler)) sources;
+
     (* Build type order. *)
     List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
     TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
@@ -73,6 +74,7 @@ let populate
   Handler.transaction
     ~f:(fun () -> List.iter ~f:(Plugin.apply_to_environment (module Handler) resolution) sources)
     ();
+
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
   Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ()
@@ -83,6 +85,7 @@ let build ((module Handler : Environment.Handler) as handler)
           ~scheduler
           ~sources =
   Log.info "Building type environment...";
+
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
      sequentially until we find a way to build the environment in parallel. *)
   let get_sources =
@@ -376,6 +379,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     |> fun keys ->
     (* We add a global name for each function definition as well. *)
     Globals.remove_batch (Globals.KeySet.of_list keys);
+
     (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
     |> List.map ~f:(fun name -> Type.Primitive name)
@@ -431,6 +435,7 @@ let populate_shared_memory
       }
     =
     Log.info "Adding environment information to shared memory...";
+
     (* Writing through the caches because we are doing a batch-add. Especially while still adding
        amounts of data that exceed the cache size, the time spent doing cache bookkeeping is
        wasted. *)

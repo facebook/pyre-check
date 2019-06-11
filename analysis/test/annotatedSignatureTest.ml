@@ -170,6 +170,7 @@ let test_select _ =
     "[..., unknown][[..., int][[int], int]]"
     "(1)"
     (`Found "[..., int]");
+
   (* Traverse anonymous arguments. *)
   assert_select "[[], int]" "()" (`Found "[[], int]");
   assert_select "[[int], int]" "()" (`NotFoundMissingAnonymousArgument 0);
@@ -194,6 +195,7 @@ let test_select _ =
     "(union)"
     (`NotFoundMismatch (Type.union [Type.integer; Type.string], "union", Type.integer, None, 1));
   assert_select "[[int, Named(i, int)], int]" "(1, 2, i=3)" (`NotFoundTooManyArguments (1, 2));
+
   (* Traverse variable arguments. *)
   assert_select "[[Variable()], int]" "()" (`Found "[[Variable()], int]");
   assert_select "[[Variable()], int]" "(1, 2)" (`Found "[[Variable()], int]");
@@ -219,6 +221,7 @@ let test_select _ =
     "[[Variable(int)], int]"
     "(*['string'])"
     (`NotFoundMismatch (Type.string, "*[\"string\"]", Type.integer, None, 1));
+
   (* KeywordOnly *)
   assert_select "[[KeywordOnly(i, int)], int]" "(i=1)" (`Found "[[KeywordOnly(i, int)], int]");
   assert_select "[[KeywordOnly(i, int)], int]" "(2, i=1)" (`NotFoundTooManyArguments (0, 1));
@@ -230,6 +233,7 @@ let test_select _ =
     "[[Named(x, str), KeywordOnly(i, bool, default)], int]"
     "(*['a', 'b'])"
     (`Found "[[Named(x, str), KeywordOnly(i, bool, default)], int]");
+
   (* Named arguments. *)
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
@@ -248,6 +252,7 @@ let test_select _ =
     "(j=1, q=2)"
     (`NotFoundUnexpectedKeyword "q");
   assert_select "[[], int]" "(j=1, q=2)" (`NotFoundUnexpectedKeyword "j");
+
   (* May want new class of error for `keyword argument repeated` *)
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
@@ -277,6 +282,7 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'j': 'string', 'i': 'string'})"
     (`NotFoundMismatch (Type.string, "**{'j': 'string', 'i': 'string'}", Type.integer, None, 1));
+
   (* Test iterable and mapping expansions. *)
   assert_select "[[int], int]" "(*[1])" (`Found "[[int], int]");
   assert_select
@@ -301,6 +307,7 @@ let test_select _ =
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'i': 1}, j=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
+
   (* Constructor resolution. *)
   assert_select
     "[[typing.Callable[[typing.Any], int]], int]"
@@ -321,6 +328,7 @@ let test_select _ =
           (),
         None,
         1 ));
+
   (* Keywords. *)
   assert_select "[[Keywords()], int]" "()" (`Found "[[Keywords()], int]");
   assert_select "[[Keywords()], int]" "(a=1, b=2)" (`Found "[[Keywords()], int]");
@@ -337,6 +345,7 @@ let test_select _ =
     "[[Keywords(str)], int]"
     "(a='string', b=2)"
     (`NotFoundMismatch (Type.literal_integer 2, "2", Type.string, Some "b", 2));
+
   (* Constraint resolution. *)
   assert_select "[[_T], _T]" "(1)" (`Found "[[$literal_one], $literal_one]");
   assert_select
@@ -463,6 +472,7 @@ let test_select _ =
     "[[], _T_bound_by_float_str_union]"
     "()"
     (`Found "[[], _T_bound_by_float_str_union]");
+
   (* Ranking. *)
   assert_select
     ~allow_undefined:true
@@ -506,6 +516,7 @@ let test_select _ =
     "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
     (`NotFoundMissingAnonymousArgumentWithClosest ("[[int, str, bool], int]", 2));
+
   (* Match not found in overloads: error against implementation if it exists. *)
   assert_select
     "[[typing.Union[str, int]], typing.Union[str, int]][[[str], str][[int], int]]"
@@ -528,6 +539,7 @@ let test_select _ =
     "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
     "(i=1, d=2)"
     (`NotFoundUnexpectedKeywordWithClosest ("[[Named(c, int), Named(d, int)], int]", "i"));
+
   (* Prefer the overload where the mismatch comes latest *)
   assert_select
     ~allow_undefined:true
@@ -541,6 +553,7 @@ let test_select _ =
     "(1, 1)"
     (`NotFoundMismatchWithClosest
       ("[[int, str], int]", Type.literal_integer 1, "1", Type.string, None, 2));
+
   (* Void functions. *)
   assert_select ~allow_undefined:true "[..., None]" "()" (`Found "[..., None]");
   assert_select "[[int], None]" "(1)" (`Found "[[int], None]");
@@ -556,12 +569,14 @@ let test_select _ =
     "[[typing.Callable[[_T], typing.List[bool]]], _T]"
     "(f)"
     (`Found "[[typing.Callable[[int], typing.List[bool]]], int]");
+
   (* Special dictionary constructor *)
   assert_select
     ~name:"dict.__init__"
     "[[Keywords(_S)], dict[_T, _S]]"
     "(a=1)"
     (`Found "[[Keywords($literal_one)], dict[str, $literal_one]]");
+
   (* TODO(T41074174): Error here rather than defaulting back to the initial signature *)
   assert_select
     ~name:"dict.__init__"

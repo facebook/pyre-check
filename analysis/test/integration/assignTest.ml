@@ -38,6 +38,7 @@ let test_check_assign _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__add__` but got `str`." ];
+
   (* Prune `undeclared` from assignments. *)
   assert_type_errors
     {|

@@ -655,6 +655,7 @@ let attribute_table
       List.iter
         definitions
         ~f:(definition_attributes ~in_test ~instantiated ~class_attributes ~table);
+
       (* Class over meta hierarchy if necessary. *)
       let meta_definitions =
         if class_attributes then

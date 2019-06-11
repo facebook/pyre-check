@@ -385,6 +385,7 @@ let test_unbound_variables _ =
         bar([])
     |}
     [];
+
   (* TODO(T42360946): Probably want a better error here *)
   assert_type_errors
     {|
@@ -537,6 +538,7 @@ let test_unbound_variables _ =
         return [], []
     |}
     [];
+
   (* This could cause an infinite loop due to mismatching errors if we didn't make the error set
      namespace insensitive *)
   assert_type_errors
@@ -748,6 +750,7 @@ let test_callable_parameter_variadics _ =
     |}
     [ "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
       ^ "Classes parameterized by callable parameter variadics are not supported at this time" ];
+
   (* We really don't support typechecking the bodies of these decorators yet *)
   assert_type_errors
     {|
@@ -801,6 +804,7 @@ let test_list_variadics _ =
       return x
     |}
     ["Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, str, bool]`."];
+
   (* Concatenation isn't implemented yet, and I'm not even sure this is going to be the final
    * syntax for it *)
   assert_type_errors
@@ -898,6 +902,7 @@ let test_list_variadics _ =
       "Revealed type [-1]: Revealed type for `call_with_tuple(bar, (True, 19, 37))` is `int`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[ListVariadic[Ts]]` for 2nd \
        anonymous parameter to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`." ];
+
   (* This is not yet supported *)
   assert_type_errors
     {|

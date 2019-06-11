@@ -104,6 +104,7 @@ let test_add_bound _ =
   assert_add_bound_succeeds
     ~preconstraints
     (`Lower (ParameterVariadicPair (parameter_variadic, Type.Callable.Defined [])));
+
   (* We currently always reject adding a different bound to something with a bound already *)
   assert_add_bound_fails
     ~preconstraints
@@ -163,6 +164,7 @@ let test_single_variable_solution _ =
   assert_solution
     ~sequentially_applied_bounds:[`Lower (UnaryPair (unconstrained, child))]
     (Some [UnaryPair (unconstrained, child)]);
+
   (* Solving unconstrained to bottom would be sound as it fulfills the bound, but we want to
      eliminate bottoms whenever possible, so this should be fine *)
   assert_solution
@@ -216,6 +218,7 @@ let test_single_variable_solution _ =
     ~sequentially_applied_bounds:
       [`Lower (ParameterVariadicPair (parameter_variadic, empty_parameters))]
     (Some [ParameterVariadicPair (parameter_variadic, empty_parameters)]);
+
   (* Attempting to bound a parameter variadic by more than one set of non-identical parameters
      fails *)
   assert_solution
@@ -273,6 +276,7 @@ let test_multiple_variable_solution _ =
       [ `Lower (UnaryPair (unconstrained_a, Type.Variable unconstrained_b));
         `Lower (UnaryPair (unconstrained_b, child)) ]
     (Some [UnaryPair (unconstrained_a, child); UnaryPair (unconstrained_b, child)]);
+
   (* Could be solvable, choosing not to deal with this yet *)
   assert_solution
     ~sequentially_applied_bounds:
@@ -312,6 +316,7 @@ let test_multiple_variable_solution _ =
     (Some
        [ ParameterVariadicPair (parameters_a, empty_parameters);
          ParameterVariadicPair (parameters_b, empty_parameters) ]);
+
   (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
      this yet *)
   assert_solution
@@ -339,6 +344,7 @@ let test_multiple_variable_solution _ =
     (Some
        [ ParameterVariadicPair (parameters_a, parameters_with_integer);
          UnaryPair (unconstrained_a, Type.integer) ]);
+
   (* This is truly unsolvable, because A is supposed to be greater than [T], but T is supposed to
      be greater than typing.Callable[A, int]. *)
   assert_solution
@@ -366,6 +372,7 @@ let test_multiple_variable_solution _ =
            (list_variadic_a, Type.Record.OrderedTypes.Concrete [Type.integer; Type.string]);
          ListVariadicPair
            (list_variadic_b, Type.Record.OrderedTypes.Concrete [Type.integer; Type.string]) ]);
+
   (* As with unaries, this trivial loop could be solvable, but we are choosing not to deal with
      this yet *)
   assert_solution

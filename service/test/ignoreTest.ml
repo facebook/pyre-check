@@ -106,6 +106,7 @@ let ignore_lines_test context =
           return 1.0  # pyre-ignore[7]
       |}
       [];
+
     (* Test error on unused ignores *)
     assert_errors
       {|

@@ -112,6 +112,7 @@ let test_handle_to_path context =
   touch other_root "b.py";
   touch other_root "matching.py";
   touch import_me "a.py";
+
   (* Check that we can recover paths from handles. *)
   let assert_path ~handle ~path =
     match File.Handle.to_path ~configuration (File.Handle.create handle) with

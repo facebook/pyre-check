@@ -13,6 +13,7 @@ let test_scheduling _ =
     "'string' + 1"
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+
   (* Functions are scheduled. *)
   assert_type_errors
     {|
@@ -30,6 +31,7 @@ let test_scheduling _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+
   (* Class bodies are scheduled. *)
   assert_type_errors
     {|
@@ -38,6 +40,7 @@ let test_scheduling _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+
   (* Methods are scheduled. *)
   assert_type_errors
     {|
@@ -47,6 +50,7 @@ let test_scheduling _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `int.__radd__` but got `str`." ];
+
   (* Entry states are propagated. *)
   assert_type_errors
     {|
@@ -64,6 +68,7 @@ let test_scheduling _ =
       "Incompatible variable type [9]: variable is declared to have type `int` "
       ^ "but is used as type `str`.";
       "Incompatible return type [7]: Expected `str` but got `int`." ];
+
   (* Functions defined after try/except blocks are typechecked. *)
   assert_type_errors
     {|
@@ -319,6 +324,7 @@ let test_check_nested _ =
       "Undefined error [1]: Problem with analysis.";
       "Incompatible return type [7]: Expected `Derp.Word` but got "
       ^ "implicit return value of `None`." ];
+
   (* Nesting behaves differently for the toplevel function. *)
   assert_type_errors
     ~qualifier:!&"shadowing"

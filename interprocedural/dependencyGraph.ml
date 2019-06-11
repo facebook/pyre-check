@@ -164,6 +164,7 @@ let dump call_graph ~configuration =
   Map.iteri call_graph ~f:add_edges;
   remove_trailing_comma ();
   Buffer.add_string buffer "}";
+
   (* Write to file. *)
   Path.create_relative
     ~root:(Configuration.Analysis.pyre_root configuration)

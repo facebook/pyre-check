@@ -93,6 +93,7 @@ let initialize ?configuration sources =
       | None -> ()
     in
     List.iter handles ~f:add_module;
+
     (* Initialize dependency map. *)
     let source (path, content) =
       let handle = File.Handle.create path in
@@ -257,6 +258,7 @@ let test_process_display_type_errors_request _ =
     assert_errors_equal ~actual_errors ~expected_errors
   in
   assert_response ~paths:[] ~errors:[] ~expected_errors:[];
+
   (* Empty request returns all errors. *)
   assert_response
     ~paths:[]
@@ -313,6 +315,7 @@ let test_process_type_check_request context =
       |}]
     ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
     ();
+
   (* Absolute paths *)
   let temporary_directory = OUnit2.bracket_tmpdir context in
   let absolute_path =
@@ -328,6 +331,7 @@ let test_process_type_check_request context =
     ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
     ~temporary_directory
     ();
+
   (* Check deferred requests for dependencies. *)
   assert_response
     ~sources:
@@ -335,6 +339,7 @@ let test_process_type_check_request context =
     ~check:["library.py", "def function() -> int: ..."] (* Unchanged. *)
     ~expected_errors:["library.py", []]
     ();
+
   (* Single dependency. *)
   assert_response
     ~sources:
@@ -342,6 +347,7 @@ let test_process_type_check_request context =
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["client.py", []; "library.py", []]
     ();
+
   (* Multiple depedencies. *)
   assert_response
     ~sources:
@@ -351,6 +357,7 @@ let test_process_type_check_request context =
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["client.py", []; "library.py", []; "other.py", []]
     ();
+
   (* Indirect dependency. *)
   assert_response
     ~incremental_transitive_dependencies:true
@@ -365,12 +372,14 @@ let test_process_type_check_request context =
     ~check:["library.py", "def function() -> str: ..."]
     ~expected_errors:["client.py", []; "indirect.py", []; "library.py", []]
     ();
+
   (* When multiple files match a qualifier, the existing file has priority. *)
   assert_response
     ~sources:["first.pyi", "def function() -> str: ..."]
     ~check:["first.py", "def function() -> int: ..."]
     ~expected_errors:[]
     ();
+
   (* Starred imports. *)
   assert_response
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
@@ -401,6 +410,7 @@ let test_process_type_check_request context =
       (* TODO(T44669208): We should not get any results for a.py here. *)
     ~expected_errors:["a.py", []; "a.pyi", []]
     ();
+
   (* Check nonexistent handles. *)
   let configuration, state = initialize [] in
   let files =
@@ -410,6 +420,7 @@ let test_process_type_check_request context =
   in
   let { Request.response; _ } = Request.process_type_check_request ~state ~configuration ~files in
   assert_equal (Some (Protocol.TypeCheckResponse [])) response;
+
   (* Ensure we don't raise an exception when a untracked files is passed in. *)
   Request.process_type_check_request
     ~state
@@ -502,8 +513,10 @@ let test_process_get_definition_request context =
     in
     (* Invalid request for an invalid file (no exception raised). *)
     assert_response ~sources ~line:0 ~column:0 None;
+
     (* Invalid request for a valid file. *)
     assert_response ~sources ~filename:"client.py" ~line:0 ~column:0 None;
+
     (* Valid request for a valid file. *)
     assert_response
       ~sources

@@ -181,6 +181,7 @@ let check
         "strict_coverage", strict_coverage;
         "total_errors", List.length errors ]
     ();
+
   (* Only destroy the scheduler if the check command created it. *)
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler

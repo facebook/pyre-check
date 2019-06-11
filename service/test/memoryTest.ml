@@ -75,6 +75,7 @@ let test_hash_of_key _ =
     ( OrderBackedges.string_of_key 1234
     |> (fun key -> Memory.unsafe_little_endian_representation ~key)
     |> Int64.to_string );
+
   (* Make sure different modules have different caches. *)
   assert_equal
     false

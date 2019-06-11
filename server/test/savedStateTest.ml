@@ -46,10 +46,12 @@ let test_restore_symbolic_links context =
     ~expected:
       [ Path.create_relative ~root:local_root ~relative:"a.py";
         Path.create_relative ~root:local_root ~relative:"b.py" ];
+
   (* We only get paths that are passed in. *)
   assert_restored
     ~names:[path "a.py"]
     ~expected:[Path.create_relative ~root:local_root ~relative:"a.py"];
+
   (* We relativize files not present in the new set of files. *)
   assert_restored
     ~names:[path "a.py"; path "removed.py"]
@@ -81,6 +83,7 @@ let test_compute_locally_changed_files context =
           Test.parse ~handle:relative content |> Ast.SharedMemory.Sources.add handle;
           Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton handle)
       | None -> () );
+
       (* Write new content to the file system if necessary. *)
       match new_content with
       | Some content -> File.write (File.create ~content (Path.create_relative ~root ~relative))
@@ -115,6 +118,7 @@ let test_compute_locally_changed_files context =
   assert_changed_files
     ~files:[{ relative = "a.py"; old_content = Some "'I used to exist'"; new_content = None }]
     ~expected:["a.py"];
+
   (* If a stub shadows a `.py` file that existed in the initial saved state generation, the server
      will be passed both files (as `a.py` used to exist, but was now removed in the eyes of the
      algorithm). *)

@@ -42,6 +42,7 @@ let communicate server_socket all_uris =
   >>| LanguageServer.Protocol.write_message Out_channel.stdout
   |> ignore;
   Statistics.event ~flush:true ~name:"persistent_client_launch" ();
+
   (* Get all initial errors *)
   Socket.write server_socket (Protocol.Request.DisplayTypeErrors []);
   let rec listen server_socket () =

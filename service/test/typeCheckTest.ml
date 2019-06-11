@@ -106,6 +106,7 @@ let test_filter_directories context =
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~files
     ["Incompatible return type [7]: Expected `C` but got `D`."];
+
   (* The structure:
    *  /root/check <- pyre is meant to analyze here
    *  /root/check/search <- this is added to the search path, handles are relative to here instead

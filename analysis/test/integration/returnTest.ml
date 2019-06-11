@@ -238,6 +238,7 @@ let test_check_return_control_flow _ =
         return x
     |}
     [];
+
   (* Type aliases in the class hierarchy are resolved. I.e. we follow the conditional `Collection`
      indirection in typeshed. *)
   assert_type_errors
@@ -286,11 +287,13 @@ let test_check_return_control_flow _ =
         return f( *args)
     |}
     [];
+
   (* Object methods are picked up for optionals. *)
   assert_type_errors {|
       def f() -> int:
         return None.__sizeof__()
     |} [];
+
   (* Builtins. *)
   assert_default_type_errors
     {|
@@ -312,6 +315,7 @@ let test_check_return_control_flow _ =
         return builtins.__name__
     |}
     ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+
   (* Meta. *)
   assert_type_errors
     {|

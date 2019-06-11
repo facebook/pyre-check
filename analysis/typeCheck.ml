@@ -4050,12 +4050,14 @@ let check_define
       Fixpoint.exit fixpoint
     in
     if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
       if configuration.store_type_check_resolution then
         ResolutionSharedMemory.add ~handle name resolution_fixpoint
     in
     exit >>| dump_resolutions |> ignore;
+
     (* Schedule nested functions for analysis. *)
     let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
     let errors = exit >>| State.errors |> Option.value ~default:[] in

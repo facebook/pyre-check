@@ -48,6 +48,7 @@ let test_multiline_strings_locations _ =
   (* variations of the multiline string: ''' AAA BBB ''' pass *)
   test_one "'''\nAAA\nBBB\n'''\npass";
   test_one "\"\"\"\nAAA\nBBB\n\"\"\"\npass";
+
   (* variations of the multiline string: (note the backslash in line 2) ''' AAA \ BBB ''' pass *)
   test_one "'''\nAAA \\\nBBB\n'''\npass";
   test_one "\"\"\"\nAAA \\\nBBB\n\"\"\"\npass"

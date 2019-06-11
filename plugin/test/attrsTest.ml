@@ -196,6 +196,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   (* Boolean arguments *)
   PluginTest.assert_environment_contains
     {|
@@ -295,6 +296,7 @@ let test_transform_environment _ =
             pass
       |}
     ];
+
   (* Inheritance *)
   PluginTest.assert_environment_contains
     {|

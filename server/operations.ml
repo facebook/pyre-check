@@ -158,6 +158,7 @@ let stop
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
   Path.absolute lock_path |> Lock.release |> ignore;
+
   (* Cleanup server files. *)
   Path.remove socket_path;
   Path.remove json_socket_path;
@@ -177,6 +178,7 @@ let connect
     if attempt >= retries then (
       Log.error "Could not connect to server after %d retries" attempt;
       raise ConnectionFailure );
+
     (* The socket path is computed in each iteration because the server might set up a symlink
        after a connection attempt - in that case, we want to avoid using the stale file. *)
     try

@@ -269,6 +269,7 @@ let check_expectation
         (Sexp.to_string [%message (set : String.Set.t)]))
     expected_sources
     returned_sources;
+
   (* Check sinks. *)
   assert_equal
     (Map.length expected_sinks)
@@ -277,6 +278,7 @@ let check_expectation
     ~msg:
       (Format.sprintf "Define %s: List of sink tainted parameters differ in length." define_name);
   String.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
+
   (* Check parameter sources. *)
   assert_equal
     (Map.length expected_parameter_sources)
@@ -295,6 +297,7 @@ let check_expectation
     ~msg:(Format.sprintf "Define %s Tito positions" define_name)
     expected_tito
     taint_in_taint_out_names;
+
   (* Check errors *)
   let actual_errors =
     Fixpoint.get_result callable
@@ -399,6 +402,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
         (File.Handle.show source.Source.handle)
         errors
         () );
+
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
     let overrides = DependencyGraph.create_overrides ~environment ~source in

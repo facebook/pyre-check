@@ -185,9 +185,11 @@ let test_less_or_equal _ =
     (State.less_or_equal
        ~left:(create ["x", Type.integer])
        ~right:(create ["x", Type.integer; "y", Type.integer]));
+
   (* > *)
   assert_false (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create []));
   assert_false (State.less_or_equal ~left:(create ["x", Type.Top]) ~right:(create []));
+
   (* partial order *)
   assert_false
     (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["x", Type.string]));
@@ -220,9 +222,11 @@ let test_join _ =
   assert_state_equal
     (State.join (create ["x", Type.integer]) (create ["x", Type.integer; "y", Type.integer]))
     (create ["x", Type.integer; "y", Type.Top]);
+
   (* > *)
   assert_state_equal (State.join (create ["x", Type.integer]) (create [])) (create ["x", Type.Top]);
   assert_state_equal (State.join (create ["x", Type.Top]) (create [])) (create ["x", Type.Top]);
+
   (* partial order *)
   assert_state_equal
     (State.join (create ["x", Type.integer]) (create ["x", Type.string]))
@@ -567,6 +571,7 @@ let test_forward_expression _ =
            control flow path that doesn't define `undefined`." ])
     "await undefined"
     Type.Top;
+
   (* Boolean operator. *)
   assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);
   assert_forward "1 and 'string'" (Type.union [Type.integer; Type.string]);
@@ -582,6 +587,7 @@ let test_forward_expression _ =
   assert_optional_forward "x and 1" (Type.optional Type.integer);
   assert_optional_forward "1 and x" (Type.optional Type.integer);
   assert_optional_forward "x and x" (Type.optional Type.integer);
+
   (* Call *)
   assert_forward
     ~precondition:["x", Type.dictionary ~key:Type.integer ~value:Type.Bottom]
@@ -647,6 +653,7 @@ let test_forward_expression _ =
           "Undefined attribute [16]: `Foo` has no attribute `another_unknown`." ])
     "foo(foo_instance.unknown).another_unknown"
     Type.Top;
+
   (* Comparison operator. *)
   assert_forward "1 < 2" Type.bool;
   assert_forward "1 < 2 < 3" Type.bool;
@@ -673,11 +680,13 @@ let test_forward_expression _ =
     Type.bool;
   assert_forward ~errors:(`Undefined 1) "undefined < 1" Type.Top;
   assert_forward ~errors:(`Undefined 2) "undefined == undefined" Type.Top;
+
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
   assert_forward "1" (Type.literal_integer 1);
   assert_forward "\"\"" (Type.literal_string "");
   assert_forward "b\"\"" Type.bytes;
+
   (* Dictionaries. *)
   assert_forward "{1: 1}" (Type.dictionary ~key:Type.integer ~value:Type.integer);
   assert_forward "{1: 'string'}" (Type.dictionary ~key:Type.integer ~value:Type.string);
@@ -709,12 +718,16 @@ let test_forward_expression _ =
   assert_forward
     "{key: value for key in [1] for value in ['string']}"
     (Type.dictionary ~key:Type.integer ~value:Type.string);
+
   (* Ellipsis. *)
   assert_forward "..." Type.Any;
+
   (* False literal. *)
   assert_forward "False" (Type.Literal (Type.Boolean false));
+
   (* Float literal. *)
   assert_forward "1.0" Type.float;
+
   (* Generators. *)
   assert_forward "(element for element in [1])" (Type.generator Type.integer);
   assert_forward
@@ -736,6 +749,7 @@ let test_forward_expression _ =
     ~errors:(`Undefined 1)
     "(element for element in undefined)"
     (Type.generator Type.Top);
+
   (* Lambda. *)
   let callable ~parameters ~annotation =
     let parameters =
@@ -767,6 +781,7 @@ let test_forward_expression _ =
     ~errors:(`Undefined 1)
     "lambda: undefined"
     (callable ~parameters:[] ~annotation:Type.Top);
+
   (* Lists. *)
   Type.Variable.Namespace.reset ();
   let empty_list =
@@ -804,12 +819,14 @@ let test_forward_expression _ =
            flow path that doesn't define `x`." ])
     "[x]"
     (Type.list Type.undeclared);
+
   (* Name. *)
   assert_forward
     ~precondition:["x", Type.integer]
     ~postcondition:["x", Type.integer]
     "x"
     Type.integer;
+
   (* Sets. *)
   assert_forward "{1}" (Type.set Type.integer);
   assert_forward "{1, 'string'}" (Type.set (Type.union [Type.integer; Type.string]));
@@ -831,15 +848,18 @@ let test_forward_expression _ =
     ~postcondition:["x", Type.set Type.integer]
     "{'', *x}"
     (Type.set (Type.union [Type.string; Type.integer]));
+
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
   assert_forward "**1" Type.Top;
   assert_forward ~errors:(`Undefined 1) "*undefined" Type.Top;
+
   (* String literals. *)
   assert_forward "'string'" (Type.literal_string "string");
   assert_forward "f'string'" Type.string;
   assert_forward "f'string{1}'" Type.string;
   assert_forward ~errors:(`Undefined 1) "f'string{undefined}'" Type.string;
+
   (* Ternaries. *)
   assert_forward "3 if True else 1" Type.integer;
   assert_forward "1.0 if True else 1" Type.float;
@@ -853,13 +873,16 @@ let test_forward_expression _ =
     ~postcondition:["x", Type.integer]
     "x if x is not None else 32"
     Type.integer;
+
   (* True literal. *)
   assert_forward "True" (Type.Literal (Boolean true));
+
   (* Tuples. *)
   assert_forward "1," (Type.tuple [Type.literal_integer 1]);
   assert_forward "1, 'string'" (Type.tuple [Type.literal_integer 1; Type.literal_string "string"]);
   assert_forward ~errors:(`Undefined 1) "undefined," (Type.tuple [Type.Top]);
   assert_forward ~errors:(`Undefined 2) "undefined, undefined" (Type.tuple [Type.Top; Type.Top]);
+
   (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
   assert_forward ~errors:(`Undefined 1) "not undefined" Type.bool;
@@ -867,6 +890,7 @@ let test_forward_expression _ =
   assert_forward "+1" Type.integer;
   assert_forward "~1" Type.integer;
   assert_forward ~errors:(`Undefined 1) "-undefined" Type.Top;
+
   (* Yield. *)
   assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
@@ -1007,6 +1031,7 @@ let test_forward_statement _ =
     []
     "x: typing.Union[int, str] = 1"
     ["x", Type.literal_integer 1];
+
   (* Assignments with tuples. *)
   assert_forward
     ["c", Type.integer; "d", Type.Top]
@@ -1057,6 +1082,7 @@ let test_forward_statement _ =
     ["x", Type.integer; "y", Type.integer; "z", Type.list Type.integer];
   assert_forward [] "x, y = return_tuple()" ["x", Type.integer; "y", Type.integer];
   assert_forward [] "x = ()" ["x", Type.Tuple (Type.Bounded (Concrete []))];
+
   (* Assignments with list. *)
   assert_forward
     ["x", Type.list Type.integer]
@@ -1070,6 +1096,7 @@ let test_forward_statement _ =
     ["x", Type.list Type.integer]
     "a, *b = x"
     ["x", Type.list Type.integer; "a", Type.integer; "b", Type.list Type.integer];
+
   (* Assignments with uniform sequences. *)
   assert_forward
     ["x", Type.iterable Type.integer]
@@ -1083,6 +1110,7 @@ let test_forward_statement _ =
     ["c", Type.Tuple (Type.Unbounded Type.integer)]
     "*a, b = c"
     ["a", Type.list Type.integer; "b", Type.integer; "c", Type.Tuple (Type.Unbounded Type.integer)];
+
   (* Assignments with non-uniform sequences. *)
   assert_forward
     ["x", Type.tuple [Type.integer; Type.string; Type.float]]
@@ -1118,6 +1146,7 @@ let test_forward_statement _ =
       "a", Type.integer;
       "b", Type.tuple [];
       "c", Type.float ];
+
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", (true, Type.Top)] [] "global x" ["x", Type.Top];
   assert_forward
@@ -1148,6 +1177,7 @@ let test_forward_statement _ =
     ["y", Type.string]
     "y: int"
     ["y", Type.integer];
+
   (* Delete. *)
   assert_forward
     ~errors:
@@ -1157,6 +1187,7 @@ let test_forward_statement _ =
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer]
     "del d[0]"
     ["d", Type.dictionary ~key:Type.string ~value:Type.integer];
+
   (* Assert. *)
   assert_forward ["x", Type.optional Type.integer] "assert x" ["x", Type.integer];
   assert_forward
@@ -1220,6 +1251,7 @@ let test_forward_statement _ =
     ["x", Type.float]
     "assert x in [1]"
     ["x", Type.float];
+
   (* Isinstance. *)
   assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
   assert_forward
@@ -1280,6 +1312,7 @@ let test_forward_statement _ =
     ["my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer)); "x", Type.Top]
     "assert isinstance(x, my_type)"
     ["my_type", Type.Tuple (Type.Unbounded (Type.meta Type.integer)); "x", Type.integer];
+
   (* Works for general expressions. *)
   assert_forward
     ~errors:
@@ -1293,10 +1326,12 @@ let test_forward_statement _ =
   assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
   assert_forward ~bottom:true [] "assert False" [];
   assert_forward ~bottom:false [] "assert (not True)" [];
+
   (* Raise. *)
   assert_forward [] "raise 1" [];
   assert_forward ~errors:(`Undefined 1) [] "raise undefined" [];
   assert_forward [] "raise" [];
+
   (* Return. *)
   assert_forward
     ~errors:
@@ -1312,6 +1347,7 @@ let test_forward_statement _ =
     []
     "return 1"
     [];
+
   (* Pass. *)
   assert_forward ["y", Type.integer] "pass" ["y", Type.integer]
 

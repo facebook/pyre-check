@@ -58,11 +58,14 @@ let test_saved_state context =
   Network.Socket.write socket Request.FlushTypeErrorsRequest;
   let _ = Network.Socket.read socket in
   CommandTest.stop_server server_configuration;
+
   (* A saved state was created. *)
   assert_equal `Yes (Sys.file_exists saved_state_path);
+
   (* No server is running. *)
   assert_raises Operations.ConnectionFailure (fun () ->
       Operations.connect ~retries:1 ~configuration);
+
   (* A server loads from the saved state successfully. *)
   let server_configuration =
     let saved_state_action =
@@ -81,11 +84,13 @@ let test_saved_state context =
   Network.Socket.write socket (Commands.Query.parse_query ~root:local_root "type(a.x)");
   let query_response = Network.Socket.read socket in
   CommandTest.stop_server server_configuration;
+
   (* The server loaded from a saved state has the information we expect. *)
   let expected_response =
     TypeQueryResponse (TypeQuery.Response (TypeQuery.Type (Analysis.Type.Primitive "a.C")))
   in
   assert_equal expected_response query_response;
+
   (* Errors are preserved when loading from a saved state. *)
   let _ =
     let saved_state_action =
@@ -108,6 +113,7 @@ let test_saved_state context =
     |> fun errors -> Protocol.TypeCheckResponse errors
   in
   assert_equal ~printer:show_response expected_errors errors;
+
   (* The server reanalyzed changed files when they are passed in and banishes errors. *)
   write_content ~root:local_root ~filename:"a.py" "x: int = 1";
   let _ =
@@ -155,8 +161,10 @@ let test_invalid_configuration context =
   let _ = Commands.Start.run server_configuration in
   connect ();
   CommandTest.stop_server server_configuration;
+
   (* We built the saved state. *)
   assert_equal `Yes (Sys.file_exists saved_state_path);
+
   (* No server is running. *)
   assert_raises Operations.ConnectionFailure connect;
   let socket =

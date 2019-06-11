@@ -146,6 +146,7 @@ let get_new_results = SharedResults.get_batch
 let oldify callable_set =
   SharedModels.oldify_batch callable_set;
   SharedFixpoint.oldify_batch callable_set;
+
   (* Old results are never looked up, so remove them. *)
   SharedResults.remove_batch callable_set
 

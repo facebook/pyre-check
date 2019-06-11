@@ -20,6 +20,7 @@ let test_create context =
   let path, root = root context in
   (* Create absolute paths. *)
   assert_equal (root |> Path.show) path;
+
   (* Create relative paths. *)
   assert_equal (Path.create_relative ~root ~relative:"some/path" |> Path.show) (path ^/ "some/path");
   assert_equal
@@ -28,6 +29,7 @@ let test_create context =
   assert_equal
     (Path.create_relative ~root ~relative:"/other/root/some/path" |> Path.show)
     (path ^/ "other/root/some/path");
+
   (* Current directory. *)
   assert_equal (Path.current_working_directory () |> Path.show) (Sys.getcwd ())
 

@@ -36,6 +36,7 @@ let test_less_or_equal _ =
   assert_true (less_or_equal ~resolution (create Type.integer) (create Type.integer));
   assert_true (less_or_equal ~resolution (create Type.integer) (create Type.float));
   assert_false (less_or_equal ~resolution (create Type.float) (create Type.integer));
+
   (* Mutable <= Local <= Local. *)
   assert_true
     (less_or_equal ~resolution (create Type.integer) (create_immutable ~global:false Type.integer));
@@ -62,6 +63,7 @@ let test_join _ =
   (* Type order is preserved. *)
   assert_equal (join ~resolution (create Type.integer) (create Type.integer)) (create Type.integer);
   assert_equal (join ~resolution (create Type.integer) (create Type.float)) (create Type.float);
+
   (* Mutability. *)
   assert_equal
     (join ~resolution (create Type.integer) (create_immutable ~global:false Type.integer))
@@ -93,6 +95,7 @@ let test_meet _ =
   (* Type order is preserved. *)
   assert_equal (meet ~resolution (create Type.integer) (create Type.integer)) (create Type.integer);
   assert_equal (meet ~resolution (create Type.integer) (create Type.float)) (create Type.integer);
+
   (* Mutability. *)
   assert_equal
     (meet ~resolution (create Type.integer) (create_immutable ~global:false Type.integer))

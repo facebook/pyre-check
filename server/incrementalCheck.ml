@@ -166,6 +166,7 @@ let recheck
     ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
     ();
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
   ResolutionSharedMemory.remove repopulate_handles;
@@ -179,6 +180,7 @@ let recheck
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) (removed_handles @ repopulate_handles);
+
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
       Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);

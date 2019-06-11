@@ -48,7 +48,6 @@ val is_global : resolution:Resolution.t -> Expression.t -> bool
 
 val is_property : resolution:Resolution.t -> Expression.expression -> bool
 
-
 type argument_match = {
   root: Root.t;
   actual_path: AbstractTreeDomain.Label.path;

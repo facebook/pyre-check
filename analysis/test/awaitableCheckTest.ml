@@ -30,6 +30,7 @@ let test_forward _ =
       await awaited
     |}
     [];
+
   (* Assert. *)
   assert_awaitable_errors
     {|
@@ -52,6 +53,7 @@ let test_forward _ =
       assert awaited
     |}
     ["Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited."];
+
   (* Delete. *)
   assert_awaitable_errors
     {|
@@ -61,6 +63,7 @@ let test_forward _ =
         del (await awaited)
     |}
     [];
+
   (* Raise. *)
   assert_awaitable_errors
     {|
@@ -69,6 +72,7 @@ let test_forward _ =
       raise (await awaited)
     |}
     [];
+
   (* Return. *)
   assert_awaitable_errors
     {|
@@ -78,6 +82,7 @@ let test_forward _ =
         return awaited
     |}
     [];
+
   (* Yield. *)
   assert_awaitable_errors
     {|
@@ -95,6 +100,7 @@ let test_forward _ =
         yield (await awaited)
     |}
     [];
+
   (* We aren't handling (await awaited).__iter__() correctly at the moment, causing this issue. *)
   assert_awaitable_errors
     {|
@@ -104,6 +110,7 @@ let test_forward _ =
         yield from (await awaited)
     |}
     ["Unawaited awaitable [101]: Awaitable assigned to `awaited` is never awaited."];
+
   (* Tuples. *)
   assert_awaitable_errors
     {|
@@ -113,6 +120,7 @@ let test_forward _ =
         yield (await awaited, 3)
     |}
     [];
+
   (* Boolean operators. *)
   assert_awaitable_errors
     {|
@@ -130,6 +138,7 @@ let test_forward _ =
         1 and (2 and (await awaited))
     |}
     [];
+
   (* We view parameters which flow into a call as having been awaited. *)
   assert_awaitable_errors
     {|
@@ -140,6 +149,7 @@ let test_forward _ =
         await takes_awaitable(awaited)
     |}
     [];
+
   (* Comparison operators. *)
   assert_awaitable_errors
     {|
@@ -157,6 +167,7 @@ let test_forward _ =
         return 0 == (await awaited)
     |}
     [];
+
   (* Container literals. *)
   assert_awaitable_errors
     {|
@@ -190,6 +201,7 @@ let test_forward _ =
         return {"foo": [await awaited]}
     |}
     [];
+
   (* Lambdas. *)
   assert_awaitable_errors
     {|
@@ -199,6 +211,7 @@ let test_forward _ =
         lambda x: (await awaited) or 42
     |}
     [];
+
   (* Starred expressions. *)
   assert_awaitable_errors
     {|
@@ -216,6 +229,7 @@ let test_forward _ =
         {1: "x", **(await awaited)}
     |}
     [];
+
   (* Ternaries. *)
   assert_awaitable_errors
     {|
@@ -238,6 +252,7 @@ let test_forward _ =
       1 if 2 else (await awaited)
     |}
     [];
+
   (* Unary operators. *)
   assert_awaitable_errors
     {|
@@ -246,6 +261,7 @@ let test_forward _ =
       -(not (await awaited))
     |}
     [];
+
   (* Yield. *)
   assert_awaitable_errors
     {|
@@ -254,6 +270,7 @@ let test_forward _ =
       yield (await awaited) if 1 > 2 else False
     |}
     [];
+
   (* Comprehensions. *)
   assert_awaitable_errors
     {|
@@ -341,6 +358,7 @@ let test_forward _ =
         awaitable()
     |}
     ["Unawaited awaitable [101]: `awaitable()` is never awaited."];
+
   (* Ensure that we don't crash when attempting to await a non-simple name. *)
   assert_awaitable_errors
     {|
@@ -406,6 +424,7 @@ let test_forward _ =
         await a
     |}
     ["Unawaited awaitable [101]: Awaitable assigned to `c` is never awaited."];
+
   (* We don't validate that every expression in a starred one is awaited. *)
   assert_awaitable_errors
     {|
@@ -415,6 +434,7 @@ let test_forward _ =
         await asyncio.gather(a, c)
     |}
     [];
+
   (* We have limitations at the moment. *)
   assert_awaitable_errors
     {|

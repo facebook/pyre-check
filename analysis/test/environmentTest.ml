@@ -96,6 +96,7 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) !"A") (Type.Primitive "A");
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   assert_equal (TypeOrder.successors order "C") [];
+
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
     Environment.register_class_definitions
@@ -238,6 +239,7 @@ let test_register_aliases _ =
     ]
     [ "collections.TypingIterator", "typing.Iterator[typing.Any]";
       "collections.Iterable", "typing.Iterable[typing.Any]" ];
+
   (* Handle builtins correctly. *)
   assert_resolved
     [ parse
@@ -281,6 +283,7 @@ let test_register_aliases _ =
         |}
     ]
     ["a._T", "Variable[a._T]"; "a._T2", "Variable[a._T2]"];
+
   (* Type variable aliases in classes. *)
   assert_resolved
     [ parse
@@ -292,6 +295,7 @@ let test_register_aliases _ =
         |}
     ]
     ["qualifier.Class.T", "Variable[qualifier.Class.T]"; "qualifier.Class.Int", "int"];
+
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved
     [ parse ~qualifier:!&"stubbed" ~local_mode:Source.PlaceholderStub ~handle:"stubbed.pyi" "";
@@ -556,13 +560,16 @@ let test_populate _ =
     (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
     (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
+
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
     (Type.parametric "collections.defaultdict" [Type.Any; Type.Any]);
+
   (* Check custom class definitions. *)
   assert_is_some (Handler.class_definition "None");
   assert_is_some (Handler.class_definition "typing.Optional");
+
   (* Check type aliases. *)
   let environment =
     populate
@@ -619,6 +626,7 @@ let test_populate _ =
       |}
   in
   assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
+
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
     populate
@@ -631,6 +639,7 @@ let test_populate _ =
       |}
   in
   assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
+
   (* Globals *)
   let assert_global_with_environment environment actual expected =
     assert_equal
@@ -719,6 +728,7 @@ let test_populate _ =
                    { name = "self"; annotation = Type.Top; default = false } ])
           ~annotation:Type.Top
           ()));
+
   (* Properties. *)
   let assert_global =
     {|
@@ -741,12 +751,14 @@ let test_populate _ =
                    { name = "self"; annotation = Type.Top; default = false } ])
           ~annotation:Type.integer
           ()));
+
   (* Loops. *)
   ( try populate {|
         def foo(cls):
           class cls(cls): pass
       |} |> ignore with
   | TypeOrder.Cyclic -> assert_unreached () );
+
   (* Check meta variables are registered. *)
   let assert_global =
     {|
@@ -759,6 +771,7 @@ let test_populate _ =
     ( Type.Primitive "A"
     |> Type.meta
     |> Annotation.create_immutable ~global:true ~original:(Some Type.Top) );
+
   (* Callable classes. *)
   let environment =
     populate
@@ -830,6 +843,7 @@ let test_less_or_equal_type_order _ =
   let top = parse_annotation environment (parse_single_expression "module.top") in
   assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
   assert_true (TypeOrder.less_or_equal order ~left:super ~right:top);
+
   (* Optionals. *)
   let order, _ =
     order_and_environment
@@ -854,6 +868,7 @@ let test_less_or_equal_type_order _ =
        order
        ~left:(Type.Optional (Type.Primitive "A"))
        ~right:(Type.Primitive "A"));
+
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
     (TypeOrder.less_or_equal
@@ -862,6 +877,7 @@ let test_less_or_equal_type_order _ =
        ~right:(Type.Primitive "C"));
   assert_false
     (TypeOrder.less_or_equal order ~left:(Type.Primitive "A") ~right:(Type.Primitive "C"));
+
   (* Unions. *)
   let order, _ =
     order_and_environment
@@ -922,6 +938,7 @@ let test_less_or_equal_type_order _ =
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:(Type.Union [Type.float; Type.Primitive "B"; Type.integer]));
+
   (* Special cases. *)
   assert_true (TypeOrder.less_or_equal order ~left:Type.integer ~right:Type.float)
 
@@ -947,6 +964,7 @@ let test_join_type_order _ =
     (Type.Union [Type.integer; Type.string]);
   assert_raises (TypeOrder.Untracked (Type.Primitive "durp")) (fun _ ->
       TypeOrder.join order bar (Type.Primitive "durp"));
+
   (* Special cases. *)
   assert_equal (TypeOrder.join order Type.integer Type.float) Type.float
 
@@ -988,6 +1006,7 @@ let test_meet_type_order _ =
   assert_meet b c d;
   assert_meet b d d;
   assert_meet c d d;
+
   (* Special cases. *)
   assert_meet Type.integer Type.float Type.integer
 

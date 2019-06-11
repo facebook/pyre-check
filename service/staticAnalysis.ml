@@ -208,6 +208,7 @@ let analyze
   in
   let errors = Interprocedural.Analysis.extract_errors scheduler ~configuration all_callables in
   Statistics.performance ~name:"Analysis fixpoint complete" ~timer ();
+
   (* If saving to a file, don't return errors. Thousands of errors on output is inconvenient *)
   if Option.is_some analysis_configuration.result_json_path then
     []

@@ -28,6 +28,7 @@ let test_check_imports _ =
       from durp import typing
     |}
     ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+
   (* Ensure we don't double-error. *)
   assert_type_errors
     {|

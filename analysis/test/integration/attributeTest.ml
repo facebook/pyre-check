@@ -172,6 +172,7 @@ let test_check_attributes _ =
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized.";
       "Incompatible return type [7]: Expected `int` but got `str`." ];
+
   (* Annotations containing `Any` in strict are not permitted. *)
   assert_type_errors
     {|
@@ -186,6 +187,7 @@ let test_check_attributes _ =
        than `Any`.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized." ];
+
   (* Annotations containing aliases to `Any` in strict are permitted. Extra type inference errors
      are thrown in debug that are filtered away in strict. *)
   assert_strict_type_errors
@@ -344,6 +346,7 @@ let test_check_attributes _ =
           return self.baz
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `baz`."];
+
   (* Ensure synthetic attribute accesses don't mask errors on real ones. *)
   assert_strict_type_errors
     {|
@@ -355,6 +358,7 @@ let test_check_attributes _ =
           pass
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `a`."];
+
   (* TODO(T25072735): support attribute tests for: class variables, generic annotations *)
   assert_type_errors
     {|
@@ -381,6 +385,7 @@ let test_check_attributes _ =
       "Incompatible attribute type [8]: Attribute `bar` declared in class `Foo` has type "
       ^ "`typing.Generic[Variable[_T]]` but is used as type `int`.";
       "Incompatible return type [7]: Expected `int` but got `typing.Generic[Variable[_T]]`." ];
+
   (* Static attributes are properly resolved. *)
   assert_type_errors
     {|
@@ -411,6 +416,7 @@ let test_check_attributes _ =
           return Foo.DERP
     |}
     [];
+
   (* Attributes defined in constructor. *)
   assert_type_errors
     {|
@@ -459,6 +465,7 @@ let test_check_attributes _ =
           return self.attribute
     |}
     [];
+
   (* Undefined attributes. *)
   assert_strict_type_errors
     {|
@@ -480,6 +487,7 @@ let test_check_attributes _ =
       foo.y = 1
     |}
     ["Undefined attribute [16]: `Foo` has no attribute `y`."];
+
   (* Class implements `__getattr__`. *)
   assert_type_errors
     {|
@@ -492,6 +500,7 @@ let test_check_attributes _ =
           return self.attribute
     |}
     ["Incompatible return type [7]: Expected `int` but got `str`."];
+
   (* Attributes of other classes are properly resolved. *)
   assert_type_errors
     {|
@@ -504,6 +513,7 @@ let test_check_attributes _ =
         return bar.bar
     |}
     [];
+
   (* Any has all attributes in default mode, but not strict mode. *)
   assert_strict_type_errors
     {|
@@ -517,12 +527,14 @@ let test_check_attributes _ =
         return any.attribute
     |}
     [];
+
   (* We allow instance attributes to be accessed via class objects. *)
   assert_type_errors {|
       class Foo:
         attribute: int = 1
       Foo.attribute
     |} [];
+
   (* Check attribute type propagation. *)
   assert_type_errors
     {|
@@ -534,6 +546,7 @@ let test_check_attributes _ =
     |}
     [ "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
       ^ "`int` but is used as type `unknown`." ];
+
   (* Check attribute type variable resolution. *)
   assert_type_errors
     {|
@@ -630,6 +643,7 @@ let test_check_attributes _ =
         a = t()
     |}
     [];
+
   (* Do not resolve optional attributes to the optional type. *)
   assert_type_errors
     {|
@@ -640,6 +654,7 @@ let test_check_attributes _ =
     |}
     [ "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: Optional type has no attribute `debug`." ];
+
   (* Attributes defined with property decorators. *)
   assert_type_errors
     {|
@@ -650,6 +665,7 @@ let test_check_attributes _ =
         return Foo().prop
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
+
   (* Attributes defined with getters and setters. *)
   assert_type_errors
     {|
@@ -835,6 +851,7 @@ let test_check_missing_attribute _ =
       ^ "but type `Any` is specified.";
       "Missing attribute annotation [4]: Attribute `b` of class `Foo` must have a type "
       ^ "that does not contain `Any`." ];
+
   (* Don't report in non-debug mode. *)
   assert_default_type_errors
     {|

@@ -118,6 +118,7 @@ let test_normalize_dependencies _ =
   let handle = File.Handle.create "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
   DependencyHandler.add_function_key ~handle !&"f";
+
   (* Only keep one copy. *)
   DependencyHandler.add_function_key ~handle !&"f";
   DependencyHandler.add_function_key ~handle !&"h";
@@ -220,6 +221,7 @@ let test_populate context =
     assert_equal ~printer:(String.concat ~sep:", ") expected_successors successors
   in
   assert_successors "a.C" ["a.D"; "object"];
+
   (* Ensure that the memory doesn't get clobbered on a re-write. *)
   Service.Environment.populate
     (module Handler)

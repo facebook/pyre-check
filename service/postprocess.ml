@@ -23,6 +23,7 @@ let register_ignores ~configuration scheduler handles =
   let timer = Timer.start () in
   remove_ignores handles;
   remove_modes handles;
+
   (* Register new values *)
   let register_ignores_for_handle handle =
     let key = File.Handle.show handle in

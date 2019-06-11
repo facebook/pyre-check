@@ -185,6 +185,7 @@ let test_json_socket context =
     ->
       ()
   | _ -> assert_bool "Handshake received from server is malformed" false );
+
   (* then, write client handshake message back *)
   { LanguageServer.Types.HandshakeClient.jsonrpc = "2.0";
     method_ = "handshake/client";
@@ -193,12 +194,14 @@ let test_json_socket context =
   |> LanguageServer.Types.HandshakeClient.to_yojson
   |> LanguageServer.Protocol.write_message out_channel;
   Out_channel.flush out_channel;
+
   (* send valid and invalid LSP over the json socket *)
   `Assoc ["jsonrpc", `String "2.0"; "id", `Int 42; "method", `String "telemetry/rage"]
   |> LanguageServer.Protocol.write_message out_channel;
   Out_channel.flush out_channel;
   `Assoc [] |> LanguageServer.Protocol.write_message out_channel;
   Out_channel.flush out_channel;
+
   (* verify that the server is still alive at this point *)
   Unix.sleep 1;
   match Unix.wait_nohang (`Pid pid) with
@@ -707,6 +710,7 @@ let test_query context =
               2, 8, 2, 9, Type.integer;
               3, 10, 3, 11, Type.integer ]
           |> create_types_at_locations )));
+
   (* ==== Documenting known bad behavior below (T37772879) ==== *)
 
   (* Annotation type is Type[int] rather than Type[List[int]]. *)
@@ -723,6 +727,7 @@ let test_query context =
               2, 8, 2, 9, Type.list Type.integer;
               2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
           |> create_types_at_locations )));
+
   (* Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
   assert_type_query_response
     ~source:{|
@@ -738,6 +743,7 @@ let test_query context =
             { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
               annotation = Type.literal_integer 1
             } ]));
+
   (* `x` is typed as List[int] rather than int. *)
   assert_type_query_response
     ~source:{|
@@ -758,6 +764,7 @@ let test_query context =
               2, 10, 2, 11, Type.literal_integer 1;
               2, 9, 2, 15, Type.list Type.integer ]
           |> create_types_at_locations )));
+
   (* ==== Documenting known bad behavior above (T37772879) ==== *)
   assert_type_query_response
     ~source:{|
@@ -1327,6 +1334,7 @@ let test_incremental_typecheck context =
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
     (Protocol.TypeCheckResponse [File.Handle.create handle, []]);
+
   (* The handles get updated in shared memory. *)
   let print_tree tree = File.Handle.Set.Tree.to_list tree |> List.to_string ~f:File.Handle.show in
   assert_equal
@@ -1344,6 +1352,7 @@ let test_incremental_typecheck context =
          source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
+
   (* Assert that only files getting used to update the environment get parsed. *)
   let open Protocol in
   assert_response

@@ -111,6 +111,7 @@ let run_analysis
           "gc_major_collections", major_collections;
           "gc_compactions", compactions ]
       ();
+
     (* Print results. *)
     List.map errors ~f:(fun error -> Interprocedural.Error.to_json ~show_error_traces error)
     |> (fun result -> Yojson.Safe.pretty_to_string (`List result))

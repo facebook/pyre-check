@@ -11,6 +11,7 @@ let unsafe_little_endian_representation ~key =
   |> Digest.from_hex
   |> fun digest ->
   assert (Digest.equal digest key);
+
   (* Mimic what hack_parallel does, which is cast a key to a uint64_t pointer and dereference. This
      code is not portable by any means. *)
   let rec compute_little_endian accumulator index =

@@ -224,6 +224,7 @@ let variance_order =
   connect order ~predecessor:Type.integer ~successor:Type.float;
   connect order ~predecessor:Type.float ~successor:Type.Top;
   insert order !"typing.Generic";
+
   (* Variance examples borrowed from https://www.python.org/dev/peps/pep-0483 *)
   let variable_t = Type.variable "_T" in
   let variable_t_2 = Type.variable "_T_2" in
@@ -529,6 +530,7 @@ let test_default _ =
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_true (less_or_equal order ~left:Type.Top ~right:Type.Top);
   assert_false (less_or_equal order ~left:Type.Top ~right:Type.Bottom);
+
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
     assert_true (TypeOrder.contains order (Type.Primitive primitive_name))
@@ -539,15 +541,18 @@ let test_default _ =
   assert_has_special_form "typing.Callable";
   assert_has_special_form "typing.ClassVar";
   assert_has_special_form "typing.Final";
+
   (* Object *)
   assert_true (less_or_equal order ~left:(Type.optional Type.integer) ~right:Type.object_primitive);
   assert_true (less_or_equal order ~left:(Type.list Type.integer) ~right:Type.object_primitive);
   assert_false
     (less_or_equal order ~left:Type.object_primitive ~right:(Type.optional Type.integer));
+
   (* Mock. *)
   assert_true (less_or_equal order ~left:(Type.Primitive "unittest.mock.Base") ~right:Type.Top);
   assert_true
     (less_or_equal order ~left:(Type.Primitive "unittest.mock.NonCallableMock") ~right:Type.Top);
+
   (* Numerical types. *)
   assert_true (less_or_equal order ~left:Type.integer ~right:Type.integer);
   assert_false (less_or_equal order ~left:Type.float ~right:Type.integer);
@@ -566,12 +571,14 @@ let test_default _ =
   assert_false (less_or_equal order ~left:Type.float ~right:(Type.Primitive "numbers.Integral"));
   assert_true (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Complex"));
   assert_false (less_or_equal order ~left:Type.complex ~right:(Type.Primitive "numbers.Real"));
+
   (* Test join. *)
   assert_type_equal (join order Type.integer Type.integer) Type.integer;
   assert_type_equal (join order Type.float Type.integer) Type.float;
   assert_type_equal (join order Type.integer Type.float) Type.float;
   assert_type_equal (join order Type.integer Type.complex) Type.complex;
   assert_type_equal (join order Type.float Type.complex) Type.complex;
+
   (* Test meet. *)
   assert_type_equal (meet order Type.integer Type.integer) Type.integer;
   assert_type_equal (meet order Type.float Type.integer) Type.integer;
@@ -593,6 +600,7 @@ let test_method_resolution_order_linearize _ =
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
   assert_method_resolution_order diamond_order "D" ["D"; "C"; "B"; "A"];
+
   (* The subclass gets chosen first even if after the superclass when both are inherited. *)
   assert_method_resolution_order triangle_order "C" ["C"; "B"; "A"]
 
@@ -604,6 +612,7 @@ let test_successors _ =
    *  1 - 3 *)
   assert_equal (successors butterfly "3") [];
   assert_equal (successors butterfly "0") ["3"; "2"];
+
   (*          0 - 3
    *          /   /   \
    *          BOTTOM - 1      TOP
@@ -632,6 +641,7 @@ let test_less_or_equal _ =
   assert_false (less_or_equal order ~left:!"2" ~right:!"3");
   assert_true (less_or_equal default ~left:!"list" ~right:!"typing.Sized");
   assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!"typing.Sized");
+
   (* Parametric types. *)
   assert_true
     (less_or_equal default ~left:(Type.list Type.integer) ~right:(Type.iterator Type.integer));
@@ -641,8 +651,10 @@ let test_less_or_equal _ =
     (less_or_equal default ~left:(Type.iterator Type.integer) ~right:(Type.iterable Type.integer));
   assert_true
     (less_or_equal default ~left:(Type.iterator Type.integer) ~right:(Type.iterable Type.float));
+
   (* Mixed primitive and parametric types. *)
   assert_true (less_or_equal default ~left:Type.string ~right:(Type.iterable Type.string));
+
   (* Mixed tuple and parametric types. *)
   assert_true
     (less_or_equal
@@ -679,17 +691,20 @@ let test_less_or_equal _ =
        default
        ~left:(Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.integer])))
        ~right:(Type.parametric "tuple" [Type.integer]));
+
   (* Union types *)
   assert_true
     (less_or_equal
        default
        ~left:(Type.Optional Type.string)
        ~right:(Type.Union [Type.integer; Type.Optional Type.string]));
+
   (* Undeclared. *)
   assert_false (less_or_equal default ~left:Type.undeclared ~right:Type.Top);
   assert_false (less_or_equal default ~left:Type.Top ~right:Type.undeclared);
   assert_false (less_or_equal default ~left:Type.undeclared ~right:Type.Bottom);
   assert_true (less_or_equal default ~left:Type.Bottom ~right:Type.undeclared);
+
   (* Tuples. *)
   assert_true
     (less_or_equal
@@ -845,6 +860,7 @@ let test_less_or_equal _ =
        ~left:(Type.parametric "A" [Type.string; Type.integer])
        ~right:
          (Type.parametric "C" [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
+
   (* Variables. *)
   assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
   assert_false (less_or_equal order ~left:(Type.variable "T") ~right:Type.integer);
@@ -978,6 +994,7 @@ let test_less_or_equal _ =
        order
        ~left:(Type.variable ~constraints:Type.Variable.Unary.LiteralIntegers "T")
        ~right:Type.integer);
+
   (* Behavioral subtyping of callables. *)
   let less_or_equal ?attributes ?is_protocol order ~left ~right =
     let aliases = function
@@ -1013,6 +1030,7 @@ let test_less_or_equal _ =
     (less_or_equal order ~left:"typing.Callable[[float], int]" ~right:"typing.Callable[[int], int]");
   assert_false
     (less_or_equal order ~left:"typing.Callable[[int], int]" ~right:"typing.Callable[[float], int]");
+
   (* Named vs. anonymous callables. *)
   assert_true
     (less_or_equal
@@ -1034,6 +1052,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable('foo')[[str], int]"
        ~right:"typing.Callable[[int], int]");
+
   (* Named callables. *)
   assert_true
     (less_or_equal
@@ -1055,6 +1074,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable('foo')[[str], int]"
        ~right:"typing.Callable('foo')[[int], int]");
+
   (* Undefined callables. *)
   assert_true
     (less_or_equal order ~left:"typing.Callable[..., int]" ~right:"typing.Callable[..., float]");
@@ -1072,13 +1092,16 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Variable(int), Keywords(object)], int]"
        ~right:"typing.Callable[..., int]");
+
   (* Callable classes. *)
   assert_true
     (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[float], str]");
+
   (* Subtyping is handled properly for callable classes. *)
   assert_true (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[int], str]");
   assert_false
     (less_or_equal order ~left:"FloatToStrCallable" ~right:"typing.Callable[[float], int]");
+
   (* Parametric classes are also callables. *)
   assert_true
     (less_or_equal order ~left:"ParametricCallableToStr[int]" ~right:"typing.Callable[[int], str]");
@@ -1114,6 +1137,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Variable(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
+
   (* Callables with keyword arguments. *)
   assert_false
     (less_or_equal
@@ -1130,6 +1154,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Variable(str), Keywords(int)], str]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
+
   (* Generic callables *)
   assert_false
     (less_or_equal
@@ -1156,6 +1181,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
        ~right:"typing.Callable[[Named(arg, str)], str]");
+
   (* Callables with overloads *)
   assert_true
     (less_or_equal
@@ -1172,6 +1198,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[object], object][[[str], int][[int], str]]"
        ~right:"typing.Callable[[object], object][[[str], str]]");
+
   (* TypedDictionaries *)
   assert_true
     (less_or_equal
@@ -1230,6 +1257,7 @@ let test_less_or_equal _ =
        order
        ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
        ~right:"dict[str, typing.Any]");
+
   (* Literals *)
   assert_true
     (less_or_equal
@@ -1243,6 +1271,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing_extensions.Literal['a']"
        ~right:"typing_extensions.Literal['a', 'b']");
+
   (* Callback protocols *)
   let parse_annotation =
     let aliases = function
@@ -1337,6 +1366,7 @@ let test_less_or_equal _ =
     ~left:"NonGenericChild"
     ~right:"GenericBase[typing.Any, typing.Any]"
     true;
+
   (* This should get filtered by mismatch with any postprocessing *)
   assert_less_or_equal
     ~source:
@@ -1416,6 +1446,7 @@ let test_is_compatible_with _ =
   assert_is_compatible list_of_integer list_of_any;
   assert_is_compatible list_of_any list_of_integer;
   assert_is_compatible Type.Any Type.Any;
+
   (* Top *)
   assert_is_compatible list_of_integer Type.Top;
   assert_not_compatible Type.Top list_of_integer;
@@ -1426,11 +1457,13 @@ let test_is_compatible_with _ =
   assert_is_compatible list_of_integer list_of_top;
   assert_not_compatible list_of_top list_of_integer;
   assert_is_compatible Type.Top Type.Top;
+
   (* Basic *)
   assert_is_compatible list_of_integer list_of_integer;
   assert_is_compatible list_of_integer list_of_float;
   assert_not_compatible list_of_float list_of_integer;
   assert_not_compatible list_of_integer list_of_string;
+
   (* Optional *)
   assert_is_compatible Type.none (Type.optional Type.Any);
   assert_is_compatible (Type.optional Type.Any) Type.none;
@@ -1442,6 +1475,7 @@ let test_is_compatible_with _ =
   assert_is_compatible (Type.optional list_of_integer) (Type.optional list_of_float);
   assert_not_compatible list_of_float (Type.optional list_of_integer);
   assert_not_compatible list_of_integer (Type.optional list_of_string);
+
   (* Tuple *)
   assert_is_compatible
     (Type.tuple [list_of_integer; list_of_string])
@@ -1470,6 +1504,7 @@ let test_is_compatible_with _ =
   assert_not_compatible
     (Type.tuple [list_of_string; list_of_integer])
     (Type.Tuple (Unbounded list_of_float));
+
   (* Union *)
   assert_is_compatible list_of_integer (Type.union [list_of_integer]);
   assert_is_compatible list_of_integer (Type.union [list_of_float]);
@@ -1496,6 +1531,7 @@ let test_is_compatible_with _ =
   assert_not_compatible
     (Type.set (Type.union [Type.integer; Type.string]))
     (Type.set (Type.union [list_of_string; list_of_integer]));
+
   (* Parametric *)
   assert_is_compatible
     (Type.dictionary ~key:list_of_integer ~value:list_of_string)
@@ -1569,6 +1605,7 @@ let test_less_or_equal_variance _ =
     ~order:variance_order
     ~left:(Type.parametric "LinkedList" [Type.integer])
     ~right:(Type.parametric "LinkedList" [Type.Top]);
+
   (* Covariant. *)
   assert_strict_less
     ~order:variance_order
@@ -1578,6 +1615,7 @@ let test_less_or_equal_variance _ =
     ~order:variance_order
     ~left:(Type.parametric "Box" [Type.integer])
     ~right:(Type.parametric "Box" [Type.Any]);
+
   (* Contravariant. *)
   assert_strict_less
     ~order:variance_order
@@ -1587,6 +1625,7 @@ let test_less_or_equal_variance _ =
     ~order:variance_order
     ~left:(Type.parametric "Sink" [Type.Any])
     ~right:(Type.parametric "Sink" [Type.integer]);
+
   (* More complex rules. *)
   assert_strict_less
     ~order:variance_order
@@ -1612,6 +1651,7 @@ let test_less_or_equal_variance _ =
     ~order:variance_order
     ~left:(Type.parametric "Derived" [Type.float])
     ~right:(Type.parametric "Base" [Type.integer]);
+
   (* Multiplane variance. *)
   assert_strict_less
     ~order:multiplane_variance_order
@@ -1724,6 +1764,7 @@ let test_join _ =
   assert_join "typing.Sized" "list" "typing.Sized";
   assert_join "typing.List[int]" "typing.Sized" "typing.Sized";
   assert_join "int" "str" "typing.Union[int, str]";
+
   (* Parametric types. *)
   assert_join "typing.List[float]" "typing.List[float]" "typing.List[float]";
   assert_join "typing.List[float]" "typing.List[int]" "typing.List[typing.Any]";
@@ -1731,6 +1772,7 @@ let test_join _ =
   assert_join "typing.Iterator[int]" "typing.List[int]" "typing.Iterator[int]";
   assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
   assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
+
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
   let bound_list_variadic =
@@ -1743,14 +1785,17 @@ let test_join _ =
     "typing.Tuple[Ts]"
     "typing.Tuple[float, ...]"
     "typing.Tuple[object, ...]";
+
   (* Optionals. *)
   assert_join "str" "typing.Optional[str]" "typing.Optional[str]";
   assert_join "str" "typing.Optional[$bottom]" "typing.Optional[str]";
   assert_join "typing.Optional[$bottom]" "str" "typing.Optional[str]";
+
   (* Handles `[] or optional_list`. *)
   assert_join "typing.List[$bottom]" "typing.Optional[typing.List[int]]" "typing.List[int]";
   assert_join "typing.Optional[typing.List[int]]" "typing.List[$bottom]" "typing.List[int]";
   assert_join "typing.Optional[typing.Set[int]]" "typing.Set[$bottom]" "typing.Set[int]";
+
   (* Union types. *)
   assert_join
     "typing.Optional[bool]"
@@ -1776,6 +1821,7 @@ let test_join _ =
     "typing.Optional[float]"
     "typing.Union[float, int]"
     "typing.Optional[typing.Union[float, int]]";
+
   (* Undeclared. *)
   assert_join "typing.Undeclared" "int" "typing.Union[typing.Undeclared, int]";
   assert_join "int" "typing.Undeclared" "typing.Union[typing.Undeclared, int]";
@@ -1880,6 +1926,7 @@ let test_join _ =
     "C[typing.Union[float, typing.Tuple[int, str]]]";
   assert_join ~order:disconnected_order "A" "B" "typing.Union[A, B]";
   assert_join "typing.Type[int]" "typing.Type[str]" "typing.Type[typing.Union[int, str]]";
+
   (* Callables. *)
   assert_join
     "typing.Callable[..., int]"
@@ -1897,6 +1944,7 @@ let test_join _ =
     "typing.Callable('derp')[..., int]"
     "typing.Callable('other')[..., int]"
     "typing.Callable[..., int]";
+
   (* Do not join with overloads. *)
   assert_join
     "typing.Callable[..., int][[..., str]]"
@@ -1910,6 +1958,7 @@ let test_join _ =
     "typing.Callable[[Named(a, int)], int]"
     "typing.Callable[[int], int]"
     "typing.Callable[[int], int]";
+
   (* Behavioral subtyping is preserved. *)
   assert_join
     "typing.Callable[[Named(a, str)], int]"
@@ -1931,6 +1980,7 @@ let test_join _ =
     "typing.Callable[..., typing.Any]"
     "typing.Callable[[int], int]"
     "typing.Callable[[int], typing.Any]";
+
   (* Classes with __call__ are callables. *)
   assert_join ~order "CallableClass" "typing.Callable[[int], str]" "typing.Callable[[int], str]";
   assert_join ~order "typing.Callable[[int], str]" "CallableClass" "typing.Callable[[int], str]";
@@ -1974,6 +2024,7 @@ let test_join _ =
     "typing.Callable[[int], int]"
     "ParametricCallableToStr[int]"
     "typing.Callable[[int], typing.Union[int, str]]";
+
   (* TypedDictionaries *)
   assert_join
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
@@ -2014,6 +2065,7 @@ let test_join _ =
     ^ "mypy_extensions.TypedDict[('Alpha', True, ('bar', str), ('foo', str), ('ben', str))], "
     ^ "typing.Dict[str, str]"
     ^ "]" );
+
   (* Variables. *)
   assert_type_equal
     (join order Type.integer (Type.variable "T"))
@@ -2044,6 +2096,7 @@ let test_join _ =
        (Type.variable ~constraints:Type.Variable.Unary.LiteralIntegers "T"))
     (Type.union
        [Type.literal_integer 7; Type.variable ~constraints:Type.Variable.Unary.LiteralIntegers "T"]);
+
   (* Variance. *)
   assert_type_equal
     (join
@@ -2209,6 +2262,7 @@ let test_join _ =
     "B[float, float]"
     "A[int, int]"
     "A[float, int]";
+
   (* Literals *)
   assert_type_equal
     (join order (Type.literal_string "A") (Type.literal_string "A"))
@@ -2265,16 +2319,20 @@ let test_meet _ =
   in
   (* Special elements. *)
   assert_meet "typing.List[float]" "typing.Any" "typing.List[float]";
+
   (* Primitive types. *)
   assert_meet "list" "typing.Sized" "list";
   assert_meet "typing.Sized" "list" "list";
   assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
+
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
+
   (* TODO(T39185893): current implementation of meet has some limitations which need to be fixed *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, typing.Optional[str]]" "$bottom";
   assert_meet "typing.Union[int, typing.Optional[str]]" "typing.Optional[str]" "$bottom";
+
   (* Parametric types. *)
   assert_meet "typing.List[int]" "typing.Iterator[int]" "typing.List[int]";
   assert_meet "typing.List[float]" "typing.Iterator[int]" "typing.List[$bottom]";
@@ -2284,6 +2342,7 @@ let test_meet _ =
     "typing.Dict[str, typing.List[str]]"
     "typing.Dict[str, $bottom]";
   assert_meet ~order:disconnected_order "A" "B" "$bottom";
+
   (* TypedDictionaries *)
   assert_meet
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
@@ -2307,6 +2366,7 @@ let test_meet _ =
     "mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', str), ('ben', int))]"
     "typing.Mapping[str, typing.Any]"
     "$bottom";
+
   (* Variables. *)
   assert_type_equal (meet default Type.integer (Type.variable "T")) Type.Bottom;
   assert_type_equal
@@ -2321,9 +2381,11 @@ let test_meet _ =
        Type.string
        (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.float; Type.string]) "T"))
     Type.Bottom;
+
   (* Undeclared. *)
   assert_type_equal (meet default Type.undeclared Type.Bottom) Type.Bottom;
   assert_type_equal (meet default Type.Bottom Type.undeclared) Type.Bottom;
+
   (* Variance. *)
   assert_type_equal
     (meet
@@ -2489,14 +2551,17 @@ let test_instantiate_parameters _ =
   assert_equal
     (instantiate_successors_parameters order ~source:!"AnyIterable" ~target:!"typing.Iterable")
     (Some [Type.Any]);
+
   (* If you're not completely specified, fill all with anys *)
   assert_equal
     (instantiate_successors_parameters order ~source:!"PartiallySpecifiedDict" ~target:!"dict")
     (Some [Type.Any; Type.Any]);
+
   (* If you're over-specified, fill all with anys *)
   assert_equal
     (instantiate_successors_parameters order ~source:!"OverSpecifiedDict" ~target:!"dict")
     (Some [Type.Any; Type.Any]);
+
   (* Don't do a search when starting from bottom *)
   assert_equal
     (instantiate_successors_parameters
@@ -2591,6 +2656,7 @@ let test_connect_annotations_to_top _ =
     order
   in
   assert_equal (least_upper_bound order !"1" !"2") [!"3"];
+
   (* Ensure that the backedge gets added as well *)
   assert_equal (greatest_lower_bound order !"1" !"3") [!"1"]
 
@@ -2628,6 +2694,7 @@ let test_sort_bottom_edges _ =
     assert_equal ~printer:(List.to_string ~f:ident) expected bottom_edges
   in
   assert_bottom_edges ["1"; "3"; "2"; "0"];
+
   (* We sort by target, which is not necessarily alphabetical. *)
   TypeOrder.sort_bottom_edges (module Handler) ~bottom:Type.Bottom;
   assert_bottom_edges ["1"; "2"; "3"; "0"]
@@ -2636,6 +2703,7 @@ let test_sort_bottom_edges _ =
 let test_check_integrity _ =
   check_integrity order;
   check_integrity butterfly;
+
   (* 0 <-> 1 *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
@@ -2648,6 +2716,7 @@ let test_check_integrity _ =
     order
   in
   assert_raises TypeOrder.Cyclic (fun _ -> check_integrity order);
+
   (* 0 -> 1
    * ^    |
    *  \   v
@@ -2990,6 +3059,7 @@ let test_solve_less_or_equal _ =
   assert_solve ~left:"Q" ~right:"T_Bound_C" [];
   assert_solve ~left:"C" ~right:"T_Bound_D" [];
   assert_solve ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
+
   (* An explicit type variable can only be bound to its constraints *)
   assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];
   assert_solve ~left:"C" ~right:"T_D_Q" [];
@@ -3046,18 +3116,23 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
     [["T", "C"]];
+
   (* Bound => Bound *)
   assert_solve ~left:"T_Bound_D" ~right:"T_Bound_C" [["T_Bound_C", "T_Bound_D"]];
   assert_solve ~left:"T_Bound_C" ~right:"T_Bound_D" [];
   assert_solve ~left:"T_Bound_Union" ~right:"T_Bound_Union" [["T_Bound_Union", "T_Bound_Union"]];
+
   (* Bound => Explicit *)
   assert_solve ~left:"T_Bound_D" ~right:"T_C_Q" [["T_C_Q", "C"]];
   assert_solve ~left:"T_Bound_C" ~right:"T_D_Q" [];
+
   (* Explicit => Bound *)
   assert_solve ~left:"T_D_Q" ~right:"T_Bound_Union_C_Q" [["T_Bound_Union_C_Q", "T_D_Q"]];
   assert_solve ~left:"T_D_Q" ~right:"T_Bound_D" [];
+
   (* Explicit => Explicit *)
   assert_solve ~left:"T_C_Q" ~right:"T_C_Q_int" [["T_C_Q_int", "T_C_Q"]];
+
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
    *  T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
@@ -3103,6 +3178,7 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[T3], T3]"
     ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], T1][[str], T2]] "
     [["T2", "str"; "T1", "int"]];
+
   (* Callback protocols *)
   let parse_annotation annotation =
     annotation |> parse_single_expression |> Resolution.parse_annotation resolution
@@ -3128,6 +3204,7 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
     [["T1", "int"]];
+
   (* Multiple options *)
   assert_solve
     ~left:"typing.List[int]"
@@ -3149,6 +3226,7 @@ let test_solve_less_or_equal _ =
     [ ["T3", "int"; "T4", "str"];
       ["T3", "str"; "T4", "int"];
       ["T3", "typing.Union[int, str]"; "T4", "typing.Union[int, str]"] ];
+
   (* Free Variable <-> Free Variable constraints *)
   assert_solve
     ~postprocess:Fn.id
@@ -3171,23 +3249,27 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[int, int], int]"
     ~right:"typing.Callable[V, int]"
     [["V", "[int, int]"]];
+
   (* We need to ensure that return values are still checked *)
   assert_solve ~left:"typing.Callable[[int, int], int]" ~right:"typing.Callable[V, str]" [];
   assert_solve
     ~left:"typing.Callable[[int, int], int]"
     ~right:"typing.Callable[V, T1]"
     [["T1", "int"; "V", "[int, int]"]];
+
   (* We should be able to capture the same parameter set twice *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, int], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
     [["V", "[int, int]"]];
+
   (* We currently do not find a way to take both [int, int] and [int, str]. A correct solution
      would be [int, Intersection[int, str]]. This is probably not desired *)
   assert_solve
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, str], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
     [];
+
   (* There is no common interface between a callable that requires exactly two arguments and one
      that requires exactly one *)
   assert_solve
@@ -3225,6 +3307,7 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[int, str, bool], int]"
     ~right:"typing.Callable[[Ts], int]"
     [["Ts", "int, str, bool"]];
+
   (* This does not bind anything to Ts because the rule is that we assume that type variables in
      Callable types in the left are from the scope of that callable, while type variables in
      callable types in the right are from an outer scope. This remaining asymmetry is required in
@@ -3235,6 +3318,7 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[Ts], int]"
     ~right:"typing.Callable[[int, str, bool], int]"
     [[]];
+
   (* This is the situation we are supporting with the above odd behavior *)
   assert_solve
     ~leave_unbound_in_left:["Ts"]
@@ -3507,6 +3591,7 @@ let test_instantiate_protocol_parameters _ =
     ~candidate:"A"
     ~protocol:"P"
     (Some ["int"]);
+
   (* Simple method protocols *)
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
@@ -3540,6 +3625,7 @@ let test_instantiate_protocol_parameters _ =
     ~candidate:"A"
     ~protocol:"P"
     (Some ["str"]);
+
   (* Primitive recursive protocol, primitive recursive candidate *)
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
@@ -3565,6 +3651,7 @@ let test_instantiate_protocol_parameters _ =
     ~candidate:"A"
     ~protocol:"P"
     (Some ["int"]);
+
   (* Ideally this would work, but avoiding for now *)
   assert_instantiate_protocol_parameters
     ~context:{|
@@ -3576,6 +3663,7 @@ let test_instantiate_protocol_parameters _ =
     ~candidate:"A"
     ~protocol:"P"
     None;
+
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters
     ~context:{|

@@ -136,6 +136,7 @@ let test_number _ =
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0_1");
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "0o9");
   assert_raises (Failure "Could not parse test") (fun () -> parse_untrimmed ~silent:true "1a3");
+
   (* Overflow. *)
   assert_parsed_equal "0xffffffffff0000000000000000000000" [+Expression (+Integer Int.max_value)]
 
@@ -840,6 +841,7 @@ let test_define _ =
              };
            body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }]
          } ];
+
   (* Don't use string annotations if list length does not match signature *)
   assert_parsed_equal
     (trim_extra_indentation {|
@@ -2217,6 +2219,7 @@ let test_class _ =
            decorators = [];
            docstring = None
          } ];
+
   (* We mark parents for functions under if statements. *)
   assert_parsed_equal
     (trim_extra_indentation

@@ -141,26 +141,32 @@ let test_resolve_literal _ =
   assert_resolve_literal "G(7)" Type.Top;
   assert_resolve_literal "C" (Type.meta (Type.Primitive "C"));
   assert_resolve_literal "G" Type.Top;
+
   (* None *)
   assert_resolve_literal "None" Type.none;
   assert_resolve_literal "[None]" (Type.list Type.none);
+
   (* Dictionary *)
   assert_resolve_literal "{'a': 1}" (Type.dictionary ~key:Type.string ~value:Type.integer);
   assert_resolve_literal "{'a': i}" Type.Any;
   assert_resolve_literal "{**foo}" Type.Any;
   assert_resolve_literal "{'a': 1, **foo}" Type.Any;
+
   (* Boolean Operator *)
   assert_resolve_literal "1 or 2" Type.integer;
   assert_resolve_literal "True or 1" (Type.union [Type.bool; Type.integer]);
   assert_resolve_literal "True or i" Type.Any;
+
   (* List *)
   assert_resolve_literal "[1]" (Type.list Type.integer);
   assert_resolve_literal "[1, 'string']" (Type.list (Type.Union [Type.integer; Type.string]));
   assert_resolve_literal "[1, i]" Type.Any;
+
   (* Set *)
   assert_resolve_literal "{1}" (Type.set Type.integer);
   assert_resolve_literal "{1, 'string'}" (Type.set (Type.Union [Type.integer; Type.string]));
   assert_resolve_literal "{1, i}" Type.Any;
+
   (* Ternary *)
   assert_resolve_literal "1 if x else 2" Type.integer;
   assert_resolve_literal "'hi' if x else 1" (Type.union [Type.string; Type.integer]);

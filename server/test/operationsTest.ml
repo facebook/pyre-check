@@ -16,6 +16,7 @@ let test_socket_path context =
   File.write (File.create ~content:"1234" preexisting);
   Unix.symlink ~src:(Path.absolute preexisting) ~dst:(Path.absolute socket_link);
   assert_equal (Filename.realpath (Path.absolute socket_link)) (Path.absolute preexisting);
+
   (* Reading the socket path gives us the preexisting file. *)
   assert_equal
     ~cmp:Path.equal
@@ -26,6 +27,7 @@ let test_socket_path context =
     ~printer:ident
     (Unix.readlink (Path.absolute socket_link))
     (Path.absolute preexisting);
+
   (* Creating always overrides existing sockets. *)
   let socket_path = Server.Operations.socket_path ~create:true configuration in
   (* The socket path gets written by the server, so simulate that. *)

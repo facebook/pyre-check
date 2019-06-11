@@ -160,9 +160,8 @@ let test_statement_visitor_source _ =
 
 
 let () =
-  "visit">:::[
-    "collect">::test_collect;
-    "statement_visitor">::test_statement_visitor;
-    "statement_visitor_source">::test_statement_visitor_source;
-  ]
+  "visit"
+  >::: [ "collect" >:: test_collect;
+         "statement_visitor" >:: test_statement_visitor;
+         "statement_visitor_source" >:: test_statement_visitor_source ]
   |> Test.run

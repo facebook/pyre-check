@@ -15,6 +15,7 @@ let test_check_callables _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `str` for 1st anonymous parameter to anoynmous call but got `int`." ];
+
   (* Type variables & callables. *)
   assert_type_errors
     {|
@@ -51,6 +52,7 @@ let test_check_callables _ =
     [ "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], int]` for 1st anonymous parameter to call `foo` but got "
       ^ "`typing.Callable(i2s)[[Named(x, int)], str]`." ];
+
   (* Classes with __call__ are callables. *)
   assert_type_errors
     {|
@@ -87,6 +89,7 @@ let test_check_callables _ =
       "Incompatible parameter type [6]: "
       ^ "Expected `typing.Callable[[int], str]` for 1st anonymous parameter to call `map` but got "
       ^ "`CallMeToo`." ];
+
   (* Sanity check: Callables do not subclass classes. *)
   assert_type_errors
     {|
@@ -101,6 +104,7 @@ let test_check_callables _ =
     [ "Incompatible parameter type [6]: "
       ^ "Expected `CallMe` for 1st anonymous parameter to call `map` but got "
       ^ "`typing.Callable[[int], str]`." ];
+
   (* The annotation for callable gets expanded automatically. *)
   assert_type_errors
     {|
@@ -124,6 +128,7 @@ let test_check_callables _ =
       reveal_type(foo(f))
     |}
     ["Revealed type [-1]: Revealed type for `foo(f)` is `str`."];
+
   (* Lambdas. *)
   assert_type_errors
     {|
@@ -221,6 +226,7 @@ let test_check_function_parameters _ =
     [ "Missing parameter annotation [2]: Parameter `i` has no type specified.";
       "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
       ^ "to call `int_to_int` but got `typing.Any`." ];
+
   (* Type aliases in signatures are resolved. *)
   assert_type_errors
     "hashlib.md5(1.0)"
@@ -596,6 +602,7 @@ let test_check_function_overloads _ =
         return x.derp(5)
     |}
     [];
+
   (* Technically invalid; all @overload stubs must be followed by implementation *)
   assert_type_errors
     {|
@@ -638,6 +645,7 @@ let test_check_function_overloads _ =
         return typing.cast(x)
     |}
     ["Missing argument [20]: Call `typing.cast` expects argument `obj`."];
+
   (* Technically invalid; @overload stubs must comprehensively cover implementation *)
   assert_type_errors
     {|
@@ -683,6 +691,7 @@ let test_check_function_overloads _ =
     [ "Missing overload implementation [42]: Overloaded function `derp` must have an implementation.";
       "Revealed type [-1]: Revealed type for `derp` is "
       ^ "`typing.Callable(derp)[..., unknown][[[Named(x, int)], int][[Named(x, str)], str]]`." ];
+
   (* The overloaded stub will override the implementation *)
   assert_type_errors
     {|

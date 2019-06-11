@@ -69,6 +69,7 @@ let test_forward _ =
     |} {|
       foo(1)
     |};
+
   (* Deletion. *)
   assert_deobfuscation
     {|
@@ -93,6 +94,7 @@ let test_forward _ =
       a = 1 + 1
       a
     |};
+
   (* Control flow. *)
   assert_deobfuscation
     {|
@@ -122,6 +124,7 @@ let test_forward _ =
         pass
       1
     |};
+
   (* Assertions. *)
   assert_deobfuscation {|
       a = False
@@ -150,6 +153,7 @@ let test_forward _ =
       if False:
         foo(1)
     |};
+
   (* Functions. *)
   assert_deobfuscation {|
       a = len
@@ -169,6 +173,7 @@ let test_forward _ =
     |} {|
       len(b).imag
     |};
+
   (* Constructors. *)
   assert_deobfuscation
     {|
@@ -180,6 +185,7 @@ let test_forward _ =
       import threading
       threading.Thread()
     |};
+
   (* Global constants. *)
   assert_deobfuscation
     {|
@@ -306,6 +312,7 @@ let test_fixup _ =
       def foo():
         pass
     |};
+
   (* Remove docstrings. *)
   assert_deobfuscation
     {|
@@ -317,6 +324,7 @@ let test_fixup _ =
       def foo():
         pass
     |};
+
   (* Sanitize accesses. *)
   assert_deobfuscation {|
       $local_qualifier$variable
@@ -352,6 +360,7 @@ let test_fixup _ =
       except Exception as e:
         pass
     |};
+
   (* Drop qualifier. *)
   assert_deobfuscation
     {|
@@ -362,6 +371,7 @@ let test_fixup _ =
       def foo():
         bar()
     |};
+
   (* Naming heuristics. *)
   assert_deobfuscation
     {|
@@ -475,6 +485,7 @@ let test_fixup _ =
       def a():
         pass
     |};
+
   (* For. *)
   assert_deobfuscation
     {|
@@ -485,6 +496,7 @@ let test_fixup _ =
       for a in []:
         a
     |};
+
   (* Globals. *)
   assert_deobfuscation
     {|

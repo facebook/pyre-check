@@ -22,6 +22,7 @@ let test_parse _ =
   assert_mode " # pyre-strict" Source.Strict;
   assert_mode " # pyre-durp" Source.Default;
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " (Source.DefaultButDontCheck [42; 7; 15]);
+
   (* Prevent typos from being treated as error suppressors. *)
   assert_mode " # pyre-ignore-all-errors[42, 7,   15" Source.Default;
   let assert_ignore lines expected_ignore_lines =
@@ -95,16 +96,19 @@ let test_parse _ =
   assert_ignore
     ["def foo() -> str: return 1  # pyre-fixme[7, 1, 2]: something about Class[Derp4]"]
     [create_ignore 1 [7; 1; 2] PyreFixme 1 30 1 79];
+
   (* Comment on preceding line. *)
   assert_ignore
     ["# pyre-ignore[7]"; "def foo() -> str: return"]
     [create_ignore 2 [7] PyreIgnore 1 2 1 16];
+
   (* Don't include ignore keywords inside quotes *)
   assert_ignore ["def foo() -> int: return 1.0  # haha no 'pyre-ignore's here"] [];
   assert_ignore
     ["def foo() -> int: return 1.0  # 'quote before is OK' pyre-ignore"]
     [create_ignore 1 [] PyreIgnore 1 53 1 64];
   assert_ignore ["def foo() -> int: return 1.0  # 'still in quotes' 'pyre-ignore'"] [];
+
   (* Ignores apply to next non-comment line *)
   assert_ignore
     ["# pyre-ignore[7]"; "# another comment"; "def foo() -> str: return"]
@@ -162,6 +166,7 @@ let test_expand_relative_import _ =
     ~from:".other"
     ~expected:"module.submodule.other";
   assert_export ~handle:"module/submodule/qualifier.py" ~from:"..other" ~expected:"module.other";
+
   (* `__init__` modules are special. *)
   assert_export ~handle:"module/__init__.py" ~from:"." ~expected:"module"
 
@@ -184,11 +189,13 @@ let test_signature_hash _ =
   assert_hash_equal "# pyre-strict" "# pyre-strict";
   assert_hash_unequal "# pyre-strict" "";
   assert_hash_unequal "# pyre-strict" "# pyre-declare-but-dont-check";
+
   (* Assignments. *)
   assert_hash_equal "a = 1" "a = 1";
   assert_hash_equal "a: int = 1" "a: int = 1";
   assert_hash_unequal "a: str = 1" "a: int = 1";
   assert_hash_unequal "a = 2" "a = 1";
+
   (* Defines. *)
   assert_hash_equal
     {|
@@ -204,6 +211,7 @@ let test_signature_hash _ =
   assert_hash_unequal "def foo(): ..." "def bar(): ...";
   assert_hash_unequal "def foo(a: int): ..." "def foo(a: str): ...";
   assert_hash_unequal "def foo(a: int = 1): ..." "def foo(a: int = 2): ...";
+
   (* Yerps... :( *)
   assert_hash_unequal
     {|
@@ -216,6 +224,7 @@ let test_signature_hash _ =
     |};
   assert_hash_unequal "def foo() -> int: ..." "def foo() -> str: ...";
   assert_hash_unequal "def foo(): ..." "async def foo(): ...";
+
   (* Classes. *)
   assert_hash_equal
     {|
@@ -248,6 +257,7 @@ let test_signature_hash _ =
       @other_decorator
       class A: ...
     |};
+
   (* If. *)
   assert_hash_equal
     {|
@@ -293,11 +303,13 @@ let test_signature_hash _ =
       else:
         attribute = 3
     |};
+
   (* Imports. *)
   assert_hash_equal "from a import b" "from a import b";
   assert_hash_equal "import a" "import a";
   assert_hash_unequal "from a import b" "from a import c";
   assert_hash_unequal "import a" "import b";
+
   (* With. *)
   assert_hash_equal
     {|

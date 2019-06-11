@@ -143,6 +143,7 @@ let test_check_protocol _ =
         return x.bar() + y
     |}
     [];
+
   (* Collection -> Sized is special cased for now *)
   assert_type_errors
     {|

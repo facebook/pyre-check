@@ -407,6 +407,7 @@ let test_initialize_request_parses _ =
    }
   }
   |};
+
   (* Handle non-existent fields. *)
   assert_parses
     {|
@@ -547,6 +548,7 @@ let test_language_server_protocol_read_message_eof context =
     Out_channel.output_string out_channel message;
     Out_channel.flush out_channel;
     Out_channel.close out_channel;
+
     (* EOF *)
     assert_raises End_of_file (fun _ -> read_message in_channel)
   in
@@ -561,6 +563,7 @@ let test_language_server_protocol_read_message_eof context =
     Out_channel.output_string out_channel message;
     Out_channel.flush out_channel;
     Out_channel.close out_channel;
+
     (* EOF *)
     read_message in_channel
   in

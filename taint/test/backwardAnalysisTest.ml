@@ -284,6 +284,7 @@ let test_apply_method_model_at_call_site _ =
         ~kind:`Function
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
         "qualifier.taint_across_union_receiver_types" ];
+
   (* Propagation through properties. *)
   assert_taint
     {|

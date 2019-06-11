@@ -294,7 +294,6 @@ module StatementCollector (Predicate : StatementPredicate) = struct
   let collect source = CollectingVisit.visit [] source
 end
 
-
 let collect_calls statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct

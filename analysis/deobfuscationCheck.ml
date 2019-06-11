@@ -176,6 +176,7 @@ module ConstantPropagationState (Context : Context) = struct
     in
     if not (Statement.equal statement transformed) then
       Hashtbl.set Context.transformations ~key:(Node.location transformed) ~data:[transformed];
+
     (* Find new constants. *)
     let constants =
       match Node.value transformed with

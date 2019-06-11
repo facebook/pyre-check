@@ -310,10 +310,7 @@ module Class : sig
 
   val is_frozen : t -> bool
 
-  val implicit_attributes
-    :  ?in_test:bool ->
-    t ->
-    Attribute.t Identifier.SerializableMap.t
+  val implicit_attributes : ?in_test:bool -> t -> Attribute.t Identifier.SerializableMap.t
 
   val explicitly_assigned_attributes : t -> Attribute.t Identifier.SerializableMap.t
 

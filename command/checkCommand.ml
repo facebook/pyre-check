@@ -88,6 +88,7 @@ let run_check
       ();
     if debug then
       Memory.report_statistics ();
+
     (* Print results. *)
     Yojson.Safe.to_string
       (`Assoc

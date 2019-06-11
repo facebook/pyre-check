@@ -141,6 +141,7 @@ let computation_thread request_queue configuration state =
           if current_time -. state.last_request_time > stop_after_idle_for then
             Mutex.critical_section state.lock ~f:(fun () ->
                 Operations.stop ~reason:"idle" ~configuration ~socket:!(state.connections).socket);
+
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
             let integrity_check_every = 60.0 (* 1 minute *) in
@@ -335,6 +336,7 @@ let request_handler_thread
         handle_readable_file_notifier socket
     in
     List.iter ~f:handle_socket readable;
+
     (* We need to introduce this nanosleep to avoid burning CPU. *)
     if List.is_empty readable then
       Unix.nanosleep 0.1 |> ignore;
@@ -407,6 +409,7 @@ let run_server_daemon_entry : run_server_daemon_entry =
     (fun (socket, json_socket, server_configuration) (parent_in_channel, parent_out_channel) ->
       Daemon.close_in parent_in_channel;
       Daemon.close_out parent_out_channel;
+
       (* Detach the from a controlling terminal *)
       Unix.Terminal_io.setsid () |> ignore;
       acquire_lock ~server_configuration;
