@@ -1082,6 +1082,25 @@ let messages ~concise ~signature location kind =
            type variable."
           pp_type
           annotation ]
+  | NotCallable (Type.Callable { implementation; overloads; _ } as annotation) ->
+      let has_list_variadic_variable_parameter { Type.Callable.parameters; _ } =
+        match parameters with
+        | Defined parameters ->
+            let is_list_variadic_variable_parameter = function
+              | Type.Callable.Parameter.Variable (Variadic _) -> true
+              | _ -> false
+            in
+            List.exists parameters ~f:is_list_variadic_variable_parameter
+        | _ -> false
+      in
+      if List.exists (implementation :: overloads) ~f:has_list_variadic_variable_parameter then
+        [ Format.asprintf
+            "`%a` cannot be safely called because the types and kinds of its parameters depend on \
+             a type variable."
+            pp_type
+            annotation ]
+      else
+        [Format.asprintf "`%a` is not a function." pp_type annotation]
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
   | ProhibitedAny { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then

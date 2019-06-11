@@ -2857,14 +2857,41 @@ let test_solve_less_or_equal _ =
            resolution
     in
     let left =
-      let constraints annotation =
-        match annotation with
-        | Type.Variable { variable = variable_name; _ }
-          when not (List.exists leave_unbound_in_left ~f:(( = ) variable_name)) ->
-            Some (Type.Variable.mark_all_variables_as_bound annotation)
-        | _ -> None
+      let mark_unary ({ Type.Variable.Unary.variable = name; _ } as variable) =
+        if List.mem leave_unbound_in_left name ~equal:Identifier.equal then
+          None
+        else
+          Some (Type.Variable (Type.Variable.Unary.mark_as_bound variable))
       in
-      parse_annotation left |> Type.instantiate ~constraints
+      let mark_parameter_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.Parameters.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Callable.ParameterVariadicTypeVariable
+               (Type.Variable.Variadic.Parameters.mark_as_bound variable))
+      in
+      let mark_list_variadic variable =
+        if
+          List.mem
+            leave_unbound_in_left
+            (Type.Variable.Variadic.List.name variable)
+            ~equal:Identifier.equal
+        then
+          None
+        else
+          Some
+            (Type.Record.OrderedTypes.Variable (Type.Variable.Variadic.List.mark_as_bound variable))
+      in
+      parse_annotation left
+      |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
+      |> Type.Variable.GlobalTransforms.ParameterVariadic.replace_all mark_parameter_variadic
+      |> Type.Variable.GlobalTransforms.ListVariadic.replace_all mark_list_variadic
     in
     let right = parse_annotation right in
     let expected =
@@ -2883,9 +2910,12 @@ let test_solve_less_or_equal _ =
                 | _ -> failwith "impossible"
               in
               let parse_ordered_types ordered =
-                match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
-                | Type.Tuple (Bounded ordered) -> ordered
-                | _ -> failwith "impossible"
+                if ordered = "" then
+                  Type.Record.OrderedTypes.Concrete []
+                else
+                  match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
+                  | Type.Tuple (Bounded ordered) -> ordered
+                  | _ -> failwith "impossible"
               in
               match Handler.aliases primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
@@ -3173,6 +3203,7 @@ let test_solve_less_or_equal _ =
     ~right:"typing.Tuple[Ts]"
     [["Ts", "int, str, bool"]];
   assert_solve
+    ~leave_unbound_in_left:["Ts"]
     ~left:"typing.Tuple[Ts]"
     ~right:"typing.Tuple[int, str, bool]"
     [["Ts", "int, str, bool"]];
@@ -3184,8 +3215,45 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Tuple[typing.Tuple[int, str], typing.Tuple[bool, str, int]]"
     ~right:"typing.Tuple[typing.Tuple[Ts], typing.Tuple[Ts]]"
     [];
-  assert_solve ~left:"typing.Tuple[Ts]" ~right:"typing.Tuple[T2s]" [["T2s", "Ts"]; ["Ts", "T2s"]];
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Tuple[Ts]"
+    ~right:"typing.Tuple[T2s]"
+    [["T2s", "Ts"]; ["Ts", "T2s"]];
   assert_solve ~left:"typing.Tuple[...]" ~right:"typing.Tuple[Ts]" [["Ts", "..."]];
+  assert_solve
+    ~left:"typing.Callable[[int, str, bool], int]"
+    ~right:"typing.Callable[[Ts], int]"
+    [["Ts", "int, str, bool"]];
+  (* This does not bind anything to Ts because the rule is that we assume that type variables in
+     Callable types in the left are from the scope of that callable, while type variables in
+     callable types in the right are from an outer scope. This remaining asymmetry is required in
+     order to make passing generic functions into generic higher order functions work without
+     marking scopes explicitly. *)
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Callable[[Ts], int]"
+    ~right:"typing.Callable[[int, str, bool], int]"
+    [[]];
+  (* This is the situation we are supporting with the above odd behavior *)
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Callable[[Ts], typing.Tuple[Ts]]"
+    ~right:"typing.Callable[[int, str, bool], typing.Tuple[int, str, bool]]"
+    [[]];
+  assert_solve
+    ~left:"typing.Callable[[int, str, bool], int]"
+    ~right:"typing.Callable[[int, str, bool, Variable(Ts)], int]"
+    [["Ts", ""]];
+  assert_solve
+    ~left:"typing.Callable[[Named(A, int), Named(B, str)], int]"
+    ~right:"typing.Callable[[Ts], int]"
+    [["Ts", "int, str"]];
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Callable[[Ts], int]"
+    ~right:"typing.Callable[[Named(A, int), Named(B, str)], int]"
+    [];
   ()
 
 

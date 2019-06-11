@@ -38,6 +38,7 @@ type reason =
   | UnexpectedKeyword of Identifier.t
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | CallingParameterVariadicTypeVariable
+  | CallingListVariadicTypeVariable
 [@@deriving eq, show, compare]
 
 type closest = {
@@ -318,8 +319,10 @@ let select
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
-      let parameter_annotation = Parameter.annotation key in
       match key, data with
+      | Parameter.Variable (Variadic _), _ ->
+          let reasons = { reasons with arity = CallingListVariadicTypeVariable :: arity } in
+          { signature_match with reasons }
       | Parameter.Variable _, []
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword
@@ -334,7 +337,11 @@ let select
           (* Parameter was not matched *)
           let reasons = { reasons with arity = MissingArgument (Anonymous index) :: arity } in
           { signature_match with reasons }
-      | _, arguments ->
+      | Anonymous { annotation = parameter_annotation; _ }, arguments
+      | KeywordOnly { annotation = parameter_annotation; _ }, arguments
+      | Named { annotation = parameter_annotation; _ }, arguments
+      | Variable (Concrete parameter_annotation), arguments
+      | Keywords parameter_annotation, arguments ->
           let rec set_constraints_and_reasons
               ~resolution
               ~position
@@ -593,6 +600,7 @@ let select
             | UnexpectedKeyword _ -> 1
             | AbstractClassInstantiation _ -> 1
             | CallingParameterVariadicTypeVariable -> 1
+            | CallingListVariadicTypeVariable -> 1
           in
           let get_most_important best_reason reason =
             if importance reason > importance best_reason then

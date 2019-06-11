@@ -36,6 +36,7 @@ type reason =
   | UnexpectedKeyword of Identifier.t
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | CallingParameterVariadicTypeVariable
+  | CallingListVariadicTypeVariable
 [@@deriving eq, show, compare]
 
 type closest = {

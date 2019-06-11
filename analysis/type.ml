@@ -141,11 +141,16 @@ module Record = struct
       }
       [@@deriving compare, eq, sexp, show, hash]
 
+      type 'annotation variable =
+        | Concrete of 'annotation
+        | Variadic of Variable.RecordVariadic.RecordList.record
+      [@@deriving compare, eq, sexp, show, hash]
+
       type 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | KeywordOnly of 'annotation named
-        | Variable of 'annotation
+        | Variable of 'annotation variable
         | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
 
@@ -174,7 +179,8 @@ module Record = struct
             Format.asprintf "%a%s" pp_type annotation (if default then ", default" else "")
         | Named named -> print_named ~kind:"Named" named
         | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
-        | Variable annotation -> Format.asprintf "Variable(%a)" pp_type annotation
+        | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
+        | Variable (Variadic { name; _ }) -> Format.asprintf "Variable(%s)" name
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
     end
 
@@ -583,7 +589,9 @@ let rec pp_concise format annotation =
                 | Parameter.KeywordOnly { annotation; _ }
                 | Parameter.Named { annotation; _ } ->
                     Format.asprintf "%a" pp_concise annotation
-                | Parameter.Variable annotation -> Format.asprintf "*(%a)" pp_concise annotation
+                | Parameter.Variable (Concrete annotation) ->
+                    Format.asprintf "*(%a)" pp_concise annotation
+                | Parameter.Variable (Variadic { name; _ }) -> Format.asprintf "*(%s)" name
                 | Parameter.Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
               List.map parameters ~f:parameter
@@ -849,7 +857,8 @@ let rec expression annotation =
                       call ~default ~name "Named" annotation
                   | Parameter.KeywordOnly { name; annotation; default } ->
                       call ~default ~name "KeywordOnly" annotation
-                  | Parameter.Variable annotation -> call "Variable" annotation
+                  | Parameter.Variable (Concrete annotation) -> call "Variable" annotation
+                  | Parameter.Variable (Variadic { name; _ }) -> call "Variable" (Primitive name)
                 in
                 List (List.map ~f:convert_parameter parameters) |> Node.create ~location
             | Undefined -> Node.create ~location Ellipsis
@@ -1008,8 +1017,9 @@ module Transform = struct
                   | RecordParameter.KeywordOnly ({ annotation; _ } as named) ->
                       RecordParameter.KeywordOnly
                         { named with annotation = visit_annotation annotation ~state }
-                  | RecordParameter.Variable annotation ->
-                      RecordParameter.Variable (visit_annotation annotation ~state)
+                  | RecordParameter.Variable (Concrete annotation) ->
+                      RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
+                  | RecordParameter.Variable (Variadic _) as parameter -> parameter
                   | RecordParameter.Keywords annotation ->
                       RecordParameter.Keywords (visit_annotation annotation ~state)
                   | RecordParameter.Anonymous ({ annotation; _ } as anonymous) ->
@@ -1131,7 +1141,7 @@ module Callable = struct
           let new_parameter =
             match star with
             | "**" -> Keywords annotation
-            | "*" -> Variable annotation
+            | "*" -> Variable (Concrete annotation)
             | _ ->
                 let sanitized = Identifier.sanitized name in
                 if
@@ -1152,15 +1162,6 @@ module Callable = struct
 
 
     let show_concise = show_concise ~pp_type
-
-    let annotation = function
-      | Anonymous { annotation; _ }
-      | KeywordOnly { annotation; _ }
-      | Named { annotation; _ }
-      | Variable annotation
-      | Keywords annotation ->
-          annotation
-
 
     let default = function
       | Anonymous { default; _ }
@@ -1332,6 +1333,11 @@ let primitive_substitution_map =
     "typing.Type", parametric_anys "type" 1;
     "typing_extensions.Protocol", Primitive "typing.Protocol" ]
   |> Identifier.Table.of_alist_exn
+
+
+let primitive_name = function
+  | Primitive name -> Some name
+  | _ -> None
 
 
 type alias =
@@ -1525,14 +1531,21 @@ let rec create_logic ?(use_cache = true)
                                     create_logic (Node.create_with_default_location annotation);
                                   default
                                 }
-                          | "Variable", tail ->
+                          | "Variable", tail -> (
                               let annotation =
                                 match tail with
                                 | annotation :: _ ->
                                     create_logic (Node.create_with_default_location annotation)
                                 | _ -> Top
                               in
-                              Parameter.Variable annotation
+                              let concrete = Parameter.Variable (Concrete annotation) in
+                              match annotation with
+                              | Primitive name -> (
+                                match variable_aliases name with
+                                | Some (Record.Variable.ListVariadic variable) ->
+                                    Parameter.Variable (Variadic variable)
+                                | _ -> concrete )
+                              | _ -> concrete )
                           | "Keywords", tail ->
                               let annotation =
                                 match tail with
@@ -1547,6 +1560,15 @@ let rec create_logic ?(use_cache = true)
                             { index; annotation = create_logic parameter; default = false }
                     in
                     match Node.value parameters with
+                    | List [parameter] -> (
+                        let normal () = Defined [extract_parameter 0 parameter] in
+                        let variable_alias =
+                          create_logic parameter |> primitive_name >>= variable_aliases
+                        in
+                        match variable_alias with
+                        | Some (Record.Variable.ListVariadic variable) ->
+                            Defined [Parameter.Variable (Variadic variable)]
+                        | _ -> normal () )
                     | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
                     | _ -> (
                       match variable_aliases (Expression.show parameters) with
@@ -1892,11 +1914,6 @@ let collect annotation ~predicate =
   end)
   in
   fst (CollectorTransform.visit [] annotation)
-
-
-let primitive_name = function
-  | Primitive name -> Some name
-  | _ -> None
 
 
 let primitives annotation =
@@ -2520,6 +2537,36 @@ end = struct
       let local_replace replacement = function
         | Tuple (Bounded (Variable variable)) ->
             replacement variable >>| fun ordered_types -> Tuple (Bounded ordered_types)
+        | Callable callable ->
+            let map = function
+              | Defined parameters ->
+                  let replace_variadic = function
+                    | Callable.Parameter.Variable (Variadic variable) -> (
+                      match replacement variable with
+                      | None -> [Callable.Parameter.Variable (Variadic variable)]
+                      | Some (Variable new_variable) ->
+                          [Callable.Parameter.Variable (Variadic new_variable)]
+                      | Some Any -> [Callable.Parameter.Variable (Concrete Any)]
+                      | Some (Concrete concretes) ->
+                          let make_anonymous annotation =
+                            Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+                          in
+                          List.map concretes ~f:make_anonymous )
+                    | parameter -> [parameter]
+                  in
+                  let correct_indices index = function
+                    | Callable.Parameter.Anonymous anonymous ->
+                        Callable.Parameter.Anonymous { anonymous with index }
+                    | parameter -> parameter
+                  in
+                  List.concat_map parameters ~f:replace_variadic
+                  |> List.mapi ~f:correct_indices
+                  |> fun defined -> Defined defined
+              | parameters -> parameters
+            in
+            Callable.map_parameters callable ~f:map
+            |> (fun callable -> Callable callable)
+            |> Option.some
         | _ -> None
 
 
@@ -2528,6 +2575,17 @@ end = struct
       (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
       let local_collect = function
         | Tuple (Bounded (Variable variable)) -> [variable]
+        | Callable { implementation; overloads; _ } ->
+            let map = function
+              | { parameters = Defined parameters; _ } ->
+                  let collect_variadic = function
+                    | Callable.Parameter.Variable (Variadic variable) -> Some variable
+                    | _ -> None
+                  in
+                  List.filter_map parameters ~f:collect_variadic
+              | _ -> []
+            in
+            implementation :: overloads |> List.concat_map ~f:map
         | _ -> []
 
 

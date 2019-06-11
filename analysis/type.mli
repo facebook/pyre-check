@@ -72,11 +72,16 @@ module Record : sig
       }
       [@@deriving compare, eq, sexp, show, hash]
 
+      type 'annotation variable =
+        | Concrete of 'annotation
+        | Variadic of Variable.RecordVariadic.RecordList.record
+      [@@deriving compare, eq, sexp, show, hash]
+
       type 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | KeywordOnly of 'annotation named
-        | Variable of 'annotation
+        | Variable of 'annotation variable
         | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
     end
@@ -274,8 +279,6 @@ module Callable : sig
     module Map : Core.Map.S with type Key.t = parameter
 
     val create : (Identifier.t * type_t * bool) list -> type_t t list
-
-    val annotation : parameter -> type_t
 
     val default : parameter -> bool
 

@@ -39,8 +39,8 @@ let resolution =
       unknown: $unknown = ...
       g: typing.Callable[[int], bool]
       f: typing.Callable[[int], typing.List[bool]]
-
-      class ESCAPED(typing.Generic[_T]): ...
+      Tparams = pyre_extensions.ParameterSpecification("Tparams")
+      Ts = pyre_extensions.ListVariadic("Ts")
     |}
   |> fun environment -> TypeCheck.resolution environment ()
 
@@ -59,62 +59,28 @@ let parse_annotation annotation =
 let test_select _ =
   let assert_select ?(allow_undefined = false) ?name callable arguments expected =
     let parse_callable callable =
-      match parse_annotation callable with
-      | Type.Parametric
-          { name = "CallableWithVariadicGenericParameters"; parameters = [annotation] } ->
-          let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
-          { Type.Callable.kind = Anonymous;
-            implementation =
-              { annotation;
-                parameters = Type.Callable.ParameterVariadicTypeVariable parameter_variadic
-              };
-            overloads = [];
-            implicit = None
-          }
-      | Type.Parametric
-          { name = "CallableWithEscapedVariadicGenericParameters"; parameters = [annotation] } ->
-          let parameter_variadic =
-            Type.Variable.Variadic.Parameters.create "T"
-            |> Type.Variable.Variadic.Parameters.mark_as_escaped
+      callable
+      |> String.substr_replace_all ~pattern:"$literal_one" ~with_:"typing_extensions.Literal[1]"
+      |> String.substr_replace_all
+           ~pattern:"$literal_string"
+           ~with_:"typing_extensions.Literal[\"string\"]"
+      |> Format.asprintf "typing.Callable%s"
+      |> parse_annotation
+      |> function
+      | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
+          let undefined { Type.Callable.parameters; _ } =
+            match parameters with
+            | Type.Callable.Undefined -> true
+            | _ -> false
           in
-          { Type.Callable.kind = Anonymous;
-            implementation =
-              { annotation;
-                parameters = Type.Callable.ParameterVariadicTypeVariable parameter_variadic
-              };
-            overloads = [];
-            implicit = None
-          }
-      | _ -> (
-          callable
-          |> String.substr_replace_all
-               ~pattern:"$literal_one"
-               ~with_:"typing_extensions.Literal[1]"
-          |> String.substr_replace_all
-               ~pattern:"$literal_string"
-               ~with_:"typing_extensions.Literal[\"string\"]"
-          |> Format.asprintf "typing.Callable%s"
-          |> parse_annotation
-          |> Type.instantiate ~constraints:(function
-                 | Type.Parametric { name = "ESCAPED"; parameters = [variable] } ->
-                     Type.Variable.Namespace.reset ();
-                     Some (Type.Variable.mark_all_free_variables_as_escaped variable)
-                 | _ -> None)
-          |> function
-          | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
-              let undefined { Type.Callable.parameters; _ } =
-                match parameters with
-                | Type.Callable.Undefined -> true
-                | _ -> false
-              in
-              if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
-                failwith "Undefined parameters"
-              else
-                name
-                >>| Reference.create
-                >>| (fun name -> { callable with kind = Named name })
-                |> Option.value ~default:callable
-          | _ -> failwith "Could not extract signatures" )
+          if List.exists (implementation :: overloads) ~f:undefined && not allow_undefined then
+            failwith "Undefined parameters"
+          else
+            name
+            >>| Reference.create
+            >>| (fun name -> { callable with kind = Named name })
+            |> Option.value ~default:callable
+      | _ -> failwith "Could not extract signatures"
     in
     let callable = parse_callable callable in
     Type.Variable.Namespace.reset ();
@@ -123,6 +89,12 @@ let test_select _ =
       Signature.select ~arguments ~resolution ~callable
     in
     let callable = { callable with Type.Callable.overloads = [] } in
+    let parse_callable callable =
+      Type.Variable.Namespace.reset ();
+      parse_callable callable
+      |> Type.Callable.map ~f:Type.Variable.mark_all_free_variables_as_escaped
+      |> fun callable -> Option.value_exn callable
+    in
     let expected =
       match expected with
       | `Found expected -> Found (parse_callable expected)
@@ -387,7 +359,7 @@ let test_select _ =
     "[[typing.Union[int, typing.List[_T]]], _T]"
     "([1])"
     (`Found "[[typing.Union[int, typing.List[int]]], int]");
-  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], ESCAPED[_S]]");
+  assert_select "[[_T], _S]" "(1)" (`Found "[[$literal_one], _S]");
   assert_select "[[typing.List[_T]], int]" "([1])" (`Found "[[typing.List[int]], int]");
   assert_select "[[typing.Sequence[_T]], int]" "([1])" (`Found "[[typing.Sequence[int]], int]");
   assert_select "[[typing.List[C]], int]" "([B()])" (`Found "[[typing.List[C]], int]");
@@ -416,7 +388,7 @@ let test_select _ =
     "[[typing.Sequence[_T]], int]"
     "(1)"
     (`NotFoundMismatchWithClosest
-      ( "[[typing.Sequence[ESCAPED[_T]]], int]",
+      ( "[[typing.Sequence[_T]], int]",
         Type.literal_integer 1,
         "1",
         Type.parametric "typing.Sequence" [Type.variable "_T"],
@@ -427,7 +399,7 @@ let test_select _ =
     "[[_R], _R]"
     "('string')"
     (`NotFoundMismatchWithClosest
-      ( "[[ESCAPED[_R]], ESCAPED[_R]]",
+      ( "[[_R], _R]",
         Type.literal_string "string",
         "\"string\"",
         Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer; Type.float]) "_R",
@@ -438,7 +410,7 @@ let test_select _ =
     "[[typing.List[_R]], _R]"
     "(['string'])"
     (`NotFoundMismatchWithClosest
-      ( "[[typing.List[ESCAPED[_R]]], ESCAPED[_R]]",
+      ( "[[typing.List[_R]], _R]",
         Type.list Type.string,
         "['string']",
         Type.list
@@ -447,7 +419,7 @@ let test_select _ =
              "_R"),
         None,
         1 ));
-  assert_select "[[], _R]" "()" (`Found "[[], ESCAPED[_R]]");
+  assert_select "[[], _R]" "()" (`Found "[[], _R]");
   assert_select "[[typing.Type[_T]], _T]" "(int)" (`Found "[[typing.Type[int]], int]");
   assert_select
     "[[typing.Type[typing.List[_T]]], _T]"
@@ -463,7 +435,7 @@ let test_select _ =
     "[[_T_float_or_str], None]"
     "(union)"
     (`NotFoundMismatchWithClosest
-      ( "[[ESCAPED[_T_float_or_str]], None]",
+      ( "[[_T_float_or_str], None]",
         Type.union [Type.integer; Type.string],
         "union",
         Type.variable
@@ -479,18 +451,18 @@ let test_select _ =
     "[[_T_bound_by_float_str_union], _T_bound_by_float_str_union]"
     "(union)"
     (`Found "[[typing.Union[int, str]], typing.Union[int, str]]");
-  assert_select "[[int], _T]" "(5)" (`Found "[[int], ESCAPED[_T]]");
-  assert_select "[[int], _T_float_or_str]" "(5)" (`Found "[[int], ESCAPED[_T_float_or_str]]");
+  assert_select "[[int], _T]" "(5)" (`Found "[[int], _T]");
+  assert_select "[[int], _T_float_or_str]" "(5)" (`Found "[[int], _T_float_or_str]");
   assert_select
     "[[int], _T_bound_by_float_str_union]"
     "(5)"
-    (`Found "[[int], ESCAPED[_T_bound_by_float_str_union]]");
-  assert_select "[[], _T]" "()" (`Found "[[], ESCAPED[_T]]");
-  assert_select "[[], _T_float_or_str]" "()" (`Found "[[], ESCAPED[_T_float_or_str]]");
+    (`Found "[[int], _T_bound_by_float_str_union]");
+  assert_select "[[], _T]" "()" (`Found "[[], _T]");
+  assert_select "[[], _T_float_or_str]" "()" (`Found "[[], _T_float_or_str]");
   assert_select
     "[[], _T_bound_by_float_str_union]"
     "()"
-    (`Found "[[], ESCAPED[_T_bound_by_float_str_union]]");
+    (`Found "[[], _T_bound_by_float_str_union]");
   (* Ranking. *)
   assert_select
     ~allow_undefined:true
@@ -600,17 +572,23 @@ let test_select _ =
     ~name:"dict.__init__"
     "[[Keywords(_S)], dict[_T, _S]]"
     "()"
-    (`Found "[[Keywords(ESCAPED[_S])], dict[ESCAPED[_T], ESCAPED[_S]]]");
+    (`Found "[[Keywords(_S)], dict[_T, _S]]");
   assert_select
     "[[Keywords(_S)], dict[_T, _S]]"
     "(a=1)"
-    (`Found "[[Keywords($literal_one)], dict[ESCAPED[_T], $literal_one]]");
+    (`Found "[[Keywords($literal_one)], dict[_T, $literal_one]]");
   assert_select
-    "CallableWithVariadicGenericParameters[int]"
+    "[Tparams, int]"
     "(a=1)"
-    (`NotFound
-      ( "CallableWithEscapedVariadicGenericParameters[int]",
-        Some CallingParameterVariadicTypeVariable ));
+    (`NotFound ("[Tparams, int]", Some CallingParameterVariadicTypeVariable));
+  assert_select
+    "[[Ts], int]"
+    "(1)"
+    (`NotFound ("[[Ts], int]", Some CallingListVariadicTypeVariable));
+  assert_select
+    "[[int, Variable(Ts)], int]"
+    "(1)"
+    (`NotFound ("[[int, Variable(Ts)], int]", Some CallingListVariadicTypeVariable));
   ()
 
 

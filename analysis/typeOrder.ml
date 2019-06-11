@@ -489,8 +489,48 @@ module OrderImplementation = struct
       let open Callable in
       let solve implementation ~initial_constraints =
         try
-          let rec solve_parameters left right constraints =
-            match left, right with
+          let rec solve_parameters_against_list_variadic ~is_lower_bound ~concretes ~variable ~tail
+            =
+            let before_first_keyword, after_first_keyword_inclusive =
+              let is_not_keyword_only = function
+                | Type.Callable.Parameter.Keywords _
+                | Type.Callable.Parameter.KeywordOnly _ ->
+                    false
+                | _ -> true
+              in
+              List.split_while concretes ~f:is_not_keyword_only
+            in
+            let single_annotation = function
+              | Type.Callable.Parameter.Anonymous { annotation; _ } -> Some annotation
+              | Named { annotation; _ } when not is_lower_bound ->
+                  (* Named arguments can be called positionally, but positionals can't be called
+                     with a name *)
+                  Some annotation
+              | _ -> None
+            in
+            let add_bound, continue =
+              if is_lower_bound then
+                ( OrderedConstraints.add_lower_bound,
+                  solve_parameters
+                    ~left_parameters:after_first_keyword_inclusive
+                    ~right_parameters:tail )
+              else
+                ( OrderedConstraints.add_upper_bound,
+                  solve_parameters
+                    ~left_parameters:tail
+                    ~right_parameters:after_first_keyword_inclusive )
+            in
+            List.map before_first_keyword ~f:single_annotation
+            |> Option.all
+            >>= (fun concretes ->
+                  add_bound
+                    constraints
+                    ~order
+                    ~pair:(Type.Variable.ListVariadicPair (variable, Concrete concretes)))
+            >>| continue
+            |> Option.value ~default:[]
+          and solve_parameters ~left_parameters ~right_parameters constraints =
+            match left_parameters, right_parameters with
             | Parameter.Anonymous _ :: _, Parameter.Named _ :: _ -> []
             | ( Parameter.Anonymous { annotation = left_annotation; _ } :: left_parameters,
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters )
@@ -501,9 +541,9 @@ module OrderImplementation = struct
                   ~constraints
                   ~left:right_annotation
                   ~right:left_annotation
-                |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
-            | ( Parameter.Variable left_annotation :: left_parameters,
-                Parameter.Variable right_annotation :: right_parameters )
+                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+            | ( Parameter.Variable (Concrete left_annotation) :: left_parameters,
+                Parameter.Variable (Concrete right_annotation) :: right_parameters )
             | ( Parameter.Keywords left_annotation :: left_parameters,
                 Parameter.Keywords right_annotation :: right_parameters ) ->
                 solve_less_or_equal_safe
@@ -511,7 +551,7 @@ module OrderImplementation = struct
                   ~constraints
                   ~left:right_annotation
                   ~right:left_annotation
-                |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
+                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.KeywordOnly ({ annotation = left_annotation; _ } as left)
                 :: left_parameters,
                 Parameter.KeywordOnly ({ annotation = right_annotation; _ } as right)
@@ -525,37 +565,69 @@ module OrderImplementation = struct
                     ~constraints
                     ~left:right_annotation
                     ~right:left_annotation
-                  |> List.concat_map ~f:(solve_parameters left_parameters right_parameters)
+                  |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
                 else
                   []
-            | ( Parameter.Variable left_annotation :: _,
+            | ( Parameter.Variable (Concrete left_annotation) :: _,
                 Parameter.Anonymous { annotation = right_annotation; _ } :: right_parameters ) ->
                 solve_less_or_equal_safe
                   order
                   ~constraints
                   ~left:right_annotation
                   ~right:left_annotation
-                |> List.concat_map ~f:(solve_parameters left right_parameters)
+                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+            | ( Parameter.Variable (Variadic left_variable) :: left_parameters,
+                Parameter.Variable (Variadic right_variable) :: right_parameters )
+              when Type.Variable.Variadic.List.is_free right_variable
+                   && Type.Variable.Variadic.List.is_free left_variable ->
+                let left_greater_than_right, right_less_than_left =
+                  ( OrderedConstraints.add_lower_bound
+                      constraints
+                      ~order
+                      ~pair:
+                        (Type.Variable.ListVariadicPair (left_variable, Variable right_variable))
+                    |> Option.to_list,
+                    OrderedConstraints.add_upper_bound
+                      constraints
+                      ~order
+                      ~pair:
+                        (Type.Variable.ListVariadicPair (right_variable, Variable left_variable))
+                    |> Option.to_list )
+                in
+                left_greater_than_right @ right_less_than_left
+                |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
+            | left, Parameter.Variable (Variadic right_variable) :: right_parameters
+              when Type.Variable.Variadic.List.is_free right_variable ->
+                solve_parameters_against_list_variadic
+                  ~is_lower_bound:false
+                  ~concretes:left
+                  ~variable:right_variable
+                  ~tail:right_parameters
+            | Parameter.Variable (Variadic left_variable) :: left_parameters, right
+              when Type.Variable.Variadic.List.is_free left_variable ->
+                solve_parameters_against_list_variadic
+                  ~is_lower_bound:true
+                  ~concretes:right
+                  ~variable:left_variable
+                  ~tail:left_parameters
             | Parameter.Variable _ :: left_parameters, []
             | Parameter.Keywords _ :: left_parameters, [] ->
-                solve_parameters left_parameters [] constraints
-            | ( (Parameter.Variable _ as variable) :: (Parameter.Keywords _ as keywords) :: _,
-                (Parameter.Named _ as named) :: right ) ->
+                solve_parameters ~left_parameters ~right_parameters:[] constraints
+            | ( Parameter.Variable (Concrete variable_annotation)
+                :: Parameter.Keywords keywords_annotation :: _,
+                Parameter.Named { annotation = named_annotation; _ } :: right_parameters ) ->
                 (* SOLVE *)
                 let is_compatible =
-                  Type.equal (Parameter.annotation variable) (Parameter.annotation keywords)
-                  && less_or_equal
-                       order
-                       ~left:(Parameter.annotation named)
-                       ~right:(Parameter.annotation keywords)
+                  Type.equal variable_annotation keywords_annotation
+                  && less_or_equal order ~left:named_annotation ~right:keywords_annotation
                 in
                 if is_compatible then
-                  solve_parameters left right constraints
+                  solve_parameters ~left_parameters ~right_parameters constraints
                 else
                   []
             | left :: left_parameters, [] ->
                 if Parameter.default left then
-                  solve_parameters left_parameters [] constraints
+                  solve_parameters ~left_parameters ~right_parameters:[] constraints
                 else
                   []
             | [], [] -> [constraints]
@@ -564,7 +636,10 @@ module OrderImplementation = struct
           match implementation.parameters, called_as.parameters with
           | Undefined, Undefined -> [initial_constraints]
           | Defined implementation, Defined called_as ->
-              solve_parameters implementation called_as initial_constraints
+              solve_parameters
+                ~left_parameters:implementation
+                ~right_parameters:called_as
+                initial_constraints
           (* We exhibit unsound behavior when a concrete callable is passed into one expecting a
              Callable[..., T] - Callable[..., T] admits any parameters, which is not true when a
              callable that doesn't admit kwargs and varargs is passed in. We need this since there
@@ -1238,8 +1313,8 @@ module OrderImplementation = struct
                                { left with
                                  annotation = parameter_join order left.annotation right.annotation
                                })
-                      | Parameter.Variable left, Parameter.Variable right ->
-                          Some (Parameter.Variable (parameter_join order left right))
+                      | Parameter.Variable (Concrete left), Parameter.Variable (Concrete right) ->
+                          Some (Parameter.Variable (Concrete (parameter_join order left right)))
                       | Parameter.Keywords left, Parameter.Keywords right ->
                           Some (Parameter.Keywords (parameter_join order left right))
                       | _ -> None

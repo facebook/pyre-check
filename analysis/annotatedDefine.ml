@@ -66,8 +66,14 @@ let decorate
                 | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
                 | Type.Callable.Parameter.Named { name; annotation; _ } ->
                     Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
-                | Type.Callable.Parameter.Variable annotation ->
+                | Type.Callable.Parameter.Variable (Concrete annotation) ->
                     Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"*args" ()
+                | Type.Callable.Parameter.Variable (Variadic variable) ->
+                    let name = Type.Variable.Variadic.List.name variable in
+                    Ast.Parameter.create
+                      ~annotation:(Type.expression (Primitive name))
+                      ~name:"*args"
+                      ()
                 | Type.Callable.Parameter.Keywords annotation ->
                     Ast.Parameter.create
                       ~annotation:(Type.expression annotation)
