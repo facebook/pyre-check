@@ -3213,7 +3213,7 @@ module State (Context : Context) = struct
               List.fold elements ~init:state ~f:propagate
           | List elements
           | Tuple elements
-            when is_nonuniform_sequence ~minimum_length:(List.length elements) guide ->
+            when is_nonuniform_sequence ~minimum_length:(List.length elements - 1) guide ->
               let left, starred, right =
                 let is_starred { Node.value; _ } =
                   match value with
@@ -3236,6 +3236,7 @@ module State (Context : Context) = struct
               in
               let annotations =
                 let annotations = nonuniform_sequence_parameters guide in
+                let has_starred_assignee = not (List.is_empty starred) in
                 let left, tail = List.split_n annotations (List.length left) in
                 let starred, right = List.split_n tail (List.length tail - List.length right) in
                 let starred =
@@ -3245,6 +3246,8 @@ module State (Context : Context) = struct
                       |> Type.list
                     in
                     [annotation]
+                  else if has_starred_assignee then
+                    [Type.tuple []]
                   else
                     []
                 in

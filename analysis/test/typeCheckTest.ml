@@ -1103,6 +1103,21 @@ let test_forward_statement _ =
       "a", Type.integer;
       "b", Type.list (Type.union [Type.string; Type.integer]);
       "c", Type.float ];
+  assert_forward
+    ["x", Type.tuple [Type.integer]]
+    "a, *b = x"
+    ["x", Type.tuple [Type.integer]; "a", Type.integer; "b", Type.tuple []];
+  assert_forward
+    ["x", Type.tuple [Type.integer]]
+    "*b, c = x"
+    ["x", Type.tuple [Type.integer]; "b", Type.tuple []; "c", Type.integer];
+  assert_forward
+    ["x", Type.tuple [Type.integer; Type.float]]
+    "a, *b, c = x"
+    [ "x", Type.tuple [Type.integer; Type.float];
+      "a", Type.integer;
+      "b", Type.tuple [];
+      "c", Type.float ];
   (* Assignments with immutables. *)
   assert_forward ~postcondition_immutables:["x", (true, Type.Top)] [] "global x" ["x", Type.Top];
   assert_forward
