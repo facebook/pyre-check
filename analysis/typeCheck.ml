@@ -3992,6 +3992,99 @@ let resolution_with_key ~environment ~parent ~name ~key =
 
 let name = "TypeCheck"
 
+let check_define
+    ~configuration
+    ~handle
+    ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
+      resolution )
+  =
+  let module Context = struct
+    let configuration = configuration
+
+    let define = define_node
+  end
+  in
+  let module State = State (Context) in
+  let module Fixpoint = Fixpoint.Make (State) in
+  let check
+      ~define:{ Node.value = { Define.signature = { name; parent; _ }; _ } as define; _ }
+      ~initial
+    =
+    Log.log ~section:`Check "Checking %a" Reference.pp name;
+    let dump = Define.dump define in
+    if dump then (
+      Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
+      Log.dump "AST:\n%a" Define.pp define );
+    let dump_cfg cfg fixpoint =
+      let precondition table id =
+        match Hashtbl.find table id with
+        | Some { State.resolution; _ } ->
+            let stringify ~key ~data label =
+              let annotation_string =
+                Type.show (Annotation.annotation data) |> String.strip ~drop:(Char.equal '`')
+              in
+              label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
+            in
+            Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
+        | None -> ""
+      in
+      if Define.dump_cfg define then
+        let name =
+          match parent with
+          | Some parent -> Reference.combine parent name
+          | None -> name
+        in
+        Path.create_relative
+          ~root:(Configuration.Analysis.pyre_root configuration)
+          ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
+        |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
+        |> File.write
+    in
+    let exit =
+      let cfg = Cfg.create define in
+      let fixpoint = Fixpoint.forward ~cfg ~initial in
+      dump_cfg cfg fixpoint;
+      Fixpoint.exit fixpoint
+    in
+    if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
+    (* Write fixpoint type resolutions to shared memory *)
+    let dump_resolutions { State.resolution_fixpoint; _ } =
+      if configuration.store_type_check_resolution then
+        ResolutionSharedMemory.add ~handle name resolution_fixpoint
+    in
+    exit >>| dump_resolutions |> ignore;
+    (* Schedule nested functions for analysis. *)
+    let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
+    let errors = exit >>| State.errors |> Option.value ~default:[] in
+    let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
+    { errors; coverage }, nested_defines
+  in
+  try
+    let initial = State.initial ~resolution in
+    if Define.is_stub define then
+      { errors = State.errors initial; coverage = Coverage.create () }, []
+    else
+      check ~define:define_node ~initial
+  with
+  | TypeOrder.Untracked annotation ->
+      Statistics.event
+        ~name:"undefined type"
+        ~integers:[]
+        ~normals:
+          [ "handle", File.Handle.show handle;
+            "define", Reference.show name;
+            "type", Type.show annotation ]
+        ();
+      if Define.dump define then
+        Log.dump
+          "Analysis crashed because of untracked type `%s`."
+          (Log.Color.red (Type.show annotation));
+      let undefined_error =
+        Error.create ~location ~kind:(Error.AnalysisFailure annotation) ~define:define_node
+      in
+      { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, []
+
+
 let run
     ~configuration
     ~environment
@@ -4035,104 +4128,9 @@ let run
     in
     let rec results ~queue =
       match Queue.dequeue queue with
-      | Some
-          ( ( { Node.location; value = { Define.signature = { name; _ }; _ } as define } as
-            define_node ),
-            resolution ) ->
-          let result =
-            let module Context = struct
-              let configuration = configuration
-
-              let define = define_node
-            end
-            in
-            let module State = State (Context) in
-            let module Fixpoint = Fixpoint.Make (State) in
-            let check
-                ~define:{ Node.value = { Define.signature = { name; parent; _ }; _ } as define; _ }
-                ~initial
-                ~queue
-              =
-              Log.log ~section:`Check "Checking %a" Reference.pp name;
-              let dump = Define.dump define in
-              if dump then (
-                Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-                Log.dump "AST:\n%a" Define.pp define );
-              let dump_cfg cfg fixpoint =
-                let precondition table id =
-                  match Hashtbl.find table id with
-                  | Some { State.resolution; _ } ->
-                      let stringify ~key ~data label =
-                        let annotation_string =
-                          Type.show (Annotation.annotation data)
-                          |> String.strip ~drop:(Char.equal '`')
-                        in
-                        label ^ "\n" ^ Reference.show key ^ ": " ^ annotation_string
-                      in
-                      Map.fold ~f:stringify ~init:"" (Resolution.annotations resolution)
-                  | None -> ""
-                in
-                if Define.dump_cfg define then
-                  let name =
-                    match parent with
-                    | Some parent -> Reference.combine parent name
-                    | None -> name
-                  in
-                  Path.create_relative
-                    ~root:(Configuration.Analysis.pyre_root configuration)
-                    ~relative:(Format.asprintf "cfgs%a.dot" Reference.pp name)
-                  |> File.create ~content:(Cfg.to_dot ~precondition:(precondition fixpoint) cfg)
-                  |> File.write
-              in
-              let exit =
-                let cfg = Cfg.create define in
-                let fixpoint = Fixpoint.forward ~cfg ~initial in
-                dump_cfg cfg fixpoint;
-                Fixpoint.exit fixpoint
-              in
-              if dump then exit >>| Log.dump "Exit state:\n%a" State.pp |> ignore;
-              (* Write fixpoint type resolutions to shared memory *)
-              let dump_resolutions { State.resolution_fixpoint; _ } =
-                if configuration.store_type_check_resolution then
-                  ResolutionSharedMemory.add ~handle name resolution_fixpoint
-              in
-              exit >>| dump_resolutions |> ignore;
-              (* Schedule nested functions for analysis. *)
-              exit >>| State.nested_defines >>| List.iter ~f:(Queue.enqueue queue) |> ignore;
-              let errors = exit >>| State.errors |> Option.value ~default:[] in
-              let coverage =
-                exit >>| State.coverage |> Option.value ~default:(Coverage.create ())
-              in
-              { errors; coverage }
-            in
-            try
-              let initial = State.initial ~resolution in
-              if Define.is_stub define then
-                { errors = State.errors initial; coverage = Coverage.create () }
-              else
-                check ~define:define_node ~initial ~queue
-            with
-            | TypeOrder.Untracked annotation ->
-                Statistics.event
-                  ~name:"undefined type"
-                  ~integers:[]
-                  ~normals:
-                    [ "handle", File.Handle.show handle;
-                      "define", Reference.show name;
-                      "type", Type.show annotation ]
-                  ();
-                if Define.dump define then
-                  Log.dump
-                    "Analysis crashed because of untracked type `%s`."
-                    (Log.Color.red (Type.show annotation));
-                let undefined_error =
-                  Error.create
-                    ~location
-                    ~kind:(Error.AnalysisFailure annotation)
-                    ~define:define_node
-                in
-                { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }
-          in
+      | Some entry ->
+          let result, nested_defines = check_define ~configuration ~handle entry in
+          List.iter nested_defines ~f:(Queue.enqueue queue);
           result :: results ~queue
       | _ -> []
     in
