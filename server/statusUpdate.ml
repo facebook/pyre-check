@@ -4,12 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-
-module Connections = Connections.Make (struct
-  let write = Network.Socket.write
-
-  let close descriptor = Unix.close descriptor
-end)
+module Connections = Connections.Unix
 
 let write ~state:{ State.connections; _ } ~content ~message_type =
   LanguageServer.Protocol.ShowStatus.create

@@ -12,12 +12,7 @@ open State
 open Protocol
 module Time = Core_kernel.Time_ns.Span
 module Request = Server.Request
-
-module Connections = Server.Connections.Make (struct
-  let write = Socket.write
-
-  let close descriptor = Unix.close descriptor
-end)
+module Connections = Server.Connections.Unix
 
 exception AlreadyRunning
 
