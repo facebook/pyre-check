@@ -32,10 +32,19 @@ public final class RemoteFileTarget implements BuildTarget {
 
   @Override
   public void build(String buckRoot, String outputDirectory) {
+    File outputDirectoryFile = new File(outputDirectory);
     try {
-      FileSystem.unzipRemoteFile(url, new File(outputDirectory));
-    } catch (IOException exception) {
-      LOGGER.warning("Cannot fetch and unzip remote python dependency at " + url);
+      FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+    } catch (IOException firstException) {
+      try {
+        FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+      } catch (IOException secondException) {
+        LOGGER.warning(
+            String.format(
+                "Cannot fetch and unzip remote python dependency at `%s` after 1 retry.", url));
+        LOGGER.warning("First IO Exception: " + firstException);
+        LOGGER.warning("Second IO Exception: " + secondException);
+      }
     }
   }
 

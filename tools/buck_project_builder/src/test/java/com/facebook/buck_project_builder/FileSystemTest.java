@@ -2,6 +2,7 @@
 
 package com.facebook.buck_project_builder;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -37,6 +38,7 @@ public class FileSystemTest {
   }
 
   private static void writeContent(File file, String content) throws IOException {
+    file.getParentFile().mkdirs();
     try (FileWriter writer = new FileWriter(file)) {
       writer.write(content + "\n");
       writer.flush();

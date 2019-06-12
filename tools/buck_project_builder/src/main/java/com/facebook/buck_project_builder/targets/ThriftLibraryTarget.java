@@ -13,10 +13,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public final class ThriftLibraryTarget implements BuildTarget {
@@ -64,6 +66,51 @@ public final class ThriftLibraryTarget implements BuildTarget {
     return new ThriftLibraryTarget(basePath, command, sourcesBuilder.build());
   }
 
+  /**
+   * Thrift puts all generated python code at [supplied output directory]/gen-py*, so we must copy
+   * all python files by ourselves. This function copies all necessary python files for type
+   * checking to desired location. It also renames *-remote files to *-remote.py to be consistent
+   * with buck's behavior.
+   *
+   * <p>It's package-private for the purpose of testing. Do not call it outside of this class.
+   */
+  static void copyGeneratedThriftSources(Path generatedCodePath, String outputDirectory)
+      throws IOException {
+    try (Stream<Path> generatedDirectoryStream = Files.walk(generatedCodePath)) {
+      generatedDirectoryStream.forEach(
+          path -> {
+            String relativeOutputPath = generatedCodePath.relativize(path).toString();
+            String absoluteDestinationPath =
+                Paths.get(outputDirectory, relativeOutputPath).toString();
+            File fileToCopy = path.toFile();
+            if (fileToCopy.isDirectory()) {
+              return;
+            }
+            File absoluteDestination;
+            if (absoluteDestinationPath.endsWith("-remote")) {
+              // We must rename it with .py extension so it can be picked by
+              // SharedAnalysisDirectory in pyre client.
+              absoluteDestination = new File(absoluteDestinationPath + ".py");
+            } else if (absoluteDestinationPath.matches("((?!__init__).)+\\.py(i?)")) {
+              // Include only py and pyi files, but not __init__.py(i) files.
+              // __init__.py(i) files are needed in each python2 directory, but this restriction was
+              // removed in python3 and pyre doesn't need them.
+              absoluteDestination = new File(absoluteDestinationPath);
+            } else {
+              return;
+            }
+            try {
+              FileUtils.copyFile(fileToCopy, absoluteDestination);
+            } catch (IOException exception) {
+              LOGGER.warning(
+                  String.format(
+                      "Failed to copy generated source %s after thrift python code generation",
+                      fileToCopy));
+            }
+          });
+    }
+  }
+
   private void buildThriftStubs(String buckRoot, String outputDirectory) throws IOException {
     String basePathPrefixedSources =
         this.sources.stream()
@@ -98,33 +145,14 @@ public final class ThriftLibraryTarget implements BuildTarget {
     }
   }
 
-  /**
-   * Thrift puts all generated python code at [supplied output directory]/gen-py, so we must copy
-   * all python files by ourselves. This function copies all necessary python files for type
-   * checking to desired location.
-   */
   private void copyThriftStubs(String temporaryThriftOutputDirectory, String outputDirectory)
       throws IOException {
-    File generatedPythonCodeDirectory =
-        Paths.get(temporaryThriftOutputDirectory, "gen-py").toFile();
-    if (generatedPythonCodeDirectory.exists()) {
-      FileUtils.copyDirectory(
-          generatedPythonCodeDirectory,
-          new File(outputDirectory),
-          file -> {
-            if (file.isDirectory()) {
-              return true;
-            }
-            /*
-             * Include only py and pyi files, but not __init__.py(i) files.
-             * An init.py file is needed in each python2 directory, but this restriction was removed in python3.
-             * __init__.py(i) files are generated to make python2 happy and pyre doesn't need them.
-             */
-            return file.getPath().matches("((?!__init__).)+\\.py(i?)");
-          });
-    } else {
+    Path generatedPythonCodePath = Paths.get(temporaryThriftOutputDirectory, "gen-py");
+    if (!generatedPythonCodePath.toFile().exists()) {
       LOGGER.warning("Failed to compile following thrift sources: " + sources);
+      return;
     }
+    copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
   }
 
   @Override
