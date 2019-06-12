@@ -1118,7 +1118,7 @@ module Class = struct
             Expression.Name
               (Name.Attribute
                 { base = { Node.value = Name (Name.Identifier "abc"); _ };
-                  attribute = "ABCMeta"
+                  attribute = "ABCMeta" | "ABC"
                 ; _
                 })
         ; _

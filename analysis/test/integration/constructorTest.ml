@@ -582,6 +582,18 @@ let test_check_constructors _ =
       B()
     |}
     [];
+  assert_type_errors
+    {|
+      from abc import abstractmethod, ABC
+      class Foo(ABC):
+        @abstractmethod
+        def bar(self) -> None:
+          pass
+      def foo() -> None:
+        Foo()
+      |}
+    [ "Abstract class instantiation [38]: Cannot instantiate class `Foo` because method `bar` is \
+       not implemented." ];
 
   (* Explicit call. *)
   assert_type_errors
