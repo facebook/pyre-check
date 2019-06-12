@@ -24,8 +24,6 @@ let assert_parsed_equal source statements =
     parsed_source
 
 
-let ( ! ) name = +Name (Name.Identifier name)
-
 let test_lexer _ =
   assert_parsed_equal "1 # comment" [+Expression (+Integer 1)];
   assert_parsed_equal "# comment\n1" [+Expression (+Integer 1)];
