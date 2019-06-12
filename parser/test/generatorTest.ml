@@ -12,15 +12,10 @@ open Test
 
 let assert_parsed_equal source statements =
   let parsed_source = parse_untrimmed source in
-  let module Visit = Visit.Make (struct
-    type t = bool
-
-    let expression sofar { Node.location; _ } = sofar || location == Location.Reference.any
-
-    let statement sofar _ = sofar
-  end)
+  let found_any =
+    Visit.collect_locations parsed_source
+    |> List.for_all ~f:(Location.equal Location.Reference.any)
   in
-  let found_any = Visit.visit false parsed_source in
   if found_any then
     Printf.printf "\nLocation.any found in parse of %s\n" source;
   assert_false found_any;
