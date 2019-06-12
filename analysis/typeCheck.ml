@@ -10,24 +10,26 @@ open Expression
 open Statement
 module Error = AnalysisError
 
-module ErrorKey = struct
-  type t = {
+module ErrorMap = struct
+  type key = {
     location: Location.Instantiated.t;
     kind: int
   }
   [@@deriving compare, sexp]
 
   module Map = Map.Make (struct
-    type nonrec t = t
+    type nonrec t = key
 
-    let compare = compare
+    let compare = compare_key
 
-    let sexp_of_t = sexp_of_t
+    let sexp_of_t = sexp_of_key
 
-    let t_of_sexp = t_of_sexp
+    let t_of_sexp = key_of_sexp
   end)
 
-  let add_error ~errors ({ Error.location; _ } as error) =
+  type t = Error.t Map.t
+
+  let add ~errors ({ Error.location; _ } as error) =
     Map.set errors ~key:{ location; kind = Error.code error } ~data:error
 end
 
@@ -42,7 +44,7 @@ module type Signature = sig
 
   val create
     :  ?bottom:bool ->
-    ?errors:Error.t ErrorKey.Map.t ->
+    ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
     ?resolution_fixpoint:ResolutionSharedMemory.annotation_map Int.Map.Tree.t ->
     unit ->
@@ -50,7 +52,7 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  val error_map : t -> Error.t ErrorKey.Map.t
+  val error_map : t -> ErrorMap.t
 
   val errors : t -> Error.t list
 
@@ -91,7 +93,7 @@ module State (Context : Context) = struct
 
   and t = {
     resolution: Resolution.t;
-    errors: Error.t ErrorKey.Map.t;
+    errors: ErrorMap.t;
     check_return: bool;
     nested_defines: nested_define Location.Reference.Map.t;
     bottom: bool;
@@ -163,7 +165,7 @@ module State (Context : Context) = struct
 
   let create
       ?(bottom = false)
-      ?(errors = ErrorKey.Map.empty)
+      ?(errors = ErrorMap.Map.empty)
       ~resolution
       ?(resolution_fixpoint = Int.Map.Tree.empty)
       ()
@@ -181,7 +183,7 @@ module State (Context : Context) = struct
     let mismatches, annotation = Resolution.check_invalid_type_parameters resolution annotation in
     let add_error errors mismatch =
       Error.create ~location ~kind:(Error.InvalidTypeParameters mismatch) ~define:Context.define
-      |> ErrorKey.add_error ~errors
+      |> ErrorMap.add ~errors
     in
     List.fold mismatches ~f:add_error ~init:errors, annotation
 
@@ -255,7 +257,7 @@ module State (Context : Context) = struct
       else
         let errors =
           List.fold critical_errors ~init:errors ~f:(fun errors error ->
-              ErrorKey.add_error ~errors error)
+              ErrorMap.add ~errors error)
         in
         errors, Type.Top
     in
@@ -272,7 +274,7 @@ module State (Context : Context) = struct
           ~location
           ~kind:(Error.InvalidType (InvalidType (Type.Primitive (Expression.show expression))))
           ~define:Context.define
-        |> ErrorKey.add_error ~errors
+        |> ErrorMap.add ~errors
       else
         errors
     in
@@ -651,11 +653,11 @@ module State (Context : Context) = struct
 
   let emit_raw_error ~state:({ errors; resolution; _ } as state) ({ Error.location; _ } as error) =
     let error =
-      match Map.find errors { ErrorKey.location; kind = Error.code error } with
+      match Map.find errors { ErrorMap.location; kind = Error.code error } with
       | Some other_error -> Error.join ~resolution error other_error
       | None -> error
     in
-    { state with errors = ErrorKey.add_error ~errors error }
+    { state with errors = ErrorMap.add ~errors error }
 
 
   let emit_error ~state ~location ~kind =
@@ -1040,7 +1042,7 @@ module State (Context : Context) = struct
                           ~kind:(Error.InvalidOverride { parent; decorator = Final })
                           ~define:Context.define
                       in
-                      ErrorKey.add_error ~errors error
+                      ErrorMap.add ~errors error
                     else
                       errors
                   in
@@ -1064,7 +1066,7 @@ module State (Context : Context) = struct
                           ~kind:(Error.InvalidOverride { parent; decorator })
                           ~define:Context.define
                       in
-                      ErrorKey.add_error ~errors error
+                      ErrorMap.add ~errors error
                     else
                       errors
                   in
@@ -1112,7 +1114,7 @@ module State (Context : Context) = struct
                                    })
                               ~define:Context.define
                           in
-                          ErrorKey.add_error ~errors error
+                          ErrorMap.add ~errors error
                         else
                           errors
                       in
@@ -1161,7 +1163,7 @@ module State (Context : Context) = struct
                                            })
                                       ~define:Context.define
                                   in
-                                  ErrorKey.add_error ~errors error
+                                  ErrorMap.add ~errors error
                                 else
                                   errors
                               with
@@ -1198,7 +1200,7 @@ module State (Context : Context) = struct
                                          })
                                     ~define:Context.define
                                 in
-                                ErrorKey.add_error ~errors error
+                                ErrorMap.add ~errors error
                         in
                         match overridden_parameter with
                         | Type.Callable.Parameter.Anonymous { index; annotation; _ } ->
@@ -1368,7 +1370,7 @@ module State (Context : Context) = struct
       let state =
         let { errors; _ } = state in
         let ({ errors = iterator_errors; _ } as state) =
-          forward_statement ~state:{ state with errors = ErrorKey.Map.empty } ~statement:iterator
+          forward_statement ~state:{ state with errors = ErrorMap.Map.empty } ~statement:iterator
         in
         (* Don't throw Incompatible Variable errors on the generated iterator assign; we are
            temporarily minting a variable in a new scope and old annotations should be ignored. *)
@@ -1994,7 +1996,7 @@ module State (Context : Context) = struct
         forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
     | Call { callee; arguments } ->
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee } =
-          forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:callee
+          forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
         let { state = { errors = updated_errors; _ } as updated_state; resolved } =
           forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
@@ -2013,7 +2015,7 @@ module State (Context : Context) = struct
         else (* Do not throw more errors if callee already contains terminating error. *)
           let errors =
             Map.fold callee_errors ~init:state.errors ~f:(fun ~key:_ ~data errors ->
-                ErrorKey.add_error ~errors data)
+                ErrorMap.add ~errors data)
           in
           { state = { state with errors }; resolved }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
@@ -2219,7 +2221,7 @@ module State (Context : Context) = struct
     | Name (Name.Attribute { base; attribute; special } as name) ->
         let reference = Reference.from_name name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base } =
-          forward_expression ~state:{ state with errors = ErrorKey.Map.empty } ~expression:base
+          forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:base
         in
         let ({ errors; _ } as state), resolved_base =
           if Type.Variable.contains_escaped_free_variable resolved_base then
@@ -2361,13 +2363,13 @@ module State (Context : Context) = struct
         then
           let errors =
             Map.fold base_errors ~init:updated_errors ~f:(fun ~key:_ ~data errors ->
-                ErrorKey.add_error ~errors data)
+                ErrorMap.add ~errors data)
           in
           { state = { updated_state with errors }; resolved }
         else (* Do not throw more errors if base already contains terminating error. *)
           let errors =
             Map.fold base_errors ~init:errors ~f:(fun ~key:_ ~data errors ->
-                ErrorKey.add_error ~errors data)
+                ErrorMap.add ~errors data)
           in
           { state = { state with errors }; resolved }
     | Set elements ->
@@ -2593,7 +2595,7 @@ module State (Context : Context) = struct
                     AnalysisError.InvalidType
                       (AnalysisError.NestedTypeVariables (Type.Variable.Unary variable))
                   in
-                  Error.create ~location ~kind ~define:Context.define |> ErrorKey.add_error ~errors
+                  Error.create ~location ~kind ~define:Context.define |> ErrorMap.add ~errors
               | _ -> errors
             in
             { state with resolution; errors }, resolved
@@ -2724,7 +2726,7 @@ module State (Context : Context) = struct
                 | _ ->
                     let { state = { errors; _ }; resolved } =
                       forward_expression
-                        ~state:{ state with errors = ErrorKey.Map.empty }
+                        ~state:{ state with errors = ErrorMap.Map.empty }
                         ~expression:target
                     in
                     if Map.is_empty errors then
@@ -3899,7 +3901,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
         ~is_protocol:(fun _ -> false)
         ()
     in
-    { State.errors = ErrorKey.Map.empty;
+    { State.errors = ErrorMap.Map.empty;
       check_return = true;
       nested_defines = Location.Reference.Map.empty;
       bottom = false;

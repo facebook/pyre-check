@@ -8,16 +8,18 @@ open Ast
 open Statement
 module Error = AnalysisError
 
-module ErrorKey : sig
-  type t = {
+module ErrorMap : sig
+  type key = {
     location: Location.Instantiated.t;
     kind: int
   }
   [@@deriving compare, sexp]
 
-  module Map : Map.S with type Key.t = t
+  module Map : Map.S with type Key.t = key
 
-  val add_error : errors:Error.t Map.t -> Error.t -> Error.t Map.t
+  type t = Error.t Map.t
+
+  val add : errors:t -> Error.t -> t
 end
 
 module type Context = sig
@@ -31,7 +33,7 @@ module type Signature = sig
 
   val create
     :  ?bottom:bool ->
-    ?errors:Error.t ErrorKey.Map.t ->
+    ?errors:ErrorMap.t ->
     resolution:Resolution.t ->
     ?resolution_fixpoint:ResolutionSharedMemory.annotation_map Int.Map.Tree.t ->
     unit ->
@@ -39,7 +41,7 @@ module type Signature = sig
 
   val resolution : t -> Resolution.t
 
-  val error_map : t -> Error.t ErrorKey.Map.t
+  val error_map : t -> ErrorMap.t
 
   val errors : t -> Error.t list
 

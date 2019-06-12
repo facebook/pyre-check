@@ -41,7 +41,7 @@ module State (Context : Context) = struct
 
   type t = {
     resolution: Resolution.t;
-    errors: Error.t TypeCheck.ErrorKey.Map.t;
+    errors: Error.t TypeCheck.ErrorMap.Map.t;
     bottom: bool
   }
 
@@ -93,7 +93,7 @@ module State (Context : Context) = struct
   let create ?(bottom = false)
              ~resolution
              () =
-    { resolution; errors = TypeCheck.ErrorKey.Map.empty; bottom }
+    { resolution; errors = TypeCheck.ErrorMap.Map.empty; bottom }
 
 
   let errors { resolution; errors; bottom } =
@@ -334,7 +334,7 @@ module State (Context : Context) = struct
                        })
                   ~define:Context.define
               in
-              TypeCheck.ErrorKey.add_error ~errors error)
+              TypeCheck.ErrorMap.add ~errors error)
         |> Option.value ~default:errors
       in
       match annotation with
