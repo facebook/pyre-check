@@ -418,19 +418,42 @@ module State (Context : Context) = struct
         let base_errors = check_bases () in
         List.append base_errors (check_attributes_initialized ())
       else if Define.is_class_toplevel define then
-        let no_explicit_class_constructor =
+        let annotated_class =
           let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-          Resolution.class_definition resolution (Type.Primitive name)
-          >>| Annotated.Class.create
-          >>| Annotated.Class.constructors ~resolution
-          >>| List.is_empty
-          |> Option.value ~default:false
+          Resolution.class_definition resolution (Type.Primitive name) >>| Annotated.Class.create
         in
-        if no_explicit_class_constructor then
-          let base_errors = check_bases () in
-          List.append base_errors (check_attributes_initialized ())
-        else
-          errors
+        let check_abstract_methods errors =
+          annotated_class
+          >>| (fun definition ->
+                if
+                  (not (AnnotatedClass.is_abstract definition))
+                  && AnnotatedClass.has_abstract_methods definition
+                then
+                  let error =
+                    Error.create
+                      ~location
+                      ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
+                      ~define:Context.define
+                  in
+                  error :: errors
+                else
+                  errors)
+          |> Option.value ~default:errors
+        in
+        let check_base_and_attributes errors =
+          let no_explicit_class_constructor =
+            annotated_class
+            >>| Annotated.Class.constructors ~resolution
+            >>| List.is_empty
+            |> Option.value ~default:false
+          in
+          if no_explicit_class_constructor then
+            let base_errors = check_bases () in
+            List.append base_errors (check_attributes_initialized ())
+          else
+            errors
+        in
+        errors |> check_base_and_attributes |> check_abstract_methods
       else
         errors
     in

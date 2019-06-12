@@ -102,6 +102,8 @@ let successors_fold class_node ~resolution ~f ~initial =
 
 let is_unit_test { Node.value; _ } = Class.is_unit_test value
 
+let is_abstract { Node.value; _ } = Statement.Class.is_abstract value
+
 let resolve_class ~resolution annotation =
   let rec extract ~is_meta original_annotation =
     let annotation =
@@ -304,6 +306,14 @@ let methods ({ Node.value = { Class.body; _ }; _ } as definition) =
     | _ -> None
   in
   List.filter_map ~f:extract_define body
+
+
+let has_abstract_methods { Node.value; _ } =
+  not
+    ( value
+    |> Statement.Class.defines
+    |> List.filter ~f:Statement.Define.is_abstract_method
+    |> List.is_empty )
 
 
 let is_protocol { Node.value = { Class.bases; _ }; _ } =

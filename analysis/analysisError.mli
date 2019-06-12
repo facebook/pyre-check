@@ -144,6 +144,7 @@ type kind =
         override_kind: override_kind
       }
   | InvalidArgument of invalid_argument
+  | InvalidClass of Reference.t
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch

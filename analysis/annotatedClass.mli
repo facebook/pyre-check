@@ -44,6 +44,8 @@ val successors_fold
 
 val is_unit_test : t -> bool
 
+val is_abstract : t -> bool
+
 val metaclass : t -> resolution:Resolution.t -> Type.t
 
 val resolve_class : resolution:Resolution.t -> Type.t -> class_data list option
@@ -85,6 +87,8 @@ val constraints
 val superclasses : t -> resolution:Resolution.t -> t list
 
 val methods : t -> Method.t list
+
+val has_abstract_methods : t -> bool
 
 val is_protocol : t -> bool
 

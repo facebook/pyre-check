@@ -490,7 +490,8 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [];
+    [ "Invalid class [44]: `Foo` is a non-abstract class with abstract methods. Did you mean to \
+       make this class abstract?" ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -553,9 +554,6 @@ let test_check_constructors _ =
               pass
       class B(A):
           def g(self) -> None:
-              pass
-          @abstractmethod
-          def f(self) -> None:
               pass
       class C(B):
           pass

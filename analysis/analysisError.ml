@@ -152,6 +152,7 @@ type kind =
         override_kind: override_kind
       }
   | InvalidArgument of invalid_argument
+  | InvalidClass of Reference.t
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
@@ -242,6 +243,7 @@ let code = function
   | InvalidAssignment _ -> 41
   | MissingOverloadImplementation _ -> 42
   | IncompatibleOverload _ -> 43
+  | InvalidClass _ -> 44
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
   | Deobfuscation _ -> 102
@@ -263,6 +265,7 @@ let name = function
   | IncompleteType _ -> "Incomplete type"
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
+  | InvalidClass _ -> "Invalid class"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
@@ -796,6 +799,14 @@ let messages ~concise ~signature location kind =
     | ReadOnly name ->
         [Format.asprintf "`%a` cannot be reassigned. It is a read-only property." pp_reference name]
     )
+  | InvalidClass name when concise ->
+      [Format.asprintf "`%a` non-abstract class with abstract methods" pp_reference name]
+  | InvalidClass name ->
+      [ Format.asprintf
+          "`%a` is a non-abstract class with abstract methods. Did you mean to make this class \
+           abstract?"
+          pp_reference
+          name ]
   | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
@@ -1485,6 +1496,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidAssignment _
+  | InvalidClass _
   | InvalidType _
   | IncompatibleOverload _
   | IncompleteType _
@@ -1577,6 +1589,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidInheritance _
   | InvalidOverride _
   | InvalidAssignment _
+  | InvalidClass _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingOverloadImplementation _
@@ -1709,6 +1722,7 @@ let less_or_equal ~resolution left right =
   | ( MissingArgument { callee = left_callee; parameter = Anonymous left_index },
       MissingArgument { callee = right_callee; parameter = Anonymous right_index } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
+  | InvalidClass left, InvalidClass right -> Reference.equal left right
   | ProhibitedAny left, ProhibitedAny right
   | MissingParameterAnnotation left, MissingParameterAnnotation right
   | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -1784,6 +1798,7 @@ let less_or_equal ~resolution left right =
   | InvalidInheritance _, _
   | InvalidOverride _, _
   | InvalidAssignment _, _
+  | InvalidClass _, _
   | MissingArgument _, _
   | MissingAttributeAnnotation _, _
   | MissingGlobalAnnotation _, _
@@ -2064,6 +2079,7 @@ let join ~resolution left right =
     | InvalidInheritance _, _
     | InvalidOverride _, _
     | InvalidAssignment _, _
+    | InvalidClass _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2414,6 +2430,7 @@ let dequalify
     | InvalidInheritance name -> InvalidInheritance name
     | InvalidOverride { parent; decorator } -> InvalidOverride { parent; decorator }
     | InvalidAssignment kind -> InvalidAssignment kind
+    | InvalidClass name -> InvalidClass name
     | TooManyArguments extra_argument -> TooManyArguments extra_argument
     | Top -> Top
     | MissingParameterAnnotation ({ annotation; _ } as missing_annotation) ->
