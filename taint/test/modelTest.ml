@@ -201,6 +201,7 @@ let test_invalid_models _ =
           [ Test.parse
               {|
               def sink(parameter) -> None: pass
+              def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
               def source() -> None: pass
             |}
           ]
@@ -220,6 +221,7 @@ let test_invalid_models _ =
     in
     assert_equal ~printer:ident expect error_message
   in
+  let assert_valid_model ~model_source = assert_invalid_model ~model_source ~expect:"no failure" in
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
     ~expect:"Invalid model for `sink`: Unsupported taint sink `Unsupported`";
@@ -253,6 +255,23 @@ let test_invalid_models _ =
     ~expect:
       ( "Invalid model for `sink`: Model signature parameters do not match implementation "
       ^ "`typing.Callable(sink)[[Named(parameter, unknown)], None]`" );
+  assert_invalid_model
+    ~model_source:"def sink_with_optional(): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `typing.Callable(sink_with_optional)[[Named(parameter, unknown), \
+       Named(firstOptional, unknown, default), Named(secondOptional, unknown, default)], None]`";
+  assert_valid_model ~model_source:"def sink_with_optional(parameter): ...";
+  assert_valid_model ~model_source:"def sink_with_optional(parameter, firstOptional): ...";
+  assert_valid_model
+    ~model_source:"def sink_with_optional(parameter, firstOptional, secondOptional): ...";
+  assert_invalid_model
+    ~model_source:
+      "def sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `typing.Callable(sink_with_optional)[[Named(parameter, unknown), \
+       Named(firstOptional, unknown, default), Named(secondOptional, unknown, default)], None]`";
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
     ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`";

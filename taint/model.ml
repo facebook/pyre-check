@@ -380,8 +380,19 @@ let create ~resolution ?(verify = true) ~configuration source =
                   implicit
                 ; _
                 } as callable ) ) ->
-            let self_length = if Option.is_some implicit then 1 else 0 in
-            if List.length normalized <> self_length + List.length implementation_parameters then (
+            let model_compatible =
+              let optional_parameters =
+                List.count implementation_parameters ~f:Type.Callable.Parameter.default
+              in
+              let self_length = if Option.is_some implicit then 1 else 0 in
+              let required_parameters =
+                self_length + List.length implementation_parameters - optional_parameters
+              in
+              let normalized = List.length normalized in
+              normalized >= required_parameters
+              && normalized <= required_parameters + optional_parameters
+            in
+            if not model_compatible then (
               let message =
                 Format.asprintf
                   "Model signature parameters do not match implementation `%a`"
