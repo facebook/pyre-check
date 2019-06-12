@@ -78,7 +78,7 @@ module Call : sig
       name: Identifier.t Node.t option;
       value: 'expression
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   type 'expression t = {
@@ -200,7 +200,7 @@ type expression =
   | UnaryOperator of t Record.UnaryOperator.record
   | Yield of t option
 
-and t = expression Node.t [@@deriving compare, eq, sexp, show, hash]
+and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 and expression_t = t [@@deriving compare, eq, sexp, show, hash]
 

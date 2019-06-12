@@ -8,7 +8,7 @@ open Pyre
 open Sexplib.Conv
 open Expression
 
-type t = Identifier.t list [@@deriving compare, eq, sexp, hash]
+type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson]
 
 let create ?prefix name =
   let name =

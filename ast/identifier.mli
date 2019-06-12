@@ -5,7 +5,7 @@
 
 open Core
 
-type t = string [@@deriving compare, eq, sexp, hash]
+type t = string [@@deriving compare, eq, sexp, hash, to_yojson]
 
 module Map : Map.S with type Key.t = t
 

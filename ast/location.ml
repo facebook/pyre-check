@@ -34,7 +34,7 @@ let show pp_path { path; start; stop } =
 
 
 module Reference = struct
-  type t = int location [@@deriving compare, eq, sexp, hash]
+  type t = int location [@@deriving compare, eq, sexp, hash, to_yojson]
 
   let pp format { path; start; stop } =
     Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
@@ -155,6 +155,6 @@ let stop_column { stop = { column; _ }; _ } = column
 
 let path { path; _ } = path
 
-type t = Reference.t [@@deriving compare, eq, sexp, show, hash]
+type t = Reference.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 let create = Reference.create

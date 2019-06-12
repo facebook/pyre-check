@@ -283,6 +283,10 @@ module Define : sig
 
   val dump_cfg : t -> bool
 
+  val dump_locations : t -> bool
+
+  val show_json : t -> string
+
   val implicit_attributes
     :  t ->
     definition:statement_t Record.Class.record ->

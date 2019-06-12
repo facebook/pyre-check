@@ -11,14 +11,14 @@ module BooleanOperator = struct
   type operator =
     | And
     | Or
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type 'expression t = {
     left: 'expression;
     operator: operator;
     right: 'expression
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let pp_boolean_operator formatter operator =
     Format.fprintf
@@ -47,14 +47,14 @@ module Record = struct
       | LessThanOrEquals
       | NotEquals
       | NotIn
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type 'expression record = {
       left: 'expression;
       operator: operator;
       right: 'expression
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let inverse = function
       | Equals -> NotEquals
@@ -92,13 +92,13 @@ module Record = struct
       | Negative
       | Not
       | Positive
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type 'expression record = {
       operator: operator;
       operand: 'expression
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let pp_unary_operator formatter operator =
       Format.fprintf
@@ -119,13 +119,13 @@ module Name = struct
       attribute: Identifier.t;
       special: bool
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   type 'expression t =
     | Attribute of 'expression Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Call = struct
@@ -134,14 +134,14 @@ module Call = struct
       name: Identifier.t Node.t option;
       value: 'expression
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   type 'expression t = {
     callee: 'expression;
     arguments: 'expression Argument.t list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Lambda = struct
@@ -149,7 +149,7 @@ module Lambda = struct
     parameters: 'expression Parameter.t list;
     body: 'expression
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Ternary = struct
@@ -158,7 +158,7 @@ module Ternary = struct
     test: 'expression;
     alternative: 'expression
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Dictionary = struct
@@ -166,13 +166,13 @@ module Dictionary = struct
     key: 'expression;
     value: 'expression
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type 'expression t = {
     entries: 'expression entry list;
     keywords: 'expression list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Comprehension = struct
@@ -182,20 +182,20 @@ module Comprehension = struct
     conditions: 'expression list;
     async: bool
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type ('element, 'expression) t = {
     element: 'element;
     generators: 'expression generator list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Starred = struct
   type 'expression t =
     | Once of 'expression
     | Twice of 'expression
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module StringLiteral = struct
@@ -203,13 +203,13 @@ module StringLiteral = struct
     type kind =
       | Literal
       | Format
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type t = {
       value: string;
       kind: kind
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     let is_all_literal = List.for_all ~f:(fun { kind; _ } -> equal_kind kind Literal)
   end
@@ -224,7 +224,7 @@ module StringLiteral = struct
     value: string;
     kind: 'expression kind
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let create ?(bytes = false) ?expressions value =
     let kind =
@@ -280,11 +280,11 @@ type expression =
   | UnaryOperator of t Record.UnaryOperator.record
   | Yield of t option
 
-and t = expression Node.t [@@deriving compare, eq, sexp, show, hash]
+and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 let _ = show (* shadowed below *)
 
-type expression_t = t [@@deriving compare, eq, sexp, show, hash]
+type expression_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 module ComparisonOperator = struct
   include Record.ComparisonOperator

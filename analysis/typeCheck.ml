@@ -4033,6 +4033,8 @@ let check_define
     if dump then (
       Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
       Log.dump "AST:\n%a" Define.pp define );
+    if Define.dump_locations define then
+      Log.dump "AST with Locations:\n%s" (Define.show_json define);
     let dump_cfg cfg fixpoint =
       let precondition table id =
         match Hashtbl.find table id with

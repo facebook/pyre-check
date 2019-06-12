@@ -18,13 +18,13 @@ module Record = struct
       async: bool;
       parent: Reference.t option (* The class owning the method. *)
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type 'statement record = {
       signature: signature;
       body: 'statement list
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   module Class = struct
@@ -35,7 +35,7 @@ module Record = struct
       decorators: Expression.t list;
       docstring: string option
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   module For = struct
@@ -46,7 +46,7 @@ module Record = struct
       orelse: 'statement list;
       async: bool
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   module With = struct
@@ -55,7 +55,7 @@ module Record = struct
       body: 'statement list;
       async: bool
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 
   module Try = struct
@@ -64,7 +64,7 @@ module Record = struct
       name: Identifier.t option;
       handler_body: 'statement list
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
     type 'statement record = {
       body: 'statement list;
@@ -72,7 +72,7 @@ module Record = struct
       orelse: 'statement list;
       finally: 'statement list
     }
-    [@@deriving compare, eq, sexp, show, hash]
+    [@@deriving compare, eq, sexp, show, hash, to_yojson]
   end
 end
 
@@ -87,7 +87,7 @@ module While = struct
     body: 'statement list;
     orelse: 'statement list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module If = struct
@@ -96,7 +96,7 @@ module If = struct
     body: 'statement list;
     orelse: 'statement list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Assert = struct
@@ -110,7 +110,7 @@ module Assert = struct
     message: Expression.t option;
     origin: 'statement origin
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Import = struct
@@ -118,13 +118,13 @@ module Import = struct
     name: Reference.t;
     alias: Reference.t option
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   type t = {
     from: Reference.t option;
     imports: import list
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 module Assign = struct
@@ -134,7 +134,7 @@ module Assign = struct
     value: Expression.t;
     parent: Reference.t option
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 end
@@ -144,7 +144,7 @@ module Return = struct
     is_implicit: bool;
     expression: Expression.t option
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
 end
 
 type statement =
@@ -170,11 +170,11 @@ type statement =
   | Yield of Expression.t
   | YieldFrom of Expression.t
 
-and t = statement Node.t [@@deriving compare, eq, sexp, show, hash]
+and t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 let _ = show (* shadowed below *)
 
-type statement_t = t [@@deriving compare, eq, sexp, show, hash]
+type statement_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 module Attribute = struct
   type attribute = {
@@ -239,7 +239,7 @@ end
 module Define = struct
   include Record.Define
 
-  type t = statement_t Record.Define.record [@@deriving compare, eq, sexp, show, hash]
+  type t = statement_t Record.Define.record [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
   module Signature = struct
     type t = Record.Define.signature [@@deriving compare, eq, sexp, show, hash]
@@ -433,6 +433,10 @@ module Define = struct
   let dump define = contains_call define "pyre_dump"
 
   let dump_cfg define = contains_call define "pyre_dump_cfg"
+
+  let dump_locations define = contains_call define "pyre_dump_locations"
+
+  let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 
   let implicit_attributes
       ({ body; signature = { parameters; _ } } as define)

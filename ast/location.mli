@@ -72,6 +72,6 @@ val stop_column : 'path location -> int
 val path : 'path location -> 'path
 
 (* Shortcuts to make this more palatable. *)
-type t = Reference.t [@@deriving compare, eq, sexp, show, hash]
+type t = Reference.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 val create : start:Lexing.position -> stop:Lexing.position -> t

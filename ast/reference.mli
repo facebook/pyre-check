@@ -5,7 +5,7 @@
 
 open Core
 
-type t [@@deriving compare, eq, sexp, show, hash]
+type t [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 val create : ?prefix:t -> string -> t
 

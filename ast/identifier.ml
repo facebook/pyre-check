@@ -6,7 +6,7 @@
 open Core
 open Sexplib.Conv
 
-type t = string [@@deriving compare, eq, sexp, hash]
+type t = string [@@deriving compare, eq, sexp, hash, to_yojson]
 
 module Map = Map.Make (struct
   type nonrec t = t
