@@ -175,7 +175,7 @@ let computation_thread
 let request_handler_thread
     ( ( { Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
       server_configuration ),
-      { Server.State.lock; connections },
+      ({ Server.State.lock; connections = raw_connections } as connections),
       request_queue )
   =
   let queue_request ~origin request =
@@ -185,24 +185,19 @@ let request_handler_thread
         Operations.stop
           ~reason:"explicit request"
           ~configuration:server_configuration
-          ~socket:!connections.socket
+          ~socket:!raw_connections.socket
     | Protocol.Request.StopRequest, _ ->
         Operations.stop
           ~reason:"explicit request"
           ~configuration:server_configuration
-          ~socket:!connections.socket
+          ~socket:!raw_connections.socket
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket
       ->
-        Mutex.critical_section lock ~f:(fun () ->
-            let ({ persistent_clients; _ } as cached_connections) = !connections in
-            Socket.write socket (ClientConnectionResponse client);
-            match client with
-            | Persistent ->
-                connections :=
-                  { cached_connections with
-                    persistent_clients = Map.set persistent_clients ~key:socket ~data:0
-                  }
-            | _ -> ())
+        Log.log ~section:`Server "Adding %s client" (show_client client);
+        ( match client with
+        | Persistent -> Connections.add_persistent_client ~connections ~socket
+        | _ -> () );
+        Socket.write socket (ClientConnectionResponse client)
     | Protocol.Request.ClientConnectionRequest _, _ ->
         Log.error
           "Unexpected request origin %s for connection request"
@@ -219,9 +214,9 @@ let request_handler_thread
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "Persistent client disconnected";
         Mutex.critical_section lock ~f:(fun () ->
-            let ({ persistent_clients; _ } as cached_connections) = !connections in
+            let ({ persistent_clients; _ } as cached_connections) = !raw_connections in
             Unix.close socket;
-            connections :=
+            raw_connections :=
               { cached_connections with persistent_clients = Map.remove persistent_clients socket })
   in
   let handle_readable_file_notifier socket =
@@ -241,7 +236,7 @@ let request_handler_thread
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "File notifier disconnected";
         Mutex.critical_section lock ~f:(fun () ->
-            let { file_notifiers; _ } = !connections in
+            let { file_notifiers; _ } = !raw_connections in
             let file_notifiers =
               List.filter
                 ~f:(fun file_notifier_socket ->
@@ -253,18 +248,18 @@ let request_handler_thread
                     true)
                 file_notifiers
             in
-            connections := { !connections with file_notifiers })
+            raw_connections := { !raw_connections with file_notifiers })
   in
   let rec loop () =
     let { socket = server_socket; json_socket; persistent_clients; file_notifiers; _ } =
-      Mutex.critical_section lock ~f:(fun () -> !connections)
+      Mutex.critical_section lock ~f:(fun () -> !raw_connections)
     in
     if not (PyrePath.is_directory local_root) then (
       Log.error "Stopping server due to missing source root.";
       Operations.stop
         ~reason:"missing source root"
         ~configuration:server_configuration
-        ~socket:!connections.socket );
+        ~socket:!raw_connections.socket );
     let readable =
       Unix.select
         ~restart:true
@@ -312,9 +307,9 @@ let request_handler_thread
           |> function
           | Some (Ok _) ->
               Mutex.critical_section lock ~f:(fun () ->
-                  let { file_notifiers; _ } = !connections in
-                  connections :=
-                    { !connections with file_notifiers = new_socket :: file_notifiers })
+                  let { file_notifiers; _ } = !raw_connections in
+                  raw_connections :=
+                    { !raw_connections with file_notifiers = new_socket :: file_notifiers })
           | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
           | None -> Log.warning "Failed to parse handshake as LSP."
         with
@@ -340,7 +335,7 @@ let request_handler_thread
       Operations.stop
         ~reason:"exception"
         ~configuration:server_configuration
-        ~socket:!connections.socket
+        ~socket:!raw_connections.socket
 
 
 (** Main server either as a daemon or in terminal *)

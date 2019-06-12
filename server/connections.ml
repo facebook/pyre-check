@@ -51,4 +51,13 @@ struct
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients = write_to_persistent_client persistent_clients ~socket ~response in
         connections := { cached_connections with persistent_clients })
+
+
+  let add_persistent_client ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let ({ State.persistent_clients; _ } as cached_connections) = !connections in
+        connections :=
+          { cached_connections with
+            persistent_clients = Map.set persistent_clients ~key:socket ~data:0
+          })
 end
