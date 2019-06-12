@@ -146,8 +146,7 @@ let start
 
 let stop
     ~reason
-    ~configuration:{ Configuration.Server.lock_path;
-                     socket = { path = socket_path; link = socket_link; _ };
+    ~configuration:{ Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
                      json_socket = { path = json_socket_path; link = json_socket_link; _ };
                      pid_path
                    ; _
@@ -155,7 +154,6 @@ let stop
     ~socket
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
-  Path.absolute lock_path |> Lock.release |> ignore;
 
   (* Cleanup server files. *)
   Path.remove socket_path;
