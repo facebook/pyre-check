@@ -3253,13 +3253,6 @@ module State (Context : Context) = struct
                 in
                 left @ starred @ right
               in
-              let resolved =
-                match resolved with
-                | Type.Tuple (Type.Bounded (Concrete annotations))
-                  when List.length annotations = List.length elements ->
-                    annotations
-                | _ -> List.map elements ~f:(fun _ -> Type.Top)
-              in
               let assignees = left @ starred @ right in
               let state, annotations =
                 if List.length annotations <> List.length assignees then
@@ -3278,9 +3271,8 @@ module State (Context : Context) = struct
                   state, annotations
               in
               List.zip_exn assignees annotations
-              |> List.zip_exn resolved
-              |> List.fold ~init:state ~f:(fun state (resolved, (target, guide)) ->
-                     forward_assign ~state ~target ~guide ~resolved ~expression:None)
+              |> List.fold ~init:state ~f:(fun state (target, guide) ->
+                     forward_assign ~state ~target ~guide ~resolved:guide ~expression:None)
           | List elements
           | Tuple elements ->
               let kind =
