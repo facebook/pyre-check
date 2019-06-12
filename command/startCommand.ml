@@ -78,9 +78,7 @@ let computation_thread
                 |> ignore
             | Some (TypeCheckResponse error_map) ->
                 StatusUpdate.information ~message:"Done recheck." ~state;
-                let responses = errors_to_lsp_responses error_map in
-                List.iter responses ~f:(fun response ->
-                    Connections.write_to_persistent_client ~state ~socket ~response)
+                broadcast_response state (TypeCheckResponse error_map)
             | Some _ -> Log.error "Unexpected response for persistent client request"
             | None -> () );
             state
