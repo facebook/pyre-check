@@ -418,12 +418,12 @@ module State (Context : Context) = struct
         let base_errors = check_bases () in
         List.append base_errors (check_attributes_initialized ())
       else if Define.is_class_toplevel define then
-        let annotated_class =
+        let annotated_class_definition =
           let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
           Resolution.class_definition resolution (Type.Primitive name) >>| Annotated.Class.create
         in
         let check_abstract_methods errors =
-          annotated_class
+          annotated_class_definition
           >>| (fun definition ->
                 if
                   (not (AnnotatedClass.is_abstract definition))
@@ -442,14 +442,22 @@ module State (Context : Context) = struct
         in
         let check_base_and_attributes errors =
           let no_explicit_class_constructor =
-            annotated_class
+            annotated_class_definition
             >>| Annotated.Class.constructors ~resolution
             >>| List.is_empty
             |> Option.value ~default:false
           in
           if no_explicit_class_constructor then
+            let is_protocol =
+              annotated_class_definition
+              >>| Annotated.Class.is_protocol
+              |> Option.value ~default:false
+            in
             let base_errors = check_bases () in
-            List.append base_errors (check_attributes_initialized ())
+            if not is_protocol then
+              List.append base_errors (check_attributes_initialized ())
+            else
+              base_errors
           else
             errors
         in

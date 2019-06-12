@@ -194,8 +194,7 @@ let test_check_protocol _ =
         foo(a)
 
     |}
-    [ "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` "
-      ^ "but is never initialized." ];
+    [];
   assert_type_errors
     {|
       class P(typing.Protocol):
