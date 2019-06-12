@@ -35,7 +35,7 @@ public final class RemoteFileTarget implements BuildTarget {
     try {
       FileSystem.unzipRemoteFile(url, new File(outputDirectory));
     } catch (IOException exception) {
-      LOGGER.warning("Cannot fetch and unzip remote python dependencies.");
+      LOGGER.warning("Cannot fetch and unzip remote python dependency at " + url);
     }
   }
 
