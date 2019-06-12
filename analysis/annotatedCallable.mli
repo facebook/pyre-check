@@ -14,6 +14,7 @@ val create_overload : resolution:Resolution.t -> define:Define.t -> Type.t Type.
 
 val create
   :  resolution:Resolution.t ->
+  ?invocation:Type.Callable.invocation ->
   parent:Type.t option ->
   name:Identifier.t ->
   (bool * Type.t Type.Callable.overload) list ->

@@ -263,7 +263,21 @@ let to_dot ~get_dependencies ~qualifier =
 
 
 module Calls = struct
-  module SharedMemory = SharedMemory.WithCache (Reference.Key) (Reference.ListValue)
+  type callee = {
+    name: Reference.t;
+    invocation: Type.Callable.invocation
+  }
+  [@@deriving show]
+
+  module CalleeValue = struct
+    type t = callee list
+
+    let prefix = Prefix.make ()
+
+    let description = "Reference List"
+  end
+
+  module SharedMemory = SharedMemory.WithCache (Reference.Key) (CalleeValue)
 
   let set ~caller ~callees = SharedMemory.add caller callees
 

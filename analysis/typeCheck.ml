@@ -38,7 +38,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val calls : Reference.t list Location.Reference.Table.t
+  val calls : Dependencies.Calls.callee list Location.Reference.Table.t
 end
 
 module type Signature = sig
@@ -1573,7 +1573,8 @@ module State (Context : Context) = struct
         (* Store callees. *)
         let callees =
           let callable_name = function
-            | { Type.Callable.kind = Named name; _ } -> Some name
+            | { Type.Callable.kind = Named name; invocation; _ } ->
+                Some { Dependencies.Calls.name; invocation }
             | _ -> None
           in
           callables >>| List.filter_map ~f:callable_name |> Option.value ~default:[]

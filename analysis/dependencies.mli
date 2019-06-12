@@ -72,9 +72,17 @@ val to_dot
   string
 
 module Calls : sig
-  module SharedMemory : module type of SharedMemory.WithCache (Reference.Key) (Reference.ListValue)
+  type callee = {
+    name: Reference.t;
+    invocation: Type.Callable.invocation
+  }
+  [@@deriving show]
 
-  val set : caller:Reference.t -> callees:Reference.t list -> unit
+  module CalleeValue : Value.Type with type t = callee list
 
-  val get : caller:Reference.t -> Reference.t list
+  module SharedMemory : module type of SharedMemory.WithCache (Reference.Key) (CalleeValue)
+
+  val set : caller:Reference.t -> callees:callee list -> unit
+
+  val get : caller:Reference.t -> callee list
 end

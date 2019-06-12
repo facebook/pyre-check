@@ -19,8 +19,6 @@ include Hashable with type t := t
 
 module Key : Memory.KeyType with type t = t and type out = t
 
-module ListValue : Value.Type with type t = t list
-
 val empty : t
 
 val create_from_list : Identifier.t list -> t

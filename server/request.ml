@@ -645,9 +645,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 (Coverage.CoverageValue.description, File.Handle.show key, value >>| Coverage.show)
           | Analysis.Dependencies.Calls.SharedMemory.Decoded (key, value) ->
               Some
-                ( Reference.ListValue.description,
+                ( Dependencies.Calls.CalleeValue.description,
                   Reference.show key,
-                  value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
+                  value >>| List.map ~f:Dependencies.Calls.show_callee >>| String.concat ~sep:","
+                )
           | ResolutionSharedMemory.Decoded (key, value) ->
               Some
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,

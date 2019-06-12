@@ -1426,13 +1426,27 @@ let test_calls _ =
 
     (* Check calls. *)
     let assert_calls (caller, callees) =
+      let expected_callees =
+        let callee = function
+          | `Dynamic name ->
+              { Dependencies.Calls.name = Reference.create name; invocation = Dynamic }
+          | `Static name ->
+              { Dependencies.Calls.name = Reference.create name; invocation = Static }
+        in
+        List.map callees ~f:callee
+        |> List.map ~f:Dependencies.Calls.show_callee
+        |> String.Set.of_list
+      in
+      let actual_callees =
+        Dependencies.Calls.get ~caller:(Reference.create caller)
+        |> List.map ~f:Dependencies.Calls.show_callee
+        |> String.Set.of_list
+      in
       assert_equal
         ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
         ~cmp:String.Set.equal
-        (String.Set.of_list callees)
-        ( Dependencies.Calls.get ~caller:(Reference.create caller)
-        |> List.map ~f:Reference.show
-        |> String.Set.of_list )
+        expected_callees
+        actual_callees
     in
     List.iter calls ~f:assert_calls
   in
@@ -1442,7 +1456,7 @@ let test_calls _ =
      def calls_foo():
        foo()
    |}
-    ["qualifier.foo", []; "qualifier.calls_foo", ["qualifier.foo"]];
+    ["qualifier.foo", []; "qualifier.calls_foo", [`Static "qualifier.foo"]];
   assert_calls
     {|
      def foo(): ...
@@ -1450,7 +1464,7 @@ let test_calls _ =
      def calls_on_same_line():
        foo(); bar()
    |}
-    ["qualifier.calls_on_same_line", ["qualifier.foo"; "qualifier.bar"]];
+    ["qualifier.calls_on_same_line", [`Static "qualifier.foo"; `Static "qualifier.bar"]];
 
   (* Methods. *)
   assert_calls
@@ -1460,16 +1474,24 @@ let test_calls _ =
      def calls_method(c: Class):
        c.method()
    |}
-    ["qualifier.calls_method", ["qualifier.Class.method"]];
+    ["qualifier.calls_method", [`Dynamic "qualifier.Class.method"]];
   assert_calls
     {|
      class Class: ...
-     def calls_init():
+     class ClassWithInit:
+       def __init__(self):
+         super().__init__()
+     def calls_object_init():
        Class()
+     def calls_init():
+       ClassWithInit()
+     def calls_init_statically(object: object):
+       ClassWithInit.__init__(object)
    |}
-    ["qualifier.calls_init", ["object.__init__"]];
-
-  (* TODO(T44530812): distinguish dynamic and static invocation. *)
+    [ "qualifier.ClassWithInit.__init__", [`Static "object.__init__"];
+      "qualifier.calls_object_init", [`Static "object.__init__"];
+      "qualifier.calls_init", [`Static "qualifier.ClassWithInit.__init__"];
+      "qualifier.calls_init_statically", [`Static "qualifier.ClassWithInit.__init__"] ];
   assert_calls
     {|
      class Class:
@@ -1478,7 +1500,7 @@ let test_calls _ =
      def calls_class_method():
        Class.classmethod()
    |}
-    ["qualifier.calls_class_method", ["qualifier.Class.classmethod"]];
+    ["qualifier.calls_class_method", [`Static "qualifier.Class.classmethod"]];
 
   (* Unions. *)
   assert_calls
@@ -1490,7 +1512,8 @@ let test_calls _ =
      def calls_method_on_union(union: typing.Union[Class, OtherClass]):
        union.method()
    |}
-    ["qualifier.calls_method_on_union", ["qualifier.Class.method"; "qualifier.OtherClass.method"]]
+    [ ( "qualifier.calls_method_on_union",
+        [`Dynamic "qualifier.Class.method"; `Dynamic "qualifier.OtherClass.method"] ) ]
 
 
 let () =

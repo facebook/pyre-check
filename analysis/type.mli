@@ -109,8 +109,14 @@ module Record : sig
     }
     [@@deriving compare, eq, sexp, show, hash]
 
+    type invocation =
+      | Static
+      | Dynamic
+    [@@deriving compare, eq, sexp, show, hash]
+
     type 'annotation record = {
       kind: kind;
+      invocation: invocation;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
       implicit: 'annotation implicit_record option
@@ -319,6 +325,7 @@ module Callable : sig
     ?overloads:type_t overload list ->
     ?parameters:parameters ->
     ?implicit:implicit ->
+    ?invocation:invocation ->
     annotation:type_t ->
     unit ->
     type_t

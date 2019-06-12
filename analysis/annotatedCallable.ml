@@ -66,7 +66,7 @@ let create_overload ~resolution
   }
 
 
-let create ~resolution ~parent ~name overloads =
+let create ~resolution ?(invocation = Type.Callable.Static) ~parent ~name overloads =
   let open Type.Callable in
   let implementation, overloads =
     let to_signature (implementation, overloads) (is_overload, signature) =
@@ -81,11 +81,16 @@ let create ~resolution ~parent ~name overloads =
       overloads
   in
   let callable =
-    { kind = Named (Reference.create name); implementation; overloads; implicit = None }
+    { kind = Named (Reference.create name);
+      invocation;
+      implementation;
+      overloads;
+      implicit = None
+    }
   in
   match parent with
   | Some parent ->
-      let { Type.Callable.kind; implementation; overloads; implicit } =
+      let { Type.Callable.kind; invocation; implementation; overloads; implicit } =
         match implementation with
         | { parameters = Defined (Named { name; annotation; _ } :: _); _ } -> (
             let callable =
@@ -119,6 +124,7 @@ let create ~resolution ~parent ~name overloads =
         { Type.Callable.annotation; parameters }
       in
       { Type.Callable.kind;
+        invocation;
         implementation = drop_self implementation;
         overloads = List.map overloads ~f:drop_self;
         implicit

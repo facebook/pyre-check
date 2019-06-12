@@ -82,14 +82,6 @@ module Key = struct
   let from_string name = create name
 end
 
-module ListValue = struct
-  type nonrec t = t list
-
-  let prefix = Prefix.make ()
-
-  let description = "Reference List"
-end
-
 let empty = []
 
 let create_from_list names = names
