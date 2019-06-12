@@ -70,14 +70,12 @@ module Record : sig
         annotation: 'annotation;
         default: bool
       }
-      [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation variable =
+      and 'annotation variable =
         | Concrete of 'annotation
         | Variadic of Variable.RecordVariadic.RecordList.record
-      [@@deriving compare, eq, sexp, show, hash]
 
-      type 'annotation t =
+      and 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
         | Named of 'annotation named
         | KeywordOnly of 'annotation named
@@ -89,32 +87,27 @@ module Record : sig
     type kind =
       | Anonymous
       | Named of Reference.t
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation implicit_record = {
+    and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
       name: Identifier.t
     }
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation record_parameters =
+    and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
       | ParameterVariadicTypeVariable of Variable.RecordVariadic.RecordParameters.record
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation overload = {
+    and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters
     }
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type invocation =
+    and invocation =
       | Static
       | Dynamic
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation record = {
+    and 'annotation record = {
       kind: kind;
       invocation: invocation;
       implementation: 'annotation overload;
@@ -125,15 +118,14 @@ module Record : sig
   end
 end
 
-type primitive = Identifier.t [@@deriving compare, eq, sexp, show, hash]
+type primitive = Identifier.t
 
-type literal =
+and literal =
   | Boolean of bool
   | Integer of int
   | String of string
-[@@deriving compare, eq, sexp, show, hash]
 
-type tuple =
+and tuple =
   | Bounded of t Record.OrderedTypes.t
   | Unbounded of t
 
@@ -155,7 +147,7 @@ and t =
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
   | Union of t list
   | Variable of t Record.Variable.RecordUnary.record
-[@@deriving compare, eq, sexp, show]
+[@@deriving compare, eq, sexp, show, hash]
 
 type type_t = t [@@deriving compare, eq, sexp, show]
 

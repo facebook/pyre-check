@@ -187,32 +187,27 @@ module Record = struct
     type kind =
       | Anonymous
       | Named of Reference.t
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation implicit_record = {
+    and 'annotation implicit_record = {
       implicit_annotation: 'annotation;
       name: Identifier.t
     }
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation record_parameters =
+    and 'annotation record_parameters =
       | Defined of 'annotation RecordParameter.t list
       | Undefined
       | ParameterVariadicTypeVariable of Variable.RecordVariadic.RecordParameters.record
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation overload = {
+    and 'annotation overload = {
       annotation: 'annotation;
       parameters: 'annotation record_parameters
     }
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type invocation =
+    and invocation =
       | Static
       | Dynamic
-    [@@deriving compare, eq, sexp, show, hash]
 
-    type 'annotation record = {
+    and 'annotation record = {
       kind: kind;
       invocation: invocation;
       implementation: 'annotation overload;
@@ -234,15 +229,14 @@ end
 open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
-type primitive = Identifier.t [@@deriving compare, eq, sexp, show, hash]
+type primitive = Identifier.t
 
-type literal =
+and literal =
   | Boolean of bool
   | Integer of int
   | String of string
-[@@deriving compare, eq, sexp, show, hash]
 
-type tuple =
+and tuple =
   | Bounded of t Record.OrderedTypes.t
   | Unbounded of t
 
