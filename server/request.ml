@@ -908,6 +908,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           let configuration = configuration
 
           let define = define
+
+          let calls = Location.Reference.Table.create ()
         end)
         in
         let state = State.create ~resolution () in

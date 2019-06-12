@@ -210,6 +210,8 @@ let test_type_collection _ =
           let configuration = configuration
 
           let define = +Test.mock_define
+
+          let calls = Location.Reference.Table.create ()
         end)
         in
         let state = State.create ~resolution () in

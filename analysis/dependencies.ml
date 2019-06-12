@@ -6,6 +6,7 @@
 open Core
 open Ast
 open Pyre
+module SharedMemory = Memory
 
 type index = {
   function_keys: Reference.t Hash_set.t File.Handle.Table.t;
@@ -259,3 +260,20 @@ let to_dot ~get_dependencies ~qualifier =
   List.iter edges ~f:print_edge;
   Buffer.add_string buffer "}";
   Buffer.contents buffer
+
+
+module Calls = struct
+  module ReferenceListValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Callees"
+  end
+
+  module SharedMemory = SharedMemory.WithCache (Ast.SharedMemory.ReferenceKey) (ReferenceListValue)
+
+  let set ~caller ~callees = SharedMemory.add caller callees
+
+  let get ~caller = SharedMemory.get caller |> Option.value ~default:[]
+end

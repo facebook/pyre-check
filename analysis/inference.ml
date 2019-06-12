@@ -35,6 +35,8 @@ module State (Context : Context) = struct
     let configuration = Context.configuration
 
     let define = Context.define
+
+    let calls = Location.Reference.Table.create ()
   end
 
   module TypeCheckState = TypeCheck.State (TypeCheckContext)

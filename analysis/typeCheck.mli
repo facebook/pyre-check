@@ -26,6 +26,8 @@ module type Context = sig
   val configuration : Configuration.Analysis.t
 
   val define : Define.t Node.t
+
+  val calls : Reference.t list Location.Reference.Table.t
 end
 
 module type Signature = sig

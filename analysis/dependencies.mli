@@ -69,3 +69,9 @@ val to_dot
   :  get_dependencies:(Reference.t -> Reference.Set.Tree.t option) ->
   qualifier:Reference.t ->
   string
+
+module Calls : sig
+  val set : caller:Reference.t -> callees:Reference.t list -> unit
+
+  val get : caller:Reference.t -> Reference.t list
+end

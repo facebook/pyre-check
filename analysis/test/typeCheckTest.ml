@@ -17,6 +17,8 @@ module DefaultContext = struct
   let configuration = Test.mock_configuration
 
   let define = +Test.mock_define
+
+  let calls = Location.Reference.Table.create ()
 end
 
 module Create (Context : TypeCheck.Context) = struct
@@ -74,6 +76,8 @@ let test_initial _ =
       let configuration = Test.mock_configuration
 
       let define = +define
+
+      let calls = Location.Reference.Table.create ()
     end
     in
     let module Create = Create (Context) in
@@ -332,6 +336,8 @@ let assert_resolved sources expression expected =
     let configuration = Test.mock_configuration
 
     let define = +Test.mock_define
+
+    let calls = Location.Reference.Table.create ()
   end)
   in
   let resolution =
@@ -898,6 +904,8 @@ let test_forward_statement _ =
       let configuration = Test.mock_configuration
 
       let define = +define
+
+      let calls = Location.Reference.Table.create ()
     end
     in
     let module Create = Create (Context) in
@@ -1400,6 +1408,91 @@ let test_coverage _ =
     { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
 
 
+let test_calls _ =
+  let assert_calls source calls =
+    let source =
+      parse ~qualifier:(Reference.create "qualifier") source |> Preprocessing.preprocess
+    in
+    (* Clear dependencies for all defines. *)
+    let clear_calls
+        { Node.value = { Statement.Define.signature = { Statement.Define.name; _ }; _ }; _ }
+      =
+      Dependencies.Calls.set ~caller:name ~callees:[]
+    in
+    Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
+    |> List.iter ~f:clear_calls;
+    let environment = Test.environment ~sources:(source :: Test.typeshed_stubs ()) () in
+    TypeCheck.run ~configuration:Test.mock_configuration ~environment ~source |> ignore;
+
+    (* Check calls. *)
+    let assert_calls (caller, callees) =
+      assert_equal
+        ~printer:(fun set -> Set.to_list set |> String.concat ~sep:",")
+        ~cmp:String.Set.equal
+        (String.Set.of_list callees)
+        ( Dependencies.Calls.get ~caller:(Reference.create caller)
+        |> List.map ~f:Reference.show
+        |> String.Set.of_list )
+    in
+    List.iter calls ~f:assert_calls
+  in
+  assert_calls
+    {|
+     def foo(): ...
+     def calls_foo():
+       foo()
+   |}
+    ["qualifier.foo", []; "qualifier.calls_foo", ["qualifier.foo"]];
+  assert_calls
+    {|
+     def foo(): ...
+     def bar(): ...
+     def calls_on_same_line():
+       foo(); bar()
+   |}
+    ["qualifier.calls_on_same_line", ["qualifier.foo"; "qualifier.bar"]];
+
+  (* Methods. *)
+  assert_calls
+    {|
+     class Class:
+       def method(): ...
+     def calls_method(c: Class):
+       c.method()
+   |}
+    ["qualifier.calls_method", ["qualifier.Class.method"]];
+  assert_calls
+    {|
+     class Class: ...
+     def calls_init():
+       Class()
+   |}
+    ["qualifier.calls_init", ["object.__init__"]];
+
+  (* TODO(T44530812): distinguish dynamic and static invocation. *)
+  assert_calls
+    {|
+     class Class:
+       @classmethod
+       def classmethod(cls): ...
+     def calls_class_method():
+       Class.classmethod()
+   |}
+    ["qualifier.calls_class_method", ["qualifier.Class.classmethod"]];
+
+  (* Unions. *)
+  assert_calls
+    {|
+     class Class:
+       def method(): ...
+     class OtherClass:
+       def method(): ...
+     def calls_method_on_union(union: typing.Union[Class, OtherClass]):
+       union.method()
+   |}
+    ["qualifier.calls_method_on_union", ["qualifier.Class.method"; "qualifier.OtherClass.method"]]
+
+
 let () =
   "type"
   >::: [ "initial" >:: test_initial;
@@ -1413,5 +1506,6 @@ let () =
          "coverage" >:: test_coverage;
          "module_exports" >:: test_module_exports;
          "object_callables" >:: test_object_callables;
-         "callable_selection" >:: test_callable_selection ]
+         "callable_selection" >:: test_callable_selection;
+         "calls" >:: test_calls ]
   |> Test.run

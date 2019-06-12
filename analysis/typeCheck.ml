@@ -37,6 +37,8 @@ module type Context = sig
   val configuration : Configuration.Analysis.t
 
   val define : Define.t Node.t
+
+  val calls : Reference.t list Location.Reference.Table.t
 end
 
 module type Signature = sig
@@ -1545,6 +1547,16 @@ module State (Context : Context) = struct
           | Type.Union annotations -> List.map annotations ~f:callable |> Option.all
           | annotation -> callable annotation >>| fun callable -> [callable]
         in
+        (* Store callees. *)
+        let callees =
+          let callable_name = function
+            | { Type.Callable.kind = Named name; _ } -> Some name
+            | _ -> None
+          in
+          callables >>| List.filter_map ~f:callable_name |> Option.value ~default:[]
+        in
+        Hashtbl.set Context.calls ~key:location ~data:callees;
+
         let signature callable =
           let signature = Annotated.Signature.select ~arguments ~resolution ~callable in
           match signature with
@@ -3879,6 +3891,8 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
     let configuration = Configuration.Analysis.create ()
 
     let define = define
+
+    let calls = Location.Reference.Table.create ()
   end)
   in
   let aliases = Handler.aliases in
@@ -3980,6 +3994,8 @@ let check_define
     let configuration = configuration
 
     let define = define_node
+
+    let calls = Location.Reference.Table.create ()
   end
   in
   let module State = State (Context) in
@@ -4032,6 +4048,10 @@ let check_define
         ResolutionSharedMemory.add ~handle name resolution_fixpoint
     in
     exit >>| dump_resolutions |> ignore;
+
+    (* Store calls in shared memory. *)
+    let callees = Hashtbl.data Context.calls |> List.concat in
+    Dependencies.Calls.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)
     let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
