@@ -5,23 +5,22 @@
 
 open Core
 
-let broadcast_response = ref None
+module Connections = Connections.Make (struct
+  let write = Network.Socket.write
 
-let initialize broadcast = broadcast_response := Some broadcast
+  let close descriptor = Unix.close descriptor
+end)
 
 let write ~state ~content ~message_type =
-  match !broadcast_response with
-  | Some broadcast ->
-      LanguageServer.Protocol.ShowStatus.create
-        ~content
-        ~message_type
-        ~progress:None
-        ~short_message:None
-      |> LanguageServer.Protocol.ShowStatus.to_yojson
-      |> Yojson.Safe.to_string
-      |> (fun response -> Protocol.LanguageServerProtocolResponse response)
-      |> fun response -> broadcast state response
-  | None -> Log.warning "Unable to update status - no broadcasting method set."
+  LanguageServer.Protocol.ShowStatus.create
+    ~content
+    ~message_type
+    ~progress:None
+    ~short_message:None
+  |> LanguageServer.Protocol.ShowStatus.to_yojson
+  |> Yojson.Safe.to_string
+  |> (fun response -> Protocol.LanguageServerProtocolResponse response)
+  |> fun response -> Connections.broadcast_response ~state ~response
 
 
 let information ~message =

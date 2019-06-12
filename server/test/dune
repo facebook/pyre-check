@@ -1,5 +1,6 @@
 (tests
  (names
+  connectionsTest
   queryTest
   requestTest
   operationsTest

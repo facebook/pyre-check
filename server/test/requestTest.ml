@@ -14,7 +14,9 @@ let int_request_id id = LanguageServer.Types.RequestId.Int id
 
 let string_request_id id = LanguageServer.Types.RequestId.String id
 
-let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) () =
+let mock_server_state
+    ?(persistent_clients = []) ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
+  =
   let configuration = Test.mock_configuration in
   let environment =
     let environment =
@@ -27,6 +29,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
     in
     Analysis.Environment.handler environment
   in
+  let persistent_clients = Network.Socket.Map.of_alist_exn persistent_clients in
   add_defaults_to_environment ~configuration environment;
   { State.environment;
     errors;
@@ -38,7 +41,7 @@ let mock_server_state ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
       ref
         { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
           json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          persistent_clients = Network.Socket.Map.empty;
+          persistent_clients;
           file_notifiers = []
         };
     scheduler = Scheduler.mock ();

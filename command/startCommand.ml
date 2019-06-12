@@ -13,6 +13,12 @@ open Protocol
 module Time = Core_kernel.Time_ns.Span
 module Request = Server.Request
 
+module Connections = Server.Connections.Make (struct
+  let write = Socket.write
+
+  let close descriptor = Unix.close descriptor
+end)
+
 exception AlreadyRunning
 
 let handshake_message version =
@@ -28,7 +34,6 @@ let computation_thread
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
     state
   =
-  let failure_threshold = 5 in
   let errors_to_lsp_responses error_map =
     let diagnostic_to_response = function
       | Ok diagnostic_error ->
@@ -48,75 +53,34 @@ let computation_thread
     |> List.concat_map ~f:diagnostic_to_response
   in
   (* Decides what to broadcast to persistent clients after a request is processed. *)
-  let broadcast_response { lock; connections; _ } response =
+  let broadcast_response state response =
     let responses =
       match response with
       | TypeCheckResponse error_map -> errors_to_lsp_responses error_map
       | LanguageServerProtocolResponse _ -> [response]
+      | ClientExitResponse Persistent -> [response]
       | _ -> []
     in
-    let write_or_mark_failure responses ~key:socket ~data:failures =
-      try
-        List.iter ~f:(Socket.write socket) responses;
-        failures
-      with
-      | Unix.Unix_error (Unix.EPIPE, _, _) ->
-          Log.warning "Got an EPIPE while broadcasting to a persistent client";
-          failures + 1
-    in
-    Mutex.critical_section lock ~f:(fun () ->
-        let ({ persistent_clients; _ } as cached_connections) = !connections in
-        let persistent_clients =
-          let keep failure = failure < failure_threshold in
-          let persistent_clients =
-            Map.mapi ~f:(write_or_mark_failure responses) persistent_clients
-          in
-          Map.iteri persistent_clients ~f:(fun ~key ~data ->
-              if not (keep data) then Unix.close key);
-          Map.filter persistent_clients ~f:keep
-        in
-        connections := { cached_connections with persistent_clients })
+    List.iter responses ~f:(fun response -> Connections.broadcast_response ~state ~response)
   in
-  StatusUpdate.initialize broadcast_response;
   let rec loop state =
     let rec handle_request ?(retries = 2) state ~origin ~process =
       try
         match origin with
         | Protocol.Request.PersistentSocket socket ->
-            let write_or_forget socket responses =
-              try List.iter ~f:(Socket.write socket) responses with
-              | Unix.Unix_error (kind, _, _) -> (
-                match kind with
-                | Unix.EPIPE ->
-                    Log.warning "EPIPE while writing to a persistent client.";
-                    Mutex.critical_section state.lock ~f:(fun () ->
-                        let { persistent_clients; _ } = !(state.connections) in
-                        let persistent_clients =
-                          match Map.find persistent_clients socket with
-                          | Some failures ->
-                              if failures < failure_threshold then
-                                Map.set persistent_clients ~key:socket ~data:(failures + 1)
-                              else (
-                                Log.info
-                                  "Closing socket with file descriptor `%s`."
-                                  (Unix.File_descr.to_string socket);
-                                Unix.close socket;
-                                Map.remove persistent_clients socket )
-                          | None -> persistent_clients
-                        in
-                        state.connections := { !(state.connections) with persistent_clients })
-                | _ -> () )
-            in
             let { Request.state; response } = process ~socket ~state in
             ( match response with
-            | Some (LanguageServerProtocolResponse _) ->
-                response >>| (fun response -> write_or_forget socket [response]) |> ignore
+            | Some (LanguageServerProtocolResponse _)
             | Some (ClientExitResponse Persistent) ->
-                response >>| (fun response -> write_or_forget socket [response]) |> ignore
+                response
+                >>| (fun response ->
+                      Connections.write_to_persistent_client ~state ~socket ~response)
+                |> ignore
             | Some (TypeCheckResponse error_map) ->
                 StatusUpdate.information ~message:"Done recheck." ~state;
                 let responses = errors_to_lsp_responses error_map in
-                write_or_forget socket responses
+                List.iter responses ~f:(fun response ->
+                    Connections.write_to_persistent_client ~state ~socket ~response)
             | Some _ -> Log.error "Unexpected response for persistent client request"
             | None -> () );
             state
