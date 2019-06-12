@@ -11,7 +11,7 @@ module Connections = Connections.Make (struct
   let close descriptor = Unix.close descriptor
 end)
 
-let write ~state ~content ~message_type =
+let write ~state:{ State.connections; _ } ~content ~message_type =
   LanguageServer.Protocol.ShowStatus.create
     ~content
     ~message_type
@@ -20,7 +20,7 @@ let write ~state ~content ~message_type =
   |> LanguageServer.Protocol.ShowStatus.to_yojson
   |> Yojson.Safe.to_string
   |> (fun response -> Protocol.LanguageServerProtocolResponse response)
-  |> fun response -> Connections.broadcast_response ~state ~response
+  |> fun response -> Connections.broadcast_response ~connections ~response
 
 
 let information ~message =

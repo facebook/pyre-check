@@ -11,10 +11,10 @@ module Make (Socket : sig
   val close : Unix.File_descr.t -> unit
 end) : sig
   val write_to_persistent_client
-    :  state:State.t ->
+    :  connections:State.connections ->
     socket:Network.Socket.t ->
     response:Protocol.response ->
     unit
 
-  val broadcast_response : state:State.t -> response:Protocol.response -> unit
+  val broadcast_response : connections:State.connections -> response:Protocol.response -> unit
 end

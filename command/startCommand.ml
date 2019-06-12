@@ -61,7 +61,8 @@ let computation_thread
       | ClientExitResponse Persistent -> [response]
       | _ -> []
     in
-    List.iter responses ~f:(fun response -> Connections.broadcast_response ~state ~response)
+    List.iter responses ~f:(fun response ->
+        Connections.broadcast_response ~connections:state.connections ~response)
   in
   let rec loop state =
     let rec handle_request ?(retries = 2) state ~origin ~process =
@@ -74,7 +75,10 @@ let computation_thread
             | Some (ClientExitResponse Persistent) ->
                 response
                 >>| (fun response ->
-                      Connections.write_to_persistent_client ~state ~socket ~response)
+                      Connections.write_to_persistent_client
+                        ~connections:state.connections
+                        ~socket
+                        ~response)
                 |> ignore
             | Some (TypeCheckResponse error_map) ->
                 StatusUpdate.information ~message:"Done recheck." ~state;
@@ -85,7 +89,8 @@ let computation_thread
         | Protocol.Request.FileNotifier
         | Protocol.Request.Background ->
             let { socket; _ } =
-              Mutex.critical_section state.lock ~f:(fun () -> !(state.connections))
+              Mutex.critical_section state.connections.lock ~f:(fun () ->
+                  !(state.connections.connections))
             in
             let { Request.state; response } = process ~socket ~state in
             ( match response with
@@ -114,8 +119,11 @@ let computation_thread
           let current_time = Unix.time () in
           let stop_after_idle_for = 24.0 *. 60.0 *. 60.0 (* 1 day *) in
           if current_time -. state.last_request_time > stop_after_idle_for then
-            Mutex.critical_section state.lock ~f:(fun () ->
-                Operations.stop ~reason:"idle" ~configuration ~socket:!(state.connections).socket);
+            Mutex.critical_section state.connections.lock ~f:(fun () ->
+                Operations.stop
+                  ~reason:"idle"
+                  ~configuration
+                  ~socket:!(state.connections.connections).socket);
 
           (* Stop if there's any inconsistencies in the .pyre directory. *)
           let last_integrity_check =
@@ -133,11 +141,11 @@ let computation_thread
                 current_time
               with
               | _ ->
-                  Mutex.critical_section state.lock ~f:(fun () ->
+                  Mutex.critical_section state.connections.lock ~f:(fun () ->
                       Operations.stop
                         ~reason:"failed integrity check"
                         ~configuration
-                        ~socket:!(state.connections).socket)
+                        ~socket:!(state.connections.connections).socket)
             else
               state.last_integrity_check
           in
@@ -167,8 +175,7 @@ let computation_thread
 let request_handler_thread
     ( ( { Configuration.Server.configuration = { expected_version; local_root; _ }; _ } as
       server_configuration ),
-      lock,
-      connections,
+      { Server.State.lock; connections },
       request_queue )
   =
   let queue_request ~origin request =
@@ -186,7 +193,6 @@ let request_handler_thread
           ~socket:!connections.socket
     | Protocol.Request.ClientConnectionRequest client, Protocol.Request.NewConnectionSocket socket
       ->
-        Log.log ~section:`Server "Adding %s client" (show_client client);
         Mutex.critical_section lock ~f:(fun () ->
             let ({ persistent_clients; _ } as cached_connections) = !connections in
             Socket.write socket (ClientConnectionResponse client);
@@ -348,17 +354,19 @@ let serve
     Log.log ~section:`Server "Starting daemon server loop...";
     Configuration.Server.set_global server_configuration;
     let request_queue = Squeue.create 25 in
-    let lock = Mutex.create () in
     let connections =
-      ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] }
+      { lock = Mutex.create ();
+        connections =
+          ref { socket; json_socket; persistent_clients = Socket.Map.empty; file_notifiers = [] }
+      }
     in
     (* Register signal handlers. *)
     Signal.Expert.handle Signal.int (fun _ ->
         Operations.stop ~reason:"interrupt" ~configuration:server_configuration ~socket);
     Signal.Expert.handle Signal.pipe (fun _ -> ());
-    Thread.create request_handler_thread (server_configuration, lock, connections, request_queue)
+    Thread.create request_handler_thread (server_configuration, connections, request_queue)
     |> ignore;
-    let state = Operations.start ~lock ~connections ~configuration:server_configuration () in
+    let state = Operations.start ~connections ~configuration:server_configuration () in
     try computation_thread request_queue server_configuration state with
     | uncaught_exception ->
         Statistics.log_exception uncaught_exception ~fatal:true ~origin:"server";

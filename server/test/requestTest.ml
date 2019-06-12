@@ -36,14 +36,16 @@ let mock_server_state
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
-    lock = Mutex.create ();
     connections =
-      ref
-        { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          persistent_clients;
-          file_notifiers = []
-        };
+      { lock = Mutex.create ();
+        connections =
+          ref
+            { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+              json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+              persistent_clients;
+              file_notifiers = []
+            }
+      };
     scheduler = Scheduler.mock ();
     open_documents = Path.Set.empty
   }

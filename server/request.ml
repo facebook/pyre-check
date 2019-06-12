@@ -1031,7 +1031,7 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.environment; lock; connections; errors; _ } as state)
+    ~state:({ State.environment; connections; errors; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
@@ -1052,11 +1052,11 @@ let rec process
           SharedMem.collect `aggressive;
           process_type_check_request ~state ~configuration ~files
       | StopRequest ->
-          Mutex.critical_section lock ~f:(fun () ->
+          Mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop
                 ~reason:"explicit request"
                 ~configuration:server_configuration
-                ~socket:!connections.socket)
+                ~socket:!(connections.connections).socket)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | DisplayTypeErrors files ->
           let configuration = { configuration with include_hints = true } in
@@ -1190,8 +1190,8 @@ let rec process
              the next lookup (if any). *)
           LookupCache.evict ~state ~configuration file;
           let check_on_save =
-            Mutex.critical_section lock ~f:(fun () ->
-                let { file_notifiers; _ } = !connections in
+            Mutex.critical_section connections.lock ~f:(fun () ->
+                let { file_notifiers; _ } = !(connections.connections) in
                 List.is_empty file_notifiers)
           in
           if check_on_save then
@@ -1243,11 +1243,11 @@ let rec process
         in
         Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
-          Mutex.critical_section lock ~f:(fun () ->
+          Mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop
                 ~reason:"uncaught exception"
                 ~configuration:server_configuration
-                ~socket:!connections.socket);
+                ~socket:!(connections.connections).socket);
         { state; response = None }
   in
   Statistics.performance

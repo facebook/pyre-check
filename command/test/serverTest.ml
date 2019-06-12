@@ -239,14 +239,16 @@ let mock_server_state ~local_root
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     lookups = String.Table.create ();
-    lock = Mutex.create ();
     connections =
-      ref
-        { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-          persistent_clients = Network.Socket.Map.empty;
-          file_notifiers = []
-        };
+      { lock = Mutex.create ();
+        connections =
+          ref
+            { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+              json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+              persistent_clients = Network.Socket.Map.empty;
+              file_notifiers = []
+            }
+      };
     scheduler = Scheduler.mock ();
     open_documents = Path.Set.empty
   }
@@ -1684,7 +1686,7 @@ let test_incremental_attribute_caching context =
   let environment = Analysis.Environment.Builder.create () |> Analysis.Environment.handler in
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   add_defaults_to_environment ~configuration environment;
-  let ({ State.connections; lock = server_lock; _ } as old_state) =
+  let ({ State.connections; _ } as old_state) =
     mock_server_state ~local_root (File.Handle.Table.create ())
   in
   let source_path = Path.create_relative ~root:local_root ~relative:"a.py" in
@@ -1712,12 +1714,7 @@ let test_incremental_attribute_caching context =
   in
   write_to_file ~content:content_with_annotation;
   let initial_state =
-    Server.Operations.start
-      ~old_state
-      ~lock:server_lock
-      ~connections
-      ~configuration:server_configuration
-      ()
+    Server.Operations.start ~old_state ~connections ~configuration:server_configuration ()
   in
   let request_typecheck state =
     Request.process

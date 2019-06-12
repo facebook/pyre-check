@@ -103,7 +103,6 @@ let load
                             saved_state_action
                           ; _
                           }
-    ~lock
     ~connections
   =
   Log.info "Initializing server from saved state...";
@@ -169,7 +168,6 @@ let load
     { State.environment;
       errors;
       scheduler;
-      lock;
       last_request_time = Unix.time ();
       last_integrity_check = Unix.time ();
       connections;

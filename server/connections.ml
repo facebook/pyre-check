@@ -33,7 +33,7 @@ struct
               Map.remove persistent_clients socket )
 
 
-  let broadcast_response ~state:{ State.lock; connections; _ } ~response =
+  let broadcast_response ~connections:{ State.lock; connections; _ } ~response =
     Mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients =
@@ -46,7 +46,7 @@ struct
         connections := { cached_connections with persistent_clients })
 
 
-  let write_to_persistent_client ~state:{ State.lock; connections; _ } ~socket ~response =
+  let write_to_persistent_client ~connections:{ State.lock; connections; _ } ~socket ~response =
     Mutex.critical_section lock ~f:(fun () ->
         let ({ State.persistent_clients; _ } as cached_connections) = !connections in
         let persistent_clients = write_to_persistent_client persistent_clients ~socket ~response in

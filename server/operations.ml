@@ -64,7 +64,7 @@ exception ConnectionFailure
 
 exception VersionMismatch of version_mismatch
 
-let start_from_scratch ?old_state ~lock ~connections ~configuration () =
+let start_from_scratch ?old_state ~connections ~configuration () =
   Log.log ~section:`Server "Initializing server...";
   let scheduler =
     match old_state with
@@ -97,7 +97,6 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
   { environment;
     errors;
     scheduler;
-    lock;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();
     connections;
@@ -108,7 +107,6 @@ let start_from_scratch ?old_state ~lock ~connections ~configuration () =
 
 let start
     ?old_state
-    ~lock
     ~connections
     ~configuration:( { Configuration.Server.configuration =
                          { Configuration.Analysis.expected_version; _ } as configuration;
@@ -124,7 +122,7 @@ let start
     | Some (Load (LoadFromFiles _)), _ -> (
       try
         let timer = Timer.start () in
-        let state = SavedState.load ~server_configuration ~lock ~connections in
+        let state = SavedState.load ~server_configuration ~connections in
         Statistics.event ~name:"saved state success" ();
         Statistics.performance
           ~name:"initialization"
@@ -137,8 +135,8 @@ let start
       | SavedState.IncompatibleState reason ->
           Log.warning "Unable to load saved state, falling back to a full start.";
           Statistics.event ~name:"saved state failure" ~normals:["reason", reason] ();
-          start_from_scratch ?old_state ~lock ~connections ~configuration () )
-    | _ -> start_from_scratch ?old_state ~lock ~connections ~configuration ()
+          start_from_scratch ?old_state ~connections ~configuration () )
+    | _ -> start_from_scratch ?old_state ~connections ~configuration ()
   in
   ( match saved_state_action with
   | Some (Save saved_state_path) -> SavedState.save ~configuration ~errors ~saved_state_path

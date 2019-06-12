@@ -30,8 +30,7 @@ exception VersionMismatch of version_mismatch
 
 val start
   :  ?old_state:State.t ->
-  lock:Mutex.t ->
-  connections:State.connections ref ->
+  connections:State.connections ->
   configuration:Configuration.Server.t ->
   unit ->
   State.t

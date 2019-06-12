@@ -19,11 +19,7 @@ val compute_locally_changed_files
   configuration:Configuration.Analysis.t ->
   File.t list
 
-val load
-  :  server_configuration:Configuration.Server.t ->
-  lock:Mutex.t ->
-  connections:State.connections ref ->
-  State.t
+val load : server_configuration:Configuration.Server.t -> connections:State.connections -> State.t
 
 val save
   :  configuration:Configuration.Analysis.t ->
