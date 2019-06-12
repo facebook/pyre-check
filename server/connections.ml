@@ -68,4 +68,27 @@ struct
         Socket.close socket;
         connections :=
           { cached_connections with persistent_clients = Map.remove persistent_clients socket })
+
+
+  let add_file_notifier ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let { State.file_notifiers; _ } = !connections in
+        connections := { !connections with file_notifiers = socket :: file_notifiers })
+
+
+  let remove_file_notifier ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let ({ State.file_notifiers; _ } as cached_connections) = !connections in
+        let file_notifiers =
+          List.filter
+            ~f:(fun file_notifier_socket ->
+              if socket = file_notifier_socket then (
+                Log.log ~section:`Server "Removing file notifier";
+                Socket.close socket;
+                false )
+              else
+                true)
+            file_notifiers
+        in
+        connections := { cached_connections with file_notifiers })
 end

@@ -231,20 +231,7 @@ let request_handler_thread
     | Yojson.Json_error _
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "File notifier disconnected";
-        Mutex.critical_section lock ~f:(fun () ->
-            let { file_notifiers; _ } = !raw_connections in
-            let file_notifiers =
-              List.filter
-                ~f:(fun file_notifier_socket ->
-                  if socket = file_notifier_socket then (
-                    Log.log ~section:`Server "Removing file notifier";
-                    Unix.close socket;
-                    false )
-                  else
-                    true)
-                file_notifiers
-            in
-            raw_connections := { !raw_connections with file_notifiers })
+        Connections.remove_file_notifier ~connections ~socket
   in
   let rec loop () =
     let { socket = server_socket; json_socket; persistent_clients; file_notifiers; _ } =
@@ -301,11 +288,7 @@ let request_handler_thread
           |> LanguageServer.Protocol.read_message
           >>| LanguageServer.Types.HandshakeClient.of_yojson
           |> function
-          | Some (Ok _) ->
-              Mutex.critical_section lock ~f:(fun () ->
-                  let { file_notifiers; _ } = !raw_connections in
-                  raw_connections :=
-                    { !raw_connections with file_notifiers = new_socket :: file_notifiers })
+          | Some (Ok _) -> Connections.add_file_notifier ~connections ~socket:new_socket
           | Some (Error error) -> Log.warning "Failed to parse handshake: %s" error
           | None -> Log.warning "Failed to parse handshake as LSP."
         with

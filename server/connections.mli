@@ -22,4 +22,8 @@ end) : sig
   val add_persistent_client : connections:State.connections -> socket:Network.Socket.t -> unit
 
   val remove_persistent_client : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val add_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val remove_file_notifier : connections:State.connections -> socket:Network.Socket.t -> unit
 end
