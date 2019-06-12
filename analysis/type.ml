@@ -246,6 +246,7 @@ and typed_dictionary_field = {
 }
 
 and t =
+  | Annotated of t
   | Bottom
   | Callable of t Record.Callable.record
   | Any
@@ -479,6 +480,7 @@ let reverse_substitute name =
 
 let rec pp format annotation =
   match annotation with
+  | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp annotation
   | Bottom -> Format.fprintf format "undefined"
   | Callable { kind; implementation; overloads; _ } ->
       let kind =
@@ -576,6 +578,7 @@ let rec pp_concise format annotation =
     String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
   in
   match annotation with
+  | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp_concise annotation
   | Bottom -> Format.fprintf format "?"
   | Callable { implementation; _ } ->
       let signature_to_string { annotation; parameters } =
@@ -647,6 +650,12 @@ let rec serialize = function
 
 
 let parametric name parameters = Parametric { name; parameters }
+
+let rec annotated annotation =
+  match annotation with
+  | Annotated annotation -> annotated annotation
+  | _ -> Annotated annotation
+
 
 let awaitable parameter = Parametric { name = "typing.Awaitable"; parameters = [parameter] }
 
@@ -815,6 +824,7 @@ let rec expression annotation =
   in
   let convert_annotation annotation =
     match annotation with
+    | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
         let convert_signature { annotation; parameters } =
@@ -1006,6 +1016,7 @@ module Transform = struct
     let rec visit_annotation ~state annotation =
       let visit_children annotation =
         match annotation with
+        | Annotated annotation -> Annotated (visit_annotation annotation ~state)
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
             let visit_overload { annotation; parameters } =
@@ -1804,6 +1815,8 @@ let rec create_logic ?(use_cache = true)
           | Some name -> Parametric { name; parameters }
           | None -> (
             match name with
+            | "typing.Annotated" when List.length parameters > 0 ->
+                annotated (List.hd_exn parameters)
             | "typing.Optional" when List.length parameters = 1 ->
                 optional (List.hd_exn parameters)
             | "tuple"
@@ -1947,6 +1960,7 @@ let elements annotation =
     let visit sofar annotation =
       let new_state =
         match annotation with
+        | Annotated _ -> Primitive "typing.Annotated" :: sofar
         | Callable _ -> Primitive "typing.Callable" :: sofar
         | Literal _ -> Primitive "typing_extensions.Literal" :: sofar
         | Optional _ -> Primitive "typing.Optional" :: sofar

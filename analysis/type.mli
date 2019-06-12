@@ -135,6 +135,7 @@ and typed_dictionary_field = {
 }
 
 and t =
+  | Annotated of t
   | Bottom
   | Callable of t Record.Callable.record
   | Any
@@ -172,6 +173,8 @@ val show_concise : t -> string
 val serialize : t -> string
 
 val parametric : string -> t list -> t
+
+val annotated : t -> t
 
 val awaitable : t -> t
 

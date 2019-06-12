@@ -642,6 +642,12 @@ let test_less_or_equal _ =
   assert_true (less_or_equal default ~left:!"list" ~right:!"typing.Sized");
   assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!"typing.Sized");
 
+  (* Annotated types. *)
+  assert_true (less_or_equal default ~left:(Type.annotated Type.integer) ~right:Type.float);
+  assert_true (less_or_equal default ~left:Type.integer ~right:(Type.annotated Type.float));
+  assert_true
+    (less_or_equal default ~left:(Type.annotated Type.integer) ~right:(Type.annotated Type.float));
+
   (* Parametric types. *)
   assert_true
     (less_or_equal default ~left:(Type.list Type.integer) ~right:(Type.iterator Type.integer));
@@ -1773,6 +1779,10 @@ let test_join _ =
   assert_join "typing.List[float]" "typing.Iterator[int]" "typing.Iterator[float]";
   assert_join "typing.List[float]" "float[int]" "typing.Union[typing.List[float], float[int]]";
 
+  (* Annotated types. *)
+  assert_join "typing.Annotated[int]" "float" "typing.Annotated[float]";
+  assert_join "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[float]";
+
   (* TODO(T41082573) throw here instead of unioning *)
   assert_join "typing.Tuple[int, int]" "typing.Iterator[int]" "typing.Iterator[int]";
   let bound_list_variadic =
@@ -2325,6 +2335,10 @@ let test_meet _ =
   assert_meet "typing.Sized" "list" "list";
   assert_meet "typing.List[int]" "typing.Sized" "typing.List[int]";
 
+  (* Annotated types. *)
+  assert_meet "typing.Annotated[int]" "float" "typing.Annotated[int]";
+  assert_meet "typing.Annotated[int]" "typing.Annotated[float]" "typing.Annotated[int]";
+
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";
   assert_meet "typing.Union[int, str]" "typing.Union[str, int]" "typing.Union[int, str]";
@@ -2477,12 +2491,12 @@ let test_meet _ =
     ~order:(make_potentially_inconsistent_order ~x_before_y:true)
     "B[int, str]"
     "A[str]"
-    "M[str]";
+    "M[$bottom]";
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:false)
     "B[int, str]"
     "A[str]"
-    "M[str]";
+    "M[$bottom]";
   ()
 
 
@@ -2697,7 +2711,7 @@ let test_sort_bottom_edges _ =
 
   (* We sort by target, which is not necessarily alphabetical. *)
   TypeOrder.sort_bottom_edges (module Handler) ~bottom:Type.Bottom;
-  assert_bottom_edges ["1"; "2"; "3"; "0"]
+  assert_bottom_edges ["0"; "2"; "3"; "1"]
 
 
 let test_check_integrity _ =
@@ -2770,19 +2784,19 @@ let test_to_dot _ =
   assert_equal
     ~printer:ident
     ( {|
-        digraph {
-          129913994[label="undefined"]
-          360125662[label="0"]
-          544641955[label="3"]
-          648017920[label="unknown"]
-          874630001[label="2"]
-          1061160138[label="1"]
-          360125662 -> 874630001
-          360125662 -> 1061160138[label="(str)"]
-          874630001 -> 544641955
-          1061160138 -> 544641955
-        }
-     |}
+      digraph {
+        129913994[label="undefined"]
+        198052753[label="1"]
+        648017920[label="unknown"]
+        691116823[label="3"]
+        768293459[label="2"]
+        924236761[label="0"]
+        198052753 -> 691116823
+        768293459 -> 691116823
+        924236761 -> 198052753[label="(str)"]
+        924236761 -> 768293459
+      }
+    |}
     |> Test.trim_extra_indentation )
     ("\n" ^ TypeOrder.to_dot order)
 
@@ -3059,6 +3073,10 @@ let test_solve_less_or_equal _ =
   assert_solve ~left:"Q" ~right:"T_Bound_C" [];
   assert_solve ~left:"C" ~right:"T_Bound_D" [];
   assert_solve ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
+
+  (* Annotated types. *)
+  assert_solve ~left:"typing.Annotated[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
+  assert_solve ~left:"C" ~right:"typing.Annotated[T_Unconstrained]" [["T_Unconstrained", "C"]];
 
   (* An explicit type variable can only be bound to its constraints *)
   assert_solve ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];

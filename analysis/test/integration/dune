@@ -11,6 +11,7 @@
 
 (tests
  (names
+  annotatedTest
   annotationTest
   assertTest
   assertOptionalTest

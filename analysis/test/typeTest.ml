@@ -72,6 +72,10 @@ let test_create _ =
     "typing.Union[typing.Optional[int], str]"
     (Type.optional (Type.union [Type.integer; Type.string]));
 
+  (* Annotated. *)
+  assert_create "typing.Annotated[int]" (Type.annotated Type.integer);
+  assert_create "typing.Annotated[int, Derp()]" (Type.annotated Type.integer);
+
   (* Nested renaming. *)
   assert_create "typing.Set[typing.Any]" (Type.set Type.Any);
   assert_create "typing.Dict[str, typing.Any]" (Type.dictionary ~key:Type.string ~value:Type.Any);

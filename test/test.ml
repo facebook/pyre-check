@@ -799,6 +799,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class TypeAlias: ...
 
         TypeVar = object()
+        Annotated = TypeAlias(object)
         List = TypeAlias(object)
         Dict = TypeAlias(object)
         Any = object()

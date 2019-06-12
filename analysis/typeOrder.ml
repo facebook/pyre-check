@@ -771,6 +771,8 @@ module OrderImplementation = struct
           | _, Type.Any
           | _, Type.Top ->
               [constraints]
+          | Type.Annotated left, _ -> solve_less_or_equal_throws order ~constraints ~left ~right
+          | _, Type.Annotated right -> solve_less_or_equal_throws order ~constraints ~left ~right
           | Type.Any, _ when any_is_bottom -> [constraints]
           | Type.Union lefts, right ->
               solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
@@ -960,6 +962,8 @@ module OrderImplementation = struct
         | _, Type.Bottom -> false
         | _, Type.Primitive "object" -> true
         | _, Type.Variable _ -> false
+        | Type.Annotated left, _ -> less_or_equal order ~left ~right
+        | _, Type.Annotated right -> less_or_equal order ~left ~right
         | ( Type.Parametric { name = left_name; parameters = left_parameters },
             Type.Parametric { name = right_name; parameters = right_parameters } ) ->
             let compare_parameter left right variable =
@@ -1371,6 +1375,8 @@ module OrderImplementation = struct
         | Type.Any, _
         | _, Type.Any ->
             Type.Any
+        | Type.Annotated left, _ -> Type.annotated (join order left right)
+        | _, Type.Annotated right -> Type.annotated (join order left right)
         (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
         | Type.Union left, Type.Union right -> Type.union (left @ right)
         | (Type.Union elements as union), other
@@ -1620,6 +1626,8 @@ module OrderImplementation = struct
         | Type.Bottom, _
         | _, Type.Bottom ->
             Type.Bottom
+        | Type.Annotated left, _ -> Type.annotated (meet order left right)
+        | _, Type.Annotated right -> Type.annotated (meet order left right)
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
             if less_or_equal order ~left:variable ~right:other then
@@ -2427,6 +2435,7 @@ module Builder = struct
     let singleton annotation = [Type.Bottom; annotation; Type.object_primitive] in
     [ [Type.Bottom; Type.object_primitive; Type.Any; Type.Top];
       (* Special forms *)
+      singleton (Type.Primitive "typing.Annotated");
       singleton (Type.Primitive "typing.Tuple");
       singleton Type.named_tuple;
       singleton Type.generic_primitive;
