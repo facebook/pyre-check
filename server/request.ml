@@ -7,7 +7,6 @@ open Core
 module ServerDependencies = Dependencies
 open Ast
 open Analysis
-open Network
 open State
 open Configuration.Server
 open Protocol
@@ -1032,7 +1031,6 @@ let process_get_definition_request
 
 
 let rec process
-    ~socket
     ~state:({ State.environment; lock; connections; errors; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
@@ -1053,21 +1051,19 @@ let rec process
       | TypeCheckRequest files ->
           SharedMem.collect `aggressive;
           process_type_check_request ~state ~configuration ~files
-      | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
-      | DisplayTypeErrors files ->
-          let configuration = { configuration with include_hints = true } in
-          process_display_type_errors_request ~state ~configuration ~files
       | StopRequest ->
-          Socket.write socket StopResponse;
           Mutex.critical_section lock ~f:(fun () ->
               Operations.stop
                 ~reason:"explicit request"
                 ~configuration:server_configuration
-                ~socket:!connections.socket);
-          { state; response = None }
+                ~socket:!connections.socket)
+      | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
+      | DisplayTypeErrors files ->
+          let configuration = { configuration with include_hints = true } in
+          process_display_type_errors_request ~state ~configuration ~files
       | LanguageServerProtocolRequest request ->
           parse_lsp ~configuration ~request:(Yojson.Safe.from_string request)
-          >>| (fun request -> process ~state ~socket ~configuration:server_configuration ~request)
+          >>| (fun request -> process ~state ~configuration:server_configuration ~request)
           |> Option.value ~default:{ state; response = None }
       | ClientShutdownRequest id -> process_client_shutdown_request ~state ~id
       | ClientExitRequest client ->

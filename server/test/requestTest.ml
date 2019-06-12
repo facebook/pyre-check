@@ -688,12 +688,11 @@ let test_open_document_state _ =
     Path.Set.add set (File.path file)
   in
   let configuration, state = initialize [] in
-  let { State.connections = { contents = { State.socket; _ } }; _ } = state in
   let assert_open_documents ~start ~request ~expected =
     let state = { state with open_documents = start } in
     let configuration = mock_server_configuration ~configuration in
     let ({ state = { open_documents; _ }; _ } : Request.response) =
-      Request.process ~configuration ~state ~socket ~request
+      Request.process ~configuration ~state ~request
     in
     assert_true (Path.Set.equal open_documents expected)
   in

@@ -252,8 +252,6 @@ let mock_server_state ~local_root
   }
 
 
-let mock_client_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null"
-
 let assert_response
     ~local_root
     ?state
@@ -288,7 +286,6 @@ let assert_response
   in
   let { Request.response; _ } =
     Request.process
-      ~socket:mock_client_socket
       ~state:mock_server_state
       ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request
@@ -1392,7 +1389,6 @@ let test_protocol_language_server_protocol context =
   let server_state = mock_server_state ~local_root (File.Handle.Table.create ()) in
   let { Request.response; _ } =
     Request.process
-      ~socket:mock_client_socket
       ~state:server_state
       ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request:(Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
@@ -1474,7 +1470,6 @@ let test_incremental_dependencies context =
     in
     let process request =
       Request.process
-        ~socket:mock_client_socket
         ~state:initial_state
         ~configuration:(CommandTest.mock_server_configuration ~local_root ())
         ~request
@@ -1548,7 +1543,6 @@ let test_incremental_lookups context =
   let initial_state = mock_server_state ~local_root ~initial_environment:environment errors in
   let { Request.state; _ } =
     Request.process
-      ~socket:mock_client_socket
       ~state:initial_state
       ~configuration:(CommandTest.mock_server_configuration ~local_root ())
       ~request
@@ -1631,7 +1625,6 @@ let test_incremental_repopulate context =
   in
   File.write file;
   Request.process
-    ~socket:mock_client_socket
     ~state:initial_state
     ~configuration:(CommandTest.mock_server_configuration ~local_root ())
     ~request:(Protocol.Request.TypeCheckRequest [file])
@@ -1728,7 +1721,6 @@ let test_incremental_attribute_caching context =
   in
   let request_typecheck state =
     Request.process
-      ~socket:Unix.stdout
       ~state
       ~configuration:server_configuration
       ~request:(Protocol.Request.TypeCheckRequest [File.create source_path])

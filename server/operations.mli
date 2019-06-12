@@ -36,10 +36,6 @@ val start
   unit ->
   State.t
 
-val stop
-  :  reason:string ->
-  configuration:Configuration.Server.t ->
-  socket:Unix.File_descr.t ->
-  unit
+val stop : reason:string -> configuration:Configuration.Server.t -> socket:Unix.File_descr.t -> 'a
 
 val connect : retries:int -> configuration:Configuration.Analysis.t -> Socket.t

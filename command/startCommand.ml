@@ -139,8 +139,7 @@ let computation_thread
                       Operations.stop
                         ~reason:"failed integrity check"
                         ~configuration
-                        ~socket:!(state.connections).socket;
-                      current_time)
+                        ~socket:!(state.connections).socket)
             else
               state.last_integrity_check
           in
@@ -152,7 +151,13 @@ let computation_thread
           let origin, request = Squeue.pop request_queue in
           let process_request ~socket ~state =
             Log.info "Processing request %a" Protocol.Request.pp request;
-            Request.process ~socket ~state ~configuration ~request
+
+            (* Stop requests are special - they require communicating back to the socket, but never
+               return, so we need to respond to the request before processing it. *)
+            ( match request with
+            | Server.Protocol.Request.StopRequest -> Socket.write socket StopResponse
+            | _ -> () );
+            Request.process ~state ~configuration ~request
           in
           handle_request state ~origin ~process:process_request
     in
@@ -431,8 +436,7 @@ let run
         pid )
       else (
         acquire_lock ~server_configuration;
-        serve ~socket ~json_socket ~server_configuration;
-        0 )
+        serve ~socket ~json_socket ~server_configuration )
     with
     | AlreadyRunning ->
         Log.info "Server is already running";
