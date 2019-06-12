@@ -278,6 +278,86 @@ let assert_source_equal left right =
     right
 
 
+let assert_source_equal_with_locations expected actual =
+  let compare_sources left_source right_source =
+    let equal_locations =
+      let location_equal left right =
+        Location.equal Location.Reference.any left
+        || Location.equal Location.Reference.any right
+        || Location.equal left right
+      in
+      List.for_all2_exn
+        ~f:location_equal
+        (Visit.collect_locations left_source)
+        (Visit.collect_locations right_source)
+    in
+    let equal_statements =
+      let { Source.statements = left; _ } = expected in
+      let { Source.statements = right; _ } = actual in
+      List.for_all2_exn ~f:Statement.equal left right
+    in
+    equal_statements && equal_locations
+  in
+  let pp_with_locations format { Source.statements; _ } =
+    let rec print_statement ~prefix statement =
+      let indented_prefix = prefix ^ "  " in
+      let pp_nested_expressions format statement =
+        let module Collector = Visit.ExpressionCollector (struct
+          type t = Expression.t
+
+          let predicate statement = Some statement
+        end)
+        in
+        let print_expression expression =
+          Format.fprintf
+            format
+            "%s%a -> (%a)\n"
+            indented_prefix
+            Expression.pp
+            expression
+            Location.Reference.pp_line_and_column
+            expression.Node.location
+        in
+        Collector.collect (Source.create [statement]) |> List.iter ~f:print_expression
+      in
+      let pp_nested_statements _ statement =
+        let module Collector = Visit.StatementCollector (struct
+          type t = Statement.t
+
+          let visit_children current_statement = Statement.equal statement current_statement
+
+          let predicate current_statement =
+            Option.some_if (not (Statement.equal statement current_statement)) statement
+        end)
+        in
+        Collector.collect (Source.create [statement])
+        |> List.iter ~f:(print_statement ~prefix:indented_prefix)
+      in
+      Format.fprintf
+        format
+        "%s%a -> (%a)\n%sNested Expressions:\n%a%sNested Statements:\n%a"
+        prefix
+        Statement.pp
+        statement
+        Location.Reference.pp_line_and_column
+        statement.Node.location
+        indented_prefix
+        pp_nested_expressions
+        statement
+        indented_prefix
+        pp_nested_statements
+        statement
+    in
+    List.iter statements ~f:(print_statement ~prefix:"")
+  in
+  assert_equal
+    ~cmp:compare_sources
+    ~printer:(fun source -> Format.asprintf "\n%a" pp_with_locations source)
+    ~pp_diff:(diff ~print:pp_with_locations)
+    expected
+    actual
+
+
 let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
 
 let add_defaults_to_environment ~configuration environment_handler =

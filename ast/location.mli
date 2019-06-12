@@ -41,6 +41,8 @@ module Reference : sig
   val any : t
 
   val synthetic : t
+
+  val pp_line_and_column : Format.formatter -> t -> unit
 end
 
 module Instantiated : sig

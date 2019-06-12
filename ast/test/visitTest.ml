@@ -93,6 +93,46 @@ let test_collect _ =
         +Expression (+Float 3.0) ] )
 
 
+let test_collect_location _ =
+  let assert_collect_location source expected_locations =
+    let source = parse source in
+    let actual_locations = Visit.collect_locations source in
+    let expected_locations =
+      let create_location (start_line, start_column, end_line, end_column) =
+        { Location.path = String.hash "test.py";
+          start = { Ast.Location.line = start_line; column = start_column };
+          stop = { Ast.Location.line = end_line; column = end_column }
+        }
+      in
+      List.map ~f:create_location expected_locations
+    in
+    let equal left right = List.equal left right ~equal:Location.equal in
+    let printer locations =
+      Format.asprintf "%a" Sexp.pp [%message (locations : Location.t list)]
+    in
+    assert_equal ~cmp:equal ~printer expected_locations actual_locations
+  in
+  assert_collect_location
+    {|
+      if test:
+        1
+      else:
+        2
+    |}
+    [ (* Integer 2 expression *)
+      5, 2, 5, 3;
+      (* Integer 1 expression *)
+      3, 2, 3, 3;
+      (* test expression *)
+      2, 3, 2, 7;
+      (* Entire if statement. *)
+      2, 0, 5, 3;
+      (* orelse statement *)
+      5, 2, 5, 3;
+      (* body statement *)
+      3, 2, 3, 3 ]
+
+
 let test_statement_visitor _ =
   let module StatementVisitor = struct
     type t = int String.Table.t
@@ -162,6 +202,7 @@ let test_statement_visitor_source _ =
 let () =
   "visit"
   >::: [ "collect" >:: test_collect;
+         "collect_location" >:: test_collect_location;
          "statement_visitor" >:: test_statement_visitor;
          "statement_visitor_source" >:: test_statement_visitor_source ]
   |> Test.run

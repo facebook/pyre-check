@@ -294,6 +294,26 @@ module StatementCollector (Predicate : StatementPredicate) = struct
   let collect source = CollectingVisit.visit [] source
 end
 
+let collect_locations source =
+  let module Collector =
+    Collector
+      (struct
+        type t = Location.t
+
+        let predicate expression = Some (Node.location expression)
+      end)
+      (struct
+        type t = Location.t
+
+        let visit_children _ = true
+
+        let predicate statement = Some (Node.location statement)
+      end)
+  in
+  let expression_locations, statement_locations = Collector.collect source in
+  expression_locations @ statement_locations
+
+
 let collect_calls statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct

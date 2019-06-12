@@ -40,6 +40,10 @@ module Reference = struct
     Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
 
 
+  let pp_line_and_column format { start; stop; _ } =
+    Format.fprintf format "%d:%d-%d:%d" start.line start.column stop.line stop.column
+
+
   let show = show Int.pp
 
   module Map = Map.Make (struct
