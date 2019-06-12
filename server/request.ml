@@ -1076,10 +1076,7 @@ let rec process
           process_type_check_request ~state ~configuration ~files
       | StopRequest ->
           Mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop
-                ~reason:"explicit request"
-                ~configuration:server_configuration
-                ~socket:!(connections.connections).socket)
+              Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
       | DisplayTypeErrors files ->
           let configuration = { configuration with include_hints = true } in
@@ -1267,10 +1264,7 @@ let rec process
         Statistics.log_exception uncaught_exception ~fatal:should_stop ~origin:"server";
         if should_stop then
           Mutex.critical_section connections.lock ~f:(fun () ->
-              Operations.stop
-                ~reason:"uncaught exception"
-                ~configuration:server_configuration
-                ~socket:!(connections.connections).socket);
+              Operations.stop ~reason:"uncaught exception" ~configuration:server_configuration);
         { state; response = None }
   in
   Statistics.performance

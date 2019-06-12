@@ -3,7 +3,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-open Core
 open Pyre
 open Network
 
@@ -35,6 +34,6 @@ val start
   unit ->
   State.t
 
-val stop : reason:string -> configuration:Configuration.Server.t -> socket:Unix.File_descr.t -> 'a
+val stop : reason:string -> configuration:Configuration.Server.t -> 'a
 
 val connect : retries:int -> configuration:Configuration.Analysis.t -> Socket.t

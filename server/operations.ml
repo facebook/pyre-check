@@ -151,7 +151,6 @@ let stop
                      pid_path
                    ; _
                    }
-    ~socket
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();
 
@@ -161,7 +160,6 @@ let stop
   Path.remove socket_link;
   Path.remove json_socket_link;
   Path.remove pid_path;
-  Unix.close socket;
   Worker.killall ();
   exit 0
 
