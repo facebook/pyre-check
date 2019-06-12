@@ -62,7 +62,7 @@ let test_define_locations _ =
 
 let assert_source_locations source statements =
   let parsed_source = parse source in
-  let expected_source = Source.create ~handle:(File.Handle.create "test.py") statements in
+  let expected_source = { parsed_source with Source.statements } in
   assert_source_equal_with_locations expected_source parsed_source
 
 

@@ -279,25 +279,7 @@ let assert_source_equal left right =
 
 
 let assert_source_equal_with_locations expected actual =
-  let compare_sources left_source right_source =
-    let equal_locations =
-      let location_equal left right =
-        Location.equal Location.Reference.any left
-        || Location.equal Location.Reference.any right
-        || Location.equal left right
-      in
-      List.for_all2_exn
-        ~f:location_equal
-        (Visit.collect_locations left_source)
-        (Visit.collect_locations right_source)
-    in
-    let equal_statements =
-      let { Source.statements = left; _ } = expected in
-      let { Source.statements = right; _ } = actual in
-      List.for_all2_exn ~f:Statement.equal left right
-    in
-    equal_statements && equal_locations
-  in
+  Node.in_testing := true;
   let pp_with_locations format { Source.statements; _ } =
     let rec print_statement ~prefix statement =
       let indented_prefix = prefix ^ "  " in
@@ -364,7 +346,7 @@ let assert_source_equal_with_locations expected actual =
     List.iter statements ~f:(print_statement ~prefix:"")
   in
   assert_equal
-    ~cmp:compare_sources
+    ~cmp:Source.equal
     ~printer:(fun source -> Format.asprintf "\n%a" pp_with_locations source)
     ~pp_diff:(diff ~print:pp_with_locations)
     expected
