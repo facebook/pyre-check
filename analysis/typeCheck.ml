@@ -2648,7 +2648,6 @@ module State (Context : Context) = struct
             >>| Annotated.Class.create
             >>| Annotated.Class.attributes ~resolution
             >>| namedtuple_attribute_annotations
-            |> Option.value ~default:[]
           in
           let is_uniform_sequence annotation =
             match annotation with
@@ -2670,23 +2669,11 @@ module State (Context : Context) = struct
                 | Type.Parametric { parameters = [parameter]; _ } -> parameter
                 | _ -> Type.Top )
           in
-          let is_nonuniform_sequence ~minimum_length annotation =
-            (* TODO(32692300): this should support tuple subclasses as well. *)
-            match annotation with
-            | Type.Tuple (Type.Bounded (Concrete parameters))
-              when minimum_length <= List.length parameters ->
-                true
-            | annotation
-              when is_named_tuple annotation
-                   && minimum_length <= List.length (get_named_tuple_parameters annotation) ->
-                true
-            | _ -> false
-          in
           let nonuniform_sequence_parameters annotation =
             match annotation with
-            | Type.Tuple (Type.Bounded (Concrete parameters)) -> parameters
+            | Type.Tuple (Type.Bounded (Concrete parameters)) -> Some parameters
             | annotation when is_named_tuple annotation -> get_named_tuple_parameters annotation
-            | _ -> []
+            | _ -> None
           in
           match target_value with
           | Name name ->
@@ -3212,8 +3199,7 @@ module State (Context : Context) = struct
               in
               List.fold elements ~init:state ~f:propagate
           | List elements
-          | Tuple elements
-            when is_nonuniform_sequence ~minimum_length:(List.length elements - 1) guide ->
+          | Tuple elements ->
               let left, starred, right =
                 let is_starred { Node.value; _ } =
                   match value with
@@ -3234,69 +3220,64 @@ module State (Context : Context) = struct
                 in
                 left, starred, right
               in
-              let annotations =
-                let annotations = nonuniform_sequence_parameters guide in
-                let has_starred_assignee = not (List.is_empty starred) in
-                let left, tail = List.split_n annotations (List.length left) in
-                let starred, right = List.split_n tail (List.length tail - List.length right) in
-                let starred =
-                  if not (List.is_empty starred) then
-                    let annotation =
-                      List.fold starred ~init:Type.Bottom ~f:(Resolution.join resolution)
-                      |> Type.list
-                    in
-                    [annotation]
-                  else if has_starred_assignee then
-                    [Type.tuple []]
-                  else
-                    []
-                in
-                left @ starred @ right
-              in
               let assignees = left @ starred @ right in
               let state, annotations =
-                if List.length annotations <> List.length assignees then
-                  let state =
-                    emit_error
-                      ~state
-                      ~location
-                      ~kind:
-                        (Error.Unpack
-                           { expected_count = List.length assignees;
-                             unpack_problem = CountMismatch (List.length annotations)
-                           })
-                  in
-                  state, List.map assignees ~f:(fun _ -> Type.Top)
-                else
-                  state, annotations
+                match guide with
+                | Type.Any -> state, List.map assignees ~f:(fun _ -> Type.Any)
+                | Type.Top -> state, List.map assignees ~f:(fun _ -> Type.Top)
+                | _ -> (
+                  match nonuniform_sequence_parameters guide with
+                  | None ->
+                      let state =
+                        emit_error
+                          ~state
+                          ~location
+                          ~kind:
+                            (Error.Unpack
+                               { expected_count = List.length assignees;
+                                 unpack_problem = UnacceptableType guide
+                               })
+                      in
+                      state, List.map assignees ~f:(fun _ -> Type.Top)
+                  | Some annotations ->
+                      let annotations =
+                        let has_starred_assignee = not (List.is_empty starred) in
+                        let left, tail = List.split_n annotations (List.length left) in
+                        let starred, right =
+                          List.split_n tail (List.length tail - List.length right)
+                        in
+                        let starred =
+                          if not (List.is_empty starred) then
+                            let annotation =
+                              List.fold starred ~init:Type.Bottom ~f:(Resolution.join resolution)
+                              |> Type.list
+                            in
+                            [annotation]
+                          else if has_starred_assignee then
+                            [Type.tuple []]
+                          else
+                            []
+                        in
+                        left @ starred @ right
+                      in
+                      if List.length annotations <> List.length assignees then
+                        let state =
+                          emit_error
+                            ~state
+                            ~location
+                            ~kind:
+                              (Error.Unpack
+                                 { expected_count = List.length assignees;
+                                   unpack_problem = CountMismatch (List.length annotations)
+                                 })
+                        in
+                        state, List.map assignees ~f:(fun _ -> Type.Top)
+                      else
+                        state, annotations )
               in
               List.zip_exn assignees annotations
               |> List.fold ~init:state ~f:(fun state (target, guide) ->
                      forward_assign ~state ~target ~guide ~resolved:guide ~expression:None)
-          | List elements
-          | Tuple elements ->
-              let kind =
-                match guide with
-                | Type.Tuple (Type.Bounded (Concrete parameters)) ->
-                    Error.Unpack
-                      { expected_count = List.length elements;
-                        unpack_problem = CountMismatch (List.length parameters)
-                      }
-                | annotation when is_named_tuple annotation ->
-                    Error.Unpack
-                      { expected_count = List.length elements;
-                        unpack_problem =
-                          CountMismatch (List.length (get_named_tuple_parameters annotation))
-                      }
-                | _ ->
-                    Error.Unpack
-                      { expected_count = List.length elements;
-                        unpack_problem = UnacceptableType guide
-                      }
-              in
-              let state = emit_error ~state ~location ~kind in
-              List.fold elements ~init:state ~f:(fun state target ->
-                  forward_assign ~state ~target ~guide:Type.Top ~resolved:Type.Top ~expression:None)
           | _ ->
               if Option.is_some annotation then
                 emit_error ~state ~location ~kind:(Error.IllegalAnnotationTarget target)

@@ -1069,10 +1069,7 @@ let test_forward_statement _ =
     "x, y = z"
     ["x", Type.integer; "y", Type.integer; "z", Type.Tuple (Type.Unbounded Type.integer)];
   assert_forward
-    ~errors:
-      (`Specific
-        [ "Unable to unpack [23]: Unable to unpack `unknown` into 2 values.";
-          "Unable to unpack [23]: Unable to unpack `int` into 2 values." ])
+    ~errors:(`Specific ["Unable to unpack [23]: Unable to unpack `int` into 2 values."])
     []
     "(x, y), z = 1"
     ["x", Type.Top; "y", Type.Top; "z", Type.Top];
