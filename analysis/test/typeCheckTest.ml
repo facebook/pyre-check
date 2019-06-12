@@ -13,6 +13,12 @@ open Test
 
 let resolution = Test.resolution ()
 
+module DefaultContext = struct
+  let configuration = Test.mock_configuration
+
+  let define = +Test.mock_define
+end
+
 module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false)
              ?(resolution = Test.resolution ())
@@ -166,17 +172,11 @@ let test_initial _ =
 
 
 let test_less_or_equal _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   (* <= *)
   assert_true (State.less_or_equal ~left:(create []) ~right:(create []));
   assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
@@ -198,17 +198,11 @@ let test_less_or_equal _ =
 
 
 let test_join _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   let assert_state_equal =
     assert_equal
       ~cmp:State.equal
@@ -237,17 +231,11 @@ let test_join _ =
 
 
 let test_widen _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   let assert_state_equal =
     assert_equal
       ~cmp:State.equal
@@ -270,17 +258,11 @@ let test_widen _ =
 
 
 let test_check_annotation _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   let assert_check_annotation source expression descriptions =
     let resolution = Test.resolution ~sources:(parse source :: Test.typeshed_stubs ()) () in
     let state = create ~resolution [] in
@@ -496,17 +478,11 @@ type parameter_kind =
   | KeywordParameter
 
 let test_forward_expression _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   let assert_state_equal =
     assert_equal
       ~cmp:State.equal
@@ -1350,17 +1326,11 @@ let test_forward_statement _ =
 
 
 let test_forward _ =
-  let module Context = struct
-    let configuration = Test.mock_configuration
-
-    let define = +Test.mock_define
-  end
-  in
   let create =
-    let module Create = Create (Context) in
+    let module Create = Create (DefaultContext) in
     Create.create
   in
-  let module State = State (Context) in
+  let module State = State (DefaultContext) in
   let assert_state_equal =
     assert_equal
       ~cmp:State.equal
