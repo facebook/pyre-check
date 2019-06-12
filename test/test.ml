@@ -345,10 +345,41 @@ let assert_source_equal_with_locations expected actual =
     in
     List.iter statements ~f:(print_statement ~prefix:"")
   in
+  let pp_diff_with_locations format (expected, actual) =
+    (* Don't diff location discrepancies due to Location.any. *)
+    let create_separate_blocks pp_string =
+      pp_string |> String.split ~on:'\n' |> String.concat ~sep:"\n\n"
+    in
+    let expected_string =
+      Format.asprintf "%a" pp_with_locations expected |> create_separate_blocks
+    in
+    let actual_string = Format.asprintf "%a" pp_with_locations actual |> create_separate_blocks in
+    let collect_non_anys difference =
+      let matches regex line = Str.string_match (Str.regexp regex) line 0 in
+      let is_removed_any = matches "-.*\\(-1:-1--1:-1\\)" in
+      let is_difference line = matches "-.*" line || matches "+.*" line in
+      let is_context line =
+        not (String.is_empty (String.strip line) || matches ".*\\(.*-.*\\)" line)
+      in
+      let rec collect_non_anys collected = function
+        | removed :: _ :: rest when is_removed_any removed -> collect_non_anys collected rest
+        | line :: rest when is_difference line || is_context line ->
+            collect_non_anys (line :: collected) rest
+        | _ :: rest -> collect_non_anys collected rest
+        | _ -> collected
+      in
+      collect_non_anys [] difference |> List.rev
+    in
+    Format.asprintf "%a" (diff ~print:String.pp) (expected_string, actual_string)
+    |> String.split ~on:'\n'
+    |> collect_non_anys
+    |> String.concat ~sep:"\n"
+    |> Format.fprintf format "%s"
+  in
   assert_equal
     ~cmp:Source.equal
     ~printer:(fun source -> Format.asprintf "\n%a" pp_with_locations source)
-    ~pp_diff:(diff ~print:pp_with_locations)
+    ~pp_diff:pp_diff_with_locations
     expected
     actual
 
