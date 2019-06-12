@@ -10,6 +10,26 @@ open Expression
 
 type t = Identifier.t list [@@deriving compare, eq, sexp, hash]
 
+let create ?prefix name =
+  let name =
+    if String.equal name "" then
+      []
+    else if String.equal name "..." then
+      [name]
+    else
+      String.split ~on:'.' name
+  in
+  match prefix with
+  | None
+  | Some [""] ->
+      name
+  | Some prefix -> prefix @ name
+
+
+let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf format "%s"
+
+let show reference = Format.asprintf "%a" pp reference
+
 module Map = Map.Make (struct
   type nonrec t = t
 
@@ -50,27 +70,27 @@ include Hashable.Make (struct
   let t_of_sexp = t_of_sexp
 end)
 
-let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf format "%s"
+module Key = struct
+  type nonrec t = t
 
-let show reference = Format.asprintf "%a" pp reference
+  let to_string = show
+
+  let compare = compare
+
+  type out = t
+
+  let from_string name = create name
+end
+
+module ListValue = struct
+  type nonrec t = t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Reference List"
+end
 
 let empty = []
-
-let create ?prefix name =
-  let name =
-    if String.equal name "" then
-      []
-    else if String.equal name "..." then
-      [name]
-    else
-      String.split ~on:'.' name
-  in
-  match prefix with
-  | None
-  | Some [""] ->
-      name
-  | Some prefix -> prefix @ name
-
 
 let create_from_list names = names
 

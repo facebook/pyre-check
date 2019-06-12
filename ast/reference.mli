@@ -7,6 +7,8 @@ open Core
 
 type t [@@deriving compare, eq, sexp, show, hash]
 
+val create : ?prefix:t -> string -> t
+
 module Map : Map.S with type Key.t = t
 
 module SerializableMap : SerializableMap.S with type key = t
@@ -15,9 +17,11 @@ module Set : Set.S with type Elt.t = t
 
 include Hashable with type t := t
 
-val empty : t
+module Key : Memory.KeyType with type t = t and type out = t
 
-val create : ?prefix:t -> string -> t
+module ListValue : Value.Type with type t = t list
+
+val empty : t
 
 val create_from_list : Identifier.t list -> t
 

@@ -5,6 +5,7 @@
 
 open Core
 open Ast
+module SharedMemory = Memory
 
 type index = {
   function_keys: Reference.t Hash_set.t File.Handle.Table.t;
@@ -71,6 +72,8 @@ val to_dot
   string
 
 module Calls : sig
+  module SharedMemory : module type of SharedMemory.WithCache (Reference.Key) (Reference.ListValue)
+
   val set : caller:Reference.t -> callees:Reference.t list -> unit
 
   val get : caller:Reference.t -> Reference.t list

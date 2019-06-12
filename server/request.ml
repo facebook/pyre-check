@@ -469,6 +469,23 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let map =
           extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:handles)
         in
+        (* Calls *)
+        let map =
+          let keys =
+            let open Statement.Define in
+            List.filter_map handles ~f:Ast.SharedMemory.Sources.get
+            |> List.concat_map
+                 ~f:
+                   (Preprocessing.defines
+                      ~include_stubs:true
+                      ~include_nested:true
+                      ~include_toplevels:true)
+            |> List.map ~f:(fun { Node.value = { signature = { name; _ }; _ }; _ } -> name)
+          in
+          extend_map
+            map
+            ~new_map:(Analysis.Dependencies.Calls.SharedMemory.compute_hashes_to_keys ~keys)
+        in
         map
         |> Map.to_alist
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
@@ -626,6 +643,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Coverage.SharedMemory.Decoded (key, value) ->
               Some
                 (Coverage.CoverageValue.description, File.Handle.show key, value >>| Coverage.show)
+          | Analysis.Dependencies.Calls.SharedMemory.Decoded (key, value) ->
+              Some
+                ( Reference.ListValue.description,
+                  Reference.show key,
+                  value >>| List.map ~f:Reference.show >>| String.concat ~sep:"," )
           | ResolutionSharedMemory.Decoded (key, value) ->
               Some
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,
