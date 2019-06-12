@@ -303,9 +303,20 @@ let assert_source_equal_with_locations expected actual =
       let indented_prefix = prefix ^ "  " in
       let pp_nested_expressions format statement =
         let module Collector = Visit.ExpressionCollector (struct
-          type t = Expression.t
+          type t = Expression.t list
 
-          let predicate statement = Some statement
+          let predicate expression =
+            (* Pick up Identifiers with locations. *)
+            let open Expression in
+            match Node.value expression with
+            | Call { arguments; _ } ->
+                let extract_identifiers sofar = function
+                  | { Call.Argument.name = Some { Node.value = name; location }; _ } ->
+                      Node.create ~location (Name (Name.Identifier name)) :: sofar
+                  | _ -> sofar
+                in
+                List.fold ~f:extract_identifiers ~init:[expression] arguments |> Option.some
+            | _ -> Some [expression]
         end)
         in
         let print_expression expression =
@@ -318,7 +329,9 @@ let assert_source_equal_with_locations expected actual =
             Location.Reference.pp_line_and_column
             expression.Node.location
         in
-        Collector.collect (Source.create [statement]) |> List.iter ~f:print_expression
+        Collector.collect (Source.create [statement])
+        |> List.concat
+        |> List.iter ~f:print_expression
       in
       let pp_nested_statements _ statement =
         let module Collector = Visit.StatementCollector (struct

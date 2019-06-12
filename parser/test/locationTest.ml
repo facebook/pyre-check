@@ -7,6 +7,7 @@ open Core
 open OUnit2
 open Ast
 open Expression
+open Statement
 open Test
 
 let assert_statement_location
@@ -59,46 +60,50 @@ let test_define_locations _ =
   assert_statement_location ~statement:source_code ~start:(1, 0) ~stop:(2, 15)
 
 
-(* Tests below need more granualer helper function for testing locations *)
+let assert_source_locations source statements =
+  let parsed_source = parse source in
+  let expected_source = Source.create ~handle:(File.Handle.create "test.py") statements in
+  assert_source_equal_with_locations expected_source parsed_source
+
+
+let node ~start:(start_line, start_column)
+         ~stop:(stop_line, stop_column) =
+  let location =
+    { Location.path = String.hash "test.py";
+      start = { Location.line = start_line; Location.column = start_column };
+      stop = { Location.line = stop_line; Location.column = stop_column }
+    }
+  in
+  Node.create ~location
+
 
 let test_tuple_locations _ =
-  let parsed_source = parse_single_statement "(1, 2) = a" in
-  match parsed_source with
-  | { Node.value = Statement.Assign { target = { Node.location; _ }; _ }; _ } ->
-      let expected_location =
-        { Ast.Location.path = Location.path location;
-          start = { Ast.Location.line = 1; column = 1 };
-          stop = { Ast.Location.line = 1; column = 5 }
-        }
-      in
-      assert_equal ~cmp:Location.equal ~printer:Location.show expected_location location
-  | _ -> assert_unreached ()
+  assert_source_locations
+    {|
+      (1, 2) = a
+    |}
+    [ +Assign
+         { Assign.target = node ~start:(2, 1) ~stop:(2, 5) (Tuple [+Integer 1; +Integer 2]);
+           annotation = None;
+           value = !"a";
+           parent = None
+         } ]
 
 
 let test_call_arguments_locations _ =
-  let source_code = "fun(1, second = 2)" in
-  let statement = parse_single_statement source_code in
-  let arguments =
-    let print_argument { Call.Argument.name; value } =
-      Format.asprintf
-        "name=%s value=%a"
-        ( Option.map name ~f:(fun { Node.value; location } ->
-              Format.asprintf "%a/%s" String.pp value (Location.Reference.show location))
-        |> Option.value ~default:"(none)" )
-        Expression.pp
-        value
-    in
-    Visit.collect_calls statement
-    |> List.map ~f:Node.value
-    |> List.map ~f:(fun { Call.arguments; _ } -> arguments)
-    |> List.concat
-    |> List.map ~f:print_argument
-  in
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    [ "name=(none) value=1";
-      Format.sprintf "name=second/%d:1:7-1:13 value=2" (String.hash "test.py") ]
-    arguments
+  assert_source_locations
+    {|
+      fun(1, second = 2)
+    |}
+    [ +Expression
+         (+Call
+             { callee = +Name (Name.Identifier "fun");
+               arguments =
+                 [ { Call.Argument.name = None; value = +Integer 1 };
+                   { Call.Argument.name = Some (node ~start:(2, 7) ~stop:(2, 13) "second");
+                     value = +Integer 2
+                   } ]
+             }) ]
 
 
 let () =

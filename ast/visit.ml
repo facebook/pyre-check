@@ -298,9 +298,18 @@ let collect_locations source =
   let module Collector =
     Collector
       (struct
-        type t = Location.t
+        type t = Location.t list
 
-        let predicate expression = Some (Node.location expression)
+        let predicate { Node.location; value } =
+          (* Pick up locations on Identifier nodes. *)
+          match value with
+          | Call { arguments; _ } ->
+              let extract_locations sofar = function
+                | { Call.Argument.name = Some { Node.location; _ }; _ } -> location :: sofar
+                | _ -> sofar
+              in
+              List.fold ~f:extract_locations ~init:[location] arguments |> Option.some
+          | _ -> Some [location]
       end)
       (struct
         type t = Location.t
@@ -311,7 +320,7 @@ let collect_locations source =
       end)
   in
   let expression_locations, statement_locations = Collector.collect source in
-  expression_locations @ statement_locations
+  List.concat expression_locations @ statement_locations
 
 
 let collect_calls statement =
