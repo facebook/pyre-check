@@ -77,6 +77,226 @@ let node ~start:(start_line, start_column)
   Node.create ~location
 
 
+let test_call_locations _ =
+  assert_source_locations
+    "a[1 < 2]"
+    [ +Expression
+         (+Call
+             { callee =
+                 node
+                   ~start:(1, 0)
+                   ~stop:(1, 1)
+                   (Name
+                      (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value =
+                       node
+                         ~start:(1, 2)
+                         ~stop:(1, 3) (* TODO(T45713676): This should be (1, 7). *)
+                         (ComparisonOperator
+                            { ComparisonOperator.left = +Integer 1;
+                              operator = ComparisonOperator.LessThan;
+                              right = +Integer 2
+                            })
+                   } ]
+             }) ];
+  assert_source_locations
+    "a.__getitem__(argument)"
+    [ +Expression
+         (+Call
+             { callee =
+                 node
+                   ~start:(1, 0)
+                   ~stop:(1, 13)
+                   (Name
+                      (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false }));
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value = node ~start:(1, 14) ~stop:(1, 22) (Name (Name.Identifier "argument"))
+                   } ]
+             }) ];
+  assert_source_locations
+    "a(arg1,  arg2,)"
+    [ +Expression
+         (+Call
+             { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"))
+                   };
+                   { Call.Argument.name = None;
+                     value = node ~start:(1, 9) ~stop:(1, 13) (Name (Name.Identifier "arg2"))
+                   } ]
+             }) ];
+  assert_source_locations
+    "a(arg1)(arg2)"
+    [ +Expression
+         (+Call
+             { callee =
+                 +Call
+                    { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                      arguments =
+                        [ { Call.Argument.name = None;
+                            value = node ~start:(1, 2) ~stop:(1, 6) (Name (Name.Identifier "arg1"))
+                          } ]
+                    };
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value = node ~start:(1, 8) ~stop:(1, 12) (Name (Name.Identifier "arg2"))
+                   } ]
+             }) ];
+  assert_source_locations
+    "a(  arg1)((arg2)  )"
+    [ +Expression
+         (+Call
+             { callee =
+                 +Call
+                    { callee = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                      arguments =
+                        [ { Call.Argument.name = None;
+                            value = node ~start:(1, 4) ~stop:(1, 8) (Name (Name.Identifier "arg1"))
+                          } ]
+                    };
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value = node ~start:(1, 11) ~stop:(1, 15) (Name (Name.Identifier "arg2"))
+                   } ]
+             }) ];
+  assert_source_locations
+    "foo(1, a = 2, *args, **kwargs)"
+    [ +Expression
+         (+Call
+             { callee = !"foo";
+               arguments =
+                 [ { Call.Argument.name = None; value = +Integer 1 };
+                   { Call.Argument.name = Some ~+"a"; value = +Integer 2 };
+                   { Call.Argument.name = None;
+                     value = node ~start:(1, 14) ~stop:(1, 19) (Starred (Starred.Once !"args"))
+                   };
+                   { Call.Argument.name = None;
+                     value = node ~start:(1, 21) ~stop:(1, 29) (Starred (Starred.Twice !"kwargs"))
+                   } ]
+             }) ];
+  assert_source_locations
+    "foo(1, second = 2)"
+    [ +Expression
+         (+Call
+             { callee = +Name (Name.Identifier "foo");
+               arguments =
+                 [ { Call.Argument.name = None; value = +Integer 1 };
+                   { Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                     value = node ~start:(1, 16) ~stop:(1, 17) (Integer 2)
+                   } ]
+             }) ];
+  assert_source_locations
+    "foo(1, second = \n2)"
+    [ +Expression
+         (+Call
+             { callee = +Name (Name.Identifier "foo");
+               arguments =
+                 [ { Call.Argument.name = None; value = +Integer 1 };
+                   { Call.Argument.name = Some (node ~start:(1, 7) ~stop:(1, 13) "second");
+                     value = node ~start:(2, 0) ~stop:(2, 1) (Integer 2)
+                   } ]
+             }) ]
+
+
+let test_name_locations _ =
+  assert_source_locations
+    "a.b.c"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 5)
+            (Name
+               (Name.Attribute
+                  { base =
+                      node
+                        ~start:(1, 0)
+                        ~stop:(1, 3)
+                        (Name
+                           (Name.Attribute
+                              { base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                                attribute = "b";
+                                special = false
+                              }));
+                    attribute = "c";
+                    special = false
+                  }))) ];
+  assert_source_locations
+    "((a)).b"
+    [ +Expression
+         (node
+            ~start:
+              (1, 2) (* TODO(T45713676): Start should take parens into account if stop does. *)
+            ~stop:(1, 7)
+            (Name
+               (Name.Attribute
+                  { base = node ~start:(1, 2) ~stop:(1, 3) (Name (Name.Identifier "a"));
+                    attribute = "b";
+                    special = false
+                  }))) ];
+  assert_source_locations
+    "(a  \n).b"
+    [ +Expression
+         (node
+            ~start:(1, 1) (* TODO(T45713676): Same as above. *)
+            ~stop:(2, 3)
+            (Name
+               (Name.Attribute
+                  { base = node ~start:(1, 1) ~stop:(1, 2) (Name (Name.Identifier "a"));
+                    attribute = "b";
+                    special = false
+                  }))) ];
+  assert_source_locations
+    {|
+      a. \
+      b
+    |}
+    [ +Expression
+         (node
+            ~start:(2, 0)
+            ~stop:(3, 1)
+            (Name
+               (Name.Attribute
+                  { base = node ~start:(2, 0) ~stop:(2, 1) (Name (Name.Identifier "a"));
+                    attribute = "b";
+                    special = false
+                  }))) ];
+  assert_source_locations
+    "a.b;"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 3)
+            (Name
+               (Name.Attribute
+                  { base = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
+                    attribute = "b";
+                    special = false
+                  }))) ];
+  assert_source_locations
+    "a(arg).b"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 8)
+            (Name
+               (Name.Attribute
+                  { base =
+                      node
+                        ~start:(1, 0)
+                        ~stop:(1, 1) (* TODO(T45713676): Should be (1, 6). *)
+                        (Call
+                           { callee = !"a";
+                             arguments = [{ Call.Argument.name = None; value = !"arg" }]
+                           });
+                    attribute = "b";
+                    special = false
+                  }))) ]
+
+
 let test_tuple_locations _ =
   assert_source_locations
     {|
@@ -90,27 +310,12 @@ let test_tuple_locations _ =
          } ]
 
 
-let test_call_arguments_locations _ =
-  assert_source_locations
-    {|
-      fun(1, second = 2)
-    |}
-    [ +Expression
-         (+Call
-             { callee = +Name (Name.Identifier "fun");
-               arguments =
-                 [ { Call.Argument.name = None; value = +Integer 1 };
-                   { Call.Argument.name = Some (node ~start:(2, 7) ~stop:(2, 13) "second");
-                     value = +Integer 2
-                   } ]
-             }) ]
-
-
 let () =
-  "parsing"
+  "parsed_locations"
   >::: [ "string_locations" >:: test_string_locations;
          "multiline_strings_positions" >:: test_multiline_strings_locations;
          "define_locations" >:: test_define_locations;
-         "tuple_locations" >:: test_tuple_locations;
-         "call_arguments_locations" >:: test_call_arguments_locations ]
+         "call_locations" >:: test_call_locations;
+         "name_locations" >:: test_name_locations;
+         "tuple_locations" >:: test_tuple_locations ]
   |> Test.run

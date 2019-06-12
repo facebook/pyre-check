@@ -3323,7 +3323,7 @@ let () =
   >::: [ "lexer" >:: test_lexer;
          "number" >:: test_number;
          "await" >:: test_await;
-         "access" >:: test_name;
+         "name" >:: test_name;
          "starred" >:: test_starred;
          "compound" >:: test_compound;
          "define" >:: test_define;
