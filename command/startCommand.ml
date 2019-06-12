@@ -213,11 +213,7 @@ let request_handler_thread
     | End_of_file
     | Unix.Unix_error (Unix.ECONNRESET, _, _) ->
         Log.log ~section:`Server "Persistent client disconnected";
-        Mutex.critical_section lock ~f:(fun () ->
-            let ({ persistent_clients; _ } as cached_connections) = !raw_connections in
-            Unix.close socket;
-            raw_connections :=
-              { cached_connections with persistent_clients = Map.remove persistent_clients socket })
+        Connections.remove_persistent_client ~connections ~socket
   in
   let handle_readable_file_notifier socket =
     try

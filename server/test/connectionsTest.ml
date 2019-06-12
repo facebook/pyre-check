@@ -53,6 +53,8 @@ end
 
 module Connections = Server.Connections.Make (TrackedWrites)
 
+let response content = Server.Protocol.LanguageServerProtocolResponse content
+
 let test_broadcast_response _ =
   let response content = Server.Protocol.LanguageServerProtocolResponse content in
   Connections.broadcast_response ~connections:(connections []) ~response:(response "1");
@@ -113,7 +115,6 @@ let test_write_to_persistent_client _ =
 
 
 let test_add_persistent_client _ =
-  let response content = Server.Protocol.LanguageServerProtocolResponse content in
   TrackedWrites.clear ();
   let mock_connections = connections [] in
   Connections.add_persistent_client ~connections:mock_connections ~socket:!+42;
@@ -124,9 +125,21 @@ let test_add_persistent_client _ =
   assert_equal [response "2"] (Hashtbl.find_exn TrackedWrites.writes !+43)
 
 
+let test_remove_persistent_client _ =
+  TrackedWrites.clear ();
+  let mock_connections = connections [] in
+  Connections.add_persistent_client ~connections:mock_connections ~socket:!+42;
+  Connections.broadcast_response ~connections:mock_connections ~response:(response "1");
+  Connections.remove_persistent_client ~connections:mock_connections ~socket:!+42;
+  Connections.broadcast_response ~connections:mock_connections ~response:(response "To the void");
+  assert_equal [response "1"] (Hashtbl.find_exn TrackedWrites.writes !+42);
+  assert_equal true (Hash_set.mem TrackedWrites.closed !+42)
+
+
 let () =
   "connections"
   >::: [ "broadcast_response" >:: test_broadcast_response;
          "write_to_persistent_client" >:: test_write_to_persistent_client;
-         "add_persistent_client" >:: test_add_persistent_client ]
+         "add_persistent_client" >:: test_add_persistent_client;
+         "remove_persistent_client" >:: test_remove_persistent_client ]
   |> Test.run

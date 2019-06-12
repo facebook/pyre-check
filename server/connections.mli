@@ -20,4 +20,6 @@ end) : sig
 
   (* Mutates the state to keep track of the socket. *)
   val add_persistent_client : connections:State.connections -> socket:Network.Socket.t -> unit
+
+  val remove_persistent_client : connections:State.connections -> socket:Network.Socket.t -> unit
 end

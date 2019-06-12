@@ -60,4 +60,12 @@ struct
           { cached_connections with
             persistent_clients = Map.set persistent_clients ~key:socket ~data:0
           })
+
+
+  let remove_persistent_client ~connections:{ State.lock; connections; _ } ~socket =
+    Mutex.critical_section lock ~f:(fun () ->
+        let ({ State.persistent_clients; _ } as cached_connections) = !connections in
+        Socket.close socket;
+        connections :=
+          { cached_connections with persistent_clients = Map.remove persistent_clients socket })
 end
