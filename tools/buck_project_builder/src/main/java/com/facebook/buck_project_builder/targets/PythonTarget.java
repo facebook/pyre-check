@@ -37,7 +37,7 @@ public final class PythonTarget implements BuildTarget {
     if (sourcesField.isJsonObject()) {
       // Parse srcs of the form { "a": "b", "c": "d" } into Java Map.
       for (Map.Entry<String, JsonElement> entry : sourcesField.getAsJsonObject().entrySet()) {
-        sourcesBuilder.put(entry.getKey(), entry.getValue().getAsString());
+        sourcesBuilder.put(entry.getValue().getAsString(), entry.getKey());
       }
     } else if (sourcesField.isJsonArray()) {
       // Parse srcs of the form ["a", "b", "c"] into { "a": "a", "b": "b", "c": "c" }

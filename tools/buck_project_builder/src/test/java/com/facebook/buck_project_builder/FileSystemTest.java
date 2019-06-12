@@ -2,7 +2,6 @@
 
 package com.facebook.buck_project_builder;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -95,6 +94,12 @@ public class FileSystemTest {
     assertTrue("symbolic link should already be there", symbolicLinkPath.toFile().exists());
     writeContent(actualPath.toFile(), "def");
     FileSystem.addSymbolicLink(symbolicLinkPath, actualPath);
+    assertIsSymbolicLinkWithContent(symbolicLinkPath, "def");
+
+    // We do nothing when the source path does not exist, so the symbolic link file should still
+    // have the old content.
+    FileSystem.addSymbolicLink(
+        symbolicLinkPath, Paths.get("this", "path", "can", "never", "exist"));
     assertIsSymbolicLinkWithContent(symbolicLinkPath, "def");
 
     new File(root).delete();

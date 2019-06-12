@@ -92,7 +92,7 @@ public class BuildTargetsCollectorTest {
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"base_module\": \"BASE_MODULE\",\n"
             + "  \"buck.type\": \"python_binary\",\n"
-            + "  \"srcs\": { \"a.py\": \"b.py\" }\n"
+            + "  \"srcs\": { \"b.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
@@ -173,7 +173,7 @@ public class BuildTargetsCollectorTest {
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"python_library\",\n"
             + "  \"labels\": [\"is_fully_translated\", \"generated\"],\n"
-            + "  \"srcs\": { \"generated_1.py\": \"generated_2.py\" }\n"
+            + "  \"srcs\": { \"generated_2.py\": \"generated_1.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,

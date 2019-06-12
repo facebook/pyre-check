@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -42,12 +41,16 @@ public final class FileSystem {
   }
 
   public static void addSymbolicLink(Path linkPath, Path actualPath) {
+    if (!actualPath.toFile().exists()) {
+      // We ignore requests to create symbolic link when actual path does not exist.
+      return;
+    }
     linkPath.getParent().toFile().mkdirs();
     try {
       Files.deleteIfExists(linkPath);
       Files.createSymbolicLink(linkPath, actualPath);
     } catch (IOException exception) {
-      Logger.getGlobal().log(Level.SEVERE, exception.getMessage());
+      Logger.getGlobal().severe("Cannot create symbolic link: " + exception.getMessage());
     }
   }
 
