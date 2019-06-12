@@ -180,13 +180,46 @@ public class BuildTargetsCollectorTest {
         new PythonTarget(
             "python_library", "PATH", null, ImmutableMap.of("generated_1.py", "generated_2.py")));
 
-    // Thrift library parsing should be supported.
+    // Thrift library parsing should be supported, including those with extensions
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"genrule\",\n"
             + "  \"cmd\": \"CMD\",\n"
             + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py/compile\"],\n"
+            + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
+
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=pyi/compile\"],\n"
+            + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.pyi", "b.pyi")));
+
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py3/compile\"],\n"
+            + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.pyi", "b.pyi")));
+
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py-extension/compile\"],\n"
             + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(

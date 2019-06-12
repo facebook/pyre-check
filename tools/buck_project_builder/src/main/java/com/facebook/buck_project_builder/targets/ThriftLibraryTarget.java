@@ -44,12 +44,7 @@ public final class ThriftLibraryTarget implements BuildTarget {
     JsonArray labelsJson = labelsField.getAsJsonArray();
     boolean isThriftLibraryTarget =
         StreamSupport.stream(labelsJson.spliterator(), false)
-            .anyMatch(
-                labelJson -> {
-                  String label = labelJson.getAsString();
-                  return label.equals("thrift_library=py/compile")
-                      || label.equals("thrift_library=pyi/compile");
-                });
+            .anyMatch(label -> label.getAsString().matches("thrift_library=py(.*)/compile"));
     if (!isThriftLibraryTarget) {
       return null;
     }
@@ -145,11 +140,9 @@ public final class ThriftLibraryTarget implements BuildTarget {
     }
   }
 
-  private void copyThriftStubs(String temporaryThriftOutputDirectory, String outputDirectory)
+  private void copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
       throws IOException {
-    Path generatedPythonCodePath = Paths.get(temporaryThriftOutputDirectory, "gen-py");
     if (!generatedPythonCodePath.toFile().exists()) {
-      LOGGER.warning("Failed to compile following thrift sources: " + sources);
       return;
     }
     copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
@@ -160,7 +153,8 @@ public final class ThriftLibraryTarget implements BuildTarget {
     try {
       String temporaryThriftOutputDirectory = Files.createTempDirectory("thrift_temp_").toString();
       buildThriftStubs(buckRoot, temporaryThriftOutputDirectory);
-      copyThriftStubs(temporaryThriftOutputDirectory, outputDirectory);
+      copyThriftStubs(Paths.get(temporaryThriftOutputDirectory, "gen-py"), outputDirectory);
+      copyThriftStubs(Paths.get(temporaryThriftOutputDirectory, "gen-py3"), outputDirectory);
       new File(temporaryThriftOutputDirectory).delete();
     } catch (IOException exception) {
       LOGGER.warning("IOException during thrift stub generation: " + exception.getMessage());
