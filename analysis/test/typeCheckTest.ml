@@ -1488,10 +1488,10 @@ let test_calls _ =
      def calls_init_statically(object: object):
        ClassWithInit.__init__(object)
    |}
-    [ "qualifier.ClassWithInit.__init__", [`Static "object.__init__"];
-      "qualifier.calls_object_init", [`Static "object.__init__"];
-      "qualifier.calls_init", [`Static "qualifier.ClassWithInit.__init__"];
-      "qualifier.calls_init_statically", [`Static "qualifier.ClassWithInit.__init__"] ];
+    [ "qualifier.ClassWithInit.__init__", [`Dynamic "object.__init__"];
+      "qualifier.calls_object_init", [`Dynamic "object.__init__"];
+      "qualifier.calls_init", [`Dynamic "qualifier.ClassWithInit.__init__"];
+      "qualifier.calls_init_statically", [`Dynamic "qualifier.ClassWithInit.__init__"] ];
   assert_calls
     {|
      class Class:
@@ -1500,7 +1500,7 @@ let test_calls _ =
      def calls_class_method():
        Class.classmethod()
    |}
-    ["qualifier.calls_class_method", [`Static "qualifier.Class.classmethod"]];
+    ["qualifier.calls_class_method", [`Dynamic "qualifier.Class.classmethod"]];
 
   (* Unions. *)
   assert_calls

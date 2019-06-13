@@ -432,8 +432,7 @@ let create_attribute
     in
     match defines with
     | Some (({ Define.signature = { Define.name; _ }; _ } as define) :: _ as defines) ->
-        let parent, invocation =
-          let open Type.Callable in
+        let parent =
           (* TODO(T45029821): __new__ is special cased to be a static method. It doesn't play well
              with our logic here - we should clean up the call logic to handle passing the extra
              argument, and eliminate the special fields from here. *)
@@ -441,22 +440,20 @@ let create_attribute
             Define.is_static_method define
             && not (String.equal (Define.unqualified_name define) "__new__")
           then
-            None, Static
+            None
           else if Define.is_class_method define then
-            Some (Type.meta instantiated), Static
+            Some (Type.meta instantiated)
           else if class_attribute then
             (* Keep first argument around when calling instance methods from class attributes. *)
-            None, Static
-          else if Define.is_constructor define then
-            Some instantiated, Static
+            None
           else
-            Some instantiated, Dynamic
+            Some instantiated
         in
         let apply_decorators define =
           Define.is_overloaded_method define, Callable.apply_decorators ~define ~resolution
         in
         List.map defines ~f:apply_decorators
-        |> Callable.create ~resolution ~invocation ~parent ~name:(Reference.show name)
+        |> Callable.create ~resolution ~invocation:Dynamic ~parent ~name:(Reference.show name)
         |> fun callable -> Some (Type.Callable callable)
     | _ -> annotation
   in
