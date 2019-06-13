@@ -147,7 +147,8 @@ val parse_annotation
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val solve_less_or_equal
-  :  t ->
+  :  ?any_is_bottom:bool ->
+  t ->
   constraints:TypeConstraints.t ->
   left:Type.t ->
   right:Type.t ->
@@ -155,7 +156,11 @@ val solve_less_or_equal
 
 val constraints_solution_exists : left:Type.t -> right:Type.t -> t -> bool
 
-val solve_constraints : t -> TypeConstraints.t -> TypeConstraints.Solution.t option
+val solve_constraints
+  :  ?any_is_bottom:bool ->
+  t ->
+  TypeConstraints.t ->
+  TypeConstraints.Solution.t option
 
 val partial_solve_constraints
   :  t ->

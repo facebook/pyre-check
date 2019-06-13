@@ -260,8 +260,9 @@ let full_order ({ order; attributes = a; protocol_assumptions; _ } as resolution
   }
 
 
-let solve_less_or_equal resolution ~constraints ~left ~right =
-  full_order resolution |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
+let solve_less_or_equal ?(any_is_bottom = false) resolution ~constraints ~left ~right =
+  { (full_order resolution) with any_is_bottom }
+  |> TypeOrder.solve_less_or_equal ~constraints ~left ~right
 
 
 let constraints_solution_exists ~left ~right resolution =
@@ -275,8 +276,9 @@ let consistent_solution_exists resolution =
   TypeOrder.consistent_solution_exists (full_order resolution)
 
 
-let solve_constraints resolution =
-  TypeOrder.OrderedConstraints.solve ~order:(full_order resolution)
+let solve_constraints ?(any_is_bottom = false) resolution =
+  let order = { (full_order resolution) with any_is_bottom } in
+  TypeOrder.OrderedConstraints.solve ~order
 
 
 let partial_solve_constraints resolution =

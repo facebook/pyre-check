@@ -100,10 +100,11 @@ let create ~resolution ?(invocation = Type.Callable.Static) ~parent ~name overlo
             let solution =
               Resolution.solve_less_or_equal
                 resolution
+                ~any_is_bottom:true
                 ~left:parent
                 ~right:annotation
                 ~constraints:TypeConstraints.empty
-              |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+              |> List.filter_map ~f:(Resolution.solve_constraints ~any_is_bottom:true resolution)
               |> List.hd
               |> Option.value ~default:TypeConstraints.Solution.empty
             in

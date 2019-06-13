@@ -1070,7 +1070,25 @@ let test_check_self _ =
       def foo(x: G[int], y: G[str]) -> typing.Tuple[G[int], G[str]]:
         return (x.verbose(1), y.verbose(1))
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      TG = typing.TypeVar('TG')
+      TSelf = typing.TypeVar('TSelf', bound="G")
+      class G(typing.Generic[TG]):
+        def inner(self, x: int) -> None:
+          pass
+        def verbose(self: TSelf, x: int) -> TSelf:
+          self.inner(x)
+          return self
+      class C(G[TG]):
+        def outer(self) -> TG: ...
+      def foo(x: C[int]) -> None:
+        reveal_type(x.verbose(1).outer())
+    |}
+    [ "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
+      "Revealed type [-1]: Revealed type for `x.verbose(1).outer()` is `int`." ];
+  ()
 
 
 let test_check_meta_self _ =
