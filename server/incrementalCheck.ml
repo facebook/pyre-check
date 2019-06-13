@@ -70,7 +70,10 @@ let recheck
   in
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";
-  StatusUpdate.warning ~message:"Repopulating the environment" ~state;
+  StatusUpdate.warning
+    ~message:"Repopulating the environment"
+    ~short_message:(Some "[Repopulating]")
+    ~state;
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
     let timer = Timer.start () in
@@ -102,6 +105,7 @@ let recheck
     Log.info "Parsing %d updated stubs..." (List.length stubs);
     StatusUpdate.warning
       ~message:(Format.asprintf "Parsing %d updated stubs..." (List.length stubs))
+      ~short_message:(Some "[Parsing stubs]")
       ~state;
     let { Service.Parser.parsed = stubs;
           syntax_error = stub_syntax_errors;
@@ -132,6 +136,7 @@ let recheck
     Log.info "Parsing %d updated sources..." (List.length sources);
     StatusUpdate.warning
       ~message:(Format.asprintf "Parsing %d updated sources..." (List.length sources))
+      ~short_message:(Some "[Parsing sources]")
       ~state;
     let { Service.Parser.parsed = sources;
           syntax_error = source_syntax_errors;
