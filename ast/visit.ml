@@ -309,6 +309,7 @@ let collect_locations source =
                 | _ -> sofar
               in
               List.fold ~f:extract_locations ~init:[location] arguments |> Option.some
+          | Lambda { parameters; _ } -> Some (List.map ~f:Node.location parameters)
           | _ -> Some [location]
       end)
       (struct

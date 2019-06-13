@@ -287,17 +287,21 @@ let assert_source_equal_with_locations expected actual =
         let module Collector = Visit.ExpressionCollector (struct
           type t = Expression.t list
 
-          let predicate expression =
-            (* Pick up Identifiers with locations. *)
+          let predicate ({ Node.value; _ } as expression) =
             let open Expression in
-            match Node.value expression with
+            match value with
             | Call { arguments; _ } ->
+                (* Pick up Identifiers with locations. *)
                 let extract_identifiers sofar = function
                   | { Call.Argument.name = Some { Node.value = name; location }; _ } ->
                       Node.create ~location (Name (Name.Identifier name)) :: sofar
                   | _ -> sofar
                 in
                 List.fold ~f:extract_identifiers ~init:[expression] arguments |> Option.some
+            | Lambda { parameters; _ } ->
+                (* Print the entire lambda with each parameter location. *)
+                let convert { Node.location; _ } = Node.create ~location value in
+                Some (expression :: List.map ~f:convert parameters)
             | _ -> Some [expression]
         end)
         in

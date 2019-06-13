@@ -293,6 +293,39 @@ let test_define_locations _ =
            }) ]
 
 
+let test_lambda_locations _ =
+  assert_source_locations
+    "lambda x = 1, y: x + 1"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 22)
+            (Lambda
+               { Lambda.parameters =
+                   [ node
+                       ~start:
+                         (1, 7)
+                         (* TODO(T45713676): The parameter node should also include the value. *)
+                       ~stop:(1, 8)
+                       { Parameter.name = "x"; value = Some (+Integer 1); annotation = None };
+                     node
+                       ~start:(1, 14)
+                       ~stop:(1, 15)
+                       { Parameter.name = "y"; value = None; annotation = None } ];
+                 body =
+                   +Call
+                      { callee =
+                          +Name
+                             (Name.Attribute
+                                { base = +Name (Name.Identifier "x");
+                                  attribute = "__add__";
+                                  special = true
+                                });
+                        arguments = [{ Call.Argument.name = None; value = +Integer 1 }]
+                      }
+               })) ]
+
+
 let test_name_locations _ =
   assert_source_locations
     "a.b.c"
@@ -465,6 +498,7 @@ let () =
          "await_locations" >:: test_await_locations;
          "call_locations" >:: test_call_locations;
          "define_locations" >:: test_define_locations;
+         "lambda_locations" >:: test_lambda_locations;
          "name_locations" >:: test_name_locations;
          "number_locations" >:: test_number_locations;
          "operator_locations" >:: test_operator_locations;
