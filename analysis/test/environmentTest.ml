@@ -387,6 +387,28 @@ let test_register_aliases _ =
   ()
 
 
+let test_register_implicit_submodules _ =
+  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  Environment.register_implicit_submodules (module Handler) (Reference.create "a.b.c");
+  assert_equal None (Handler.module_definition (Reference.create "a.b.c"));
+  assert_equal
+    (Some
+       (Ast.Module.create
+          ~qualifier:(Reference.create "a.b")
+          ~local_mode:Source.Declare
+          ~stub:false
+          []))
+    (Handler.module_definition (Reference.create "a.b"));
+  assert_equal
+    (Some
+       (Ast.Module.create
+          ~qualifier:(Reference.create "a")
+          ~local_mode:Source.Declare
+          ~stub:false
+          []))
+    (Handler.module_definition (Reference.create "a"))
+
+
 let test_connect_definition _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
@@ -1253,5 +1275,6 @@ let () =
          "register_class_definitions" >:: test_register_class_definitions;
          "register_dependencies" >:: test_register_dependencies;
          "register_globals" >:: test_register_globals;
+         "register_implicit_submodules" >:: test_register_implicit_submodules;
          "propagate_nested_classes" >:: test_propagate_nested_classes ]
   |> Test.run

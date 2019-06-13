@@ -332,21 +332,28 @@ let register_module
     (module Handler : Handler)
     { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
   =
-  let rec register_submodules = function
-    | None -> ()
-    | Some qualifier ->
-        if not (Handler.is_module qualifier) then
-          Handler.register_module ~handle:None ~qualifier ~local_mode ~stub:false ~statements:[];
-        register_submodules (Reference.prefix qualifier)
-  in
   Handler.register_module
     ~qualifier
     ~local_mode
     ~handle:(Some handle)
     ~stub:(File.Handle.is_stub handle)
-    ~statements;
-  if Reference.length qualifier > 1 then
-    Reference.prefix qualifier |> register_submodules
+    ~statements
+
+
+let register_implicit_submodules (module Handler : Handler) qualifier =
+  let rec register_submodules = function
+    | None -> ()
+    | Some qualifier ->
+        if not (Handler.is_module qualifier) then
+          Handler.register_module
+            ~handle:None
+            ~qualifier
+            ~local_mode:Ast.Source.Declare
+            ~stub:false
+            ~statements:[];
+        register_submodules (Reference.prefix qualifier)
+  in
+  register_submodules (Reference.prefix qualifier)
 
 
 let register_class_definitions (module Handler : Handler) source =

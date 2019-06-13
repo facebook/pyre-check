@@ -89,6 +89,8 @@ val connect_definition : resolution:Resolution.t -> definition:Class.t Node.t ->
 
 val register_module : (module Handler) -> Source.t -> unit
 
+val register_implicit_submodules : (module Handler) -> Reference.t -> unit
+
 val register_class_definitions : (module Handler) -> Source.t -> Type.Set.t
 
 val register_aliases : (module Handler) -> Source.t list -> unit

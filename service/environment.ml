@@ -19,7 +19,10 @@ let populate
   =
   let resolution = TypeCheck.resolution (module Handler) () in
   let populate () =
-    List.iter ~f:(Environment.register_module (module Handler)) sources;
+    List.iter sources ~f:(Environment.register_module (module Handler));
+    sources
+    |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
+    |> List.iter ~f:(Environment.register_implicit_submodules (module Handler));
     let all_annotations =
       List.fold
         ~init:Environment.built_in_annotations
