@@ -55,11 +55,6 @@ let test_multiline_strings_locations _ =
   test_one "\"\"\"\nAAA \\\nBBB\n\"\"\"\npass"
 
 
-let test_define_locations _ =
-  let source_code = parse_single_statement "def a():\n    return None" in
-  assert_statement_location ~statement:source_code ~start:(1, 0) ~stop:(2, 15)
-
-
 let assert_source_locations source statements =
   let parsed_source = parse source in
   let expected_source = { parsed_source with Source.statements } in
@@ -75,6 +70,15 @@ let node ~start:(start_line, start_column)
     }
   in
   Node.create ~location
+
+
+let test_await_locations _ =
+  assert_source_locations
+    "await 1"
+    [+Expression (node ~start:(1, 0) ~stop:(1, 7) (Await (+Integer 1)))];
+  assert_source_locations
+    "await   1"
+    [+Expression (node ~start:(1, 0) ~stop:(1, 9) (Await (+Integer 1)))]
 
 
 let test_call_locations _ =
@@ -202,6 +206,93 @@ let test_call_locations _ =
              }) ]
 
 
+let test_define_locations _ =
+  assert_source_locations
+    "async def foo():\n  1"
+    [ node
+        ~start:(1, 0)
+        ~stop:(2, 3)
+        (Define
+           { signature =
+               { name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 docstring = None;
+                 return_annotation = None;
+                 async = true;
+                 parent = None
+               };
+             body = [node ~start:(2, 2) ~stop:(2, 3) (Expression (+Integer 1))]
+           }) ];
+  assert_source_locations
+    {|
+      def foo():
+        def bar():
+          1
+          2
+      3
+    |}
+    [ node
+        ~start:(2, 0)
+        ~stop:(5, 5)
+        (Define
+           { signature =
+               { name = !&"foo";
+                 parameters = [];
+                 decorators = [];
+                 docstring = None;
+                 return_annotation = None;
+                 async = false;
+                 parent = None
+               };
+             body =
+               [ node
+                   ~start:(3, 2)
+                   ~stop:(5, 5)
+                   (Define
+                      { signature =
+                          { name = !&"bar";
+                            parameters = [];
+                            decorators = [];
+                            docstring = None;
+                            return_annotation = None;
+                            async = false;
+                            parent = None
+                          };
+                        body = [+Expression (+Integer 1); +Expression (+Integer 2)]
+                      }) ]
+           });
+      node ~start:(6, 0) ~stop:(6, 1) (Expression (+Integer 3)) ];
+  assert_source_locations
+    {|
+      def foo(
+        a,  # type: bool
+        **kwargs
+      ):
+        pass
+    |}
+    [ node
+        ~start:(2, 0)
+        ~stop:(6, 6)
+        (Define
+           { signature =
+               { name = !&"foo";
+                 parameters =
+                   [ +{ Parameter.name = "a";
+                        value = None;
+                        annotation = Some (+String (StringLiteral.create "bool"))
+                      };
+                     +{ Parameter.name = "**kwargs"; value = None; annotation = None } ];
+                 decorators = [];
+                 docstring = None;
+                 return_annotation = None;
+                 async = false;
+                 parent = None
+               };
+             body = [+Pass]
+           }) ]
+
+
 let test_name_locations _ =
   assert_source_locations
     "a.b.c"
@@ -297,6 +388,63 @@ let test_name_locations _ =
                   }))) ]
 
 
+let test_number_locations _ =
+  assert_source_locations "((1))" [node ~start:(1, 2) ~stop:(1, 3) (Expression (+Integer 1))];
+  assert_source_locations "((1))" [+Expression (node ~start:(1, 2) ~stop:(1, 3) (Integer 1))];
+  assert_source_locations "1;" [+Expression (node ~start:(1, 0) ~stop:(1, 1) (Integer 1))];
+  assert_source_locations ".1" [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Float 0.1))];
+  assert_source_locations "1." [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Float 1.0))];
+  assert_source_locations "1e10" [+Expression (node ~start:(1, 0) ~stop:(1, 4) (Float 1e10))];
+  assert_source_locations "0.1j" [+Expression (node ~start:(1, 0) ~stop:(1, 4) (Complex 0.1))];
+  assert_source_locations "1L" [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Integer 1))]
+
+
+let test_operator_locations _ =
+  assert_source_locations
+    "1 and 2 or 3"
+    [ node
+        ~start:(1, 0)
+        ~stop:(1, 12)
+        (Expression
+           (node
+              ~start:(1, 0)
+              ~stop:(1, 12)
+              (BooleanOperator
+                 { BooleanOperator.left =
+                     node
+                       ~start:(1, 0)
+                       ~stop:(1, 7)
+                       (BooleanOperator
+                          { BooleanOperator.left = +Integer 1;
+                            operator = BooleanOperator.And;
+                            right = +Integer 2
+                          });
+                   operator = BooleanOperator.Or;
+                   right = node ~start:(1, 11) ~stop:(1, 12) (Integer 3)
+                 }))) ];
+  assert_source_locations
+    "1 // 2"
+    [ +Expression
+         (+Call
+             { callee =
+                 node
+                   ~start:(1, 0)
+                   ~stop:(1, 1) (* TODO(T45713676): Should this encompass the original operator? *)
+                   (Name
+                      (Name.Attribute
+                         { base = +Integer 1; attribute = "__floordiv__"; special = true }));
+               arguments = [{ Call.Argument.name = None; value = +Integer 2 }]
+             }) ];
+  assert_source_locations
+    "not 1"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 5)
+            (UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = +Integer 1 }))
+    ]
+
+
 let test_tuple_locations _ =
   assert_source_locations
     {|
@@ -314,8 +462,11 @@ let () =
   "parsed_locations"
   >::: [ "string_locations" >:: test_string_locations;
          "multiline_strings_positions" >:: test_multiline_strings_locations;
-         "define_locations" >:: test_define_locations;
+         "await_locations" >:: test_await_locations;
          "call_locations" >:: test_call_locations;
+         "define_locations" >:: test_define_locations;
          "name_locations" >:: test_name_locations;
+         "number_locations" >:: test_number_locations;
+         "operator_locations" >:: test_operator_locations;
          "tuple_locations" >:: test_tuple_locations ]
   |> Test.run

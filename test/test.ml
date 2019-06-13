@@ -316,17 +316,25 @@ let assert_source_equal_with_locations expected actual =
         |> List.iter ~f:print_expression
       in
       let pp_nested_statements _ statement =
-        let module Collector = Visit.StatementCollector (struct
-          type t = Statement.t
-
-          let visit_children current_statement = Statement.equal statement current_statement
-
-          let predicate current_statement =
-            Option.some_if (not (Statement.equal statement current_statement)) statement
-        end)
+        let immediate_children =
+          match Node.value statement with
+          | Class { Class.body; _ }
+          | Define { Define.body; _ }
+          | With { With.body; _ } ->
+              body
+          | For { For.body; orelse; _ }
+          | If { If.body; orelse; _ }
+          | While { While.body; orelse; _ } ->
+              body @ orelse
+          | Try { Try.body; handlers; orelse; finally } ->
+              let handlers =
+                let get_handler_body sofar { Try.handler_body; _ } = handler_body @ sofar in
+                List.fold ~init:[] ~f:get_handler_body handlers
+              in
+              body @ handlers @ orelse @ finally
+          | _ -> []
         in
-        Collector.collect (Source.create [statement])
-        |> List.iter ~f:(print_statement ~prefix:indented_prefix)
+        List.iter ~f:(print_statement ~prefix:indented_prefix) immediate_children
       in
       Format.fprintf
         format
