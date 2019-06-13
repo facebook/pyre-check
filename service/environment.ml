@@ -284,13 +284,9 @@ module SharedHandler : Analysis.Environment.Handler = struct
       |> Node.create_with_default_location
     in
     Globals.add (global_key "__dict__") dictionary_annotation;
-    let is_registered_empty_stub =
-      Ast.SharedMemory.Modules.get ~qualifier >>| Module.empty_stub |> Option.value ~default:false
-    in
-    if not is_registered_empty_stub then
-      Ast.SharedMemory.Modules.add
-        ~qualifier
-        ~ast_module:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
+    Ast.SharedMemory.Modules.add
+      ~qualifier
+      ~ast_module:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
 
 
   let register_undecorated_function ~reference ~annotation =

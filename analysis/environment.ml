@@ -284,9 +284,6 @@ let handler
     let class_metadata = Hashtbl.find class_metadata
 
     let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-      let is_registered_empty_stub =
-        Hashtbl.find modules qualifier >>| Module.empty_stub |> Option.value ~default:false
-      in
       let string =
         Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
       in
@@ -299,11 +296,10 @@ let handler
         |> Node.create_with_default_location
       in
       Hashtbl.set globals ~key:(global_key "__dict__") ~data:dictionary_annotation;
-      if not is_registered_empty_stub then
-        Hashtbl.set
-          ~key:qualifier
-          ~data:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
-          modules
+      Hashtbl.set
+        ~key:qualifier
+        ~data:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
+        modules
 
 
     let is_module name = Hashtbl.mem modules name
