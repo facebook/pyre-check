@@ -88,7 +88,7 @@ let create_overload ~resolution
   { annotation = return_annotation ~define ~resolution; parameters }
 
 
-let create ~resolution ?(invocation = Type.Callable.Static) ~parent ~name overloads =
+let create ~resolution ?(invocation = Type.Callable.Function) ~parent ~name overloads =
   let open Type.Callable in
   let implementation, overloads =
     let to_signature (implementation, overloads) (is_overload, signature) =

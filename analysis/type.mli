@@ -104,8 +104,8 @@ module Record : sig
     }
 
     and invocation =
-      | Static
-      | Dynamic
+      | Function
+      | Method
 
     and 'annotation record = {
       kind: kind;

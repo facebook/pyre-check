@@ -204,8 +204,8 @@ module Record = struct
     }
 
     and invocation =
-      | Static
-      | Dynamic
+      | Function
+      | Method
 
     and 'annotation record = {
       kind: kind;
@@ -1258,7 +1258,7 @@ module Callable = struct
 
   let map_implementation implementation ~f =
     map
-      { kind = Anonymous; invocation = Static; implementation; overloads = []; implicit = None }
+      { kind = Anonymous; invocation = Function; implementation; overloads = []; implicit = None }
       ~f
     |> function
     | Some { implementation; _ } -> implementation
@@ -1288,7 +1288,7 @@ module Callable = struct
       ?(overloads = [])
       ?(parameters = Undefined)
       ?implicit
-      ?(invocation = Static)
+      ?(invocation = Function)
       ~annotation
       ()
     =
@@ -1308,7 +1308,7 @@ let lambda ~parameters ~return_annotation =
   in
   Callable
     { kind = Anonymous;
-      invocation = Static;
+      invocation = Function;
       implementation = { annotation = return_annotation; parameters = Defined parameters };
       overloads = [];
       implicit = None
@@ -1625,7 +1625,7 @@ let rec create_logic ?(use_cache = true)
               | Some signatures -> List.rev (parse_overloads (Node.value signatures))
               | None -> []
             in
-            Callable { kind; invocation = Static; implementation; overloads; implicit = None }
+            Callable { kind; invocation = Function; implementation; overloads; implicit = None }
           in
           match expression with
           | Call
@@ -2977,7 +2977,7 @@ module TypedDictionary = struct
   let constructor ~name ~fields ~total =
     let annotation = TypedDictionary { name; fields; total } in
     { Callable.kind = Named (Reference.create "__init__");
-      invocation = Static;
+      invocation = Function;
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [ { annotation; parameters = field_named_parameters ~default:(not total) fields };

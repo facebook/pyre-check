@@ -221,7 +221,7 @@ let test_create _ =
     "typing.Callable('name')[..., int]"
     (Type.Callable
        { kind = Type.Callable.Named !&"name";
-         invocation = Static;
+         invocation = Function;
          implementation = { annotation = Type.integer; parameters = Undefined };
          overloads = [];
          implicit = None
@@ -230,7 +230,7 @@ let test_create _ =
     "typing.Callable('foo')[..., $unknown]"
     (Type.Callable
        { kind = Type.Callable.Named !&"foo";
-         invocation = Static;
+         invocation = Function;
          implementation = { annotation = Type.Top; parameters = Undefined };
          overloads = [];
          implicit = None
@@ -240,7 +240,7 @@ let test_create _ =
     "typing.Callable[[int, str], int]"
     (Type.Callable
        { kind = Type.Callable.Anonymous;
-         invocation = Static;
+         invocation = Function;
          implementation =
            { annotation = Type.integer;
              parameters =
@@ -255,7 +255,7 @@ let test_create _ =
     "typing.Callable[[int, Named(a, int), Variable(), Keywords()], int]"
     (Type.Callable
        { kind = Anonymous;
-         invocation = Static;
+         invocation = Function;
          implementation =
            { annotation = Type.integer;
              parameters =
@@ -272,7 +272,7 @@ let test_create _ =
     "typing.Callable[[int, Variable(int), Keywords(str)], int]"
     (Type.Callable
        { kind = Anonymous;
-         invocation = Static;
+         invocation = Function;
          implementation =
            { annotation = Type.integer;
              parameters =
@@ -288,7 +288,7 @@ let test_create _ =
     "typing.Callable[[Named(a, int, default)], int]"
     (Type.Callable
        { kind = Anonymous;
-         invocation = Static;
+         invocation = Function;
          implementation =
            { annotation = Type.integer;
              parameters =
