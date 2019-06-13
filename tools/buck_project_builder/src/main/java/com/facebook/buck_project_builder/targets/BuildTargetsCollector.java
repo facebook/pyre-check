@@ -1,8 +1,10 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.BuckCells;
 import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.CommandLine;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,7 +28,7 @@ public final class BuildTargetsCollector {
    */
   public static ImmutableList<BuildTarget> collectBuckTargets(ImmutableList<String> targets)
       throws BuilderException {
-    return parseBuildTargetList(getBuildTargetJson(targets));
+    return parseBuildTargetList(BuckCells.getCellMappings(), getBuildTargetJson(targets));
   }
 
   /**
@@ -34,7 +36,8 @@ public final class BuildTargetsCollector {
    *
    * @return a list of parsed json targets from target json.
    */
-  static ImmutableList<BuildTarget> parseBuildTargetList(JsonObject targetJsonMap) {
+  static ImmutableList<BuildTarget> parseBuildTargetList(
+      ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap) {
     Set<String> requiredRemoteFiles = new HashSet<>();
     // The first pass collects python_library that refers to a remote python_file
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
@@ -46,8 +49,12 @@ public final class BuildTargetsCollector {
     // collected above.
     ImmutableList.Builder<BuildTarget> buildTargetListBuilder = ImmutableList.builder();
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
+      String buildTargetName = entry.getKey();
+      String cellPath = BuckCells.getCellPath(buildTargetName, cellMappings);
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
-      BuildTarget parsedTarget = parseBuildTarget(targetJsonObject, immutableRequiredRemoteFiles);
+      BuildTarget parsedTarget =
+          parseBuildTarget(
+              targetJsonObject, cellPath, buildTargetName, immutableRequiredRemoteFiles);
       if (parsedTarget != null) {
         buildTargetListBuilder.add(parsedTarget);
       }
@@ -91,7 +98,7 @@ public final class BuildTargetsCollector {
     if (wheelSuffix == null) {
       return;
     }
-    requiredRemoteFiles.add(basePath + wheelSuffix + "-remote");
+    requiredRemoteFiles.add("//" + basePath + wheelSuffix + "-remote");
   }
 
   /**
@@ -100,18 +107,23 @@ public final class BuildTargetsCollector {
    * @return the parsed build target, or null if it is a non-python related target.
    */
   static @Nullable BuildTarget parseBuildTarget(
-      JsonObject targetJsonObject, ImmutableSet<String> requiredRemoteFiles) {
+      JsonObject targetJsonObject,
+      @Nullable String cellPath,
+      String buildTargetName,
+      ImmutableSet<String> requiredRemoteFiles) {
     String type = targetJsonObject.get("buck.type").getAsString();
     switch (type) {
       case "python_binary":
       case "python_library":
       case "python_test":
-        return PythonTarget.parse(type, targetJsonObject);
+        return PythonTarget.parse(type, cellPath, targetJsonObject);
       case "genrule":
         // Thrift library targets have genrule rule type.
-        return ThriftLibraryTarget.parse(targetJsonObject);
+        return ThriftLibraryTarget.parse(cellPath, targetJsonObject);
       case "remote_file":
-        return RemoteFileTarget.parse(targetJsonObject, requiredRemoteFiles);
+        return requiredRemoteFiles.contains(buildTargetName)
+            ? RemoteFileTarget.parse(targetJsonObject)
+            : null;
       default:
         return null;
     }

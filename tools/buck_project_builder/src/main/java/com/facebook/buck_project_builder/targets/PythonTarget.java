@@ -17,19 +17,30 @@ public final class PythonTarget implements BuildTarget {
   private static final Logger LOGGER = Logger.getGlobal();
 
   private final String ruleName;
+  private final @Nullable String cellPath;
   private final String basePath;
   private final @Nullable String baseModule;
   private final ImmutableMap<String, String> sources;
 
   PythonTarget(
       String ruleName,
+      @Nullable String cellPath,
       String basePath,
       @Nullable String baseModule,
       ImmutableMap<String, String> sources) {
     this.ruleName = ruleName;
+    this.cellPath = cellPath;
     this.basePath = basePath;
     this.baseModule = baseModule;
     this.sources = sources;
+  }
+
+  PythonTarget(
+      String ruleName,
+      String basePath,
+      @Nullable String baseModule,
+      ImmutableMap<String, String> sources) {
+    this(ruleName, null, basePath, baseModule, sources);
   }
 
   private static ImmutableMap<String, String> parseSources(JsonElement sourcesField) {
@@ -98,8 +109,8 @@ public final class PythonTarget implements BuildTarget {
     return sourcesBuilder.build();
   }
 
-  static @Nullable PythonTarget parse(String ruleName, JsonObject targetJsonObject) {
-    String basePath = targetJsonObject.get("buck.base_path").getAsString();
+  static @Nullable PythonTarget parse(
+      String ruleName, @Nullable String cellPath, JsonObject targetJsonObject) {
     ImmutableMap<String, String> sources;
     // Ignore any target that does not have srcs or versioned_srcs
     JsonElement sourcesField = targetJsonObject.get("srcs");
@@ -115,14 +126,16 @@ public final class PythonTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
+    String basePath = targetJsonObject.get("buck.base_path").getAsString();
     JsonElement baseModuleField = targetJsonObject.get("base_module");
     String baseModule = baseModuleField == null ? null : baseModuleField.getAsString();
-    return new PythonTarget(ruleName, basePath, baseModule, sources);
+    return new PythonTarget(ruleName, cellPath, basePath, baseModule, sources);
   }
 
   @Override
   public void build(String buckRoot, String outputDirectory) {
-    String sourceDirectory = Paths.get(buckRoot, basePath).toString();
+    String sourceDirectory =
+        Paths.get(this.cellPath != null ? this.cellPath : buckRoot, basePath).toString();
     String outputBasePath =
         baseModule == null ? basePath : Paths.get(".", baseModule.split("\\.")).toString();
     outputDirectory = Paths.get(outputDirectory, outputBasePath).toString();
@@ -136,8 +149,8 @@ public final class PythonTarget implements BuildTarget {
   @Override
   public String toString() {
     return String.format(
-        "{ruleName=%s, basePath=%s, baseModule=%s, sources=%s}",
-        ruleName, basePath, baseModule, sources);
+        "{ruleName=%s, cellPath=%s, basePath=%s, baseModule=%s, sources=%s}",
+        ruleName, cellPath, basePath, baseModule, sources);
   }
 
   @Override
@@ -150,6 +163,7 @@ public final class PythonTarget implements BuildTarget {
     }
     PythonTarget pythonTarget = (PythonTarget) other;
     return ruleName.equals(pythonTarget.ruleName)
+        && Objects.equals(cellPath, pythonTarget.cellPath)
         && basePath.equals(pythonTarget.basePath)
         && Objects.equals(baseModule, pythonTarget.baseModule)
         && sources.equals(pythonTarget.sources);
@@ -157,6 +171,6 @@ public final class PythonTarget implements BuildTarget {
 
   @Override
   public int hashCode() {
-    return Objects.hash(ruleName, basePath, baseModule, sources);
+    return Objects.hash(ruleName, cellPath, basePath, baseModule, sources);
   }
 }

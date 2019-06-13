@@ -1,7 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.FileSystem;
-import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
@@ -19,15 +18,8 @@ public final class RemoteFileTarget implements BuildTarget {
     this.url = url;
   }
 
-  static RemoteFileTarget parse(
-      JsonObject targetJsonObject, ImmutableSet<String> requiredRemoteFiles) {
-    String basePath = targetJsonObject.get("buck.base_path").getAsString();
-    String name = targetJsonObject.get("name").getAsString();
-    if (!requiredRemoteFiles.contains(basePath + ":" + name)) {
-      return null;
-    }
-    String url = targetJsonObject.get("url").getAsString();
-    return new RemoteFileTarget(url);
+  static RemoteFileTarget parse(JsonObject targetJsonObject) {
+    return new RemoteFileTarget(targetJsonObject.get("url").getAsString());
   }
 
   @Override

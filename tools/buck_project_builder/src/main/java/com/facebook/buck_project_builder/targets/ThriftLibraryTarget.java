@@ -25,18 +25,24 @@ public final class ThriftLibraryTarget implements BuildTarget {
 
   private static final Logger LOGGER = Logger.getGlobal();
 
+  private final @Nullable String cellPath;
   private final String basePath;
   private final String command;
   private final ImmutableList<String> sources;
 
-  ThriftLibraryTarget(String basePath, String command, ImmutableList<String> sources) {
+  ThriftLibraryTarget(
+      @Nullable String cellPath, String basePath, String command, ImmutableList<String> sources) {
+    this.cellPath = cellPath;
     this.basePath = basePath;
     this.command = command;
     this.sources = sources;
   }
 
-  static @Nullable ThriftLibraryTarget parse(JsonObject targetJsonObject) {
-    String basePath = targetJsonObject.get("buck.base_path").getAsString();
+  ThriftLibraryTarget(String basePath, String command, ImmutableList<String> sources) {
+    this(null, basePath, command, sources);
+  }
+
+  static @Nullable ThriftLibraryTarget parse(String cellPath, JsonObject targetJsonObject) {
     JsonElement labelsField = targetJsonObject.get("labels");
     if (labelsField == null) {
       return null;
@@ -58,7 +64,8 @@ public final class ThriftLibraryTarget implements BuildTarget {
     for (JsonElement sourceElement : sourcesField.getAsJsonArray()) {
       sourcesBuilder.add(sourceElement.getAsString());
     }
-    return new ThriftLibraryTarget(basePath, command, sourcesBuilder.build());
+    String basePath = targetJsonObject.get("buck.base_path").getAsString();
+    return new ThriftLibraryTarget(cellPath, basePath, command, sourcesBuilder.build());
   }
 
   /**
@@ -107,9 +114,11 @@ public final class ThriftLibraryTarget implements BuildTarget {
   }
 
   private void buildThriftStubs(String buckRoot, String outputDirectory) throws IOException {
+    String cellAndBasePathPrefix =
+        Paths.get(this.cellPath != null ? this.cellPath : ".", this.basePath).toString();
     String basePathPrefixedSources =
         this.sources.stream()
-            .map(source -> Paths.get(this.basePath, source).toString())
+            .map(source -> Paths.get(cellAndBasePathPrefix, source).toString())
             .collect(Collectors.joining(" "));
     // Replace buck cmd macro with predefined values.
     String builderCommand =
@@ -163,7 +172,8 @@ public final class ThriftLibraryTarget implements BuildTarget {
 
   @Override
   public String toString() {
-    return String.format("{basePath=%s, command=%s, sources=%s}", basePath, command, sources);
+    return String.format(
+        "{cellPath=%s, basePath=%s, command=%s, sources=%s}", cellPath, basePath, command, sources);
   }
 
   @Override
@@ -175,13 +185,14 @@ public final class ThriftLibraryTarget implements BuildTarget {
       return false;
     }
     ThriftLibraryTarget thriftLibraryTarget = (ThriftLibraryTarget) other;
-    return basePath.equals(thriftLibraryTarget.basePath)
+    return Objects.equals(cellPath, thriftLibraryTarget.cellPath)
+        && basePath.equals(thriftLibraryTarget.basePath)
         && command.equals(thriftLibraryTarget.command)
         && sources.equals(thriftLibraryTarget.sources);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(basePath, command, sources);
+    return Objects.hash(cellPath, basePath, command, sources);
   }
 }

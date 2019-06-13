@@ -18,23 +18,38 @@ public class BuildTargetsCollectorTest {
   private static void assertExpectedParsedBuildTarget(
       String targetJsonString,
       @Nullable BuildTarget expectedTarget,
+      @Nullable String cellPath,
+      String buildTargetName,
       ImmutableSet<String> requiredRemoteFiles) {
     BuildTarget actualBuiltTarget =
         BuildTargetsCollector.parseBuildTarget(
-            JSON_PARSER.parse(targetJsonString).getAsJsonObject(), requiredRemoteFiles);
+            JSON_PARSER.parse(targetJsonString).getAsJsonObject(),
+            cellPath,
+            buildTargetName,
+            requiredRemoteFiles);
     assertEquals(expectedTarget, actualBuiltTarget);
   }
 
   private static void assertExpectedParsedBuildTarget(
       String targetJsonString, @Nullable BuildTarget expectedTarget) {
-    assertExpectedParsedBuildTarget(targetJsonString, expectedTarget, ImmutableSet.of());
+    assertExpectedParsedBuildTarget(targetJsonString, expectedTarget, null, "", ImmutableSet.of());
+  }
+
+  private static void assertExpectedParsedBuildTargetList(
+      String targetsJsonString,
+      ImmutableMap<String, String> cellMappings,
+      ImmutableList<BuildTarget> expectedTargets) {
+    ImmutableList<BuildTarget> actualBuiltTarget =
+        BuildTargetsCollector.parseBuildTargetList(
+            cellMappings, JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
+    assertEquals(expectedTargets, actualBuiltTarget);
   }
 
   private static void assertExpectedParsedBuildTargetList(
       String targetsJsonString, ImmutableList<BuildTarget> expectedTargets) {
     ImmutableList<BuildTarget> actualBuiltTarget =
         BuildTargetsCollector.parseBuildTargetList(
-            JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
+            ImmutableMap.of(), JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     assertEquals(expectedTargets, actualBuiltTarget);
   }
 
@@ -235,7 +250,11 @@ public class BuildTargetsCollectorTest {
             + "  \"url\": \"URL\"\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new RemoteFileTarget("URL"), ImmutableSet.of("PATH:NAME"));
+        targetJson,
+        new RemoteFileTarget("URL"),
+        "../path/to",
+        "PATH:NAME",
+        ImmutableSet.of("PATH:NAME"));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -244,14 +263,34 @@ public class BuildTargetsCollectorTest {
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"url\": \"URL\"\n"
             + "}";
-    assertExpectedParsedBuildTarget(targetJson, null, ImmutableSet.of("PATH:BAD_NAME"));
+    assertExpectedParsedBuildTarget(
+        targetJson, null, ".", "build-target-name", ImmutableSet.of("PATH:BAD_NAME"));
+
+    // Cell path has impact on build target.
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"python_binary\",\n"
+            + "  \"srcs\": []\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget("python_binary", "../path/to/", "PATH", null, ImmutableMap.of()),
+        "../path/to/",
+        "",
+        ImmutableSet.of());
 
     // Unsupported targets should be ignored
-    assertExpectedParsedBuildTarget("{\"buck.type\": \"random_stuff\"}", null);
-    assertExpectedParsedBuildTarget("{\"buck.type\": \"java_library\"}", null);
-    assertExpectedParsedBuildTarget("{\"buck.type\": \"cxx_library\"}", null);
-    assertExpectedParsedBuildTarget("{\"buck.type\": \"ocaml_library\"}", null);
-    assertExpectedParsedBuildTarget("{\"buck.type\": \"go_library\"}", null);
+    assertExpectedParsedBuildTarget(
+        "{\"buck.base_path\": \"PATH\", \"buck.type\": \"random_stuff\"}", null);
+    assertExpectedParsedBuildTarget(
+        "{\"buck.base_path\": \"PATH\", \"buck.type\": \"java_library\"}", null);
+    assertExpectedParsedBuildTarget(
+        "{\"buck.base_path\": \"PATH\", \"buck.type\": \"cxx_library\"}", null);
+    assertExpectedParsedBuildTarget(
+        "{\"buck.base_path\": \"PATH\", \"buck.type\": \"ocaml_library\"}", null);
+    assertExpectedParsedBuildTarget(
+        "{\"buck.base_path\": \"PATH\", \"buck.type\": \"go_library\"}", null);
   }
 
   @Test
@@ -263,30 +302,30 @@ public class BuildTargetsCollectorTest {
     // The last target should be ignored.
     String targetsJson =
         "{\n"
-            + "  \"target1\": {\n"
+            + "  \"//target1\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"python_binary\",\n"
             + "    \"labels\": [\"is_fully_translated\"],\n"
             + "    \"srcs\": {\"a.py\": \"a.py\"}\n"
             + "  },\n"
-            + "  \"target2\": {\n"
+            + "  \"//target2\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"python_library\",\n"
             + "    \"labels\": [\"is_fully_translated\"],\n"
             + "    \"srcs\": [\"a.py\", \"b.py\"]\n"
             + "  },\n"
-            + "  \"target3\": {\n"
+            + "  \"//target3\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"python_test\",\n"
             + "    \"srcs\": {\"a.py\": \"a.py\"}\n"
             + "  },\n"
-            + "  \"target4\": {\n"
+            + "  \"//target4\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"python_binary\",\n"
             + "    \"labels\": [\"is_fully_translated\", \"generated\"],\n"
             + "    \"srcs\": {\"a.py\": \"a.py\"}\n"
             + "  },\n"
-            + "  \"//target_for_remote_file\": {\n"
+            + "  \"//target_for_remote_file:NAME\": {\n"
             + "    \"buck.base_path\": \"target_for_remote_file\",\n"
             + "    \"buck.type\": \"python_library\",\n"
             + "    \"name\": \"NAME\",\n"
@@ -296,25 +335,26 @@ public class BuildTargetsCollectorTest {
             + "  \"//target_for_remote_file:42.21\": {\n"
             + "    \"buck.base_path\": \"target_for_remote_file\",\n"
             + "    \"buck.type\": \"python_library\",\n"
-            + "    \"name\": \"NAME\",\n"
+            + "    \"name\": \"42.21\",\n"
             + "    \"labels\": [\"is_fully_translated\"],\n"
             + "    \"platform_deps\": [[\"py3-platform007$\", [\":a.whl\"]]]\n"
             + "  },\n"
-            + "  \"//remote_file_1\": {\n"
+            + "  \"//target_for_remote_file:a.whl-remote\": {\n"
             + "    \"buck.base_path\": \"target_for_remote_file\",\n"
             + "    \"buck.type\": \"remote_file\",\n"
             + "    \"name\": \"a.whl-remote\",\n"
             + "    \"labels\": [\"is_fully_translated\"],\n"
-            + "    \"url\": \"URL\"\n"
+            + "    \"url\": \"URL1\"\n"
             + "  },\n"
-            + "  \"//remote_file_2\": {\n"
+            + "  \"//target_for_remote_file:42.21-BAD.whl-remote\": {\n"
             + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"remote_file\",\n"
             + "    \"name\": \"NAME-42.21-BAD.whl-remote\",\n"
             + "    \"labels\": [\"is_fully_translated\"],\n"
-            + "    \"url\": \"URL\"\n"
+            + "    \"url\": \"URL2\"\n"
             + "  },\n"
-            + "  \"target2_to_be_ignored\": {\n"
+            + "  \"//target2_to_be_ignored\": {\n"
+            + "    \"buck.base_path\": \"PATH\",\n"
             + "    \"buck.type\": \"go_binary\"\n"
             + "  }\n"
             + "}\n";
@@ -326,6 +366,6 @@ public class BuildTargetsCollectorTest {
                 "python_library", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
             new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py")),
             new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")),
-            new RemoteFileTarget("URL")));
+            new RemoteFileTarget("URL1")));
   }
 }
