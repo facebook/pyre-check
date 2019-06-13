@@ -54,16 +54,38 @@ let return_annotation
 let create_overload ~resolution
                     ~define:({ Define.signature = { parameters; _ }; _ } as define) =
   let open Type.Callable in
-  let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
-    let annotation =
+  let parameters =
+    let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
+      let default = Option.is_some value in
+      { Parameter.name; annotation; default }
+    in
+    let parse_as_annotation annotation =
       annotation >>| Resolution.parse_annotation resolution |> Option.value ~default:Type.Top
     in
-    let default = Option.is_some value in
-    name, annotation, default
+    let parse = function
+      | Type.Callable.Parameter.Anonymous ({ annotation; _ } as anonymous) ->
+          Type.Callable.Parameter.Anonymous
+            { anonymous with annotation = parse_as_annotation annotation }
+      | Named ({ annotation; _ } as named) ->
+          Named { named with annotation = parse_as_annotation annotation }
+      | KeywordOnly ({ annotation; _ } as named) ->
+          KeywordOnly { named with annotation = parse_as_annotation annotation }
+      | Variable (Variadic _) -> failwith "impossible"
+      | Variable (Concrete annotation) -> (
+          let parsed_as_list_variadic =
+            annotation >>= Resolution.parse_as_list_variadic resolution
+          in
+          match parsed_as_list_variadic with
+          | Some variable -> Parameter.Variable (Variadic variable)
+          | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) )
+      | Keywords annotation -> Keywords (parse_as_annotation annotation)
+    in
+    List.map parameters ~f:parameter
+    |> Parameter.create
+    |> List.map ~f:parse
+    |> fun defined -> Defined defined
   in
-  { annotation = return_annotation ~define ~resolution;
-    parameters = Defined (List.map parameters ~f:parameter |> Parameter.create)
-  }
+  { annotation = return_annotation ~define ~resolution; parameters }
 
 
 let create ~resolution ?(invocation = Type.Callable.Static) ~parent ~name overloads =

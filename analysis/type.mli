@@ -279,7 +279,7 @@ module Callable : sig
 
     module Map : Core.Map.S with type Key.t = parameter
 
-    val create : (Identifier.t * type_t * bool) list -> type_t t list
+    val create : 'annotation named list -> 'annotation t list
 
     val default : parameter -> bool
 

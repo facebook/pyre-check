@@ -442,6 +442,15 @@ let parse_reference ?(allow_untracked = false) resolution reference =
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
+let parse_as_list_variadic ({ aliases; _ } as resolution) name =
+  let parsed_as_type_variable =
+    parse_annotation resolution name ~allow_untracked:true |> Type.primitive_name >>= aliases
+  in
+  match parsed_as_type_variable with
+  | Some (VariableAlias (ListVariadic variable)) -> Some variable
+  | _ -> None
+
+
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },

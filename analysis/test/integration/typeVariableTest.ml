@@ -937,6 +937,21 @@ let test_list_variadics _ =
     |}
     [ "Incompatible variable type [9]: f2 is declared to have type `Barable` but is used as type \
        `typing.Callable[[int, str, bool], int]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional, Callable, TypeVar
+    Ts = pyre_extensions.ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    def return_args(x: int, *args: Ts) -> Tuple[Ts]:
+      reveal_type(args)
+      return args
+    def use() -> None:
+      return_args(1, 2, 3)
+    |}
+    [ "Revealed type [-1]: Revealed type for `args` is `typing.Tuple[ListVariadic[Ts]]`.";
+      "Call error [29]: `typing.Callable(return_args)[[Named(x, int), Variable(Ts)], \
+       typing.Tuple[ListVariadic[Ts]]]` cannot be safely called because the types and kinds of \
+       its parameters depend on a type variable." ];
   ()
 
 

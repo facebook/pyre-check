@@ -191,7 +191,7 @@ let test_create_overload _ =
 let test_create _ =
   let assert_callable ?expected_implicit ?parent ~expected source =
     let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
-    let expected = parse_callable expected in
+    let expected = Resolution.parse_annotation resolution (parse_single_expression expected) in
     let check_implicit { Type.Callable.implicit = actual; _ } =
       match expected_implicit with
       (* Verify implicit if we're checking for it explicitly, ignore otherwise for convenience. *)
@@ -301,6 +301,14 @@ let test_create _ =
   assert_callable
     "def foo(*var: int, a: int = 7) -> int: ..."
     ~expected:"typing.Callable('foo')[[Variable(int), KeywordOnly(a, int, default)], int]";
+  assert_callable
+    {|
+      Ts = pyre_extensions.ListVariadic("Ts")
+      def foo(x: str, y: int, *args: Ts, z: bool) -> typing.Tuple[Ts]: ...
+    |}
+    ~expected:
+      "typing.Callable('foo')[[Named(x, str), Named(y, int), Variable(Ts), KeywordOnly(z, bool)], \
+       typing.Tuple[Ts]]";
   ()
 
 

@@ -1673,7 +1673,9 @@ let test_replace_all _ =
     (Type.parametric "p" [Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
   let replaced =
     Type.Callable.Parameter.create
-      ["__x", Type.bool, false; "__a", Type.integer, false; "__b", Type.string, false]
+      [ { name = "__x"; annotation = Type.bool; default = false };
+        { name = "__a"; annotation = Type.integer; default = false };
+        { name = "__b"; annotation = Type.string; default = false } ]
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all

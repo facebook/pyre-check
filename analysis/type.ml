@@ -1143,7 +1143,7 @@ module Callable = struct
     end)
 
     let create parameters =
-      let parameter index (keyword_only, sofar) (name, annotation, default) =
+      let parameter index (keyword_only, sofar) { name; annotation; default } =
         if String.equal (Identifier.sanitized name) "*" then
           true, sofar
         else
@@ -1302,7 +1302,8 @@ end
 
 let lambda ~parameters ~return_annotation =
   let parameters =
-    List.map parameters ~f:(fun (name, annotation) -> name, annotation, false)
+    List.map parameters ~f:(fun (name, annotation) ->
+        { Parameter.name; annotation; default = false })
     |> Callable.Parameter.create
   in
   Callable

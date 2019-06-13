@@ -848,145 +848,164 @@ module State (Context : Context) = struct
             in
             state, annotation
           in
-          let state, { Annotation.annotation; mutability } =
-            match index, parent with
-            | 0, Some parent
-            (* __new__ does not require an annotation for __cls__, even though it is a static
-               method. *)
-              when not
-                     ( Define.is_class_toplevel define
-                     || Define.is_static_method define
-                        && not (String.equal (Define.unqualified_name define) "__new__") ) -> (
-                let resolved, is_class_method =
-                  let parent_annotation =
-                    let parent_name = Reference.show parent in
-                    let parent_type = Type.Primitive parent_name in
-                    let variables =
-                      TypeOrder.variables (Resolution.order resolution) parent_type
-                    in
-                    match variables with
-                    | None
-                    | Some [] ->
-                        parent_type
-                    | Some variables ->
-                        Type.Parametric { name = parent_name; parameters = variables }
-                    | exception _ -> parent_type
-                  in
-                  if Define.is_class_method define || Define.is_class_property define then
-                    (* First parameter of a method is a class object. *)
-                    Type.meta parent_annotation, true
-                  else (* First parameter of a method is the callee object. *)
-                    parent_annotation, false
-                in
-                match annotation with
-                | Some annotation ->
-                    let state, annotation =
-                      parse_and_check_annotation ~state ~bind_variables:false annotation
-                    in
-                    let compatible =
-                      Resolution.constraints_solution_exists
-                        resolution
-                        ~left:annotation
-                        ~right:resolved
-                    in
-                    let state =
-                      let name = Identifier.sanitized name in
-                      let kind =
-                        if compatible then
-                          None
-                        else if
-                          (is_class_method && String.equal name "cls")
-                          || ((not is_class_method) && String.equal name "self")
-                        then (* Assume the user incorrectly tried to type the implicit parameter *)
-                          Some
-                            (Error.InvalidMethodSignature { annotation = Some annotation; name })
-                        else (* Assume the user forgot to specify the implicit parameter *)
-                          Some
-                            (Error.InvalidMethodSignature
-                               { annotation = None;
-                                 name = (if is_class_method then "cls" else "self")
-                               })
+          let parse_as_unary () =
+            let state, { Annotation.annotation; mutability } =
+              match index, parent with
+              | 0, Some parent
+              (* __new__ does not require an annotation for __cls__, even though it is a static
+                 method. *)
+                when not
+                       ( Define.is_class_toplevel define
+                       || Define.is_static_method define
+                          && not (String.equal (Define.unqualified_name define) "__new__") ) -> (
+                  let resolved, is_class_method =
+                    let parent_annotation =
+                      let parent_name = Reference.show parent in
+                      let parent_type = Type.Primitive parent_name in
+                      let variables =
+                        TypeOrder.variables (Resolution.order resolution) parent_type
                       in
-                      match kind with
-                      | Some kind -> emit_error ~state ~location ~kind
-                      | None -> state
+                      match variables with
+                      | None
+                      | Some [] ->
+                          parent_type
+                      | Some variables ->
+                          Type.Parametric { name = parent_name; parameters = variables }
+                      | exception _ -> parent_type
                     in
-                    state, Annotation.create annotation
-                | None -> state, Annotation.create resolved )
-            | _ -> (
-                let annotation_and_state =
-                  annotation
-                  >>| parse_and_check_annotation ~state ~bind_variables:false
-                  >>| add_variance_error
-                in
-                let contains_prohibited_any parsed_annotation =
-                  let contains_literal_any =
-                    annotation >>| Type.expression_contains_any |> Option.value ~default:false
+                    if Define.is_class_method define || Define.is_class_property define then
+                      (* First parameter of a method is a class object. *)
+                      Type.meta parent_annotation, true
+                    else (* First parameter of a method is the callee object. *)
+                      parent_annotation, false
                   in
-                  contains_literal_any
-                  && not (Resolution.is_string_to_any_mapping resolution parsed_annotation)
-                in
-                match annotation_and_state, value with
-                | Some (_, annotation), Some value when Type.contains_final annotation ->
-                    let { resolved = value_annotation; _ } =
-                      forward_expression ~state ~expression:value
+                  match annotation with
+                  | Some annotation ->
+                      let state, annotation =
+                        parse_and_check_annotation ~state ~bind_variables:false annotation
+                      in
+                      let compatible =
+                        Resolution.constraints_solution_exists
+                          resolution
+                          ~left:annotation
+                          ~right:resolved
+                      in
+                      let state =
+                        let name = Identifier.sanitized name in
+                        let kind =
+                          if compatible then
+                            None
+                          else if
+                            (is_class_method && String.equal name "cls")
+                            || ((not is_class_method) && String.equal name "self")
+                          then
+                            (* Assume the user incorrectly tried to type the implicit parameter *)
+                            Some
+                              (Error.InvalidMethodSignature { annotation = Some annotation; name })
+                          else (* Assume the user forgot to specify the implicit parameter *)
+                            Some
+                              (Error.InvalidMethodSignature
+                                 { annotation = None;
+                                   name = (if is_class_method then "cls" else "self")
+                                 })
+                        in
+                        match kind with
+                        | Some kind -> emit_error ~state ~location ~kind
+                        | None -> state
+                      in
+                      state, Annotation.create annotation
+                  | None -> state, Annotation.create resolved )
+              | _ -> (
+                  let annotation_and_state =
+                    annotation
+                    >>| parse_and_check_annotation ~state ~bind_variables:false
+                    >>| add_variance_error
+                  in
+                  let contains_prohibited_any parsed_annotation =
+                    let contains_literal_any =
+                      annotation >>| Type.expression_contains_any |> Option.value ~default:false
                     in
-                    ( add_final_parameter_annotation_error ~state,
-                      Annotation.create_immutable
-                        ~global:false
-                        ~original:(Some annotation)
-                        value_annotation )
-                | Some (_, annotation), Some value when contains_prohibited_any annotation ->
-                    let { resolved = value_annotation; _ } =
-                      forward_expression ~state ~expression:value
-                    in
-                    ( add_missing_parameter_annotation_error
-                        ~state
-                        ~given_annotation:(Some annotation)
-                        (Some value_annotation),
-                      Annotation.create_immutable
-                        ~global:false
-                        ~original:(Some annotation)
-                        value_annotation )
-                | Some (_, annotation), _ when Type.contains_final annotation ->
-                    ( add_final_parameter_annotation_error ~state,
-                      Annotation.create_immutable ~global:false annotation )
-                | Some (_, annotation), None when contains_prohibited_any annotation ->
-                    ( add_missing_parameter_annotation_error
-                        ~state
-                        ~given_annotation:(Some annotation)
-                        None,
-                      Annotation.create_immutable ~global:false annotation )
-                | Some (state, annotation), value ->
-                    let state =
-                      value
-                      >>| (fun value -> forward_expression ~state ~expression:value)
-                      >>| (fun { resolved; _ } -> resolved)
-                      >>| add_incompatible_variable_error ~state ~value annotation
-                      |> Option.value ~default:state
-                    in
-                    state, Annotation.create_immutable ~global:false annotation
-                | None, Some value ->
-                    let { resolved = annotation; _ } =
-                      forward_expression ~state ~expression:value
-                    in
-                    ( add_missing_parameter_annotation_error
-                        ~state
-                        ~given_annotation:None
-                        (Some annotation),
-                      Annotation.create annotation )
-                | None, None ->
-                    ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
-                      Annotation.create Type.Any ) )
+                    contains_literal_any
+                    && not (Resolution.is_string_to_any_mapping resolution parsed_annotation)
+                  in
+                  match annotation_and_state, value with
+                  | Some (_, annotation), Some value when Type.contains_final annotation ->
+                      let { resolved = value_annotation; _ } =
+                        forward_expression ~state ~expression:value
+                      in
+                      ( add_final_parameter_annotation_error ~state,
+                        Annotation.create_immutable
+                          ~global:false
+                          ~original:(Some annotation)
+                          value_annotation )
+                  | Some (_, annotation), Some value when contains_prohibited_any annotation ->
+                      let { resolved = value_annotation; _ } =
+                        forward_expression ~state ~expression:value
+                      in
+                      ( add_missing_parameter_annotation_error
+                          ~state
+                          ~given_annotation:(Some annotation)
+                          (Some value_annotation),
+                        Annotation.create_immutable
+                          ~global:false
+                          ~original:(Some annotation)
+                          value_annotation )
+                  | Some (_, annotation), _ when Type.contains_final annotation ->
+                      ( add_final_parameter_annotation_error ~state,
+                        Annotation.create_immutable ~global:false annotation )
+                  | Some (_, annotation), None when contains_prohibited_any annotation ->
+                      ( add_missing_parameter_annotation_error
+                          ~state
+                          ~given_annotation:(Some annotation)
+                          None,
+                        Annotation.create_immutable ~global:false annotation )
+                  | Some (state, annotation), value ->
+                      let state =
+                        value
+                        >>| (fun value -> forward_expression ~state ~expression:value)
+                        >>| (fun { resolved; _ } -> resolved)
+                        >>| add_incompatible_variable_error ~state ~value annotation
+                        |> Option.value ~default:state
+                      in
+                      state, Annotation.create_immutable ~global:false annotation
+                  | None, Some value ->
+                      let { resolved = annotation; _ } =
+                        forward_expression ~state ~expression:value
+                      in
+                      ( add_missing_parameter_annotation_error
+                          ~state
+                          ~given_annotation:None
+                          (Some annotation),
+                        Annotation.create annotation )
+                  | None, None ->
+                      ( add_missing_parameter_annotation_error ~state ~given_annotation:None None,
+                        Annotation.create Type.Any ) )
+            in
+            let annotation =
+              let annotation = Type.Variable.mark_all_variables_as_bound annotation in
+              if String.is_prefix ~prefix:"**" name then
+                Type.dictionary ~key:Type.string ~value:annotation
+              else if String.is_prefix ~prefix:"*" name then
+                Type.Tuple (Type.Unbounded annotation)
+              else
+                annotation
+            in
+            state, { Annotation.annotation; mutability }
           in
-          let annotation =
-            let annotation = Type.Variable.mark_all_variables_as_bound annotation in
-            if String.is_prefix ~prefix:"**" name then
-              Type.dictionary ~key:Type.string ~value:annotation
-            else if String.is_prefix ~prefix:"*" name then
-              Type.Tuple (Type.Unbounded annotation)
+          let state, { Annotation.annotation; mutability } =
+            if (not (String.is_prefix ~prefix:"**" name)) && String.is_prefix ~prefix:"*" name then
+              let parsed_as_list_variadic =
+                annotation >>= Resolution.parse_as_list_variadic resolution
+              in
+              match parsed_as_list_variadic with
+              | Some variable ->
+                  ( state,
+                    { Annotation.annotation = Type.Tuple (Bounded (Variable variable));
+                      mutability = Mutable
+                    } )
+              | None -> parse_as_unary ()
             else
-              annotation
+              parse_as_unary ()
           in
           let mutability =
             match mutability with
@@ -1155,7 +1174,8 @@ module State (Context : Context) = struct
                       let overriding_parameters =
                         Method.create ~define ~parent:(Annotated.Class.annotation definition)
                         |> Method.parameter_annotations ~resolution
-                        |> List.map ~f:(fun (name, annotation) -> name, annotation, false)
+                        |> List.map ~f:(fun (name, annotation) ->
+                               { Type.Callable.Parameter.name; annotation; default = false })
                         |> Type.Callable.Parameter.create
                       in
                       let check_parameter errors overridden_parameter =
@@ -2245,7 +2265,7 @@ module State (Context : Context) = struct
            that behavior you can always write a real inner function with a literal return type *)
         let resolved = Type.weaken_literals resolved in
         let create_parameter { Node.value = { Parameter.name; value; _ }; _ } =
-          name, Type.Any, Option.is_some value
+          { Type.Callable.Parameter.name; annotation = Type.Any; default = Option.is_some value }
         in
         let parameters =
           List.map parameters ~f:create_parameter
@@ -3876,16 +3896,12 @@ module State (Context : Context) = struct
             schedule
               ~variables
               ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
-        | Define ({ Define.signature = { parameters; _ }; _ } as define) ->
+        | Define define ->
             let variables =
-              let extract_variables { Node.value = { Parameter.annotation; _ }; _ } =
-                match annotation with
-                | None -> []
-                | Some annotation ->
-                    let annotation = Resolution.parse_annotation resolution annotation in
-                    Type.Variable.all_free_variables annotation
-              in
-              List.concat_map parameters ~f:extract_variables
+              AnnotatedCallable.create_overload ~resolution ~define
+              |> (fun { parameters; _ } ->
+                   Type.Callable.create ~parameters ~annotation:Type.Top ())
+              |> Type.Variable.all_free_variables
               |> List.dedup_and_sort ~compare:Type.Variable.compare
             in
             schedule ~variables ~define
