@@ -898,7 +898,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                 qualify_strings
             in
             let name =
-              let rename identifier = "$parameter$" ^ identifier in
+              let rename identifier =
+                let parameter_prefix = "$parameter$" in
+                if String.is_prefix identifier ~prefix:parameter_prefix then
+                  identifier
+                else
+                  parameter_prefix ^ identifier
+              in
               name >>| Node.map ~f:rename
             in
             { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }

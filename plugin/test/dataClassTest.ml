@@ -658,6 +658,131 @@ let test_transform_environment _ =
           def __eq__(self, o: object) -> bool:
             pass
       |}
+    ];
+
+  (* Dataclass field init disabler *)
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=False)
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=False)
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=True)
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=True)
+          def __init__(self, x: int) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=True, default=1)
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=True, default=1)
+          def __init__(self, x: int = 1) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=True, default_factory=foo)
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=True, default_factory=foo)
+          def __init__(self, x: int = foo()) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+  PluginTest.assert_environment_contains
+    (* NOTE: Ideally we'd like to warn about this somehow *)
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=False, default=1)
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=False, default=1)
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
+    ];
+  PluginTest.assert_environment_contains
+    {|
+      @dataclass
+      class A:
+        x: int = dataclasses.field(init=False)
+      @dataclass
+      class B:
+        y: str = "abc"
+    |}
+    [ {|
+        @dataclass
+        class A:
+          x: int = dataclasses.field(init=False)
+          def __init__(self) -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+      {|
+        @dataclass
+        class B:
+          y: str = "abc"
+          def __init__(self, y: str = "abc") -> None:
+            pass
+          def __repr__(self) -> str:
+            pass
+          def __eq__(self, o: object) -> bool:
+            pass
+      |}
     ]
 
 

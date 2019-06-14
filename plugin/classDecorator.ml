@@ -55,6 +55,77 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                          (Annotated.Class.has_method annotated_class ~resolution ~name:"__init__")
                   then
                     let parameters =
+                      let extract_dataclass_field_arguments
+                          { Node.value = { Annotated.Attribute.value; _ }; _ }
+                        =
+                        match value with
+                        | { Node.value =
+                              Expression.Call
+                                { callee =
+                                    { Node.value =
+                                        Expression.Name
+                                          (Name.Attribute
+                                            { base =
+                                                { Node.value =
+                                                    Expression.Name (Name.Identifier "dataclasses")
+                                                ; _
+                                                };
+                                              attribute = "field"
+                                            ; _
+                                            })
+                                    ; _
+                                    };
+                                  arguments
+                                ; _
+                                }
+                          ; _
+                          } ->
+                            Some arguments
+                        | _ -> None
+                      in
+                      let init_not_disabled attribute =
+                        let is_disable_init { Call.Argument.name; value = { Node.value; _ } } =
+                          match name, value with
+                          | Some { Node.value = parameter_name; _ }, Expression.False
+                            when String.equal "init" (Identifier.sanitized parameter_name) ->
+                              true
+                          | _ -> false
+                        in
+                        match extract_dataclass_field_arguments attribute with
+                        | Some arguments -> not (List.exists arguments ~f:is_disable_init)
+                        | _ -> true
+                      in
+                      let extract_init_value
+                          ( { Node.value = { Annotated.Attribute.initialized; value; _ }; _ } as
+                          attribute )
+                        =
+                        let get_default_value { Call.Argument.name; value } : expression_t option =
+                          match name with
+                          | Some { Node.value = parameter_name; _ } ->
+                              if String.equal "default" (Identifier.sanitized parameter_name) then
+                                Some value
+                              else if
+                                String.equal
+                                  "default_factory"
+                                  (Identifier.sanitized parameter_name)
+                              then
+                                let { Node.location; _ } = value in
+                                Some
+                                  { Node.value =
+                                      Expression.Call { Call.callee = value; arguments = [] };
+                                    location
+                                  }
+                              else
+                                None
+                          | _ -> None
+                        in
+                        match initialized with
+                        | false -> None
+                        | true -> (
+                          match extract_dataclass_field_arguments attribute with
+                          | Some arguments -> List.find_map arguments ~f:get_default_value
+                          | _ -> Some value )
+                      in
                       let collect_parameters parameters attribute =
                         (* Parameters must be annotated attributes *)
                         let annotation =
@@ -68,12 +139,7 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                         in
                         match Annotated.Attribute.name attribute with
                         | name when not (Type.is_unknown annotation) ->
-                            let value =
-                              if Annotated.Attribute.initialized attribute then
-                                Some (Annotated.Attribute.value attribute)
-                              else
-                                None
-                            in
+                            let value = extract_init_value attribute in
                             let annotation = Type.expression annotation in
                             let rec override_existing_parameters unchecked_parameters =
                               match unchecked_parameters with
@@ -109,6 +175,7 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                       in
                       parent_dataclasses
                       |> List.map ~f:parent_attributes
+                      |> List.map ~f:(List.filter ~f:init_not_disabled)
                       |> List.fold ~init:[] ~f:(fun parameters ->
                              List.fold ~init:parameters ~f:collect_parameters)
                     in
