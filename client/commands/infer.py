@@ -290,7 +290,7 @@ def generate_stub_files(arguments, errors) -> List[StubFile]:
     for path, errors in files.items():
         stub = StubFile(errors, full_only=arguments.full_only)
         if not stub.is_empty():
-            path = Path(os.getcwd()) / Path(path)
+            path = pyre_configuration_directory(arguments) / Path(path)
             stubs.append(stub)
     return stubs
 
@@ -329,7 +329,7 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
     if arguments.in_place != []:
         stubs = filter_paths(arguments, stubs, type_directory)
 
-    current_directory = os.getcwd()
+    project_directory = pyre_configuration_directory(arguments)
 
     for stub in stubs:
         try:
@@ -340,19 +340,19 @@ def annotate_paths(arguments, stubs, type_directory) -> None:
                     "--quiet",
                     "--incremental",
                     "--target-dir",
-                    stub.path(current_directory).parent,
+                    stub.path(project_directory).parent,
                     "--pyi-dir",
                     stub.path(type_directory).parent,
-                    str(stub.path(current_directory)).rstrip("i"),
+                    str(stub.path(project_directory)).rstrip("i"),
                 ]
             )
             LOG.info(
-                "Annotated {}".format(str(stub.path(current_directory)).rstrip("i"))
+                "Annotated {}".format(str(stub.path(project_directory)).rstrip("i"))
             )
         except (subprocess.CalledProcessError):
             LOG.warning(
                 "Failed to annotate {}".format(
-                    str(stub.path(current_directory)).rstrip("i")
+                    str(stub.path(project_directory)).rstrip("i")
                 )
             )
     with open(os.devnull, "w") as FNULL:
@@ -367,6 +367,13 @@ def file_exists(path):
     if not os.path.exists(path):
         raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
     return path
+
+
+def pyre_configuration_directory(arguments) -> Path:
+    if arguments.local_configuration:
+        return Path(arguments.local_configuration)
+    else:
+        return Path(os.getcwd())
 
 
 class Infer(Reporting):
@@ -386,7 +393,9 @@ class Infer(Reporting):
         if self._print_errors:
             self._print(errors)
         else:
-            type_directory = Path(os.getcwd()) / Path(".pyre/types")
+            type_directory = pyre_configuration_directory(self._arguments) / Path(
+                ".pyre/types"
+            )
             stubs = generate_stub_files(self._arguments, errors)
             write_stubs_to_disk(self._arguments, stubs, type_directory)
             if self._arguments.in_place is not None:
