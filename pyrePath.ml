@@ -101,14 +101,21 @@ let real_path path =
   | Relative _ -> absolute path |> create_absolute
 
 
+(* Variant of Sys.readdir where names are sorted in alphabetical order *)
+let read_directory_ordered path =
+  let entries = Core.Sys.readdir path in
+  Array.sort ~compare:String.compare entries;
+  entries
+
+
 let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~root () =
   let rec list sofar path =
     if Core.Sys.is_directory path = `Yes then
       if directory_filter path then (
-        match Core.Sys.ls_dir path with
+        match read_directory_ordered path with
         | entries ->
             let collect sofar entry = list sofar (path ^/ entry) in
-            List.fold ~init:sofar ~f:collect entries
+            Array.fold ~init:sofar ~f:collect entries
         | exception Sys_error _ ->
             Log.error "Could not list `%s`" path;
             sofar )
