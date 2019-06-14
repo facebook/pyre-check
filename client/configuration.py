@@ -341,7 +341,6 @@ class Configuration:
         try:
             with open(path) as file:
                 LOG.debug("Reading configuration `%s`...", path)
-
                 configuration = _ConfigurationFile(file)
 
                 source_directories = configuration.consume(

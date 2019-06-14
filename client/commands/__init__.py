@@ -10,6 +10,7 @@ from .check import Check as Check  # noqa
 from .color import Color as Color  # noqa
 from .deobfuscate import Deobfuscate as Deobfuscate  # noqa
 from .incremental import Incremental as Incremental  # noqa
+from .infer import Infer as Infer  # noqa
 from .initialize import Initialize as Initialize  # noqa
 from .kill import Kill as Kill  # noqa
 from .persistent import Persistent as Persistent  # noqa

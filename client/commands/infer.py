@@ -10,28 +10,14 @@ import os
 import re
 import shutil
 import subprocess
-import sys
-import time
-import traceback
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
-from . import (
-    EnvironmentException,
-    buck,
-    commands,
-    get_binary_version,
-    is_capable_terminal,
-    log,
-    log_statistics,
-    readable_directory,
-    resolve_analysis_directory,
-    switch_root,
-)
-from .commands import ExitCode, typeshed_search_path
-from .configuration import Configuration
-from .filesystem import AnalysisDirectory, SharedAnalysisDirectory
+from .. import log
+from .check import Check
+from .command import Command, typeshed_search_path
+from .reporting import JSON, Reporting
 
 
 LOG = logging.getLogger(__name__)
@@ -383,16 +369,19 @@ def file_exists(path):
     return path
 
 
-class Infer(commands.Reporting):
+class Infer(Reporting):
+    NAME = "infer"
+
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         arguments.show_error_traces = True
-        arguments.output = commands.reporting.JSON
+        arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
+        self._local_configuration = arguments.local_configuration
 
-    def run(self) -> commands.Command:
-        result = self._call_client(command=commands.Check.NAME)
+    def run(self) -> Command:
+        result = self._call_client(command=Check.NAME)
         errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
             self._print(errors)
@@ -417,193 +406,3 @@ class Infer(commands.Reporting):
         if self._recursive:
             flags.append("-recursive-infer")
         return flags
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        allow_abbrev=False,
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog="environment variables:"
-        "\n   `PYRE_BINARY` overrides the pyre binary used."
-        "\n   `PYRE_VERSION_HASH` overrides the pyre version set in the "
-        "configuration files.",
-    )
-
-    parser.add_argument(
-        "-l", "--local-configuration", type=str, help="Use a local configuration"
-    )
-
-    parser.add_argument("--version", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--sequential", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--strict", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--additional-check", action="append", help=argparse.SUPPRESS)
-
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--noninteractive", action="store_true", help="Disable interactive logging"
-    )
-    parser.add_argument(
-        "--hide-parse-errors",
-        action="store_true",
-        help="Display detailed information about parse errors",
-        default="true",
-    )
-    parser.add_argument(
-        "--show-parse-errors",
-        action="store_true",
-        help="DEPRECATED Show detailed information about parse errors",
-    )
-    parser.add_argument(
-        "--typeshed",
-        default=None,
-        type=readable_directory,
-        help="Location of the typeshed stubs",
-    )
-
-    parser.add_argument("--logging-sections", help="Enable sectional logging")
-    parser.add_argument(
-        "--log-identifier",
-        default="",
-        help=argparse.SUPPRESS,  # Add given identifier to logged samples.
-    )
-    parser.add_argument(
-        "--logger", help=argparse.SUPPRESS  # Specify custom logging binary.
-    )
-    parser.add_argument(
-        "--enable-profiling", action="store_true", help=argparse.SUPPRESS
-    )
-
-    parser.add_argument(
-        "--binary-version",
-        action="store_true",
-        help="Print the pyre.bin version to be used",
-    )
-
-    parser.add_argument(
-        "-p",
-        "--print-only",
-        action="store_true",
-        help="Print raw JSON errors to standard output, "
-        + "without converting to stubs or annnotating.",
-    )
-    parser.add_argument(
-        "-f",
-        "--full-only",
-        action="store_true",
-        help="Only output fully annotated functions. Requires infer flag.",
-    )
-    parser.add_argument(
-        "-r",
-        "--recursive",
-        action="store_true",
-        help="Recursively run infer until no new annotations are generated."
-        + " Requires infer flag.",
-    )
-    parser.add_argument(
-        "-i",
-        "--in-place",
-        nargs="*",
-        metavar="path",
-        type=file_exists,
-        help="Add annotations to functions in selected paths."
-        + " Takes a set of files and folders to add annotations to."
-        + " If no paths are given, all functions are annotated."
-        + " WARNING: Modifies original files and requires infer flag and retype",
-    )
-
-    buck_arguments = parser.add_argument_group("buck")
-    buck_arguments.add_argument(
-        "--build", action="store_true", help="Build all the necessary artifacts."
-    )
-    buck_arguments.add_argument(
-        "--target", action="append", dest="targets", help="The buck target to check"
-    )
-    buck_arguments.add_argument(
-        "--use-buck-builder",
-        action="store_true",
-        help="Use Pyre's experimental builder for Buck projects.",
-    )
-
-    # Let buck project builder succeed even with unbuilt dependencies.
-    buck_arguments.add_argument(
-        "--ignore-unbuilt-dependencies", action="store_true", help=argparse.SUPPRESS
-    )
-
-    source_directories = parser.add_argument_group("source-directories")
-    source_directories.add_argument(
-        "--source-directory",
-        action="append",
-        dest="source_directories",
-        help="The source directory to run the inference on.",
-    )
-
-    arguments = parser.parse_args()
-    arguments.filter_directory = None
-
-    start = time.time()
-    stubs = []
-    error_message = ""
-    configuration = None
-    try:
-        exit_code = ExitCode.SUCCESS
-        analysis_directory = None
-
-        arguments.capable_terminal = is_capable_terminal()
-        if arguments.debug or not arguments.capable_terminal:
-            arguments.noninteractive = True
-        arguments.command = None
-
-        log.initialize(arguments)
-        switch_root(arguments)
-
-        configuration = Configuration(
-            local_configuration=arguments.local_configuration,
-            typeshed=arguments.typeshed,
-        )
-
-        if arguments.version or arguments.binary_version:
-            sys.stdout.write(get_binary_version(configuration) + "\n")
-            return ExitCode.SUCCESS
-
-        analysis_directory = resolve_analysis_directory(
-            arguments, commands, configuration
-        )
-        analysis_directory.prepare()
-        Infer(arguments, configuration, analysis_directory).run()
-    except (
-        buck.BuckException,
-        commands.ClientException,
-        EnvironmentException,
-    ) as error:
-        error_message = str(error)
-        LOG.error(error_message)
-        LOG.error("For more information, run 'pyre-infer --help'.")
-        exit_code = ExitCode.FAILURE
-    except Exception as error:
-        error_message = str(error)
-        LOG.error(error_message)
-        LOG.error("For more information, run 'pyre-infer --help'.")
-        LOG.info(traceback.format_exc())
-        exit_code = ExitCode.FAILURE
-    finally:
-        if analysis_directory:
-            analysis_directory.cleanup()
-        log.cleanup(arguments)
-        if configuration and configuration.logger:
-            log_statistics(
-                "perfpipe_pyre_infer_performance",
-                arguments=arguments,
-                configuration=configuration,
-                integers={
-                    "exit_code": exit_code,
-                    "runtime": int((time.time() - start) * 1000),  # ms
-                    "stubs_generated": len(stubs),
-                },
-                normals={"error_message": error_message},
-            )
-        return exit_code
-
-
-if __name__ == "__main__":
-    sys.exit(main())

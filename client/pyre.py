@@ -49,6 +49,11 @@ def main() -> int:
         assert_writable_directory(path)
         return path
 
+    def file_exists(path: str) -> str:
+        if not os.path.exists(path):
+            raise argparse.ArgumentTypeError("ERROR: " + str(path) + " does not exist")
+        return path
+
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -383,6 +388,40 @@ def main() -> int:
     """
     query.add_argument("query", help=query_argument_message)
     query.set_defaults(command=commands.Query)
+
+    infer = parsed_commands.add_parser(commands.Infer.NAME)
+    infer.add_argument(
+        "-p",
+        "--print-only",
+        action="store_true",
+        help="Print raw JSON errors to standard output, "
+        + "without converting to stubs or annnotating.",
+    )
+    infer.add_argument(
+        "-f",
+        "--full-only",
+        action="store_true",
+        help="Only output fully annotated functions. Requires infer flag.",
+    )
+    infer.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help="Recursively run infer until no new annotations are generated."
+        + " Requires infer flag.",
+    )
+    infer.add_argument(
+        "-i",
+        "--in-place",
+        nargs="*",
+        metavar="path",
+        type=file_exists,
+        help="Add annotations to functions in selected paths."
+        + " Takes a set of files and folders to add annotations to."
+        + " If no paths are given, all functions are annotated."
+        + " WARNING: Modifies original files and requires infer flag and retype",
+    )
+    infer.set_defaults(command=commands.Infer)
 
     arguments = parser.parse_args()
 

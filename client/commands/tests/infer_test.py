@@ -3,26 +3,24 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import sys
 import textwrap
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
-from .. import commands, configuration, infer, log
-from ..error import Error
-from ..filesystem import AnalysisDirectory
-from ..infer import (
+from ... import commands
+from ...commands.infer import (
     FieldStub,
     FunctionStub,
     Infer,
     StubFile,
     _relativize_access,
     dequalify,
-    main,
 )
+from ...error import Error
+from ...filesystem import AnalysisDirectory
 
 
-_typeshed_search_path = "{}.typeshed_search_path".format(infer.__name__)
+_typeshed_search_path = "{}.typeshed_search_path".format(commands.infer.__name__)
 
 
 def build_json(inference):
@@ -574,13 +572,3 @@ class InferTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
-
-    @patch.object(log, "initialize")
-    @patch.object(log, "cleanup")
-    @patch.object(configuration.Configuration, "_read")
-    @patch.object(configuration.Configuration, "_validate")
-    def test_main(self, validate, read, log_cleanup, log_initialize) -> None:
-        with patch.object(sys, "argv", ["infer", "--target", "."]), patch.object(
-            Infer, "run"
-        ):
-            self.assertEqual(main(), 2)

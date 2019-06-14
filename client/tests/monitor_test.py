@@ -11,8 +11,8 @@ from unittest.mock import call, patch
 
 from .. import monitor, watchman_subscriber
 from ..commands import stop
+from ..commands.tests.command_test import mock_arguments, mock_configuration
 from ..filesystem import AnalysisDirectory
-from .infer_test import mock_arguments, mock_configuration
 
 
 class MonitorTest(unittest.TestCase):
