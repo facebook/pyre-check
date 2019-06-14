@@ -43,8 +43,8 @@ public final class PythonTarget implements BuildTarget {
     this(ruleName, null, basePath, baseModule, sources);
   }
 
-  private static ImmutableMap<String, String> parseSources(JsonElement sourcesField) {
-    ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
+  private static void addSources(
+      JsonElement sourcesField, ImmutableMap.Builder<String, String> sourcesBuilder) {
     if (sourcesField.isJsonObject()) {
       // Parse srcs of the form { "a": "b", "c": "d" } into Java Map.
       for (Map.Entry<String, JsonElement> entry : sourcesField.getAsJsonObject().entrySet()) {
@@ -63,11 +63,10 @@ public final class PythonTarget implements BuildTarget {
               + "Unexpected srcs field: "
               + sourcesField);
     }
-    return sourcesBuilder.build();
   }
 
-  private static @Nullable ImmutableMap<String, String> parseVersionedSources(
-      JsonArray versionedSourcesArray) {
+  private static void addVersionedSources(
+      JsonArray versionedSourcesArray, ImmutableMap.Builder<String, String> sourcesBuilder) {
     // Pick the highest possible python minor version for consistency.
     int highestPythonMinorVersion = -1;
     JsonObject sourceSet = null;
@@ -99,31 +98,29 @@ public final class PythonTarget implements BuildTarget {
       }
     }
     if (sourceSet == null) {
-      return null;
+      return;
     }
-    ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
     for (Map.Entry<String, JsonElement> entry : sourceSet.entrySet()) {
       // Versioned sources entries: key => output, value => source, so it's inverted here.
       sourcesBuilder.put(entry.getValue().getAsString(), entry.getKey());
     }
-    return sourcesBuilder.build();
   }
 
   static @Nullable PythonTarget parse(
       String ruleName, @Nullable String cellPath, JsonObject targetJsonObject) {
-    ImmutableMap<String, String> sources;
-    // Ignore any target that does not have srcs or versioned_srcs
+    ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
+    // Both `srcs` and `versioned_srcs` might be present in a target.
     JsonElement sourcesField = targetJsonObject.get("srcs");
     if (sourcesField != null) {
-      sources = parseSources(sourcesField);
-    } else {
-      JsonElement versionedSourcesField = targetJsonObject.get("versioned_srcs");
-      sources =
-          versionedSourcesField == null
-              ? null
-              : parseVersionedSources(versionedSourcesField.getAsJsonArray());
+      addSources(sourcesField, sourcesBuilder);
     }
-    if (sources == null) {
+    JsonElement versionedSourcesField = targetJsonObject.get("versioned_srcs");
+    if (versionedSourcesField != null) {
+      addVersionedSources(versionedSourcesField.getAsJsonArray(), sourcesBuilder);
+    }
+    ImmutableMap<String, String> sources = sourcesBuilder.build();
+    // Ignore any target that contains no sources.
+    if (sources.isEmpty()) {
       return null;
     }
     String basePath = targetJsonObject.get("buck.base_path").getAsString();

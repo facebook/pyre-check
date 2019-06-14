@@ -134,6 +134,34 @@ public class BuildTargetsCollectorTest {
             null,
             ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
 
+    // Python library with sources AND versioned sources
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"python_library\",\n"
+            + "  \"srcs\": [\"non_version_specific.py\"],\n"
+            + "  \"versioned_srcs\": [[{\n"
+            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
+            + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
+            + "  }, {\n"
+            + "      \"a.py\": \"3.6/a.py\",\n"
+            + "      \"b.py\": \"3.6/b.py\"\n"
+            + "  }]]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget(
+            "python_library",
+            "PATH",
+            null,
+            ImmutableMap.of(
+                "non_version_specific.py",
+                "non_version_specific.py",
+                "3.6/a.py",
+                "a.py",
+                "3.6/b.py",
+                "b.py")));
+
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -271,11 +299,12 @@ public class BuildTargetsCollectorTest {
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"python_binary\",\n"
-            + "  \"srcs\": []\n"
+            + "  \"srcs\": [\"a.py\"]\n"
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("python_binary", "../path/to/", "PATH", null, ImmutableMap.of()),
+        new PythonTarget(
+            "python_binary", "../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py")),
         "../path/to/",
         "",
         ImmutableSet.of());
