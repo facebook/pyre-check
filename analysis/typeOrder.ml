@@ -1031,81 +1031,26 @@ module OrderImplementation = struct
                 | Type.Primitive name -> Some (Type.Parametric { name; parameters })
                 | _ -> None
               in
-              (* 1. Go one level down in the class hierarchy and try from there. *)
-              let step_into_subclasses () =
-                let target_to_parametric { Target.target; parameters } =
-                  let parameters =
-                    Handler.find (Handler.edges ()) target
-                    >>| get_instantiated_successors ~generic_index ~parameters
-                    >>= get_generic_parameters ~generic_index
-                    |> Option.value ~default:[]
-                  in
-                  Handler.find (Handler.annotations ()) target
-                  >>| Type.split
-                  >>| fst
-                  >>= fun primitive -> parametric ~primitive ~parameters
+              (* Go one level down in the class hierarchy and try from there. *)
+              let target_to_parametric { Target.target; parameters } =
+                let parameters =
+                  Handler.find (Handler.edges ()) target
+                  >>| get_instantiated_successors ~generic_index ~parameters
+                  >>= get_generic_parameters ~generic_index
+                  |> Option.value ~default:[]
                 in
-                let successors =
-                  let left_index = index_of handler (Type.Primitive left_name) in
-                  Handler.find (Handler.edges ()) left_index |> Option.value ~default:[]
-                in
-                get_instantiated_successors ~generic_index ~parameters:left_parameters successors
-                |> List.filter_map ~f:target_to_parametric
-                |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
+                Handler.find (Handler.annotations ()) target
+                >>| Type.split
+                >>| fst
+                >>= fun primitive -> parametric ~primitive ~parameters
               in
-              (* 2. Try and replace all parameters, one at a time, to get closer to the
-                 destination. *)
-              let replace_parameters_with_destination left_variables =
-                (* Mapping from a variable in `left` to the target parameter (via subclass
-                   substitutions) in `right`. *)
-                let variable_substitutions =
-                  let right_propagated =
-                    (* Create a "fake" primitive+variables type that we can propagate to the
-                       target. *)
-                    parametric ~primitive:(Type.Primitive left_name) ~parameters:left_variables
-                    >>= (fun source ->
-                          instantiate_successors_parameters
-                            order
-                            ~source
-                            ~target:(Type.Primitive right_name))
-                    |> Option.value ~default:[]
-                  in
-                  solve_all_safe order ~lefts:right_propagated ~rights:right_parameters
-                  |> List.filter_map ~f:(OrderedConstraints.solve ~order)
-                  |> List.hd
-                  |> Option.value ~default:TypeConstraints.Solution.empty
-                in
-                let propagate_with_substitutions index variable =
-                  let replace_one_parameter replacement =
-                    let head, tail = List.split_n left_parameters index in
-                    match List.hd tail with
-                    | Some original
-                      when (* If the original and replacement do not differ, no recursion is
-                              needed. *)
-                           Type.equal original replacement
-                           or (* Cannot perform the replacement if variance does not allow it. *)
-                              not (compare_parameter original replacement variable) ->
-                        None
-                    | _ ->
-                        let tail = List.tl tail |> Option.value ~default:[] in
-                        let parameters = head @ [replacement] @ tail in
-                        Some (Type.Parametric { name = left_name; parameters })
-                  in
-                  TypeConstraints.Solution.instantiate variable_substitutions variable
-                  |> replace_one_parameter
-                  >>| (fun left -> less_or_equal order ~left ~right)
-                  |> Option.value ~default:false
-                in
-                List.existsi left_variables ~f:propagate_with_substitutions
+              let successors =
+                let left_index = index_of handler (Type.Primitive left_name) in
+                Handler.find (Handler.edges ()) left_index |> Option.value ~default:[]
               in
-              let step_sideways () =
-                left_variables
-                >>| (fun left_variables ->
-                      List.length left_variables == List.length left_parameters
-                      && replace_parameters_with_destination left_variables)
-                |> Option.value ~default:false
-              in
-              step_into_subclasses () or step_sideways ()
+              get_instantiated_successors ~generic_index ~parameters:left_parameters successors
+              |> List.filter_map ~f:target_to_parametric
+              |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
         (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
         | Type.Union left, right ->
             List.fold

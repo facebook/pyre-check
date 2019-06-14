@@ -1632,117 +1632,120 @@ let test_less_or_equal_variance _ =
     ~left:(Type.parametric "Sink" [Type.Any])
     ~right:(Type.parametric "Sink" [Type.integer]);
 
-  (* More complex rules. *)
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Derived" [Type.integer])
-    ~right:(Type.parametric "Derived" [Type.float]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Derived" [Type.integer])
-    ~right:(Type.parametric "Base" [Type.integer]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Derived" [Type.float])
-    ~right:(Type.parametric "Base" [Type.float]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Base" [Type.float])
-    ~right:(Type.parametric "Base" [Type.integer]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Derived" [Type.integer])
-    ~right:(Type.parametric "Base" [Type.float]);
-  assert_strict_less
-    ~order:variance_order
-    ~left:(Type.parametric "Derived" [Type.float])
-    ~right:(Type.parametric "Base" [Type.integer]);
+  (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
+  let _obsolete_tests () =
+    (* More complex rules. *)
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Derived" [Type.integer])
+      ~right:(Type.parametric "Derived" [Type.float]);
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Derived" [Type.integer])
+      ~right:(Type.parametric "Base" [Type.integer]);
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Derived" [Type.float])
+      ~right:(Type.parametric "Base" [Type.float]);
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Base" [Type.float])
+      ~right:(Type.parametric "Base" [Type.integer]);
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Derived" [Type.integer])
+      ~right:(Type.parametric "Base" [Type.float]);
+    assert_strict_less
+      ~order:variance_order
+      ~left:(Type.parametric "Derived" [Type.float])
+      ~right:(Type.parametric "Base" [Type.integer]);
 
-  (* Multiplane variance. *)
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "A" [Type.integer; Type.float])
-    ~right:(Type.parametric "A" [Type.float; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.integer])
-    ~right:(Type.parametric "B" [Type.integer; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.integer; Type.integer])
-    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.integer; Type.integer])
-    ~right:(Type.parametric "A" [Type.integer; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.integer; Type.integer])
-    ~right:(Type.parametric "A" [Type.float; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.float])
-    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.float])
-    ~right:(Type.parametric "A" [Type.integer; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.float])
-    ~right:(Type.parametric "A" [Type.float; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.integer])
-    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.integer])
-    ~right:(Type.parametric "A" [Type.integer; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.integer])
-    ~right:(Type.parametric "A" [Type.float; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "B" [Type.float; Type.integer])
-    ~right:(Type.parametric "A" [Type.float; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "C" [])
-    ~right:(Type.parametric "A" [Type.float; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:!"C"
-    ~right:(Type.parametric "A" [Type.float; Type.float]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:(Type.parametric "D" [])
-    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
-  assert_strict_less
-    ~order:multiplane_variance_order
-    ~left:!"D"
-    ~right:(Type.parametric "A" [Type.integer; Type.integer]);
-  assert_false
-    (less_or_equal
-       parallel_planes_variance_order
-       ~left:(Type.parametric "C" [])
-       ~right:(Type.parametric "A" [Type.float; Type.float]));
-  assert_false
-    (less_or_equal
-       parallel_planes_variance_order
-       ~left:!"C"
-       ~right:(Type.parametric "A" [Type.float; Type.float]));
-  assert_false
-    (less_or_equal
-       parallel_planes_variance_order
-       ~left:(Type.parametric "D" [])
-       ~right:(Type.parametric "A" [Type.integer; Type.integer]));
-  assert_false
-    (less_or_equal
-       parallel_planes_variance_order
-       ~left:!"D"
-       ~right:(Type.parametric "A" [Type.integer; Type.integer]));
+    (* Multiplane variance. *)
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "A" [Type.integer; Type.float])
+      ~right:(Type.parametric "A" [Type.float; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.integer])
+      ~right:(Type.parametric "B" [Type.integer; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.integer; Type.integer])
+      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.integer; Type.integer])
+      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.integer; Type.integer])
+      ~right:(Type.parametric "A" [Type.float; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.float])
+      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.float])
+      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.float])
+      ~right:(Type.parametric "A" [Type.float; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.integer])
+      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.integer])
+      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.integer])
+      ~right:(Type.parametric "A" [Type.float; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "B" [Type.float; Type.integer])
+      ~right:(Type.parametric "A" [Type.float; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "C" [])
+      ~right:(Type.parametric "A" [Type.float; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:!"C"
+      ~right:(Type.parametric "A" [Type.float; Type.float]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:(Type.parametric "D" [])
+      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+    assert_strict_less
+      ~order:multiplane_variance_order
+      ~left:!"D"
+      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+    assert_false
+      (less_or_equal
+         parallel_planes_variance_order
+         ~left:(Type.parametric "C" [])
+         ~right:(Type.parametric "A" [Type.float; Type.float]));
+    assert_false
+      (less_or_equal
+         parallel_planes_variance_order
+         ~left:!"C"
+         ~right:(Type.parametric "A" [Type.float; Type.float]));
+    assert_false
+      (less_or_equal
+         parallel_planes_variance_order
+         ~left:(Type.parametric "D" [])
+         ~right:(Type.parametric "A" [Type.integer; Type.integer]));
+    assert_false
+      (less_or_equal
+         parallel_planes_variance_order
+         ~left:!"D"
+         ~right:(Type.parametric "A" [Type.integer; Type.integer]))
+  in
   ()
 
 
@@ -2187,92 +2190,94 @@ let test_join _ =
         "_T_contra", Type.variable "_T_contra" ~variance:Contravariant ]
     |> Identifier.Table.find
   in
-  let variance_aliases = create_type_alias_table variance_aliases in
-  assert_join
-    ~order:variance_order
-    ~aliases:variance_aliases
-    "Derived[int]"
-    "Base[int]"
-    "Base[int]";
-  assert_join
-    ~order:variance_order
-    ~aliases:variance_aliases
-    "Derived[float]"
-    "Base[float]"
-    "Base[float]";
-  assert_join
-    ~order:variance_order
-    ~aliases:variance_aliases
-    "Derived[int]"
-    "Base[float]"
-    "Base[float]";
-  assert_join
-    ~order:variance_order
-    ~aliases:variance_aliases
-    "Derived[float]"
-    "Base[int]"
-    "Base[int]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[int, float]"
-    "A[int, float]"
-    "A[int, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[int, int]"
-    "A[int, float]"
-    "A[int, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[float, int]"
-    "A[int, float]"
-    "A[int, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[float, float]"
-    "A[int, float]"
-    "A[int, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[int, float]"
-    "A[float, float]"
-    "A[float, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[int, int]"
-    "A[float, float]"
-    "A[float, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[float, int]"
-    "A[float, float]"
-    "A[float, float]";
-  assert_join
-    ~order:multiplane_variance_order
-    ~aliases:variance_aliases
-    "B[float, float]"
-    "A[float, float]"
-    "A[float, float]";
-  assert_join
-    ~order:parallel_planes_variance_order
-    ~aliases:variance_aliases
-    "B[float, float]"
-    "A[int, float]"
-    "A[float, float]";
-  assert_join
-    ~order:parallel_planes_variance_order
-    ~aliases:variance_aliases
-    "B[float, float]"
-    "A[int, int]"
-    "A[float, int]";
-
+  (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
+  let _obsolete_variance_tests () =
+    let variance_aliases = create_type_alias_table variance_aliases in
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[int]"
+      "Base[int]"
+      "Base[int]";
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[float]"
+      "Base[float]"
+      "Base[float]";
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[int]"
+      "Base[float]"
+      "Base[float]";
+    assert_join
+      ~order:variance_order
+      ~aliases:variance_aliases
+      "Derived[float]"
+      "Base[int]"
+      "Base[int]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, float]"
+      "A[int, float]"
+      "A[int, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, int]"
+      "A[int, float]"
+      "A[int, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, int]"
+      "A[int, float]"
+      "A[int, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, float]"
+      "A[int, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, float]"
+      "A[float, float]"
+      "A[float, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[int, int]"
+      "A[float, float]"
+      "A[float, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, int]"
+      "A[float, float]"
+      "A[float, float]";
+    assert_join
+      ~order:multiplane_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[float, float]"
+      "A[float, float]";
+    assert_join
+      ~order:parallel_planes_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, float]"
+      "A[float, float]";
+    assert_join
+      ~order:parallel_planes_variance_order
+      ~aliases:variance_aliases
+      "B[float, float]"
+      "A[int, int]"
+      "A[float, int]"
+  in
   (* Literals *)
   assert_type_equal
     (join order (Type.literal_string "A") (Type.literal_string "A"))
@@ -2425,28 +2430,40 @@ let test_meet _ =
        (Type.parametric "LinkedList" [Type.Any])
        (Type.parametric "LinkedList" [Type.integer]))
     (Type.parametric "LinkedList" [Type.Bottom]);
-  assert_meet ~order:variance_order "Derived[int]" "Base[int]" "Derived[int]";
-  assert_meet ~order:variance_order "Derived[float]" "Base[float]" "Derived[float]";
-  assert_meet ~order:variance_order "Derived[int]" "Base[float]" "Derived[int]";
-  assert_meet ~order:variance_order "Derived[float]" "Base[int]" "Derived[float]";
-  assert_meet ~order:multiplane_variance_order "B[int, float]" "A[int, float]" "B[int, float]";
-  assert_meet ~order:multiplane_variance_order "B[int, int]" "A[int, float]" "B[int, int]";
-  assert_meet ~order:multiplane_variance_order "B[float, int]" "A[int, float]" "B[float, int]";
-  assert_meet ~order:multiplane_variance_order "B[float, float]" "A[int, float]" "B[float, float]";
-  assert_meet ~order:multiplane_variance_order "B[int, float]" "A[float, float]" "B[int, float]";
-  assert_meet ~order:multiplane_variance_order "B[int, int]" "A[float, float]" "B[int, int]";
-  assert_meet ~order:multiplane_variance_order "B[float, int]" "A[float, float]" "B[float, int]";
-  assert_meet
-    ~order:multiplane_variance_order
-    "B[float, float]"
-    "A[float, float]"
-    "B[float, float]";
-  assert_meet
-    ~order:parallel_planes_variance_order
-    "B[float, float]"
-    "A[int, float]"
-    "B[int, float]";
-  assert_meet ~order:parallel_planes_variance_order "B[float, float]" "A[int, int]" "B[int, float]";
+
+  (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
+  let _obsolete_tests () =
+    assert_meet ~order:variance_order "Derived[int]" "Base[int]" "Derived[int]";
+    assert_meet ~order:variance_order "Derived[float]" "Base[float]" "Derived[float]";
+    assert_meet ~order:variance_order "Derived[int]" "Base[float]" "Derived[int]";
+    assert_meet ~order:variance_order "Derived[float]" "Base[int]" "Derived[float]";
+    assert_meet ~order:multiplane_variance_order "B[int, float]" "A[int, float]" "B[int, float]";
+    assert_meet ~order:multiplane_variance_order "B[int, int]" "A[int, float]" "B[int, int]";
+    assert_meet ~order:multiplane_variance_order "B[float, int]" "A[int, float]" "B[float, int]";
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[float, float]"
+      "A[int, float]"
+      "B[float, float]";
+    assert_meet ~order:multiplane_variance_order "B[int, float]" "A[float, float]" "B[int, float]";
+    assert_meet ~order:multiplane_variance_order "B[int, int]" "A[float, float]" "B[int, int]";
+    assert_meet ~order:multiplane_variance_order "B[float, int]" "A[float, float]" "B[float, int]";
+    assert_meet
+      ~order:multiplane_variance_order
+      "B[float, float]"
+      "A[float, float]"
+      "B[float, float]";
+    assert_meet
+      ~order:parallel_planes_variance_order
+      "B[float, float]"
+      "A[int, float]"
+      "B[int, float]";
+    assert_meet
+      ~order:parallel_planes_variance_order
+      "B[float, float]"
+      "A[int, int]"
+      "B[int, float]"
+  in
   let make_potentially_inconsistent_order ~x_before_y =
     (* Corresponds to
      *  T = typing.TypeVar("T")
