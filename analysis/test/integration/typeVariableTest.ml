@@ -138,6 +138,15 @@ let test_check_unbounded_variables _ =
               return True
     |}
     [];
+  assert_type_errors
+    {|
+    from typing import TypeVar, Union, List
+    T = TypeVar("T")
+    def foo(x: Union[T, List[T]]) -> None: ...
+    def bar(x: Union[T, List[T]]) -> None:
+      foo(x)
+    |}
+    [];
   ()
 
 

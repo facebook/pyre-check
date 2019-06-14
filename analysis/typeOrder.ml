@@ -1852,7 +1852,7 @@ module OrderImplementation = struct
           >>| List.map ~f:(fun _ -> Type.Any)
       | _ -> (
         match Type.split source with
-        | primitive, Concrete parameters ->
+        | primitive, Concrete parameters when contains handler primitive ->
             let parameters =
               match primitive with
               | Type.Primitive "tuple" ->
@@ -1861,7 +1861,6 @@ module OrderImplementation = struct
                   |> List.map ~f:Type.weaken_literals
               | _ -> parameters
             in
-            raise_if_untracked handler primitive;
             let worklist = Queue.create () in
             Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
             let rec iterate worklist =
