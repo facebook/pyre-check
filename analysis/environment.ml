@@ -512,16 +512,25 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
             | Some alias -> Reference.combine qualifier alias
           in
           let original_name = Reference.combine from name in
-          match Reference.as_list qualified_name, Reference.as_list original_name with
-          | [single_identifier], [typing; identifier]
-            when String.equal typing "typing" && String.equal single_identifier identifier ->
-              (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
-              []
-          | _ ->
-              [ { UnresolvedAlias.handle;
-                  target = qualified_name;
-                  value = Reference.expression original_name
-                } ]
+          (* A module might import T and define a T that shadows it. In this case, we do not want
+             to create the alias. *)
+          if
+            TypeOrder.contains
+              (module Handler.TypeOrderHandler)
+              (Type.Primitive (Reference.show qualified_name))
+          then
+            []
+          else
+            match Reference.as_list qualified_name, Reference.as_list original_name with
+            | [single_identifier], [typing; identifier]
+              when String.equal typing "typing" && String.equal single_identifier identifier ->
+                (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
+                []
+            | _ ->
+                [ { UnresolvedAlias.handle;
+                    target = qualified_name;
+                    value = Reference.expression original_name
+                  } ]
         in
         List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
     | _ -> aliases

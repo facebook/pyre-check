@@ -362,6 +362,42 @@ let test_register_aliases _ =
           import a
         |} ]
     ["b.a.Foo", "a.Foo"];
+  assert_resolved
+    [ parse ~qualifier:!&"a" {|
+          class Foo: ...
+        |};
+      parse
+        ~qualifier:!&"b"
+        {|
+          from a import Foo
+          class Foo:
+            ...
+        |} ]
+    ["b.Foo", "b.Foo"];
+  assert_resolved
+    [ parse ~qualifier:!&"a" {|
+          class Bar: ...
+        |};
+      parse
+        ~qualifier:!&"b"
+        {|
+          from a import Bar as Foo
+          class Foo:
+            ...
+        |} ]
+    ["b.Foo", "b.Foo"];
+  assert_resolved
+    [ parse ~qualifier:!&"a" {|
+          class Foo: ...
+        |};
+      parse
+        ~qualifier:!&"b"
+        {|
+          from a import Foo as Bar
+          class Foo: ...
+        |} ]
+    ["b.Foo", "b.Foo"; "b.Bar", "a.Foo"];
+
   let assert_resolved sources aliases =
     let (module Handler) = register_all sources in
     let assert_alias (alias, target) =
