@@ -77,9 +77,17 @@ let recheck
   let repopulate_handles =
     (* Clean up all data related to updated files. *)
     let timer = Timer.start () in
-    let handle file =
-      try Some (File.handle ~configuration file) with
-      | File.NonexistentHandle _ -> None
+    let handles, recheck =
+      let keep_file_with_handle file =
+        try Some (File.handle ~configuration file, file) with
+        | File.NonexistentHandle _ as nonexistent_handle ->
+            Statistics.log_exception
+              nonexistent_handle
+              ~fatal:false
+              ~origin:"Rechecking dependencies";
+            None
+      in
+      List.filter_map recheck ~f:keep_file_with_handle |> List.unzip
     in
     (* Watchman only notifies Pyre that a file has been updated, we have to detect removals
        manually and update our handle set. *)
@@ -89,7 +97,6 @@ let recheck
       List.filter_map recheck ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-    let handles = List.filter_map recheck ~f:handle in
     Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
     List.iter recheck ~f:(LookupCache.evict ~state ~configuration);
@@ -119,9 +126,9 @@ let recheck
         List.map stubs ~f:(fun handle -> Source.qualifier ~handle) |> Reference.Hash_set.of_list
       in
       let keep file =
-        match handle file with
-        | None -> false
-        | Some handle ->
+        match File.handle ~configuration file with
+        | exception File.NonexistentHandle _ -> false
+        | handle ->
             let qualifier = Source.qualifier ~handle in
             if Hash_set.mem stub_qualifiers qualifier then
               false
