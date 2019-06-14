@@ -432,7 +432,11 @@ class Configuration:
                     "taint_models_path", current=self.taint_models_path
                 )
                 assert taint_models_path is None or isinstance(taint_models_path, str)
-                self.taint_models_path = taint_models_path
+                if taint_models_path is not None:
+                    configuration_directory = os.path.dirname(os.path.realpath(path))
+                    self.taint_models_path = os.path.join(
+                        configuration_directory, taint_models_path
+                    )
 
                 excludes = configuration.consume("exclude", default=[])
                 if isinstance(excludes, list):

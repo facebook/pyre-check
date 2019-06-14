@@ -171,6 +171,47 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.search_path, ["simple_string/"])
         self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
 
+        def directory_side_effect(path: str) -> str:
+            if path.endswith(".pyre_configuration"):
+                return "/root"
+            elif path.endswith(".pyre_configuration.local"):
+                return "/root/local"
+            else:
+                return path
+
+        with patch("os.path.dirname", side_effect=directory_side_effect):
+            json_load.side_effect = [
+                {
+                    "taint_models_path": ".pyre/taint_models",
+                    "search_path": "simple_string/",
+                    "version": "VERSION",
+                    "typeshed": "TYPE/%V/SHED/",
+                },
+                {},
+            ]
+            configuration = Configuration()
+            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.search_path, ["simple_string/"])
+            self.assertEqual(
+                configuration.taint_models_path, "/root/.pyre/taint_models"
+            )
+            json_load.side_effect = [
+                {"taint_models_path": ".pyre/taint_models"},
+                {
+                    "search_path": "simple_string/",
+                    "version": "VERSION",
+                    "typeshed": "TYPE/%V/SHED/",
+                },
+            ]
+            configuration = Configuration(
+                local_configuration="/root/local/.pyre_configuration.local"
+            )
+            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.search_path, ["simple_string/"])
+            self.assertEqual(
+                configuration.taint_models_path, "/root/local/.pyre/taint_models"
+            )
+
         json_load.side_effect = [
             {
                 "search_path": "simple_string/",
