@@ -68,6 +68,10 @@ public final class FileSystem {
         ZipEntry zipEntry = zipEntries.nextElement();
         if (!zipEntry.isDirectory()) {
           File outputFile = new File(outputDirectory, File.separator + zipEntry.getName());
+          if (outputFile.exists()) {
+            // Avoid overriding existing files, which might be symbolic links.
+            return;
+          }
           outputFile.getParentFile().mkdirs();
           IOUtils.copy(zipFile.getInputStream(zipEntry), new FileOutputStream(outputFile));
         }
