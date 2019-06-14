@@ -41,6 +41,8 @@ let resolution =
       f: typing.Callable[[int], typing.List[bool]]
       Tparams = pyre_extensions.ParameterSpecification("Tparams")
       Ts = pyre_extensions.ListVariadic("Ts")
+      int_string_tuple: typing.Tuple[int, str]
+      unbounded_tuple: typing.Tuple[int, ...]
     |}
   |> fun environment -> TypeCheck.resolution environment ()
 
@@ -598,12 +600,34 @@ let test_select _ =
     (`NotFound ("[Tparams, int]", Some CallingParameterVariadicTypeVariable));
   assert_select
     "[[Ts], int]"
-    "(1)"
-    (`NotFound ("[[Ts], int]", Some CallingListVariadicTypeVariable));
+    "(1, 'string', 1, 'string')"
+    (`Found "[[$literal_one, $literal_string, $literal_one, $literal_string], int]");
+  assert_select "[[int, Variable(Ts)], int]" "(1)" (`Found "[[int], int]");
   assert_select
-    "[[int, Variable(Ts)], int]"
-    "(1)"
-    (`NotFound ("[[int, Variable(Ts)], int]", Some CallingListVariadicTypeVariable));
+    "[[Variable(Ts)], int]"
+    "(1, *int_string_tuple, *int_string_tuple, 1)"
+    (`Found "[[$literal_one, int, str, int, str, $literal_one], int]");
+  assert_select
+    "[[Variable(Ts)], int]"
+    "(1, *unbounded_tuple)"
+    (`NotFound
+      ( "[[Variable(Ts)], int]",
+        Some
+          (MismatchWithListVariadicTypeVariable
+             ( Type.Variable.Variadic.List.create "Ts",
+               NotDefiniteTuple
+                 { expression = +Name (Name.Identifier "unbounded_tuple");
+                   annotation = Type.Tuple (Unbounded Type.integer)
+                 } )) ));
+  assert_select
+    "[[typing.Tuple[Ts], Variable(Ts)], int]"
+    "((1, 'string'), 1.1)"
+    (`NotFound
+      ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
+        Some
+          (MismatchWithListVariadicTypeVariable
+             (Type.Variable.Variadic.List.create "Ts", ConstraintFailure (Concrete [Type.float])))
+      ));
   ()
 
 

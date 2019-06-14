@@ -61,6 +61,8 @@ module Record : sig
       | Variable of Variable.RecordVariadic.RecordList.record
       | Any
     [@@deriving compare, eq, sexp, show, hash]
+
+    val pp_concise : Format.formatter -> 'a t -> pp_type:(Format.formatter -> 'a -> unit) -> unit
   end
 
   module Callable : sig

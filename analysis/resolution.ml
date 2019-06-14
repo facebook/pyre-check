@@ -658,3 +658,7 @@ let resolve_exports resolution ~reference =
       | _ -> reference
   in
   resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
+let solve_ordered_types_less_or_equal resolution =
+  TypeOrder.solve_ordered_types_less_or_equal (full_order resolution)

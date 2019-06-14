@@ -21,12 +21,18 @@ type invalid_argument = {
   expression: Expression.t;
   annotation: Type.t
 }
-[@@deriving eq, show, compare]
+[@@deriving compare, eq, show, sexp, hash]
 
 type missing_argument =
   | Named of Identifier.t
   | Anonymous of int
 [@@deriving eq, show, compare, sexp, hash]
+
+type mismatch_with_list_variadic_type_variable =
+  | NotDefiniteTuple of invalid_argument
+  | CantConcatenate of Type.t Type.Record.OrderedTypes.t list
+  | ConstraintFailure of Type.t Type.Record.OrderedTypes.t
+[@@deriving compare, eq, show, sexp, hash]
 
 type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
@@ -38,7 +44,8 @@ type reason =
   | UnexpectedKeyword of Identifier.t
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | CallingParameterVariadicTypeVariable
-  | CallingListVariadicTypeVariable
+  | MismatchWithListVariadicTypeVariable of
+      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
 [@@deriving eq, show, compare]
 
 type closest = {
@@ -289,9 +296,85 @@ let select
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
       match key, data with
-      | Parameter.Variable (Variadic _), _ ->
-          let reasons = { reasons with arity = CallingListVariadicTypeVariable :: arity } in
-          { signature_match with reasons }
+      | Parameter.Variable (Variadic variable), arguments ->
+          let extract arguments =
+            let extracted, errors =
+              let arguments =
+                List.map arguments ~f:(function
+                    | Argument argument -> argument
+                    | Default -> failwith "Variable parameters do not have defaults")
+              in
+              let extract { Argument.kind; resolved; expression; _ } =
+                match kind with
+                | SingleStar -> (
+                  match resolved with
+                  | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                  (* We don't support expanding indefinite containers into ListVariadics *)
+                  | annotation -> `Snd { expression; annotation } )
+                | _ -> `Fst (Type.Record.OrderedTypes.Concrete [resolved])
+              in
+              List.rev arguments |> List.partition_map ~f:extract
+            in
+            match errors with
+            | [] -> Ok extracted
+            | not_definite_tuple :: _ ->
+                Error
+                  (MismatchWithListVariadicTypeVariable
+                     (variable, NotDefiniteTuple not_definite_tuple))
+          in
+          let concatenate extracted =
+            let concatenated =
+              match extracted with
+              | [] -> Some (Type.Record.OrderedTypes.Concrete [])
+              | head :: tail ->
+                  let concatenate sofar next =
+                    let concatenate sofar =
+                      match sofar, next with
+                      | ( Type.Record.OrderedTypes.Concrete sofar,
+                          Type.Record.OrderedTypes.Concrete next ) ->
+                          Some (Type.Record.OrderedTypes.Concrete (sofar @ next))
+                      (* Any can masquerade as the empty list *)
+                      | other, Any
+                      | Any, other
+                      | other, Concrete []
+                      | Concrete [], other ->
+                          Some other
+                      | Variable _, Variable _
+                      | Concrete _, Variable _
+                      | Variable _, Concrete _ ->
+                          (* TODO(T45636537): support these when we have support for concatenation *)
+                          None
+                    in
+                    sofar >>= concatenate
+                  in
+                  List.fold tail ~f:concatenate ~init:(Some head)
+            in
+            match concatenated with
+            | Some concatenated -> Ok concatenated
+            | None ->
+                Error (MismatchWithListVariadicTypeVariable (variable, CantConcatenate extracted))
+          in
+          let solve concatenated =
+            match
+              List.concat_map signature_match.constraints_set ~f:(fun constraints ->
+                  Resolution.solve_ordered_types_less_or_equal
+                    resolution
+                    ~left:concatenated
+                    ~right:(Variable variable)
+                    ~constraints)
+            with
+            | [] ->
+                Error
+                  (MismatchWithListVariadicTypeVariable (variable, ConstraintFailure concatenated))
+            | updated_constraints_set -> Ok updated_constraints_set
+          in
+          let make_signature_match = function
+            | Ok constraints_set -> { signature_match with constraints_set }
+            | Error error ->
+                { signature_match with reasons = { reasons with arity = error :: arity } }
+          in
+          let open Result in
+          extract arguments >>= concatenate >>= solve |> make_signature_match
       | Parameter.Variable _, []
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword
@@ -572,7 +655,7 @@ let select
             | UnexpectedKeyword _ -> 1
             | AbstractClassInstantiation _ -> 1
             | CallingParameterVariadicTypeVariable -> 1
-            | CallingListVariadicTypeVariable -> 1
+            | MismatchWithListVariadicTypeVariable _ -> 1
           in
           let get_most_important best_reason reason =
             if importance reason > importance best_reason then

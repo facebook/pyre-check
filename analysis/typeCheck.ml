@@ -1745,7 +1745,9 @@ module State (Context : Context) = struct
                   let kind = Error.InvalidArgument (Error.Keyword { expression; annotation }) in
                   Error.create ~location ~kind ~define:Context.define
               | InvalidVariableArgument { Node.location; value = { expression; annotation } } ->
-                  let kind = Error.InvalidArgument (Error.Variable { expression; annotation }) in
+                  let kind =
+                    Error.InvalidArgument (Error.ConcreteVariable { expression; annotation })
+                  in
                   Error.create ~location ~kind ~define:Context.define
               | Mismatch mismatch ->
                   let { Annotated.Signature.actual; actual_expression; expected; name; position } =
@@ -1810,7 +1812,11 @@ module State (Context : Context) = struct
                     ~location
                     ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
                     ~define:Context.define
-              | CallingListVariadicTypeVariable
+              | MismatchWithListVariadicTypeVariable (variable, mismatch) ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))
+                    ~define:Context.define
               | CallingParameterVariadicTypeVariable ->
                   Error.create
                     ~location

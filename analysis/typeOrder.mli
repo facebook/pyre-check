@@ -183,6 +183,13 @@ val instantiate_successors_parameters
   target:Type.t ->
   Type.t List.t Option.t
 
+val solve_ordered_types_less_or_equal
+  :  order ->
+  left:Type.t Type.Record.OrderedTypes.t ->
+  right:Type.t Type.Record.OrderedTypes.t ->
+  constraints:TypeConstraints.t ->
+  TypeConstraints.t sexp_list
+
 val is_consistent_with : order -> Type.t -> Type.t -> bool
 
 val consistent_solution_exists : order -> Type.t -> Type.t -> bool

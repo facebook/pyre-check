@@ -26,6 +26,12 @@ type missing_argument =
   | Anonymous of int
 [@@deriving eq, show, compare, sexp, hash]
 
+type mismatch_with_list_variadic_type_variable =
+  | NotDefiniteTuple of invalid_argument
+  | CantConcatenate of Type.t Type.Record.OrderedTypes.t list
+  | ConstraintFailure of Type.t Type.Record.OrderedTypes.t
+[@@deriving compare, eq, show, sexp, hash]
+
 type reason =
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
@@ -36,7 +42,8 @@ type reason =
   | UnexpectedKeyword of Identifier.t
   | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | CallingParameterVariadicTypeVariable
-  | CallingListVariadicTypeVariable
+  | MismatchWithListVariadicTypeVariable of
+      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
 [@@deriving eq, show, compare]
 
 type closest = {

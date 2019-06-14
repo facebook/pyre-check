@@ -45,7 +45,11 @@ type incompatible_type = {
 
 type invalid_argument =
   | Keyword of { expression: Expression.t; annotation: Type.t }
-  | Variable of { expression: Expression.t; annotation: Type.t }
+  | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
+  | ListVariadicVariable of
+      { variable: Type.Variable.Variadic.List.t;
+        mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
+      }
 [@@deriving compare, eq, show, sexp, hash]
 
 type precondition_mismatch =
@@ -632,7 +636,22 @@ let messages ~concise ~signature location kind =
   | InvalidArgument argument when concise -> (
     match argument with
     | Keyword _ -> ["Keyword argument must be a mapping with string keys."]
-    | Variable _ -> ["Variable argument must be an iterable."] )
+    | ConcreteVariable _ -> ["Variable argument must be an iterable."]
+    | ListVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
+        [ Format.asprintf
+            "Variable argument conflicts with constraints on `%a`."
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable) ]
+    | ListVariadicVariable { variable; mismatch = NotDefiniteTuple _ } ->
+        [ Format.asprintf
+            "Variable argument for `%a` must be a definite tuple."
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable) ]
+    | ListVariadicVariable { variable; mismatch = CantConcatenate _ } ->
+        [ Format.asprintf
+            "Concatenating ListVariadics for variable `%a` is not yet supported."
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable) ] )
   | InvalidArgument argument -> (
     match argument with
     | Keyword { expression; annotation } ->
@@ -641,12 +660,41 @@ let messages ~concise ~signature location kind =
             (Expression.show_sanitized expression)
             pp_type
             annotation ]
-    | Variable { expression; annotation } ->
+    | ConcreteVariable { expression; annotation } ->
         [ Format.asprintf
             "Variable argument `%s` has type `%a` but must be an iterable."
             (Expression.show_sanitized expression)
             pp_type
-            annotation ] )
+            annotation ]
+    | ListVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
+        [ Format.asprintf
+            "Types `%a` conflict with existing constraints on `%a`."
+            (Type.Record.OrderedTypes.pp_concise ~pp_type)
+            ordered_types
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable) ]
+    | ListVariadicVariable { variable; mismatch = NotDefiniteTuple { expression; annotation } } ->
+        [ Format.asprintf
+            "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
+             variadic type variable `%a`."
+            (Expression.show_sanitized expression)
+            pp_type
+            annotation
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable) ]
+    | ListVariadicVariable { variable; mismatch = CantConcatenate unconcatenatable } ->
+        let unconcatenatable =
+          List.map
+            unconcatenatable
+            ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
+          |> String.concat ~sep:", "
+        in
+        [ Format.asprintf
+            "Variadic type variable `%a` cannot be made to contain `%s`, concatenation of \
+             variadic type variables is not yet implemented."
+            Type.Variable.pp_concise
+            (Type.Variable.ListVariadic variable)
+            unconcatenatable ] )
   | InvalidMethodSignature { annotation = Some annotation; name } ->
       [Format.asprintf "`%a` cannot be the type of `%a`." pp_type annotation pp_identifier name]
   | InvalidMethodSignature { name; _ } ->
@@ -1093,25 +1141,6 @@ let messages ~concise ~signature location kind =
            type variable."
           pp_type
           annotation ]
-  | NotCallable (Type.Callable { implementation; overloads; _ } as annotation) ->
-      let has_list_variadic_variable_parameter { Type.Callable.parameters; _ } =
-        match parameters with
-        | Defined parameters ->
-            let is_list_variadic_variable_parameter = function
-              | Type.Callable.Parameter.Variable (Variadic _) -> true
-              | _ -> false
-            in
-            List.exists parameters ~f:is_list_variadic_variable_parameter
-        | _ -> false
-      in
-      if List.exists (implementation :: overloads) ~f:has_list_variadic_variable_parameter then
-        [ Format.asprintf
-            "`%a` cannot be safely called because the types and kinds of its parameters depend on \
-             a type variable."
-            pp_type
-            annotation ]
-      else
-        [Format.asprintf "`%a` is not a function." pp_type annotation]
   | NotCallable annotation -> [Format.asprintf "`%a` is not a function." pp_type annotation]
   | ProhibitedAny { given_annotation; _ } when concise ->
       if Option.value_map given_annotation ~f:Type.is_any ~default:false then
@@ -1473,7 +1502,9 @@ let due_to_analysis_limitations { kind; _ } =
   | InconsistentOverride { override = StrengthenedPrecondition (Found { actual; _ }); _ }
   | InconsistentOverride { override = WeakenedPostcondition { actual; _ }; _ }
   | InvalidArgument (Keyword { annotation = actual; _ })
-  | InvalidArgument (Variable { annotation = actual; _ })
+  | InvalidArgument (ConcreteVariable { annotation = actual; _ })
+  | InvalidArgument
+      (ListVariadicVariable { mismatch = NotDefiniteTuple { annotation = actual; _ }; _ })
   | InvalidType (InvalidType actual)
   | InvalidType (FinalNested actual)
   | NotCallable actual
@@ -1489,6 +1520,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleConstructorAnnotation _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
+  | InvalidArgument (ListVariadicVariable _)
   | InvalidMethodSignature _
   | InvalidTypeParameters _
   | InvalidTypeVariable _
@@ -1537,7 +1569,9 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   in
   match kind with
   | IncompatibleAwaitableType actual
-  | InvalidArgument (Variable { annotation = actual; _ })
+  | InvalidArgument (ConcreteVariable { annotation = actual; _ })
+  | InvalidArgument
+      (ListVariadicVariable { mismatch = NotDefiniteTuple { annotation = actual; _ }; _ })
   | NotCallable actual
   | UndefinedAttribute { origin = Class { annotation = actual; _ }; _ }
   | Unpack { unpack_problem = UnacceptableType actual; _ } ->
@@ -1582,6 +1616,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | IncompatibleOverload _
   | IncompleteType _
   | InvalidMethodSignature _
+  | InvalidArgument (ListVariadicVariable _)
   | InvalidType _
   | InvalidTypeParameters _
   | InvalidTypeVariable _
@@ -1670,7 +1705,7 @@ let less_or_equal ~resolution left right =
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
     when Expression.equal left.expression right.expression ->
       Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
-  | InvalidArgument (Variable left), InvalidArgument (Variable right)
+  | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
     when Expression.equal left.expression right.expression ->
       Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidMethodSignature left, InvalidMethodSignature right -> (
@@ -1971,10 +2006,10 @@ let join ~resolution left right =
         InvalidArgument
           (Keyword
              { left with annotation = Resolution.join resolution left.annotation right.annotation })
-    | InvalidArgument (Variable left), InvalidArgument (Variable right)
+    | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
       when Expression.equal left.expression right.expression ->
         InvalidArgument
-          (Variable
+          (ConcreteVariable
              { left with annotation = Resolution.join resolution left.annotation right.annotation })
     | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
       ->
@@ -2410,8 +2445,18 @@ let dequalify
         IncompleteType { target; annotation = dequalify annotation; attempted_action }
     | InvalidArgument (Keyword { expression; annotation }) ->
         InvalidArgument (Keyword { expression; annotation = dequalify annotation })
-    | InvalidArgument (Variable { expression; annotation }) ->
-        InvalidArgument (Variable { expression; annotation = dequalify annotation })
+    | InvalidArgument (ConcreteVariable { expression; annotation }) ->
+        InvalidArgument (ConcreteVariable { expression; annotation = dequalify annotation })
+    | InvalidArgument (ListVariadicVariable { variable; mismatch }) ->
+        let mismatch =
+          match mismatch with
+          | AnnotatedSignature.NotDefiniteTuple { expression; annotation } ->
+              AnnotatedSignature.NotDefiniteTuple { expression; annotation = dequalify annotation }
+          | _ ->
+              (* TODO(T45656387): implement dequalify ordered_types *)
+              mismatch
+        in
+        InvalidArgument (ListVariadicVariable { variable; mismatch })
     | InvalidMethodSignature ({ annotation; _ } as kind) ->
         InvalidMethodSignature { kind with annotation = annotation >>| dequalify }
     | InvalidType (InvalidType annotation) -> InvalidType (InvalidType (dequalify annotation))

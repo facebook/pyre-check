@@ -775,11 +775,11 @@ let test_list_variadics _ =
     Ts = pyre_extensions.ListVariadic("Ts")
     def duple(x: Tuple[Ts]) -> Tuple[Tuple[Ts], Tuple[Ts]]:
       return x, x
-    def foo(x: int) -> None:
-      reveal_type(duple((x, x)))
+    def foo(x: int, y: str) -> None:
+      reveal_type(duple((x, y)))
     |}
-    [ "Revealed type [-1]: Revealed type for `duple((x, x))` is `typing.Tuple[typing.Tuple[int, \
-       int], typing.Tuple[int, int]]`." ];
+    [ "Revealed type [-1]: Revealed type for `duple((x, y))` is `typing.Tuple[typing.Tuple[int, \
+       str], typing.Tuple[int, str]]`." ];
   assert_type_errors
     {|
     from typing import Tuple, Optional
@@ -890,7 +890,8 @@ let test_list_variadics _ =
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def call_with_tuple(f: Callable[[Ts], TReturn], tupleargs: Tuple[Ts]) -> TReturn: ...
+    def call_with_tuple(f: Callable[[Ts], TReturn], tupleargs: Tuple[Ts]) -> TReturn:
+      return f( *tupleargs)
     def foo(x: int, y: str, z: bool) -> str: ...
     def bar(x: bool, y: int, z: float) -> int: ...
     def use() -> None:
@@ -902,18 +903,6 @@ let test_list_variadics _ =
       "Revealed type [-1]: Revealed type for `call_with_tuple(bar, (True, 19, 37))` is `int`.";
       "Incompatible parameter type [6]: Expected `typing.Tuple[ListVariadic[Ts]]` for 2nd \
        anonymous parameter to call `call_with_tuple` but got `typing.Tuple[bool, float, int]`." ];
-
-  (* This is not yet supported *)
-  assert_type_errors
-    {|
-    from typing import Tuple, Optional, Callable, TypeVar
-    Ts = pyre_extensions.ListVariadic("Ts")
-    TReturn = TypeVar("TReturn")
-    def call_with_tuple(f: Callable[[Ts], TReturn], argtuple: Tuple[Ts]) -> TReturn:
-      return f( *argtuple)
-    |}
-    [ "Call error [29]: `typing.Callable[[Variable(Ts)], Variable[TReturn]]` cannot be safely \
-       called because the types and kinds of its parameters depend on a type variable." ];
   assert_type_errors
     {|
     from typing import Tuple, Optional, Callable, Protocol
@@ -939,19 +928,65 @@ let test_list_variadics _ =
        `typing.Callable[[int, str, bool], int]`." ];
   assert_type_errors
     {|
+    from typing import Tuple, Optional, Callable
+    Ts = pyre_extensions.ListVariadic("Ts")
+    def loop( *args: Ts) -> Tuple[Ts]:
+      return args
+    def foo(x: int, y: str, z: bool) -> None:
+      reveal_type(loop(x, y, z))
+    |}
+    ["Revealed type [-1]: Revealed type for `loop(x, y, z)` is `typing.Tuple[int, str, bool]`."];
+  assert_type_errors
+    {|
     from typing import Tuple, Optional, Callable, TypeVar
     Ts = pyre_extensions.ListVariadic("Ts")
     TReturn = TypeVar("TReturn")
-    def return_args(x: int, *args: Ts) -> Tuple[Ts]:
-      reveal_type(args)
-      return args
-    def use() -> None:
-      return_args(1, 2, 3)
+    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+      return f( *args)
+    def foo(x: int, y: str, z: bool) -> str: ...
+    def bar(x: bool, y: int, z: float) -> int: ...
+    def use(x: int, y: str, z: bool) -> None:
+      reveal_type(call_with_args(foo, x, y, z))
+      reveal_type(call_with_args(bar, z, x, x))
+      call_with_args(bar, x, y, z)
     |}
-    [ "Revealed type [-1]: Revealed type for `args` is `typing.Tuple[ListVariadic[Ts]]`.";
-      "Call error [29]: `typing.Callable(return_args)[[Named(x, int), Variable(Ts)], \
-       typing.Tuple[ListVariadic[Ts]]]` cannot be safely called because the types and kinds of \
-       its parameters depend on a type variable." ];
+    [ "Revealed type [-1]: Revealed type for `call_with_args(foo, x, y, z)` is `str`.";
+      "Revealed type [-1]: Revealed type for `call_with_args(bar, z, x, x)` is `int`.";
+      "Invalid argument [32]: Types `int, str, bool` conflict with existing constraints on \
+       `ListVariadic[Ts]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional, Callable, TypeVar
+    Ts = pyre_extensions.ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+      return f( *args)
+    def foo(x: int, y: str, z: bool) -> str: ...
+    def bar(x: int, y: int, z: int) -> int: ...
+    def use(x: Tuple[int, str, bool], y: Tuple[int, ...]) -> None:
+      reveal_type(call_with_args(foo, *x))
+      call_with_args(bar, *y)
+    |}
+    [ "Revealed type [-1]: Revealed type for `call_with_args(foo, *$parameter$x)` is `str`.";
+      "Invalid argument [32]: Variable argument `y` has type `typing.Tuple[int, ...]` but must be \
+       a definite tuple to be included in variadic type variable `ListVariadic[Ts]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, Optional, Callable, TypeVar
+    Ts = pyre_extensions.ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    def call_with_args(f: Callable[[Ts], TReturn], *args: Ts) -> TReturn:
+      return f( *args)
+    def foo(x: int, y: str, z: bool) -> str: ...
+    def bar(x: bool, y: int, z: float) -> int: ...
+    def use(x: Tuple[int, str], y: Tuple[Ts]) -> None:
+      reveal_type(call_with_args(foo, *x, True))
+      call_with_args(bar, *x, *y)
+    |}
+    [ "Revealed type [-1]: Revealed type for `call_with_args(foo, *$parameter$x, True)` is `str`.";
+      "Invalid argument [32]: Variadic type variable `ListVariadic[Ts]` cannot be made to contain \
+       `int, str, ListVariadic[Ts]`, concatenation of variadic type variables is not yet \
+       implemented." ];
   ()
 
 

@@ -37,7 +37,11 @@ type incompatible_type = {
 
 type invalid_argument =
   | Keyword of { expression: Expression.t; annotation: Type.t }
-  | Variable of { expression: Expression.t; annotation: Type.t }
+  | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
+  | ListVariadicVariable of
+      { variable: Type.Variable.Variadic.List.t;
+        mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
+      }
 [@@deriving compare, eq, show, sexp, hash]
 
 type precondition_mismatch =

@@ -469,6 +469,13 @@ module type FullOrderTypeWithoutT = sig
     candidate:Type.t ->
     protocol:Ast.Identifier.t ->
     Type.t list option
+
+  val solve_ordered_types_less_or_equal
+    :  order ->
+    left:Type.t Type.Record.OrderedTypes.t ->
+    right:Type.t Type.Record.OrderedTypes.t ->
+    constraints:TypeConstraints.t ->
+    TypeConstraints.t sexp_list
 end
 
 module type FullOrderType = sig
@@ -578,24 +585,12 @@ module OrderImplementation = struct
                   ~right:left_annotation
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | ( Parameter.Variable (Variadic left_variable) :: left_parameters,
-                Parameter.Variable (Variadic right_variable) :: right_parameters )
-              when Type.Variable.Variadic.List.is_free right_variable
-                   && Type.Variable.Variadic.List.is_free left_variable ->
-                let left_greater_than_right, right_less_than_left =
-                  ( OrderedConstraints.add_lower_bound
-                      constraints
-                      ~order
-                      ~pair:
-                        (Type.Variable.ListVariadicPair (left_variable, Variable right_variable))
-                    |> Option.to_list,
-                    OrderedConstraints.add_upper_bound
-                      constraints
-                      ~order
-                      ~pair:
-                        (Type.Variable.ListVariadicPair (right_variable, Variable left_variable))
-                    |> Option.to_list )
-                in
-                left_greater_than_right @ right_less_than_left
+                Parameter.Variable (Variadic right_variable) :: right_parameters ) ->
+                solve_ordered_types_less_or_equal
+                  order
+                  ~left:(Type.Record.OrderedTypes.Variable left_variable)
+                  ~right:(Type.Record.OrderedTypes.Variable right_variable)
+                  ~constraints
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | left, Parameter.Variable (Variadic right_variable) :: right_parameters
               when Type.Variable.Variadic.List.is_free right_variable ->
@@ -752,19 +747,6 @@ module OrderImplementation = struct
         then
           if less_or_equal order ~left ~right then [constraints] else []
         else
-          let solve_all constraints ~lefts ~rights =
-            let folded_constraints =
-              let solve_pair constraints left right =
-                constraints
-                |> List.concat_map ~f:(fun constraints ->
-                       solve_less_or_equal_throws order ~constraints ~left ~right)
-              in
-              List.fold2 ~init:[constraints] ~f:solve_pair lefts rights
-            in
-            match folded_constraints with
-            | List.Or_unequal_lengths.Ok constraints -> constraints
-            | List.Or_unequal_lengths.Unequal_lengths -> []
-          in
           match left, right with
           | _, _ when Type.equal left right -> [constraints]
           | _, Type.Primitive "object"
@@ -775,7 +757,11 @@ module OrderImplementation = struct
           | _, Type.Annotated right -> solve_less_or_equal_throws order ~constraints ~left ~right
           | Type.Any, _ when any_is_bottom -> [constraints]
           | Type.Union lefts, right ->
-              solve_all constraints ~lefts ~rights:(List.map lefts ~f:(fun _ -> right))
+              solve_ordered_types_less_or_equal
+                order
+                ~left:(Concrete lefts)
+                ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
+                ~constraints
           | Type.Variable left_variable, Type.Variable right_variable
             when Type.Variable.Unary.is_free left_variable
                  && Type.Variable.Unary.is_free right_variable ->
@@ -864,41 +850,18 @@ module OrderImplementation = struct
           | left, Optional right
           | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
               solve_less_or_equal_throws order ~constraints ~left ~right
-          | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Bounded (Concrete rights))
-            ->
-              solve_all constraints ~lefts ~rights
           | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded (Concrete rights)) ->
               let lefts = List.init (List.length rights) ~f:(fun _ -> left) in
-              solve_all constraints ~lefts ~rights
+              solve_less_or_equal_throws
+                order
+                ~constraints
+                ~left:(Type.Tuple (Bounded (Concrete lefts)))
+                ~right
           | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Unbounded right) ->
               let left = Type.union lefts in
               solve_less_or_equal_throws order ~constraints ~left ~right
-          | ( Type.Tuple (Type.Bounded (Variable left_variable)),
-              Type.Tuple (Type.Bounded (Variable right_variable)) )
-            when Type.Variable.Variadic.List.is_free left_variable
-                 && Type.Variable.Variadic.List.is_free right_variable ->
-              (* Just as with unaries, we need to consider both possibilities *)
-              let right_greater_than_left, left_less_than_right =
-                ( OrderedConstraints.add_lower_bound
-                    constraints
-                    ~order
-                    ~pair:(Type.Variable.ListVariadicPair (right_variable, Variable left_variable))
-                  |> Option.to_list,
-                  OrderedConstraints.add_upper_bound
-                    constraints
-                    ~order
-                    ~pair:(Type.Variable.ListVariadicPair (left_variable, Variable right_variable))
-                  |> Option.to_list )
-              in
-              right_greater_than_left @ left_less_than_right
-          | Type.Tuple (Type.Bounded (Variable variable)), Type.Tuple (Type.Bounded bound)
-            when Type.Variable.Variadic.List.is_free variable ->
-              let pair = Type.Variable.ListVariadicPair (variable, bound) in
-              OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
-          | Type.Tuple (Type.Bounded bound), Type.Tuple (Type.Bounded (Variable variable))
-            when Type.Variable.Variadic.List.is_free variable ->
-              let pair = Type.Variable.ListVariadicPair (variable, bound) in
-              OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
+          | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right) ->
+              solve_ordered_types_less_or_equal order ~left ~right ~constraints
           | _, Type.Union rights ->
               List.concat_map rights ~f:(fun right ->
                   solve_less_or_equal_throws order ~constraints ~left ~right)
@@ -928,12 +891,69 @@ module OrderImplementation = struct
       | Untracked _ -> []
 
 
+    and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
+      let open Type.Record.OrderedTypes in
+      let open Type.Variable.Variadic.List in
+      match left, right with
+      | Variable left_variable, Variable right_variable
+        when is_free left_variable && is_free right_variable ->
+          (* Just as with unaries, we need to consider both possibilities *)
+          let right_greater_than_left, left_less_than_right =
+            ( OrderedConstraints.add_lower_bound
+                constraints
+                ~order
+                ~pair:(Type.Variable.ListVariadicPair (right_variable, Variable left_variable))
+              |> Option.to_list,
+              OrderedConstraints.add_upper_bound
+                constraints
+                ~order
+                ~pair:(Type.Variable.ListVariadicPair (left_variable, Variable right_variable))
+              |> Option.to_list )
+          in
+          right_greater_than_left @ left_less_than_right
+      | Variable variable, bound_variable_or_concrete when is_free variable ->
+          OrderedConstraints.add_upper_bound
+            constraints
+            ~order
+            ~pair:(Type.Variable.ListVariadicPair (variable, bound_variable_or_concrete))
+          |> Option.to_list
+      | bound_variable_or_concrete, Variable variable when is_free variable ->
+          OrderedConstraints.add_lower_bound
+            constraints
+            ~order
+            ~pair:(Type.Variable.ListVariadicPair (variable, bound_variable_or_concrete))
+          |> Option.to_list
+      | Any, _
+      | _, Any ->
+          [constraints]
+      | Variable left_bound_variable, Variable right_bound_variable ->
+          if equal left_bound_variable right_bound_variable then
+            [constraints]
+          else
+            []
+      | Variable _bound_variable, Concrete _
+      | Concrete _, Variable _bound_variable ->
+          []
+      | Concrete lefts, Concrete rights -> (
+          let folded_constraints =
+            let solve_pair constraints left right =
+              constraints
+              |> List.concat_map ~f:(fun constraints ->
+                     solve_less_or_equal_safe order ~constraints ~left ~right)
+            in
+            List.fold2 ~init:[constraints] ~f:solve_pair lefts rights
+          in
+          match folded_constraints with
+          | List.Or_unequal_lengths.Ok constraints -> constraints
+          | List.Or_unequal_lengths.Unequal_lengths -> [] )
+
+
     and solve_all_safe order ~lefts ~rights =
-      solve_less_or_equal_safe
+      solve_ordered_types_less_or_equal
         order
         ~constraints:TypeConstraints.empty
-        ~left:(Type.Tuple (Bounded (Concrete lefts)))
-        ~right:(Type.Tuple (Bounded (Concrete rights)))
+        ~left:(Concrete lefts)
+        ~right:(Concrete rights)
 
 
     and less_or_equal

@@ -173,3 +173,10 @@ val partial_solve_constraints
 module Cache : sig
   val clear : unit -> unit
 end
+
+val solve_ordered_types_less_or_equal
+  :  t ->
+  left:Type.t Type.Record.OrderedTypes.t ->
+  right:Type.t Type.Record.OrderedTypes.t ->
+  constraints:TypeConstraints.t ->
+  TypeConstraints.t list

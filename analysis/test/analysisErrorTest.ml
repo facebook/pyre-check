@@ -539,11 +539,11 @@ let test_due_to_mismatch_with_any _ =
   assert_not_due_to_mismatch_with_any
     (InvalidArgument (Keyword { expression = !"name"; annotation = Type.integer }));
   assert_not_due_to_mismatch_with_any
-    (InvalidArgument (Variable { expression = !"name"; annotation = Type.integer }));
+    (InvalidArgument (ConcreteVariable { expression = !"name"; annotation = Type.integer }));
   assert_due_to_mismatch_with_any
     (InvalidArgument (Keyword { expression = !"name"; annotation = Type.Any }));
   assert_due_to_mismatch_with_any
-    (InvalidArgument (Variable { expression = !"name"; annotation = Type.Any }));
+    (InvalidArgument (ConcreteVariable { expression = !"name"; annotation = Type.Any }));
   assert_due_to_mismatch_with_any
     (InvalidArgument
        (Keyword
