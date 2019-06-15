@@ -163,39 +163,73 @@ public class BuildTargetsCollectorTest {
                 "b.py")));
 
     targetJson =
-        "{\n"
-            + "  \"buck.base_path\": \"PATH\",\n"
-            + "  \"buck.type\": \"python_library\",\n"
-            + "  \"versioned_srcs\": [[{\n"
-            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
-            + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
-            + "  }, {\n"
-            + "      \"a.py\": \"3.6/a.py\",\n"
-            + "      \"b.py\": \"3.6/b.py\"\n"
-            + "  }], [{\n"
-            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3\"\n"
-            + "  }, {\n"
-            + "      \"a.py\": \"3/a.py\",\n"
-            + "      \"b.py\": \"3/b.py\"\n"
-            + "  }], [{\n"
-            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.\"\n"
-            + "  }, {\n"
-            + "      \"a.py\": \"3.0/a.py\",\n"
-            + "      \"b.py\": \"3.0/b.py\"\n"
-            + "  }], [{\n"
-            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.7\"\n"
-            + "  }, {\n"
-            + "      \"a.py\": \"3.7/a.py\",\n"
-            + "      \"b.py\": \"3.7/b.py\"\n"
-            + "  }]]\n"
-            + "}";
+            "{\n"
+                    + "  \"buck.base_path\": \"PATH\",\n"
+                    + "  \"buck.type\": \"python_library\",\n"
+                    + "  \"versioned_srcs\": [[{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
+                    + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.6/a.py\",\n"
+                    + "      \"b.py\": \"3.6/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3/a.py\",\n"
+                    + "      \"b.py\": \"3/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.0/a.py\",\n"
+                    + "      \"b.py\": \"3.0/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.7\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.7/a.py\",\n"
+                    + "      \"b.py\": \"3.7/b.py\"\n"
+                    + "  }]]\n"
+                    + "}";
     assertExpectedParsedBuildTarget(
-        targetJson,
-        new PythonTarget(
-            "python_library",
-            "PATH",
-            null,
-            ImmutableMap.of("3.7/a.py", "a.py", "3.7/b.py", "b.py")));
+            targetJson,
+            new PythonTarget(
+                    "python_library",
+                    "PATH",
+                    null,
+                    ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
+    targetJson =
+            "{\n"
+                    + "  \"buck.base_path\": \"PATH\",\n"
+                    + "  \"buck.type\": \"python_library\",\n"
+                    + "  \"versioned_srcs\": [[{\n"
+                    + "      \"//third-party-buck/platform007/build/python:python\": \"3.6\",\n"
+                    + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.6/a.py\",\n"
+                    + "      \"b.py\": \"3.6/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3/a.py\",\n"
+                    + "      \"b.py\": \"3/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.0/a.py\",\n"
+                    + "      \"b.py\": \"3.0/b.py\"\n"
+                    + "  }], [{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.7\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.7/a.py\",\n"
+                    + "      \"b.py\": \"3.7/b.py\"\n"
+                    + "  }]]\n"
+                    + "}";
+    assertExpectedParsedBuildTarget(
+            targetJson,
+            new PythonTarget(
+                    "python_library",
+                    "PATH",
+                    null,
+                    ImmutableMap.of("3.7/a.py", "a.py", "3.7/b.py", "b.py")));
 
     targetJson =
         "{\n"

@@ -10,11 +10,16 @@ import javax.annotation.Nullable;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 public final class PythonTarget implements BuildTarget {
 
-  private static final Logger LOGGER = Logger.getGlobal();
+  private static final String[] SUPPORTED_PLATFORMS = {
+    "//third-party-buck/platform007/build/python:__project__",
+    "//third-party-buck/platform007/build/python:python"
+  };
+  private static final String[] SUPPORTED_PYTHON_VERSIONS = {
+    "3.6", "3.7", "ouroboros.3.6", "cinder.3.6"
+  };
 
   private final String ruleName;
   private final @Nullable String cellPath;
@@ -65,38 +70,31 @@ public final class PythonTarget implements BuildTarget {
     }
   }
 
-  private static void addVersionedSources(
-      JsonArray versionedSourcesArray, ImmutableMap.Builder<String, String> sourcesBuilder) {
-    // Pick the highest possible python minor version for consistency.
-    int highestPythonMinorVersion = -1;
-    JsonObject sourceSet = null;
-    for (JsonElement versionedSourceElement : versionedSourcesArray) {
-      JsonArray versionedSourcePair = versionedSourceElement.getAsJsonArray();
-      JsonObject versions = versionedSourcePair.get(0).getAsJsonObject();
-      JsonElement pythonVersionValue =
-          versions.get("//third-party-buck/platform007/build/python:__project__");
-      if (pythonVersionValue == null) {
-        // Ignore versions on unsupported platforms.
-        continue;
-      }
-      String pythonVersion = pythonVersionValue.getAsString();
-      if (!pythonVersion.startsWith("3")) {
-        // Only python 3 is supported.
-        LOGGER.finest("Only python3 is supported. Unsupported version: " + pythonVersionValue);
-        continue;
-      }
-      String[] versionParts = pythonVersion.split("\\.");
-      int pythonMinorVersion;
-      if (versionParts.length < 2) {
-        pythonMinorVersion = 0;
-      } else {
-        pythonMinorVersion = Integer.parseInt(versionParts[1]);
-      }
-      if (pythonMinorVersion > highestPythonMinorVersion) {
-        highestPythonMinorVersion = pythonMinorVersion;
-        sourceSet = versionedSourcePair.get(1).getAsJsonObject();
+  private static @Nullable JsonObject getSupportedVersionedSources(
+      JsonArray versionedSourcesArray) {
+    for (String supportedPlatform : SUPPORTED_PLATFORMS) {
+      for (String supportedPythonVersion : SUPPORTED_PYTHON_VERSIONS) {
+        for (JsonElement versionedSourceElement : versionedSourcesArray) {
+          JsonArray versionedSourcePair = versionedSourceElement.getAsJsonArray();
+          JsonObject versions = versionedSourcePair.get(0).getAsJsonObject();
+          JsonElement pythonVersionValue = versions.get(supportedPlatform);
+          if (pythonVersionValue == null) {
+            continue;
+          }
+          String pythonVersion = pythonVersionValue.getAsString();
+          if (!pythonVersion.equals(supportedPythonVersion)) {
+            continue;
+          }
+          return versionedSourcePair.get(1).getAsJsonObject();
+        }
       }
     }
+    return null;
+  }
+
+  private static void addVersionedSources(
+      JsonArray versionedSourcesArray, ImmutableMap.Builder<String, String> sourcesBuilder) {
+    JsonObject sourceSet = getSupportedVersionedSources(versionedSourcesArray);
     if (sourceSet == null) {
       return;
     }
