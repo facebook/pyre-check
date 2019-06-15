@@ -70,7 +70,7 @@ let compute_dependencies
             Hashtbl.find new_signature_hashes handle >>| fun new_hash -> old_hash <> new_hash)
       |> Option.value ~default:false
     in
-    let deferred_files =
+    let dependents =
       let modules =
         List.filter handles ~f:signature_hash_changed
         |> List.map ~f:(fun handle -> Source.qualifier ~handle)
@@ -91,10 +91,10 @@ let compute_dependencies
       ~randomly_log_every:100
       ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
       ~integers:
-        [ "number of dependencies", File.Handle.Set.length deferred_files;
+        [ "number of dependencies", File.Handle.Set.length dependents;
           "number of files", List.length handles ]
       ();
-    deferred_files
+    dependents
   in
   Log.log
     ~section:`Server
