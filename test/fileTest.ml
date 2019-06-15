@@ -94,7 +94,9 @@ let test_handle_to_path context =
   let other_root = bracket_tmpdir context |> Path.create_absolute in
   let virtualenv = bracket_tmpdir context in
   Sys_utils.mkdir_no_fail (virtualenv ^ "/importMe");
+  Sys_utils.mkdir_no_fail (virtualenv ^ "/doNotImport");
   let import_me = virtualenv ^ "/importMe" |> Path.create_absolute in
+  let do_not_import = virtualenv ^ "/doNotImport" |> Path.create_absolute in
   let configuration =
     Configuration.Analysis.create
       ~local_root
@@ -112,6 +114,7 @@ let test_handle_to_path context =
   touch other_root "b.py";
   touch other_root "matching.py";
   touch import_me "a.py";
+  touch do_not_import "a.py";
 
   (* Check that we can recover paths from handles. *)
   let assert_path ~handle ~path =
@@ -128,7 +131,8 @@ let test_handle_to_path context =
     ~handle:"matching.py"
     ~path:(Path.create_relative ~root:other_root ~relative:"matching.py");
   assert_not_path ~handle:"nonexistent.py";
-  assert_path ~handle:"importMe/a.py" ~path:(Path.create_relative ~root:import_me ~relative:"a.py")
+  assert_path ~handle:"importMe/a.py" ~path:(Path.create_relative ~root:import_me ~relative:"a.py");
+  assert_not_path ~handle:"doNotImport/a.py"
 
 
 let () =

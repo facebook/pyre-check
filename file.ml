@@ -68,9 +68,16 @@ module Handle = struct
 
   let to_path ~configuration handle =
     let construct_relative_to_root root =
+      let should_be_considered =
+        match root with
+        | Path.SearchPath.Root _ -> true
+        | Path.SearchPath.Subdirectory { subdirectory; _ } ->
+            (* Ensure that we don't reconstruct paths that live outside the subdirectory. *)
+            String.is_prefix ~prefix:subdirectory handle
+      in
       let root = Path.SearchPath.get_root root in
       let path = Path.create_relative ~root ~relative:handle in
-      if Path.file_exists path then
+      if should_be_considered && Path.file_exists path then
         Some path
       else
         None
