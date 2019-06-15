@@ -2362,13 +2362,11 @@ let suppress ~mode ~resolution error =
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
         true
-    | MissingReturnAnnotation { annotation = Some annotation; given_annotation; _ }
-    | MissingAttributeAnnotation
-        { missing_annotation = { annotation = Some annotation; given_annotation; _ }; _ }
-    | MissingParameterAnnotation { annotation = Some annotation; given_annotation; _ }
-    | MissingGlobalAnnotation { annotation = Some annotation; given_annotation; _ }
-      when Type.is_concrete annotation
-           && given_annotation >>| Type.is_concrete |> Option.value ~default:false ->
+    | MissingReturnAnnotation { annotation = Some annotation; _ }
+    | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
+    | MissingParameterAnnotation { annotation = Some annotation; _ }
+    | MissingGlobalAnnotation { annotation = Some annotation; _ }
+      when Type.is_concrete annotation ->
         false
     | MissingReturnAnnotation _
     | MissingParameterAnnotation _
