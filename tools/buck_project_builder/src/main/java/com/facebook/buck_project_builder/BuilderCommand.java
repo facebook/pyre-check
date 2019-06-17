@@ -15,7 +15,7 @@ import java.util.Objects;
 final class BuilderCommand {
 
   private final String buckRoot;
-  private final @Nullable String outputDirectory;
+  private final String outputDirectory;
   private final ImmutableList<String> targets;
 
   BuilderCommand(String buckRoot, String outputDirectory, ImmutableList<String> targets) {
@@ -33,9 +33,12 @@ final class BuilderCommand {
       CommandLine parsedArguments = parser.parse(parsingOptions, arguments);
       String buckRoot = parsedArguments.getOptionValue("buck_root");
       if (buckRoot == null) {
-        throw new BuilderException("buck_root is a required command line argument.");
+        throw new BuilderException("`buck_root` is a required command line argument.");
       }
       String outputDirectory = parsedArguments.getOptionValue("output_directory");
+      if (outputDirectory == null) {
+        throw new BuilderException("`output_directory` is a required command line argument.");
+      }
       List<String> targets = parsedArguments.getArgList();
       return new BuilderCommand(buckRoot, outputDirectory, ImmutableList.copyOf(targets));
     } catch (ParseException exception) {
@@ -48,7 +51,6 @@ final class BuilderCommand {
     return buckRoot;
   }
 
-  @Nullable
   public String getOutputDirectory() {
     return outputDirectory;
   }
@@ -67,7 +69,7 @@ final class BuilderCommand {
     }
     BuilderCommand builderCommand = (BuilderCommand) other;
     return buckRoot.equals(builderCommand.buckRoot)
-        && Objects.equals(outputDirectory, builderCommand.outputDirectory)
+        && outputDirectory.equals(builderCommand.outputDirectory)
         && targets.equals(builderCommand.targets);
   }
 

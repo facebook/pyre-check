@@ -23,14 +23,6 @@ public class BuilderCommandTest {
     assertParsedTo(
         new BuilderCommand("ROOT", "OUT", ImmutableList.of()),
         "--buck_root ROOT --output_directory OUT");
-
-    // Output directory is indeed optional.
-    assertParsedTo(
-        new BuilderCommand("ROOT", null, ImmutableList.of("foo", "bar")),
-        "--buck_root ROOT foo bar");
-
-    // All optional args are omitted.
-    assertParsedTo(new BuilderCommand("ROOT", null, ImmutableList.of()), "--buck_root ROOT");
   }
 
   @Test(expected = BuilderException.class)
@@ -46,6 +38,11 @@ public class BuilderCommandTest {
   @Test(expected = BuilderException.class)
   public void missingBuckRootDoNotParse() throws BuilderException {
     BuilderCommand.fromCommandLineArguments(new String[] {"target_1"});
+  }
+
+  @Test(expected = BuilderException.class)
+  public void missingOutputDirectoryDoNotParse() throws BuilderException {
+    BuilderCommand.fromCommandLineArguments(new String[] {"--buck_root", "ROOT", "target_1"});
   }
 
   @Test(expected = BuilderException.class)
