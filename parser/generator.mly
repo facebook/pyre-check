@@ -1378,7 +1378,7 @@ comparison:
         | (operator, right) :: comparisons when List.length comparisons > 0 ->
             let left =
               ComparisonOperator { ComparisonOperator.left; operator; right }
-              |> Node.create ~location
+              |> Node.create ~location:({ location with Location.stop = Node.stop right })
             in
             let right = comparison right comparisons in
             BooleanOperator {
@@ -1389,7 +1389,7 @@ comparison:
             |> Node.create ~location;
         | [operator, right] ->
             ComparisonOperator { ComparisonOperator.left; operator; right }
-            |> Node.create ~location
+            |> Node.create ~location:({ location with Location.stop = Node.stop right })
         | _ ->
             failwith "The parser is a lie! Did not get a non-empty comparison list."
       in

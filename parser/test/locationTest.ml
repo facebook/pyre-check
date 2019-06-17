@@ -42,7 +42,7 @@ let test_assert_locations _ =
     "assert a is b"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 8) (* TODO(T45713676): Should include whole assert. *)
+        ~stop:(1, 13)
         (Assert
            { Assert.test =
                +ComparisonOperator
@@ -67,12 +67,12 @@ let test_assert_locations _ =
     "assert a is not None, 'b or c'"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 8)
+        ~stop:(1, 20) (* TODO(T45713676): Should the message part be included? *)
         (Assert
            { Assert.test =
                node
                  ~start:(1, 7)
-                 ~stop:(1, 8) (* TODO(T45713676): This is wrong. *)
+                 ~stop:(1, 20)
                  (ComparisonOperator
                     { ComparisonOperator.left = !"a";
                       operator = ComparisonOperator.IsNot;
@@ -214,7 +214,7 @@ let test_call_locations _ =
                      value =
                        node
                          ~start:(1, 2)
-                         ~stop:(1, 3) (* TODO(T45713676): This should be (1, 7). *)
+                         ~stop:(1, 7)
                          (ComparisonOperator
                             { ComparisonOperator.left = +Integer 1;
                               operator = ComparisonOperator.LessThan;
@@ -722,12 +722,12 @@ let test_if_locations _ =
            { If.test =
                node
                  ~start:(1, 3)
-                 ~stop:(1, 14) (* TODO(T45713676): Should encompass both sides. *)
+                 ~stop:(1, 19)
                  (BooleanOperator
                     { BooleanOperator.left =
                         node
                           ~start:(1, 3)
-                          ~stop:(1, 4) (* TODO(T45713676): Too short. *)
+                          ~stop:(1, 9)
                           (ComparisonOperator
                              { ComparisonOperator.left = !"a";
                                operator = ComparisonOperator.Is;
@@ -737,7 +737,7 @@ let test_if_locations _ =
                       right =
                         node
                           ~start:(1, 13)
-                          ~stop:(1, 14)
+                          ~stop:(1, 19)
                           (ComparisonOperator
                              { ComparisonOperator.left = !"b";
                                operator = ComparisonOperator.Equals;
@@ -995,7 +995,7 @@ let test_operator_locations _ =
     [ +Expression
          (node
             ~start:(1, 0)
-            ~stop:(1, 1) (* TODO(T45713676): This should end at (1, 10). *)
+            ~stop:(1, 10)
             (ComparisonOperator
                { ComparisonOperator.left = node ~start:(1, 0) ~stop:(1, 1) (Integer 1);
                  operator = ComparisonOperator.IsNot;

@@ -136,7 +136,7 @@ let test_server_exits_on_directory_removal context =
       | Ok _
       (* I was only able to get non-zero exits in the OUnit test environment, doing the equivalent
          calls in the command line always resulted in an exit of 0. *)
-      
+
       | Error (`Exit_non_zero 2) ->
           assert true
       | _ -> assert false)
@@ -685,9 +685,9 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ( [ 2, 11, 2, 15, Type.Literal (Boolean true);
-              2, 6, 2, 7, Type.bool;
               3, 2, 3, 3, Type.literal_integer 1;
-              3, 6, 3, 7, Type.literal_integer 1 ]
+              3, 6, 3, 7, Type.literal_integer 1;
+              2, 6, 2, 15, Type.bool ]
           |> create_types_at_locations )));
   assert_type_query_response
     ~source:
