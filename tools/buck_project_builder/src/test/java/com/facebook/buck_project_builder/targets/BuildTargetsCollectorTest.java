@@ -71,7 +71,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")));
+        new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -80,7 +80,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("python_library", "PATH", null, ImmutableMap.of("a.py", "a.py")));
+        new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
@@ -88,7 +88,7 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": { \"a.py\": \"a.py\" }\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py")));
+        targetJson, new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")));
 
     // We also need to support the case when srcs is an array.
     targetJson =
@@ -100,7 +100,7 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new PythonTarget(
-            "python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")));
+            "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")));
 
     targetJson =
         "{\n"
@@ -111,7 +111,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("python_binary", "PATH", "BASE_MODULE", ImmutableMap.of("a.py", "b.py")));
+        new PythonTarget("PATH", "BASE_MODULE", ImmutableMap.of("a.py", "b.py")));
 
     // Python library with versioned sources
     targetJson =
@@ -129,7 +129,6 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new PythonTarget(
-            "python_library",
             "PATH",
             null,
             ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
@@ -151,7 +150,6 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new PythonTarget(
-            "python_library",
             "PATH",
             null,
             ImmutableMap.of(
@@ -192,7 +190,6 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
             targetJson,
             new PythonTarget(
-                    "python_library",
                     "PATH",
                     null,
                     ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
@@ -226,7 +223,6 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
             targetJson,
             new PythonTarget(
-                    "python_library",
                     "PATH",
                     null,
                     ImmutableMap.of("3.7/a.py", "a.py", "3.7/b.py", "b.py")));
@@ -254,8 +250,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget(
-            "python_library", "PATH", null, ImmutableMap.of("generated_1.py", "generated_2.py")));
+        new PythonTarget("PATH", null, ImmutableMap.of("generated_1.py", "generated_2.py")));
 
     // Thrift library parsing should be supported, including those with extensions
     targetJson =
@@ -349,8 +344,7 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget(
-            "python_binary", "../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py")),
+        new PythonTarget("../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py")),
         "../path/to/",
         "",
         ImmutableSet.of());
@@ -436,11 +430,11 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTargetList(
         targetsJson,
         ImmutableList.of(
-            new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")),
+            new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")),
             new PythonTarget(
-                "python_library", "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
-            new PythonTarget("python_test", "PATH", null, ImmutableMap.of("a.py", "a.py")),
-            new PythonTarget("python_binary", "PATH", null, ImmutableMap.of("a.py", "a.py")),
+                "PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")),
+            new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")),
+            new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")),
             new RemoteFileTarget("URL1")));
   }
 }

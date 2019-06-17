@@ -37,13 +37,13 @@ public class BuildTargetTest {
     writer.flush();
 
     PythonTarget pythonTargetWithoutBaseModule =
-        new PythonTarget("python_binary", ".", null, ImmutableMap.of("a.py", "b.py"));
+        new PythonTarget(".", null, ImmutableMap.of("a.py", "b.py"));
     pythonTargetWithoutBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "b.py"), "print('hello world')");
 
     PythonTarget pythonTargetWithBaseModule =
-        new PythonTarget("python_binary", ".", "foo.bar", ImmutableMap.of("a.py", "b.py"));
+        new PythonTarget(".", "foo.bar", ImmutableMap.of("a.py", "b.py"));
     pythonTargetWithBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "foo", "bar", "b.py"), "print('hello world')");

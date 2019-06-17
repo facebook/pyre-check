@@ -21,31 +21,24 @@ public final class PythonTarget implements BuildTarget {
     "3.6", "3.7", "ouroboros.3.6", "cinder.3.6"
   };
 
-  private final String ruleName;
   private final @Nullable String cellPath;
   private final String basePath;
   private final @Nullable String baseModule;
   private final ImmutableMap<String, String> sources;
 
   PythonTarget(
-      String ruleName,
       @Nullable String cellPath,
       String basePath,
       @Nullable String baseModule,
       ImmutableMap<String, String> sources) {
-    this.ruleName = ruleName;
     this.cellPath = cellPath;
     this.basePath = basePath;
     this.baseModule = baseModule;
     this.sources = sources;
   }
 
-  PythonTarget(
-      String ruleName,
-      String basePath,
-      @Nullable String baseModule,
-      ImmutableMap<String, String> sources) {
-    this(ruleName, null, basePath, baseModule, sources);
+  PythonTarget(String basePath, @Nullable String baseModule, ImmutableMap<String, String> sources) {
+    this(null, basePath, baseModule, sources);
   }
 
   private static void addSources(
@@ -124,7 +117,7 @@ public final class PythonTarget implements BuildTarget {
     String basePath = targetJsonObject.get("buck.base_path").getAsString();
     JsonElement baseModuleField = targetJsonObject.get("base_module");
     String baseModule = baseModuleField == null ? null : baseModuleField.getAsString();
-    return new PythonTarget(ruleName, cellPath, basePath, baseModule, sources);
+    return new PythonTarget(cellPath, basePath, baseModule, sources);
   }
 
   @Override
@@ -145,7 +138,7 @@ public final class PythonTarget implements BuildTarget {
   public String toString() {
     return String.format(
         "{ruleName=%s, cellPath=%s, basePath=%s, baseModule=%s, sources=%s}",
-        ruleName, cellPath, basePath, baseModule, sources);
+        cellPath, basePath, baseModule, sources);
   }
 
   @Override
@@ -157,8 +150,7 @@ public final class PythonTarget implements BuildTarget {
       return false;
     }
     PythonTarget pythonTarget = (PythonTarget) other;
-    return ruleName.equals(pythonTarget.ruleName)
-        && Objects.equals(cellPath, pythonTarget.cellPath)
+    return Objects.equals(cellPath, pythonTarget.cellPath)
         && basePath.equals(pythonTarget.basePath)
         && Objects.equals(baseModule, pythonTarget.baseModule)
         && sources.equals(pythonTarget.sources);
@@ -166,6 +158,6 @@ public final class PythonTarget implements BuildTarget {
 
   @Override
   public int hashCode() {
-    return Objects.hash(ruleName, cellPath, basePath, baseModule, sources);
+    return Objects.hash(cellPath, basePath, baseModule, sources);
   }
 }
