@@ -313,15 +313,19 @@ let collect_locations source =
           | _ -> Some [location]
       end)
       (struct
-        type t = Location.t
+        type t = Location.t list
 
         let visit_children _ = true
 
-        let predicate statement = Some (Node.location statement)
+        let predicate { Node.location; value } =
+          match value with
+          | Define { signature = { Define.parameters; _ }; _ } ->
+              Some (List.map ~f:Node.location parameters)
+          | _ -> Some [location]
       end)
   in
   let expression_locations, statement_locations = Collector.collect source in
-  List.concat expression_locations @ statement_locations
+  List.concat expression_locations @ List.concat statement_locations
 
 
 let collect_calls statement =
