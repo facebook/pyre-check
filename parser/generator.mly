@@ -973,7 +973,7 @@ define_parameters:
     }
   | name = name; EQUALS; value = test {
       {
-        Node.location = fst name;
+        Node.location = { (fst name) with Location.stop = value.Node.location.Location.stop };
         value = { Parameter.name = snd name; value = Some value; annotation = None};
       }
     }

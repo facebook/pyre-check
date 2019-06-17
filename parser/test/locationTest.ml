@@ -798,10 +798,8 @@ let test_lambda_locations _ =
             (Lambda
                { Lambda.parameters =
                    [ node
-                       ~start:
-                         (1, 7)
-                         (* TODO(T45713676): The parameter node should also include the value. *)
-                       ~stop:(1, 8)
+                       ~start:(1, 7)
+                       ~stop:(1, 12)
                        { Parameter.name = "x"; value = Some (+Integer 1); annotation = None };
                      node
                        ~start:(1, 14)
