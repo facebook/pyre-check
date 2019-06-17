@@ -241,6 +241,12 @@ let get_global ~resolution name =
     | Name (Name.Identifier identifier)
       when not (Interprocedural.CallResolution.is_local identifier) ->
         Some (Reference.create identifier)
+    | Name (Name.Identifier identifier) ->
+        let reference = Reference.delocalize (Reference.create identifier) in
+        if Resolution.is_global resolution ~reference then
+          Some reference
+        else
+          None
     | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
         let name = Reference.from_name name in
         let base_name = Reference.from_name base_name in

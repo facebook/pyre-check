@@ -417,10 +417,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                            { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }
                        ; _
                        } ->
-                    BackwardState.read
-                      ~root:(Root.PositionalParameter { position = 0; name = "$global" })
-                      ~path:[]
-                      sink_taint)
+                    let state =
+                      BackwardState.read
+                        ~root:(Root.PositionalParameter { position = 0; name = "$global" })
+                        ~path:[]
+                        sink_taint
+                    in
+                    state)
               |> Option.value ~default:BackwardState.Tree.empty
             in
             BackwardState.Tree.join local_taint global_taint

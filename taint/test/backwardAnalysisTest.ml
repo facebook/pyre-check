@@ -294,9 +294,9 @@ let test_apply_method_model_at_call_site _ =
         def property(self):
           return self.tainted
 
-      c: Class = ...
 
       def property_into_sink(input):
+        c: Class = ...
         c.tainted = input
         __test_sink(c.property)
     |}
