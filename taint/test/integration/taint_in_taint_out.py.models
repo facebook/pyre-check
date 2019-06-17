@@ -166,7 +166,7 @@
               "start": 45,
               "end": 47
             },
-            "tito": [ { "line": 37, "start": 32, "end": 45 } ],
+            "tito": [ { "line": 37, "start": 32, "end": 47 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "via": "tito" },

@@ -62,7 +62,7 @@
               "start": 29,
               "end": 31
             },
-            "tito": [ { "line": 12, "start": 16, "end": 29 } ],
+            "tito": [ { "line": 12, "start": 16, "end": 31 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "tito" }, { "via": "special_source" } ]
           }
@@ -88,7 +88,7 @@
               "start": 32,
               "end": 34
             },
-            "tito": [ { "line": 6, "start": 19, "end": 32 } ],
+            "tito": [ { "line": 6, "start": 19, "end": 34 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "tito" }, { "via": "special_source" } ]
           }
@@ -114,7 +114,7 @@
               "start": 36,
               "end": 38
             },
-            "tito": [ { "line": 18, "start": 23, "end": 36 } ],
+            "tito": [ { "line": 18, "start": 23, "end": 38 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [
               { "via": "tito" },
@@ -145,7 +145,7 @@
               "start": 26,
               "end": 28
             },
-            "tito": [ { "line": 30, "start": 13, "end": 26 } ],
+            "tito": [ { "line": 30, "start": 13, "end": 28 } ],
             "leaves": [ { "kind": "Test", "name": "__test_source" } ],
             "features": [ { "via": "tito" }, { "via": "special_source" } ]
           }

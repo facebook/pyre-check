@@ -63,7 +63,7 @@
     "code": 5002,
     "line": 33,
     "start": 31,
-    "end": 43,
+    "end": 45,
     "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
@@ -97,7 +97,7 @@
                 "filename": "port.py",
                 "line": 33,
                 "start": 31,
-                "end": 43
+                "end": 45
               },
               "resolves_to": [ "port.star_arg_wrapper" ],
               "port": "formal(*rest1)[1][a]",
@@ -175,7 +175,7 @@
     "code": 5002,
     "line": 50,
     "start": 40,
-    "end": 52,
+    "end": 54,
     "filename": "port.py",
     "message":
       "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
@@ -209,7 +209,7 @@
                 "filename": "port.py",
                 "line": 50,
                 "start": 40,
-                "end": 52
+                "end": 54
               },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
               "port": "formal(**kw)[arg][a]",

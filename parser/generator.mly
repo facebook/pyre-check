@@ -1200,11 +1200,13 @@ atom:
     }
 
   | name = expression;
-    LEFTPARENS;
+    start = LEFTPARENS;
     arguments = arguments;
-    RIGHTPARENS {
+    stop = RIGHTPARENS {
+      let call_location = Location.create ~start ~stop in
       Expression.Call { callee = name; arguments }
-      |> Node.create ~location:(name.Node.location)
+      |> Node.create
+        ~location:({ name.Node.location with Location.stop = call_location.Location.stop })
     }
 
   | set_or_dictionary = set_or_dictionary {

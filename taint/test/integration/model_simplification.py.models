@@ -48,7 +48,7 @@
                 "filename": "model_simplification.py",
                 "line": 23,
                 "start": 34,
-                "end": 41
+                "end": 54
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
               "port": "formal(obj)",

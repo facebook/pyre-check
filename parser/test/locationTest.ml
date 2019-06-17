@@ -939,7 +939,7 @@ let test_name_locations _ =
                   { base =
                       node
                         ~start:(1, 0)
-                        ~stop:(1, 1) (* TODO(T45713676): Should be (1, 6). *)
+                        ~stop:(1, 6)
                         (Call
                            { callee = !"a";
                              arguments = [{ Call.Argument.name = None; value = !"arg" }]

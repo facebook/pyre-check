@@ -215,6 +215,7 @@ let test_lookup_identifier_accesses _ =
       "7:13-7:16/typing.Type[int]";
       "8:10-8:13/typing_extensions.Literal[100]";
       "8:4-8:5/test.A";
+      "8:8-8:14/test.A";
       (* This is the annotation for `A()` (the function call). *)
       "8:8-8:9/typing.Type[test.A]";
       "9:11-9:12/test.A";
@@ -273,11 +274,13 @@ let test_lookup_multiline_accesses _ =
     ~lookup
     [ "11:13-11:16/typing.Type[int]";
       "12:4-12:5/test.A";
+      "12:8-12:11/test.A";
       "12:8-12:9/typing.Type[test.A]";
       "13:12-13:13/test.A";
       "13:12-14:13/int";
       "16:21-16:24/typing.Type[int]";
       "17:12-17:13/typing.Type[test.A]";
+      "17:12-17:15/test.A";
       "17:12-19:13/int";
       "2:13-2:17/None";
       "3:7-5:14/bool";
@@ -569,32 +572,32 @@ let test_lookup_definitions_instances _ =
       "test.py:13:4-13:9 -> test.py:3:4-4:12";
       "test.py:14:4-14:11 -> test.py:3:4-4:12";
       "test.py:14:4-14:5 -> test.py:2:0-4:12";
-      "test.py:15:8-15:9 -> test.py:6:0-9:16";
+      "test.py:15:8-15:9 -> test.py:6:0-9:18";
       "test.py:16:4-16:15 -> test.py:3:4-4:12";
-      "test.py:16:4-16:9 -> test.py:8:4-9:16";
-      "test.py:17:4-17:11 -> test.py:8:4-9:16";
+      "test.py:16:4-16:9 -> test.py:8:4-9:18";
+      "test.py:17:4-17:11 -> test.py:8:4-9:18";
       "test.py:17:4-17:17 -> test.py:3:4-4:12";
-      "test.py:17:4-17:5 -> test.py:6:0-9:16";
+      "test.py:17:4-17:5 -> test.py:6:0-9:18";
       "test.py:18:4-18:11 -> test.py:3:4-4:12";
       "test.py:19:4-19:13 -> test.py:3:4-4:12";
-      "test.py:19:4-19:5 -> test.py:6:0-9:16";
+      "test.py:19:4-19:5 -> test.py:6:0-9:18";
       "test.py:7:11-7:12 -> test.py:2:0-4:12";
-      "test.py:7:4-7:5 -> test.py:6:0-9:16";
+      "test.py:7:4-7:5 -> test.py:6:0-9:18";
       "test.py:7:7-7:8 -> test.py:2:0-4:12";
       "test.py:8:21-8:22 -> test.py:2:0-4:12";
       "test.py:9:15-9:16 -> test.py:2:0-4:12" ];
   assert_definition
     ~position:{ Location.line = 16; column = 4 }
-    ~definition:(Some "test.py:8:4-9:16");
+    ~definition:(Some "test.py:8:4-9:18");
   assert_definition
     ~position:{ Location.line = 16; column = 5 }
-    ~definition:(Some "test.py:8:4-9:16");
+    ~definition:(Some "test.py:8:4-9:18");
   assert_definition
     ~position:{ Location.line = 16; column = 6 }
-    ~definition:(Some "test.py:8:4-9:16");
+    ~definition:(Some "test.py:8:4-9:18");
   assert_definition
     ~position:{ Location.line = 16; column = 8 }
-    ~definition:(Some "test.py:8:4-9:16");
+    ~definition:(Some "test.py:8:4-9:18");
   assert_definition
     ~position:{ Location.line = 16; column = 9 }
     ~definition:(Some "test.py:3:4-4:12");
