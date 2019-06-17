@@ -1471,7 +1471,7 @@ test:
     ELSE;
     alternative = test {
       {
-        Node.location = target.Node.location;
+        Node.location = { target.Node.location with Location.stop = Node.stop alternative };
         value = Ternary { Ternary.target; test; alternative };
       }
     }

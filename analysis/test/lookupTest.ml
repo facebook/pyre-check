@@ -428,7 +428,8 @@ let test_lookup_unbound _ =
       "4:2-4:3/typing.Any";
       "4:22-4:23/typing.List[typing.Any]";
       "4:24-4:25/typing_extensions.Literal[1]";
-      "4:7-4:8/typing.Any";
+      "4:7-4:23/typing.Any";
+      "4:7-4:8/typing.List[typing.Any]";
       "4:9-4:10/typing_extensions.Literal[0]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
@@ -442,7 +443,7 @@ let test_lookup_unbound _ =
     ~annotation:(Some "3:18-3:20/typing.List[Variable[_T]]");
   assert_annotation
     ~position:{ Location.line = 4; column = 7 }
-    ~annotation:(Some "4:7-4:8/typing.Any");
+    ~annotation:(Some "4:7-4:8/typing.List[typing.Any]");
   assert_annotation
     ~position:{ Location.line = 4; column = 22 }
     ~annotation:(Some "4:22-4:23/typing.List[typing.Any]")

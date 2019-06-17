@@ -596,7 +596,7 @@ let test_dictionary_locations _ =
                    { Dictionary.key =
                        node
                          ~start:(1, 1)
-                         ~stop:(1, 2)
+                         ~stop:(1, 14)
                          (Ternary { Ternary.target = !"a"; test = !"a"; alternative = !"a" });
                      value = !"b"
                    };
@@ -1078,7 +1078,7 @@ let test_set_locations _ =
                [ node ~start:(1, 1) ~stop:(1, 2) (Integer 1);
                  node
                    ~start:(1, 4)
-                   ~stop:(1, 5)
+                   ~stop:(1, 17)
                    (Ternary
                       { Ternary.target = +Integer 1; test = +Integer 2; alternative = +Integer 3 })
                ])) ];
@@ -1286,9 +1286,9 @@ let test_stub_locations _ =
 let test_ternary_locations _ =
   assert_source_locations
     "5 if 1 else 1"
-    [ node (* TODO:(T45713676) Ternary locations are all wrong. *)
+    [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 13)
         (Expression
            (+Ternary { Ternary.target = +Integer 5; test = +Integer 1; alternative = +Integer 1 }))
     ];
@@ -1297,14 +1297,14 @@ let test_ternary_locations _ =
     [ +Expression
          (node
             ~start:(1, 0)
-            ~stop:(1, 1)
+            ~stop:(1, 25)
             (Ternary
                { Ternary.target = +Integer 1;
                  test = +Integer 2;
                  alternative =
                    node
                      ~start:(1, 12)
-                     ~stop:(1, 13)
+                     ~stop:(1, 25)
                      (Ternary
                         { Ternary.target = +Integer 3;
                           test = +Integer 4;
