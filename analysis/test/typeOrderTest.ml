@@ -2985,8 +2985,7 @@ let test_solve_less_or_equal _ =
         then
           None
         else
-          Some
-            (Type.Record.OrderedTypes.Variable (Type.Variable.Variadic.List.mark_as_bound variable))
+          Some (Type.OrderedTypes.Variable (Type.Variable.Variadic.List.mark_as_bound variable))
       in
       parse_annotation left
       |> Type.Variable.GlobalTransforms.Unary.replace_all mark_unary
@@ -3011,7 +3010,7 @@ let test_solve_less_or_equal _ =
               in
               let parse_ordered_types ordered =
                 if ordered = "" then
-                  Type.Record.OrderedTypes.Concrete []
+                  Type.OrderedTypes.Concrete []
                 else
                   match parse_annotation (Printf.sprintf "typing.Tuple[%s]" ordered) with
                   | Type.Tuple (Bounded ordered) -> ordered

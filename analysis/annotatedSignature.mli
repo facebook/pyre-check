@@ -28,8 +28,8 @@ type missing_argument =
 
 type mismatch_with_list_variadic_type_variable =
   | NotDefiniteTuple of invalid_argument
-  | CantConcatenate of Type.t Type.Record.OrderedTypes.t list
-  | ConstraintFailure of Type.t Type.Record.OrderedTypes.t
+  | CantConcatenate of Type.OrderedTypes.t list
+  | ConstraintFailure of Type.OrderedTypes.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type reason =

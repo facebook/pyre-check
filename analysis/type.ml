@@ -114,7 +114,7 @@ module Record = struct
   end
 
   module OrderedTypes = struct
-    type 'annotation t =
+    type 'annotation record =
       | Concrete of 'annotation list
       | Variable of Variable.RecordVariadic.RecordList.record
       | Any
@@ -237,7 +237,7 @@ and literal =
   | String of string
 
 and tuple =
-  | Bounded of t Record.OrderedTypes.t
+  | Bounded of t Record.OrderedTypes.record
   | Unbounded of t
 
 and typed_dictionary_field = {
@@ -2056,8 +2056,14 @@ let weaken_literals annotation =
   instantiate ~constraints annotation
 
 
+module OrderedTypes = struct
+  include Record.OrderedTypes
+
+  type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+end
+
 let split annotation =
-  let open Record.OrderedTypes in
+  let open OrderedTypes in
   match annotation with
   | Optional parameter -> Primitive "typing.Optional", Concrete [parameter]
   | Parametric { name; parameters } -> Primitive name, Concrete parameters
@@ -2156,7 +2162,7 @@ module Variable : sig
   type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type list_variadic_domain = type_t Record.OrderedTypes.t
+  type list_variadic_domain = OrderedTypes.t
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -2310,7 +2316,7 @@ end = struct
   type list_variadic_t = Record.Variable.RecordVariadic.RecordList.record
   [@@deriving compare, eq, sexp, show, hash]
 
-  type list_variadic_domain = type_t Record.OrderedTypes.t
+  type list_variadic_domain = OrderedTypes.t
 
   type pair =
     | UnaryPair of unary_t * unary_domain
@@ -2526,7 +2532,7 @@ end = struct
 
       type t = record [@@deriving compare, eq, sexp, show, hash]
 
-      type domain = type_t Record.OrderedTypes.t [@@deriving compare, eq, sexp, show, hash]
+      type domain = OrderedTypes.t [@@deriving compare, eq, sexp, show, hash]
 
       module Map = Core.Map.Make (struct
         type nonrec t = t
@@ -2540,9 +2546,9 @@ end = struct
 
       let name { name; _ } = name
 
-      let any = Record.OrderedTypes.Any
+      let any = OrderedTypes.Any
 
-      let self_reference variable = Record.OrderedTypes.Variable variable
+      let self_reference variable = OrderedTypes.Variable variable
 
       let pair variable value = ListVariadicPair (variable, value)
 

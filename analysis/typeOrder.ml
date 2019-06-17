@@ -472,8 +472,8 @@ module type FullOrderTypeWithoutT = sig
 
   val solve_ordered_types_less_or_equal
     :  order ->
-    left:Type.t Type.Record.OrderedTypes.t ->
-    right:Type.t Type.Record.OrderedTypes.t ->
+    left:Type.OrderedTypes.t ->
+    right:Type.OrderedTypes.t ->
     constraints:TypeConstraints.t ->
     TypeConstraints.t sexp_list
 end
@@ -588,8 +588,8 @@ module OrderImplementation = struct
                 Parameter.Variable (Variadic right_variable) :: right_parameters ) ->
                 solve_ordered_types_less_or_equal
                   order
-                  ~left:(Type.Record.OrderedTypes.Variable left_variable)
-                  ~right:(Type.Record.OrderedTypes.Variable right_variable)
+                  ~left:(Type.OrderedTypes.Variable left_variable)
+                  ~right:(Type.OrderedTypes.Variable right_variable)
                   ~constraints
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
             | left, Parameter.Variable (Variadic right_variable) :: right_parameters
@@ -892,7 +892,7 @@ module OrderImplementation = struct
 
 
     and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
-      let open Type.Record.OrderedTypes in
+      let open Type.OrderedTypes in
       let open Type.Variable.Variadic.List in
       match left, right with
       | Variable left_variable, Variable right_variable

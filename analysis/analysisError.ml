@@ -669,7 +669,7 @@ let messages ~concise ~signature location kind =
     | ListVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
         [ Format.asprintf
             "Types `%a` conflict with existing constraints on `%a`."
-            (Type.Record.OrderedTypes.pp_concise ~pp_type)
+            (Type.OrderedTypes.pp_concise ~pp_type)
             ordered_types
             Type.Variable.pp_concise
             (Type.Variable.ListVariadic variable) ]
@@ -686,7 +686,7 @@ let messages ~concise ~signature location kind =
         let unconcatenatable =
           List.map
             unconcatenatable
-            ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
+            ~f:(Format.asprintf "%a" (Type.OrderedTypes.pp_concise ~pp_type))
           |> String.concat ~sep:", "
         in
         [ Format.asprintf

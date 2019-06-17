@@ -185,8 +185,8 @@ val instantiate_successors_parameters
 
 val solve_ordered_types_less_or_equal
   :  order ->
-  left:Type.t Type.Record.OrderedTypes.t ->
-  right:Type.t Type.Record.OrderedTypes.t ->
+  left:Type.OrderedTypes.t ->
+  right:Type.OrderedTypes.t ->
   constraints:TypeConstraints.t ->
   TypeConstraints.t sexp_list
 

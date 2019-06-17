@@ -176,7 +176,7 @@ end
 
 val solve_ordered_types_less_or_equal
   :  t ->
-  left:Type.t Type.Record.OrderedTypes.t ->
-  right:Type.t Type.Record.OrderedTypes.t ->
+  left:Type.OrderedTypes.t ->
+  right:Type.OrderedTypes.t ->
   constraints:TypeConstraints.t ->
   TypeConstraints.t list

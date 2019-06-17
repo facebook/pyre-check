@@ -30,8 +30,8 @@ type missing_argument =
 
 type mismatch_with_list_variadic_type_variable =
   | NotDefiniteTuple of invalid_argument
-  | CantConcatenate of Type.t Type.Record.OrderedTypes.t list
-  | ConstraintFailure of Type.t Type.Record.OrderedTypes.t
+  | CantConcatenate of Type.OrderedTypes.t list
+  | ConstraintFailure of Type.OrderedTypes.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type reason =
@@ -311,7 +311,7 @@ let select
                   | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
                   (* We don't support expanding indefinite containers into ListVariadics *)
                   | annotation -> `Snd { expression; annotation } )
-                | _ -> `Fst (Type.Record.OrderedTypes.Concrete [resolved])
+                | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
               in
               List.rev arguments |> List.partition_map ~f:extract
             in
@@ -325,14 +325,13 @@ let select
           let concatenate extracted =
             let concatenated =
               match extracted with
-              | [] -> Some (Type.Record.OrderedTypes.Concrete [])
+              | [] -> Some (Type.OrderedTypes.Concrete [])
               | head :: tail ->
                   let concatenate sofar next =
                     let concatenate sofar =
                       match sofar, next with
-                      | ( Type.Record.OrderedTypes.Concrete sofar,
-                          Type.Record.OrderedTypes.Concrete next ) ->
-                          Some (Type.Record.OrderedTypes.Concrete (sofar @ next))
+                      | Type.OrderedTypes.Concrete sofar, Type.OrderedTypes.Concrete next ->
+                          Some (Type.OrderedTypes.Concrete (sofar @ next))
                       (* Any can masquerade as the empty list *)
                       | other, Any
                       | Any, other

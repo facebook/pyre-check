@@ -385,7 +385,7 @@ let test_expression _ =
     (Type.Parametric { name = "foo.bar"; parameters = [Type.Primitive "baz"] })
     "foo.bar.__getitem__(baz)";
   assert_expression
-    (Type.Tuple (Type.Bounded (Type.Record.OrderedTypes.Concrete [Type.integer; Type.string])))
+    (Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete [Type.integer; Type.string])))
     "typing.Tuple.__getitem__((int, str))";
   assert_expression
     (Type.Tuple (Type.Unbounded Type.integer))
@@ -1668,7 +1668,7 @@ let test_replace_all _ =
   let free_variable_tuple = Type.Tuple (Bounded (Variable list_variadic)) in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
-       (fun _ -> Some (Type.Record.OrderedTypes.Concrete [Type.integer; Type.string]))
+       (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
        (Type.parametric "p" [Type.integer; free_variable_tuple]))
     (Type.parametric "p" [Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
   let replaced =
@@ -1679,7 +1679,7 @@ let test_replace_all _ =
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
-       (fun _ -> Some (Type.Record.OrderedTypes.Concrete [Type.integer; Type.string]))
+       (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
        (Type.Callable.create
           ~parameters:
             (Defined
