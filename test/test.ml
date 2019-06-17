@@ -306,12 +306,16 @@ let assert_source_equal_with_locations expected actual =
         end)
         in
         let print_expression expression =
+          let add_indentation expression_string =
+            let indent expression_string =
+              String.split ~on:'\n' expression_string |> String.concat ~sep:("\n" ^ indented_prefix)
+            in
+            indented_prefix ^ indent expression_string
+          in
           Format.fprintf
             format
-            "%s%a -> (%a)\n"
-            indented_prefix
-            Expression.pp
-            expression
+            "%s -> (%a)\n"
+            (Expression.show expression |> add_indentation)
             Location.Reference.pp_line_and_column
             expression.Node.location
         in
@@ -370,13 +374,9 @@ let assert_source_equal_with_locations expected actual =
       let matches regex line = Str.string_match (Str.regexp regex) line 0 in
       let is_removed_any = matches "-.*\\(-1:-1--1:-1\\)" in
       let is_difference line = matches "-.*" line || matches "+.*" line in
-      let is_context line =
-        not (String.is_empty (String.strip line) || matches ".*\\(.*-.*\\)" line)
-      in
       let rec collect_non_anys collected = function
         | removed :: _ :: rest when is_removed_any removed -> collect_non_anys collected rest
-        | line :: rest when is_difference line || is_context line ->
-            collect_non_anys (line :: collected) rest
+        | line :: rest when is_difference line -> collect_non_anys (line :: collected) rest
         | _ :: rest -> collect_non_anys collected rest
         | _ -> collected
       in
