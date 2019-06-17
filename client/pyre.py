@@ -499,7 +499,12 @@ def main() -> int:
             .run()
             .exit_code()
         )
-    except (buck.BuckException, EnvironmentException) as error:
+    except buck.BuckException as error:
+        LOG.error(str(error))
+        if arguments.command == commands.Persistent:
+            commands.Persistent.run_null_server(timeout=3600 * 12)
+        exit_code = ExitCode.BUCK_ERROR
+    except EnvironmentException as error:
         LOG.error(str(error))
         if arguments.command == commands.Persistent:
             commands.Persistent.run_null_server(timeout=3600 * 12)
