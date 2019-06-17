@@ -386,7 +386,10 @@ small_statement:
   | target = test_list;
     annotation = annotation {
       [{
-        Node.location = target.Node.location;
+        Node.location = {
+          target.Node.location with Location.stop =
+            annotation.Node.location.Location.stop;
+        };
         value = Assign {
           Assign.target;
           annotation = Some annotation;
@@ -398,7 +401,10 @@ small_statement:
   | target = test_list;
     annotation = comment_annotation {
       [{
-        Node.location = target.Node.location;
+        Node.location = {
+          target.Node.location with Location.stop =
+            annotation.Node.location.Location.stop;
+        };
         value = Assign {
           Assign.target;
           annotation = Some annotation;
@@ -412,7 +418,10 @@ small_statement:
     EQUALS;
     value = test_list {
       [{
-        Node.location = target.Node.location;
+        Node.location = {
+          target.Node.location with Location.stop =
+            value.Node.location.Location.stop;
+        };
         value = Assign {
           Assign.target;
           annotation = Some annotation;
@@ -432,12 +441,16 @@ small_statement:
     annotation = annotation;
     EQUALS;
     ellipsis = ELLIPSES {
+      let ellipsis = create_ellipsis ellipsis in
       [{
-        Node.location = target.Node.location;
+        Node.location = {
+          target.Node.location with Location.stop =
+            ellipsis.Node.location.Location.stop;
+        };
         value = Assign {
           Assign.target;
           annotation = Some annotation;
-          value = create_ellipsis ellipsis;
+          value = ellipsis;
           parent = None;
         };
       }]
@@ -1119,7 +1132,10 @@ import:
   | target = test_list {
       let assignment_with_annotation ~value ~annotation =
         {
-          Node.location = target.Node.location;
+          Node.location = {
+            target.Node.location with Location.stop =
+              value.Node.location.Location.stop;
+          };
           value = Assign {
             Assign.target;
             annotation;

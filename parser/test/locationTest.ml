@@ -89,7 +89,7 @@ let test_assign_locations _ =
     "a = 1"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1) (* TODO(T45713676): Assign end location should encompass entire assign. *)
+        ~stop:(1, 5)
         (Assign
            { Assign.target = node ~start:(1, 0) ~stop:(1, 1) (Name (Name.Identifier "a"));
              annotation = None;
@@ -100,7 +100,7 @@ let test_assign_locations _ =
     "a: int = 1"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 10)
         (Assign
            { Assign.target = !"a";
              annotation = Some (node ~start:(1, 3) ~stop:(1, 6) (Name (Name.Identifier "int")));
@@ -111,7 +111,7 @@ let test_assign_locations _ =
     "a = 1     # type: int"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 5)
         (Assign
            { Assign.target = !"a";
              annotation =
@@ -127,7 +127,7 @@ let test_assign_locations _ =
     "a = 1  # type: 'int'"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 5)
         (Assign
            { Assign.target = !"a";
              annotation =
@@ -139,7 +139,7 @@ let test_assign_locations _ =
     "a: int"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 6)
         (Assign
            { Assign.target = !"a";
              annotation = Some !"int";
@@ -150,17 +150,17 @@ let test_assign_locations _ =
     "a = b = 1"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 9)
         (Assign { Assign.target = !"a"; annotation = None; value = +Integer 1; parent = None });
       node
         ~start:(1, 4)
-        ~stop:(1, 5) (* TODO(T45713676): This is wrong. *)
+        ~stop:(1, 9)
         (Assign { Assign.target = !"b"; annotation = None; value = +Integer 1; parent = None }) ];
   assert_source_locations
     "a = yield from b"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 16)
         (Assign
            { Assign.target = !"a";
              annotation = None;
@@ -335,7 +335,7 @@ let test_call_locations _ =
     "x = i[j] = y"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 12)
         (Assign { target = !"x"; annotation = None; value = !"y"; parent = None });
       +Expression
          (node
@@ -1191,7 +1191,7 @@ let test_stub_locations _ =
     "a = ..."
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1) (* TODO:(T45713676) Stops too early. *)
+        ~stop:(1, 7)
         (Assign
            { Assign.target = !"a";
              annotation = None;
@@ -1202,7 +1202,7 @@ let test_stub_locations _ =
     "a = ... # type: Tuple[str]"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 1)
+        ~stop:(1, 7)
         (Assign
            { Assign.target = !"a";
              annotation =
@@ -1253,7 +1253,7 @@ let test_stub_locations _ =
     "class A:\n\ta = ... # type: int"
     [ node
         ~start:(1, 0)
-        ~stop:(2, 2) (* TODO(T45713676): Class doesn't encompass all of internal statements. *)
+        ~stop:(2, 8)
         (Class
            { Class.name = !&"A";
              bases = [];
