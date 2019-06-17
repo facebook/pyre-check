@@ -170,16 +170,14 @@ let test_check_generators _ =
     |}
     [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
       ^ "as type that does not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+      "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters." ];
   assert_type_errors
     {|
       x: typing.Generator[int, int, int]
       def foo() -> typing.Generator:
         return x
     |}
-    [ "Missing return annotation [3]: Returning `typing.Generator[int, int, int]` but "
-      ^ "return type must be specified as type that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `typing.Generator` expects 3 type parameters.";
       "Incompatible return type [7]: Expected `typing.Generator[typing.Any, typing.Any, "
       ^ "typing.Any]` but got `typing.Generator[int, int, int]`." ];
   assert_type_errors

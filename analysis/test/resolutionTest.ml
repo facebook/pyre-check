@@ -97,7 +97,7 @@ let test_parse_reference _ =
   assert_parse_reference "undefined" Type.Top;
   assert_parse_reference "MyType" Type.integer;
   assert_parse_reference "Foo" (Type.Primitive "Foo");
-  assert_parse_reference "typing.List" (Type.list Type.Any)
+  assert_parse_reference "typing.List" (Type.Primitive "list")
 
 
 let test_resolve_literal _ =

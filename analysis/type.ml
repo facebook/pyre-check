@@ -1333,28 +1333,15 @@ let primitive_substitution_map =
     "tuple", Tuple (Unbounded Any);
     "type", parametric_anys "type" 1;
     "typing.Any", Any;
-    "typing.AsyncContextManager", parametric_anys "typing.AsyncContextManager" 1;
-    "typing.AsyncGenerator", parametric_anys "typing.AsyncGenerator" 2;
-    "typing.AsyncIterable", parametric_anys "typing.AsyncIterable" 1;
-    "typing.AsyncIterator", parametric_anys "typing.AsyncIterator" 1;
-    "typing.Awaitable", parametric_anys "typing.Awaitable" 1;
     "typing.Callable", Callable.create ~annotation:Any ();
-    "typing.ChainMap", parametric_anys "collections.ChainMap" 1;
-    "typing.ContextManager", parametric_anys "typing.ContextManager" 1;
-    "typing.Counter", parametric_anys "collections.Counter" 1;
-    "typing.Coroutine", parametric_anys "typing.Coroutine" 3;
-    "typing.DefaultDict", parametric_anys "collections.defaultdict" 2;
-    "typing.Deque", parametric_anys "collections.deque" 1;
-    "typing.Dict", parametric_anys "dict" 2;
-    "typing.Generator", parametric_anys "typing.Generator" 3;
-    "typing.Iterable", parametric_anys "typing.Iterable" 1;
-    "typing.Iterator", parametric_anys "typing.Iterator" 1;
-    "typing.List", list Any;
-    "typing.Mapping", parametric_anys "typing.Mapping" 2;
-    "typing.Sequence", parametric_anys "typing.Sequence" 1;
-    "typing.Set", parametric_anys "typing.Set" 1;
+    "typing.ChainMap", Primitive "collections.ChainMap";
+    "typing.Counter", Primitive "collections.Counter";
+    "typing.DefaultDict", Primitive "collections.defaultdict";
+    "typing.Deque", Primitive "collections.deque";
+    "typing.Dict", Primitive "dict";
+    "typing.List", Primitive "list";
     "typing.Tuple", Tuple (Unbounded Any);
-    "typing.Type", parametric_anys "type" 1;
+    "typing.Type", Primitive "type";
     "typing_extensions.Protocol", Primitive "typing.Protocol" ]
   |> Identifier.Table.of_alist_exn
 

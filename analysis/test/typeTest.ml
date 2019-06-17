@@ -33,11 +33,11 @@ let test_create _ =
     (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   (* Type aliases in typeshed. *)
-  assert_create "typing.Counter" (Type.parametric "collections.Counter" [Type.Any]);
+  assert_create "typing.Counter" (Type.Primitive "collections.Counter");
   assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" [Type.integer]);
-  assert_create "typing.ChainMap" (Type.parametric "collections.ChainMap" [Type.Any]);
+  assert_create "typing.ChainMap" (Type.Primitive "collections.ChainMap");
   assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
-  assert_create "typing.Deque" (Type.parametric "collections.deque" [Type.Any]);
+  assert_create "typing.Deque" (Type.Primitive "collections.deque");
   assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
   assert_create
     "typing_extensions.Protocol[int]"
@@ -46,7 +46,7 @@ let test_create _ =
 
   (* Check renaming. *)
   assert_create "typing.List[int]" (Type.list Type.integer);
-  assert_create "typing.List" (Type.list Type.Any);
+  assert_create "typing.List" (Primitive "list");
   assert_create
     "typing.DefaultDict[int, str]"
     (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);

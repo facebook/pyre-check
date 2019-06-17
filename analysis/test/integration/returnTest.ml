@@ -55,8 +55,7 @@ let test_check_return _ =
       def foo() -> typing.Type[typing.Any]:
         return x
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
-      ^ "as type that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
   assert_type_errors {|
