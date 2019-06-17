@@ -302,6 +302,18 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
 
+    // Swig library parsing should be supported
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"name\": \"TEST-py-gen\",\n"
+            + "  \"buck.type\": \"cxx_genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"srcs\": [ \"a.i\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson, new SwigLibraryTarget(null, "PATH", "CMD", ImmutableList.of("a.i")));
+
     // Remote file parsing should be parsed only if base_path + ":" + name is in the set.
     targetJson =
         "{\n"

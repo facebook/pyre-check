@@ -120,6 +120,9 @@ public final class BuildTargetsCollector {
       case "genrule":
         // Thrift library targets have genrule rule type.
         return ThriftLibraryTarget.parse(cellPath, targetJsonObject);
+      case "cxx_genrule":
+        // Swig library targets have cxx_genrule rule type.
+        return SwigLibraryTarget.parse(cellPath, targetJsonObject);
       case "remote_file":
         return requiredRemoteFiles.contains(buildTargetName)
             ? RemoteFileTarget.parse(targetJsonObject)
@@ -173,7 +176,8 @@ public final class BuildTargetsCollector {
         ImmutableList.<String>builder()
             .add("buck")
             .add("query")
-            .add("kind('python_binary|python_library|python_test|genrule|remote_file', deps(%s))")
+            .add(
+                "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
             .addAll(targets)
             .add("--output-attributes")
             .add("buck.type")

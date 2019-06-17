@@ -7,17 +7,13 @@ import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -114,12 +110,8 @@ public final class ThriftLibraryTarget implements BuildTarget {
   }
 
   private void buildThriftStubs(String buckRoot, String outputDirectory) throws IOException {
-    String cellAndBasePathPrefix =
-        Paths.get(this.cellPath != null ? this.cellPath : ".", this.basePath).toString();
     String basePathPrefixedSources =
-        this.sources.stream()
-            .map(source -> Paths.get(cellAndBasePathPrefix, source).toString())
-            .collect(Collectors.joining(" "));
+        GeneratedBuildRuleRunner.getBasePathPrefixedSources(cellPath, basePath, sources);
     // Replace buck cmd macro with predefined values.
     String builderCommand =
         this.command
@@ -131,22 +123,7 @@ public final class ThriftLibraryTarget implements BuildTarget {
             .replace("\"$OUT\"", outputDirectory)
             .replace("\"$SRCS\"", basePathPrefixedSources)
             .replaceFirst(" &&.*", "");
-    /*
-     * We log the errors of thrift building failure but do not stop the building workflow.
-     * We do not throw error because builds will be parallelized so the error can never be caught at main thread.
-     */
-    try (InputStream thriftErrorStream =
-        // Run the command in replaced cmd directly.
-        Runtime.getRuntime()
-            .exec(
-                builderCommand,
-                /* environment variables */ null,
-                /* working directory */ new File(buckRoot))
-            .getErrorStream()) {
-      new BufferedReader(new InputStreamReader(thriftErrorStream))
-          .lines()
-          .forEach(thriftErrorLine -> LOGGER.warning("[thrift-error]: " + thriftErrorLine));
-    }
+    GeneratedBuildRuleRunner.runBuilderCommand(builderCommand, buckRoot);
   }
 
   private void copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
