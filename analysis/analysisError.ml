@@ -14,19 +14,7 @@ module Type = struct
   let compare = Type.namespace_insensitive_compare
 end
 
-type origin =
-  | Class of { annotation: Type.t; class_attribute: bool }
-  | Module of Reference.t
-[@@deriving compare, eq, show, sexp, hash]
-
-type mismatch = {
-  actual: Type.t;
-  actual_expressions: Expression.t list;
-  expected: Type.t;
-  due_to_invariance: bool
-}
-[@@deriving compare, eq, show, sexp, hash]
-
+(* The `name` field conflicts with that defined in incompatible_type. *)
 type missing_annotation = {
   name: Reference.t;
   annotation: Type.t option;
@@ -34,86 +22,84 @@ type missing_annotation = {
   evidence_locations: Location.Instantiated.t list;
   thrown_at_source: bool
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, eq, sexp, show, hash]
 
-type incompatible_type = {
+type origin =
+  | Class of { annotation: Type.t; class_attribute: bool }
+  | Module of Reference.t
+
+and mismatch = {
+  actual: Type.t;
+  actual_expressions: Expression.t list;
+  expected: Type.t;
+  due_to_invariance: bool
+}
+
+and incompatible_type = {
   name: Reference.t;
   mismatch: mismatch;
   declare_location: Location.Instantiated.t
 }
-[@@deriving compare, eq, show, sexp, hash]
 
-type invalid_argument =
+and invalid_argument =
   | Keyword of { expression: Expression.t; annotation: Type.t }
   | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
   | ListVariadicVariable of
       { variable: Type.Variable.Variadic.List.t;
         mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
       }
-[@@deriving compare, eq, show, sexp, hash]
 
-type precondition_mismatch =
+and precondition_mismatch =
   | Found of mismatch
   | NotFound of Type.t Type.Callable.Parameter.t
-[@@deriving compare, eq, show, sexp, hash]
 
-type override =
+and override =
   | StrengthenedPrecondition of precondition_mismatch
   | WeakenedPostcondition of mismatch
-[@@deriving compare, eq, show, sexp, hash]
 
-type unpack_problem =
+and unpack_problem =
   | UnacceptableType of Type.t
   | CountMismatch of int
-[@@deriving compare, eq, sexp, show, hash]
 
-type type_variable_origin =
+and type_variable_origin =
   | ClassToplevel
   | Define
   | Toplevel
-[@@deriving compare, eq, sexp, show, hash]
 
-type type_variance_origin =
+and type_variance_origin =
   | Parameter
   | Return
-[@@deriving compare, eq, sexp, show, hash]
 
-type illegal_action_on_incomplete_type =
+and illegal_action_on_incomplete_type =
   | Naming
   | Calling
   | AttributeAccess of Identifier.t
-[@@deriving compare, eq, sexp, show, hash]
 
-type override_kind =
+and override_kind =
   | Method
   | Attribute
-[@@deriving compare, eq, sexp, show, hash]
 
-type invalid_inheritance =
-  | Class of Identifier.t
+and invalid_inheritance =
+  | ClassName of Identifier.t
   | NonMethodFunction of Identifier.t
-[@@deriving compare, eq, sexp, show, hash]
 
-type invalid_override_kind =
+and invalid_override_kind =
   | Final
   | StaticSuper
   | StaticOverride
-[@@deriving compare, eq, sexp, show, hash]
 
-type invalid_assignment_kind =
-  | Final of Reference.t
+and invalid_assignment_kind =
+  | FinalAttribute of Reference.t
   | ClassVariable of { class_variable: Identifier.t; class_name: Identifier.t }
   | ReadOnly of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
 
-type invalid_type_kind =
+and invalid_type_kind =
   | FinalNested of Type.t
   | FinalParameter of Identifier.t
   | InvalidType of Type.t
   | NestedTypeVariables of Type.Variable.t
-[@@deriving compare, eq, sexp, show, hash]
 
-type unawaited_awaitable = {
+and unawaited_awaitable = {
   references: Reference.t list;
   expression: Expression.t
 }
@@ -196,7 +182,7 @@ type kind =
   (* TODO(T38384376): split this into a separate module. *)
   | Deobfuscation of Source.t
   | UnawaitedAwaitable of unawaited_awaitable
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, eq, sexp, show, hash]
 
 let code = function
   | RevealedType _ -> -1
@@ -823,7 +809,7 @@ let messages ~concise ~signature location kind =
       ]
   | InvalidInheritance invalid_inheritance -> (
     match invalid_inheritance with
-    | Class class_name ->
+    | ClassName class_name ->
         [Format.asprintf "Cannot inherit from final class `%a`." pp_identifier class_name]
     | NonMethodFunction decorator_name ->
         [ Format.asprintf
@@ -847,7 +833,8 @@ let messages ~concise ~signature location kind =
           parent ]
   | InvalidAssignment kind -> (
     match kind with
-    | Final name -> [Format.asprintf "Cannot reassign final attribute `%a`." pp_reference name]
+    | FinalAttribute name ->
+        [Format.asprintf "Cannot reassign final attribute `%a`." pp_reference name]
     | ClassVariable _ when concise -> ["Assigning to class variable through instance."]
     | ClassVariable { class_variable; class_name } ->
         [ Format.asprintf
@@ -1742,7 +1729,7 @@ let less_or_equal ~resolution left right =
       && equal_type_variance_origin left_origin right_origin
   | InvalidInheritance left, InvalidInheritance right -> (
     match left, right with
-    | Class left, Class right
+    | ClassName left, ClassName right
     | NonMethodFunction left, NonMethodFunction right ->
         Identifier.equal_sanitized left right
     | _, _ -> false )
@@ -1757,7 +1744,7 @@ let less_or_equal ~resolution left right =
   | InvalidAssignment left, InvalidAssignment right -> (
     match left, right with
     | ReadOnly left, ReadOnly right
-    | Final left, Final right ->
+    | FinalAttribute left, FinalAttribute right ->
         Reference.equal left right
     | ClassVariable left, ClassVariable right ->
         Identifier.equal left.class_variable right.class_variable

@@ -352,7 +352,7 @@ module State (Context : Context) = struct
                       else
                         let kind =
                           if final then
-                            Error.InvalidAssignment (Final (Reference.create name))
+                            Error.InvalidAssignment (FinalAttribute (Reference.create name))
                           else
                             Error.InconsistentOverride
                               { overridden_method = name;
@@ -393,7 +393,7 @@ module State (Context : Context) = struct
               let error =
                 Error.create
                   ~location
-                  ~kind:(Error.InvalidInheritance (Class (Expression.show value)))
+                  ~kind:(Error.InvalidInheritance (ClassName (Expression.show value)))
                   ~define:Context.define
               in
               error :: errors
@@ -2841,7 +2841,7 @@ module State (Context : Context) = struct
                 | Some reference ->
                     let check_global_final_reassignment state =
                       if Annotation.is_final target_annotation then
-                        let kind = Error.InvalidAssignment (Final reference) in
+                        let kind = Error.InvalidAssignment (FinalAttribute reference) in
                         emit_error ~state ~location ~kind
                       else
                         state
@@ -2853,7 +2853,7 @@ module State (Context : Context) = struct
                           emit_error
                             ~state
                             ~location
-                            ~kind:(Error.InvalidAssignment (Final reference))
+                            ~kind:(Error.InvalidAssignment (FinalAttribute reference))
                       | _ -> state
                     in
                     let check_assign_class_variable_on_instance state =
