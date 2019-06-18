@@ -27,11 +27,11 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path
 }
-[@@deriving show]
+[@@deriving show, eq]
 
 val create : Root.t -> AbstractTreeDomain.Label.path -> t
 
-val of_expression : Expression.t -> t option
+val of_expression : resolution:Resolution.t -> Expression.t -> t option
 
 val get_index : Expression.t -> AbstractTreeDomain.Label.t
 

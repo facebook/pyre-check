@@ -288,7 +288,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 match List.nth arguments n with
                 | None -> state
                 | Some { Call.Argument.value = exp; _ } ->
-                    let access_path = AccessPath.of_expression exp in
+                    let access_path = AccessPath.of_expression ~resolution exp in
                     store_taint_option ~weak:true access_path taint state )
               | _ -> failwith "unexpected sink in tito"
             in
@@ -350,7 +350,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:iterator
           |>> ForwardState.Tree.read [AbstractTreeDomain.Label.Any]
         in
-        let access_path = AccessPath.of_expression target in
+        let access_path = AccessPath.of_expression ~resolution target in
         store_taint_option access_path taint state
       in
       let bound_state = List.fold ~f:add_binding generators ~init:state in
@@ -569,7 +569,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;
 
           (* Propagate taint. *)
-          let access_path = AccessPath.of_expression target in
+          let access_path = AccessPath.of_expression ~resolution target in
           store_taint_option access_path taint state
 
 

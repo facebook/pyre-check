@@ -162,7 +162,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
                     | Some { Call.Argument.value = exp; _ } ->
-                        let access_path = of_expression exp in
+                        let access_path = of_expression ~resolution exp in
                         get_taint access_path state )
                   | _ -> failwith "unexpected tito sink"
                 in
@@ -247,7 +247,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let element_taint = read_tree [AbstractTreeDomain.Label.Any] taint in
       let state = analyze_expression ~resolution ~taint:element_taint ~state ~expression:element in
       let handle_generator state { Comprehension.target; iterator; _ } =
-        let access_path = of_expression target in
+        let access_path = of_expression ~resolution target in
         let bound_variable_taint = get_taint access_path state in
         let iterator_taint =
           BackwardState.Tree.prepend [AbstractTreeDomain.Label.Any] bound_variable_taint
@@ -408,7 +408,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ ->
           let taint =
             let local_taint =
-              let access_path = of_expression target in
+              let access_path = of_expression ~resolution target in
               get_taint access_path state
             in
             let global_taint =

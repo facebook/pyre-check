@@ -173,23 +173,9 @@ type t = {
   root: Root.t;
   path: AbstractTreeDomain.Label.path
 }
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, eq]
 
 let create root path = { root; path }
-
-let of_expression = function
-  | { Node.value = Name _; _ } as expression ->
-      let rec of_expression path = function
-        | { Node.value = Name (Name.Identifier identifier); _ } ->
-            Some { root = Root.Variable identifier; path }
-        | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-            let path = AbstractTreeDomain.Label.Field attribute :: path in
-            of_expression path base
-        | _ -> None
-      in
-      of_expression [] expression
-  | _ -> None
-
 
 let get_index { Node.value = expression; _ } =
   match expression with
@@ -258,3 +244,22 @@ let get_global ~resolution name =
 
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)
+
+let of_expression ~resolution = function
+  | { Node.value = Name _; _ } as expression ->
+      let expression =
+        if is_global ~resolution expression then
+          Ast.Expression.delocalize expression
+        else
+          expression
+      in
+      let rec of_expression path = function
+        | { Node.value = Name (Name.Identifier identifier); _ } ->
+            Some { root = Root.Variable identifier; path }
+        | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+            let path = AbstractTreeDomain.Label.Field attribute :: path in
+            of_expression path base
+        | _ -> None
+      in
+      of_expression [] expression
+  | _ -> None

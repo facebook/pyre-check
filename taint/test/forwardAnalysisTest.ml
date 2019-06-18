@@ -100,6 +100,20 @@ let test_simple_source _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"]
 
 
+let test_global_taint _ =
+  assert_taint
+    ~models:{|
+       django.http.Request.GET: TaintSource[UserControlled] = ...
+    |}
+    {|
+      sink = 0
+      def inferred_source(request: django.http.Request):
+        sink = request.GET
+        return sink
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.inferred_source"]
+
+
 let test_hardcoded_source _ =
   assert_taint
     ~models:
@@ -772,5 +786,6 @@ let () =
          "test_yield" >:: test_yield;
          "test_construction" >:: test_construction;
          "test_composed_models" >:: test_composed_models;
-         "test_tito_side_effects" >:: test_tito_side_effects ]
+         "test_tito_side_effects" >:: test_tito_side_effects;
+         "test_global_taint" >:: test_global_taint ]
   |> TestHelper.run_with_taint_models
