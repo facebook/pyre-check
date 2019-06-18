@@ -2093,15 +2093,12 @@ module State (Context : Context) = struct
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
         let { state = { errors = updated_errors; _ } as updated_state; resolved } =
-          let target =
-            match Node.value callee with
-            | _ when Type.is_meta resolved_callee -> Some (Type.single_parameter resolved_callee)
-            | Name (Name.Attribute { Name.Attribute.base; _ }) ->
-                let { resolved; _ } = forward_expression ~state ~expression:base in
-                if Type.is_top resolved then None else Some resolved
-            | _ -> None
-          in
-          forward_callable ~state ~target ~callee ~resolved:resolved_callee ~arguments
+          (* TODO(T44530812): reenable let target = match Node.value callee with | _ when
+             Type.is_meta resolved_callee -> Some (Type.single_parameter resolved_callee) | Name
+             (Name.Attribute { Name.Attribute.base; _ }) -> let { resolved; _ } =
+             forward_expression ~state ~expression:base in if Type.is_top resolved then None else
+             Some resolved | _ -> None in *)
+          forward_callable ~state ~target:None ~callee ~resolved:resolved_callee ~arguments
         in
         if
           Map.is_empty (Map.filter ~f:is_terminating_error callee_errors)
