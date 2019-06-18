@@ -116,13 +116,8 @@ module Record : sig
       parameters: 'annotation record_parameters
     }
 
-    and invocation =
-      | Function
-      | Method
-
     and 'annotation record = {
       kind: kind;
-      invocation: invocation;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
       implicit: 'annotation implicit_record option
@@ -333,7 +328,6 @@ module Callable : sig
     ?overloads:type_t overload list ->
     ?parameters:parameters ->
     ?implicit:implicit ->
-    ?invocation:invocation ->
     annotation:type_t ->
     unit ->
     type_t

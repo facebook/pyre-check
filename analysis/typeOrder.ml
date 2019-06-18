@@ -656,7 +656,6 @@ module OrderImplementation = struct
         let namespaced_variables =
           Type.Callable
             { Type.Callable.kind = Anonymous;
-              invocation = Function;
               implementation = overload;
               overloads = [];
               implicit = None

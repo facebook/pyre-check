@@ -223,13 +223,8 @@ module Record = struct
       parameters: 'annotation record_parameters
     }
 
-    and invocation =
-      | Function
-      | Method
-
     and 'annotation record = {
       kind: kind;
-      invocation: invocation;
       implementation: 'annotation overload;
       overloads: 'annotation overload list;
       implicit: 'annotation implicit_record option
@@ -1263,15 +1258,9 @@ module Callable = struct
     | ({ kind = Named _; _ } as initial) :: overloads ->
         let fold sofar signature =
           match sofar, signature with
-          | Some sofar, { kind; invocation; implementation; overloads; implicit } ->
+          | Some sofar, { kind; implementation; overloads; implicit } ->
               if equal_kind kind sofar.kind then
-                Some
-                  { kind;
-                    invocation;
-                    implementation;
-                    overloads = sofar.overloads @ overloads;
-                    implicit
-                  }
+                Some { kind; implementation; overloads = sofar.overloads @ overloads; implicit }
               else
                 None
           | _ -> None
@@ -1289,9 +1278,7 @@ module Callable = struct
 
 
   let map_implementation implementation ~f =
-    map
-      { kind = Anonymous; invocation = Function; implementation; overloads = []; implicit = None }
-      ~f
+    map { kind = Anonymous; implementation; overloads = []; implicit = None } ~f
     |> function
     | Some { implementation; _ } -> implementation
     | _ -> failwith "f did not return a callable"
@@ -1315,17 +1302,14 @@ module Callable = struct
     }
 
 
-  let create
-      ?name
-      ?(overloads = [])
-      ?(parameters = Undefined)
-      ?implicit
-      ?(invocation = Function)
-      ~annotation
-      ()
-    =
+  let create ?name
+             ?(overloads = [])
+             ?(parameters = Undefined)
+             ?implicit
+             ~annotation
+             () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-    Callable { kind; invocation; implementation = { annotation; parameters }; overloads; implicit }
+    Callable { kind; implementation = { annotation; parameters }; overloads; implicit }
 
 
   let create_from_implementation implementation =
@@ -1340,7 +1324,6 @@ let lambda ~parameters ~return_annotation =
   in
   Callable
     { kind = Anonymous;
-      invocation = Function;
       implementation = { annotation = return_annotation; parameters = Defined parameters };
       overloads = [];
       implicit = None
@@ -1633,7 +1616,7 @@ let rec create_logic ?(use_cache = true)
               | Some signatures -> List.rev (parse_overloads (Node.value signatures))
               | None -> []
             in
-            Callable { kind; invocation = Function; implementation; overloads; implicit = None }
+            Callable { kind; implementation; overloads; implicit = None }
           in
           match expression with
           | Call
@@ -3051,7 +3034,6 @@ module TypedDictionary = struct
   let constructor ~name ~fields ~total =
     let annotation = TypedDictionary { name; fields; total } in
     { Callable.kind = Named (Reference.create "__init__");
-      invocation = Function;
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [ { annotation; parameters = field_named_parameters ~default:(not total) fields };

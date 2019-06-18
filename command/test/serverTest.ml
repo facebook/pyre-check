@@ -779,7 +779,6 @@ let test_query context =
               annotation =
                 Type.Callable
                   { Type.Callable.kind = Type.Callable.Named !&"C.foo";
-                    invocation = Type.Callable.Method;
                     implementation =
                       { Type.Callable.annotation = Type.integer;
                         parameters = Type.Callable.Defined []
