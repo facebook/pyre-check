@@ -755,12 +755,6 @@ module OrderImplementation = struct
           | Type.Annotated left, _ -> solve_less_or_equal_throws order ~constraints ~left ~right
           | _, Type.Annotated right -> solve_less_or_equal_throws order ~constraints ~left ~right
           | Type.Any, _ when any_is_bottom -> [constraints]
-          | Type.Union lefts, right ->
-              solve_ordered_types_less_or_equal
-                order
-                ~left:(Concrete lefts)
-                ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
-                ~constraints
           | Type.Variable left_variable, Type.Variable right_variable
             when Type.Variable.Unary.is_free left_variable
                  && Type.Variable.Unary.is_free right_variable ->
@@ -799,6 +793,12 @@ module OrderImplementation = struct
               >>| Type.parametric name
               >>| (fun left -> solve_less_or_equal_throws order ~constraints ~left ~right)
               |> Option.value ~default:[]
+          | Type.Union lefts, right ->
+              solve_ordered_types_less_or_equal
+                order
+                ~left:(Concrete lefts)
+                ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
+                ~constraints
           | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
               let solve_parameters left_parameters =
                 let solve_parameter_pair constraints (variable, (left, right)) =

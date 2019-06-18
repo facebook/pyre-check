@@ -3101,7 +3101,7 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Union[int, G_invariant[str], str]"
     ~right:"T_Unconstrained"
     [["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]];
-  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
+  assert_solve ~left:"typing.Union[D, C]" ~right:"T_Bound_C" [["T_Bound_C", "typing.Union[D, C]"]];
   assert_solve
     ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_invariant[C]"
@@ -3132,7 +3132,7 @@ let test_solve_less_or_equal _ =
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    [["T_Unconstrained", "typing.Union[C, Q]"]];
+    [["T_Unconstrained", "typing.Union[C, D, Q]"]];
   assert_solve
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"

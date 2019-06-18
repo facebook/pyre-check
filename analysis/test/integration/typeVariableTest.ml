@@ -147,6 +147,20 @@ let test_check_unbounded_variables _ =
       foo(x)
     |}
     [];
+  assert_type_errors
+    {|
+    from typing import Union, Tuple
+    SeparatedUnion = Union[
+        Tuple[int, bool],
+        Tuple[str, None],
+    ]
+    def foo(x: SeparatedUnion) -> SeparatedUnion:
+      i = identity(x)
+      reveal_type(i)
+      return i
+    |}
+    [ "Revealed type [-1]: Revealed type for `i` is `Union[typing.Tuple[int, bool], \
+       typing.Tuple[str, None]]`." ];
   ()
 
 
