@@ -263,10 +263,9 @@ let to_dot ~get_dependencies ~qualifier =
 
 
 module Callgraph = struct
-  type callee = {
-    name: Reference.t;
-    invocation: Type.Callable.invocation
-  }
+  type callee =
+    | Function of Reference.t
+    | Method of { direct_target: Reference.t; static_target: Reference.t }
   [@@deriving show]
 
   module CalleeValue = struct

@@ -1408,6 +1408,11 @@ let test_coverage _ =
     { Coverage.full = 0; partial = 0; untyped = 2; ignore = 0; crashes = 0 }
 
 
+type method_call = {
+  direct_target: string;
+  static_target: string
+}
+
 let test_calls _ =
   let assert_calls source calls =
     let source =
@@ -1428,10 +1433,12 @@ let test_calls _ =
     let assert_calls (caller, callees) =
       let expected_callees =
         let callee = function
-          | `Method name ->
-              { Dependencies.Callgraph.name = Reference.create name; invocation = Method }
-          | `Function name ->
-              { Dependencies.Callgraph.name = Reference.create name; invocation = Function }
+          | `Method { direct_target; static_target } ->
+              Dependencies.Callgraph.Method
+                { direct_target = Reference.create direct_target;
+                  static_target = Reference.create static_target
+                }
+          | `Function name -> Dependencies.Callgraph.Function (Reference.create name)
         in
         List.map callees ~f:callee
         |> List.map ~f:Dependencies.Callgraph.show_callee
@@ -1474,24 +1481,40 @@ let test_calls _ =
      def calls_method(c: Class):
        c.method()
    |}
-    ["qualifier.calls_method", [`Method "qualifier.Class.method"]];
+    [ ( "qualifier.calls_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
+        ] ) ];
+
+  (* Constructors and `super`. *)
   assert_calls
     {|
      class Class: ...
      class ClassWithInit:
        def __init__(self):
          super().__init__()
-     def calls_object_init():
+     def calls_Class():
        Class()
-     def calls_init():
+     def calls_ClassWithInit():
        ClassWithInit()
-     def calls_init_statically(object: object):
+     def calls_ClassWithInit__init__(object: object):
        ClassWithInit.__init__(object)
    |}
-    [ "qualifier.ClassWithInit.__init__", [`Method "object.__init__"];
-      "qualifier.calls_object_init", [`Method "qualifier.Class.__init__"];
-      "qualifier.calls_init", [`Method "qualifier.ClassWithInit.__init__"];
-      "qualifier.calls_init_statically", [`Method "qualifier.ClassWithInit.__init__"] ];
+    [ ( "qualifier.ClassWithInit.__init__",
+        [`Method { direct_target = "object.__init__"; static_target = "object.__init__" }] );
+      ( "qualifier.calls_Class",
+        [`Method { direct_target = "object.__init__"; static_target = "qualifier.Class.__init__" }]
+      );
+      ( "qualifier.calls_ClassWithInit",
+        [ `Method
+            { direct_target = "qualifier.ClassWithInit.__init__";
+              static_target = "qualifier.ClassWithInit.__init__"
+            } ] );
+      ( "qualifier.calls_ClassWithInit__init__",
+        [ `Method
+            { direct_target = "qualifier.ClassWithInit.__init__";
+              static_target = "qualifier.ClassWithInit.__init__"
+            } ] ) ];
   assert_calls
     {|
      class Class:
@@ -1500,7 +1523,51 @@ let test_calls _ =
      def calls_class_method():
        Class.classmethod()
    |}
-    ["qualifier.calls_class_method", [`Method "qualifier.Class.classmethod"]];
+    [ ( "qualifier.calls_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.classmethod";
+              static_target = "qualifier.Class.classmethod"
+            } ] ) ];
+
+  (* Inheritance. *)
+  assert_calls
+    {|
+      class Class:
+        def method(self): ...
+      class Indirect(Class):
+        ...
+      class Subclass(Indirect):
+        ...
+      class OverridingSubclass(Subclass):
+        def method(self): ...
+      def calls_Class_method(c: Class):
+        c.method()
+      def calls_Indirect_method(i: Indirect):
+        i.method()
+      def calls_Subclass_method(s: Subclass):
+        s.method()
+      def calls_OverridingSubclass_method(o: OverridingSubclass):
+        o.method()
+    |}
+    [ ( "qualifier.calls_Class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
+        ] );
+      ( "qualifier.calls_Indirect_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Indirect.method"
+            } ] );
+      ( "qualifier.calls_Subclass_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Subclass.method"
+            } ] );
+      ( "qualifier.calls_OverridingSubclass_method",
+        [ `Method
+            { direct_target = "qualifier.OverridingSubclass.method";
+              static_target = "qualifier.OverridingSubclass.method"
+            } ] ) ];
 
   (* Unions. *)
   assert_calls
@@ -1513,7 +1580,13 @@ let test_calls _ =
        union.method()
    |}
     [ ( "qualifier.calls_method_on_union",
-        [`Method "qualifier.Class.method"; `Method "qualifier.OtherClass.method"] ) ]
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" };
+          `Method
+            { direct_target = "qualifier.OtherClass.method";
+              static_target = "qualifier.OtherClass.method"
+            } ] ) ];
+  ()
 
 
 let () =

@@ -1606,32 +1606,30 @@ module State (Context : Context) = struct
         in
         (* Store callees. *)
         let callees =
-          let callable_name = function
-            | { Type.Callable.kind = Named name; invocation; _ } ->
-                let names =
-                  match target with
-                  | Some annotation ->
-                      let rec names = function
-                        | Type.Union elements -> List.concat_map elements ~f:names
-                        | annotation ->
-                            let class_name =
-                              ( if Type.is_meta annotation then
-                                  Type.single_parameter annotation
-                              else
-                                annotation )
-                              |> Type.class_name
-                            in
-                            Reference.as_list class_name @ [Reference.last name]
-                            |> Reference.create_from_list
-                            |> fun name -> [name]
-                      in
-                      names annotation
-                  | _ -> [name]
+          let method_callee annotation callable =
+            match callable with
+            | { Type.Callable.kind = Named direct_target; _ } ->
+                let class_name =
+                  ( if Type.is_meta annotation then
+                      Type.single_parameter annotation
+                  else
+                    annotation )
+                  |> Type.class_name
                 in
-                List.map names ~f:(fun name -> { Dependencies.Callgraph.name; invocation })
+                Reference.as_list class_name @ [Reference.last direct_target]
+                |> Reference.create_from_list
+                |> fun name ->
+                [Dependencies.Callgraph.Method { direct_target; static_target = name }]
             | _ -> []
           in
-          callables >>| List.concat_map ~f:callable_name |> Option.value ~default:[]
+          match target, callables with
+          | Some (Type.Union elements), Some callables
+            when List.length elements = List.length callables ->
+              List.map2_exn elements callables ~f:method_callee |> List.concat
+          | Some annotation, Some [callable] -> method_callee annotation callable
+          | None, Some [{ Type.Callable.kind = Named define; _ }] ->
+              [Dependencies.Callgraph.Function define]
+          | _ -> []
         in
         Hashtbl.set Context.calls ~key:location ~data:callees;
 
