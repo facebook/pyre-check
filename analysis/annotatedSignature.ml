@@ -460,50 +460,49 @@ let select
                     reasons = { reasons with annotation = error :: annotation }
                   }
                 in
+                let solution_based_extraction ~create_error ~synthetic_variable ~solve_against =
+                  let signature_with_error =
+                    { expression; annotation = resolved }
+                    |> Node.create ~location:expression.location
+                    |> create_error
+                    |> add_annotation_error signature_match
+                  in
+                  let iterable_constraints =
+                    if Type.is_unbound resolved then
+                      []
+                    else
+                      Resolution.solve_less_or_equal
+                        resolution
+                        ~constraints:TypeConstraints.empty
+                        ~left:resolved
+                        ~right:solve_against
+                  in
+                  match iterable_constraints with
+                  | [] -> signature_with_error
+                  | iterable_constraint :: _ ->
+                      Resolution.solve_constraints resolution iterable_constraint
+                      >>= (fun solution ->
+                            TypeConstraints.Solution.instantiate_single_variable
+                              solution
+                              synthetic_variable)
+                      >>| set_constraints_and_reasons
+                      |> Option.value ~default:signature_with_error
+                in
                 match kind with
                 | DoubleStar ->
-                    let annotation = resolved in
-                    let mapping = Type.parametric "typing.Mapping" [Type.string; Type.Top] in
-                    if Resolution.less_or_equal resolution ~left:annotation ~right:mapping then
-                      (* Try to extract second parameter. *)
-                      Type.parameters annotation
-                      |> (fun parameters -> List.nth parameters 1)
-                      |> Option.value ~default:Type.Top
-                      |> set_constraints_and_reasons
-                    else
-                      { expression; annotation }
-                      |> Node.create ~location:expression.location
-                      |> (fun error -> InvalidKeywordArgument error)
-                      |> add_annotation_error signature_match
-                | SingleStar -> (
-                    let annotation = resolved in
-                    let signature_with_error =
-                      { expression; annotation }
-                      |> Node.create ~location:expression.location
-                      |> (fun error -> InvalidVariableArgument error)
-                      |> add_annotation_error signature_match
+                    let create_error error = InvalidKeywordArgument error in
+                    let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                    let solve_against =
+                      Type.parametric
+                        "typing.Mapping"
+                        [Type.string; Type.Variable synthetic_variable]
                     in
-                    let iterable_variable = Type.Variable.Unary.create "$_T" in
-                    let iterable_constraints =
-                      if Type.is_unbound annotation then
-                        []
-                      else
-                        Resolution.solve_less_or_equal
-                          resolution
-                          ~constraints:TypeConstraints.empty
-                          ~left:annotation
-                          ~right:(Type.iterable (Type.Variable iterable_variable))
-                    in
-                    match iterable_constraints with
-                    | [] -> signature_with_error
-                    | iterable_constraint :: _ ->
-                        Resolution.solve_constraints resolution iterable_constraint
-                        >>= (fun solution ->
-                              TypeConstraints.Solution.instantiate_single_variable
-                                solution
-                                iterable_variable)
-                        >>| set_constraints_and_reasons
-                        |> Option.value ~default:signature_with_error )
+                    solution_based_extraction ~create_error ~synthetic_variable ~solve_against
+                | SingleStar ->
+                    let create_error error = InvalidVariableArgument error in
+                    let synthetic_variable = Type.Variable.Unary.create "$_T" in
+                    let solve_against = Type.iterable (Type.Variable synthetic_variable) in
+                    solution_based_extraction ~create_error ~synthetic_variable ~solve_against
                 | Named _
                 | Positional ->
                     let argument_annotation =

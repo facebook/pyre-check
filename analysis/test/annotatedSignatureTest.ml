@@ -43,6 +43,9 @@ let resolution =
       Ts = pyre_extensions.ListVariadic("Ts")
       int_string_tuple: typing.Tuple[int, str]
       unbounded_tuple: typing.Tuple[int, ...]
+
+      class ExtendsDictStrInt(typing.Dict[str, int]): pass
+      optional: typing.Optional[int]
     |}
   |> fun environment -> TypeCheck.resolution environment ()
 
@@ -308,6 +311,22 @@ let test_select _ =
   assert_select
     "[[Named(i, int), Named(j, int)], int]"
     "(**{'i': 1}, j=2)"
+    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**(ExtendsDictStrInt()), j=2)"
+    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select
+    "[[Named(i, str)], int]"
+    "(**(ExtendsDictStrInt()))"
+    (`NotFoundMismatch (Type.integer, "**ExtendsDictStrInt()", Type.string, None, 1));
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**({}), j=2)"
+    (`Found "[[Named(i, int), Named(j, int)], int]");
+  assert_select
+    "[[Named(i, int), Named(j, int)], int]"
+    "(**({} if optional is None else {'i': optional}), j=2)"
     (`Found "[[Named(i, int), Named(j, int)], int]");
 
   (* Constructor resolution. *)

@@ -966,7 +966,27 @@ let test_check_keyword_arguments _ =
         test = foo( **x )
     |}
     [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter "
-      ^ "to call `foo` but got `typing.Union[int, str]`." ]
+      ^ "to call `foo` but got `typing.Union[int, str]`." ];
+  assert_type_errors
+    {|
+      def foo(x: float, y: float) -> None:
+        pass
+
+      def bar(x: typing.Union[typing.Dict[str, int], typing.Dict[str, float]]) -> None:
+        test = foo( **x )
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo(x: float, y: int) -> None:
+        pass
+
+      def bar(x: typing.Union[typing.Dict[str, int], typing.Dict[str, float]]) -> None:
+        test = foo( **x )
+    |}
+    [ "Incompatible parameter type [6]: Expected `int` for 1st anonymous parameter to call `foo` \
+       but got `float`." ];
+  ()
 
 
 let test_check_named_arguments _ =
