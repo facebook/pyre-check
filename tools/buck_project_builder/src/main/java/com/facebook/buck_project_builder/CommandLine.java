@@ -24,10 +24,6 @@ public final class CommandLine {
     }
   }
 
-  public static List<String> getCommandLineOutputLines(List<String> commands) throws IOException {
-    return getCommandLineOutputLines(commands.toArray(new String[0]));
-  }
-
   public static InputStream getCommandLineOutput(List<String> commands) throws IOException {
     return getCommandLineOutput(commands.toArray(new String[0]));
   }

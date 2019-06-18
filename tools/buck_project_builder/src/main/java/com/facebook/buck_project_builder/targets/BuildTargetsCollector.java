@@ -116,7 +116,7 @@ public final class BuildTargetsCollector {
       case "python_binary":
       case "python_library":
       case "python_test":
-        return PythonTarget.parse(type, cellPath, targetJsonObject);
+        return PythonTarget.parse(cellPath, targetJsonObject);
       case "genrule":
         // Thrift library targets have genrule rule type.
         return ThriftLibraryTarget.parse(cellPath, targetJsonObject);

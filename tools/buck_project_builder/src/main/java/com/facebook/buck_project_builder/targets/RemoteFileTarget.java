@@ -7,8 +7,6 @@ import java.util.logging.Logger;
 
 public final class RemoteFileTarget implements BuildTarget {
 
-  private static final Logger LOGGER = Logger.getGlobal();
-
   private final String url;
 
   RemoteFileTarget(String url) {

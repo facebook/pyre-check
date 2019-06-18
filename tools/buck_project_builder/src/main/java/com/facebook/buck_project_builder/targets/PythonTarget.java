@@ -115,8 +115,7 @@ public final class PythonTarget implements BuildTarget {
     addSource(sourceSet, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
   }
 
-  static @Nullable PythonTarget parse(
-      String ruleName, @Nullable String cellPath, JsonObject targetJsonObject) {
+  static @Nullable PythonTarget parse(@Nullable String cellPath, JsonObject targetJsonObject) {
     ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
     ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder = ImmutableSet.builder();
     // Both `srcs` and `versioned_srcs` might be present in a target.

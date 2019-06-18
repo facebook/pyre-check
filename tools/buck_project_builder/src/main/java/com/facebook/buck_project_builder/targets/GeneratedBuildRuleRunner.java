@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 
 final class GeneratedBuildRuleRunner {
 
-  private static final Logger LOGGER = Logger.getGlobal();
-
   private GeneratedBuildRuleRunner() {}
 
   static String getBasePathPrefixedSources(
