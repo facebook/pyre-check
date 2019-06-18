@@ -70,7 +70,7 @@ public final class FileSystem {
           File outputFile = new File(outputDirectory, File.separator + zipEntry.getName());
           if (outputFile.exists()) {
             // Avoid overriding existing files, which might be symbolic links.
-            return;
+            continue;
           }
           outputFile.getParentFile().mkdirs();
           IOUtils.copy(zipFile.getInputStream(zipEntry), new FileOutputStream(outputFile));
