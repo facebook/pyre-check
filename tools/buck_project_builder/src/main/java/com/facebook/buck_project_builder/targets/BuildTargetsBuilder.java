@@ -23,7 +23,9 @@ public final class BuildTargetsBuilder {
   private final String buckRoot;
   private final String outputDirectory;
   private final String temporaryThriftOutputDirectory;
+  /** key: output path, value: source path */
   private final Map<Path, Path> sources = new HashMap<>();
+
   private final Set<String> unsupportedGeneratedSources = new HashSet<>();
   private final Set<String> pythonWheelUrls = new HashSet<>();
   private final Set<String> thriftLibraryBuildCommands = new HashSet<>();
@@ -47,7 +49,7 @@ public final class BuildTargetsBuilder {
     this.sources
         .entrySet()
         .parallelStream()
-        .forEach(mapping -> FileSystem.addSymbolicLink(mapping.getValue(), mapping.getKey()));
+        .forEach(mapping -> FileSystem.addSymbolicLink(mapping.getKey(), mapping.getValue()));
   }
 
   private void buildPythonWheels() {
@@ -143,8 +145,33 @@ public final class BuildTargetsBuilder {
     return temporaryThriftOutputDirectory;
   }
 
+  /** Exposed for testing. */
+  Map<Path, Path> getSources() {
+    return sources;
+  }
+
+  /** Exposed for testing. */
+  Set<String> getThriftLibraryBuildCommands() {
+    return thriftLibraryBuildCommands;
+  }
+
+  /** Exposed for testing. */
+  Set<String> getSwigLibraryBuildCommands() {
+    return swigLibraryBuildCommands;
+  }
+
+  /** Exposed for testing. */
+  Set<String> getUnsupportedGeneratedSources() {
+    return unsupportedGeneratedSources;
+  }
+
+  /** Exposed for testing. */
+  Set<String> getPythonWheelUrls() {
+    return pythonWheelUrls;
+  }
+
   void addSourceMapping(Path sourcePath, Path outputPath) {
-    sources.put(sourcePath, outputPath);
+    sources.put(outputPath, sourcePath);
   }
 
   void addUnsupportedGeneratedSource(String generatedSourcePath) {
