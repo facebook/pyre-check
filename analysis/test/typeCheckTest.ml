@@ -1569,6 +1569,61 @@ let test_calls _ =
               static_target = "qualifier.OverridingSubclass.method"
             } ] ) ];
 
+  (* Classmethods. *)
+  assert_calls
+    {|
+      class Class:
+        @classmethod
+        def class_method(cls): ...
+      class Indirect(Class):
+        ...
+      class Subclass(Indirect):
+        @classmethod
+        def class_method(cls): ...
+      def calls_Class_class_method():
+        Class.class_method()
+      def calls_Indirect_class_method():
+        Indirect.class_method()
+      def calls_Subclass_class_method():
+        Subclass.class_method()
+      def calls_Type_Class_class_method(c: typing.Type[Class]):
+        c.class_method()
+      def calls_Type_Indirect_class_method(c: typing.Type[Indirect]):
+        c.class_method()
+      def calls_Type_Subclass_class_method(c: typing.Type[Subclass]):
+        c.class_method()
+    |}
+    [ ( "qualifier.calls_Class_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Class.class_method"
+            } ] );
+      ( "qualifier.calls_Indirect_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Indirect.class_method"
+            } ] );
+      ( "qualifier.calls_Subclass_class_method",
+        [ `Method
+            { direct_target = "qualifier.Subclass.class_method";
+              static_target = "qualifier.Subclass.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Class_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Class.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Indirect_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Indirect.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Subclass_class_method",
+        [ `Method
+            { direct_target = "qualifier.Subclass.class_method";
+              static_target = "qualifier.Subclass.class_method"
+            } ] ) ];
+
   (* Unions. *)
   assert_calls
     {|
