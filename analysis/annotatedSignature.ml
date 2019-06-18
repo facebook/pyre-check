@@ -35,17 +35,17 @@ type mismatch_with_list_variadic_type_variable =
 [@@deriving compare, eq, show, sexp, hash]
 
 type reason =
+  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
+  | CallingParameterVariadicTypeVariable
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
+  | MismatchWithListVariadicTypeVariable of
+      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
-  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
-  | CallingParameterVariadicTypeVariable
-  | MismatchWithListVariadicTypeVariable of
-      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
 [@@deriving eq, show, compare]
 
 type closest = {
@@ -647,16 +647,16 @@ let select
       | reason :: reasons, _
       | [], reason :: reasons ->
           let importance = function
+            | AbstractClassInstantiation _ -> 1
+            | CallingParameterVariadicTypeVariable -> 1
             | InvalidKeywordArgument _ -> 0
             | InvalidVariableArgument _ -> 0
             | Mismatch { Node.value = { position; _ }; _ } -> 0 - position
             | MissingArgument _ -> 1
+            | MismatchWithListVariadicTypeVariable _ -> 1
             | MutuallyRecursiveTypeVariables -> 1
             | TooManyArguments _ -> 1
             | UnexpectedKeyword _ -> 1
-            | AbstractClassInstantiation _ -> 1
-            | CallingParameterVariadicTypeVariable -> 1
-            | MismatchWithListVariadicTypeVariable _ -> 1
           in
           let get_most_important best_reason reason =
             if importance reason > importance best_reason then

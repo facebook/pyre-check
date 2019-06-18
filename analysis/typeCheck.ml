@@ -1765,6 +1765,16 @@ module State (Context : Context) = struct
                 | _ -> None
               in
               match reason with
+              | AbstractClassInstantiation { class_name; method_names } ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
+                    ~define:Context.define
+              | CallingParameterVariadicTypeVariable ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.NotCallable (Type.Callable callable))
+                    ~define:Context.define
               | InvalidKeywordArgument { Node.location; value = { expression; annotation } } ->
                   let kind = Error.InvalidArgument (Error.Keyword { expression; annotation }) in
                   Error.create ~location ~kind ~define:Context.define
@@ -1811,6 +1821,11 @@ module State (Context : Context) = struct
                     | _ -> normal
                   in
                   Error.create ~location ~kind ~define:Context.define
+              | MismatchWithListVariadicTypeVariable (variable, mismatch) ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))
+                    ~define:Context.define
               | MissingArgument parameter ->
                   Error.create
                     ~location
@@ -1830,21 +1845,6 @@ module State (Context : Context) = struct
                   Error.create
                     ~location
                     ~kind:(Error.UnexpectedKeyword { callee; name })
-                    ~define:Context.define
-              | AbstractClassInstantiation { class_name; method_names } ->
-                  Error.create
-                    ~location
-                    ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
-                    ~define:Context.define
-              | MismatchWithListVariadicTypeVariable (variable, mismatch) ->
-                  Error.create
-                    ~location
-                    ~kind:(Error.InvalidArgument (ListVariadicVariable { variable; mismatch }))
-                    ~define:Context.define
-              | CallingParameterVariadicTypeVariable ->
-                  Error.create
-                    ~location
-                    ~kind:(Error.NotCallable (Type.Callable callable))
                     ~define:Context.define
             in
             emit_raw_error ~state error

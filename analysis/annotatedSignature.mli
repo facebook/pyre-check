@@ -33,17 +33,17 @@ type mismatch_with_list_variadic_type_variable =
 [@@deriving compare, eq, show, sexp, hash]
 
 type reason =
+  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
+  | CallingParameterVariadicTypeVariable
   | InvalidKeywordArgument of invalid_argument Node.t
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
+  | MismatchWithListVariadicTypeVariable of
+      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
-  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
-  | CallingParameterVariadicTypeVariable
-  | MismatchWithListVariadicTypeVariable of
-      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
 [@@deriving eq, show, compare]
 
 type closest = {
