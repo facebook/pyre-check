@@ -200,6 +200,7 @@ let test_invalid_models _ =
         ~sources:
           [ Test.parse
               {|
+              unannotated_global = source()
               def sink(parameter) -> None: pass
               def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
               def source() -> None: pass
@@ -280,7 +281,8 @@ let test_invalid_models _ =
     ~expect:"Invalid model for `sink`: Unrecognized Via annotation `bad_feature`";
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Updates[self]]): ..."
-    ~expect:"Invalid model for `sink`: No such parameter `self`"
+    ~expect:"Invalid model for `sink`: No such parameter `self`";
+  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]"
 
 
 let () =

@@ -364,7 +364,7 @@ let create ~resolution ?(verify = true) ~configuration source =
       let call_target = (call_target :> Callable.t) in
       let annotation = Resolution.resolve resolution (Reference.expression name) in
       let () =
-        if Type.is_top annotation then
+        if Type.is_top annotation && not (Resolution.is_global resolution ~reference:name) then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
       let normalized = AccessPath.Root.normalize_parameters parameters in
