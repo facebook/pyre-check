@@ -30,6 +30,7 @@ let recheck
     ~configuration:({ debug; _ } as configuration)
     ~files
   =
+  let timer = Timer.start () in
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   Resolution.Cache.clear ();
@@ -210,4 +211,9 @@ let recheck
       recheck
     |> Option.some
   in
+  Statistics.performance
+    ~name:"incremental check"
+    ~timer
+    ~integers:["number of direct files", List.length files; "number of files", List.length recheck]
+    ();
   state, build_file_to_error_map ~checked_files ~state new_errors
