@@ -262,7 +262,7 @@ let to_dot ~get_dependencies ~qualifier =
   Buffer.contents buffer
 
 
-module Calls = struct
+module Callgraph = struct
   type callee = {
     name: Reference.t;
     invocation: Type.Callable.invocation

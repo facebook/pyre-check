@@ -38,7 +38,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val calls : Dependencies.Calls.callee list Location.Reference.Table.t
+  val calls : Dependencies.Callgraph.callee list Location.Reference.Table.t
 end
 
 module type Signature = sig
@@ -1628,7 +1628,7 @@ module State (Context : Context) = struct
                       names annotation
                   | _ -> [name]
                 in
-                List.map names ~f:(fun name -> { Dependencies.Calls.name; invocation })
+                List.map names ~f:(fun name -> { Dependencies.Callgraph.name; invocation })
             | _ -> []
           in
           callables >>| List.concat_map ~f:callable_name |> Option.value ~default:[]
@@ -4141,7 +4141,7 @@ let check_define
 
     (* Store calls in shared memory. *)
     let callees = Hashtbl.data Context.calls |> List.concat in
-    Dependencies.Calls.set ~caller:name ~callees;
+    Dependencies.Callgraph.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)
     let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in

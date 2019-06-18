@@ -1417,7 +1417,7 @@ let test_calls _ =
     let clear_calls
         { Node.value = { Statement.Define.signature = { Statement.Define.name; _ }; _ }; _ }
       =
-      Dependencies.Calls.set ~caller:name ~callees:[]
+      Dependencies.Callgraph.set ~caller:name ~callees:[]
     in
     Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
     |> List.iter ~f:clear_calls;
@@ -1429,17 +1429,17 @@ let test_calls _ =
       let expected_callees =
         let callee = function
           | `Method name ->
-              { Dependencies.Calls.name = Reference.create name; invocation = Method }
+              { Dependencies.Callgraph.name = Reference.create name; invocation = Method }
           | `Function name ->
-              { Dependencies.Calls.name = Reference.create name; invocation = Function }
+              { Dependencies.Callgraph.name = Reference.create name; invocation = Function }
         in
         List.map callees ~f:callee
-        |> List.map ~f:Dependencies.Calls.show_callee
+        |> List.map ~f:Dependencies.Callgraph.show_callee
         |> String.Set.of_list
       in
       let actual_callees =
-        Dependencies.Calls.get ~caller:(Reference.create caller)
-        |> List.map ~f:Dependencies.Calls.show_callee
+        Dependencies.Callgraph.get ~caller:(Reference.create caller)
+        |> List.map ~f:Dependencies.Callgraph.show_callee
         |> String.Set.of_list
       in
       assert_equal

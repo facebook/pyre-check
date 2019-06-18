@@ -27,7 +27,7 @@ module type Context = sig
 
   val define : Define.t Node.t
 
-  val calls : Dependencies.Calls.callee list Location.Reference.Table.t
+  val calls : Dependencies.Callgraph.callee list Location.Reference.Table.t
 end
 
 module type Signature = sig

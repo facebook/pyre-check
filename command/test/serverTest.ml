@@ -1024,8 +1024,9 @@ let test_compute_hashes_to_keys context =
           (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create "sample.py"))
           (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create "sample.py"));
         to_binding
-          (Analysis.Dependencies.Calls.SharedMemory.hash_of_key (Reference.create "$toplevel"))
-          (Analysis.Dependencies.Calls.SharedMemory.serialize_key (Reference.create "$toplevel"));
+          (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key (Reference.create "$toplevel"))
+          (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
+             (Reference.create "$toplevel"));
         to_binding
           (Coverage.SharedMemory.hash_of_key (File.Handle.create "sample.py"))
           (Coverage.SharedMemory.serialize_key (File.Handle.create "sample.py")) ]

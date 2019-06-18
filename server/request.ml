@@ -484,7 +484,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           extend_map
             map
-            ~new_map:(Analysis.Dependencies.Calls.SharedMemory.compute_hashes_to_keys ~keys)
+            ~new_map:(Analysis.Dependencies.Callgraph.SharedMemory.compute_hashes_to_keys ~keys)
         in
         map
         |> Map.to_alist
@@ -643,12 +643,13 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Coverage.SharedMemory.Decoded (key, value) ->
               Some
                 (Coverage.CoverageValue.description, File.Handle.show key, value >>| Coverage.show)
-          | Analysis.Dependencies.Calls.SharedMemory.Decoded (key, value) ->
+          | Analysis.Dependencies.Callgraph.SharedMemory.Decoded (key, value) ->
               Some
-                ( Dependencies.Calls.CalleeValue.description,
+                ( Dependencies.Callgraph.CalleeValue.description,
                   Reference.show key,
-                  value >>| List.map ~f:Dependencies.Calls.show_callee >>| String.concat ~sep:","
-                )
+                  value
+                  >>| List.map ~f:Dependencies.Callgraph.show_callee
+                  >>| String.concat ~sep:"," )
           | ResolutionSharedMemory.Decoded (key, value) ->
               Some
                 ( ResolutionSharedMemory.TypeAnnotationsValue.description,

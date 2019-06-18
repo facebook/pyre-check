@@ -71,7 +71,7 @@ val to_dot
   qualifier:Reference.t ->
   string
 
-module Calls : sig
+module Callgraph : sig
   type callee = {
     name: Reference.t;
     invocation: Type.Callable.invocation
