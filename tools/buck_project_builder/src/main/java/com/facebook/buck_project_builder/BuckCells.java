@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -26,7 +27,7 @@ public final class BuckCells {
     try {
       return parseCellMappings(
           IOUtils.toString(
-              CommandLine.getCommandLineOutput(List.of("buck", "audit", "cell", "--json")),
+              CommandLine.getCommandLineOutput(ImmutableList.of("buck", "audit", "cell", "--json")),
               Charset.defaultCharset()));
     } catch (IOException exception) {
       throw new BuilderException(

@@ -2,6 +2,7 @@
 
 package com.facebook.buck_project_builder;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -62,19 +63,19 @@ public class FileSystemTest {
   public void resolveSourceMappingTest() {
     // simple identity mapping case
     testResolveSourceMapping(
-        Map.of(
+        ImmutableMap.of(
             "a.py", "a.py",
             "b.py", "b.py"),
-        Map.of(
+        ImmutableMap.of(
             "/project/a.py", "/out/a.py",
             "/project/b.py", "/out/b.py"));
 
     // non-identity source mappings
     testResolveSourceMapping(
-        Map.of(
+        ImmutableMap.of(
             "a.py", "foo/bar/a.py",
             "b.py", "foo/bar/baz/b.py"),
-        Map.of(
+        ImmutableMap.of(
             "/project/a.py", "/out/foo/bar/a.py",
             "/project/b.py", "/out/foo/bar/baz/b.py"));
   }

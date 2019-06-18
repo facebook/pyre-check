@@ -2,6 +2,7 @@
 
 package com.facebook.buck_project_builder;
 
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ public class CommandLineTest {
   public void correctCommandLineOutput() throws IOException {
     assertEquals(
         "echo \"hello world\" should get back hello world",
-        List.of("hello world"),
+        ImmutableList.of("hello world"),
         CommandLine.getCommandLineOutputLines("echo", "hello world"));
     assertEquals(
         "ls should give the same answer for two different names of current directory",
