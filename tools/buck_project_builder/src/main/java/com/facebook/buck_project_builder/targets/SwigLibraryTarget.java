@@ -6,13 +6,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.Objects;
-import java.util.logging.Logger;
 
 public final class SwigLibraryTarget implements BuildTarget {
-
-  private static final Logger LOGGER = Logger.getGlobal();
 
   private final @Nullable String cellPath;
   private final String basePath;
@@ -20,7 +16,7 @@ public final class SwigLibraryTarget implements BuildTarget {
   private final ImmutableList<String> sources;
 
   SwigLibraryTarget(
-          @Nullable String cellPath, String basePath, String command, ImmutableList<String> sources) {
+      @Nullable String cellPath, String basePath, String command, ImmutableList<String> sources) {
     this.cellPath = cellPath;
     this.basePath = basePath;
     this.command = command;
@@ -44,10 +40,11 @@ public final class SwigLibraryTarget implements BuildTarget {
   }
 
   @Override
-  public void build(String buckRoot, String outputDirectory) {
+  public void addToBuilder(BuildTargetsBuilder builder) {
     String basePathPrefixedSources =
         GeneratedBuildRuleRunner.getBasePathPrefixedSources(
             this.cellPath, this.basePath, this.sources);
+    String outputDirectory = builder.getOutputDirectory();
     String builderCommand =
         this.command
             .replaceFirst(
@@ -62,11 +59,7 @@ public final class SwigLibraryTarget implements BuildTarget {
                     outputDirectory + "/temp.h",
                     basePathPrefixedSources))
             .replaceAll("'", "");
-    try {
-      GeneratedBuildRuleRunner.runBuilderCommand(builderCommand, buckRoot);
-    } catch (IOException exception) {
-      LOGGER.warning("IOException during thrift stub generation: " + exception.getMessage());
-    }
+    builder.addSwigLibraryBuildCommand(builderCommand);
   }
 
   @Override

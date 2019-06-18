@@ -121,16 +121,17 @@ public final class PythonTarget implements BuildTarget {
   }
 
   @Override
-  public void build(String buckRoot, String outputDirectory) {
+  public void addToBuilder(BuildTargetsBuilder builder) {
     String sourceDirectory =
-        Paths.get(this.cellPath != null ? this.cellPath : buckRoot, basePath).toString();
+        Paths.get(this.cellPath != null ? this.cellPath : builder.getBuckRoot(), basePath)
+            .toString();
     String outputBasePath =
         baseModule == null ? basePath : Paths.get(".", baseModule.split("\\.")).toString();
-    outputDirectory = Paths.get(outputDirectory, outputBasePath).toString();
+    String outputDirectory = Paths.get(builder.getOutputDirectory(), outputBasePath).toString();
     Map<String, String> sourceMapping =
         FileSystem.resolveSourceMapping(sourceDirectory, outputDirectory, sources);
     for (Map.Entry<String, String> entry : sourceMapping.entrySet()) {
-      FileSystem.addSymbolicLink(Paths.get(entry.getValue()), Paths.get(entry.getKey()));
+      builder.addSourceMapping(Paths.get(entry.getKey()), Paths.get(entry.getValue()));
     }
   }
 

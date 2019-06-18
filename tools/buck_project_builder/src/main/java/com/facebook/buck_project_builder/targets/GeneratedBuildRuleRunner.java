@@ -1,6 +1,7 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
@@ -8,10 +9,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 final class GeneratedBuildRuleRunner {
+
+  private static final Logger LOGGER = Logger.getGlobal();
 
   private GeneratedBuildRuleRunner() {}
 
@@ -36,4 +43,5 @@ final class GeneratedBuildRuleRunner {
       new BufferedReader(new InputStreamReader(errorStream)).lines().forEach(System.err::println);
     }
   }
+
 }

@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.FileSystemTest;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.io.FileUtils;
@@ -23,7 +24,7 @@ public class BuildTargetTest {
    * temporary folder.
    */
   @Test
-  public void pythonTargetsCanCorrectlyBuild() throws IOException {
+  public void pythonTargetsCanCorrectlyBuild() throws IOException, BuilderException {
     String temporaryRoot = Files.createTempDirectory("python_target_build_test").toString();
 
     File buckRoot = Paths.get(temporaryRoot, "buck_root/").toFile();
@@ -38,13 +39,18 @@ public class BuildTargetTest {
 
     PythonTarget pythonTargetWithoutBaseModule =
         new PythonTarget(".", null, ImmutableMap.of("a.py", "b.py"));
-    pythonTargetWithoutBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
+    BuildTargetsBuilder builder =
+        new BuildTargetsBuilder(buckRoot.getPath(), outputDirectory.getPath());
+    pythonTargetWithoutBaseModule.addToBuilder(builder);
+    builder.buildTargets();
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "b.py"), "print('hello world')");
 
     PythonTarget pythonTargetWithBaseModule =
         new PythonTarget(".", "foo.bar", ImmutableMap.of("a.py", "b.py"));
-    pythonTargetWithBaseModule.build(buckRoot.getPath(), outputDirectory.getPath());
+    builder = new BuildTargetsBuilder(buckRoot.getPath(), outputDirectory.getPath());
+    pythonTargetWithBaseModule.addToBuilder(builder);
+    builder.buildTargets();
     FileSystemTest.assertIsSymbolicLinkWithContent(
         Paths.get(outputDirectory.getPath(), "foo", "bar", "b.py"), "print('hello world')");
 

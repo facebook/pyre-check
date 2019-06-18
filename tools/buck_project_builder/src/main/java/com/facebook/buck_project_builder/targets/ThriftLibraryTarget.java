@@ -109,7 +109,16 @@ public final class ThriftLibraryTarget implements BuildTarget {
     }
   }
 
-  private void buildThriftStubs(String buckRoot, String outputDirectory) throws IOException {
+  static void copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
+      throws IOException {
+    if (!generatedPythonCodePath.toFile().exists()) {
+      return;
+    }
+    copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
+  }
+
+  @Override
+  public void addToBuilder(BuildTargetsBuilder builder) {
     String basePathPrefixedSources =
         GeneratedBuildRuleRunner.getBasePathPrefixedSources(cellPath, basePath, sources);
     // Replace buck cmd macro with predefined values.
@@ -120,31 +129,10 @@ public final class ThriftLibraryTarget implements BuildTarget {
                 "$(location //thrift/compiler/generate/templates:templates)",
                 "thrift/compiler/generate/templates")
             .replaceFirst("-I \\$\\(location .*\\)", "-I .")
-            .replace("\"$OUT\"", outputDirectory)
+            .replace("\"$OUT\"", builder.getTemporaryThriftOutputDirectory())
             .replace("\"$SRCS\"", basePathPrefixedSources)
             .replaceFirst(" &&.*", "");
-    GeneratedBuildRuleRunner.runBuilderCommand(builderCommand, buckRoot);
-  }
-
-  private void copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
-      throws IOException {
-    if (!generatedPythonCodePath.toFile().exists()) {
-      return;
-    }
-    copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
-  }
-
-  @Override
-  public void build(String buckRoot, String outputDirectory) {
-    try {
-      String temporaryThriftOutputDirectory = Files.createTempDirectory("thrift_temp_").toString();
-      buildThriftStubs(buckRoot, temporaryThriftOutputDirectory);
-      copyThriftStubs(Paths.get(temporaryThriftOutputDirectory, "gen-py"), outputDirectory);
-      copyThriftStubs(Paths.get(temporaryThriftOutputDirectory, "gen-py3"), outputDirectory);
-      new File(temporaryThriftOutputDirectory).delete();
-    } catch (IOException exception) {
-      LOGGER.warning("IOException during thrift stub generation: " + exception.getMessage());
-    }
+    builder.addThriftLibraryBuildCommand(builderCommand);
   }
 
   @Override
