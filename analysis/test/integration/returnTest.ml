@@ -33,8 +33,8 @@ let test_check_return _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+       `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
   assert_type_errors
@@ -44,18 +44,20 @@ let test_check_return _ =
       def foo() -> typing.Dict[typing.Any]:
         return f()
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type that does "
-      ^ "not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+       `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type that does "
       ^ "not contain `Any`.";
-      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1." ];
+      "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1, \
+       use `typing.Dict` to avoid runtime subscripting errors." ];
   assert_type_errors
     {|
       x: typing.Type
       def foo() -> typing.Type[typing.Any]:
         return x
     |}
-    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter.";
+    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
+       `typing.Type` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
   assert_type_errors {|
@@ -175,8 +177,8 @@ let test_check_return_control_flow _ =
       def foo() -> list:
         return x
     |}
-    [ "Missing return annotation [3]: Returning `typing.List[int]` but return type "
-      ^ "must be specified as type that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
+       `typing.List` to avoid runtime subscripting errors.";
       "Incompatible return type [7]: Expected `typing.List[typing.Any]` but got `typing.List[int]`."
     ];
   assert_type_errors
@@ -187,8 +189,8 @@ let test_check_return_control_flow _ =
     |}
     [ "Missing global annotation [5]: Globally accessible variable `x` must be specified "
       ^ "as type that does not contain `Any`.";
-      "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+      "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
+       `typing.List` to avoid runtime subscripting errors." ];
   assert_type_errors
     {|
       def foo(x: typing.Union[int, str]) -> int:
@@ -333,8 +335,8 @@ let test_check_return_control_flow _ =
       def f(meta: type) -> typing.Type[int]:
         return meta
     |}
-    [ "Missing parameter annotation [2]: Parameter `meta` must have a type "
-      ^ "that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
+       `typing.Type` to avoid runtime subscripting errors.";
       "Incompatible return type [7]: Expected `typing.Type[int]` but got "
       ^ "`typing.Type[typing.Any]`." ];
   assert_type_errors

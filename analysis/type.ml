@@ -1316,22 +1316,11 @@ let lambda ~parameters ~return_annotation =
 
 
 let primitive_substitution_map =
-  let parametric_anys name number_of_anys =
-    let rec parameters sofar remaining =
-      match remaining with
-      | 0 -> sofar
-      | _ -> parameters (Any :: sofar) (remaining - 1)
-    in
-    Parametric { name; parameters = parameters [] number_of_anys }
-  in
   [ "$bottom", Bottom;
     "$unknown", Top;
     "None", none;
     "function", Callable.create ~annotation:Any ();
-    "dict", parametric_anys "dict" 2;
-    "list", list Any;
     "tuple", Tuple (Unbounded Any);
-    "type", parametric_anys "type" 1;
     "typing.Any", Any;
     "typing.Callable", Callable.create ~annotation:Any ();
     "typing.ChainMap", Primitive "collections.ChainMap";

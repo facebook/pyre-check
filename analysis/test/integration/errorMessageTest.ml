@@ -29,8 +29,8 @@ let test_show_error_traces _ =
       def f() -> dict: return {}
       def foo() -> typing.Dict[typing.Any, typing.Any]: return f()
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`.";
+    [ "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
+       `typing.Dict` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`." ];
   assert_type_errors

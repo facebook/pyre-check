@@ -1054,7 +1054,13 @@ module State (Context : Context) = struct
       if Define.is_class_toplevel define then
         let open Annotated in
         let check_base state { Call.Argument.value; _ } =
-          parse_and_check_annotation ~state value |> fst
+          let state_with_errors, parsed = parse_and_check_annotation ~state value in
+          match parsed with
+          | Type.Parametric { name = "type"; parameters = [Type.Any] } ->
+              (* Inheriting from type makes you a metaclass, and we don't want to
+               * suggest that instead you need to use typing.Type[Something] *)
+              state
+          | _ -> state_with_errors
         in
         let bases =
           Define.create define

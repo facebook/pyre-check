@@ -718,6 +718,18 @@ let messages ~concise ~signature location kind =
             variable ] )
   | InvalidTypeParameters
       { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual } } ->
+      let additional =
+        let replacement =
+          match name with
+          | "dict" -> Some "typing.Dict"
+          | "list" -> Some "typing.List"
+          | "type" -> Some "typing.Type"
+          | _ -> None
+        in
+        replacement
+        >>| Format.asprintf ", use `%s` to avoid runtime subscripting errors"
+        |> Option.value ~default:""
+      in
       if expected > 0 then
         let received =
           if actual = 0 then
@@ -726,11 +738,12 @@ let messages ~concise ~signature location kind =
             Format.asprintf ", received %d" actual
         in
         [ Format.asprintf
-            "Generic type `%s` expects %d type parameter%s%s."
+            "Generic type `%s` expects %d type parameter%s%s%s."
             name
             expected
             (if expected = 1 then "" else "s")
-            received ]
+            received
+            additional ]
       else
         [Format.asprintf "Non-generic type `%s` cannot take parameters." name]
   | InvalidTypeParameters { name; kind = Resolution.ViolateConstraints { expected; actual } } ->

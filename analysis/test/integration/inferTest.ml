@@ -235,8 +235,8 @@ let test_check_missing_return _ =
       def foo() -> list:
         return []
     |}
-    [ "Missing return annotation [3]: Return type must be specified as type "
-      ^ "that does not contain `Any`." ];
+    [ "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
+       `typing.List` to avoid runtime subscripting errors." ];
 
   (* Don't report in non-debug mode. *)
   assert_default_type_errors {|
