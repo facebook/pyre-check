@@ -6,6 +6,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,7 @@ public final class BuildTargetsBuilder {
   private final String outputDirectory;
   private final String temporaryThriftOutputDirectory;
   private final Map<Path, Path> sources = new HashMap<>();
+  private final Set<String> unsupportedGeneratedSources = new HashSet<>();
   private final Set<String> pythonWheelUrls = new HashSet<>();
   private final Set<String> thriftLibraryBuildCommands = new HashSet<>();
   private final Set<String> swigLibraryBuildCommands = new HashSet<>();
@@ -110,6 +112,25 @@ public final class BuildTargetsBuilder {
     }
   }
 
+  private void generateEmptyStubs() {
+    this.unsupportedGeneratedSources
+        .parallelStream()
+        .forEach(
+            source -> {
+              File outputFile = new File(source);
+              if (outputFile.exists()) {
+                // Do not generate stubs for files that has already been handled.
+                return;
+              }
+              outputFile.getParentFile().mkdirs();
+              try {
+                FileUtils.write(outputFile, "# pyre-placeholder-stub\n", Charset.defaultCharset());
+              } catch (IOException exception) {
+                logCodeGenerationIOException(exception);
+              }
+            });
+  }
+
   public String getBuckRoot() {
     return buckRoot;
   }
@@ -124,6 +145,10 @@ public final class BuildTargetsBuilder {
 
   void addSourceMapping(Path sourcePath, Path outputPath) {
     sources.put(sourcePath, outputPath);
+  }
+
+  void addUnsupportedGeneratedSource(String generatedSourcePath) {
+    unsupportedGeneratedSources.add(generatedSourcePath);
   }
 
   void addPythonWheelUrl(String url) {
@@ -143,5 +168,6 @@ public final class BuildTargetsBuilder {
     this.buildPythonWheels();
     this.buildThriftLibraries();
     this.buildSwigLibraries();
+    this.generateEmptyStubs();
   }
 }

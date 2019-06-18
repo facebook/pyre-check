@@ -344,10 +344,26 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new PythonTarget("../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py")),
+        new PythonTarget("../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py"), ImmutableSet.of()),
         "../path/to/",
         "",
         ImmutableSet.of());
+
+    // Generated source should be detected.
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"python_binary\",\n"
+            + "  \"srcs\": {\"a.py\": \"//foo:bar\", \"b.py\": \":foo\"}\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget(
+            null,
+            "PATH",
+            null,
+            ImmutableMap.of(),
+            ImmutableSet.of("a.py", "b.py")));
 
     // Unsupported targets should be ignored
     assertExpectedParsedBuildTarget(
