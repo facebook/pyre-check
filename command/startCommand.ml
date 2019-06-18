@@ -60,11 +60,15 @@ let computation_thread
         Connections.broadcast_response ~connections:state.connections ~response)
   in
   let rec loop state =
-    let rec handle_request ?(retries = 2) state ~origin ~process =
+    let rec handle_request ?(retries = 2) state ~origin ~request =
       try
+        let process_request ~state ~request =
+          Log.info "Processing request %a" Protocol.Request.pp request;
+          Request.process ~state ~configuration ~request
+        in
         match origin with
         | Protocol.Request.PersistentSocket socket ->
-            let { Request.state; response } = process ~socket ~state in
+            let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some (LanguageServerProtocolResponse _)
             | Some (ClientExitResponse Persistent) ->
@@ -83,17 +87,18 @@ let computation_thread
             state
         | Protocol.Request.FileNotifier
         | Protocol.Request.Background ->
-            let { socket; _ } =
-              Mutex.critical_section state.connections.lock ~f:(fun () ->
-                  !(state.connections.connections))
-            in
-            let { Request.state; response } = process ~socket ~state in
+            let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some response -> broadcast_response state response
             | None -> () );
             state
         | Protocol.Request.NewConnectionSocket socket ->
-            let { Request.state; response } = process ~socket ~state in
+            (* Stop requests are special - they require communicating back to the socket, but never
+               return, so we need to respond to the request before processing it. *)
+            ( match request with
+            | Server.Protocol.Request.StopRequest -> Socket.write socket StopResponse
+            | _ -> () );
+            let { Request.state; response } = process_request ~state ~request in
             ( match response with
             | Some response ->
                 Socket.write_ignoring_epipe socket response;
@@ -103,7 +108,7 @@ let computation_thread
       with
       | uncaught_exception ->
           if retries > 0 then
-            handle_request ~retries:(retries - 1) state ~origin ~process
+            handle_request ~retries:(retries - 1) state ~origin ~request
           else
             raise uncaught_exception
     in
@@ -144,17 +149,7 @@ let computation_thread
       | _ ->
           let state = { state with last_request_time = Unix.time () } in
           let origin, request = Squeue.pop request_queue in
-          let process_request ~socket ~state =
-            Log.info "Processing request %a" Protocol.Request.pp request;
-
-            (* Stop requests are special - they require communicating back to the socket, but never
-               return, so we need to respond to the request before processing it. *)
-            ( match request with
-            | Server.Protocol.Request.StopRequest -> Socket.write socket StopResponse
-            | _ -> () );
-            Request.process ~state ~configuration ~request
-          in
-          handle_request state ~origin ~process:process_request
+          handle_request state ~origin ~request
     in
     loop state
   in
