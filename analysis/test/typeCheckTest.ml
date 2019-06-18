@@ -1489,7 +1489,7 @@ let test_calls _ =
        ClassWithInit.__init__(object)
    |}
     [ "qualifier.ClassWithInit.__init__", [`Method "object.__init__"];
-      "qualifier.calls_object_init", [`Method "object.__init__"];
+      "qualifier.calls_object_init", [`Method "qualifier.Class.__init__"];
       "qualifier.calls_init", [`Method "qualifier.ClassWithInit.__init__"];
       "qualifier.calls_init_statically", [`Method "qualifier.ClassWithInit.__init__"] ];
   assert_calls

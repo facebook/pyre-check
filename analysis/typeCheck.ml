@@ -1550,7 +1550,7 @@ module State (Context : Context) = struct
             { state; resolved = Type.Top }
         | _ -> { state; resolved = Type.Top } )
     in
-    let forward_callable ~state ~callee ~resolved ~arguments =
+    let forward_callable ~state ~target ~callee ~resolved ~arguments =
       let state =
         let forward_argument state { Call.Argument.value; _ } =
           forward_expression ~state ~expression:value |> fun { state; _ } -> state
@@ -1608,10 +1608,30 @@ module State (Context : Context) = struct
         let callees =
           let callable_name = function
             | { Type.Callable.kind = Named name; invocation; _ } ->
-                Some { Dependencies.Calls.name; invocation }
-            | _ -> None
+                let names =
+                  match target with
+                  | Some annotation ->
+                      let rec names = function
+                        | Type.Union elements -> List.concat_map elements ~f:names
+                        | annotation ->
+                            let class_name =
+                              ( if Type.is_meta annotation then
+                                  Type.single_parameter annotation
+                              else
+                                annotation )
+                              |> Type.class_name
+                            in
+                            Reference.as_list class_name @ [Reference.last name]
+                            |> Reference.create_from_list
+                            |> fun name -> [name]
+                      in
+                      names annotation
+                  | _ -> [name]
+                in
+                List.map names ~f:(fun name -> { Dependencies.Calls.name; invocation })
+            | _ -> []
           in
-          callables >>| List.filter_map ~f:callable_name |> Option.value ~default:[]
+          callables >>| List.concat_map ~f:callable_name |> Option.value ~default:[]
         in
         Hashtbl.set Context.calls ~key:location ~data:callees;
 
@@ -1916,7 +1936,7 @@ module State (Context : Context) = struct
         | Some superclass -> { state; resolved = Type.Primitive superclass }
         | None ->
             let { resolved; _ } = forward_expression ~state ~expression:callee in
-            forward_callable ~state ~callee ~resolved ~arguments )
+            forward_callable ~state ~target:None ~callee ~resolved ~arguments )
     | Call
         { callee = { Node.value = Name (Name.Identifier "type"); _ };
           arguments = [{ Call.Argument.value; _ }]
@@ -2057,7 +2077,7 @@ module State (Context : Context) = struct
         let { state; resolved = resolved_callee } =
           forward_expression ~state:{ state with resolution } ~expression:callee
         in
-        forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+        forward_callable ~state ~target:None ~callee ~resolved:resolved_callee ~arguments
     | Call
         { callee =
             { Node.value = Name (Name.Attribute { attribute = "assertFalse"; _ }); _ } as callee;
@@ -2069,13 +2089,21 @@ module State (Context : Context) = struct
         let { state; resolved = resolved_callee } =
           forward_expression ~state:{ state with resolution } ~expression:callee
         in
-        forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+        forward_callable ~state ~target:None ~callee ~resolved:resolved_callee ~arguments
     | Call { callee; arguments } ->
         let { state = { errors = callee_errors; _ }; resolved = resolved_callee } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
         let { state = { errors = updated_errors; _ } as updated_state; resolved } =
-          forward_callable ~state ~callee ~resolved:resolved_callee ~arguments
+          let target =
+            match Node.value callee with
+            | _ when Type.is_meta resolved_callee -> Some (Type.single_parameter resolved_callee)
+            | Name (Name.Attribute { Name.Attribute.base; _ }) ->
+                let { resolved; _ } = forward_expression ~state ~expression:base in
+                if Type.is_top resolved then None else Some resolved
+            | _ -> None
+          in
+          forward_callable ~state ~target ~callee ~resolved:resolved_callee ~arguments
         in
         if
           Map.is_empty (Map.filter ~f:is_terminating_error callee_errors)
