@@ -348,6 +348,17 @@ let test_create _ =
               Variable (Variadic (Type.Variable.Variadic.List.create "Ts")) ])
        ~annotation:Type.integer
        ());
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (Type.VariableAlias (ListVariadic (Type.Variable.Variadic.List.create "Ts")))
+      | _ -> None)
+    "typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    (Type.Tuple
+       (Bounded
+          (Map
+             (Type.OrderedTypes.Map.create
+                ~mappers:["list"]
+                ~variable:(Type.Variable.Variadic.List.create "Ts")))));
   ()
 
 
@@ -1688,6 +1699,23 @@ let test_replace_all _ =
           ~annotation:Type.integer
           ()))
     (Type.Callable.create ~parameters:(Defined replaced) ~annotation:Type.integer ());
+  assert_equal
+    (Type.Variable.GlobalTransforms.ListVariadic.replace_all
+       (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
+       (Tuple
+          (Bounded
+             (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable:list_variadic)))))
+    (Tuple
+       (Bounded
+          (Concrete
+             [ Parametric
+                 { name = "Foo";
+                   parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+                 };
+               Parametric
+                 { name = "Foo";
+                   parameters = [Parametric { name = "Bar"; parameters = [Type.string] }]
+                 } ])));
   ()
 
 
@@ -1724,6 +1752,12 @@ let test_collect_all _ =
           ~annotation:Type.integer
           ()))
     [Type.Variable.Variadic.List.create "Ts"];
+  assert_equal
+    (Type.Variable.GlobalTransforms.ListVariadic.collect_all
+       (Tuple
+          (Bounded
+             (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable:list_variadic)))))
+    [Type.Variable.Variadic.List.create "Ts"];
   ()
 
 
@@ -1744,6 +1778,102 @@ let test_parse_type_variable_declarations _ =
     "pyre_extensions.ListVariadic('Ts')"
     (Type.Variable.ListVariadic (Type.Variable.Variadic.List.create "Ts"));
   assert_declaration_does_not_parse "pyre_extensions.ListVariadic('Ts', int, str)";
+  ()
+
+
+let test_map_operator_variable _ =
+  let variable = Type.Variable.Variadic.List.create "Ts" in
+  assert_equal
+    (Type.OrderedTypes.Map.variable
+       (Type.OrderedTypes.Map.create ~mappers:["A"; "B"; "C"] ~variable))
+    variable;
+  ()
+
+
+let test_map_operator_singleton_replace_variable _ =
+  let assert_replaces_into ~map ~replacement expected =
+    assert_equal (Type.OrderedTypes.Map.singleton_replace_variable map ~replacement) expected
+  in
+  let variable = Type.Variable.Variadic.List.create "Ts" in
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:Type.integer
+    (Type.Parametric
+       { name = "Foo"; parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }] });
+
+  (* This approach is used to solve concretes against maps *)
+  let unary_variable = Type.Variable.Unary.create "T" in
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(Type.Variable unary_variable)
+    (Type.Parametric
+       { name = "Foo";
+         parameters = [Parametric { name = "Bar"; parameters = [Type.Variable unary_variable] }]
+       });
+  ()
+
+
+let test_map_operator_union_upper_bound _ =
+  let assert_union_upper_bound map expected =
+    assert_equal (Type.OrderedTypes.Map.union_upper_bound map) expected
+  in
+  let variable = Type.Variable.Variadic.List.create "Ts" in
+  assert_union_upper_bound
+    (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    (Parametric
+       { name = "Foo";
+         parameters = [Parametric { name = "Bar"; parameters = [Type.object_primitive] }]
+       });
+  ()
+
+
+let test_map_operator_replace_variable _ =
+  let assert_replaces_into ~map ~replacement expected =
+    assert_equal (Type.OrderedTypes.Map.replace_variable map ~replacement) expected
+  in
+  let variable = Type.Variable.Variadic.List.create "Ts" in
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(fun _ -> Some (Concrete [Type.integer]))
+    (Some
+       (Concrete
+          [ Parametric
+              { name = "Foo";
+                parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+              } ]));
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(fun _ -> Some (Concrete [Type.integer; Type.string]))
+    (Some
+       (Concrete
+          [ Parametric
+              { name = "Foo";
+                parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+              };
+            Parametric
+              { name = "Foo";
+                parameters = [Parametric { name = "Bar"; parameters = [Type.string] }]
+              } ]));
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable)
+    ~replacement:(fun _ -> Some (Map (Type.OrderedTypes.Map.create ~mappers:["Bar"] ~variable)))
+    (Some (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)));
+  let other_variable = Type.Variable.Variadic.List.create "Ts2" in
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(function
+      | _ -> Some (Variable other_variable))
+    (Some (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable:other_variable)));
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(function
+      | _ -> Some Any)
+    (Some Any);
+  assert_replaces_into
+    ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
+    ~replacement:(function
+      | _ -> None)
+    None;
   ()
 
 
@@ -1786,7 +1916,11 @@ let () =
          >:: test_convert_all_escaped_free_variables_to_anys;
          "replace_all" >:: test_replace_all;
          "collect_all" >:: test_collect_all;
-         "parse_type_variable_declarations" >:: test_parse_type_variable_declarations ]
+         "parse_type_variable_declarations" >:: test_parse_type_variable_declarations;
+         "map_operator_variable" >:: test_map_operator_variable;
+         "map_operator_singleton_replace_variable" >:: test_map_operator_singleton_replace_variable;
+         "map_operator_replace_variable" >:: test_map_operator_replace_variable;
+         "map_operator_union_upper_bound" >:: test_map_operator_union_upper_bound ]
   |> Test.run;
   "callable"
   >::: [ "from_overloads" >:: test_from_overloads;

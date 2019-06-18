@@ -338,6 +338,8 @@ let select
                       | other, Concrete []
                       | Concrete [], other ->
                           Some other
+                      | _, Map _
+                      | Map _, _
                       | Variable _, Variable _
                       | Concrete _, Variable _
                       | Variable _, Concrete _ ->

@@ -114,10 +114,29 @@ module Record = struct
   end
 
   module OrderedTypes = struct
+    module RecordMap = struct
+      type mappee =
+        | Variable of Variable.RecordVariadic.RecordList.record
+        | SubMap of t
+
+      and t = {
+        mappee: mappee;
+        mapper: Identifier.t
+      }
+      [@@deriving compare, eq, sexp, show, hash]
+
+      let rec pp_concise format = function
+        | { mappee = Variable { name; _ }; mapper } ->
+            Format.fprintf format "MapOperator[%s, %s]" mapper name
+        | { mappee = SubMap submap; mapper } ->
+            Format.fprintf format "MapOperator[%s, %a]" mapper pp_concise submap
+    end
+
     type 'annotation record =
       | Concrete of 'annotation list
       | Variable of Variable.RecordVariadic.RecordList.record
       | Any
+      | Map of RecordMap.t
     [@@deriving compare, eq, sexp, show, hash]
 
     let pp_concise format variable ~pp_type =
@@ -130,6 +149,7 @@ module Record = struct
             types
       | Variable { name; _ } -> Format.fprintf format "ListVariadic[%s]" name
       | Any -> Format.fprintf format "..."
+      | Map map -> Format.fprintf format "%a" RecordMap.pp_concise map
   end
 
   module Callable = struct
@@ -955,11 +975,22 @@ let rec expression annotation =
     | Tuple (Bounded (Concrete [])) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
     | Tuple elements ->
+        let rec map_annotation map =
+          let single_wrap ~mapper ~inner =
+            Parametric { name = "MapOperator"; parameters = [Primitive mapper; inner] }
+          in
+          match map with
+          | { Record.OrderedTypes.RecordMap.mappee = Variable { name; _ }; mapper } ->
+              single_wrap ~mapper ~inner:(Primitive name)
+          | { mappee = SubMap submap; mapper } ->
+              single_wrap ~mapper ~inner:(map_annotation submap)
+        in
         let parameters =
           match elements with
           | Bounded Any -> [Primitive "..."]
           | Bounded (Variable { name; _ }) -> [Primitive name]
           | Bounded (Concrete parameters) -> parameters
+          | Bounded (Map map) -> [map_annotation map]
           | Unbounded parameter -> [parameter; Primitive "..."]
         in
         get_item_call "typing.Tuple" (List.map ~f:expression parameters)
@@ -1053,6 +1084,7 @@ module Transform = struct
         | Optional annotation -> optional (visit_annotation annotation ~state)
         | Parametric { name; parameters } ->
             Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
+        | Tuple (Bounded (Map _))
         | Tuple (Bounded Any)
         | Tuple (Bounded (Variable _)) ->
             annotation
@@ -1806,6 +1838,15 @@ let rec create_logic ?(use_cache = true)
                     match variable_aliases parameter with
                     | Some (Record.Variable.ListVariadic variable) -> Bounded (Variable variable)
                     | _ -> Bounded (Concrete parameters) )
+                  | [ Parametric
+                        { name;
+                          parameters = [Primitive left_parameter; Primitive right_parameter]
+                        } ]
+                    when Identifier.equal name "pyre_extensions.MapOperator" -> (
+                    match variable_aliases right_parameter with
+                    | Some (Record.Variable.ListVariadic variable) ->
+                        Bounded (Map { mappee = Variable variable; mapper = left_parameter })
+                    | _ -> Bounded (Concrete parameters) )
                   | _ -> Bounded (Concrete parameters)
                 in
                 Tuple tuple
@@ -2036,6 +2077,52 @@ module OrderedTypes = struct
   include Record.OrderedTypes
 
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+
+  type ordered_types_t = t
+
+  module Map = struct
+    include Record.OrderedTypes.RecordMap
+
+    let create ~mappers ~variable =
+      match List.rev mappers with
+      | mapper :: tail ->
+          let wrap sofar mapper = { mappee = SubMap sofar; mapper } in
+          List.fold tail ~f:wrap ~init:{ mappee = Variable variable; mapper }
+      | _ -> failwith "expected at least one mapper"
+
+
+    let rec replace_variable map ~replacement =
+      let petit ~inner ~mapper =
+        match inner with
+        | Concrete concretes ->
+            Concrete
+              (List.map concretes ~f:(fun concrete ->
+                   Parametric { name = mapper; parameters = [concrete] }))
+        | Variable variable -> Map { mappee = Variable variable; mapper }
+        | Any -> Any
+        | Map submap -> Map { mappee = SubMap submap; mapper }
+      in
+      match map with
+      | { mappee = Variable variable; mapper } ->
+          replacement variable >>| fun inner -> petit ~inner ~mapper
+      | { mappee = SubMap submap; mapper } ->
+          replace_variable submap ~replacement >>| fun inner -> petit ~inner ~mapper
+
+
+    let singleton_replace_variable map ~replacement =
+      let extract = function
+        | Some (Concrete [extracted]) -> extracted
+        | _ -> failwith "this was a singleton replace"
+      in
+      replace_variable map ~replacement:(fun _ -> Some (Concrete [replacement])) |> extract
+
+
+    let union_upper_bound = singleton_replace_variable ~replacement:object_primitive
+
+    let rec variable = function
+      | { mappee = Variable variable; _ } -> variable
+      | { mappee = SubMap submap; _ } -> variable submap
+  end
 end
 
 let split annotation =
@@ -2546,6 +2633,9 @@ end = struct
       let local_replace replacement = function
         | Tuple (Bounded (Variable variable)) ->
             replacement variable >>| fun ordered_types -> Tuple (Bounded ordered_types)
+        | Tuple (Bounded (Map map)) ->
+            OrderedTypes.Map.replace_variable map ~replacement
+            >>| fun ordered_types -> Tuple (Bounded ordered_types)
         | Callable callable ->
             let map = function
               | Defined parameters ->
@@ -2560,7 +2650,8 @@ end = struct
                           let make_anonymous annotation =
                             Callable.Parameter.Anonymous { index = 0; annotation; default = false }
                           in
-                          List.map concretes ~f:make_anonymous )
+                          List.map concretes ~f:make_anonymous
+                      | Some (Map _) -> failwith "ignore for now" )
                     | parameter -> [parameter]
                   in
                   let correct_indices index = function
@@ -2584,6 +2675,7 @@ end = struct
       (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
       let local_collect = function
         | Tuple (Bounded (Variable variable)) -> [variable]
+        | Tuple (Bounded (Map map)) -> [OrderedTypes.Map.variable map]
         | Callable { implementation; overloads; _ } ->
             let map = function
               | { parameters = Defined parameters; _ } ->

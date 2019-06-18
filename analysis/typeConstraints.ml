@@ -489,6 +489,8 @@ module OrderedConstraints (Order : OrderType) = struct
         | _, Any
         | Any, _ ->
             true
+        | _, Map _
+        | Map _, _
         | _, Variable _
         | Variable _, _ ->
             false
@@ -581,6 +583,10 @@ module OrderedConstraints (Order : OrderType) = struct
           | result ->
               Some (Option.value result ~default:(Type.OrderedTypes.Variable variable_bound)) )
         | Concrete types -> Some (Concrete (List.map types ~f:(Solution.instantiate solution)))
+        | Map map ->
+            Type.OrderedTypes.Map.replace_variable
+              map
+              ~replacement:(ListVariadic.Map.find solution.Solution.list_variadics)
       in
       create
         ?upper_bound:(upper_bound >>= smart_instantiate)
@@ -610,6 +616,12 @@ module OrderedConstraints (Order : OrderType) = struct
             else
               []
         | Concrete types -> List.concat_map types ~f:Type.Variable.all_free_variables
+        | Map map ->
+            let var = Type.OrderedTypes.Map.variable map in
+            if Type.Variable.Variadic.List.is_free var then
+              [Type.Variable.ListVariadic var]
+            else
+              []
       in
       List.concat_map bounds ~f:extract
   end

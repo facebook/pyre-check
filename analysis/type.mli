@@ -56,10 +56,17 @@ module Record : sig
   end
 
   module OrderedTypes : sig
+    module RecordMap : sig
+      type mappee [@@deriving compare, eq, sexp, show, hash]
+
+      type t [@@deriving compare, eq, sexp, show, hash]
+    end
+
     type 'annotation record =
       | Concrete of 'annotation list
       | Variable of Variable.RecordVariadic.RecordList.record
       | Any
+      | Map of RecordMap.t
     [@@deriving compare, eq, sexp, show, hash]
 
     val pp_concise
@@ -435,6 +442,31 @@ module OrderedTypes : sig
   end
 
   type t = type_t record [@@deriving compare, eq, sexp, show, hash]
+
+  type ordered_types_t = t
+
+  module Map : sig
+    include module type of struct
+      include Record.OrderedTypes.RecordMap
+    end
+
+    (* For testing only *)
+    val create
+      :  mappers:string list ->
+      variable:Record.Variable.RecordVariadic.RecordList.record ->
+      t
+
+    val variable : t -> Record.Variable.RecordVariadic.RecordList.record
+
+    val singleton_replace_variable : t -> replacement:type_t -> type_t
+
+    val union_upper_bound : t -> type_t
+
+    val replace_variable
+      :  t ->
+      replacement:(Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
+      ordered_types_t option
+  end
 end
 
 val split : t -> t * OrderedTypes.t

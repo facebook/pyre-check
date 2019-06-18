@@ -1153,6 +1153,18 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def assertFalse(self, x: Any) -> Bool:
               ...
       |}
+    |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "pyre_extensions")
+      ~handle:"pyre_extensions.pyi"
+      {|
+        from typing import List, Optional, Type, TypeVar
+
+        _T = TypeVar("_T")
+
+        def none_throws(optional: Optional[_T]) -> _T: ...
+        def ParameterSpecification(__name: str) -> List[Type]: ...
+      |}
     |> Preprocessing.preprocess ]
 
 

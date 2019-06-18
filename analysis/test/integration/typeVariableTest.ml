@@ -999,6 +999,23 @@ let test_list_variadics _ =
   ()
 
 
+let test_map _ =
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    def wrap(x: Tuple[Ts]) -> Tuple[MapOperator[List, Ts]]: ...
+    def unwrap(x: Tuple[MapOperator[List, Ts]]) -> Tuple[Ts]: ...
+    def foo(x: int, y: str, lx: List[int], ly: List[str]) -> None:
+      reveal_type(wrap((x, y)))
+      reveal_type(unwrap((lx, ly)))
+    |}
+    [ "Revealed type [-1]: Revealed type for `wrap((x, y))` is `typing.Tuple[List[int], List[str]]`.";
+      "Revealed type [-1]: Revealed type for `unwrap((lx, ly))` is `typing.Tuple[int, str]`." ];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [ "check_unbounded_variables" >:: test_check_unbounded_variables;
@@ -1008,5 +1025,6 @@ let () =
          "integer_variables" >:: test_integer_variables;
          "nested_variable_error" >:: test_nested_variable_error;
          "callable_parameter_variadics" >:: test_callable_parameter_variadics;
-         "list_variadics" >:: test_list_variadics ]
+         "list_variadics" >:: test_list_variadics;
+         "map" >:: test_map ]
   |> Test.run

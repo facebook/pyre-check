@@ -3372,6 +3372,75 @@ let test_solve_less_or_equal _ =
     ~left:"typing.Callable[[Ts], int]"
     ~right:"typing.Callable[[Named(A, int), Named(B, str)], int]"
     [];
+
+  (* Map operator *)
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[str], typing.List[bool]]"
+    ~right:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    [["Ts", "int, str, bool"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.List[int], typing.List[str], typing.List[bool]]"
+    ~right:"typing.Tuple[pyre_extensions.MapOperator[typing.Iterable, Ts]]"
+    [["Ts", "int, str, bool"]];
+  assert_solve
+    ~left:"typing.Tuple[typing.Iterable[int], typing.Iterable[str], typing.Iterable[bool]]"
+    ~right:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    [];
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    [[]];
+
+  (* We are not handling comparing two different maps *)
+  assert_solve
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    [];
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Tuple[typing.Iterable[int], typing.Iterable[str], typing.Iterable[bool]]"
+    [["Ts", "int, str, bool"]];
+  assert_solve
+    ~leave_unbound_in_left:["Ts"]
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Tuple[typing.Iterable[int], typing.Iterable[str], bool]"
+    [];
+  assert_solve
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Tuple[typing.List[object], typing.List[object]]"
+    [];
+  assert_solve
+    ~left:"typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    ~right:"typing.Iterable[object]"
+    [[]];
+  assert_solve
+    ~left:
+      "typing.Tuple[typing.Tuple[typing.List[int], typing.List[str]], \
+       typing.Tuple[typing.List[int], typing.List[str]]]"
+    ~right:
+      "typing.Tuple[typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]], \
+       typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]]"
+    [["Ts", "int, str"]];
+  assert_solve
+    ~left:
+      "typing.Tuple[typing.Tuple[typing.List[int], typing.List[str]], \
+       typing.Tuple[typing.List[float], typing.List[str]]]"
+    ~right:
+      "typing.Tuple[typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]], \
+       typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]]"
+    [];
+
+  (* We currently assume all mappers are invariant *)
+  assert_solve
+    ~left:
+      "typing.Tuple[typing.Tuple[typing.Iterable[int], typing.Iterable[str]], \
+       typing.Tuple[typing.Iterable[float], typing.Iterable[str]]]"
+    ~right:
+      "typing.Tuple[typing.Tuple[pyre_extensions.MapOperator[typing.Iterable, Ts]], \
+       typing.Tuple[pyre_extensions.MapOperator[typing.Iterable, Ts]]]"
+    [];
   ()
 
 

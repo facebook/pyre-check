@@ -892,6 +892,75 @@ module OrderImplementation = struct
 
 
     and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
+      let solve_against_map ~is_lower_bound ~bound ~map =
+        let variable = Type.OrderedTypes.Map.variable map in
+        if Type.Variable.Variadic.List.is_free variable then
+          (* Our strategy for solving Concrete[X0, X1, ... Xn] <: Map[mapper, mapped_var]
+           *   is as follows:
+           * construct n "synthetic" unary type variables
+           * substitute them through the map, generating
+           *   mapper[Synth0], mapper[Synth1], ... mapper[SynthN]
+           * pairwise solve the concrete memebers against the synthetics:
+           *   X0 <: mapper[Synth0] && X1 <: mapper[Synth1] && ... Xn <: Mapper[SynthN]
+           * Solve the resulting constraints to Soln
+           * Add both upper and lower bounds on mapped_var to be
+           *   Soln[Synth0], Soln[Synth1], ... Soln[SynthN]
+           *)
+          let synthetic_variables, synthetic_variable_constraints_set =
+            let namespace = Type.Variable.Namespace.create_fresh () in
+            let synthetic_solve index (synthetics_created_sofar, constraints_set) concrete =
+              let new_synthetic_variable =
+                Type.Variable.Unary.create (Int.to_string index)
+                |> Type.Variable.Unary.namespace ~namespace
+              in
+              let solve_against_concrete constraints =
+                let generated =
+                  Type.OrderedTypes.Map.singleton_replace_variable
+                    map
+                    ~replacement:(Type.Variable new_synthetic_variable)
+                in
+                let left, right =
+                  if is_lower_bound then
+                    concrete, generated
+                  else
+                    generated, concrete
+                in
+                solve_less_or_equal_safe order ~constraints ~left ~right
+              in
+              ( new_synthetic_variable :: synthetics_created_sofar,
+                List.concat_map constraints_set ~f:solve_against_concrete )
+            in
+            List.foldi bound ~f:synthetic_solve ~init:([], [constraints])
+          in
+          let consider_synthetic_variable_constraints synthetic_variable_constraints =
+            let instantiate_synthetic_variables solution =
+              List.map
+                synthetic_variables
+                ~f:(TypeConstraints.Solution.instantiate_single_variable solution)
+              |> Option.all
+            in
+            let add_bound concrete =
+              let add_bound ~adder constraints =
+                adder
+                  constraints
+                  ~order
+                  ~pair:(Type.Variable.ListVariadicPair (variable, concrete))
+              in
+              add_bound ~adder:OrderedConstraints.add_lower_bound constraints
+              >>= add_bound ~adder:OrderedConstraints.add_upper_bound
+            in
+            OrderedConstraints.solve ~order synthetic_variable_constraints
+            >>= instantiate_synthetic_variables
+            >>| List.rev
+            >>| (fun substituted -> Type.Record.OrderedTypes.Concrete substituted)
+            >>= add_bound
+          in
+          List.filter_map
+            synthetic_variable_constraints_set
+            ~f:consider_synthetic_variable_constraints
+        else
+          []
+      in
       let open Type.OrderedTypes in
       let open Type.Variable.Variadic.List in
       match left, right with
@@ -946,6 +1015,16 @@ module OrderImplementation = struct
           match folded_constraints with
           | List.Or_unequal_lengths.Ok constraints -> constraints
           | List.Or_unequal_lengths.Unequal_lengths -> [] )
+      | Concrete bound, Map map -> solve_against_map ~is_lower_bound:true ~bound ~map
+      | Map map, Concrete bound -> solve_against_map ~is_lower_bound:false ~bound ~map
+      | Variable _bound_variable, Map _
+      | Map _, Variable _bound_variable ->
+          []
+      | Map left, Map right ->
+          if Type.OrderedTypes.Map.equal left right then
+            [constraints]
+          else
+            []
 
 
     and solve_all_safe order ~lefts ~rights =
@@ -1100,6 +1179,7 @@ module OrderImplementation = struct
                   List.fold ~init:Type.Bottom ~f:(join order) parameters
               | Type.Bounded Any -> Type.Any
               | Type.Bounded (Variable _) -> Type.object_primitive
+              | Type.Bounded (Map map) -> Type.OrderedTypes.Map.union_upper_bound map
             in
             let parametric = Type.parametric "tuple" [parameter] in
             less_or_equal order ~left:parametric ~right

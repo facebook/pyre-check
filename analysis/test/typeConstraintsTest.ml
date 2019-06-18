@@ -376,6 +376,24 @@ let test_multiple_variable_solution _ =
     (Some
        [ ListVariadicPair (list_variadic_a, Type.OrderedTypes.Concrete [Type.integer]);
          UnaryPair (unconstrained_a, Type.integer) ]);
+  assert_solution
+    ~sequentially_applied_bounds:
+      [ `Lower
+          (ListVariadicPair
+             ( list_variadic_a,
+               Type.OrderedTypes.Map
+                 (Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable:list_variadic_b) ));
+        `Lower
+          (ListVariadicPair
+             (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string])) ]
+    (Some
+       [ ListVariadicPair
+           ( list_variadic_a,
+             Concrete
+               [ Parametric { name = "Foo"; parameters = [Type.integer] };
+                 Parametric { name = "Foo"; parameters = [Type.string] } ] );
+         ListVariadicPair (list_variadic_b, Type.OrderedTypes.Concrete [Type.integer; Type.string])
+       ]);
   ()
 
 
