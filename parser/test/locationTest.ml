@@ -344,12 +344,16 @@ let test_call_locations _ =
                { callee =
                    node
                      ~start:(1, 4)
-                     ~stop:(1, 12)
+                     ~stop:(1, 8)
                      (Name
                         (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true }));
                  arguments =
-                   [ { Call.Argument.name = None; value = !"j" };
-                     { Call.Argument.name = None; value = !"y" } ]
+                   [ { Call.Argument.name = None;
+                       value = node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "j"))
+                     };
+                     { Call.Argument.name = None;
+                       value = node ~start:(1, 11) ~stop:(1, 12) (Name (Name.Identifier "y"))
+                     } ]
                })) ];
   assert_source_locations
     "a[:1]"

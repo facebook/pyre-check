@@ -181,13 +181,16 @@
     |> Node.create ~location:{ subscript_location with start = location.start }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
-    let head, subscripts, _ = subscript in
-    let location =
-      { head.Node.location with Location.stop = value.Node.location.Location.stop }
-    in
+    let head, subscripts, subscript_location = subscript in
     let callee =
+      let location =
+        { head.Node.location with Location.stop = subscript_location.Location.stop }
+      in
       Name (Name.Attribute { base = head; attribute = "__setitem__"; special = true })
       |> Node.create ~location
+    in
+    let location =
+      { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
     Call {
       callee;
