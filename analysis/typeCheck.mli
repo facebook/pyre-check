@@ -52,6 +52,7 @@ module type Signature = sig
   val initial : resolution:Resolution.t -> t
 
   type base =
+    | Class of Type.t
     | Instance of Type.t
     | Super of Type.t
 

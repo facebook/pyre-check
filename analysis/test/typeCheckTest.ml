@@ -1526,7 +1526,7 @@ let test_calls _ =
         [ `Method
             { direct_target = "qualifier.ClassWithInit.__init__";
               static_target = "qualifier.ClassWithInit.__init__";
-              dispatch = Dynamic
+              dispatch = Static
             } ] ) ];
   assert_calls
     {|
@@ -1540,7 +1540,7 @@ let test_calls _ =
         [ `Method
             { direct_target = "qualifier.Class.classmethod";
               static_target = "qualifier.Class.classmethod";
-              dispatch = Dynamic
+              dispatch = Static
             } ] ) ];
 
   (* Inheritance. *)
@@ -1616,19 +1616,19 @@ let test_calls _ =
         [ `Method
             { direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Class.class_method";
-              dispatch = Dynamic
+              dispatch = Static
             } ] );
       ( "qualifier.calls_Indirect_class_method",
         [ `Method
             { direct_target = "qualifier.Class.class_method";
               static_target = "qualifier.Indirect.class_method";
-              dispatch = Dynamic
+              dispatch = Static
             } ] );
       ( "qualifier.calls_Subclass_class_method",
         [ `Method
             { direct_target = "qualifier.Subclass.class_method";
               static_target = "qualifier.Subclass.class_method";
-              dispatch = Dynamic
+              dispatch = Static
             } ] );
       ( "qualifier.calls_Type_Class_class_method",
         [ `Method

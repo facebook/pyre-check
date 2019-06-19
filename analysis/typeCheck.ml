@@ -63,6 +63,7 @@ module type Signature = sig
   val initial : resolution:Resolution.t -> t
 
   type base =
+    | Class of Type.t
     | Instance of Type.t
     | Super of Type.t
 
@@ -720,6 +721,7 @@ module State (Context : Context) = struct
 
 
   type base =
+    | Class of Type.t
     | Instance of Type.t
     | Super of Type.t
 
@@ -2110,6 +2112,7 @@ module State (Context : Context) = struct
             else
               match base with
               | Some (Instance resolved) when not (Type.is_top resolved) -> Some resolved, true
+              | Some (Class resolved) when not (Type.is_top resolved) -> Some resolved, false
               | Some (Super resolved) when not (Type.is_top resolved) -> Some resolved, false
               | _ -> None, false
           in
@@ -2476,7 +2479,23 @@ module State (Context : Context) = struct
         let base =
           match super_base with
           | Some (Super _) -> super_base
-          | _ -> Some (Instance resolved_base)
+          | _ ->
+              let is_global_meta =
+                let is_global () =
+                  match base with
+                  | { Node.value = Name name; _ } ->
+                      Expression.name_to_identifiers name
+                      >>| Reference.create_from_list
+                      >>= Resolution.global resolution
+                      |> Option.is_some
+                  | _ -> false
+                in
+                Type.is_meta resolved_base && is_global ()
+              in
+              if is_global_meta then
+                Some (Class resolved_base)
+              else
+                Some (Instance resolved_base)
         in
         if
           Map.is_empty (Map.filter ~f:is_terminating_error base_errors)
