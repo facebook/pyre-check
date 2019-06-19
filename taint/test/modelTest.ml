@@ -109,7 +109,7 @@ let test_sink_models _ =
           "multiple" ]
 
 
-let test_class_sink_models _ =
+let test_class_models _ =
   assert_model
     ~model_source:
       {|
@@ -129,7 +129,24 @@ let test_class_sink_models _ =
           ~sink_parameters:
             [ { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "TestSink"] } ]
-          "Sink.method_with_multiple_parameters" ]
+          "Sink.method_with_multiple_parameters" ];
+  assert_model
+    ~model_source:
+      {|
+        class Source(TaintSource[UserControlled]):
+          # Note: the methods are specified here to have them added to the test environment.
+          # These need not be specified in actual sink class models.
+          def Source.method(parameter): ...
+          def Source.method_with_multiple_parameters(first, second): ...
+          # TODO(T46075946): Support attributes.
+          Source.attribute = ...
+      |}
+    ~expect:
+      [ outcome ~kind:`Method ~returns:[Sources.UserControlled] "Source.method";
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.UserControlled]
+          "Source.method_with_multiple_parameters" ]
 
 
 let test_taint_in_taint_out_models _ =
@@ -289,7 +306,7 @@ let () =
   "taint_model"
   >::: [ "source_models" >:: test_source_models;
          "sink_models" >:: test_sink_models;
-         "class_sink_models" >:: test_class_sink_models;
+         "class_models" >:: test_class_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;
          "taint_in_taint_out_models_alternate" >:: test_taint_in_taint_out_models_alternate;
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;

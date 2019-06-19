@@ -282,36 +282,61 @@ let create ~resolution ?(verify = true) ~configuration source =
           in
           [signature, call_target]
       | { Node.value = Class { Class.name; bases; _ }; _ } ->
-          let class_sink_base { Call.Argument.value; _ } =
-            if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
-              Some value
-            else
-              None
+          let sink_annotation =
+            let class_sink_base { Call.Argument.value; _ } =
+              if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
+                Some value
+              else
+                None
+            in
+            List.find_map bases ~f:class_sink_base
           in
-          List.find_map bases ~f:class_sink_base
-          >>= (fun base ->
-                Resolution.class_definition resolution (Type.Primitive (Reference.show name))
-                >>| fun { Node.value = { Class.body; _ }; _ } ->
-                let sink_signature { Node.value; _ } =
-                  match value with
-                  | Define { Define.signature = { Define.name; parameters; _ } as signature; _ } ->
-                      let signature =
-                        let parameters =
-                          let sink_parameter parameter =
-                            let update_annotation parameter =
-                              { parameter with Parameter.annotation = Some base }
-                            in
-                            Node.map parameter ~f:update_annotation
+          let source_annotation =
+            let class_source_base { Call.Argument.value; _ } =
+              if Expression.show value |> String.is_prefix ~prefix:"TaintSource[" then
+                Some value
+              else
+                None
+            in
+            List.find_map bases ~f:class_source_base
+          in
+          if Option.is_some sink_annotation || Option.is_some source_annotation then
+            Resolution.class_definition resolution (Type.Primitive (Reference.show name))
+            >>| (fun { Node.value = { Class.body; _ }; _ } ->
+                  let signature { Node.value; _ } =
+                    match value with
+                    | Define
+                        { Define.signature =
+                            { Define.name; parameters; return_annotation; _ } as signature
+                        ; _
+                        } ->
+                        let signature =
+                          let parameters =
+                            match sink_annotation with
+                            | Some base ->
+                                let sink_parameter parameter =
+                                  let update_annotation parameter =
+                                    { parameter with Parameter.annotation = Some base }
+                                  in
+                                  Node.map parameter ~f:update_annotation
+                                in
+                                List.map parameters ~f:sink_parameter
+                            | None -> parameters
                           in
-                          List.map parameters ~f:sink_parameter
+                          let return_annotation =
+                            match source_annotation with
+                            | Some annotation -> Some annotation
+                            | None -> return_annotation
+                          in
+                          { signature with Define.parameters; return_annotation }
                         in
-                        { signature with Define.parameters }
-                      in
-                      Some (signature, Callable.create_method name)
-                  | _ -> None
-                in
-                List.filter_map body ~f:sink_signature)
-          |> Option.value ~default:[]
+                        Some (signature, Callable.create_method name)
+                    | _ -> None
+                  in
+                  List.filter_map body ~f:signature)
+            |> Option.value ~default:[]
+          else
+            []
       | { Node.value =
             Assign
               { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
