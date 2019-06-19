@@ -54,7 +54,8 @@ module type Signature = sig
   (* Visible for testing. *)
   type resolved = {
     state: t;
-    resolved: Type.t
+    resolved: Type.t;
+    last_base: Type.t option
   }
 
   val parse_and_check_annotation : ?bind_variables:bool -> state:t -> Expression.t -> t * Type.t

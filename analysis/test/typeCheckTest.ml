@@ -517,7 +517,7 @@ let test_forward_expression _ =
       |> (fun source -> source :: Test.typeshed_stubs ())
       |> fun sources -> Test.resolution ~sources ()
     in
-    let { State.state = forwarded; resolved } =
+    let { State.state = forwarded; resolved; _ } =
       State.forward_expression ~state:(create ~resolution precondition) ~expression
     in
     let errors =
@@ -1474,175 +1474,173 @@ let test_calls _ =
     ["qualifier.calls_on_same_line", [`Function "qualifier.foo"; `Function "qualifier.bar"]];
 
   (* Methods. *)
-  (*
-   *   assert_calls
-   *     {|
-   *      class Class:
-   *        def method(): ...
-   *      def calls_method(c: Class):
-   *        c.method()
-   *    |}
-   *     [ ( "qualifier.calls_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
-   *         ] ) ];
- *
-   *   (* Constructors and `super`. *)
-   *   assert_calls
-   *     {|
-   *      class Class: ...
-   *      class ClassWithInit:
-   *        def __init__(self):
-   *          super().__init__()
-   *      def calls_Class():
-   *        Class()
-   *      def calls_ClassWithInit():
-   *        ClassWithInit()
-   *      def calls_ClassWithInit__init__(object: object):
-   *        ClassWithInit.__init__(object)
-   *    |}
-   *     [ ( "qualifier.ClassWithInit.__init__",
-   *         [`Method { direct_target = "object.__init__"; static_target = "object.__init__" }] );
-   *       ( "qualifier.calls_Class",
-   *         [`Method { direct_target = "object.__init__"; static_target = "qualifier.Class.__init__" }]
-   *       );
-   *       ( "qualifier.calls_ClassWithInit",
-   *         [ `Method
-   *             { direct_target = "qualifier.ClassWithInit.__init__";
-   *               static_target = "qualifier.ClassWithInit.__init__"
-   *             } ] );
-   *       ( "qualifier.calls_ClassWithInit__init__",
-   *         [ `Method
-   *             { direct_target = "qualifier.ClassWithInit.__init__";
-   *               static_target = "qualifier.ClassWithInit.__init__"
-   *             } ] ) ];
-   *   assert_calls
-   *     {|
-   *      class Class:
-   *        @classmethod
-   *        def classmethod(cls): ...
-   *      def calls_class_method():
-   *        Class.classmethod()
-   *    |}
-   *     [ ( "qualifier.calls_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.classmethod";
-   *               static_target = "qualifier.Class.classmethod"
-   *             } ] ) ];
- *
-   *   (* Inheritance. *)
-   *   assert_calls
-   *     {|
-   *       class Class:
-   *         def method(self): ...
-   *       class Indirect(Class):
-   *         ...
-   *       class Subclass(Indirect):
-   *         ...
-   *       class OverridingSubclass(Subclass):
-   *         def method(self): ...
-   *       def calls_Class_method(c: Class):
-   *         c.method()
-   *       def calls_Indirect_method(i: Indirect):
-   *         i.method()
-   *       def calls_Subclass_method(s: Subclass):
-   *         s.method()
-   *       def calls_OverridingSubclass_method(o: OverridingSubclass):
-   *         o.method()
-   *     |}
-   *     [ ( "qualifier.calls_Class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
-   *         ] );
-   *       ( "qualifier.calls_Indirect_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.method";
-   *               static_target = "qualifier.Indirect.method"
-   *             } ] );
-   *       ( "qualifier.calls_Subclass_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.method";
-   *               static_target = "qualifier.Subclass.method"
-   *             } ] );
-   *       ( "qualifier.calls_OverridingSubclass_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.OverridingSubclass.method";
-   *               static_target = "qualifier.OverridingSubclass.method"
-   *             } ] ) ];
- *
-   *   (* Classmethods. *)
-   *   assert_calls
-   *     {|
-   *       class Class:
-   *         @classmethod
-   *         def class_method(cls): ...
-   *       class Indirect(Class):
-   *         ...
-   *       class Subclass(Indirect):
-   *         @classmethod
-   *         def class_method(cls): ...
-   *       def calls_Class_class_method():
-   *         Class.class_method()
-   *       def calls_Indirect_class_method():
-   *         Indirect.class_method()
-   *       def calls_Subclass_class_method():
-   *         Subclass.class_method()
-   *       def calls_Type_Class_class_method(c: typing.Type[Class]):
-   *         c.class_method()
-   *       def calls_Type_Indirect_class_method(c: typing.Type[Indirect]):
-   *         c.class_method()
-   *       def calls_Type_Subclass_class_method(c: typing.Type[Subclass]):
-   *         c.class_method()
-   *     |}
-   *     [ ( "qualifier.calls_Class_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.class_method";
-   *               static_target = "qualifier.Class.class_method"
-   *             } ] );
-   *       ( "qualifier.calls_Indirect_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.class_method";
-   *               static_target = "qualifier.Indirect.class_method"
-   *             } ] );
-   *       ( "qualifier.calls_Subclass_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Subclass.class_method";
-   *               static_target = "qualifier.Subclass.class_method"
-   *             } ] );
-   *       ( "qualifier.calls_Type_Class_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.class_method";
-   *               static_target = "qualifier.Class.class_method"
-   *             } ] );
-   *       ( "qualifier.calls_Type_Indirect_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.class_method";
-   *               static_target = "qualifier.Indirect.class_method"
-   *             } ] );
-   *       ( "qualifier.calls_Type_Subclass_class_method",
-   *         [ `Method
-   *             { direct_target = "qualifier.Subclass.class_method";
-   *               static_target = "qualifier.Subclass.class_method"
-   *             } ] ) ];
- *
-   *   (* Unions. *)
-   *   assert_calls
-   *     {|
-   *      class Class:
-   *        def method(): ...
-   *      class OtherClass:
-   *        def method(): ...
-   *      def calls_method_on_union(union: typing.Union[Class, OtherClass]):
-   *        union.method()
-   *    |}
-   *     [ ( "qualifier.calls_method_on_union",
-   *         [ `Method
-   *             { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" };
-   *           `Method
-   *             { direct_target = "qualifier.OtherClass.method";
-   *               static_target = "qualifier.OtherClass.method"
-   *             } ] ) ];
-   *)
+  assert_calls
+    {|
+     class Class:
+       def method(): ...
+     def calls_method(c: Class):
+       c.method()
+   |}
+    [ ( "qualifier.calls_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
+        ] ) ];
+
+  (* Constructors and `super`. *)
+  assert_calls
+    {|
+     class Class: ...
+     class ClassWithInit:
+       def __init__(self):
+         super().__init__()
+     def calls_Class():
+       Class()
+     def calls_ClassWithInit():
+       ClassWithInit()
+     def calls_ClassWithInit__init__(object: object):
+       ClassWithInit.__init__(object)
+   |}
+    [ ( "qualifier.ClassWithInit.__init__",
+        [`Method { direct_target = "object.__init__"; static_target = "object.__init__" }] );
+      ( "qualifier.calls_Class",
+        [`Method { direct_target = "object.__init__"; static_target = "qualifier.Class.__init__" }]
+      );
+      ( "qualifier.calls_ClassWithInit",
+        [ `Method
+            { direct_target = "qualifier.ClassWithInit.__init__";
+              static_target = "qualifier.ClassWithInit.__init__"
+            } ] );
+      ( "qualifier.calls_ClassWithInit__init__",
+        [ `Method
+            { direct_target = "qualifier.ClassWithInit.__init__";
+              static_target = "qualifier.ClassWithInit.__init__"
+            } ] ) ];
+  assert_calls
+    {|
+     class Class:
+       @classmethod
+       def classmethod(cls): ...
+     def calls_class_method():
+       Class.classmethod()
+   |}
+    [ ( "qualifier.calls_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.classmethod";
+              static_target = "qualifier.Class.classmethod"
+            } ] ) ];
+
+  (* Inheritance. *)
+  assert_calls
+    {|
+      class Class:
+        def method(self): ...
+      class Indirect(Class):
+        ...
+      class Subclass(Indirect):
+        ...
+      class OverridingSubclass(Subclass):
+        def method(self): ...
+      def calls_Class_method(c: Class):
+        c.method()
+      def calls_Indirect_method(i: Indirect):
+        i.method()
+      def calls_Subclass_method(s: Subclass):
+        s.method()
+      def calls_OverridingSubclass_method(o: OverridingSubclass):
+        o.method()
+    |}
+    [ ( "qualifier.calls_Class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
+        ] );
+      ( "qualifier.calls_Indirect_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Indirect.method"
+            } ] );
+      ( "qualifier.calls_Subclass_method",
+        [ `Method
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Subclass.method"
+            } ] );
+      ( "qualifier.calls_OverridingSubclass_method",
+        [ `Method
+            { direct_target = "qualifier.OverridingSubclass.method";
+              static_target = "qualifier.OverridingSubclass.method"
+            } ] ) ];
+
+  (* Classmethods. *)
+  assert_calls
+    {|
+      class Class:
+        @classmethod
+        def class_method(cls): ...
+      class Indirect(Class):
+        ...
+      class Subclass(Indirect):
+        @classmethod
+        def class_method(cls): ...
+      def calls_Class_class_method():
+        Class.class_method()
+      def calls_Indirect_class_method():
+        Indirect.class_method()
+      def calls_Subclass_class_method():
+        Subclass.class_method()
+      def calls_Type_Class_class_method(c: typing.Type[Class]):
+        c.class_method()
+      def calls_Type_Indirect_class_method(c: typing.Type[Indirect]):
+        c.class_method()
+      def calls_Type_Subclass_class_method(c: typing.Type[Subclass]):
+        c.class_method()
+    |}
+    [ ( "qualifier.calls_Class_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Class.class_method"
+            } ] );
+      ( "qualifier.calls_Indirect_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Indirect.class_method"
+            } ] );
+      ( "qualifier.calls_Subclass_class_method",
+        [ `Method
+            { direct_target = "qualifier.Subclass.class_method";
+              static_target = "qualifier.Subclass.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Class_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Class.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Indirect_class_method",
+        [ `Method
+            { direct_target = "qualifier.Class.class_method";
+              static_target = "qualifier.Indirect.class_method"
+            } ] );
+      ( "qualifier.calls_Type_Subclass_class_method",
+        [ `Method
+            { direct_target = "qualifier.Subclass.class_method";
+              static_target = "qualifier.Subclass.class_method"
+            } ] ) ];
+
+  (* Unions. *)
+  assert_calls
+    {|
+     class Class:
+       def method(): ...
+     class OtherClass:
+       def method(): ...
+     def calls_method_on_union(union: typing.Union[Class, OtherClass]):
+       union.method()
+   |}
+    [ ( "qualifier.calls_method_on_union",
+        [ `Method
+            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" };
+          `Method
+            { direct_target = "qualifier.OtherClass.method";
+              static_target = "qualifier.OtherClass.method"
+            } ] ) ];
   ()
 
 

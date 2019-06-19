@@ -936,7 +936,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         end)
         in
         let state = State.create ~resolution () in
-        let { State.state; resolved = annotation } = State.forward_expression ~state ~expression in
+        let { State.state; resolved = annotation; _ } =
+          State.forward_expression ~state ~expression
+        in
         match State.errors state with
         | [] -> TypeQuery.Response (TypeQuery.Type annotation)
         | errors ->
