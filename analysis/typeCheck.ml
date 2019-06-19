@@ -2106,9 +2106,7 @@ module State (Context : Context) = struct
         let { state = { errors = updated_errors; _ } as updated_state; resolved; _ } =
           let target, dynamic =
             if Type.is_meta resolved_callee then
-              (* TODO(T44530812): handle direct class method invocations. Default invocations on
-                 `Type[T]` are dynamic. *)
-              Some (Type.single_parameter resolved_callee), true
+              Some (Type.single_parameter resolved_callee), false
             else
               match base with
               | Some (Instance resolved) when not (Type.is_top resolved) -> Some resolved, true

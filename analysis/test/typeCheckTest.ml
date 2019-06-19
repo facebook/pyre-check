@@ -1514,13 +1514,13 @@ let test_calls _ =
         [ `Method
             { direct_target = "object.__init__";
               static_target = "qualifier.Class.__init__";
-              dispatch = Dynamic
+              dispatch = Static
             } ] );
       ( "qualifier.calls_ClassWithInit",
         [ `Method
             { direct_target = "qualifier.ClassWithInit.__init__";
               static_target = "qualifier.ClassWithInit.__init__";
-              dispatch = Dynamic
+              dispatch = Static
             } ] );
       ( "qualifier.calls_ClassWithInit__init__",
         [ `Method
