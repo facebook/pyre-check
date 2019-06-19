@@ -4243,15 +4243,18 @@ let run
           Queue.enqueue queue (toplevel, resolution) );
       queue
     in
-    let rec results ~queue =
+    let results = ref [] in
+    let rec compute_results () =
       match Queue.dequeue queue with
+      | None -> ()
       | Some define ->
           let result, nested_defines = check_define ~configuration ~environment ~source define in
-          List.iter nested_defines ~f:(Queue.enqueue queue);
-          result :: results ~queue
-      | _ -> []
+          results := result :: !results;
+          Queue.enqueue_all queue nested_defines;
+          compute_results ()
     in
-    results ~queue
+    compute_results ();
+    !results
   in
   (* These local changes allow us to add keys incrementally in a worker process without worrying
      about removing (which can only be done by a master. *)
