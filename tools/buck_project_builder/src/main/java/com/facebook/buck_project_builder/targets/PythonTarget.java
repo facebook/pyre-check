@@ -118,6 +118,21 @@ public final class PythonTarget implements BuildTarget {
     addSource(sourceSet, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
   }
 
+  private static void addPlatformSources(
+      JsonArray platformSourcesArray,
+      ImmutableMap.Builder<String, String> sourcesBuilder,
+      ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
+    for (JsonElement platformSourceElement : platformSourcesArray) {
+      JsonArray platformSourcePair = platformSourceElement.getAsJsonArray();
+      if (platformSourcePair.get(0).getAsString().equals("py3")) {
+        addSource(
+            platformSourcePair.get(1).getAsJsonObject(),
+            sourcesBuilder,
+            unsupportedGeneratedSourcesBuilder);
+      }
+    }
+  }
+
   static @Nullable PythonTarget parse(@Nullable String cellPath, JsonObject targetJsonObject) {
     ImmutableMap.Builder<String, String> sourcesBuilder = ImmutableMap.builder();
     ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder = ImmutableSet.builder();
@@ -130,6 +145,13 @@ public final class PythonTarget implements BuildTarget {
     if (versionedSourcesField != null) {
       addVersionedSources(
           versionedSourcesField.getAsJsonArray(),
+          sourcesBuilder,
+          unsupportedGeneratedSourcesBuilder);
+    }
+    JsonElement platformSourcesField = targetJsonObject.get("platform_srcs");
+    if (platformSourcesField != null) {
+      addPlatformSources(
+          platformSourcesField.getAsJsonArray(),
           sourcesBuilder,
           unsupportedGeneratedSourcesBuilder);
     }

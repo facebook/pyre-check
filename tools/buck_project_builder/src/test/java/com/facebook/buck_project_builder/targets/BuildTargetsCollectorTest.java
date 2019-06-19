@@ -240,6 +240,28 @@ public class BuildTargetsCollectorTest {
             + "}";
     assertExpectedParsedBuildTarget(targetJson, null);
 
+    // Python library with platform_srcs
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"python_library\",\n"
+            + "  \"platform_srcs\": [[\"py2\", {\n"
+            + "      \"a.py\": \"a.py\"\n"
+            + "  }]]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(targetJson, null);
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"python_library\",\n"
+            + "  \"platform_srcs\": [[\"py3\", {\n"
+            + "      \"a.py\": \"a.py\"\n"
+            + "  }]]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(
+        targetJson,
+        new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py")));
+
     // Python library with label=["generated"] should NOT be ignored.
     targetJson =
         "{\n"

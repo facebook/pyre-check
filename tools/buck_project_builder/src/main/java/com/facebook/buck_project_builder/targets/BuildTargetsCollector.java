@@ -186,6 +186,7 @@ public final class BuildTargetsCollector {
             .add("labels")
             .add("srcs")
             .add("versioned_srcs")
+            .add("platform_srcs")
             .add("cmd")
             .add("url")
             .add("binary_src")
