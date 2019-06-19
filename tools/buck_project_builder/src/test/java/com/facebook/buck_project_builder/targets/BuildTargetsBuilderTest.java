@@ -1,6 +1,7 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.BuilderException;
+import com.facebook.buck_project_builder.DebugOutput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -20,7 +21,7 @@ public class BuildTargetsBuilderTest {
             null,
             "BASE/PATH",
             null,
-            ImmutableMap.of("source.py", "out.py"),
+            ImmutableMap.of("source.py", "out.py", "source-conflict.py", "out.py"),
             ImmutableSet.of("generated.py"))
         .addToBuilder(builder);
     new RemoteFileTarget("REMOTE_URL").addToBuilder(builder);
@@ -48,5 +49,10 @@ public class BuildTargetsBuilderTest {
         "Swig library build commands are correctly added.",
         ImmutableSet.of("CMD_SWIG"),
         builder.getSwigLibraryBuildCommands());
+    assertEquals(
+        "Conflicting files are detected",
+        new DebugOutput(
+            ImmutableSet.of("BASE/PATH/out.py"), ImmutableSet.of("BASE/PATH/generated.py")),
+        builder.buildTargets());
   }
 }

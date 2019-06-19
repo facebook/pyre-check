@@ -30,6 +30,8 @@ class FastBuckBuilder(BuckBuilder):
         self._output_directory = output_directory or tempfile.mkdtemp(
             prefix="pyre_tmp_"
         )
+        self.conflicting_files = []
+        self.unsupported_files = []
 
     def build(self, targets: Iterable[str]) -> List[str]:
         command = [
@@ -42,11 +44,17 @@ class FastBuckBuilder(BuckBuilder):
             "--output_directory",
             self._output_directory,
         ]
-        if subprocess.run(command + list(targets)).returncode != 0:
+        try:
+            debug_output = json.loads(
+                subprocess.check_output(command + list(targets)).decode().strip()
+            )
+            self.conflicting_files += debug_output["conflictingFiles"]
+            self.unsupported_files += debug_output["unsupportedFiles"]
+            return [self._output_directory]
+        except subprocess.CalledProcessError:
             raise BuckException(
                 "Buck builder failure. Read the log printed above for more information."
             )
-        return [self._output_directory]
 
 
 class SimpleBuckBuilder(BuckBuilder):

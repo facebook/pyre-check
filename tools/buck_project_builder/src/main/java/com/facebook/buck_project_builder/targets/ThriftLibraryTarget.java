@@ -1,6 +1,7 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -71,9 +72,13 @@ public final class ThriftLibraryTarget implements BuildTarget {
    * with buck's behavior.
    *
    * <p>It's package-private for the purpose of testing. Do not call it outside of this class.
+   *
+   * @return a set of files in the zip that are not unzipped because they can override existing * *
+   *     files.
    */
-  static void copyGeneratedThriftSources(Path generatedCodePath, String outputDirectory)
-      throws IOException {
+  static ImmutableSet<String> copyGeneratedThriftSources(
+      Path generatedCodePath, String outputDirectory) throws IOException {
+    ImmutableSet.Builder<String> conflictingFileSetBuilder = ImmutableSet.builder();
     try (Stream<Path> generatedDirectoryStream = Files.walk(generatedCodePath)) {
       generatedDirectoryStream.forEach(
           path -> {
@@ -97,6 +102,11 @@ public final class ThriftLibraryTarget implements BuildTarget {
             } else {
               return;
             }
+            if (absoluteDestination.exists()) {
+              conflictingFileSetBuilder.add(relativeOutputPath);
+              // Avoid overriding existing files, which might be symbolic links.
+              return;
+            }
             try {
               FileUtils.copyFile(fileToCopy, absoluteDestination);
             } catch (IOException exception) {
@@ -107,14 +117,19 @@ public final class ThriftLibraryTarget implements BuildTarget {
             }
           });
     }
+    return conflictingFileSetBuilder.build();
   }
 
-  static void copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
+  /**
+   * @return a set of generated python files that are not copied because they can override existing
+   *     files.
+   */
+  static ImmutableSet<String> copyThriftStubs(Path generatedPythonCodePath, String outputDirectory)
       throws IOException {
     if (!generatedPythonCodePath.toFile().exists()) {
-      return;
+      return ImmutableSet.of();
     }
-    copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
+    return copyGeneratedThriftSources(generatedPythonCodePath, outputDirectory);
   }
 
   @Override

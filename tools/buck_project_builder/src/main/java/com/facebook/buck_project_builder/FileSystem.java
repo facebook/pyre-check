@@ -2,6 +2,7 @@
 
 package com.facebook.buck_project_builder;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -54,14 +55,19 @@ public final class FileSystem {
     }
   }
 
-  public static void unzipRemoteFile(String remoteUrl, File outputDirectory) throws IOException {
+  /**
+   * @return a set of files in the zip that are not unzipped because they can override existing
+   *     files.
+   */
+  public static ImmutableSet<String> unzipRemoteFile(String remoteUrl, File outputDirectory)
+      throws IOException {
     URL url = new URL(remoteUrl);
     File temporaryZipFile = Files.createTempFile("remote-", ".zip").toFile();
-    try (InputStream remoteInputStream = url.openStream()) {
-      try (FileOutputStream zipFileOutputStream = new FileOutputStream(temporaryZipFile)) {
-        IOUtils.copy(remoteInputStream, zipFileOutputStream);
-      }
+    try (InputStream remoteInputStream = url.openStream();
+        FileOutputStream zipFileOutputStream = new FileOutputStream(temporaryZipFile)) {
+      IOUtils.copy(remoteInputStream, zipFileOutputStream);
     }
+    ImmutableSet.Builder<String> conflictingFileSetBuilder = ImmutableSet.builder();
     try (ZipFile zipFile = new ZipFile(temporaryZipFile)) {
       Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
       while (zipEntries.hasMoreElements()) {
@@ -69,6 +75,7 @@ public final class FileSystem {
         if (!zipEntry.isDirectory()) {
           File outputFile = new File(outputDirectory, File.separator + zipEntry.getName());
           if (outputFile.exists()) {
+            conflictingFileSetBuilder.add(zipEntry.getName());
             // Avoid overriding existing files, which might be symbolic links.
             continue;
           }
@@ -78,5 +85,6 @@ public final class FileSystem {
       }
     }
     temporaryZipFile.delete();
+    return conflictingFileSetBuilder.build();
   }
 }

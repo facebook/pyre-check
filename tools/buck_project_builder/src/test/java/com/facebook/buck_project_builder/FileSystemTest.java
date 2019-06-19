@@ -3,6 +3,8 @@
 package com.facebook.buck_project_builder;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
@@ -123,9 +125,15 @@ public class FileSystemTest {
     }
 
     // use file protocol to simulate remote file
-    FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+    ImmutableSet<String> conflictingFilesOnFirstUnzip =
+        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+    assertEquals(ImmutableSet.of(), conflictingFilesOnFirstUnzip);
+    // Unzip twice to test file conflict detection
+    ImmutableSet<String> conflictingFilesOnSecondUnzip =
+        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+    assertEquals(ImmutableSet.of("foo/bar/test.txt"), conflictingFilesOnSecondUnzip);
     assertContent(Paths.get(root, "out", "foo", "bar", "test.txt").toFile(), "hello world");
 
-    new File(root).delete();
+    FileUtils.deleteDirectory(new File(root));
   }
 }

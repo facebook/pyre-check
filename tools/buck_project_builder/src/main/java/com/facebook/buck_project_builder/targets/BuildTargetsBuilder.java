@@ -1,7 +1,9 @@
 package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.BuilderException;
+import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -31,6 +33,9 @@ public final class BuildTargetsBuilder {
   private final Set<String> thriftLibraryBuildCommands = new HashSet<>();
   private final Set<String> swigLibraryBuildCommands = new HashSet<>();
 
+  private final Set<String> conflictingFiles = new HashSet<>();
+  private final Set<String> unsupportedFiles = new HashSet<>();
+
   public BuildTargetsBuilder(String buckRoot, String outputDirectory) throws BuilderException {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
@@ -59,10 +64,14 @@ public final class BuildTargetsBuilder {
         .forEach(
             url -> {
               try {
-                FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                ImmutableSet<String> conflictingFiles =
+                    FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                this.conflictingFiles.addAll(conflictingFiles);
               } catch (IOException firstException) {
                 try {
-                  FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                  ImmutableSet<String> conflictingFiles =
+                      FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                  this.conflictingFiles.addAll(conflictingFiles);
                 } catch (IOException secondException) {
                   LOGGER.warning(
                       String.format(
@@ -90,10 +99,15 @@ public final class BuildTargetsBuilder {
               }
             });
     try {
-      ThriftLibraryTarget.copyThriftStubs(
-          Paths.get(this.temporaryThriftOutputDirectory, "gen-py"), this.outputDirectory);
-      ThriftLibraryTarget.copyThriftStubs(
-          Paths.get(this.temporaryThriftOutputDirectory, "gen-py3"), this.outputDirectory);
+      ImmutableSet<String> conflictingFiles;
+      conflictingFiles =
+          ThriftLibraryTarget.copyThriftStubs(
+              Paths.get(this.temporaryThriftOutputDirectory, "gen-py"), this.outputDirectory);
+      this.conflictingFiles.addAll(conflictingFiles);
+      conflictingFiles =
+          ThriftLibraryTarget.copyThriftStubs(
+              Paths.get(this.temporaryThriftOutputDirectory, "gen-py3"), this.outputDirectory);
+      this.conflictingFiles.addAll(conflictingFiles);
       FileUtils.deleteDirectory(new File(this.temporaryThriftOutputDirectory));
     } catch (IOException exception) {
       logCodeGenerationIOException(exception);
@@ -115,6 +129,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void generateEmptyStubs() {
+    Path outputPath = Paths.get(outputDirectory);
     this.unsupportedGeneratedSources
         .parallelStream()
         .forEach(
@@ -124,6 +139,9 @@ public final class BuildTargetsBuilder {
                 // Do not generate stubs for files that has already been handled.
                 return;
               }
+              String relativeUnsupportedFilename =
+                  outputPath.relativize(Paths.get(source)).normalize().toString();
+              this.unsupportedFiles.add(relativeUnsupportedFilename);
               outputFile.getParentFile().mkdirs();
               try {
                 FileUtils.write(outputFile, "# pyre-placeholder-stub\n", Charset.defaultCharset());
@@ -171,7 +189,13 @@ public final class BuildTargetsBuilder {
   }
 
   void addSourceMapping(Path sourcePath, Path outputPath) {
-    sources.put(outputPath, sourcePath);
+    Path existingSourcePath = this.sources.get(outputPath);
+    if (existingSourcePath != null && !existingSourcePath.equals(sourcePath)) {
+      this.conflictingFiles.add(
+          Paths.get(this.outputDirectory).relativize(outputPath).normalize().toString());
+      return;
+    }
+    this.sources.put(outputPath, sourcePath);
   }
 
   void addUnsupportedGeneratedSource(String generatedSourcePath) {
@@ -190,11 +214,12 @@ public final class BuildTargetsBuilder {
     swigLibraryBuildCommands.add(command);
   }
 
-  public void buildTargets() {
+  public DebugOutput buildTargets() {
     this.buildPythonSources();
     this.buildPythonWheels();
     this.buildThriftLibraries();
     this.buildSwigLibraries();
     this.generateEmptyStubs();
+    return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }
 }

@@ -53,7 +53,10 @@ public final class PythonTarget implements BuildTarget {
       String source = entry.getValue().getAsString();
       String outputFile = entry.getKey();
       if (source.contains("//") || source.startsWith(":")) {
-        unsupportedGeneratedSourcesBuilder.add(outputFile);
+        if (outputFile.endsWith(".py") || outputFile.endsWith(".pyi")) {
+          // We only care about unsupported generated python code.
+          unsupportedGeneratedSourcesBuilder.add(outputFile);
+        }
       } else {
         sourcesBuilder.put(source, outputFile);
       }

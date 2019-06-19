@@ -4,6 +4,7 @@ package com.facebook.buck_project_builder;
 
 import com.facebook.buck_project_builder.targets.BuildTargetsBuilder;
 import com.facebook.buck_project_builder.targets.BuildTargetsCollector;
+import com.google.gson.Gson;
 
 import java.util.logging.Logger;
 
@@ -24,7 +25,8 @@ public final class BuckProjectBuilder {
           new BuildTargetsBuilder(command.getBuckRoot(), command.getOutputDirectory());
       BuildTargetsCollector.collectBuckTargets(command.getTargets())
           .forEach(target -> target.addToBuilder(builder));
-      builder.buildTargets();
+      DebugOutput debugOutput = builder.buildTargets();
+      System.out.println(new Gson().toJson(debugOutput));
     } catch (BuilderException exception) {
       LOGGER.severe(exception.getMessage());
       System.exit(1);
