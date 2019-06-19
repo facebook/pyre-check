@@ -298,3 +298,129 @@ class GenerateTaintModelsTest(unittest.TestCase):
                 "other: TaintSource[UserControlled], *starred): ...",
             },
         )
+
+    def test_qualifier(self) -> None:
+        self.assertEqual(generate_taint_models._qualifier("/root", "/root"), ".")
+        self.assertEqual(generate_taint_models._qualifier("/root", "/root/a.py"), "a")
+        self.assertEqual(
+            generate_taint_models._qualifier("/root", "/root/dir/a.py"), "dir.a"
+        )
+        self.assertEqual(
+            generate_taint_models._qualifier("/root", "/root/dir/__init__.py"), "dir"
+        )
+        self.assertEqual(generate_taint_models._qualifier("/root", "/root/a.pyi"), "a")
+        self.assertEqual(
+            generate_taint_models._qualifier("/root", "/root/dir/a.pyi"), "dir.a"
+        )
+        self.assertEqual(
+            generate_taint_models._qualifier("/root", "/root/dir/__init__.pyi"), "dir"
+        )
+
+    @patch("builtins.open")
+    def test_globals(self, open: unittest.mock._patch) -> None:
+        open.side_effect = _open_implementation(
+            {
+                "/root/module.py": textwrap.dedent(
+                    """
+                    A = 1
+                    def function():
+                      B = 2
+                    if "version" is None:
+                      C = 2
+                    __all__ = {}
+                    D, E = 1, 2
+                    class Class:
+                      F: typing.ClassVar[int] = ...
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/module.py"),
+            {
+                "module.A: TaintSink[Global] = ...",
+                "module.D: TaintSink[Global] = ...",
+                "module.E: TaintSink[Global] = ...",
+            },
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/attributes.py": textwrap.dedent(
+                    """
+                    Z.X = 1
+                    A, B.C, D = 1, 2, 3
+                    [Y, Q.W] = [1, 2]
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/attributes.py"),
+            {
+                "attributes.A: TaintSink[Global] = ...",
+                "attributes.D: TaintSink[Global] = ...",
+                "attributes.Y: TaintSink[Global] = ...",
+            },
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/namedtuples.py": textwrap.dedent(
+                    """
+                    from collections import namedtuple
+                    x = collections.namedtuple()
+                    y = namedtuple()
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/namedtuples.py"), set()
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/alias_assignments.py": textwrap.dedent(
+                    """
+                    x = a
+                    y = b.c
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/alias_assignments.py"), set()
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/assignment_to_fields.py": textwrap.dedent(
+                    """
+                    x[1] = 123
+                    y.field = 456
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/assignment_to_fields.py"),
+            set(),
+        )
+
+    @patch("glob.glob", return_value=["/root/a.py", "/root/b.py"])
+    @patch(
+        "os.path.exists",
+        side_effect=lambda path: path in {"/root/a.py", "/root/a.pyi", "/root/b.py"},
+    )
+    @patch("os.path.abspath", side_effect=lambda path: path)
+    @patch("os.getcwd", return_value="/root")
+    def test_get_globals(
+        self,
+        current_working_directory: unittest.mock._patch,
+        absolute_path: unittest.mock._patch,
+        exists: unittest.mock._patch,
+        glob: unittest.mock._patch,
+    ) -> None:
+        with patch(f"{generate_taint_models.__name__}._globals") as globals:
+            generate_taint_models._get_globals(MagicMock())
+            globals.assert_has_calls(
+                [call("/root", "/root/a.pyi"), call("/root", "/root/b.py")],
+                any_order=True,
+            )
