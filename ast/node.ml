@@ -9,8 +9,6 @@ type 'node_type t = {
 }
 [@@deriving sexp, show, hash, to_yojson]
 
-let in_testing = ref false
-
 let create ~location value = { location; value }
 
 let create_with_default_location value = { location = Location.Reference.any; value }
@@ -19,17 +17,7 @@ let pp print_node format { value; _ } = print_node format value
 
 let compare compare_value left right = compare_value left.value right.value
 
-let equal equal_value left right =
-  let locations_equal =
-    if not !in_testing then
-      true
-    else
-      Location.equal Location.Reference.any left.location
-      || Location.equal Location.Reference.any right.location
-      || Location.equal left.location right.location
-  in
-  equal_value left.value right.value && locations_equal
-
+let equal equal_value left right = equal_value left.value right.value
 
 let start { location; _ } = location.Location.start
 

@@ -267,6 +267,17 @@ let map_printer ~key_pp ~data_pp map =
   Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
+let node ~start:(start_line, start_column)
+         ~stop:(stop_line, stop_column) =
+  let location =
+    { Location.path = String.hash "test.py";
+      start = { Location.line = start_line; Location.column = start_column };
+      stop = { Location.line = stop_line; Location.column = stop_column }
+    }
+  in
+  Node.create ~location
+
+
 let assert_source_equal left right =
   let left = { left with Source.hash = -1 } in
   let right = { right with Source.hash = -1 } in
@@ -279,7 +290,25 @@ let assert_source_equal left right =
 
 
 let assert_source_equal_with_locations expected actual =
-  Node.in_testing := true;
+  let compare_sources left_source right_source =
+    let equal_locations =
+      let location_equal left right =
+        Location.equal Location.Reference.any left
+        || Location.equal Location.Reference.any right
+        || Location.equal left right
+      in
+      List.for_all2_exn
+        ~f:location_equal
+        (Visit.collect_locations left_source)
+        (Visit.collect_locations right_source)
+    in
+    let equal_statements =
+      let { Source.statements = left; _ } = expected in
+      let { Source.statements = right; _ } = actual in
+      List.for_all2_exn ~f:Statement.equal left right
+    in
+    equal_statements && equal_locations
+  in
   let pp_with_locations format { Source.statements; _ } =
     let rec print_statement ~prefix statement =
       let indented_prefix = prefix ^ "  " in
@@ -389,7 +418,7 @@ let assert_source_equal_with_locations expected actual =
     |> Format.fprintf format "%s"
   in
   assert_equal
-    ~cmp:Source.equal
+    ~cmp:compare_sources
     ~printer:(fun source -> Format.asprintf "\n%a" pp_with_locations source)
     ~pp_diff:pp_diff_with_locations
     expected

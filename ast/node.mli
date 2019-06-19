@@ -9,8 +9,6 @@ type 'node_type t = {
 }
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-val in_testing : bool ref
-
 val create : location:Location.t -> 'node_value -> 'node_value t
 
 val create_with_default_location : 'node_value -> 'node_value t
