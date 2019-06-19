@@ -644,6 +644,7 @@ let test_query context =
                 6,
                 3,
                 7,
+                (* TODO(T46070919): The type here should be int, not the iter callable *)
                 parse_callable
                   ~name:(Reference.create "list.__iter__")
                   "typing.Callable[[], typing.Iterator[int]]" );
@@ -710,9 +711,6 @@ let test_query context =
               3, 10, 3, 11, Type.integer ]
           |> create_types_at_locations )));
 
-  (* ==== Documenting known bad behavior below (T37772879) ==== *)
-
-  (* Annotation type is Type[int] rather than Type[List[int]]. *)
   assert_type_query_response
     ~source:{|
        def foo(x: typing.List[int]) -> None:
@@ -723,11 +721,11 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ( [ 2, 32, 2, 36, Type.none;
               2, 23, 2, 26, Type.meta Type.integer;
+              (* TODO:(T46070919): Missing Type[List[int]] *)
               2, 8, 2, 9, Type.list Type.integer;
               2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
           |> create_types_at_locations )));
 
-  (* Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
   assert_type_query_response
     ~source:{|
        class Foo:
@@ -736,35 +734,14 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          [ { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+          [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
+            { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
               annotation = parse_annotation "typing.Type[Foo]"
             };
             { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
               annotation = Type.literal_integer 1
             } ]));
 
-  (* `x` is typed as List[int] rather than int. *)
-  assert_type_query_response
-    ~source:{|
-        for x in [1, 2]:
-          pass
-      |}
-    ~query:"types_in_file('test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
-          ( [ ( 2,
-                4,
-                2,
-                5,
-                parse_callable
-                  ~name:(Reference.create "list.__iter__")
-                  "typing.Callable[[], typing.Iterator[int]]" );
-              2, 13, 2, 14, Type.literal_integer 2;
-              2, 10, 2, 11, Type.literal_integer 1;
-              2, 9, 2, 15, Type.list Type.integer ]
-          |> create_types_at_locations )));
-
-  (* ==== Documenting known bad behavior above (T37772879) ==== *)
   assert_type_query_response
     ~source:{|
       class C:

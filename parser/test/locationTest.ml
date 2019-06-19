@@ -883,6 +883,18 @@ let test_import_locations _ =
                [ { Import.name = !&"a"; alias = Some !&"b" };
                  { Import.name = !&"c"; alias = None };
                  { Import.name = !&"d"; alias = Some !&"e" } ]
+           }) ];
+  assert_source_locations
+    "import a as b, c, d as e"
+    [ node
+        ~start:(1, 0)
+        ~stop:(1, 24)
+        (Import
+           { Import.from = None;
+             imports =
+               [ { Import.name = !&"a"; alias = Some !&"b" };
+                 { Import.name = !&"c"; alias = None };
+                 { Import.name = !&"d"; alias = Some !&"e" } ]
            }) ]
 
 
@@ -1224,6 +1236,16 @@ let test_string_locations _ =
             (String
                (StringLiteral.create_mixed
                   [{ StringLiteral.Substring.kind = Format; value = "foo" }]))) ];
+  assert_source_locations
+    (* Format string expressions are further parsed in preprocessing. *)
+    "f'foo {x}'"
+    [ +Expression
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 10)
+            (String
+               (StringLiteral.create_mixed
+                  [{ StringLiteral.Substring.kind = Format; value = "foo {x}" }]))) ];
   assert_source_locations
     "f'foo' f'bar'"
     [ +Expression
