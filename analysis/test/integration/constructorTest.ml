@@ -437,8 +437,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `Foo` because method `bar` is \
-       not implemented." ];
+    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -452,8 +451,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `Foo` because methods `bar`, \
-       `foo` are not implemented." ];
+    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -476,10 +474,11 @@ let test_check_constructors _ =
           @abstractmethod
           def f(self) -> None:
               pass
-      A()
+      class B(A):
+         pass
     |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `A` because methods `a`, `b`, \
-       `c` and 3 others are not implemented." ];
+    [ "Abstract class [38]: Class `B` does not implement abstract methods `a`, `b`, `c` and 3 \
+       others." ];
   assert_type_errors
     {|
       from abc import abstractmethod
@@ -501,7 +500,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [];
+    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -514,8 +513,7 @@ let test_check_constructors _ =
       def foo() -> None:
          B()
    |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `B` because method `f` is not \
-       implemented." ];
+    ["Abstract class [38]: Class `B` does not implement abstract method `f`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -526,22 +524,14 @@ let test_check_constructors _ =
           @abstractmethod
           def g(self) -> None:
               pass
-      class B(A, metaclass=ABCMeta):
+      class B(A):
           def g(self) -> None:
-              pass
-          @abstractmethod
-          def f(self) -> None:
               pass
       class C(B):
           pass
-      def foo() -> None:
-        B()
-        C()
     |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `B` because methods `f`, `h` \
-       are not implemented.";
-      "Abstract class instantiation [38]: Cannot instantiate class `C` because methods `f`, `h` \
-       are not implemented." ];
+    [ "Abstract class [38]: Class `B` does not implement abstract method `h`.";
+      "Abstract class [38]: Class `C` does not implement abstract method `h`." ];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -561,10 +551,8 @@ let test_check_constructors _ =
         B()
         C()
     |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `B` because method `h` is not \
-       implemented.";
-      "Abstract class instantiation [38]: Cannot instantiate class `C` because method `h` is not \
-       implemented." ];
+    [ "Abstract class [38]: Class `B` does not implement abstract method `h`.";
+      "Abstract class [38]: Class `C` does not implement abstract method `h`." ];
   assert_type_errors
     {|
       from abc import ABCMeta, abstractmethod
@@ -590,8 +578,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    [ "Abstract class instantiation [38]: Cannot instantiate class `Foo` because method `bar` is \
-       not implemented." ];
+    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
 
   (* Explicit call. *)
   assert_type_errors

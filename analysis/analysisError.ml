@@ -105,7 +105,13 @@ and unawaited_awaitable = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type abstract_class_kind =
+  | Instantiation of Reference.t
+  | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
+  | AbstractClass of abstract_class_kind
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
@@ -175,7 +181,6 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
-  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
   (* Additional errors. *)
@@ -227,7 +232,7 @@ let code = function
   | InvalidTypeVariance _ -> 35
   | InvalidMethodSignature _ -> 36
   | IncompleteType _ -> 37
-  | AbstractClassInstantiation _ -> 38
+  | AbstractClass _ -> 38
   | InvalidInheritance _ -> 39
   | InvalidOverride _ -> 40
   | InvalidAssignment _ -> 41
@@ -285,7 +290,7 @@ let name = function
   | UndefinedType _ -> "Undefined type"
   | UnexpectedKeyword _ -> "Unexpected keyword"
   | UninitializedAttribute _ -> "Uninitialized attribute"
-  | AbstractClassInstantiation _ -> "Abstract class instantiation"
+  | AbstractClass _ -> "Abstract class"
   | Unpack _ -> "Unable to unpack"
   | UnusedIgnore _ -> "Unused ignore"
 
@@ -1316,9 +1321,12 @@ let messages ~concise ~signature location kind =
           start_line
           pp_type
           actual ]
-  | AbstractClassInstantiation { class_name; _ } when concise ->
-      [Format.asprintf "`%a` contains unimplemented abstract methods." pp_reference class_name]
-  | AbstractClassInstantiation { class_name; method_names } ->
+  | AbstractClass (Unimplemented { class_name; _ }) when concise ->
+      [ Format.asprintf
+          "`%a` does not implement all inherited abstract methods."
+          pp_reference
+          class_name ]
+  | AbstractClass (Unimplemented { class_name; method_names }) ->
       let method_names = List.map method_names ~f:(fun name -> Format.asprintf "`%s`" name) in
       let method_message =
         if List.length method_names > 3 then
@@ -1331,18 +1339,19 @@ let messages ~concise ~signature location kind =
         else
           String.concat ~sep:", " method_names
       in
-      let method_pluralization, verb_pluralization =
+      let method_pluralization =
         match method_names with
-        | [_] -> "method", "is"
-        | _ -> "methods", "are"
+        | [_] -> "method"
+        | _ -> "methods"
       in
       [ Format.asprintf
-          "Cannot instantiate class `%a` because %s %s %s not implemented."
+          "Class `%a` does not implement abstract %s %s."
           pp_reference
           class_name
           method_pluralization
-          method_message
-          verb_pluralization ]
+          method_message ]
+  | AbstractClass (Instantiation class_name) ->
+      [Format.asprintf "Cannot instantiate abstract class `%a`." pp_reference class_name]
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
@@ -1551,7 +1560,7 @@ let due_to_analysis_limitations { kind; _ } =
   | UndefinedImport _
   | UndefinedType _
   | UnexpectedKeyword _
-  | AbstractClassInstantiation _
+  | AbstractClass _
   | UnusedIgnore _ ->
       false
 
@@ -1645,7 +1654,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | UndefinedAttribute _
   | UndefinedName _
   | UndefinedImport _
-  | AbstractClassInstantiation _
+  | AbstractClass _
   | Unpack _
   | UnusedIgnore _ ->
       false
@@ -1808,8 +1817,13 @@ let less_or_equal ~resolution left right =
           Resolution.less_or_equal resolution ~left ~right
       | CountMismatch left, CountMismatch right -> left = right
       | _ -> false )
-  | AbstractClassInstantiation left, AbstractClassInstantiation right ->
-      Reference.equal_sanitized left.class_name right.class_name
+  | AbstractClass left, AbstractClass right -> (
+    match left, right with
+    | Instantiation left_class_name, Instantiation right_class_name ->
+        Reference.equal_sanitized left_class_name right_class_name
+    | Unimplemented left, Unimplemented right ->
+        Reference.equal_sanitized left.class_name right.class_name
+    | _, _ -> false )
   | _, Top -> true
   | AnalysisFailure _, _
   | Deobfuscation _, _
@@ -1856,7 +1870,7 @@ let less_or_equal ~resolution left right =
   | UndefinedType _, _
   | UnexpectedKeyword _, _
   | UninitializedAttribute _, _
-  | AbstractClassInstantiation _, _
+  | AbstractClass _, _
   | Unpack _, _
   | UnusedIgnore _, _ ->
       false
@@ -2136,7 +2150,7 @@ let join ~resolution left right =
     | UndefinedType _, _
     | UnexpectedKeyword _, _
     | UninitializedAttribute _, _
-    | AbstractClassInstantiation _, _
+    | AbstractClass _, _
     | Unpack _, _
     | UnusedIgnore _, _ ->
         Log.debug
@@ -2530,8 +2544,7 @@ let dequalify
     | TypedDictionaryKeyNotFound key -> TypedDictionaryKeyNotFound key
     | UninitializedAttribute ({ mismatch; _ } as inconsistent_usage) ->
         UninitializedAttribute { inconsistent_usage with mismatch = dequalify_mismatch mismatch }
-    | AbstractClassInstantiation { class_name; method_names } ->
-        AbstractClassInstantiation { class_name; method_names }
+    | AbstractClass kind -> AbstractClass kind
     | UnawaitedAwaitable left -> UnawaitedAwaitable left
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =

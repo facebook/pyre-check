@@ -1302,6 +1302,49 @@ let test_overrides _ =
   assert_equal (Option.value_exn overrides |> Attribute.parent |> Type.show) "Foo"
 
 
+let test_unimplemented_abstract_methods _ =
+  let assert_unimplemented_methods_equal ~source ~class_name ~expected =
+    let source = parse source in
+    let resolution = Test.resolution ~sources:[source] () in
+    let definition =
+      let definition =
+        Resolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
+      in
+      Option.value_exn ~message:"Missing definition." definition
+    in
+    let unimplemented_methods =
+      Class.unimplemented_abstract_methods ~resolution definition
+      |> List.map ~f:Statement.Define.unqualified_name
+    in
+    assert_equal unimplemented_methods expected
+  in
+  assert_unimplemented_methods_equal
+    ~expected:["foo"]
+    ~source:
+      {|
+      class Foo(metaclass=abc.ABCMeta):
+        @abstractmethod
+        def foo(self) -> None:
+          pass
+      class Bar(Foo):
+        pass
+    |}
+    ~class_name:"Bar";
+  assert_unimplemented_methods_equal
+    ~expected:[]
+    ~source:
+      {|
+      class Foo(metaclass=abc.ABCMeta):
+        @abstractmethod
+        def foo(self) -> None:
+          pass
+      class Bar(Foo):
+        def foo() -> None:
+          pass
+    |}
+    ~class_name:"Bar"
+
+
 let () =
   "class"
   >::: [ "attributes" >:: test_class_attributes;
@@ -1315,5 +1358,6 @@ let () =
          "metaclasses" >:: test_metaclasses;
          "methods" >:: test_methods;
          "overrides" >:: test_overrides;
-         "superclasses" >:: test_superclasses ]
+         "superclasses" >:: test_superclasses;
+         "unimplemented_abstract_methods" >:: test_unimplemented_abstract_methods ]
   |> Test.run

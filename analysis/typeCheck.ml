@@ -418,50 +418,67 @@ module State (Context : Context) = struct
         let base_errors = check_bases () in
         List.append base_errors (check_attributes_initialized ())
       else if Define.is_class_toplevel define then
-        let annotated_class_definition =
-          let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-          Resolution.class_definition resolution (Type.Primitive name) >>| Annotated.Class.create
+        let check_unimplemented_abstract_methods definition errors =
+          if AnnotatedClass.is_abstract definition then
+            errors
+          else
+            let abstract_methods =
+              AnnotatedClass.unimplemented_abstract_methods ~resolution definition
+              |> List.map ~f:Define.unqualified_name
+            in
+            if List.is_empty abstract_methods then
+              errors
+            else
+              let error =
+                Error.create
+                  ~location
+                  ~kind:
+                    (Error.AbstractClass
+                       (Unimplemented
+                          { class_name = AnnotatedClass.name definition;
+                            method_names = abstract_methods
+                          }))
+                  ~define:Context.define
+              in
+              error :: errors
         in
-        let check_abstract_methods errors =
-          annotated_class_definition
-          >>| (fun definition ->
-                if
-                  (not (AnnotatedClass.is_abstract definition))
-                  && AnnotatedClass.has_abstract_methods definition
-                then
-                  let error =
-                    Error.create
-                      ~location
-                      ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
-                      ~define:Context.define
-                  in
-                  error :: errors
-                else
-                  errors)
-          |> Option.value ~default:errors
+        let check_abstract_methods definition errors =
+          if
+            (not (AnnotatedClass.is_abstract definition))
+            && AnnotatedClass.has_abstract_methods definition
+          then
+            let error =
+              Error.create
+                ~location
+                ~kind:(Error.InvalidClass (AnnotatedClass.name definition))
+                ~define:Context.define
+            in
+            error :: errors
+          else
+            errors
         in
-        let check_base_and_attributes errors =
+        let check_base_and_attributes definition errors =
           let no_explicit_class_constructor =
-            annotated_class_definition
-            >>| Annotated.Class.constructors ~resolution
-            >>| List.is_empty
-            |> Option.value ~default:false
+            definition |> Annotated.Class.constructors ~resolution |> List.is_empty
           in
           if no_explicit_class_constructor then
-            let is_protocol =
-              annotated_class_definition
-              >>| Annotated.Class.is_protocol
-              |> Option.value ~default:false
-            in
             let base_errors = check_bases () in
-            if not is_protocol then
+            if not (Annotated.Class.is_protocol definition) then
               List.append base_errors (check_attributes_initialized ())
             else
               base_errors
           else
             errors
         in
-        errors |> check_base_and_attributes |> check_abstract_methods
+        let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
+        Resolution.class_definition resolution (Type.Primitive name)
+        >>| Annotated.Class.create
+        >>| (fun definition ->
+              errors
+              |> check_base_and_attributes definition
+              |> check_abstract_methods definition
+              |> check_unimplemented_abstract_methods definition)
+        |> Option.value ~default:errors
       else
         errors
     in
@@ -1669,52 +1686,15 @@ module State (Context : Context) = struct
           | Annotated.Signature.Found
               ({ kind = Type.Callable.Named access; implementation; _ } as callable)
             when String.equal "__init__" (Reference.last access) ->
-              let definition = Resolution.class_definition resolution implementation.annotation in
-              let gather_abstract_methods sofar { Node.value = class_definition; _ } =
-                let abstract_methods, base_methods =
-                  class_definition
-                  |> Statement.Class.defines
-                  |> List.partition_tf ~f:Statement.Define.is_abstract_method
-                in
-                let sofar =
-                  if Statement.Class.is_abstract class_definition then
-                    abstract_methods
-                    |> List.filter ~f:(fun method_definition ->
-                           not (Statement.Define.is_property method_definition))
-                    |> List.map ~f:Statement.Define.unqualified_name
-                    |> List.fold ~init:sofar ~f:Set.add
-                  else
-                    sofar
-                in
-                base_methods
-                |> List.map ~f:Statement.Define.unqualified_name
-                |> List.fold ~init:sofar ~f:Set.remove
-              in
-              definition
-              >>| (fun definition ->
-                    let abstract_methods =
-                      definition
-                      |> Annotated.Class.create
-                      |> Annotated.Class.successors ~resolution
-                      |> List.filter_map ~f:(fun name ->
-                             Resolution.class_definition resolution (Type.Primitive name))
-                      |> List.cons definition
-                      |> List.rev
-                      |> List.fold ~init:String.Set.empty ~f:gather_abstract_methods
-                    in
-                    if Set.is_empty abstract_methods then
-                      signature
-                    else
-                      Annotated.Signature.NotFound
-                        { callable;
-                          reason =
-                            Some
-                              (AbstractClassInstantiation
-                                 { method_names = Set.to_list abstract_methods;
-                                   class_name =
-                                     (definition |> fun { Node.value = { name; _ }; _ } -> name)
-                                 })
-                        })
+              Resolution.class_definition resolution implementation.annotation
+              >>| (function
+                    | { Node.value = definition; _ } ->
+                        let { Class.name = class_name; _ } = definition in
+                        if Statement.Class.is_abstract definition then
+                          Annotated.Signature.NotFound
+                            { callable; reason = Some (AbstractClassInstantiation class_name) }
+                        else
+                          signature)
               |> Option.value ~default:signature
           | _ -> signature
         in
@@ -1765,10 +1745,10 @@ module State (Context : Context) = struct
                 | _ -> None
               in
               match reason with
-              | AbstractClassInstantiation { class_name; method_names } ->
+              | AbstractClassInstantiation class_name ->
                   Error.create
                     ~location
-                    ~kind:(Error.AbstractClassInstantiation { class_name; method_names })
+                    ~kind:(Error.AbstractClass (Instantiation class_name))
                     ~define:Context.define
               | CallingParameterVariadicTypeVariable ->
                   Error.create

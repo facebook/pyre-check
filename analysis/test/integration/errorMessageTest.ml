@@ -452,7 +452,7 @@ let test_concise _ =
         def foo() -> None:
           Foo()
         |}
-    ["Abstract class instantiation [38]: `Foo` contains unimplemented abstract methods."]
+    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."]
 
 
 let () =

@@ -274,6 +274,42 @@ let superclasses definition ~resolution =
   |> List.map ~f:create
 
 
+let unimplemented_abstract_methods definition ~resolution =
+  let gather_abstract_methods { Node.value = class_definition; _ } sofar =
+    let abstract_methods, base_methods =
+      class_definition
+      |> Statement.Class.defines
+      |> List.partition_tf ~f:Statement.Define.is_abstract_method
+    in
+    let add_to_map sofar definition =
+      let name = Statement.Define.unqualified_name definition in
+      match String.Map.add sofar ~key:name ~data:definition with
+      | `Ok map -> map
+      | `Duplicate -> sofar
+    in
+    let sofar =
+      if Statement.Class.is_abstract class_definition then
+        abstract_methods
+        |> List.filter ~f:(fun method_definition ->
+               not (Statement.Define.is_property method_definition))
+        |> List.fold ~init:sofar ~f:add_to_map
+      else
+        sofar
+    in
+    base_methods
+    |> List.map ~f:Statement.Define.unqualified_name
+    |> List.fold ~init:sofar ~f:String.Map.remove
+  in
+  let successors = definition |> superclasses ~resolution in
+  if List.exists successors ~f:(fun { Node.value; _ } -> Statement.Class.is_abstract value) then
+    successors
+    |> List.cons definition
+    |> List.fold_right ~init:String.Map.empty ~f:gather_abstract_methods
+    |> Map.data
+  else
+    []
+
+
 let metaclass definition ~resolution =
   let get_metaclass { Node.value = { Class.bases; _ }; _ } =
     let get_metaclass = function

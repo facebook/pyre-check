@@ -86,6 +86,8 @@ val constraints
 
 val superclasses : t -> resolution:Resolution.t -> t list
 
+val unimplemented_abstract_methods : t -> resolution:Resolution.t -> Ast.Statement.Define.t list
+
 val methods : t -> Method.t list
 
 val has_abstract_methods : t -> bool

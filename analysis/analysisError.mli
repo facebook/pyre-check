@@ -96,7 +96,13 @@ and unawaited_awaitable = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type abstract_class_kind =
+  | Instantiation of Reference.t
+  | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
+[@@deriving compare, eq, sexp, show, hash]
+
 type kind =
+  | AbstractClass of abstract_class_kind
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
@@ -166,7 +172,6 @@ type kind =
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
   | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
-  | AbstractClassInstantiation of { class_name: Reference.t; method_names: Identifier.t list }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
   (* Additional errors. *)
