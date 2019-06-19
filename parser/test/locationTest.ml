@@ -347,7 +347,81 @@ let test_call_locations _ =
                  arguments =
                    [ { Call.Argument.name = None; value = !"j" };
                      { Call.Argument.name = None; value = !"y" } ]
-               })) ]
+               })) ];
+  assert_source_locations
+    "a[:1]"
+    [ +Expression
+         (+Call
+             { callee =
+                 node
+                   ~start:(1, 0)
+                   ~stop:(1, 1)
+                   (Name
+                      (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value =
+                       node
+                         ~start:(1, 2)
+                         ~stop:(1, 4)
+                         (Call
+                            { callee = !"slice";
+                              arguments =
+                                [ { Call.Argument.name = None;
+                                    value =
+                                      node
+                                        ~start:(1, 2)
+                                        ~stop:(1, 2)
+                                        (Name (Name.Identifier "None"))
+                                  };
+                                  { Call.Argument.name = None;
+                                    value = node ~start:(1, 3) ~stop:(1, 4) (Integer 1)
+                                  };
+                                  { Call.Argument.name = None;
+                                    value =
+                                      node
+                                        ~start:(1, 4)
+                                        ~stop:(1, 4)
+                                        (Name (Name.Identifier "None"))
+                                  } ]
+                            })
+                   } ]
+             }) ];
+  assert_source_locations
+    "a[::2]"
+    [ +Expression
+         (+Call
+             { callee =
+                 +Name (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+               arguments =
+                 [ { Call.Argument.name = None;
+                     value =
+                       node
+                         ~start:(1, 2)
+                         ~stop:(1, 5)
+                         (Call
+                            { callee = !"slice";
+                              arguments =
+                                [ { Call.Argument.name = None;
+                                    value =
+                                      node
+                                        ~start:(1, 2)
+                                        ~stop:(1, 2)
+                                        (Name (Name.Identifier "None"))
+                                  };
+                                  { Call.Argument.name = None;
+                                    value =
+                                      node
+                                        ~start:(1, 3)
+                                        ~stop:(1, 3)
+                                        (Name (Name.Identifier "None"))
+                                  };
+                                  { Call.Argument.name = None;
+                                    value = node ~start:(1, 4) ~stop:(1, 5) (Integer 2)
+                                  } ]
+                            })
+                   } ]
+             }) ]
 
 
 let test_class_locations _ =

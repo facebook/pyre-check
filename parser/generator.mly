@@ -97,28 +97,44 @@
     Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
     |> Node.create ~location:{ location with stop }
 
-  let slice ~lower ~upper ~step ~colon =
-    let location =
-      let expression =
-        match lower with
-        | Some lower -> Some lower
-        | None ->
-            begin
-              match upper with
-              | Some upper -> Some upper
-              | None ->
-                  begin
-                    match step with
-                    | Some step -> Some step
-                    | None -> None
-                  end
-            end
+  let slice ~lower ~upper ~step ~bound_colon ~step_colon =
+    let increment ({ Location.start; stop; _ } as location) =
+      let increment ({ Location.column; _ } as position) =
+        { position with Location.column = column + 1 }
       in
-      let anchor = Location.create ~start:colon ~stop:colon in
-      expression >>| Node.location |> Option.value ~default:anchor
+      { location with Location.start = increment start; stop = increment stop }
+    in
+    let lower_location =
+      match lower with
+      | Some lower -> lower.Node.location
+      | None -> Location.create ~start:bound_colon ~stop:bound_colon
+    in
+    let upper_location =
+      match upper with
+      | Some upper -> upper.Node.location
+      | None -> Location.create ~start:bound_colon ~stop:bound_colon |> increment
+    in
+    let step_location =
+      match step with
+      | Some step -> step.Node.location
+      | None ->
+          begin
+            match step_colon with
+            | Some colon -> Location.create ~start:colon ~stop:colon |> increment
+            | None ->
+                begin
+                  match upper with
+                  | Some { Node.location = ({ stop; _ } as location); _ } ->
+                      { location with start = stop }
+                  | None -> Location.create ~start:bound_colon ~stop:bound_colon |> increment
+                end
+          end
+    in
+    let slice_location =
+      { lower_location with Location.stop = step_location.Location.stop  }
     in
     let arguments =
-      let argument argument =
+      let argument argument location =
         let none =
           Name (Name.Identifier "None")
           |> Node.create ~location
@@ -126,17 +142,17 @@
         Option.value argument ~default:none
       in
       [
-        { Call.Argument.name = None; value = argument lower };
-        { Call.Argument.name = None; value = argument upper };
-        { Call.Argument.name = None; value = argument step };
+        { Call.Argument.name = None; value = argument lower lower_location };
+        { Call.Argument.name = None; value = argument upper upper_location };
+        { Call.Argument.name = None; value = argument step step_location };
       ]
     in
     let callee =
       Name (Name.Identifier "slice")
-      |> Node.create ~location
+      |> Node.create ~location:slice_location
     in
     Call { callee; arguments }
-    |> Node.create ~location
+    |> Node.create ~location:slice_location
 
 
   let create_ellipsis (start, stop) =
@@ -1602,11 +1618,11 @@ argument:
 
 subscript_key:
   | index = test { index }
-  | lower = test?; colon = COLON; upper = test? {
-      slice ~lower ~upper ~step:None ~colon
+  | lower = test?; bound_colon = COLON; upper = test? {
+      slice ~lower ~upper ~step:None ~bound_colon ~step_colon:None
     }
-  | lower = test?; colon = COLON; upper = test?; COLON; step = test? {
-      slice ~lower ~upper ~step ~colon
+  | lower = test?; bound_colon = COLON; upper = test?; step_colon = COLON; step = test? {
+      slice ~lower ~upper ~step ~bound_colon ~step_colon:(Some step_colon)
     }
   ;
 
