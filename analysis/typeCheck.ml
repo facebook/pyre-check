@@ -4069,7 +4069,8 @@ let name = "TypeCheck"
 
 let check_define
     ~configuration
-    ~handle
+    ~environment
+    ~source:({ Source.handle; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -4080,6 +4081,37 @@ let check_define
 
     let calls = Location.Reference.Table.create ()
   end
+  in
+  let filter_errors errors =
+    let mode error =
+      let (module Handler : Environment.Handler) = environment in
+      Handler.local_mode (Error.path error |> File.Handle.create)
+      |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
+    in
+    let filter errors =
+      if configuration.debug then
+        errors
+      else
+        let keep_error error = not (Error.suppress ~mode:(mode error) ~resolution error) in
+        List.filter ~f:keep_error errors
+    in
+    let mark_as_hint error =
+      match mode error with
+      | Default when Error.language_server_hint error -> { error with severity = Hint }
+      | _ -> error
+    in
+    let filter_hints { Error.severity; _ } =
+      let { Configuration.Analysis.include_hints; _ } = configuration in
+      match severity with
+      | Hint when not include_hints -> false
+      | _ -> true
+    in
+    filter errors
+    |> Error.join_at_define ~resolution
+    |> Error.join_at_source ~resolution
+    |> List.map ~f:mark_as_hint
+    |> List.filter ~f:filter_hints
+    |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution)
   in
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in
@@ -4140,14 +4172,14 @@ let check_define
 
     (* Schedule nested functions for analysis. *)
     let nested_defines = Option.value_map exit ~f:State.nested_defines ~default:[] in
-    let errors = exit >>| State.errors |> Option.value ~default:[] in
+    let errors = exit >>| State.errors >>| filter_errors |> Option.value ~default:[] in
     let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
     { errors; coverage }, nested_defines
   in
   try
     let initial = State.initial ~resolution in
     if Define.is_stub define then
-      { errors = State.errors initial; coverage = Coverage.create () }, []
+      { errors = filter_errors (State.errors initial); coverage = Coverage.create () }, []
     else
       check ~define:define_node ~initial
   with
@@ -4213,8 +4245,8 @@ let run
     in
     let rec results ~queue =
       match Queue.dequeue queue with
-      | Some entry ->
-          let result, nested_defines = check_define ~configuration ~handle entry in
+      | Some define ->
+          let result, nested_defines = check_define ~configuration ~environment ~source define in
           List.iter nested_defines ~f:(Queue.enqueue queue);
           result :: results ~queue
       | _ -> []
@@ -4226,37 +4258,7 @@ let run
   ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
   let errors =
-    let mode error =
-      let (module Handler : Environment.Handler) = environment in
-      Handler.local_mode (Error.path error |> File.Handle.create)
-      |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
-    in
-    let filter { errors; _ } =
-      if configuration.debug then
-        errors
-      else
-        let keep_error error = not (Error.suppress ~mode:(mode error) ~resolution error) in
-        List.filter ~f:keep_error errors
-    in
-    let mark_as_hint error =
-      match mode error with
-      | Default when Error.language_server_hint error -> { error with severity = Hint }
-      | _ -> error
-    in
-    let filter_hints { Error.severity; _ } =
-      let { Configuration.Analysis.include_hints; _ } = configuration in
-      match severity with
-      | Hint when not include_hints -> false
-      | _ -> true
-    in
-    List.map results ~f:filter
-    |> List.map ~f:(Error.join_at_define ~resolution)
-    |> List.concat
-    |> Error.join_at_source ~resolution
-    |> List.map ~f:mark_as_hint
-    |> List.filter ~f:filter_hints
-    |> List.map ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution)
-    |> List.sort ~compare:Error.compare
+    List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
   in
   let coverage =
     List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate_over_source ~source

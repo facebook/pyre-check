@@ -81,7 +81,7 @@ let test_check_unbounded_variables _ =
       ^ "`Foo.__init__` but got `float`." ];
   assert_type_errors
     {|
-      from typing import overload, TypeVar, List, Callable, Tuple
+      from typing import overload, TypeVar, List, Callable, Tuple, Union
       @overload
       def overloaded(x: int) -> str: ...
       @overload
@@ -90,6 +90,7 @@ let test_check_unbounded_variables _ =
       def overloaded(x: float) -> bool: ...
       @overload
       def overloaded(x: str) -> int: ...
+      def overloaded(x: Union[int, bool, float, str]) -> Union[int, bool, float, str]: ...
 
       T1 = typing.TypeVar("T1")
       T2 = typing.TypeVar("T2")
@@ -103,9 +104,7 @@ let test_check_unbounded_variables _ =
 
         generic(overloaded, [1], [7])
     |}
-    [ "Missing overload implementation [42]: Overloaded function `overloaded` must have an \
-       implementation.";
-      "Revealed type [-1]: Revealed type for `generic(overloaded, [1], [\"1\"])` is \
+    [ "Revealed type [-1]: Revealed type for `generic(overloaded, [1], [\"1\"])` is \
        `typing.Tuple[int, str]`.";
       "Revealed type [-1]: Revealed type for `generic(overloaded, [True], [1.000000])` is \
        `typing.Tuple[bool, float]`.";

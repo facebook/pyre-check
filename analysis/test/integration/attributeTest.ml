@@ -83,8 +83,10 @@ let test_check_attributes _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type "
-      ^ "`typing.Optional[int]` but no type is specified." ];
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
+       is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
+       is specified." ];
   assert_strict_type_errors
     {|
       class Foo:
@@ -92,8 +94,10 @@ let test_check_attributes _ =
         def __init__(self) -> None:
           self.a = 1
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type "
-      ^ "`typing.Optional[int]` but no type is specified." ];
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
+       is specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `None` but no type \
+       is specified." ];
   assert_strict_type_errors
     {|
       class Foo:
@@ -169,6 +173,8 @@ let test_check_attributes _ =
     |}
     [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `str` but type \
+       `Any` is specified.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized.";
       "Incompatible return type [7]: Expected `int` but got `str`." ];
@@ -185,6 +191,8 @@ let test_check_attributes _ =
     |}
     [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` must have a type other \
        than `Any`.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type \
+       `typing.Union[int, str]` but type `Any` is specified.";
       "Uninitialized attribute [13]: Attribute `bar` is declared in class `Foo` to have type \
        `typing.Any` but is never initialized." ];
 
@@ -334,6 +342,8 @@ let test_check_attributes _ =
     |}
     [ "Missing attribute annotation [4]: Attribute `bar` of class `Foo` "
       ^ "has type `int` but no type is specified.";
+      "Missing attribute annotation [4]: Attribute `bar` of class `Foo` has type `int` but no \
+       type is specified.";
       "Missing attribute annotation [4]: Attribute `baz` of class `Foo` "
       ^ "has type `int` but no type is specified." ];
   assert_type_errors
@@ -735,8 +745,9 @@ let test_check_missing_attribute _ =
         a = unknown
       Foo.a = 1
     |}
-    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` "
-      ^ "but no type is specified.";
+    [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but no type \
+       is specified.";
       "Undefined name [18]: Global name `unknown` is not defined, or there is at least one \
        control flow path that doesn't define `unknown`." ];
   assert_type_errors
@@ -787,6 +798,8 @@ let test_check_missing_attribute _ =
     |}
     [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but type \
+       `Any` is specified.";
       "Uninitialized attribute [13]: Attribute `a` is declared in class `Foo` to have "
       ^ "type `typing.Any` but is never initialized." ];
   assert_default_type_errors ~handle:"stub.pyi" {|
@@ -811,6 +824,8 @@ let test_check_missing_attribute _ =
     |}
     [ "Missing attribute annotation [4]: Attribute `a` of class `Foo` must have a type other than \
        `Any`.";
+      "Missing attribute annotation [4]: Attribute `a` of class `Foo` has type `int` but type \
+       `Any` is specified.";
       "Incompatible return type [7]: Expected `bool` but got `typing.Any`." ];
   assert_type_errors
     {|

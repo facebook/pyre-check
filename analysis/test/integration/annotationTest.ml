@@ -606,17 +606,6 @@ let test_check_immutable_annotations _ =
     [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but "
       ^ "no type is specified." ];
 
-  (* Illustrate that merging an ellipses with a type results in Any (aka. no type suggestion on the
-     missing annotation error) *)
-  assert_type_errors
-    {|
-      constant = ...
-      def foo() -> None:
-        global constant
-        constant = 1
-    |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has no type specified."
-    ];
   assert_type_errors
     {|
       constant: typing.Any
@@ -625,7 +614,9 @@ let test_check_immutable_annotations _ =
         constant = 1
     |}
     [ "Missing global annotation [5]: Globally accessible variable `constant` must be specified \
-       as type other than `Any`." ];
+       as type other than `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+       type `Any` is specified." ];
   assert_type_errors
     {|
       def foo() -> int:
@@ -715,8 +706,9 @@ let test_check_immutable_annotations _ =
         foo.attribute = 1
         return foo.attribute
     |}
-    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified."
-    ];
+    [ "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `int` but \
+       no type is specified." ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -741,8 +733,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = "hi"
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
-      ^ "Union[int, str]` but no type is specified." ];
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+       no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but \
+       no type is specified." ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -752,8 +746,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = None
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `typing."
-      ^ "Optional[int]` but no type is specified." ];
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+       no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `None` but \
+       no type is specified." ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -763,8 +759,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = 1.0
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `float` "
-      ^ "but no type is specified." ];
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
+       no type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `float` \
+       but no type is specified." ];
   assert_type_errors
     {|
       def foo() -> None:
@@ -774,8 +772,10 @@ let test_check_immutable_annotations _ =
         global constant
         constant = B()
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but "
-      ^ "no type is specified." ];
+    [ "Missing global annotation [5]: Globally accessible variable `constant` has type `A` but no \
+       type is specified.";
+      "Missing global annotation [5]: Globally accessible variable `constant` has type `B` but no \
+       type is specified." ];
   assert_type_errors
     {|
       class Foo():
@@ -788,6 +788,8 @@ let test_check_immutable_annotations _ =
         constant = "hi"
     |}
     [ "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has no type specified.";
+      "Missing attribute annotation [4]: Attribute `constant` of class `Foo` has type `int` but \
+       no type is specified.";
       "Missing global annotation [5]: Globally accessible variable `constant` has type `str` but "
       ^ "no type is specified." ];
   assert_type_errors
@@ -807,7 +809,9 @@ let test_check_immutable_annotations _ =
       "Missing global annotation [5]: Globally accessible variable `z` must be specified "
       ^ "as type that does not contain `Any`.";
       "Missing global annotation [5]: Globally accessible variable `a` must be specified as type \
-       other than `Any`." ];
+       other than `Any`.";
+      "Missing global annotation [5]: Globally accessible variable `a` has type `int` but type \
+       `Any` is specified." ];
   assert_type_errors
     {|
       class Foo():
