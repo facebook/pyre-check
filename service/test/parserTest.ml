@@ -237,7 +237,7 @@ let test_parse_source _ =
   let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
-  assert_equal handle (File.Handle.create "a.py");
+  assert_equal handle (File.Handle.create_for_testing "a.py");
   assert_equal number_of_lines 3;
   match statements with
   | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
@@ -294,7 +294,7 @@ let test_parse_sources context =
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove
-      ~handles:[File.Handle.create "a.py"; File.Handle.create "stub.pyi"];
+      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "stub.pyi"];
     Service.Parser.parse_all scheduler ~configuration
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
@@ -302,8 +302,8 @@ let test_parse_sources context =
   assert_equal
     ~printer:(List.to_string ~f:File.Handle.show)
     source_handles
-    [File.Handle.create "stub.pyi"; File.Handle.create "a.py"];
-  match Ast.SharedMemory.Sources.get (File.Handle.create "c.py") with
+    [File.Handle.create_for_testing "stub.pyi"; File.Handle.create_for_testing "a.py"];
+  match Ast.SharedMemory.Sources.get (File.Handle.create_for_testing "c.py") with
   | Some { Source.hash; _ } ->
       assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
   | None -> assert_unreached ()
@@ -404,7 +404,7 @@ let test_parse_repository context =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let configuration = Configuration.Analysis.create ~local_root () in
     let prepare_file (relative, content) =
-      Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create relative];
+      Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create_for_testing relative];
       File.write (File.create ~content (Path.create_relative ~root:local_root ~relative))
     in
     List.iter repository ~f:prepare_file;
@@ -425,7 +425,7 @@ let test_parse_repository context =
     in
     let expected =
       List.map expected ~f:(fun (handle, parsed_source) ->
-          File.Handle.create handle, Test.parse parsed_source)
+          File.Handle.create_for_testing handle, Test.parse parsed_source)
     in
     assert_equal ~cmp:(List.equal ~equal) ~printer:(List.to_string ~f:printer) expected actual
   in

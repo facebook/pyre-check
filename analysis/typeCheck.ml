@@ -4127,7 +4127,7 @@ let check_define
   let filter_errors errors =
     let mode error =
       let (module Handler : Environment.Handler) = environment in
-      Handler.local_mode (Error.path error |> File.Handle.create)
+      Handler.local_mode (Error.path error |> File.Handle.create_for_testing)
       |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
     in
     let filter errors =

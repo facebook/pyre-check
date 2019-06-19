@@ -29,10 +29,10 @@ let test_lines context =
 
 
 let test_is_stub _ =
-  assert_true (File.Handle.is_stub (File.Handle.create "a.pyi"));
-  assert_true (File.Handle.is_stub (File.Handle.create "pyi.pyi"));
-  assert_false (File.Handle.is_stub (File.Handle.create "pyi.py"));
-  assert_false (File.Handle.is_stub (File.Handle.create "a.py"))
+  assert_true (File.Handle.is_stub (File.Handle.create_for_testing "a.pyi"));
+  assert_true (File.Handle.is_stub (File.Handle.create_for_testing "pyi.pyi"));
+  assert_false (File.Handle.is_stub (File.Handle.create_for_testing "pyi.py"));
+  assert_false (File.Handle.is_stub (File.Handle.create_for_testing "a.py"))
 
 
 let test_handle _ =
@@ -118,12 +118,12 @@ let test_handle_to_path context =
 
   (* Check that we can recover paths from handles. *)
   let assert_path ~handle ~path =
-    match File.Handle.to_path ~configuration (File.Handle.create handle) with
+    match File.Handle.to_path ~configuration (File.Handle.create_for_testing handle) with
     | None -> assert_unreached ()
     | Some actual -> assert_equal ~printer:Path.show ~cmp:Path.equal path actual
   in
   let assert_not_path ~handle =
-    assert_is_none (File.Handle.to_path ~configuration (File.Handle.create handle))
+    assert_is_none (File.Handle.to_path ~configuration (File.Handle.create_for_testing handle))
   in
   assert_path ~handle:"a.py" ~path:(Path.create_relative ~root:local_root ~relative:"a.py");
   assert_path ~handle:"b.py" ~path:(Path.create_relative ~root:other_root ~relative:"b.py");

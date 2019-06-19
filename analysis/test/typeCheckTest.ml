@@ -1381,7 +1381,8 @@ let test_coverage _ =
         ~environment
         ~source:(parse ~handle source)
       |> ignore;
-      Coverage.get ~handle:(File.Handle.create handle) |> fun coverage -> Option.value_exn coverage
+      Coverage.get ~handle:(File.Handle.create_for_testing handle)
+      |> fun coverage -> Option.value_exn coverage
     in
     assert_equal ~printer:Coverage.show expected coverage
   in

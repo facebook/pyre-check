@@ -355,7 +355,7 @@ type test_environment = {
 
 let initialize ?(qualifier = "test.py") ?models source_content =
   let source_content = Test.trim_extra_indentation source_content in
-  let handle = File.Handle.create qualifier in
+  let handle = File.Handle.create_for_testing qualifier in
   let source =
     Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:qualifier source_content
     |> Preprocessing.preprocess

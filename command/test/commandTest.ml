@@ -67,7 +67,7 @@ let make_errors ?handle ?qualifier source =
 
 
 let associate_errors_and_filenames error_list =
-  let error_file error = File.Handle.create (Error.path error), error in
+  let error_file error = File.Handle.create_for_testing (Error.path error), error in
   List.map ~f:error_file error_list
   |> List.fold ~init:File.Handle.Map.empty ~f:(fun map (handle, error) ->
          Map.add_multi map ~key:handle ~data:error)

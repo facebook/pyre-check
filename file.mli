@@ -27,7 +27,9 @@ exception NonexistentHandle of string
 module Handle : sig
   type t [@@deriving compare, eq, show, sexp, hash]
 
-  val create : string -> t
+  (* Should not be used in production code; it only provides a conveniences for tests. You should
+     use File.handle. *)
+  val create_for_testing : string -> t
 
   val is_stub : t -> bool
 

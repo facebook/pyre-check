@@ -34,6 +34,8 @@ let assert_environment_contains source expected =
     let class_definition = Option.value_exn (Handler.class_definition class_type) in
     assert_source_equal
       expected
-      (Source.create ~handle:(File.Handle.create "test.py") [+Class (Node.value class_definition)])
+      (Source.create
+         ~handle:(File.Handle.create_for_testing "test.py")
+         [+Class (Node.value class_definition)])
   in
   List.iter2_exn ~f:assert_class_equal class_names expected

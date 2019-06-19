@@ -89,7 +89,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   let errors =
     let table = File.Handle.Table.create () in
     let add_error error =
-      Hashtbl.add_multi table ~key:(File.Handle.create (Error.path error)) ~data:error
+      Hashtbl.add_multi table ~key:(File.Handle.create_for_testing (Error.path error)) ~data:error
     in
     List.iter errors ~f:add_error;
     table

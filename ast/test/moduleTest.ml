@@ -29,11 +29,11 @@ let test_handle _ =
     ( Module.create
         ~qualifier:Reference.empty
         ~local_mode:Source.Default
-        ~handle:(File.Handle.create "voodoo.py")
+        ~handle:(File.Handle.create_for_testing "voodoo.py")
         ~stub:false
         []
     |> Module.handle )
-    (Some (File.Handle.create "voodoo.py"))
+    (Some (File.Handle.create_for_testing "voodoo.py"))
 
 
 let test_aliased_export _ =
@@ -104,7 +104,7 @@ let test_aliased_export _ =
   (* Exports through assignments. *)
   assert_aliased_exports
     ~qualifier:(Reference.create "requests")
-    ~handle:(File.Handle.create "requests/__init__.pyi")
+    ~handle:(File.Handle.create_for_testing "requests/__init__.pyi")
     {|
       from . import api
       $local_requests$post = requests.api.post

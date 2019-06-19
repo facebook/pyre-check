@@ -680,7 +680,7 @@ let test_language_server_definition_response context =
   touch file;
   let stub = Path.create_relative ~root:local_root ~relative:"b.pyi" in
   touch stub;
-  let handles = [File.Handle.create "a.py"; File.Handle.create "b.pyi"] in
+  let handles = [File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.pyi"] in
   add_paths handles;
   assert_response
     ~id:(int_request_id 1)

@@ -101,7 +101,7 @@ let initialize ?configuration sources =
 
     (* Initialize dependency map. *)
     let source (path, content) =
-      let handle = File.Handle.create path in
+      let handle = File.Handle.create_for_testing path in
       parse ~qualifier:(Source.qualifier ~handle) ~handle:path content
       |> Analysis.Preprocessing.qualify
     in
@@ -232,7 +232,7 @@ let test_process_display_type_errors_request _ =
               in
               List.map errors ~f:error
             in
-            File.Handle.create path, errors
+            File.Handle.create_for_testing path, errors
           in
           List.map errors ~f:entry
         in

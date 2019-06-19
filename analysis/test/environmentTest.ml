@@ -1192,7 +1192,7 @@ let test_purge _ =
   assert_is_some (Handler.class_definition "baz.baz");
   assert_is_some (Handler.aliases "_T");
   let dependencies handle =
-    let handle = File.Handle.create handle in
+    let handle = File.Handle.create_for_testing handle in
     Handler.dependencies (Source.qualifier ~handle)
     >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
@@ -1200,7 +1200,7 @@ let test_purge _ =
   assert_equal (dependencies "a.py") (Some ["test"]);
   assert_is_some (Handler.class_metadata "P");
   assert_is_some (Handler.class_metadata "baz.baz");
-  Handler.purge [File.Handle.create "test.py"];
+  Handler.purge [File.Handle.create_for_testing "test.py"];
   assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.class_metadata "P");
   assert_is_none (Handler.class_metadata "baz.baz");

@@ -14,7 +14,7 @@ module Handler = Service.Environment.SharedHandler
 module DependencyHandler = Handler.DependencyHandler
 
 let assert_keys ~add ~get keys expected =
-  let handle = File.Handle.create "dummy.py" in
+  let handle = File.Handle.create_for_testing "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
   List.iter keys ~f:(add ~handle);
   assert_equal expected (get ~handle)
@@ -115,7 +115,7 @@ let test_register_modules _ =
 
 
 let test_normalize_dependencies _ =
-  let handle = File.Handle.create "dummy.py" in
+  let handle = File.Handle.create_for_testing "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
   DependencyHandler.add_function_key ~handle !&"f";
 
@@ -202,10 +202,10 @@ let test_populate context =
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    ~sources:[File.Handle.create "a.py"];
+    ~sources:[File.Handle.create_for_testing "a.py"];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (GlobalKeys.find_unsafe (File.Handle.create "a.py"))
+    (GlobalKeys.find_unsafe (File.Handle.create_for_testing "a.py"))
     (List.map ~f:Reference.create ["a.T"; "a.C"; "a.D"; "a.foo"; "a.bar"]);
   assert_equal
     (UndecoratedFunctions.get (Reference.create "a.foo"))
@@ -227,7 +227,7 @@ let test_populate context =
     (module Handler)
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    [Option.value_exn (Ast.SharedMemory.Sources.get (File.Handle.create "a.py"))];
+    [Option.value_exn (Ast.SharedMemory.Sources.get (File.Handle.create_for_testing "a.py"))];
   assert_successors "a.C" ["a.D"; "object"]
 
 
@@ -253,9 +253,9 @@ let test_purge context =
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    ~sources:[File.Handle.create "a.py"];
+    ~sources:[File.Handle.create_for_testing "a.py"];
   assert_is_some (Handler.class_metadata "a.D");
-  Handler.purge [File.Handle.create "a.py"];
+  Handler.purge [File.Handle.create_for_testing "a.py"];
   assert_is_none (Handler.class_metadata "a.D")
 
 

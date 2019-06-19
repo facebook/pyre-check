@@ -15,7 +15,7 @@ type errors = (File.Handle.t * State.Error.t list) list [@@deriving show]
 
 let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
   let initial_files = Option.value ~default:(Hashtbl.keys errors) checked_files in
-  let error_file error = File.Handle.create (Error.path error) in
+  let error_file error = File.Handle.create_for_testing (Error.path error) in
   List.fold ~init:File.Handle.Map.empty ~f:(fun map key -> Map.set map ~key ~data:[]) initial_files
   |> (fun map ->
        List.fold
@@ -198,7 +198,7 @@ let recheck
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
-      Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
+      Hashtbl.add_multi errors ~key:(File.Handle.create_for_testing (Error.path error)) ~data:error);
   let checked_files =
     List.filter_map
       ~f:(fun file ->

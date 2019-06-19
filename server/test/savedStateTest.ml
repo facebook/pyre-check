@@ -79,7 +79,7 @@ let test_compute_locally_changed_files context =
       (* Register old content in shared memory. *)
       ( match old_content with
       | Some content ->
-          let handle = File.Handle.create relative in
+          let handle = File.Handle.create_for_testing relative in
           Test.parse ~handle:relative content |> Ast.SharedMemory.Sources.add handle;
           Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton handle)
       | None -> () );
@@ -98,7 +98,7 @@ let test_compute_locally_changed_files context =
       |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root ~path)
     in
     (* Ensure sources are cleaned up afterwards. *)
-    List.map files ~f:(fun { relative; _ } -> File.Handle.create relative)
+    List.map files ~f:(fun { relative; _ } -> File.Handle.create_for_testing relative)
     |> fun handles ->
     Ast.SharedMemory.Sources.remove ~handles;
     assert_equal

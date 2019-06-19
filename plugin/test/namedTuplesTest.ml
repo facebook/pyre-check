@@ -11,7 +11,7 @@ open Test
 
 let test_transform_ast _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
-    let handle = File.Handle.create qualifier in
+    let handle = File.Handle.create_for_testing qualifier in
     let parse source =
       parse source ~qualifier:(Source.qualifier ~handle) |> Analysis.Preprocessing.preprocess
     in

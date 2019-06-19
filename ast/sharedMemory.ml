@@ -16,7 +16,7 @@ module HandleKey = struct
 
   type out = File.Handle.t
 
-  let from_string = File.Handle.create
+  let from_string = File.Handle.create_for_testing
 end
 
 module IntKey = struct

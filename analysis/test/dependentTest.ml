@@ -30,7 +30,7 @@ let test_index _ =
     environment.Environment.dependencies.Dependencies.index
   in
   let assert_table_contains_key table key =
-    let keyset = Hashtbl.find_exn table (File.Handle.create "test.py") in
+    let keyset = Hashtbl.find_exn table (File.Handle.create_for_testing "test.py") in
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys "baz.baz";
@@ -39,9 +39,11 @@ let test_index _ =
 
 
 let add_dependent table handle dependent =
-  let handle = File.Handle.create handle in
+  let handle = File.Handle.create_for_testing handle in
   let source = Source.qualifier ~handle in
-  let dependent = File.Handle.create dependent |> fun handle -> Source.qualifier ~handle in
+  let dependent =
+    File.Handle.create_for_testing dependent |> fun handle -> Source.qualifier ~handle
+  in
   let update entry =
     match entry with
     | None -> Reference.Set.singleton dependent
@@ -137,7 +139,7 @@ let test_transitive_dependents _ =
     let get_dependencies = get_dependencies (Environment.handler environment) in
     let dependencies =
       Dependencies.transitive_of_list
-        ~modules:[Source.qualifier ~handle:(File.Handle.create handle)]
+        ~modules:[Source.qualifier ~handle:(File.Handle.create_for_testing handle)]
         ~get_dependencies
       |> Set.to_list
       |> List.map ~f:Reference.show
@@ -155,13 +157,15 @@ let test_normalize _ =
       Environment.Builder.create () |> Environment.handler
     in
     let add_dependent (left, right) =
-      Handler.DependencyHandler.add_dependent ~handle:(File.Handle.create (left ^ ".py")) !&right
+      Handler.DependencyHandler.add_dependent
+        ~handle:(File.Handle.create_for_testing (left ^ ".py"))
+        !&right
     in
     List.iter edges ~f:add_dependent;
     let all_modules =
       edges
       |> List.concat_map ~f:(fun (left, right) -> [left; right])
-      |> List.map ~f:(fun name -> File.Handle.create (name ^ ".py"))
+      |> List.map ~f:(fun name -> File.Handle.create_for_testing (name ^ ".py"))
     in
     Handler.DependencyHandler.normalize all_modules;
     let assert_dependents_equal (node, expected) =

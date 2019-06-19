@@ -62,7 +62,7 @@ module Handle = struct
 
   let show path = path
 
-  let create path = path
+  let create_for_testing path = path
 
   let is_stub path = String.is_suffix ~suffix:".pyi" path
 
@@ -132,13 +132,13 @@ end)
 
 exception NonexistentHandle of string
 
-let is_stub { path; _ } = Path.absolute path |> Handle.create |> Handle.is_stub
+let is_stub { path; _ } = Path.absolute path |> Handle.create_for_testing |> Handle.is_stub
 
 let handle ~configuration { path; _ } =
   let search_path = Configuration.Analysis.search_path configuration in
   let handle = Path.search_for_path ~search_path ~path >>= Path.relative in
   match handle with
-  | Some handle -> Handle.create handle
+  | Some handle -> handle
   | None ->
       let message =
         Format.sprintf

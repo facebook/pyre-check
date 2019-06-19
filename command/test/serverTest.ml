@@ -32,7 +32,7 @@ let test_language_server_protocol_json_format context =
     File.write (File.create ~content:"" path);
     "filename.py"
   in
-  let handle = File.Handle.create filename in
+  let handle = File.Handle.create_for_testing filename in
   Ast.SharedMemory.Sources.add handle (Source.create ~handle []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
@@ -55,7 +55,7 @@ let test_language_server_protocol_json_format context =
   let json_error =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
       ~configuration
-      (File.Handle.create filename)
+      (File.Handle.create_for_testing filename)
       [type_error]
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
@@ -95,7 +95,7 @@ let test_language_server_protocol_json_format context =
   let malformed_response =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
       ~configuration
-      (File.Handle.create "nonexistent_file")
+      (File.Handle.create_for_testing "nonexistent_file")
       [type_error]
   in
   assert_true (Or_error.is_error malformed_response)
@@ -136,7 +136,7 @@ let test_server_exits_on_directory_removal context =
       | Ok _
       (* I was only able to get non-zero exits in the OUnit test environment, doing the equivalent
          calls in the command line always resulted in an exit of 0. *)
-
+      
       | Error (`Exit_non_zero 2) ->
           assert true
       | _ -> assert false)
@@ -265,14 +265,17 @@ let assert_response
   =
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.HandleKeys.add
-    ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create handle));
-  Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create handle];
+    ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create_for_testing handle));
+  Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create_for_testing handle];
   let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
-  Ast.SharedMemory.Sources.add (File.Handle.create handle) parsed;
+  Ast.SharedMemory.Sources.add (File.Handle.create_for_testing handle) parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter (make_errors ~local_root ~handle source) ~f:(fun error ->
-        Hashtbl.add_multi errors ~key:(File.Handle.create (Error.path error)) ~data:error);
+        Hashtbl.add_multi
+          errors
+          ~key:(File.Handle.create_for_testing (Error.path error))
+          ~data:error);
     errors
   in
   let initial_environment =
@@ -920,9 +923,9 @@ let test_compute_hashes_to_keys context =
       ~key:16
       ~data:(TypeOrder.Target.Set.of_list [{ TypeOrder.Target.target = 15; parameters = [] }]);
     ResolutionSharedMemory.Keys.remove_batch
-      (File.Handle.create "sample.py" |> ResolutionSharedMemory.Keys.KeySet.singleton);
+      (File.Handle.create_for_testing "sample.py" |> ResolutionSharedMemory.Keys.KeySet.singleton);
     ResolutionSharedMemory.add
-      ~handle:(File.Handle.create "sample.py")
+      ~handle:(File.Handle.create_for_testing "sample.py")
       (Reference.create "name")
       Int.Map.Tree.empty
   in
@@ -967,8 +970,10 @@ let test_compute_hashes_to_keys context =
           (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
           (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
         to_binding
-          (Ast.SharedMemory.Sources.Sources.hash_of_key (File.Handle.create "sample.py"))
-          (Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "sample.py"));
+          (Ast.SharedMemory.Sources.Sources.hash_of_key
+             (File.Handle.create_for_testing "sample.py"))
+          (Ast.SharedMemory.Sources.Sources.serialize_key
+             (File.Handle.create_for_testing "sample.py"));
         to_binding
           (Ast.SharedMemory.Sources.QualifiersToHandles.hash_of_key (Reference.create "sample"))
           (Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "sample"));
@@ -976,20 +981,20 @@ let test_compute_hashes_to_keys context =
           (Ast.SharedMemory.Modules.hash_of_key !&"sample")
           (Ast.SharedMemory.Modules.serialize_key !&"sample");
         to_binding
-          (FunctionKeys.hash_of_key (File.Handle.create "sample.py"))
-          (FunctionKeys.serialize_key (File.Handle.create "sample.py"));
+          (FunctionKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (FunctionKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (ClassKeys.hash_of_key (File.Handle.create "sample.py"))
-          (ClassKeys.serialize_key (File.Handle.create "sample.py"));
+          (ClassKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (ClassKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (GlobalKeys.hash_of_key (File.Handle.create "sample.py"))
-          (GlobalKeys.serialize_key (File.Handle.create "sample.py"));
+          (GlobalKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (GlobalKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (AliasKeys.hash_of_key (File.Handle.create "sample.py"))
-          (AliasKeys.serialize_key (File.Handle.create "sample.py"));
+          (AliasKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (AliasKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (DependentKeys.hash_of_key (File.Handle.create "sample.py"))
-          (DependentKeys.serialize_key (File.Handle.create "sample.py"));
+          (DependentKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (DependentKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
           (ResolutionSharedMemory.hash_of_key (Reference.create "$toplevel"))
           (ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"));
@@ -997,15 +1002,15 @@ let test_compute_hashes_to_keys context =
           (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
           (ResolutionSharedMemory.serialize_key (Reference.create "name"));
         to_binding
-          (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create "sample.py"))
-          (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create "sample.py"));
+          (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
           (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key (Reference.create "$toplevel"))
           (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
              (Reference.create "$toplevel"));
         to_binding
-          (Coverage.SharedMemory.hash_of_key (File.Handle.create "sample.py"))
-          (Coverage.SharedMemory.serialize_key (File.Handle.create "sample.py")) ]
+          (Coverage.SharedMemory.hash_of_key (File.Handle.create_for_testing "sample.py"))
+          (Coverage.SharedMemory.serialize_key (File.Handle.create_for_testing "sample.py")) ]
     |> List.sort ~compare
   in
   assert_response
@@ -1140,12 +1145,13 @@ let test_decode_serialized_ocaml_values context =
     ~value:(Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
     ~response:("SymlinkSource", "symbolic_link.py", Some "actual_filename.py");
   assert_decode
-    ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create "handle.py"))
+    ~key:
+      (Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create_for_testing "handle.py"))
     ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
     ~response:("AST", "handle.py", Some "x = 1.__add__(2)\n");
   assert_decode
     ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key !&"handle")
-    ~value:(File.Handle.create "handle.py")
+    ~value:(File.Handle.create_for_testing "handle.py")
     ~response:("File handle", "handle", Some "handle.py");
   assert_decode
     ~key:(Ast.SharedMemory.Modules.Modules.serialize_key !&"handle")
@@ -1161,10 +1167,10 @@ let test_decode_serialized_ocaml_values context =
         Some "((aliased_exports())(empty_stub false)(handle())(wildcard_exports((x))))" );
   assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
-    ~value:(File.Handle.create "five.py")
+    ~value:(File.Handle.create_for_testing "five.py")
     ~response:("Path", "5", Some "five.py");
   assert_decode
-    ~key:(Coverage.SharedMemory.serialize_key (File.Handle.create "file.py"))
+    ~key:(Coverage.SharedMemory.serialize_key (File.Handle.create_for_testing "file.py"))
     ~value:(Coverage.create ~full:5 ~partial:3 ())
     ~response:
       ( "Coverage",
@@ -1313,14 +1319,14 @@ let test_incremental_typecheck context =
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
-    (Protocol.TypeCheckResponse [File.Handle.create handle, []]);
+    (Protocol.TypeCheckResponse [File.Handle.create_for_testing handle, []]);
 
   (* The handles get updated in shared memory. *)
   let print_tree tree = File.Handle.Set.Tree.to_list tree |> List.to_string ~f:File.Handle.show in
   assert_equal
     ~printer:print_tree
     (Ast.SharedMemory.HandleKeys.get ())
-    (File.Handle.Set.Tree.singleton (File.Handle.create handle));
+    (File.Handle.Set.Tree.singleton (File.Handle.create_for_testing handle));
   let files = [file ~local_root ~content:source path] in
   let request_with_content = Protocol.Request.TypeCheckRequest files in
   let errors =
@@ -1328,7 +1334,7 @@ let test_incremental_typecheck context =
       (make_errors
          ~local_root
          ~handle
-         ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle))
+         ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle))
          source)
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
@@ -1338,17 +1344,17 @@ let test_incremental_typecheck context =
   assert_response
     ~request:
       (Request.TypeCheckRequest [file ~local_root ~content:"def foo() -> int: return 1" path])
-    (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename path), []]);
+    (Protocol.TypeCheckResponse [File.Handle.create_for_testing (Filename.basename path), []]);
   let () =
     let stub_file = file ~local_root ~content:"" stub_path in
     assert_response
       ~handle:(relativize stub_path)
       ~request:(Request.TypeCheckRequest [stub_file])
-      (Protocol.TypeCheckResponse [File.Handle.create (Filename.basename stub_path), []]);
+      (Protocol.TypeCheckResponse [File.Handle.create_for_testing (Filename.basename stub_path), []]);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
-      (File.Handle.Set.Tree.singleton (File.Handle.create (relativize stub_path)))
+      (File.Handle.Set.Tree.singleton (File.Handle.create_for_testing (relativize stub_path)))
   in
   let source = "def foo() -> int: return \"\"" in
   assert_response
@@ -1359,12 +1365,13 @@ let test_incremental_typecheck context =
           (make_errors
              ~local_root
              ~handle:(relativize stub_path)
-             ~qualifier:(Source.qualifier ~handle:(File.Handle.create (relativize stub_path)))
+             ~qualifier:
+               (Source.qualifier ~handle:(File.Handle.create_for_testing (relativize stub_path)))
              source)));
   let file = file ~local_root ~content:"def foo() -> int: return 1" path in
   assert_response
     ~request:(Request.TypeCheckRequest [file])
-    (Protocol.TypeCheckResponse [File.Handle.create handle, []])
+    (Protocol.TypeCheckResponse [File.Handle.create_for_testing handle, []])
 
 
 let test_protocol_language_server_protocol context =
@@ -1436,7 +1443,7 @@ let test_incremental_dependencies context =
   Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
   Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
   let assert_dependencies_analyzed () =
-    let handles = [File.Handle.create "a.py"; File.Handle.create "b.py"] in
+    let handles = [File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"] in
     let sources =
       [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
         parse ~handle:"b.py" ~qualifier:!&"b" b_source ]
@@ -1467,7 +1474,8 @@ let test_incremental_dependencies context =
     assert_equal
       ~printer
       (Some
-         (Protocol.TypeCheckResponse [File.Handle.create "a.py", []; File.Handle.create "b.py", []]))
+         (Protocol.TypeCheckResponse
+            [File.Handle.create_for_testing "a.py", []; File.Handle.create_for_testing "b.py", []]))
       response;
     let { Request.response; _ } =
       process
@@ -1476,11 +1484,13 @@ let test_incremental_dependencies context =
     assert_equal
       ~printer
       (Some
-         (Protocol.TypeCheckResponse [File.Handle.create "a.py", []; File.Handle.create "b.py", []]))
+         (Protocol.TypeCheckResponse
+            [File.Handle.create_for_testing "a.py", []; File.Handle.create_for_testing "b.py", []]))
       response
   in
   let finally () =
-    Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
+    Ast.SharedMemory.Sources.remove
+      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"]
   in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
@@ -1492,7 +1502,7 @@ let test_incremental_lookups context =
     Path.create_relative ~root:local_root ~relative:path
     |> Path.relative
     |> Option.value ~default:path
-    |> File.Handle.create
+    |> File.Handle.create_for_testing
   in
   let parse content =
     Source.create
@@ -1558,7 +1568,7 @@ let test_incremental_repopulate context =
   let local_root = bracket_tmpdir context |> Path.create_absolute in
   let handle = "test_incremental.py" in
   let parse content =
-    let handle = File.Handle.create handle in
+    let handle = File.Handle.create_for_testing handle in
     Source.create
       ~handle
       ~qualifier:(Source.qualifier ~handle)

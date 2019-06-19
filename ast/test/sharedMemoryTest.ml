@@ -14,7 +14,7 @@ let test_normalize_handle_keys context =
   (* Ensure that the structural representation of the keys is identical for all possible
      permutations. *)
   let assert_normalized keys =
-    let keys = List.map keys ~f:File.Handle.create in
+    let keys = List.map keys ~f:File.Handle.create_for_testing in
     let open Ast.SharedMemory in
     HandleKeys.clear ();
     HandleKeys.add ~handles:(File.Handle.Set.Tree.of_list keys);
@@ -48,14 +48,16 @@ let test_compute_hashes_to_keys _ =
       SymlinksToPaths.hash_of_key "second", SymlinksToPaths.serialize_key "second" ]
     (SymlinksToPaths.compute_hashes_to_keys ~keys:["first"; "second"]);
   assert_mapping_equal
-    [ ( Sources.hash_of_handle (File.Handle.create "first.py"),
-        Sources.serialize_handle (File.Handle.create "first.py") );
+    [ ( Sources.hash_of_handle (File.Handle.create_for_testing "first.py"),
+        Sources.serialize_handle (File.Handle.create_for_testing "first.py") );
       Sources.hash_of_qualifier !&"first", Sources.serialize_qualifier !&"first";
-      ( Sources.hash_of_handle (File.Handle.create "second/__init__.py"),
-        Sources.serialize_handle (File.Handle.create "second/__init__.py") );
+      ( Sources.hash_of_handle (File.Handle.create_for_testing "second/__init__.py"),
+        Sources.serialize_handle (File.Handle.create_for_testing "second/__init__.py") );
       Sources.hash_of_qualifier !&"second", Sources.serialize_qualifier !&"second" ]
     (Sources.compute_hashes_to_keys
-       ~keys:[File.Handle.create "first.py"; File.Handle.create "second/__init__.py"]);
+       ~keys:
+         [ File.Handle.create_for_testing "first.py";
+           File.Handle.create_for_testing "second/__init__.py" ]);
   assert_mapping_equal
     [ ( HandleKeys.HandleKeys.hash_of_key Memory.SingletonKey.key,
         HandleKeys.HandleKeys.serialize_key Memory.SingletonKey.key ) ]
@@ -74,13 +76,15 @@ let test_compute_hashes_to_keys _ =
 let test_remove_handle_keys _ =
   let open Ast.SharedMemory in
   HandleKeys.clear ();
-  let handles paths = paths |> List.map ~f:File.Handle.create |> File.Handle.Set.Tree.of_list in
+  let handles paths =
+    paths |> List.map ~f:File.Handle.create_for_testing |> File.Handle.Set.Tree.of_list
+  in
   HandleKeys.add ~handles:(handles ["a.py"; "b.py"; "c.py"]);
   assert_equal
     ~cmp:File.Handle.Set.Tree.equal
     (HandleKeys.get ())
     (handles ["a.py"; "b.py"; "c.py"]);
-  HandleKeys.remove ~handles:(List.map ~f:File.Handle.create ["b.py"; "nonexistent"]);
+  HandleKeys.remove ~handles:(List.map ~f:File.Handle.create_for_testing ["b.py"; "nonexistent"]);
   assert_equal ~cmp:File.Handle.Set.Tree.equal (HandleKeys.get ()) (handles ["a.py"; "c.py"])
 
 

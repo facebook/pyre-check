@@ -567,7 +567,7 @@ let run ~configuration
         else
           let keep_error error =
             let mode =
-              Handler.local_mode (Error.path error |> File.Handle.create)
+              Handler.local_mode (Error.path error |> File.Handle.create_for_testing)
               |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
             in
             not (Error.suppress ~mode ~resolution error)

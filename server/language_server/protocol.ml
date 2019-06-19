@@ -197,7 +197,10 @@ module TextDocumentDefinitionResponse = struct
 
   let create ~configuration ~id ~location =
     let uri ~path =
-      File.Handle.create path |> File.Handle.to_path ~configuration >>| Path.real_path >>| Path.uri
+      File.Handle.create_for_testing path
+      |> File.Handle.to_path ~configuration
+      >>| Path.real_path
+      >>| Path.uri
     in
     { jsonrpc = "2.0";
       id;

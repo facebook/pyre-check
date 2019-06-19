@@ -132,22 +132,26 @@ let test_parse _ =
 
 let test_qualifier _ =
   let qualifier = Reference.create_from_list in
-  assert_equal (Source.qualifier ~handle:(File.Handle.create "module.py")) (qualifier ["module"]);
   assert_equal
-    (Source.qualifier ~handle:(File.Handle.create "module/submodule.py"))
-    (qualifier ["module"; "submodule"]);
-  assert_equal (Source.qualifier ~handle:(File.Handle.create "builtins.pyi")) (qualifier []);
-  assert_equal
-    (Source.qualifier ~handle:(File.Handle.create "module/builtins.pyi"))
+    (Source.qualifier ~handle:(File.Handle.create_for_testing "module.py"))
     (qualifier ["module"]);
   assert_equal
-    (Source.qualifier ~handle:(File.Handle.create "module/__init__.pyi"))
+    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/submodule.py"))
+    (qualifier ["module"; "submodule"]);
+  assert_equal
+    (Source.qualifier ~handle:(File.Handle.create_for_testing "builtins.pyi"))
+    (qualifier []);
+  assert_equal
+    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/builtins.pyi"))
+    (qualifier ["module"]);
+  assert_equal
+    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/__init__.pyi"))
     (qualifier ["module"])
 
 
 let test_expand_relative_import _ =
   let assert_export ~handle ~from ~expected =
-    let handle = File.Handle.create handle in
+    let handle = File.Handle.create_for_testing handle in
     let qualifier = Source.qualifier ~handle in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with

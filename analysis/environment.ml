@@ -876,7 +876,7 @@ let propagate_nested_classes (module Handler : Handler) resolution annotation =
                 successors =
     let handle =
       Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-      |> fun { Location.path; _ } -> File.Handle.create path
+      |> fun { Location.path; _ } -> File.Handle.create_for_testing path
     in
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function

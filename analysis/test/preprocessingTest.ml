@@ -14,7 +14,7 @@ open Test
 
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
-    let handle = File.Handle.create handle in
+    let handle = File.Handle.create_for_testing handle in
     let parse = parse ~qualifier:(Source.qualifier ~handle) in
     assert_source_equal (parse expected) (Preprocessing.expand_relative_imports (parse source))
   in
@@ -54,7 +54,9 @@ let test_expand_relative_imports _ =
 
 let test_expand_string_annotations _ =
   let assert_expand ?(qualifier = "qualifier") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create qualifier)) in
+    let parse =
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing qualifier))
+    in
     assert_source_equal (parse expected) (Preprocessing.expand_string_annotations (parse source))
   in
   assert_expand
@@ -143,7 +145,7 @@ let test_expand_format_string _ =
     assert_source_equal
       (Preprocessing.expand_format_string (parse_untrimmed source))
       (Source.create
-         ~handle:(File.Handle.create "test.py")
+         ~handle:(File.Handle.create_for_testing "test.py")
          [+Expression (+String (StringLiteral.create ~expressions value))])
   in
   assert_format_string "f'foo'" "foo" [];
@@ -204,7 +206,9 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create handle)) ~handle in
+    let parse =
+      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle)) ~handle
+    in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
   (* Base cases for aliasing. *)
@@ -1520,7 +1524,7 @@ let test_expand_implicit_returns _ =
     assert_source_equal
       (Preprocessing.expand_implicit_returns (parse source))
       (Source.create
-         ~handle:(File.Handle.create "test.py")
+         ~handle:(File.Handle.create_for_testing "test.py")
          [ +Define
               { signature =
                   { name = !&"foo";
@@ -1982,7 +1986,7 @@ let test_expand_typed_dictionaries _ =
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
     let parse source =
-      let handle = File.Handle.create "test.py" in
+      let handle = File.Handle.create_for_testing "test.py" in
       parse ~qualifier:(Source.qualifier ~handle) source
     in
     let parsed = source |> parse in

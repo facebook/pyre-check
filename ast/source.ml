@@ -226,7 +226,7 @@ let mode ~configuration ~local_mode =
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
-    ?(handle = File.Handle.create "")
+    ?(handle = File.Handle.create_for_testing "")
     ?(qualifier = Reference.empty)
     ?(hash = -1)
     statements

@@ -27,7 +27,7 @@ let instantiate =
 let generate_lookup source =
   let parsed =
     parse
-      ~qualifier:(Source.qualifier ~handle:(File.Handle.create "test.py"))
+      ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing "test.py"))
       ~handle:"test.py"
       source
     |> Preprocessing.preprocess
