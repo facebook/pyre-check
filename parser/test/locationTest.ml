@@ -610,7 +610,28 @@ let test_define_locations _ =
                  parent = None
                };
              body = [+Pass]
-           }) ]
+           }) ];
+  assert_source_locations
+    {|
+     def foo(self, a, b): # type: (int) -> str
+       return 4
+    |}
+    [ +Define
+         { signature =
+             { name = !&"foo";
+               parameters =
+                 [ +{ Parameter.name = "self"; value = None; annotation = None };
+                   +{ Parameter.name = "a"; value = None; annotation = None };
+                   +{ Parameter.name = "b"; value = None; annotation = None } ];
+               decorators = [];
+               docstring = None;
+               return_annotation =
+                 Some (node ~start:(2, 20) ~stop:(2, 41) (String (StringLiteral.create "str")));
+               async = false;
+               parent = None
+             };
+           body = [+Return { Return.expression = Some (+Integer 4); is_implicit = false }]
+         } ]
 
 
 let test_delete_locations _ =

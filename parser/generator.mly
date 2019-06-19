@@ -235,7 +235,7 @@
 %token <Lexing.position> RIGHTPARENS
 %token <Lexing.position> TILDE
 
-%token <string list * string> SIGNATURE_COMMENT
+%token <(Lexing.position * Lexing.position) * string list * string> SIGNATURE_COMMENT
 %token <(Lexing.position * Lexing.position) * string> ANNOTATION_COMMENT
 
 %token AMPERSAND
@@ -686,16 +686,16 @@ compound_statement:
         | Some return_annotation -> Some return_annotation
         | None ->
           signature_comment
-          >>= (fun (_, return_annotation) ->
+          >>= (fun ((start, stop), _, return_annotation) ->
               Some {
-                Node.location;
+                Node.location = Location.create ~start ~stop;
                 value = String (StringLiteral.create return_annotation);
               }
             )
       in
       let parameters =
         match signature_comment with
-        | Some (parameter_annotations, _)
+        | Some ((start, stop), parameter_annotations, _)
           when not (List.is_empty parameter_annotations) ->
             let add_annotation ({ Node.value = parameter; _ } as parameter_node) annotation =
                 match annotation with
@@ -706,7 +706,7 @@ compound_statement:
                     Node.value = {
                       parameter with
                         Parameter.annotation = Some {
-                          Node.location;
+                          Node.location = Location.create ~start ~stop;
                           value = String (StringLiteral.create annotation);
                         };
                       }

@@ -164,10 +164,12 @@ let escape = '\\' _
 rule read state = parse
   | newline whitespace* signature {
       line_break lexbuf;
-      SIGNATURE_COMMENT (parse_signature_comment (lexeme lexbuf))
+      let parameters, return = parse_signature_comment (lexeme lexbuf) in
+      SIGNATURE_COMMENT ((lexbuf.lex_start_p, lexbuf.lex_curr_p), parameters, return)
     }
   | whitespace* signature {
-      SIGNATURE_COMMENT (parse_signature_comment (lexeme lexbuf))
+      let parameters, return = parse_signature_comment (lexeme lexbuf) in
+      SIGNATURE_COMMENT ((lexbuf.lex_start_p, lexbuf.lex_curr_p), parameters, return)
     }
   | newline whitespace* comment {
       line_break lexbuf;
