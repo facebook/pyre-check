@@ -108,18 +108,14 @@ let test_assign_locations _ =
              parent = None
            }) ];
   assert_source_locations
-    "a = 1     # type: int"
+    "a = 1     # type:  int"
     [ node
         ~start:(1, 0)
         ~stop:(1, 5)
         (Assign
            { Assign.target = !"a";
              annotation =
-               Some
-                 (node
-                    ~start:(1, 5) (* TODO(T45713676): Don't count the spaces. *)
-                    ~stop:(1, 21)
-                    (String (StringLiteral.create "int")));
+               Some (node ~start:(1, 19) ~stop:(1, 22) (String (StringLiteral.create "int")));
              value = +Integer 1;
              parent = None
            }) ];
@@ -131,7 +127,7 @@ let test_assign_locations _ =
         (Assign
            { Assign.target = !"a";
              annotation =
-               Some (node ~start:(1, 5) ~stop:(1, 20) (String (StringLiteral.create "int")));
+               Some (node ~start:(1, 15) ~stop:(1, 20) (String (StringLiteral.create "int")));
              value = +Integer 1;
              parent = None
            }) ];
@@ -1204,7 +1200,8 @@ let test_stub_locations _ =
         (Assign
            { Assign.target = !"a";
              annotation =
-               Some (node ~start:(1, 7) ~stop:(1, 26) (String (StringLiteral.create "Tuple[str]")));
+               Some
+                 (node ~start:(1, 16) ~stop:(1, 26) (String (StringLiteral.create "Tuple[str]")));
              value = node ~start:(1, 4) ~stop:(1, 7) Ellipsis;
              parent = None
            }) ];
@@ -1260,7 +1257,7 @@ let test_stub_locations _ =
                     { Assign.target = !"a";
                       annotation =
                         Some
-                          (node ~start:(2, 8) ~stop:(2, 20) (String (StringLiteral.create "int")));
+                          (node ~start:(2, 17) ~stop:(2, 20) (String (StringLiteral.create "int")));
                       value = node ~start:(2, 5) ~stop:(2, 8) Ellipsis;
                       parent = Some !&"A"
                     } ];

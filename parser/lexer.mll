@@ -286,15 +286,28 @@ and read_without_indent state = parse
       read_without_indent state lexbuf
     }
   | whitespace* '#' whitespace* "type" whitespace* ':' whitespace* [^ '\n' '\r']* {
+      let annotation_string = lexeme lexbuf in
+      let comment_regex = Str.regexp ".*: *" in
       let annotation =
-        lexeme lexbuf
+        annotation_string
         |> String.split ~on:':'
         |> List.tl
         >>| String.concat ~sep:":"
         >>| (fun string -> String.strip string)
         |> Option.value ~default:"$unknown"
       in
-      ANNOTATION_COMMENT ((lexbuf.lex_start_p, lexbuf.lex_curr_p), annotation)
+      let offset =
+        Str.string_match comment_regex annotation_string 0 |> ignore;
+        String.length (Str.matched_string annotation_string)
+      in
+      let start = lexbuf.lex_start_p in
+      ANNOTATION_COMMENT (
+        (
+          { start with pos_cnum = start.pos_cnum + offset },
+          lexbuf.lex_curr_p
+        ),
+        annotation
+      )
     }
   | "..." { ELLIPSES (lexbuf.lex_start_p, lexbuf.lex_curr_p) }
 
