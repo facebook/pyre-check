@@ -67,7 +67,7 @@ let test_assert_locations _ =
     "assert a is not None, 'b or c'"
     [ node
         ~start:(1, 0)
-        ~stop:(1, 20) (* TODO(T45713676): Should the message part be included? *)
+        ~stop:(1, 20)
         (Assert
            { Assert.test =
                node
@@ -1002,7 +1002,7 @@ let test_operator_locations _ =
              { callee =
                  node
                    ~start:(1, 0)
-                   ~stop:(1, 1) (* TODO(T45713676): Should this encompass the original operator? *)
+                   ~stop:(1, 1)
                    (Name
                       (Name.Attribute
                          { base = +Integer 1; attribute = "__floordiv__"; special = true }));
@@ -1095,7 +1095,7 @@ let test_set_locations _ =
 
 let test_string_locations _ =
   assert_source_locations
-    "'foo'" (* TODO(T45713676): Should quotes and prefix be part of the string? *)
+    "'foo'"
     [ node
         ~start:(1, 0)
         ~stop:(1, 5)
