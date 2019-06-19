@@ -785,7 +785,6 @@ compound_statement:
     handlers = list(handler);
     orelse = named_optional_block(ELSE);
     finally = named_optional_block(FINALLY) {
-
       let stop =
         begin
           match handlers, snd orelse, snd finally with
@@ -793,7 +792,8 @@ compound_statement:
           | _, (_::_), [] -> fst orelse
           | (_::_), [], [] -> (fst (List.last_exn handlers))
           | _ -> (fst body)
-        end.Location.stop in
+        end.Location.stop
+      in
       {
         Node.location = location_create_with_stop ~start ~stop;
         value = Try {
@@ -900,13 +900,14 @@ conditional:
   | test = test_list; COLON;
     body = block;
     else_start = ELSEIF; value = conditional {
-      { test.Node.location with Location.stop = (fst value).Location.stop },
+      let stop = (fst value).Location.stop in
+      { test.Node.location with Location.stop },
       If {
         If.test;
         body = (snd body);
         orelse = [{
           Node.location =
-            location_create_with_stop ~start:else_start ~stop:(fst value).Location.stop;
+            location_create_with_stop ~start:else_start ~stop;
           value = snd value
         }];
       }
@@ -940,10 +941,12 @@ reference:
       let location =
         let (start, _) = List.hd_exn identifiers in
         let (stop, _) = List.last_exn identifiers in
-        { start with Location.stop = stop.Location.stop } in
+        { start with Location.stop = stop.Location.stop }
+      in
       let reference =
         List.map ~f:snd identifiers
-        |> Reference.create_from_list in
+        |> Reference.create_from_list
+      in
       location, reference
     }
   ;
