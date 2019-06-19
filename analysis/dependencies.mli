@@ -72,9 +72,13 @@ val to_dot
   string
 
 module Callgraph : sig
-  type callee =
+  type dispatch =
+    | Dynamic
+    | Static
+
+  and callee =
     | Function of Reference.t
-    | Method of { direct_target: Reference.t; static_target: Reference.t }
+    | Method of { direct_target: Reference.t; static_target: Reference.t; dispatch: dispatch }
   [@@deriving show]
 
   module CalleeValue : Value.Type with type t = callee list

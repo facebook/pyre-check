@@ -1410,7 +1410,8 @@ let test_coverage _ =
 
 type method_call = {
   direct_target: string;
-  static_target: string
+  static_target: string;
+  dispatch: Dependencies.Callgraph.dispatch
 }
 
 let test_calls _ =
@@ -1433,10 +1434,11 @@ let test_calls _ =
     let assert_calls (caller, callees) =
       let expected_callees =
         let callee = function
-          | `Method { direct_target; static_target } ->
+          | `Method { direct_target; static_target; dispatch } ->
               Dependencies.Callgraph.Method
                 { direct_target = Reference.create direct_target;
-                  static_target = Reference.create static_target
+                  static_target = Reference.create static_target;
+                  dispatch
                 }
           | `Function name -> Dependencies.Callgraph.Function (Reference.create name)
         in
@@ -1483,8 +1485,10 @@ let test_calls _ =
    |}
     [ ( "qualifier.calls_method",
         [ `Method
-            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
-        ] ) ];
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Class.method";
+              dispatch = Dynamic
+            } ] ) ];
 
   (* Constructors and `super`. *)
   assert_calls
@@ -1501,19 +1505,28 @@ let test_calls _ =
        ClassWithInit.__init__(object)
    |}
     [ ( "qualifier.ClassWithInit.__init__",
-        [`Method { direct_target = "object.__init__"; static_target = "object.__init__" }] );
+        [ `Method
+            { direct_target = "object.__init__";
+              static_target = "object.__init__";
+              dispatch = Static
+            } ] );
       ( "qualifier.calls_Class",
-        [`Method { direct_target = "object.__init__"; static_target = "qualifier.Class.__init__" }]
-      );
+        [ `Method
+            { direct_target = "object.__init__";
+              static_target = "qualifier.Class.__init__";
+              dispatch = Dynamic
+            } ] );
       ( "qualifier.calls_ClassWithInit",
         [ `Method
             { direct_target = "qualifier.ClassWithInit.__init__";
-              static_target = "qualifier.ClassWithInit.__init__"
+              static_target = "qualifier.ClassWithInit.__init__";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_ClassWithInit__init__",
         [ `Method
             { direct_target = "qualifier.ClassWithInit.__init__";
-              static_target = "qualifier.ClassWithInit.__init__"
+              static_target = "qualifier.ClassWithInit.__init__";
+              dispatch = Dynamic
             } ] ) ];
   assert_calls
     {|
@@ -1526,7 +1539,8 @@ let test_calls _ =
     [ ( "qualifier.calls_class_method",
         [ `Method
             { direct_target = "qualifier.Class.classmethod";
-              static_target = "qualifier.Class.classmethod"
+              static_target = "qualifier.Class.classmethod";
+              dispatch = Dynamic
             } ] ) ];
 
   (* Inheritance. *)
@@ -1551,22 +1565,27 @@ let test_calls _ =
     |}
     [ ( "qualifier.calls_Class_method",
         [ `Method
-            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" }
-        ] );
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Class.method";
+              dispatch = Dynamic
+            } ] );
       ( "qualifier.calls_Indirect_method",
         [ `Method
             { direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Indirect.method"
+              static_target = "qualifier.Indirect.method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Subclass_method",
         [ `Method
             { direct_target = "qualifier.Class.method";
-              static_target = "qualifier.Subclass.method"
+              static_target = "qualifier.Subclass.method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_OverridingSubclass_method",
         [ `Method
             { direct_target = "qualifier.OverridingSubclass.method";
-              static_target = "qualifier.OverridingSubclass.method"
+              static_target = "qualifier.OverridingSubclass.method";
+              dispatch = Dynamic
             } ] ) ];
 
   (* Classmethods. *)
@@ -1596,32 +1615,38 @@ let test_calls _ =
     [ ( "qualifier.calls_Class_class_method",
         [ `Method
             { direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Class.class_method"
+              static_target = "qualifier.Class.class_method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Indirect_class_method",
         [ `Method
             { direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Indirect.class_method"
+              static_target = "qualifier.Indirect.class_method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Subclass_class_method",
         [ `Method
             { direct_target = "qualifier.Subclass.class_method";
-              static_target = "qualifier.Subclass.class_method"
+              static_target = "qualifier.Subclass.class_method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Type_Class_class_method",
         [ `Method
             { direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Class.class_method"
+              static_target = "qualifier.Class.class_method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Type_Indirect_class_method",
         [ `Method
             { direct_target = "qualifier.Class.class_method";
-              static_target = "qualifier.Indirect.class_method"
+              static_target = "qualifier.Indirect.class_method";
+              dispatch = Dynamic
             } ] );
       ( "qualifier.calls_Type_Subclass_class_method",
         [ `Method
             { direct_target = "qualifier.Subclass.class_method";
-              static_target = "qualifier.Subclass.class_method"
+              static_target = "qualifier.Subclass.class_method";
+              dispatch = Dynamic
             } ] ) ];
 
   (* Unions. *)
@@ -1636,10 +1661,14 @@ let test_calls _ =
    |}
     [ ( "qualifier.calls_method_on_union",
         [ `Method
-            { direct_target = "qualifier.Class.method"; static_target = "qualifier.Class.method" };
+            { direct_target = "qualifier.Class.method";
+              static_target = "qualifier.Class.method";
+              dispatch = Dynamic
+            };
           `Method
             { direct_target = "qualifier.OtherClass.method";
-              static_target = "qualifier.OtherClass.method"
+              static_target = "qualifier.OtherClass.method";
+              dispatch = Dynamic
             } ] ) ];
   ()
 

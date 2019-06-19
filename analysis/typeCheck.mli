@@ -51,12 +51,16 @@ module type Signature = sig
 
   val initial : resolution:Resolution.t -> t
 
-  (* Visible for testing. *)
-  type resolved = {
+  type base =
+    | Instance of Type.t
+    | Super of Type.t
+
+  and resolved = {
     state: t;
     resolved: Type.t;
-    last_base: Type.t option
+    base: base option
   }
+  [@@deriving show]
 
   val parse_and_check_annotation : ?bind_variables:bool -> state:t -> Expression.t -> t * Type.t
 
