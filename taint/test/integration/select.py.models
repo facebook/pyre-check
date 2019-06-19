@@ -430,7 +430,7 @@
               "filename": "select.py",
               "line": 9,
               "start": 9,
-              "end": 20
+              "end": 31
             },
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }
@@ -448,7 +448,7 @@
     "code": 5001,
     "line": 9,
     "start": 9,
-    "end": 20,
+    "end": 31,
     "filename": "select.py",
     "message":
       "Possible shell injection. Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
@@ -481,7 +481,7 @@
               "filename": "select.py",
               "line": 9,
               "start": 9,
-              "end": 20
+              "end": 31
             },
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
           }

@@ -198,26 +198,29 @@ let test_call_locations _ =
   assert_source_locations
     "a[1 < 2]"
     [ +Expression
-         (+Call
-             { callee =
-                 node
-                   ~start:(1, 0)
-                   ~stop:(1, 1)
-                   (Name
-                      (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
-               arguments =
-                 [ { Call.Argument.name = None;
-                     value =
-                       node
-                         ~start:(1, 2)
-                         ~stop:(1, 7)
-                         (ComparisonOperator
-                            { ComparisonOperator.left = +Integer 1;
-                              operator = ComparisonOperator.LessThan;
-                              right = +Integer 2
-                            })
-                   } ]
-             }) ];
+         (node
+            ~start:(1, 0)
+            ~stop:(1, 8)
+            (Call
+               { callee =
+                   node
+                     ~start:(1, 0)
+                     ~stop:(1, 1)
+                     (Name
+                        (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true }));
+                 arguments =
+                   [ { Call.Argument.name = None;
+                       value =
+                         node
+                           ~start:(1, 2)
+                           ~stop:(1, 7)
+                           (ComparisonOperator
+                              { ComparisonOperator.left = +Integer 1;
+                                operator = ComparisonOperator.LessThan;
+                                right = +Integer 2
+                              })
+                     } ]
+               })) ];
   assert_source_locations
     "a.__getitem__(argument)"
     [ +Expression

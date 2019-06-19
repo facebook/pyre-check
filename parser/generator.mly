@@ -171,17 +171,17 @@
     { Call.Argument.name = None; value }
 
   let subscript_access subscript =
-    let head, subscripts = subscript in
+    let head, subscripts, subscript_location = subscript in
     let location = Node.location head in
     let callee =
       Name (Name.Attribute { base = head; attribute = "__getitem__"; special = true })
       |> Node.create ~location
     in
     Call { callee; arguments = [subscript_argument ~subscripts ~location] }
-    |> Node.create ~location
+    |> Node.create ~location:{ subscript_location with start = location.start }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
-    let head, subscripts = subscript in
+    let head, subscripts, _ = subscript in
     let location =
       { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
@@ -1037,8 +1037,10 @@ define_parameters:
 
 %inline subscript:
   | head = expression;
-    LEFTBRACKET; subscripts = separated_nonempty_list(COMMA, subscript_key); RIGHTBRACKET {
-      head, subscripts
+    left = LEFTBRACKET;
+    subscripts = separated_nonempty_list(COMMA, subscript_key);
+    right = RIGHTBRACKET {
+      head, subscripts, Location.create ~start:left ~stop:right
     }
   ;
 
