@@ -16,17 +16,6 @@ let assert_source_locations source statements =
   assert_source_equal_with_locations expected_source parsed_source
 
 
-let node ~start:(start_line, start_column)
-         ~stop:(stop_line, stop_column) =
-  let location =
-    { Location.path = String.hash "test.py";
-      start = { Location.line = start_line; Location.column = start_column };
-      stop = { Location.line = stop_line; Location.column = stop_column }
-    }
-  in
-  Node.create ~location
-
-
 let test_assert_locations _ =
   assert_source_locations
     "assert a"

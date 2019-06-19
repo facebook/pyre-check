@@ -84,6 +84,8 @@ module Make (Visitor : Visitor) = struct
         | Starred.Once expression
         | Starred.Twice expression ->
             visit_expression expression )
+      | String { StringLiteral.kind = Format expressions; _ } ->
+          List.iter expressions ~f:visit_expression
       | Ternary { Ternary.target; test; alternative } ->
           visit_expression target;
           visit_expression test;
