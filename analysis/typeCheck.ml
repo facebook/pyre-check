@@ -4202,64 +4202,84 @@ let check_define
       { errors = [undefined_error]; coverage = Coverage.create ~crashes:1 () }, []
 
 
+let check_defines
+    ~configuration
+    ~environment
+    ~source:({ Source.metadata = { Source.Metadata.local_mode; debug; version; _ }; _ } as source)
+    defines
+  =
+  if version < 3 then
+    []
+  else
+    let resolution = resolution environment () in
+    let configuration =
+      (* Override file-specific local debug configuraiton *)
+      let local_strict, declare =
+        match local_mode with
+        | Source.Strict -> true, false
+        | Source.Declare -> false, true
+        | _ -> false, false
+      in
+      Configuration.Analysis.localize configuration ~local_debug:debug ~local_strict ~declare
+    in
+    ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
+    let results =
+      let queue =
+        let queue = Queue.create () in
+        let enqueue_define define = Queue.enqueue queue (define, resolution) in
+        List.iter defines ~f:enqueue_define;
+        queue
+      in
+      let results = ref [] in
+      let rec compute_results () =
+        match Queue.dequeue queue with
+        | None -> ()
+        | Some define ->
+            let result, nested_defines = check_define ~configuration ~environment ~source define in
+            results := result :: !results;
+            Queue.enqueue_all queue nested_defines;
+            compute_results ()
+      in
+      compute_results ();
+      !results
+    in
+    (* These local changes allow us to add keys incrementally in a worker process without worrying
+       about removing (which can only be done by a master. *)
+    ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
+    ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
+    results
+
+
+let run_on_defines ~configuration ~environment ~source defines =
+  let results = check_defines ~configuration ~environment ~source defines in
+  List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
+
+
 let run
     ~configuration
     ~environment
     ~source:( { Source.handle;
-                statements;
                 qualifier;
-                metadata = { Source.Metadata.local_mode; debug; version; number_of_lines; _ }
+                statements;
+                metadata = { Source.Metadata.number_of_lines; _ }
               ; _
               } as source )
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
-  let resolution = resolution environment () in
-  let configuration =
-    (* Override file-specific local debug configuraiton *)
-    let local_strict, declare =
-      match local_mode with
-      | Source.Strict -> true, false
-      | Source.Declare -> false, true
-      | _ -> false, false
-    in
-    Configuration.Analysis.localize configuration ~local_debug:debug ~local_strict ~declare
-  in
-  ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   let results =
-    let queue =
-      let queue = Queue.create () in
-      ( if not (version < 3) then
-          let toplevel =
-            let location =
-              { Location.path = File.Handle.show handle;
-                start = { Location.line = 1; column = 1 };
-                stop = { Location.line = 1; column = 1 }
-              }
-              |> Location.reference
-            in
-            Define.create_toplevel ~qualifier:(Some qualifier) ~statements |> Node.create ~location
-          in
-          Queue.enqueue queue (toplevel, resolution) );
-      queue
+    let toplevel =
+      let location =
+        { Location.path = File.Handle.show handle;
+          start = { Location.line = 1; column = 1 };
+          stop = { Location.line = 1; column = 1 }
+        }
+        |> Location.reference
+      in
+      Define.create_toplevel ~qualifier:(Some qualifier) ~statements |> Node.create ~location
     in
-    let results = ref [] in
-    let rec compute_results () =
-      match Queue.dequeue queue with
-      | None -> ()
-      | Some define ->
-          let result, nested_defines = check_define ~configuration ~environment ~source define in
-          results := result :: !results;
-          Queue.enqueue_all queue nested_defines;
-          compute_results ()
-    in
-    compute_results ();
-    !results
+    check_defines ~configuration ~environment ~source [toplevel]
   in
-  (* These local changes allow us to add keys incrementally in a worker process without worrying
-     about removing (which can only be done by a master. *)
-  ResolutionSharedMemory.Keys.LocalChanges.commit_all ();
-  ResolutionSharedMemory.Keys.LocalChanges.pop_stack ();
   let errors =
     List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
   in

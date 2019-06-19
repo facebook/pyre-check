@@ -83,6 +83,13 @@ val resolution_with_key
 
 val name : string
 
+val run_on_defines
+  :  configuration:Configuration.Analysis.t ->
+  environment:(module Environment.Handler) ->
+  source:Source.t ->
+  Define.t Node.t list ->
+  Error.t list
+
 val run
   :  configuration:Configuration.Analysis.t ->
   environment:(module Environment.Handler) ->
