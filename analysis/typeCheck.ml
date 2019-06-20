@@ -4046,7 +4046,10 @@ module State (Context : Context) = struct
               ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
         | Define define ->
             let variables =
-              AnnotatedCallable.create_overload ~resolution ~define
+              AnnotatedCallable.create_overload
+                ~resolution
+                ~location:(Some (Node.location statement))
+                ~define
               |> (fun { parameters; _ } ->
                    Type.Callable.create ~parameters ~annotation:Type.Top ())
               |> Type.Variable.all_free_variables

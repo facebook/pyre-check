@@ -214,7 +214,8 @@ let test_populate context =
          parameters =
            Type.Callable.Defined
              [ Type.Callable.Parameter.Named
-                 { name = "$parameter$x"; annotation = Type.variable "a.T"; default = false } ]
+                 { name = "$parameter$x"; annotation = Type.variable "a.T"; default = false } ];
+         define_location = None
        });
   let assert_successors name expected_successors =
     let { Resolution.successors; _ } = ClassMetadata.find_unsafe name in

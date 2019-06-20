@@ -114,7 +114,8 @@ module Record : sig
 
     and 'annotation overload = {
       annotation: 'annotation;
-      parameters: 'annotation record_parameters
+      parameters: 'annotation record_parameters;
+      define_location: Location.t option
     }
 
     and 'annotation record = {

@@ -45,8 +45,8 @@ let decorate
   match decorators with
   | [] -> define
   | _ ->
-      let { Type.Callable.parameters; annotation } =
-        Callable.apply_decorators ~define ~resolution
+      let { Type.Callable.parameters; annotation; _ } =
+        Callable.apply_decorators ~define ~resolution ~location:None
       in
       let parameters =
         match parameters with

@@ -905,7 +905,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         | Some { Node.value; _ } -> (
           match Annotation.annotation value with
           | Type.Callable { Type.Callable.implementation; overloads; _ } ->
-              let overload_signature { Type.Callable.annotation; parameters } =
+              let overload_signature { Type.Callable.annotation; parameters; _ } =
                 match parameters with
                 | Type.Callable.Defined parameters ->
                     let format parameter =

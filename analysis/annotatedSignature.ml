@@ -566,6 +566,7 @@ let select
           implementation =
             { parameters = Defined parameters;
               annotation = Type.Parametric { parameters = [key_type; _]; _ }
+            ; _
             }
         ; _
         }

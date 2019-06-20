@@ -644,11 +644,11 @@ let register_undecorated_functions (module Handler : Handler)
 
     let visit_children _ = true
 
-    let statement _ _ statement =
-      match Node.value statement with
+    let statement _ _ { Node.value; location } =
+      match value with
       | Class definition -> (
           let annotation =
-            AnnotatedClass.create { Node.value = definition; location = Node.location statement }
+            AnnotatedClass.create { Node.value = definition; location }
             |> AnnotatedClass.inferred_callable_type ~resolution
           in
           match annotation with
@@ -663,7 +663,7 @@ let register_undecorated_functions (module Handler : Handler)
           else
             Handler.register_undecorated_function
               ~reference:name
-              ~annotation:(Annotated.Callable.create_overload ~resolution ~define)
+              ~annotation:(Annotated.Callable.create_overload ~resolution ~location:None ~define)
       | _ -> ()
   end)
   in
@@ -714,7 +714,7 @@ let register_values
             else
               None
           in
-          Annotated.Callable.apply_decorators ~resolution ~define
+          Annotated.Callable.apply_decorators ~resolution ~define ~location:(Some location)
           |> (fun overload -> [Define.is_overloaded_method define, overload])
           |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
           |> Node.create ~location

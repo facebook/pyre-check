@@ -866,7 +866,8 @@ let test_populate _ =
          parameters =
            Type.Callable.Defined
              [ Type.Callable.Parameter.Named
-                 { annotation = Type.integer; name = "x"; default = false } ]
+                 { annotation = Type.integer; name = "x"; default = false } ];
+         define_location = None
        })
 
 

@@ -761,7 +761,8 @@ let test_query context =
                   { Type.Callable.kind = Type.Callable.Named !&"C.foo";
                     implementation =
                       { Type.Callable.annotation = Type.integer;
-                        parameters = Type.Callable.Defined []
+                        parameters = Type.Callable.Defined [];
+                        define_location = None
                       };
                     overloads = [];
                     implicit = Some { implicit_annotation = Type.Primitive "C"; name = "self" }
@@ -1199,13 +1200,17 @@ let test_decode_serialized_ocaml_values context =
     ~response:("Order keys", "0", Some "(\"Undecodable(15)\"\"Undecodable(16)\")");
   assert_decode
     ~key:(UndecoratedFunctions.serialize_key (Reference.create "f"))
-    ~value:{ Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined }
+    ~value:
+      { Type.Callable.annotation = Type.integer;
+        parameters = Type.Callable.Undefined;
+        define_location = None
+      }
     ~response:
       ( "Undecorated functions",
         "f",
         Some
           "{ Type.Record.Callable.annotation = int;\n\
-          \  parameters = Type.Record.Callable.Undefined }" );
+          \  parameters = Type.Record.Callable.Undefined; define_location = None }" );
   let assert_decode_pair ~key ~first ~second ~response =
     let first_serialized_value = Marshal.to_string first [Marshal.Closures] |> Base64.encode_exn in
     let second_serialized_value =

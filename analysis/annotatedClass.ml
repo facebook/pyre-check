@@ -486,7 +486,8 @@ let create_attribute
             Some instantiated
         in
         let apply_decorators define =
-          Define.is_overloaded_method define, Callable.apply_decorators ~define ~resolution
+          ( Define.is_overloaded_method define,
+            Callable.apply_decorators ~define ~resolution ~location:(Some location) )
         in
         List.map defines ~f:apply_decorators
         |> Callable.create ~resolution ~parent ~name:(Reference.show name)
@@ -503,7 +504,8 @@ let create_attribute
               Some
                 (Type.Callable
                    { callable with
-                     implementation = { annotation = Type.Top; parameters = Undefined };
+                     implementation =
+                       { annotation = Type.Top; parameters = Undefined; define_location = None };
                      overloads
                    }))
         |> Option.value ~default:annotation
@@ -514,7 +516,8 @@ let create_attribute
           { Type.Callable.annotation = member;
             parameters =
               Defined
-                [Named { name = "x"; annotation = Type.literal_integer index; default = false }]
+                [Named { name = "x"; annotation = Type.literal_integer index; default = false }];
+            define_location = None
           }
         in
         let overloads = List.mapi ~f:overload members @ overloads in
@@ -540,7 +543,8 @@ let create_attribute
             | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
           in
           { Type.Callable.annotation = Type.meta (Type.Parametric { name; parameters = generics });
-            parameters = Defined parameters
+            parameters = Defined parameters;
+            define_location = None
           }
         in
         Some (Type.Callable { callable with implementation; overloads = [] })
@@ -1019,7 +1023,7 @@ let inferred_callable_type definition ~resolution =
       >>| fun define ->
       ( Reference.show name,
         Define.is_overloaded_method define,
-        Callable.create_overload ~define ~resolution )
+        Callable.create_overload ~define ~resolution ~location:None )
     in
     methods definition |> List.filter_map ~f:extract_callable
   in

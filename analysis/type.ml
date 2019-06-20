@@ -223,7 +223,8 @@ module Record = struct
 
     and 'annotation overload = {
       annotation: 'annotation;
-      parameters: 'annotation record_parameters
+      parameters: 'annotation record_parameters;
+      define_location: Location.t option
     }
 
     and 'annotation record = {
@@ -233,6 +234,11 @@ module Record = struct
       implicit: 'annotation implicit_record option
     }
     [@@deriving compare, eq, sexp, show, hash]
+
+    let equal_overload equal_annotation left right =
+      equal_record_parameters equal_annotation left.parameters right.parameters
+      && equal_annotation left.annotation right.annotation
+
 
     let _ = equal_record (* suppress warning about unused generated version *)
 
@@ -506,7 +512,7 @@ let rec pp format annotation =
         | Anonymous -> ""
         | Named name -> Format.asprintf "(%a)" Reference.pp name
       in
-      let signature_to_string { annotation; parameters } =
+      let signature_to_string { annotation; parameters; _ } =
         let parameters =
           match parameters with
           | Undefined -> "..."
@@ -599,7 +605,7 @@ let rec pp_concise format annotation =
   | Annotated annotation -> Format.fprintf format "typing.Annotated[%a]" pp_concise annotation
   | Bottom -> Format.fprintf format "?"
   | Callable { implementation; _ } ->
-      let signature_to_string { annotation; parameters } =
+      let signature_to_string { annotation; parameters; _ } =
         let parameters =
           match parameters with
           | Undefined -> "..."
@@ -847,7 +853,7 @@ let rec expression annotation =
     | Annotated annotation -> get_item_call "typing.Annotated" [expression annotation]
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
-        let convert_signature { annotation; parameters } =
+        let convert_signature { annotation; parameters; _ } =
           let parameters =
             match parameters with
             | Defined parameters ->
@@ -1054,7 +1060,7 @@ module Transform = struct
         | Annotated annotation -> Annotated (visit_annotation annotation ~state)
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
-            let visit_overload { annotation; parameters } =
+            let visit_overload { annotation; parameters; _ } =
               let visit_parameters parameter =
                 let visit_defined = function
                   | RecordParameter.Named ({ annotation; _ } as named) ->
@@ -1078,7 +1084,8 @@ module Transform = struct
                 | parameter -> parameter
               in
               { annotation = visit_annotation annotation ~state;
-                parameters = visit_parameters parameters
+                parameters = visit_parameters parameters;
+                define_location = None
               }
             in
             Callable
@@ -1257,7 +1264,7 @@ module Callable = struct
 
     let return_annotation { annotation; _ } = annotation
 
-    let is_undefined { parameters; annotation } =
+    let is_undefined { parameters; annotation; _ } =
       match parameters with
       | Undefined -> is_unknown annotation
       | _ -> false
@@ -1319,7 +1326,12 @@ module Callable = struct
              ~annotation
              () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
-    Callable { kind; implementation = { annotation; parameters }; overloads; implicit }
+    Callable
+      { kind;
+        implementation = { annotation; parameters; define_location = None };
+        overloads;
+        implicit
+      }
 
 
   let create_from_implementation implementation =
@@ -1334,7 +1346,8 @@ let lambda ~parameters ~return_annotation =
   in
   Callable
     { kind = Anonymous;
-      implementation = { annotation = return_annotation; parameters = Defined parameters };
+      implementation =
+        { annotation = return_annotation; parameters = Defined parameters; define_location = None };
       overloads = [];
       implicit = None
     }
@@ -1517,7 +1530,7 @@ let rec create_logic ?(use_cache = true)
                   Named (Reference.create value)
               | _ -> Anonymous
             in
-            let undefined = { annotation = Top; parameters = Undefined } in
+            let undefined = { annotation = Top; parameters = Undefined; define_location = None } in
             let get_signature = function
               | Expression.Tuple [parameters; annotation] ->
                   let parameters =
@@ -1614,7 +1627,7 @@ let rec create_logic ?(use_cache = true)
                           ParameterVariadicTypeVariable variable
                       | _ -> Undefined )
                   in
-                  { annotation = create_logic annotation; parameters }
+                  { annotation = create_logic annotation; parameters; define_location = None }
               | _ -> undefined
             in
             let implementation =
@@ -3079,14 +3092,18 @@ module TypedDictionary = struct
   let constructor ~name ~fields ~total =
     let annotation = TypedDictionary { name; fields; total } in
     { Callable.kind = Named (Reference.create "__init__");
-      implementation = { annotation = Top; parameters = Undefined };
+      implementation = { annotation = Top; parameters = Undefined; define_location = None };
       overloads =
-        [ { annotation; parameters = field_named_parameters ~default:(not total) fields };
+        [ { annotation;
+            parameters = field_named_parameters ~default:(not total) fields;
+            define_location = None
+          };
           { annotation;
             parameters =
               Defined
                 [ Record.Callable.RecordParameter.Anonymous
-                    { index = 0; annotation; default = false } ]
+                    { index = 0; annotation; default = false } ];
+            define_location = None
           } ];
       implicit = None
     }
@@ -3105,7 +3122,7 @@ module TypedDictionary = struct
   let total_special_methods =
     let getitem_overloads =
       let overload { name; annotation } =
-        { annotation; parameters = Defined [key_parameter name] }
+        { annotation; parameters = Defined [key_parameter name]; define_location = None }
       in
       List.map ~f:overload
     in
@@ -3113,14 +3130,18 @@ module TypedDictionary = struct
       let overload { name; annotation } =
         { annotation = none;
           parameters =
-            Defined [key_parameter name; Named { name = "v"; annotation; default = false }]
+            Defined [key_parameter name; Named { name = "v"; annotation; default = false }];
+          define_location = None
         }
       in
       List.map ~f:overload
     in
     let get_overloads =
       let overloads { name; annotation } =
-        [ { annotation = Optional annotation; parameters = Defined [key_parameter name] };
+        [ { annotation = Optional annotation;
+            parameters = Defined [key_parameter name];
+            define_location = None
+          };
           { annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
@@ -3129,7 +3150,8 @@ module TypedDictionary = struct
                     { name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
                       default = false
-                    } ]
+                    } ];
+            define_location = None
           } ]
       in
       List.concat_map ~f:overloads
@@ -3138,13 +3160,17 @@ module TypedDictionary = struct
       let overload { name; annotation } =
         { annotation;
           parameters =
-            Defined [key_parameter name; Named { name = "default"; annotation; default = false }]
+            Defined [key_parameter name; Named { name = "default"; annotation; default = false }];
+          define_location = None
         }
       in
       List.map ~f:overload
     in
     let update_overloads fields =
-      [{ annotation = none; parameters = field_named_parameters fields ~default:true }]
+      [ { annotation = none;
+          parameters = field_named_parameters fields ~default:true;
+          define_location = None
+        } ]
     in
     [ { name = "__getitem__"; special_index = Some 1; overloads = getitem_overloads };
       { name = "__setitem__"; special_index = Some 1; overloads = setitem_overloads };
@@ -3156,7 +3182,7 @@ module TypedDictionary = struct
   let non_total_special_methods =
     let pop_overloads =
       let overloads { name; annotation } =
-        [ { annotation; parameters = Defined [key_parameter name] };
+        [ { annotation; parameters = Defined [key_parameter name]; define_location = None };
           { annotation = Union [annotation; Variable (Variable.Unary.create "_T")];
             parameters =
               Defined
@@ -3165,14 +3191,15 @@ module TypedDictionary = struct
                     { name = "default";
                       annotation = Variable (Variable.Unary.create "_T");
                       default = false
-                    } ]
+                    } ];
+            define_location = None
           } ]
       in
       List.concat_map ~f:overloads
     in
     let delitem_overloads fields =
       let overload { name; annotation = _ } =
-        { annotation = none; parameters = Defined [key_parameter name] }
+        { annotation = none; parameters = Defined [key_parameter name]; define_location = None }
       in
       List.map ~f:overload fields
     in

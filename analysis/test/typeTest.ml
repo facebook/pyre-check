@@ -205,6 +205,9 @@ let test_create _ =
   assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
 
   (* Callables. *)
+  let default_overload =
+    { Type.Callable.annotation = Type.Top; parameters = Undefined; define_location = None }
+  in
   let open Type.Callable in
   assert_create "typing.Callable" (Type.Callable.create ~annotation:Type.Any ());
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
@@ -214,14 +217,14 @@ let test_create _ =
   assert_create
     "typing.Callable[..., int][[..., str]]"
     (Type.Callable.create
-       ~overloads:[{ annotation = Type.string; parameters = Undefined }]
+       ~overloads:[{ default_overload with annotation = Type.string }]
        ~annotation:Type.integer
        ());
   assert_create
     "typing.Callable('name')[..., int]"
     (Type.Callable
        { kind = Type.Callable.Named !&"name";
-         implementation = { annotation = Type.integer; parameters = Undefined };
+         implementation = { default_overload with annotation = Type.integer };
          overloads = [];
          implicit = None
        });
@@ -229,7 +232,7 @@ let test_create _ =
     "typing.Callable('foo')[..., $unknown]"
     (Type.Callable
        { kind = Type.Callable.Named !&"foo";
-         implementation = { annotation = Type.Top; parameters = Undefined };
+         implementation = default_overload;
          overloads = [];
          implicit = None
        });
@@ -243,7 +246,8 @@ let test_create _ =
              parameters =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
-                   Parameter.Anonymous { index = 1; annotation = Type.string; default = false } ]
+                   Parameter.Anonymous { index = 1; annotation = Type.string; default = false } ];
+             define_location = None
            };
          overloads = [];
          implicit = None
@@ -259,7 +263,8 @@ let test_create _ =
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Named { name = "a"; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.Top);
-                   Parameter.Keywords Type.Top ]
+                   Parameter.Keywords Type.Top ];
+             define_location = None
            };
          overloads = [];
          implicit = None
@@ -274,7 +279,8 @@ let test_create _ =
                Defined
                  [ Parameter.Anonymous { index = 0; annotation = Type.integer; default = false };
                    Parameter.Variable (Concrete Type.integer);
-                   Parameter.Keywords Type.string ]
+                   Parameter.Keywords Type.string ];
+             define_location = None
            };
          overloads = [];
          implicit = None
@@ -286,7 +292,8 @@ let test_create _ =
          implementation =
            { annotation = Type.integer;
              parameters =
-               Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }]
+               Defined [Parameter.Named { name = "a"; annotation = Type.integer; default = true }];
+             define_location = None
            };
          overloads = [];
          implicit = None
@@ -410,8 +417,14 @@ let test_expression _ =
   assert_expression
     (Type.Callable.create
        ~overloads:
-         [ { Type.Callable.annotation = Type.string; parameters = Type.Callable.Undefined };
-           { Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined } ]
+         [ { Type.Callable.annotation = Type.string;
+             parameters = Type.Callable.Undefined;
+             define_location = None
+           };
+           { Type.Callable.annotation = Type.integer;
+             parameters = Type.Callable.Undefined;
+             define_location = None
+           } ]
        ~annotation:Type.integer
        ())
     "typing.Callable[(..., int)].__getitem__(__getitem__((..., str))[(..., int)])";

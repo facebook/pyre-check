@@ -79,7 +79,7 @@ let test_apply_decorators _ =
       |> fun environment -> TypeCheck.resolution environment ()
     in
     let applied_return_annotation =
-      Callable.apply_decorators ~define ~resolution
+      Callable.apply_decorators ~define ~resolution ~location:None
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -90,7 +90,7 @@ let test_apply_decorators _ =
 
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      Callable.apply_decorators ~define ~resolution
+      Callable.apply_decorators ~define ~resolution ~location:None
       |> fun { Type.Callable.annotation; _ } -> annotation
     in
     assert_equal
@@ -120,7 +120,7 @@ let test_apply_decorators _ =
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
       let resolution = populate "" |> fun environment -> TypeCheck.resolution environment () in
-      Callable.apply_decorators ~define ~resolution
+      Callable.apply_decorators ~define ~resolution ~location:None
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
       | Undefined -> 0
@@ -156,7 +156,7 @@ let test_apply_decorators _ =
     ~decorators:["$strip_first_parameter"]
     ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
     ~return_annotation:None
-  |> (fun define -> Callable.apply_decorators ~define ~resolution)
+  |> (fun define -> Callable.apply_decorators ~define ~resolution ~location:None)
   |> fun { Type.Callable.parameters; _ } ->
   assert_equal
     ~printer:Type.Callable.show_parameters
@@ -174,7 +174,7 @@ let test_create_overload _ =
       expected
       ( source
       |> Test.parse_single_define
-      |> fun define -> Callable.create_overload ~define ~resolution )
+      |> fun define -> Callable.create_overload ~define ~resolution ~location:None )
   in
   assert_overload
     {|
@@ -184,7 +184,8 @@ let test_create_overload _ =
     { Type.Callable.annotation = Type.none;
       parameters =
         Type.Callable.Defined
-          [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }]
+          [Type.Callable.Parameter.Named { name = "x"; default = false; annotation = Type.integer }];
+      define_location = None
     }
 
 
@@ -210,7 +211,8 @@ let test_create _ =
       let defines = parse source |> Preprocessing.defines ~include_stubs:true |> List.rev in
       let { Define.signature = { Define.name; _ }; _ } = List.hd_exn defines |> Node.value in
       let to_overload define =
-        Define.is_overloaded_method define, Callable.create_overload ~resolution ~define
+        ( Define.is_overloaded_method define,
+          Callable.create_overload ~resolution ~define ~location:None )
       in
       defines
       |> List.map ~f:Node.value

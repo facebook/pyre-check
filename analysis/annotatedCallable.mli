@@ -10,7 +10,11 @@ val is_generator : Define.t -> bool
 
 val return_annotation : define:Define.t -> resolution:Resolution.t -> Type.t
 
-val create_overload : resolution:Resolution.t -> define:Define.t -> Type.t Type.Callable.overload
+val create_overload
+  :  resolution:Resolution.t ->
+  location:Location.t option ->
+  define:Define.t ->
+  Type.t Type.Callable.overload
 
 val create
   :  resolution:Resolution.t ->
@@ -19,4 +23,8 @@ val create
   (bool * Type.t Type.Callable.overload) list ->
   Type.Callable.t
 
-val apply_decorators : define:Define.t -> resolution:Resolution.t -> Type.t Type.Callable.overload
+val apply_decorators
+  :  location:Location.t option ->
+  define:Define.t ->
+  resolution:Resolution.t ->
+  Type.t Type.Callable.overload

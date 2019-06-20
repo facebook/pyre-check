@@ -51,8 +51,11 @@ let return_annotation
     annotation
 
 
-let create_overload ~resolution
-                    ~define:({ Define.signature = { parameters; _ }; _ } as define) =
+let create_overload
+    ~resolution
+    ~location
+    ~define:({ Define.signature = { parameters; _ }; _ } as define)
+  =
   let open Type.Callable in
   let parameters =
     let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
@@ -93,7 +96,7 @@ let create_overload ~resolution
     |> List.map ~f:parse
     |> fun defined -> Defined defined
   in
-  { annotation = return_annotation ~define ~resolution; parameters }
+  { annotation = return_annotation ~define ~resolution; parameters; define_location = location }
 
 
 let create ~resolution ~parent ~name overloads =
@@ -106,7 +109,9 @@ let create ~resolution ~parent ~name overloads =
         signature, overloads
     in
     List.fold
-      ~init:({ annotation = Type.Top; parameters = Type.Callable.Undefined }, [])
+      ~init:
+        ( { annotation = Type.Top; parameters = Type.Callable.Undefined; define_location = None },
+          [] )
       ~f:to_signature
       overloads
   in
@@ -141,13 +146,13 @@ let create ~resolution ~parent ~name overloads =
             | _ -> callable )
         | _ -> callable
       in
-      let drop_self { Type.Callable.annotation; parameters } =
+      let drop_self { Type.Callable.annotation; parameters; define_location } =
         let parameters =
           match parameters with
           | Type.Callable.Defined (_ :: parameters) -> Type.Callable.Defined parameters
           | _ -> parameters
         in
-        { Type.Callable.annotation; parameters }
+        { Type.Callable.annotation; parameters; define_location }
       in
       { Type.Callable.kind;
         implementation = drop_self implementation;
@@ -158,11 +163,13 @@ let create ~resolution ~parent ~name overloads =
 
 
 let apply_decorators
+    ~location
     ~define:({ Define.signature = { Define.decorators; _ }; _ } as define)
     ~resolution
   =
+  ignore location;
   let apply_decorator
-      ({ Type.Callable.annotation; parameters } as overload)
+      ({ Type.Callable.annotation; parameters; _ } as overload)
       { Node.value = decorator; _ }
     =
     let resolve_decorators name =
@@ -218,6 +225,7 @@ let apply_decorators
               parameters =
                 Type.Callable.Defined
                   [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }]
+            ; _
             } -> (
             let decorated_annotation =
               Resolution.solve_less_or_equal
@@ -240,7 +248,8 @@ let apply_decorators
             | Type.Callable
                 { Type.Callable.implementation =
                     { Type.Callable.parameters = decorated_parameters;
-                      annotation = decorated_annotation
+                      annotation = decorated_annotation;
+                      define_location
                     }
                 ; _
                 } -> (
@@ -251,7 +260,8 @@ let apply_decorators
               | Undefined -> { overload with Type.Callable.annotation = decorated_annotation }
               | _ ->
                   { Type.Callable.annotation = decorated_annotation;
-                    parameters = decorated_parameters
+                    parameters = decorated_parameters;
+                    define_location
                   } )
             | _ -> overload )
         | _ -> overload )
@@ -267,4 +277,4 @@ let apply_decorators
   in
   decorators
   |> List.rev
-  |> List.fold ~init:(create_overload ~define ~resolution) ~f:apply_decorator
+  |> List.fold ~init:(create_overload ~define ~resolution ~location) ~f:apply_decorator
