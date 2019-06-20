@@ -51,13 +51,17 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonSources() {
+    long start = System.currentTimeMillis();
     this.sources
         .entrySet()
         .parallelStream()
         .forEach(mapping -> FileSystem.addSymbolicLink(mapping.getKey(), mapping.getValue()));
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Built python sources in " + time + "ms.");
   }
 
   private void buildPythonWheels() {
+    long start = System.currentTimeMillis();
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
         .parallelStream()
@@ -82,12 +86,15 @@ public final class BuildTargetsBuilder {
                 }
               }
             });
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Built python wheels in " + time + "ms.");
   }
 
   private void buildThriftLibraries() {
     if (this.thriftLibraryBuildCommands.isEmpty()) {
       return;
     }
+    long start = System.currentTimeMillis();
     thriftLibraryBuildCommands
         .parallelStream()
         .forEach(
@@ -112,12 +119,15 @@ public final class BuildTargetsBuilder {
     } catch (IOException exception) {
       logCodeGenerationIOException(exception);
     }
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Built thrift libraries in " + time + "ms.");
   }
 
   private void buildSwigLibraries() {
     if (this.swigLibraryBuildCommands.isEmpty()) {
       return;
     }
+    long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
     for (String command : this.swigLibraryBuildCommands) {
       try {
@@ -126,9 +136,12 @@ public final class BuildTargetsBuilder {
         logCodeGenerationIOException(exception);
       }
     }
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Built swig libraries in " + time + "ms.");
   }
 
   private void generateEmptyStubs() {
+    long start = System.currentTimeMillis();
     Path outputPath = Paths.get(outputDirectory);
     this.unsupportedGeneratedSources
         .parallelStream()
@@ -149,6 +162,8 @@ public final class BuildTargetsBuilder {
                 logCodeGenerationIOException(exception);
               }
             });
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Generate empty stubs in " + time + "ms.");
   }
 
   public String getBuckRoot() {
