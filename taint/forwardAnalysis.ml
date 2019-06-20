@@ -460,6 +460,14 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |>> ForwardState.Tree.transform
                 ForwardTaint.simple_feature_set
                 ~f:(add_first_index index)
+      (* x[0] = value is converted to x.__setitem__(0, value). in parsing. *)
+      | Call
+          { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
+            arguments = [_; { Call.Argument.value; _ }]
+          } ->
+          let taint, state = analyze_expression ~resolution ~state ~expression:value in
+          taint, analyze_assignment ~resolution base taint taint state
       | Call { callee; arguments } -> analyze_call ~resolution ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
@@ -529,9 +537,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Yield None -> ForwardState.Tree.empty, state
 
 
-    let analyze_definition ~define:_ state = state
-
-    let rec analyze_assignment
+    and analyze_assignment
         ~resolution
         ({ Node.location; value } as target)
         taint
@@ -551,6 +557,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             analyze_assignment ~resolution target indexed_taint taint state
           in
           List.foldi targets ~f:analyze_target_element ~init:state
+      (* Assignments of the form a[1][2] = 3 translate to a.__getitem__(1).__setitem__(2, 3).*)
+      | Call
+          { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ }
+          ; _
+          } ->
+          analyze_assignment ~resolution base taint surrounding_taint state
       | _ ->
           (* Check flows to tainted globals/attributes. *)
           let source_tree = taint in
@@ -572,6 +585,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let access_path = AccessPath.of_expression ~resolution target in
           store_taint_option access_path taint state
 
+
+    let analyze_definition ~define:_ state = state
 
     let rec analyze_statement ~resolution { Node.value = statement; location } state =
       match statement with
