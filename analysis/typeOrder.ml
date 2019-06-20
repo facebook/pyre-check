@@ -766,6 +766,9 @@ module OrderImplementation = struct
           | _, Type.Any
           | _, Type.Top ->
               [constraints]
+          | Type.ParameterVariadicComponent _, _
+          | _, Type.ParameterVariadicComponent _ ->
+              []
           | Type.Annotated left, _ -> solve_less_or_equal_throws order ~constraints ~left ~right
           | _, Type.Annotated right -> solve_less_or_equal_throws order ~constraints ~left ~right
           | Type.Any, _ when any_is_bottom -> [constraints]
@@ -1074,6 +1077,9 @@ module OrderImplementation = struct
         | _, Type.Bottom -> false
         | _, Type.Primitive "object" -> true
         | _, Type.Variable _ -> false
+        | Type.ParameterVariadicComponent _, _
+        | _, Type.ParameterVariadicComponent _ ->
+            false
         | Type.Annotated left, _ -> less_or_equal order ~left ~right
         | _, Type.Annotated right -> less_or_equal order ~left ~right
         | ( Type.Parametric { name = left_name; parameters = left_parameters },
@@ -1432,6 +1438,9 @@ module OrderImplementation = struct
         | Type.Any, _
         | _, Type.Any ->
             Type.Any
+        | Type.ParameterVariadicComponent _, _
+        | _, Type.ParameterVariadicComponent _ ->
+            union
         | Type.Annotated left, _ -> Type.annotated (join order left right)
         | _, Type.Annotated right -> Type.annotated (join order left right)
         (* n: A_n = B_n -> Union[A_i] <= Union[B_i]. *)
@@ -1682,6 +1691,9 @@ module OrderImplementation = struct
             other
         | Type.Bottom, _
         | _, Type.Bottom ->
+            Type.Bottom
+        | Type.ParameterVariadicComponent _, _
+        | _, Type.ParameterVariadicComponent _ ->
             Type.Bottom
         | Type.Annotated left, _ -> Type.annotated (meet order left right)
         | _, Type.Annotated right -> Type.annotated (meet order left right)

@@ -91,6 +91,28 @@ module Record = struct
         }
         [@@deriving compare, eq, sexp, show, hash]
 
+        module RecordComponents = struct
+          type component =
+            | KeywordArguments
+            | PositionalArguments
+          [@@deriving compare, eq, sexp, show, hash]
+
+          type t = {
+            component: component;
+            variable_name: Identifier.t;
+            variable_namespace: RecordNamespace.t
+          }
+          [@@deriving compare, eq, sexp, show, hash]
+
+          let component_name = function
+            | KeywordArguments -> "pyre_extensions.KeywordArgumentsOf"
+            | PositionalArguments -> "pyre_extensions.PositionalArgumentsOf"
+
+
+          let pp_concise format { component; variable_name; _ } =
+            Format.fprintf format "%s[%s]" (component_name component) variable_name
+        end
+
         let create name = { name; state = Free { escaped = false }; namespace = 1 }
       end
 
@@ -277,6 +299,8 @@ and t =
   | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
+  | ParameterVariadicComponent of
+      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of primitive
   | Top
   | Tuple of tuple
@@ -551,6 +575,8 @@ let rec pp format annotation =
           List.map parameters ~f:show |> String.concat ~sep:", "
       in
       Format.fprintf format "%s[%s]" (reverse_substitute name) parameters
+  | ParameterVariadicComponent component ->
+      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%a" String.pp name
   | Top -> Format.fprintf format "unknown"
   | Tuple tuple ->
@@ -646,6 +672,8 @@ let rec pp_concise format annotation =
         Format.fprintf format "%s[]" name
       else
         Format.fprintf format "%s[%a]" name pp_comma_separated parameters
+  | ParameterVariadicComponent component ->
+      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
   | Top -> Format.fprintf format "unknown"
   | Tuple (Bounded parameters) ->
@@ -977,6 +1005,11 @@ let rec expression annotation =
     | Parametric { name = "typing.Optional"; parameters = [Bottom] } -> create_name "None"
     | Parametric { name; parameters } ->
         get_item_call (reverse_substitute name) (List.map ~f:expression parameters)
+    | ParameterVariadicComponent { component; variable_name; _ } ->
+        get_item_call
+          (Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name
+             component)
+          [expression (Primitive variable_name)]
     | Primitive name -> create_name name
     | Top -> create_name "$unknown"
     | Tuple (Bounded (Concrete [])) ->
@@ -1120,6 +1153,7 @@ module Transform = struct
               | LiteralIntegers -> LiteralIntegers
             in
             Variable { variable with constraints }
+        | ParameterVariadicComponent _
         | Literal _
         | Bottom
         | Top
@@ -2001,6 +2035,7 @@ let elements annotation =
         | Tuple _ -> Primitive "tuple" :: sofar
         | TypedDictionary _ -> Primitive "TypedDictionary" :: sofar
         | Union _ -> Primitive "typing.Union" :: sofar
+        | ParameterVariadicComponent _
         | Bottom
         | Any
         | Top
@@ -2234,6 +2269,8 @@ let dequalify_identifier map identifier =
   identifier |> Reference.create |> fold [] |> Reference.show
 
 
+let create_type = create
+
 module Variable : sig
   module Namespace : sig
     include module type of struct
@@ -2324,6 +2361,27 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
+
+      val parse_instance_annotation
+        :  variable_parameter_annotation:Expression.t ->
+        keywords_parameter_annotation:Expression.t ->
+        aliases:(primitive -> alias option) ->
+        t option
+
+      module Components : sig
+        include module type of struct
+          include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
+        end
+
+        type decomposition = {
+          positional_component: type_t;
+          keyword_component: type_t
+        }
+
+        val combine : decomposition -> parameter_variadic_t option
+      end
+
+      val decompose : t -> Components.decomposition
     end
 
     module List : sig
@@ -2621,6 +2679,68 @@ end = struct
           } ->
             Some (create value)
         | _ -> None
+
+
+      let parse_instance_annotation
+          ~variable_parameter_annotation ~keywords_parameter_annotation ~aliases
+        =
+        let get_variable name =
+          match aliases name with
+          | Some (VariableAlias (ParameterVariadic variable)) -> Some variable
+          | _ -> None
+        in
+        match
+          ( create_type variable_parameter_annotation ~aliases,
+            create_type keywords_parameter_annotation ~aliases )
+        with
+        | ( Parametric
+              { name = "pyre_extensions.PositionalArgumentsOf";
+                parameters = [Primitive positional_name]
+              },
+            Parametric
+              { name = "pyre_extensions.KeywordArgumentsOf";
+                parameters = [Primitive keywords_name]
+              } )
+          when Identifier.equal positional_name keywords_name ->
+            get_variable positional_name
+        | _ -> None
+
+
+      module Components = struct
+        include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
+
+        type decomposition = {
+          positional_component: type_t;
+          keyword_component: type_t
+        }
+
+        let combine { positional_component; keyword_component } =
+          let name_and_namespace_equal left right =
+            equal
+              { left with component = KeywordArguments }
+              { right with component = KeywordArguments }
+          in
+          match positional_component, keyword_component with
+          | ( ParameterVariadicComponent
+                ({ component = PositionalArguments; _ } as positional_component),
+              ParameterVariadicComponent ({ component = KeywordArguments; _ } as keyword_component)
+            )
+            when name_and_namespace_equal positional_component keyword_component ->
+              let { variable_name = name; variable_namespace = namespace; _ } =
+                positional_component
+              in
+              Some { name; namespace; state = InFunction }
+          | _ -> None
+      end
+
+      let decompose { name = variable_name; namespace = variable_namespace; _ } =
+        { Components.positional_component =
+            ParameterVariadicComponent
+              { component = PositionalArguments; variable_name; variable_namespace };
+          keyword_component =
+            ParameterVariadicComponent
+              { component = KeywordArguments; variable_name; variable_namespace }
+        }
     end
 
     module List = struct

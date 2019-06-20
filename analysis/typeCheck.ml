@@ -875,6 +875,9 @@ module State (Context : Context) = struct
     in
     let check_parameter_annotations ({ resolution; resolution_fixpoint; _ } as state) =
       let state, annotations =
+        let make_parameter_name name =
+          name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
+        in
         let check_parameter
             index
             (state, annotations)
@@ -1093,7 +1096,9 @@ module State (Context : Context) = struct
             state, { Annotation.annotation; mutability }
           in
           let state, { Annotation.annotation; mutability } =
-            if (not (String.is_prefix ~prefix:"**" name)) && String.is_prefix ~prefix:"*" name then
+            if String.is_prefix ~prefix:"**" name then
+              parse_as_unary ()
+            else if String.is_prefix ~prefix:"*" name then
               let make_tuple bounded =
                 Type.Tuple (Bounded bounded)
                 |> Type.Variable.mark_all_variables_as_bound
@@ -1126,11 +1131,13 @@ module State (Context : Context) = struct
                   { original = Type.Variable.mark_all_variables_as_bound original; scope; final }
             | _ -> mutability
           in
-          let reference =
-            name |> String.filter ~f:(fun character -> character <> '*') |> Reference.create
-          in
-          state, Map.set annotations ~key:reference ~data:{ Annotation.annotation; mutability }
+          ( state,
+            Map.set
+              annotations
+              ~key:(make_parameter_name name)
+              ~data:{ Annotation.annotation; mutability } )
         in
+        let number_of_stars name = Identifier.split_star name |> fst |> String.length in
         match parameters, parent with
         | [], Some _ when not (Define.is_class_toplevel define || Define.is_static_method define)
           ->
@@ -1147,6 +1154,66 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
             state, Resolution.annotations resolution
+        | ( [ { Node.value = { name = first_name; value = None; annotation = Some first_annotation }
+              ; _
+              }
+            ; { Node.value =
+                  { name = second_name; value = None; annotation = Some second_annotation }
+              ; _
+              } ],
+            _ )
+          when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
+          match
+            Resolution.parse_as_parameter_specification_instance_annotation
+              resolution
+              ~variable_parameter_annotation:first_annotation
+              ~keywords_parameter_annotation:second_annotation
+          with
+          | Some variable ->
+              let add_annotations
+                  { Type.Variable.Variadic.Parameters.Components.positional_component;
+                    keyword_component
+                  }
+                =
+                Resolution.annotations resolution
+                |> Map.set
+                     ~key:(make_parameter_name first_name)
+                     ~data:(Annotation.create positional_component)
+                |> Map.set
+                     ~key:(make_parameter_name second_name)
+                     ~data:(Annotation.create keyword_component)
+              in
+              if Resolution.type_variable_exists resolution ~variable:(ParameterVariadic variable)
+              then
+                let annotations =
+                  Type.Variable.Variadic.Parameters.mark_as_bound variable
+                  |> Type.Variable.Variadic.Parameters.decompose
+                  |> add_annotations
+                in
+                state, annotations
+              else
+                let state =
+                  let origin =
+                    if Define.is_toplevel (Node.value Context.define) then
+                      Error.Toplevel
+                    else if Define.is_class_toplevel (Node.value Context.define) then
+                      Error.ClassToplevel
+                    else
+                      Error.Define
+                  in
+                  emit_error
+                    ~state
+                    ~location
+                    ~kind:
+                      (Error.InvalidTypeVariable
+                         { annotation = ParameterVariadic variable; origin })
+                in
+                state, add_annotations { positional_component = Top; keyword_component = Top }
+          | None ->
+              List.foldi
+                ~init:(state, Resolution.annotations resolution)
+                ~f:check_parameter
+                parameters )
         | _ ->
             List.foldi
               ~init:(state, Resolution.annotations resolution)

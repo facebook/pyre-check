@@ -262,36 +262,48 @@ let select
             ~parameters:parameters_tail
             { signature_match with argument_mapping }
     in
+    let ordered_arguments () =
+      let create_argument index { Call.Argument.name; value } =
+        let expression, kind =
+          match value, name with
+          | { Node.value = Starred (Starred.Once expression); _ }, _ ->
+              expression, Argument.SingleStar
+          | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
+          | expression, Some name -> expression, Named name
+          | expression, None -> expression, Positional
+        in
+        let resolved = Resolution.resolve resolution expression in
+        { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
+      in
+      let is_labeled = function
+        | { Argument.kind = Named _; _ } -> true
+        | _ -> false
+      in
+      let labeled_arguments, unlabeled_arguments =
+        arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
+      in
+      labeled_arguments @ unlabeled_arguments
+    in
     match all_parameters with
     | Defined parameters ->
-        let ordered_arguments =
-          let create_argument index { Call.Argument.name; value } =
-            let expression, kind =
-              match value, name with
-              | { Node.value = Starred (Starred.Once expression); _ }, _ ->
-                  expression, Argument.SingleStar
-              | { Node.value = Starred (Starred.Twice expression); _ }, _ -> expression, DoubleStar
-              | expression, Some name -> expression, Named name
-              | expression, None -> expression, Positional
-            in
-            let resolved = Resolution.resolve resolution expression in
-            { Argument.position = index + 1; expression; full_expression = value; kind; resolved }
-          in
-          let is_labeled = function
-            | { Argument.kind = Named _; _ } -> true
-            | _ -> false
-          in
-          let labeled_arguments, unlabeled_arguments =
-            arguments |> List.mapi ~f:create_argument |> List.partition_tf ~f:is_labeled
-          in
-          labeled_arguments @ unlabeled_arguments
-        in
-        consume base_signature_match ~arguments:ordered_arguments ~parameters
+        consume base_signature_match ~arguments:(ordered_arguments ()) ~parameters
     | Undefined -> base_signature_match
-    | ParameterVariadicTypeVariable _ ->
-        { base_signature_match with
-          reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] }
-        }
+    | ParameterVariadicTypeVariable variable -> (
+        let combines_into_variable ~positional_component ~keyword_component =
+          Type.Variable.Variadic.Parameters.Components.combine
+            { positional_component; keyword_component }
+          >>| Type.Variable.Variadic.Parameters.equal variable
+          |> Option.value ~default:false
+        in
+        match ordered_arguments () with
+        | [ { kind = SingleStar; resolved = positional_component; _ }
+          ; { kind = DoubleStar; resolved = keyword_component; _ } ]
+          when combines_into_variable ~positional_component ~keyword_component ->
+            base_signature_match
+        | _ ->
+            { base_signature_match with
+              reasons = { arity = [CallingParameterVariadicTypeVariable]; annotation = [] }
+            } )
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =

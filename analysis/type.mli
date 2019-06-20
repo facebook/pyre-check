@@ -41,6 +41,10 @@ module Record : sig
     module RecordVariadic : sig
       module RecordParameters : sig
         type record [@@deriving compare, eq, sexp, show, hash]
+
+        module RecordComponents : sig
+          type t [@@deriving compare, eq, sexp, show, hash]
+        end
       end
 
       module RecordList : sig
@@ -152,6 +156,8 @@ and t =
   | Literal of literal
   | Optional of t
   | Parametric of { name: Identifier.t; parameters: t list }
+  | ParameterVariadicComponent of
+      Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of primitive
   | Top
   | Tuple of tuple
@@ -578,6 +584,27 @@ module Variable : sig
       val name : t -> Identifier.t
 
       val create : string -> t
+
+      val parse_instance_annotation
+        :  variable_parameter_annotation:Expression.t ->
+        keywords_parameter_annotation:Expression.t ->
+        aliases:(primitive -> alias option) ->
+        t option
+
+      module Components : sig
+        include module type of struct
+          include Record.Variable.RecordVariadic.RecordParameters.RecordComponents
+        end
+
+        type decomposition = {
+          positional_component: type_t;
+          keyword_component: type_t
+        }
+
+        val combine : decomposition -> parameter_variadic_t option
+      end
+
+      val decompose : t -> Components.decomposition
     end
 
     module List : sig

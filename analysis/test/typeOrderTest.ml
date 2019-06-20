@@ -2508,12 +2508,12 @@ let test_meet _ =
     ~order:(make_potentially_inconsistent_order ~x_before_y:true)
     "B[int, str]"
     "A[str]"
-    "M[$bottom]";
+    "M[str]";
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:false)
     "B[int, str]"
     "A[str]"
-    "M[$bottom]";
+    "M[str]";
   ()
 
 
@@ -2728,7 +2728,7 @@ let test_sort_bottom_edges _ =
 
   (* We sort by target, which is not necessarily alphabetical. *)
   TypeOrder.sort_bottom_edges (module Handler) ~bottom:Type.Bottom;
-  assert_bottom_edges ["0"; "2"; "3"; "1"]
+  assert_bottom_edges ["2"; "3"; "0"; "1"]
 
 
 let test_check_integrity _ =
@@ -2802,16 +2802,16 @@ let test_to_dot _ =
     ~printer:ident
     ( {|
       digraph {
+        31676745[label="1"]
         129913994[label="undefined"]
-        198052753[label="1"]
+        305083821[label="0"]
+        420066111[label="3"]
+        609281510[label="2"]
         648017920[label="unknown"]
-        691116823[label="3"]
-        768293459[label="2"]
-        924236761[label="0"]
-        198052753 -> 691116823
-        768293459 -> 691116823
-        924236761 -> 198052753[label="(str)"]
-        924236761 -> 768293459
+        31676745 -> 420066111
+        305083821 -> 31676745[label="(str)"]
+        305083821 -> 609281510
+        609281510 -> 420066111
       }
     |}
     |> Test.trim_extra_indentation )

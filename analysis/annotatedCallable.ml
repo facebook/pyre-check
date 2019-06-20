@@ -65,36 +65,47 @@ let create_overload
     let parse_as_annotation annotation =
       annotation >>| Resolution.parse_annotation resolution |> Option.value ~default:Type.Top
     in
-    let parse = function
-      | Type.Callable.Parameter.Anonymous ({ annotation; _ } as anonymous) ->
-          Type.Callable.Parameter.Anonymous
-            { anonymous with annotation = parse_as_annotation annotation }
-      | Named ({ annotation; _ } as named) ->
-          Named { named with annotation = parse_as_annotation annotation }
-      | KeywordOnly ({ annotation; _ } as named) ->
-          KeywordOnly { named with annotation = parse_as_annotation annotation }
-      | Variable (Map _)
-      | Variable (Variadic _) ->
-          failwith "impossible"
-      | Variable (Concrete annotation) -> (
-          let parsed_as_list_variadic () =
-            annotation >>= Resolution.parse_as_list_variadic resolution
-          in
-          let parsed_as_map_operator () =
-            annotation >>= Resolution.parse_as_list_variadic_map_operator resolution
-          in
-          match parsed_as_list_variadic () with
-          | Some variable -> Parameter.Variable (Variadic variable)
-          | None -> (
-            match parsed_as_map_operator () with
-            | Some map -> Parameter.Variable (Map map)
-            | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) ) )
-      | Keywords annotation -> Keywords (parse_as_annotation annotation)
+    let parse_parameters parameters =
+      let parse = function
+        | Type.Callable.Parameter.Anonymous ({ annotation; _ } as anonymous) ->
+            Type.Callable.Parameter.Anonymous
+              { anonymous with annotation = parse_as_annotation annotation }
+        | Named ({ annotation; _ } as named) ->
+            Named { named with annotation = parse_as_annotation annotation }
+        | KeywordOnly ({ annotation; _ } as named) ->
+            KeywordOnly { named with annotation = parse_as_annotation annotation }
+        | Variable (Map _)
+        | Variable (Variadic _) ->
+            failwith "impossible"
+        | Variable (Concrete annotation) -> (
+            let parsed_as_list_variadic () =
+              annotation >>= Resolution.parse_as_list_variadic resolution
+            in
+            let parsed_as_map_operator () =
+              annotation >>= Resolution.parse_as_list_variadic_map_operator resolution
+            in
+            match parsed_as_list_variadic () with
+            | Some variable -> Parameter.Variable (Variadic variable)
+            | None -> (
+              match parsed_as_map_operator () with
+              | Some map -> Parameter.Variable (Map map)
+              | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) ) )
+        | Keywords annotation -> Keywords (parse_as_annotation annotation)
+      in
+      match parameters with
+      | [ Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation))
+        ; Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation) ] -> (
+        match
+          Resolution.parse_as_parameter_specification_instance_annotation
+            resolution
+            ~variable_parameter_annotation
+            ~keywords_parameter_annotation
+        with
+        | Some variable -> ParameterVariadicTypeVariable variable
+        | None -> Defined (List.map parameters ~f:parse) )
+      | _ -> Defined (List.map parameters ~f:parse)
     in
-    List.map parameters ~f:parameter
-    |> Parameter.create
-    |> List.map ~f:parse
-    |> fun defined -> Defined defined
+    List.map parameters ~f:parameter |> Parameter.create |> parse_parameters
   in
   { annotation = return_annotation ~define ~resolution; parameters; define_location = location }
 

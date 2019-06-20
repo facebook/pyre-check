@@ -772,21 +772,17 @@ let test_callable_parameter_variadics _ =
     |}
     [ "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
       ^ "Classes parameterized by callable parameter variadics are not supported at this time" ];
-
-  (* We really don't support typechecking the bodies of these decorators yet *)
   assert_type_errors
     {|
       from typing import Callable
+      from pyre_extensions import ParameterSpecification, PositionalArgumentsOf, KeywordArgumentsOf
       V = pyre_extensions.ParameterSpecification("V")
       def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
-        def decorated( *args: object, **kwargs: object) -> typing.List[int]:
+        def decorated( *args: PositionalArgumentsOf[V], **kwargs: KeywordArgumentsOf[V]) -> typing.List[int]:
           return [x( *args, **kwargs)]
         return decorated
     |}
-    [ "Call error [29]: `typing.Callable[V, int]` cannot be safely called because the types and \
-       kinds of its parameters depend on a type variable.";
-      "Incompatible return type [7]: Expected `typing.Callable[V, typing.List[int]]` but got \
-       `typing.Callable[[Variable(object), Keywords(object)], typing.List[int]]`." ];
+    [];
   ()
 
 
