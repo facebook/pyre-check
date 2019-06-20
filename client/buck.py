@@ -25,29 +25,42 @@ class BuckException(Exception):
 
 
 class FastBuckBuilder(BuckBuilder):
-    def __init__(self, buck_root: str, output_directory: Optional[str] = None) -> None:
+    def __init__(
+        self, buck_root: str, output_directory: Optional[str] = None, debug_mode=False
+    ) -> None:
         self._buck_root = buck_root
         self._output_directory = output_directory or tempfile.mkdtemp(
             prefix="pyre_tmp_"
         )
+        self._debug_mode = debug_mode
         self.conflicting_files = []
         self.unsupported_files = []
 
     def build(self, targets: Iterable[str]) -> List[str]:
-        command = [
-            "buck",
-            "run",
-            "//tools/pyre/tools/buck_project_builder",
-            "--",
-            "--buck_root",
-            self._buck_root,
-            "--output_directory",
-            self._output_directory,
-        ]
-        try:
-            debug_output = json.loads(
-                subprocess.check_output(command + list(targets)).decode().strip()
+        if self._debug_mode:
+            executable_parts = [
+                "buck",
+                "run",
+                "//tools/pyre/tools/buck_project_builder",
+                "--",
+            ]
+        else:
+            dotslash_file_path = os.path.join(
+                self._buck_root, "tools/pyre/facebook/buck_project_builder"
             )
+            executable_parts = [dotslash_file_path]
+        command = (
+            executable_parts
+            + [
+                "--buck_root",
+                self._buck_root,
+                "--output_directory",
+                self._output_directory,
+            ]
+            + list(targets)
+        )
+        try:
+            debug_output = json.loads(subprocess.check_output(command).decode().strip())
             self.conflicting_files += debug_output["conflictingFiles"]
             self.unsupported_files += debug_output["unsupportedFiles"]
             return [self._output_directory]

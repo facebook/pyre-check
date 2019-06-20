@@ -181,7 +181,9 @@ def resolve_analysis_directory(
                         os.getcwd()
                     )
                 )
-            buck_builder = buck.FastBuckBuilder(buck_root)
+            buck_builder = buck.FastBuckBuilder(
+                buck_root, debug_mode=arguments.buck_builder_debug
+            )
         else:
             buck_builder = buck.SimpleBuckBuilder(build=build)
 
