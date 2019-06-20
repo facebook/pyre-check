@@ -1453,7 +1453,9 @@ let test_query_dependencies context =
   Out_channel.write_all (Path.absolute local_root ^/ "c.py") ~data:c_source;
   let assert_query_dependencies () =
     let handles =
-      [File.Handle.create "a.py"; File.Handle.create "b.py"; File.Handle.create "c.py"]
+      [ File.Handle.create_for_testing "a.py";
+        File.Handle.create_for_testing "b.py";
+        File.Handle.create_for_testing "c.py" ]
     in
     let sources =
       [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
@@ -1504,7 +1506,8 @@ let test_query_dependencies context =
       (reference_response [Reference.create "a.$toplevel"; Reference.create "b.$toplevel"])
   in
   let finally () =
-    Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
+    Ast.SharedMemory.Sources.remove
+      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"]
   in
   Exn.protect ~f:assert_query_dependencies ~finally
 
