@@ -404,10 +404,10 @@ class GenerateTaintModelsTest(unittest.TestCase):
             set(),
         )
 
-    @patch("glob.glob", return_value=["/root/a.py", "/root/b.py"])
     @patch(
         "os.path.exists",
-        side_effect=lambda path: path in {"/root/a.py", "/root/a.pyi", "/root/b.py"},
+        side_effect=lambda path: path in {"/root/a.py", "/root/a.pyi", "/root/b.py"}
+        or "/stub_root" in path,
     )
     @patch("os.path.abspath", side_effect=lambda path: path)
     @patch("os.getcwd", return_value="/root")
@@ -416,11 +416,31 @@ class GenerateTaintModelsTest(unittest.TestCase):
         current_working_directory: unittest.mock._patch,
         absolute_path: unittest.mock._patch,
         exists: unittest.mock._patch,
-        glob: unittest.mock._patch,
     ) -> None:
-        with patch(f"{generate_taint_models.__name__}._globals") as globals:
+        with patch(f"{generate_taint_models.__name__}._globals") as globals, patch(
+            "glob.glob", return_value=["/root/a.py", "/root/b.py"]
+        ):
             generate_taint_models._get_globals(MagicMock())
             globals.assert_has_calls(
                 [call("/root", "/root/a.pyi"), call("/root", "/root/b.py")],
+                any_order=True,
+            )
+        directory_mapping = {
+            "/root/**/*.py": ["/root/a.py", "/root/b.py"],
+            "/stub_root/**/*.pyi": ["/stub_root/a.pyi", "/stub_root/b.pyi"],
+        }
+        with patch(f"{generate_taint_models.__name__}._globals") as globals, patch(
+            "glob.glob", side_effect=lambda root, recursive: directory_mapping[root]
+        ):
+            mock = MagicMock()
+            mock.stub_root = "/stub_root"
+            generate_taint_models._get_globals(mock)
+            globals.assert_has_calls(
+                [
+                    call("/root", "/root/a.pyi"),
+                    call("/root", "/root/b.py"),
+                    call("/stub_root", "/stub_root/a.pyi"),
+                    call("/stub_root", "/stub_root/b.pyi"),
+                ],
                 any_order=True,
             )

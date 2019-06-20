@@ -361,6 +361,12 @@ def _get_globals(arguments: argparse.Namespace) -> Set[str]:
         if os.path.exists(stub_path):
             path = stub_path
         sinks = sinks.union(_globals(root, path))
+    stub_root = arguments.stub_root
+    if stub_root:
+        stub_root = os.path.abspath(stub_root)
+        paths = [path for path in glob.glob(stub_root + "/**/*.pyi", recursive=True)]
+        for path in paths:
+            sinks = sinks.union(_globals(stub_root, path))
     return sinks
 
 
@@ -378,6 +384,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--whitelisted-class", action="append")
     parser.add_argument("--as-view-base", action="append")
+    parser.add_argument(
+        "--stub-root", type=_file_exists, help="Root of the stubs directory"
+    )
 
     parser.add_argument("--mode", action="append", choices=MODES.keys())
     arguments: argparse.Namespace = parser.parse_args()
