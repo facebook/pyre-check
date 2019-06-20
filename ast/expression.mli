@@ -160,7 +160,7 @@ module StringLiteral : sig
     | String
     | Bytes
     | Format of 'expression list
-    | Mixed of Substring.t list
+    | Mixed of Substring.t Node.t list
 
   and 'expression t = {
     value: string;
@@ -170,7 +170,7 @@ module StringLiteral : sig
 
   val create : ?bytes:bool -> ?expressions:'expression list -> string -> 'expression t
 
-  val create_mixed : Substring.t list -> 'expression t
+  val create_mixed : Substring.t Node.t list -> 'expression t
 end
 
 type expression =

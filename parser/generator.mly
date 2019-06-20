@@ -212,8 +212,12 @@
     in
     { parameter with Node.value }
 
-  let create_substring kind (position, value) =
-    position, { StringLiteral.Substring.kind; value }
+  let create_substring kind ((start, stop), value) =
+    (start, stop),
+    {
+      Node.location = Location.create ~start ~stop;
+      value = { StringLiteral.Substring.kind; value };
+    }
 %}
 
 (* The syntactic junkyard. *)

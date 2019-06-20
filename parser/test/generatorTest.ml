@@ -1921,8 +1921,8 @@ let test_call _ =
 
 
 let test_string _ =
-  let create_literal value = { StringLiteral.Substring.kind = Literal; value } in
-  let create_format value = { StringLiteral.Substring.kind = Format; value } in
+  let create_literal value = +{ StringLiteral.Substring.kind = Literal; value } in
+  let create_format value = +{ StringLiteral.Substring.kind = Format; value } in
   assert_parsed_equal "'foo'" [+Expression (+String (StringLiteral.create "foo"))];
   assert_parsed_equal "\"foo\"" [+Expression (+String (StringLiteral.create "foo"))];
   assert_parsed_equal "'''foo'''" [+Expression (+String (StringLiteral.create "foo"))];

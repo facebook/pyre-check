@@ -202,7 +202,7 @@ let expand_format_string ({ Source.handle; _ } as source) =
           let gather_fstring_expressions substrings =
             let gather_expressions_in_substring
                 (current_position, expressions)
-                { StringLiteral.Substring.kind; value }
+                { Node.value = { StringLiteral.Substring.kind; value }; _ }
               =
               let value_length = String.length value in
               let rec expand_fstring input_string start_position state : 'a list =

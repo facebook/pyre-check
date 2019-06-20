@@ -1223,7 +1223,7 @@ let test_string_locations _ =
             ~stop:(1, 6)
             (String
                (StringLiteral.create_mixed
-                  [{ StringLiteral.Substring.kind = Format; value = "foo" }]))) ];
+                  [+{ StringLiteral.Substring.kind = Format; value = "foo" }]))) ];
   assert_source_locations
     (* Format string expressions are further parsed in preprocessing. *)
     "f'foo {x}'"
@@ -1233,7 +1233,7 @@ let test_string_locations _ =
             ~stop:(1, 10)
             (String
                (StringLiteral.create_mixed
-                  [{ StringLiteral.Substring.kind = Format; value = "foo {x}" }]))) ];
+                  [+{ StringLiteral.Substring.kind = Format; value = "foo {x}" }]))) ];
   assert_source_locations
     "f'foo' f'bar'"
     [ +Expression
@@ -1242,8 +1242,8 @@ let test_string_locations _ =
             ~stop:(1, 13)
             (String
                (StringLiteral.create_mixed
-                  [ { StringLiteral.Substring.kind = Format; value = "foo" };
-                    { StringLiteral.Substring.kind = Format; value = "bar" } ]))) ];
+                  [ +{ StringLiteral.Substring.kind = Format; value = "foo" };
+                    +{ StringLiteral.Substring.kind = Format; value = "bar" } ]))) ];
   assert_source_locations
     "'''a''' + '''b'''"
     [ +Expression
