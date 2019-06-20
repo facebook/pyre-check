@@ -403,6 +403,24 @@ class GenerateTaintModelsTest(unittest.TestCase):
             generate_taint_models._globals("/root", "/root/assignment_to_fields.py"),
             set(),
         )
+        open.side_effect = _open_implementation(
+            {
+                "/root/annotated_assignments.py": textwrap.dedent(
+                    """
+                    x: int = 1
+                    y: str
+                    z: Any = alias_that_we_skip
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            generate_taint_models._globals("/root", "/root/annotated_assignments.py"),
+            {
+                "annotated_assignments.x: TaintSink[Global] = ...",
+                "annotated_assignments.y: TaintSink[Global] = ...",
+            },
+        )
 
     @patch(
         "os.path.exists",

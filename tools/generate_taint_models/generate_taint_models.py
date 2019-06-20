@@ -144,24 +144,30 @@ def _globals(root: str, path: str) -> Set[str]:
 
     visitor = NameVisitor(globals)
 
-    for statement in module.body:
-        if isinstance(statement, ast.Assign):
+    def visit_assignment(target: ast.expr, value: Optional[ast.expr]) -> None:
+        if value is not None:
             # namedtuples get preprocessed out by Pyre, and shouldn't be added
             # as globals.
-            value = statement.value
             if isinstance(value, ast.Call):
                 callee = value.func
                 if isinstance(callee, ast.Attribute) and callee.attr == "namedtuple":
-                    continue
+                    return
                 if isinstance(callee, ast.Name) and callee.id == "namedtuple":
-                    continue
+                    return
             # Omit pure aliases of the form `x = alias`.
             if isinstance(value, ast.Name) or isinstance(value, ast.Attribute):
-                continue
+                return
+        visitor.visit(target)
+
+    for statement in module.body:
+        if isinstance(statement, ast.Assign):
+            # Omit pure aliases of the form `x = alias`.
             for target in statement.targets:
-                visitor.visit(target)
+                visit_assignment(target, statement.value)
         elif isinstance(statement, ast.AugAssign):
             visitor.visit(statement.target)
+        elif isinstance(statement, ast.AnnAssign):
+            visit_assignment(statement.target, statement.value)
 
     def formatted_target(target: str) -> str:
         return f"{_qualifier(root, path)}.{target}: TaintSink[Global] = ..."
