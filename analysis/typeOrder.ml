@@ -1174,9 +1174,6 @@ module OrderImplementation = struct
             let parameter =
               match tuple with
               | Type.Unbounded parameter -> parameter
-              (* TODO(T46072994) have concrete use union instead of join *)
-              | Type.Bounded (Concrete parameters) ->
-                  List.fold ~init:Type.Bottom ~f:(join order) parameters
               | Type.Bounded bound -> Type.OrderedTypes.union_upper_bound bound
             in
             let parametric = Type.parametric "tuple" [parameter] in
@@ -1916,7 +1913,7 @@ module OrderImplementation = struct
 
 
     and instantiate_successors_parameters
-        ({ handler = (module Handler : Handler) as handler; _ } as order)
+        { handler = (module Handler : Handler) as handler; _ }
         ~source
         ~target
       =
@@ -1934,12 +1931,7 @@ module OrderImplementation = struct
             | primitive, _ when not (contains handler primitive) -> None
             | (Primitive "tuple" as primitive), parameters ->
                 let union =
-                  match parameters with
-                  (* TODO(T46072994) have concrete use union instead of join *)
-                  | Concrete concretes ->
-                      (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-                      List.fold ~init:Type.Bottom ~f:(join order) concretes |> Type.weaken_literals
-                  | bound -> Type.OrderedTypes.union_upper_bound bound
+                  Type.OrderedTypes.union_upper_bound parameters |> Type.weaken_literals
                 in
                 Some (primitive, [union])
             | primitive, Concrete concretes -> Some (primitive, concretes)
