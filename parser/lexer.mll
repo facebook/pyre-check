@@ -39,17 +39,17 @@ let line_breaks buffer string =
     line_break buffer
   done
 
-let string position prefix value =
+let string string_position content_position prefix value =
   let is_byte_prefix prefix =
     String.contains prefix 'b' || String.contains prefix 'B' in
   let is_format_prefix prefix =
     String.contains prefix 'f' || String.contains prefix 'F' in
   if is_byte_prefix prefix then
-    BYTES (position, value)
+    BYTES (string_position, content_position, value)
   else if is_format_prefix prefix then
-    FORMAT (position, value)
+    FORMAT (string_position, content_position, value)
   else
-    STRING (position, value)
+    STRING (string_position, content_position, value)
 
 let strip_underscores string =
   if String.contains string '_'  then
@@ -398,16 +398,20 @@ and offset state = parse
 
 and single_string prefix_position prefix = parse
   | (([^ '\\' '\r' '\n' '\''] | escape)* as value) '\'' {
-      let (prefix_start, _) = prefix_position in
+      let (prefix_start, prefix_stop) = prefix_position in
+      let current_position = lexbuf.lex_curr_p in
+      let content_stop = { current_position with pos_cnum = current_position.pos_cnum - 1 } in
       line_breaks lexbuf value;
-      string (prefix_start, lexbuf.lex_curr_p) prefix value
+      string (prefix_start, current_position) (prefix_stop, content_stop) prefix value
     }
 
 and double_string prefix_position prefix = parse
   | (([^ '\\' '\r' '\n' '"'] | escape)* as value) '"' {
-      let (prefix_start, _) = prefix_position in
+      let (prefix_start, prefix_stop) = prefix_position in
+      let current_position = lexbuf.lex_curr_p in
+      let content_stop = { current_position with pos_cnum = current_position.pos_cnum - 1 } in
       line_breaks lexbuf value;
-      string (prefix_start, lexbuf.lex_curr_p) prefix value
+      string (prefix_start, current_position) (prefix_stop, content_stop) prefix value
     }
 
 and single_long_string prefix_position prefix buffer = parse
@@ -426,8 +430,14 @@ and single_long_string prefix_position prefix buffer = parse
       single_long_string prefix_position prefix buffer lexbuf
     }
   | "'''" {
-      let (prefix_start, _) = prefix_position in
-      string (prefix_start, lexbuf.lex_curr_p) prefix (Buffer.contents buffer)
+      let (prefix_start, prefix_stop) = prefix_position in
+      let current_position = lexbuf.lex_curr_p in
+      let content_stop = { current_position with pos_cnum = current_position.pos_cnum - 3 } in
+      string
+        (prefix_start, current_position)
+        (prefix_stop, content_stop)
+        prefix
+        (Buffer.contents buffer)
     }
 
 and double_long_string prefix_position prefix buffer = parse
@@ -446,6 +456,12 @@ and double_long_string prefix_position prefix buffer = parse
       double_long_string prefix_position prefix buffer lexbuf
     }
   | "\"\"\"" {
-      let (prefix_start, _) = prefix_position in
-      string (prefix_start, lexbuf.lex_curr_p) prefix (Buffer.contents buffer)
+      let (prefix_start, prefix_stop) = prefix_position in
+      let current_position = lexbuf.lex_curr_p in
+      let content_stop = { current_position with pos_cnum = current_position.pos_cnum - 3 } in
+      string
+        (prefix_start, current_position)
+        (prefix_stop, content_stop)
+        prefix
+        (Buffer.contents buffer)
     }

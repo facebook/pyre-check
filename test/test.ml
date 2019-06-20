@@ -331,6 +331,11 @@ let assert_source_equal_with_locations expected actual =
                 (* Print the entire lambda with each parameter location. *)
                 let convert { Node.location; _ } = Node.create ~location value in
                 Some (expression :: List.map ~f:convert parameters)
+            | String { kind = Mixed substrings; _ } ->
+                let convert { Node.location; value = { StringLiteral.Substring.value; _ } } =
+                  { Node.location; value = String { StringLiteral.value; kind = String } }
+                in
+                Some (expression :: List.map ~f:convert substrings)
             | _ -> Some [expression]
         end)
         in

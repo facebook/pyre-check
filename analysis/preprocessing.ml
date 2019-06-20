@@ -201,44 +201,43 @@ let expand_format_string ({ Source.handle; _ } as source) =
         } ->
           let gather_fstring_expressions substrings =
             let gather_expressions_in_substring
-                (current_position, expressions)
-                { Node.value = { StringLiteral.Substring.kind; value }; _ }
+                expressions
+                { Node.value = { StringLiteral.Substring.kind; value };
+                  location = { Location.start = { Location.column = substring_start; _ }; _ }
+                }
               =
               let value_length = String.length value in
-              let rec expand_fstring input_string start_position state : 'a list =
-                if start_position = value_length then
+              let rec expand_fstring input_string fstring_position state : 'a list =
+                if fstring_position = value_length then
                   []
                 else
-                  let token = input_string.[start_position] in
+                  let token = input_string.[fstring_position] in
                   let expressions, next_state =
                     match token, state with
-                    | '{', Literal -> [], Expression (start_position, "")
+                    | '{', Literal -> [], Expression (fstring_position + 1, "")
                     | '{', Expression (_, "") -> [], Literal
                     | '}', Literal -> [], Literal
                     (* NOTE: this does not account for nested expressions in e.g. format
                        specifiers. *)
-                    | '}', Expression (c, string) ->
-                        [column + current_position + c, string], Literal
+                    | '}', Expression (fstring_start_position, string) ->
+                        [column + substring_start + fstring_start_position, string], Literal
                     (* Ignore leading whitespace in expressions. *)
                     | (' ' | '\t'), (Expression (_, "") as expression) -> [], expression
                     | _, Literal -> [], Literal
                     | _, Expression (c, string) -> [], Expression (c, string ^ Char.to_string token)
                   in
                   let next_expressions =
-                    expand_fstring input_string (start_position + 1) next_state
+                    expand_fstring input_string (fstring_position + 1) next_state
                   in
                   expressions @ next_expressions
               in
-              let next_position = current_position + value_length in
               match kind with
-              | StringLiteral.Substring.Literal -> next_position, expressions
+              | StringLiteral.Substring.Literal -> expressions
               | StringLiteral.Substring.Format ->
                   let fstring_expressions = expand_fstring value 0 Literal in
-                  next_position, List.rev fstring_expressions @ expressions
+                  List.rev fstring_expressions @ expressions
             in
-            List.fold substrings ~init:(0, []) ~f:gather_expressions_in_substring
-            |> snd
-            |> List.rev
+            List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
           in
           let parse (start_column, input_string) =
             try

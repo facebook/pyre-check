@@ -312,6 +312,7 @@ let collect_locations source =
               in
               List.fold ~f:extract_locations ~init:[location] arguments |> Option.some
           | Lambda { parameters; _ } -> Some (List.map ~f:Node.location parameters)
+          | String { kind = Mixed substrings; _ } -> Some (List.map ~f:Node.location substrings)
           | _ -> Some [location]
       end)
       (struct

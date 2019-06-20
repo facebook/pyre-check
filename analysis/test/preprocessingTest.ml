@@ -143,10 +143,10 @@ let test_expand_string_annotations _ =
 let test_expand_format_string _ =
   let assert_format_string source value expressions =
     assert_source_equal
-      (Preprocessing.expand_format_string (parse_untrimmed source))
       (Source.create
          ~handle:(File.Handle.create_for_testing "test.py")
          [+Expression (+String (StringLiteral.create ~expressions value))])
+      (Preprocessing.expand_format_string (parse_untrimmed source))
   in
   assert_format_string "f'foo'" "foo" [];
   assert_format_string "f'{1}'" "{1}" [+Integer 1];
@@ -177,7 +177,6 @@ let test_expand_format_string _ =
     let expected_source = { parsed_source with Source.statements } in
     assert_source_equal_with_locations expected_source parsed_source
   in
-  (* TODO(T46070919): The locations for the format expressions looks wrong. *)
   assert_locations
     "f'foo{1}'"
     [ +Expression
@@ -186,7 +185,7 @@ let test_expand_format_string _ =
             ~stop:(1, 9)
             (String
                { StringLiteral.kind =
-                   StringLiteral.Format [node ~start:(1, 3) ~stop:(1, 4) (Integer 1)];
+                   StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Integer 1)];
                  value = "foo{1}"
                })) ];
   assert_locations
@@ -198,9 +197,30 @@ let test_expand_format_string _ =
             (String
                { StringLiteral.kind =
                    StringLiteral.Format
-                     [ node ~start:(1, 3) ~stop:(1, 6) (Integer 123);
-                       node ~start:(1, 9) ~stop:(1, 12) (Integer 456) ];
+                     [ node ~start:(1, 6) ~stop:(1, 9) (Integer 123);
+                       node ~start:(1, 12) ~stop:(1, 15) (Integer 456) ];
                  value = "foo{123}a{456}"
+               })) ];
+
+  (* TODO:(T46070919) Preprocesser needs to keep track of newlines inside substrings. *)
+  assert_locations
+    {|
+       f'''
+       foo{123}a{456}
+       b{789}
+       '''
+     |}
+    [ +Expression
+         (node
+            ~start:(2, 0)
+            ~stop:(5, 3)
+            (String
+               { StringLiteral.kind =
+                   StringLiteral.Format
+                     [ node ~start:(2, 9) ~stop:(2, 12) (Integer 123);
+                       node ~start:(2, 15) ~stop:(2, 18) (Integer 456);
+                       node ~start:(2, 22) ~stop:(2, 25) (Integer 789) ];
+                 value = "\nfoo{123}a{456}\nb{789}\n"
                })) ]
 
 

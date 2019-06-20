@@ -212,8 +212,8 @@
     in
     { parameter with Node.value }
 
-  let create_substring kind ((start, stop), value) =
-    (start, stop),
+  let create_substring kind (string_position, (start, stop), value) =
+    string_position,
     {
       Node.location = Location.create ~start ~stop;
       value = { StringLiteral.Substring.kind; value };
@@ -289,10 +289,10 @@
 %token <(Lexing.position * Lexing.position) * float> FLOAT
 %token <(Lexing.position * Lexing.position) * float> COMPLEX
 %token <(Lexing.position * Lexing.position) * int> INTEGER
-%token <(Lexing.position * Lexing.position) * string> BYTES
-%token <(Lexing.position * Lexing.position) * string> FORMAT
+%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> BYTES
+%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> FORMAT
 %token <(Lexing.position * Lexing.position) * string> IDENTIFIER
-%token <(Lexing.position * Lexing.position) * string> STRING
+%token <(Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string> STRING
 %token <(Lexing.position * Lexing.position)> ELLIPSES
 %token <(Lexing.position * Lexing.position)> FALSE
 %token <(Lexing.position * Lexing.position)> TRUE
@@ -1208,10 +1208,14 @@ atom:
     }
 
   | bytes = BYTES+ {
-      let start, stop = fst (List.hd_exn bytes) in
+      let (start, stop), _, _ = List.hd_exn bytes in
       {
         Node.location = Location.create ~start ~stop;
-        value = String (StringLiteral.create ~bytes:true (String.concat (List.map bytes ~f:snd)));
+        value = String (
+          StringLiteral.create
+            ~bytes:true
+            (String.concat (List.map bytes ~f:(fun (_, _, value) -> value)))
+        );
       }
     }
 
