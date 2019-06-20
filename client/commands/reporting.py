@@ -35,6 +35,9 @@ class Reporting(Command):
         super().__init__(arguments, configuration, analysis_directory)
         self._verbose = arguments.verbose  # type: bool
         self._output = arguments.output  # type: str
+        self._ignore_all_errors_paths = (
+            configuration.ignore_all_errors
+        )  # type: Iterable[str]
 
     def _print(self, errors: Sequence[Error]) -> None:
         if errors:
@@ -85,6 +88,10 @@ class Reporting(Command):
             external_to_global_root = True
             if full_path.startswith(self._current_directory):
                 external_to_global_root = False
+            for absolute_ignore_path in self._ignore_all_errors_paths:
+                if fnmatch.fnmatch(full_path, (absolute_ignore_path + "*")):
+                    ignore_error = True
+                    break
             errors.append(Error(ignore_error, external_to_global_root, **error))
 
         if bypass_filtering:
