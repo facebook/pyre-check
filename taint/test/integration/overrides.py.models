@@ -247,6 +247,21 @@
                 "start": 17,
                 "end": 19
               },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result",
+              "length": 1
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          },
+          {
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 120,
+                "start": 17,
+                "end": 19
+              },
               "resolves_to": [ "overrides.D.methodB" ],
               "port": "result",
               "length": 1

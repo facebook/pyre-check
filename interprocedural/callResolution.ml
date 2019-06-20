@@ -34,7 +34,8 @@ let is_local identifier = String.is_prefix ~prefix:"$" identifier
  * Instead, we have the following cases:
  * a) receiver type matches target_name's declaring type -> override target_name
  * b) no target_name override entries are subclasses of A -> real target_name
- * c) some override entries are subclasses of A -> override all those where override name is
+ * c) some override entries are subclasses of A -> include Base.method, and override all those where
+ *    the override name is
  *  1) the override target if it exists in the override shared mem
  *  2) the real target otherwise
  *)
@@ -76,7 +77,7 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             let create_override_target class_name =
               Reference.create ~prefix:class_name (Reference.last target_name) |> get_actual_target
             in
-            List.map subtypes ~f:create_override_target )
+            get_actual_target target_name :: List.map subtypes ~f:create_override_target )
 
 
 let resolve_target ~resolution ?receiver_type callee =
