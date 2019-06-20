@@ -3179,20 +3179,7 @@ module State (Context : Context) = struct
                     (* Module *)
                     let reference = Reference.from_name_exn base in
                     let definition = Resolution.module_definition resolution reference in
-                    if Option.is_some definition then
-                      Error.create
-                        ~location
-                        ~kind:
-                          (Error.MissingGlobalAnnotation
-                             { Error.name = Reference.create ~prefix:reference attribute;
-                               annotation = actual_annotation;
-                               given_annotation = Option.some_if is_immutable expected;
-                               evidence_locations;
-                               thrown_at_source = true
-                             })
-                        ~define:Context.define
-                      |> Option.some
-                    else if explicit && not is_type_alias then
+                    if explicit && (not is_type_alias) && not (Option.is_some definition) then
                       Error.create
                         ~location
                         ~kind:
