@@ -461,7 +461,16 @@ let one_analysis_pass ~analyses ~step ~environment ~callables =
   Analysis.Resolution.FunctionDefinitionsCache.enable ();
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
+    let timer = Timer.start () in
     let result = analyze_callable analyses step callable environment in
+    (* Log outliers. *)
+    if Timer.stop_in_ms timer > 500 then
+      Statistics.performance
+        ~name:"static analysis of expensive callable"
+        ~timer
+        ~section:`Interprocedural
+        ~normals:["callable", Callable.show callable]
+        ();
     Fixpoint.add_state step callable result
   in
   List.iter callables ~f:analyze_and_cache;
