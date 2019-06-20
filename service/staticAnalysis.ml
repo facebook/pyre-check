@@ -31,12 +31,11 @@ let callables ~resolution ~source =
     match definition.Node.value.Define.signature.parent with
     | None ->
         (* Only record top-level definitions. *)
-        Callable.create_function name, definition
+        Some (Callable.create_function name, definition)
     | Some class_name ->
+        let class_annotation = Type.Primitive (Reference.show class_name) in
         let class_exists =
-          Type.Primitive (Reference.show class_name)
-          |> Resolution.class_definition resolution
-          |> Option.is_some
+          Resolution.class_definition resolution class_annotation |> Option.is_some
         in
         if not class_exists then
           Log.warning
@@ -45,9 +44,18 @@ let callables ~resolution ~source =
             class_name
             Reference.pp
             name;
-        Callable.create_method name, definition
+        let is_test_function =
+          Resolution.less_or_equal
+            resolution
+            ~left:(Resolution.parse_reference resolution class_name)
+            ~right:(Type.Primitive "unittest.case.TestCase")
+        in
+        if is_test_function then
+          None
+        else
+          Some (Callable.create_method name, definition)
   in
-  List.map ~f:record_toplevel_definition defines
+  List.filter_map ~f:record_toplevel_definition defines
 
 
 let analyze
@@ -124,8 +132,8 @@ let analyze
   if dump_call_graph then
     DependencyGraph.from_callgraph callgraph |> DependencyGraph.dump ~configuration;
   let callables, stubs =
-    let classify_source (callables, stubs) (callable, define) =
-      if Define.is_stub define.Node.value then
+    let classify_source (callables, stubs) (callable, { Node.value = define; _ }) =
+      if Define.is_stub define then
         callables, callable :: stubs
       else
         callable :: callables, stubs

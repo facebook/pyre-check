@@ -1174,6 +1174,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~qualifier:(Reference.create "unittest")
       ~handle:"unittest.pyi"
       {|
+        from unittest.case import TestCase
+      |}
+    |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "unittest.case")
+      ~handle:"unittest/case.pyi"
+      {|
         class TestCase:
             def assertIsNotNone(self, x: Any) -> Bool:
               ...
