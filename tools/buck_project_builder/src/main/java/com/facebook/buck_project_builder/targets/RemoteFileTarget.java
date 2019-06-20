@@ -3,7 +3,6 @@ package com.facebook.buck_project_builder.targets;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
-import java.util.logging.Logger;
 
 public final class RemoteFileTarget implements BuildTarget {
 

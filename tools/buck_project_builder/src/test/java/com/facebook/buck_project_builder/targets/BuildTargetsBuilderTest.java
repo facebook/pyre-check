@@ -1,6 +1,5 @@
 package com.facebook.buck_project_builder.targets;
 
-import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

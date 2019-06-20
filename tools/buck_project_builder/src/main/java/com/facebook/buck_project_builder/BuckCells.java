@@ -9,7 +9,6 @@ import org.apache.commons.io.IOUtils;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Map;
 
 public final class BuckCells {
