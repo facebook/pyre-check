@@ -1,6 +1,5 @@
 package com.facebook.buck_project_builder.targets;
 
-import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
 import com.google.common.collect.ImmutableSet;
@@ -9,7 +8,6 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -24,7 +22,6 @@ public final class BuildTargetsBuilder {
 
   private final String buckRoot;
   private final String outputDirectory;
-  private final String temporaryThriftOutputDirectory;
   /** key: output path, value: source path */
   private final Map<Path, Path> sources = new HashMap<>();
 
@@ -36,14 +33,9 @@ public final class BuildTargetsBuilder {
   private final Set<String> conflictingFiles = new HashSet<>();
   private final Set<String> unsupportedFiles = new HashSet<>();
 
-  public BuildTargetsBuilder(String buckRoot, String outputDirectory) throws BuilderException {
+  public BuildTargetsBuilder(String buckRoot, String outputDirectory) {
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
-    try {
-      this.temporaryThriftOutputDirectory = Files.createTempDirectory("thrift_gen_").toString();
-    } catch (IOException exception) {
-      throw new BuilderException("Cannot create temporary directory for thrift code generation.");
-    }
   }
 
   private static void logCodeGenerationIOException(IOException exception) {
@@ -105,20 +97,6 @@ public final class BuildTargetsBuilder {
                 logCodeGenerationIOException(exception);
               }
             });
-    try {
-      ImmutableSet<String> conflictingFiles;
-      conflictingFiles =
-          ThriftLibraryTarget.copyThriftStubs(
-              Paths.get(this.temporaryThriftOutputDirectory, "gen-py"), this.outputDirectory);
-      this.conflictingFiles.addAll(conflictingFiles);
-      conflictingFiles =
-          ThriftLibraryTarget.copyThriftStubs(
-              Paths.get(this.temporaryThriftOutputDirectory, "gen-py3"), this.outputDirectory);
-      this.conflictingFiles.addAll(conflictingFiles);
-      FileUtils.deleteDirectory(new File(this.temporaryThriftOutputDirectory));
-    } catch (IOException exception) {
-      logCodeGenerationIOException(exception);
-    }
     long time = System.currentTimeMillis() - start;
     LOGGER.info("Built thrift libraries in " + time + "ms.");
   }
@@ -174,10 +152,6 @@ public final class BuildTargetsBuilder {
     return outputDirectory;
   }
 
-  public String getTemporaryThriftOutputDirectory() {
-    return temporaryThriftOutputDirectory;
-  }
-
   /** Exposed for testing. */
   Map<Path, Path> getSources() {
     return sources;
@@ -230,10 +204,10 @@ public final class BuildTargetsBuilder {
   }
 
   public DebugOutput buildTargets() {
-    this.buildPythonSources();
-    this.buildPythonWheels();
     this.buildThriftLibraries();
     this.buildSwigLibraries();
+    this.buildPythonSources();
+    this.buildPythonWheels();
     this.generateEmptyStubs();
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }

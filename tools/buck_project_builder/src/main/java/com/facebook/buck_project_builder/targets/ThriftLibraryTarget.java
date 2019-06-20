@@ -144,7 +144,7 @@ public final class ThriftLibraryTarget implements BuildTarget {
                 "$(location //thrift/compiler/generate/templates:templates)",
                 "thrift/compiler/generate/templates")
             .replaceFirst("-I \\$\\(location .*\\)", "-I .")
-            .replace("\"$OUT\"", builder.getTemporaryThriftOutputDirectory())
+            .replace("-o \"$OUT\"", "-out " + builder.getOutputDirectory())
             .replace("\"$SRCS\"", basePathPrefixedSources)
             .replaceFirst(" &&.*", "");
     builder.addThriftLibraryBuildCommand(builderCommand);

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class BuildTargetsBuilderTest {
 
   @Test
-  public void buildInformationIsCorrectlyAddedTest() throws BuilderException {
+  public void buildInformationIsCorrectlyAddedTest() {
     BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
 
     new PythonTarget(
