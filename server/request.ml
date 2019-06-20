@@ -761,6 +761,27 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
+    | TypeQuery.DependentDefines files -> (
+      try
+        let handles = List.map files ~f:(File.handle ~configuration) in
+        let modules = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+        let get_dependencies =
+          let (module Handler : Environment.Handler) = environment in
+          Handler.dependencies
+        in
+        let dependency_set = Dependencies.transitive_of_list ~get_dependencies ~modules in
+        let dependencies =
+          let source_to_define_name source =
+            let define_to_name { Statement.Define.signature = { name; _ }; _ } = name in
+            define_to_name (Source.top_level_define source)
+          in
+          Reference.Set.to_list dependency_set
+          |> List.filter_map ~f:Ast.SharedMemory.Sources.get_for_qualifier
+          |> List.map ~f:source_to_define_name
+        in
+        TypeQuery.Response (TypeQuery.References dependencies)
+      with
+      | File.NonexistentHandle message -> TypeQuery.Error message )
     | TypeQuery.DumpDependencies file ->
         let () =
           try

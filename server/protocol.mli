@@ -37,6 +37,7 @@ module TypeQuery : sig
     | ComputeHashesToKeys
     | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
+    | DependentDefines of File.t list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
     | IsCompatibleWith of Expression.t * Expression.t
@@ -145,6 +146,7 @@ module TypeQuery : sig
     | FoundPath of string
     | FoundSignature of found_signature list
     | Path of Pyre.Path.t
+    | References of Reference.t list
     | Success of string
     | Superclasses of Type.t list
     | Type of Type.t

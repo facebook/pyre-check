@@ -37,6 +37,7 @@ module TypeQuery = struct
     | ComputeHashesToKeys
     | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
+    | DependentDefines of File.t list
     | DumpDependencies of File.t
     | DumpMemoryToSqlite of Path.t
     | IsCompatibleWith of Expression.t * Expression.t
@@ -147,6 +148,7 @@ module TypeQuery = struct
     | FoundPath of string
     | FoundSignature of found_signature list
     | Path of Path.t
+    | References of Reference.t list
     | Success of string
     | Superclasses of Type.t list
     | Type of Type.t
@@ -209,6 +211,11 @@ module TypeQuery = struct
     | FoundPath path -> `Assoc ["path", `String path]
     | FoundSignature signatures ->
         `Assoc ["signature", `List (List.map signatures ~f:found_signature_to_yojson)]
+    | References references ->
+        let json_references =
+          List.map references ~f:(fun reference -> `String (Reference.show reference))
+        in
+        `Assoc ["references", `List json_references]
     | Success message -> `Assoc ["message", `String message]
     | Superclasses classes -> `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]

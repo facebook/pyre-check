@@ -1426,6 +1426,84 @@ let test_protocol_persistent context =
     None
 
 
+let test_query_dependencies context =
+  let local_root = bracket_tmpdir context |> Path.create_absolute in
+  let a_source =
+    {|
+      import b
+      def foo() -> str:
+        return b.do()
+    |}
+    |> trim_extra_indentation
+  in
+  let b_source = {|
+    from c import do
+    |} |> trim_extra_indentation in
+  let c_source = {|
+      def do() -> str:
+          pass
+    |} |> trim_extra_indentation in
+  Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
+  Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
+  Out_channel.write_all (Path.absolute local_root ^/ "c.py") ~data:c_source;
+  let assert_query_dependencies () =
+    let handles =
+      [File.Handle.create "a.py"; File.Handle.create "b.py"; File.Handle.create "c.py"]
+    in
+    let sources =
+      [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
+        parse ~handle:"b.py" ~qualifier:!&"b" b_source;
+        parse ~handle:"c.py" ~qualifier:!&"c" c_source ]
+    in
+    List.zip_exn handles sources
+    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
+    let environment = environment ~local_root in
+    let configuration = configuration ~local_root in
+    let environment_handler = Environment.handler environment in
+    add_defaults_to_environment ~configuration environment_handler;
+    Test.populate ~configuration environment_handler sources;
+    let initial_state =
+      mock_server_state ~local_root ~initial_environment:environment (File.Handle.Table.create ())
+    in
+    let assert_response ~request expected =
+      let { Request.response; _ } =
+        Request.process
+          ~state:initial_state
+          ~configuration:(CommandTest.mock_server_configuration ~local_root ())
+          ~request
+      in
+      let printer = function
+        | None -> "None"
+        | Some response -> Protocol.show_response response
+      in
+      assert_equal ~printer (Some expected) response
+    in
+    let reference_response references =
+      Protocol.TypeQueryResponse
+        (Protocol.TypeQuery.Response (Protocol.TypeQuery.References references))
+    in
+    assert_response
+      ~request:
+        (Protocol.Request.TypeQueryRequest
+           (Protocol.TypeQuery.DependentDefines [file ~local_root "a.py"]))
+      (reference_response []);
+    assert_response
+      ~request:
+        (Protocol.Request.TypeQueryRequest
+           (Protocol.TypeQuery.DependentDefines [file ~local_root "b.py"]))
+      (reference_response [Reference.create "a.$toplevel"]);
+    assert_response
+      ~request:
+        (Protocol.Request.TypeQueryRequest
+           (Protocol.TypeQuery.DependentDefines [file ~local_root "c.py"]))
+      (reference_response [Reference.create "a.$toplevel"; Reference.create "b.$toplevel"])
+  in
+  let finally () =
+    Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create "a.py"; File.Handle.create "b.py"]
+  in
+  Exn.protect ~f:assert_query_dependencies ~finally
+
+
 let test_incremental_dependencies context =
   let local_root = bracket_tmpdir context |> Path.create_absolute in
   let a_source =
@@ -1760,6 +1838,7 @@ let () =
       "language_scheduler_shutdown", test_language_scheduler_shutdown;
       "did_save_with_content", test_did_save_with_content;
       "incremental_dependencies", test_incremental_dependencies;
+      "query_dependencies", test_query_dependencies;
       "incremental_typecheck", test_incremental_typecheck;
       "incremental_repopulate", test_incremental_repopulate;
       "incremental_lookups", test_incremental_lookups;

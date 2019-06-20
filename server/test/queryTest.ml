@@ -91,6 +91,17 @@ let test_parse_query context =
     "save_server_state('state')"
     (SaveServerState (Path.create_absolute ~follow_symbolic_links:false "state"));
   assert_fails_to_parse "save_server_state(state)";
+  assert_parses "dependent_defines()" (DependentDefines []);
+  assert_parses
+    "dependent_defines('basic.py')"
+    (DependentDefines [File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic.py")]);
+  assert_parses
+    "dependent_defines('basic1.py', 'basic2.py')"
+    (DependentDefines
+       [ File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic1.py");
+         File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic2.py") ]);
+  assert_fails_to_parse "dependent_defines(unquoted.py)";
+  assert_fails_to_parse "dependent_defines('quoted,py', unquoted.py)";
   assert_parses
     "dump_dependencies('quoted.py')"
     (DumpDependencies

@@ -21,6 +21,7 @@ let help () =
     | CoverageInFile _ ->
         Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
     | DecodeOcamlValues _ -> None
+    | DependentDefines _ -> None
     | DumpDependencies _ ->
         Some
           (Format.sprintf
@@ -162,6 +163,12 @@ let parse_query
           | Some pairs -> Request.TypeQueryRequest (DecodeOcamlValues pairs)
           | None -> raise (InvalidQuery (Format.sprintf "Malformatted file at `%s`" (string path)))
           )
+      | "dependent_defines", paths ->
+          let create_file path =
+            Path.create_relative ~root ~relative:(string path) |> File.create
+          in
+          let files = List.map paths ~f:create_file in
+          Request.TypeQueryRequest (DependentDefines files)
       | "dump_dependencies", [path] ->
           let file = Path.create_relative ~root ~relative:(string path) |> File.create in
           Request.TypeQueryRequest (DumpDependencies file)
