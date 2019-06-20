@@ -150,14 +150,13 @@ let dump call_graph ~configuration =
     Buffer.add_string buffer "\n"
   in
   let add_edges ~key:source ~data:targets =
-    let add_edge target =
-      Format.asprintf "    \"%s\",\n" (Callable.external_target_name target)
-      |> Buffer.add_string buffer
-    in
+    let add_edge target = Format.asprintf "    \"%s\",\n" target |> Buffer.add_string buffer in
     if not (List.is_empty targets) then (
       Format.asprintf "  \"%s\": [\n" (Callable.external_target_name source)
       |> Buffer.add_string buffer;
-      List.iter targets ~f:add_edge;
+      List.map targets ~f:Callable.external_target_name
+      |> List.sort ~compare:String.compare
+      |> List.iter ~f:add_edge;
       remove_trailing_comma ();
       Buffer.add_string buffer "  ],\n" )
   in
