@@ -416,4 +416,4 @@ if __name__ == "__main__":
     for mode in arguments.mode:
         models = models.union(MODES[mode](arguments))
 
-    print("\n".join(models))
+    print("\n".join(sorted(models)))
