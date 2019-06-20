@@ -338,7 +338,7 @@ let test_function_definitions _ =
           def nested(): pass
       |}]
     "yarp.foo.nested"
-    ["yarp.foo.nested"];
+    [];
   assert_functions ["builtins.py", {|
         def len(): pass
       |}] "len" ["len"];

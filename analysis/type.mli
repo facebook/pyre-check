@@ -622,7 +622,7 @@ module Variable : sig
 
   val namespace : t -> namespace:Namespace.t -> t
 
-  val mark_all_variables_as_bound : type_t -> type_t
+  val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
 
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 

@@ -58,6 +58,8 @@ val add_type_variable : t -> variable:Type.Variable.t -> t
 
 val type_variable_exists : t -> variable:Type.Variable.t -> bool
 
+val all_type_variables_in_scope : t -> Type.Variable.t list
+
 val annotations : t -> Annotation.t Reference.Map.t
 
 val with_annotations : t -> annotations:Annotation.t Reference.Map.t -> t

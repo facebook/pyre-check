@@ -37,6 +37,8 @@ val expression : ?location:Location.t -> t -> Expression.t
 
 val delocalize : t -> t
 
+val is_local : t -> bool
+
 val sanitized : t -> t
 
 val sanitize_qualified : t -> t

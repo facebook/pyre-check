@@ -642,7 +642,12 @@ let register_undecorated_functions (module Handler : Handler)
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
-    let visit_children _ = true
+    let visit_children = function
+      | { Node.value = Define _; _ } ->
+          (* inner functions are not globals *)
+          false
+      | _ -> true
+
 
     let statement _ _ { Node.value; location } =
       match value with
@@ -688,7 +693,12 @@ let register_values
   let module CollectCallables = Visit.MakeStatementVisitor (struct
     type t = Type.Callable.t Node.t list Reference.Map.t
 
-    let visit_children _ = true
+    let visit_children = function
+      | { Node.value = Define _; _ } ->
+          (* inner functions are not globals *)
+          false
+      | _ -> true
+
 
     let statement { Source.handle; _ } callables statement =
       let collect_callable ~name

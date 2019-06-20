@@ -2924,6 +2924,7 @@ let test_solve_less_or_equal _ =
     |}
   in
   let resolution = TypeCheck.resolution environment () in
+  let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let assert_solve
       ~left
       ~right
@@ -2931,7 +2932,7 @@ let test_solve_less_or_equal _ =
       ?(attributes = fun _ ~protocol_assumptions:_ -> None)
       ?constraints
       ?(leave_unbound_in_left = [])
-      ?(postprocess = Type.Variable.mark_all_variables_as_bound)
+      ?(postprocess = default_postprocess)
       expected
     =
     let handler =

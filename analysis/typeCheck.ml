@@ -3968,8 +3968,19 @@ module State (Context : Context) = struct
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
     | YieldFrom _ -> state
-    | Class _
-    | Define _ ->
+    | Define define ->
+        if Reference.is_local define.signature.name then
+          AnnotatedCallable.create_overload ~resolution ~define
+          |> Type.Callable.create_from_implementation
+          |> Type.Variable.mark_all_variables_as_bound
+               ~specific:(Resolution.all_type_variables_in_scope resolution)
+          |> Annotation.create
+          |> (fun annotation ->
+               Resolution.set_local resolution ~reference:define.signature.name ~annotation)
+          |> fun resolution -> { state with resolution }
+        else
+          state
+    | Class _ ->
         (* Don't check accesses in nested classes and functions, they're analyzed separately. *)
         state
     | For _

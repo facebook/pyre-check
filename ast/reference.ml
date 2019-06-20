@@ -148,6 +148,12 @@ let delocalize reference =
   | _ -> reference
 
 
+let is_local reference =
+  match reference with
+  | head :: _ when String.is_prefix ~prefix:"$local_" head -> true
+  | _ -> false
+
+
 let sanitized reference = List.map ~f:Identifier.sanitized reference
 
 let sanitize_qualified reference =

@@ -786,7 +786,7 @@ let test_callable_parameter_variadics _ =
     [ "Call error [29]: `typing.Callable[V, int]` cannot be safely called because the types and \
        kinds of its parameters depend on a type variable.";
       "Incompatible return type [7]: Expected `typing.Callable[V, typing.List[int]]` but got \
-       `typing.Callable(f.decorated)[[Variable(object), Keywords(object)], typing.List[int]]`." ];
+       `typing.Callable[[Variable(object), Keywords(object)], typing.List[int]]`." ];
   ()
 
 

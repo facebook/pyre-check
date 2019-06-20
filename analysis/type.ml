@@ -2368,7 +2368,7 @@ module Variable : sig
 
   val namespace : t -> namespace:Namespace.t -> t
 
-  val mark_all_variables_as_bound : type_t -> type_t
+  val mark_all_variables_as_bound : ?specific:t list -> type_t -> type_t
 
   val namespace_all_free_variables : type_t -> namespace:Namespace.t -> type_t
 
@@ -2784,7 +2784,20 @@ end = struct
         replace_all (fun variable -> operation variable |> Variable.self_reference |> Option.some)
 
 
-      let mark_all_as_bound = map Variable.mark_as_bound
+      let mark_all_as_bound ?specific =
+        let in_list =
+          match specific with
+          | Some variables -> List.mem variables ~equal:Variable.equal
+          | None -> fun _ -> true
+        in
+        let mark_as_bound_if_in_list variable =
+          if in_list variable then
+            Variable.mark_as_bound variable
+          else
+            variable
+        in
+        map mark_as_bound_if_in_list
+
 
       let namespace_all_free_variables annotation ~namespace =
         let namespace_if_free variable =
@@ -2906,10 +2919,24 @@ end = struct
     | ListVariadic variable -> ListVariadic (Variadic.List.namespace variable ~namespace)
 
 
-  let mark_all_variables_as_bound annotation =
-    GlobalTransforms.Unary.mark_all_as_bound annotation
-    |> GlobalTransforms.ParameterVariadic.mark_all_as_bound
-    |> GlobalTransforms.ListVariadic.mark_all_as_bound
+  let partition =
+    let partitioner = function
+      | Unary variable -> `Fst variable
+      | ParameterVariadic variable -> `Snd variable
+      | ListVariadic variable -> `Trd variable
+    in
+    List.partition3_map ~f:partitioner
+
+
+  let mark_all_variables_as_bound ?specific annotation =
+    let specific_unaries, specific_parameters_variadics, specific_list_variadics =
+      match specific >>| partition with
+      | None -> None, None, None
+      | Some (unaries, parameters, lists) -> Some unaries, Some parameters, Some lists
+    in
+    GlobalTransforms.Unary.mark_all_as_bound ?specific:specific_unaries annotation
+    |> GlobalTransforms.ParameterVariadic.mark_all_as_bound ?specific:specific_parameters_variadics
+    |> GlobalTransforms.ListVariadic.mark_all_as_bound ?specific:specific_list_variadics
 
 
   let namespace_all_free_variables annotation ~namespace =
@@ -2943,13 +2970,8 @@ end = struct
       | Some variables -> variables
       | None -> all_free_variables annotation
     in
-    let partition = function
-      | Unary variable -> `Fst variable
-      | ParameterVariadic variable -> `Snd variable
-      | ListVariadic variable -> `Trd variable
-    in
     let specific_unaries, specific_parameters_variadics, specific_list_variadics =
-      List.partition3_map ~f:partition variables
+      partition variables
     in
     GlobalTransforms.Unary.mark_as_escaped
       annotation

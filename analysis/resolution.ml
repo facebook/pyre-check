@@ -138,6 +138,8 @@ let type_variable_exists { type_variables; _ } ~variable =
   Type.Variable.Set.mem type_variables variable
 
 
+let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_list type_variables
+
 let annotations { annotations; _ } = annotations
 
 let with_annotations resolution ~annotations = { resolution with annotations }

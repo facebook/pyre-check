@@ -505,7 +505,7 @@ let test_qualify _ =
       from typing import List
       def qualifier.f():
         $local_qualifier?f$T = 'List'
-        def qualifier.f.foo() -> 'typing.List[int]': ...
+        def $local_qualifier?f$foo() -> 'typing.List[int]': ...
         $local_qualifier?f$a = ['List']
         $local_qualifier?f$d = {'List': 'List'}
         $local_qualifier?f$f = MayBeType['List']
@@ -642,7 +642,37 @@ let test_qualify _ =
       def qualifier.foo() -> typing.List[int]: pass
     |};
 
+  (* TODO(T46137017): This is incorrect, as the variable should be hoisted *)
+  assert_qualify
+    {|
+      x = 7
+      def foo():
+        print(x)
+        x = 9
+    |}
+    {|
+      $local_qualifier$x = 7
+      def qualifier.foo():
+        print($local_qualifier$x)
+        $local_qualifier?foo$x = 9
+    |};
+
   (* Nested defines. *)
+  assert_qualify
+    {|
+      def foo():
+        def nested():
+          x = 7
+          nested()
+    |}
+    {|
+      def qualifier.foo():
+        def $local_qualifier?foo$nested():
+          $local_qualifier?foo?nested$x = 7
+          $local_qualifier?foo$nested()
+    |};
+
+  (* Hoisting is implemented for nested functions *)
   assert_qualify
     {|
       def foo():
@@ -653,10 +683,10 @@ let test_qualify _ =
     |}
     {|
       def qualifier.foo():
-        def qualifier.foo.nestedA():
-          qualifier.foo.nestedB()
-        def qualifier.foo.nestedB():
-          qualifier.foo.nestedA()
+        def $local_qualifier?foo$nestedA():
+          $local_qualifier?foo$nestedB()
+        def $local_qualifier?foo$nestedB():
+          $local_qualifier?foo$nestedA()
     |};
   assert_qualify
     {|
@@ -666,8 +696,8 @@ let test_qualify _ =
     |}
     {|
       def qualifier.foo():
-        def qualifier.foo.nested($parameter$a):
-          def qualifier.foo.nested.a(): pass
+        def $local_qualifier?foo$nested($parameter$a):
+          def $parameter$a(): pass
     |};
 
   (* SSA-gutted. *)
@@ -977,9 +1007,9 @@ let test_qualify _ =
     |}
     {|
       def qualifier.mydecoratorwrapper($parameter$x):
-        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+        def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
-        return qualifier.mydecoratorwrapper.mydecorator
+        return $local_qualifier?mydecoratorwrapper$mydecorator
       $local_qualifier$x = 42
       @(qualifier.mydecoratorwrapper($local_qualifier$x))
       def qualifier.f():
@@ -999,9 +1029,9 @@ let test_qualify _ =
     |}
     {|
       def qualifier.mydecoratorwrapper($parameter$x):
-        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+        def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
-        return qualifier.mydecoratorwrapper.mydecorator
+        return $local_qualifier?mydecoratorwrapper$mydecorator
       class qualifier.A:
         qualifier.A.x = 42
         @(qualifier.mydecoratorwrapper(qualifier.A.x))
@@ -1023,9 +1053,9 @@ let test_qualify _ =
     |}
     {|
       def qualifier.mydecoratorwrapper($parameter$x):
-        def qualifier.mydecoratorwrapper.mydecorator($parameter$decorated):
+        def $local_qualifier?mydecoratorwrapper$mydecorator($parameter$decorated):
           return $parameter$decorated
-        return qualifier.mydecoratorwrapper.mydecorator
+        return $local_qualifier?mydecoratorwrapper$mydecorator
       $local_qualifier$x = 42
       class qualifier.A:
         qualifier.A.y = 42

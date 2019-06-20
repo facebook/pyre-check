@@ -276,7 +276,8 @@ type scope = {
   locals: Reference.Set.t;
   use_forward_references: bool;
   is_top_level: bool;
-  skip: Location.Reference.Set.t
+  skip: Location.Reference.Set.t;
+  is_in_function: bool
 }
 
 let qualify_local_identifier name ~qualifier =
@@ -309,7 +310,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       { name = Reference.combine qualifier name; qualifier; is_forward_reference = true }
     in
     let explore_scope
-        ({ qualifier; aliases; immutables; skip; _ } as scope)
+        ({ qualifier; aliases; immutables; skip; is_in_function; _ } as scope)
         { Node.location; value }
       =
       match value with
@@ -322,7 +323,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           }
       | Class { Class.name; _ } ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
-      | Define { Define.signature = { name; _ }; _ } ->
+      | Define { Define.signature = { name; _ }; _ } when is_in_function ->
+          qualify_function_name ~scope name |> fst
+      | Define { Define.signature = { name; _ }; _ } when not is_in_function ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
@@ -355,8 +358,29 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       | _ -> scope
     in
     List.fold statements ~init:scope ~f:explore_scope
-  in
-  let rec qualify_parameters ~scope parameters =
+  and qualify_function_name
+      ~scope:({ aliases; locals; immutables; is_in_function; qualifier; _ } as scope) name
+    =
+    if is_in_function then
+      match Reference.as_list name with
+      | [simple_name]
+        when (not (String.is_prefix simple_name ~prefix:"$"))
+             && (not (Set.mem locals name))
+             && not (Set.mem immutables name) ->
+          let alias = qualify_local_identifier simple_name ~qualifier |> Reference.from_name_exn in
+          ( { scope with
+              aliases =
+                Map.set
+                  aliases
+                  ~key:name
+                  ~data:{ name = alias; qualifier; is_forward_reference = false };
+              locals = Set.add locals name
+            },
+            alias )
+      | _ -> scope, qualify_reference ~scope name
+    else
+      scope, qualify_reference ~suppress_synthetics:true ~scope name
+  and qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let parameters =
       let qualify_annotation { Node.location; value = { Parameter.annotation; _ } as parameter } =
@@ -550,13 +574,13 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           } )
       in
       let qualify_define
-          ({ qualifier; _ } as scope)
+          ({ qualifier; _ } as original_scope)
           ( { Define.signature = { name; parameters; decorators; return_annotation; parent; _ };
               body
             ; _
             } as define )
         =
-        let scope = { scope with is_top_level = false } in
+        let scope = { original_scope with is_top_level = false } in
         let return_annotation =
           return_annotation >>| qualify_expression ~qualify_strings:true ~scope
         in
@@ -571,17 +595,15 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         in
         let scope, parameters = qualify_parameters ~scope parameters in
         let qualifier = Reference.combine qualifier name in
-        let _, body = qualify_statements ~scope:{ scope with qualifier } body in
-        let signature =
-          { define.signature with
-            name = qualify_reference ~suppress_synthetics:true ~scope name;
-            parameters;
-            decorators;
-            return_annotation;
-            parent
-          }
+        let scope, _ = qualify_function_name ~scope name in
+        let _, body =
+          qualify_statements ~scope:{ scope with qualifier; is_in_function = true } body
         in
-        { define with signature; body }
+        let original_scope_with_alias, name = qualify_function_name ~scope:original_scope name in
+        let signature =
+          { define.signature with name; parameters; decorators; return_annotation; parent }
+        in
+        original_scope_with_alias, { define with signature; body }
       in
       let qualify_class ({ Class.name; bases; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
@@ -595,7 +617,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         in
         let body =
           let qualifier = Reference.combine qualifier name in
-          let original_scope = { scope with qualifier } in
+          let original_scope = { scope with qualifier; is_in_function = false } in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
@@ -603,7 +625,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
               | Define
                   ( { signature = { name; parameters; return_annotation; decorators; _ }; _ } as
                   define ) ->
-                  let define = qualify_define original_scope define in
+                  let _, define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
                     return_annotation >>| qualify_expression ~scope ~qualify_strings:true
@@ -675,7 +697,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
             }
           in
           scope, Class (qualify_class definition)
-      | Define define -> scope, Define (qualify_define scope define)
+      | Define define ->
+          let scope, define = qualify_define scope define in
+          scope, Define define
       | Delete expression ->
           scope, Delete (qualify_expression ~qualify_strings:false ~scope expression)
       | Expression expression ->
@@ -1011,7 +1035,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       immutables = Reference.Set.empty;
       use_forward_references = true;
       is_top_level = true;
-      skip = Location.Reference.Set.empty
+      skip = Location.Reference.Set.empty;
+      is_in_function = false
     }
   in
   { source with Source.statements = qualify_statements ~scope statements |> snd }
