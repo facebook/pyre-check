@@ -143,7 +143,8 @@ let test_due_to_analysis_limitations _ =
              actual_expressions = [];
              expected = Type.Optional Type.Top;
              due_to_invariance = false
-           }
+           };
+         kind = Class
        });
   assert_not_due_to_analysis_limitations
     (Error.UninitializedAttribute
@@ -154,7 +155,8 @@ let test_due_to_analysis_limitations _ =
              actual_expressions = [];
              expected = Type.Optional Type.string;
              due_to_invariance = false
-           }
+           };
+         kind = Class
        });
 
   (* MissingParameterAnnotation. *)
@@ -572,7 +574,8 @@ let test_due_to_mismatch_with_any _ =
              actual_expressions = [];
              expected = Type.Optional Type.integer;
              due_to_invariance = false
-           }
+           };
+         kind = Class
        });
   assert_not_due_to_mismatch_with_any
     (Error.UninitializedAttribute
@@ -583,7 +586,8 @@ let test_due_to_mismatch_with_any _ =
              actual_expressions = [];
              expected = Type.Optional Type.string;
              due_to_invariance = false
-           }
+           };
+         kind = Class
        });
 
   (* Unpack *)

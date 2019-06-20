@@ -24,6 +24,12 @@ type missing_annotation = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type uninitialized_attribute_kind =
+  | Class
+  | Protocol of Reference.t
+  | Abstract of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
   | Module of Reference.t
@@ -103,9 +109,8 @@ and unawaited_awaitable = {
   references: Reference.t list;
   expression: Expression.t
 }
-[@@deriving compare, eq, sexp, show, hash]
 
-type abstract_class_kind =
+and abstract_class_kind =
   | Instantiation of Reference.t
   | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
 [@@deriving compare, eq, sexp, show, hash]
@@ -180,7 +185,12 @@ type kind =
   | UndefinedName of Reference.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
-  | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
+  | UninitializedAttribute of
+      { name: Identifier.t;
+        parent: Type.t;
+        mismatch: mismatch;
+        kind: uninitialized_attribute_kind
+      }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
   (* Additional errors. *)
@@ -1299,19 +1309,42 @@ let messages ~concise ~signature location kind =
         | _ -> "anonymous call"
       in
       [Format.asprintf "Unexpected keyword argument `%s` to %s." (Identifier.sanitized name) callee]
-  | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ } } ->
+  | UninitializedAttribute { name; parent; mismatch = { actual; expected; _ }; kind } ->
       let message =
         if concise then
           Format.asprintf "Attribute `%a` is never initialized." pp_identifier name
         else
-          Format.asprintf
-            "Attribute `%a` is declared in class `%a` to have type `%a` but is never initialized."
-            pp_identifier
-            name
-            pp_type
-            parent
-            pp_type
-            expected
+          match kind with
+          | Class ->
+              Format.asprintf
+                "Attribute `%a` is declared in class `%a` to have type `%a` but is never \
+                 initialized."
+                pp_identifier
+                name
+                pp_type
+                parent
+                pp_type
+                expected
+          | Protocol _
+          | Abstract _ ->
+              let kind_string, superclass_name =
+                match kind with
+                | Protocol protocol_name -> "protocol", protocol_name
+                | Abstract class_name -> "abstract class", class_name
+                | Class -> failwith "impossible"
+              in
+              Format.asprintf
+                "Attribute `%a` inherited from %s `%a` in class `%a` to have type `%a` but is \
+                 never initialized."
+                pp_identifier
+                name
+                kind_string
+                pp_type
+                parent
+                pp_reference
+                superclass_name
+                pp_type
+                expected
       in
       [ message;
         Format.asprintf

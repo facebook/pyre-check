@@ -15,6 +15,12 @@ type missing_annotation = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
+type uninitialized_attribute_kind =
+  | Class
+  | Protocol of Reference.t
+  | Abstract of Reference.t
+[@@deriving compare, eq, sexp, show, hash]
+
 type origin =
   | Class of { annotation: Type.t; class_attribute: bool }
   | Module of Reference.t
@@ -94,9 +100,8 @@ and unawaited_awaitable = {
   references: Reference.t list;
   expression: Expression.t
 }
-[@@deriving compare, eq, sexp, show, hash]
 
-type abstract_class_kind =
+and abstract_class_kind =
   | Instantiation of Reference.t
   | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
 [@@deriving compare, eq, sexp, show, hash]
@@ -171,7 +176,12 @@ type kind =
   | UndefinedName of Reference.t
   | UndefinedType of Type.t
   | UnexpectedKeyword of { name: Identifier.t; callee: Reference.t option }
-  | UninitializedAttribute of { name: Identifier.t; parent: Type.t; mismatch: mismatch }
+  | UninitializedAttribute of
+      { name: Identifier.t;
+        parent: Type.t;
+        mismatch: mismatch;
+        kind: uninitialized_attribute_kind
+      }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
   (* Additional errors. *)

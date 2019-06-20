@@ -198,6 +198,40 @@ let test_check_protocol _ =
   assert_type_errors
     {|
       class P(typing.Protocol):
+        foo: int
+
+      class A(P):
+        pass
+
+    |}
+    [ "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class `A` to \
+       have type `int` but is never initialized." ];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        foo: int
+
+      class A(P):
+        pass
+
+      class B(P):
+        foo = 100
+
+    |}
+    [ "Uninitialized attribute [13]: Attribute `foo` inherited from protocol `P` in class `A` to \
+       have type `int` but is never initialized." ];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        foo: int
+        def __init__(self) -> None:
+          pass
+      |}
+    [ "Uninitialized attribute [13]: Attribute `foo` is declared in class `P` to have type `int` \
+       but is never initialized." ];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
         def foo(self) -> P: ...
 
       class Alpha:

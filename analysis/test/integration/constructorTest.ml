@@ -379,7 +379,35 @@ let test_check_init _ =
           x = example()
     |}
     [ "Missing attribute annotation [4]:"
-      ^ " Attribute `x` of class `B` has type `int` but no type is specified." ]
+      ^ " Attribute `x` of class `B` has type `int` but no type is specified." ];
+  assert_type_errors
+    {|
+      from abc import ABCMeta
+      class A(metaclass=ABCMeta):
+        foo: int
+        def __init__(self) -> None:
+           pass
+      |}
+    [ "Uninitialized attribute [13]: Attribute `foo` is declared in class `A` to have type `int` \
+       but is never initialized." ];
+  assert_type_errors
+    {|
+      from abc import ABCMeta
+      class A(metaclass=ABCMeta):
+        foo: int
+      class B(A):
+        pass
+      |}
+    [ "Uninitialized attribute [13]: Attribute `foo` inherited from abstract class `A` in class \
+       `B` to have type `int` but is never initialized." ];
+  assert_type_errors
+    {|
+      from abc import ABCMeta
+      class A(metaclass=ABCMeta):
+        foo: int
+
+    |}
+    []
 
 
 let test_check_constructors _ =

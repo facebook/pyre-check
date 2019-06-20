@@ -337,7 +337,8 @@ module State (Context : Context) = struct
                                      actual = Type.optional expected;
                                      actual_expressions = [];
                                      due_to_invariance = false
-                                   }
+                                   };
+                                 kind = Class
                                })
                           ~define:Context.define
                       in
@@ -463,14 +464,83 @@ module State (Context : Context) = struct
           else
             errors
         in
+        let check_protocol_and_abstract_attributes_initialized
+            ~is_class_type ~error_kind class_definition errors
+          =
+          let uninitialized_attributes =
+            let superclasses =
+              let superclasses = AnnotatedClass.superclasses class_definition ~resolution in
+              if List.exists superclasses ~f:is_class_type then
+                superclasses |> List.cons class_definition
+              else
+                []
+            in
+            let create_attribute_map definition sofar =
+              let attributes =
+                Annotated.Class.attributes
+                  ~include_generated_attributes:false
+                  ~resolution
+                  definition
+              in
+              let add_to_map sofar { Node.value = { AnnotatedAttribute.name; _ } as attribute; _ } =
+                match String.Map.add sofar ~key:name ~data:attribute with
+                | `Ok map -> map
+                | `Duplicate -> sofar
+              in
+              if is_class_type definition then
+                List.filter attributes ~f:(fun attribute ->
+                    not (AnnotatedAttribute.initialized attribute))
+                |> List.fold ~init:sofar ~f:add_to_map
+              else
+                List.filter attributes ~f:AnnotatedAttribute.initialized
+                |> List.map ~f:AnnotatedAttribute.name
+                |> List.fold ~init:sofar ~f:Map.remove
+            in
+            superclasses
+            |> List.fold_right ~init:String.Map.empty ~f:create_attribute_map
+            |> String.Map.to_alist
+          in
+          let unimplemented_errors =
+            uninitialized_attributes
+            |> List.map ~f:(fun (name, { AnnotatedAttribute.annotation; parent; _ }) ->
+                   let expected = Annotation.annotation annotation in
+                   Error.create
+                     ~location
+                     ~kind:
+                       (Error.UninitializedAttribute
+                          { name;
+                            parent;
+                            mismatch =
+                              { Error.expected;
+                                actual = Type.optional expected;
+                                actual_expressions = [];
+                                due_to_invariance = false
+                              };
+                            kind = error_kind
+                          })
+                     ~define:Context.define)
+          in
+          unimplemented_errors @ errors
+        in
         let check_base_and_attributes definition errors =
           let no_explicit_class_constructor =
             definition |> Annotated.Class.constructors ~resolution |> List.is_empty
           in
           if no_explicit_class_constructor then
             let base_errors = check_bases () in
-            if not (Annotated.Class.is_protocol definition) then
+            if
+              (not (AnnotatedClass.is_protocol definition))
+              && not (AnnotatedClass.is_abstract definition)
+            then
               List.append base_errors (check_attributes_initialized ())
+              |> check_protocol_and_abstract_attributes_initialized
+                   ~is_class_type:AnnotatedClass.is_protocol
+                   ~error_kind:(Error.Protocol (AnnotatedClass.name definition))
+                   definition
+              |> check_protocol_and_abstract_attributes_initialized
+                   ~is_class_type:AnnotatedClass.is_abstract
+                   ~error_kind:(Error.Abstract (AnnotatedClass.name definition))
+                   definition
             else
               base_errors
           else
