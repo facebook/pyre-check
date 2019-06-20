@@ -979,8 +979,7 @@ let test_name_locations _ =
     "((a)).b"
     [ +Expression
          (node
-            ~start:
-              (1, 2) (* TODO(T45713676): Start should take parens into account if stop does. *)
+            ~start:(1, 0)
             ~stop:(1, 7)
             (Name
                (Name.Attribute
@@ -992,7 +991,7 @@ let test_name_locations _ =
     "(a  \n).b"
     [ +Expression
          (node
-            ~start:(1, 1) (* TODO(T45713676): Same as above. *)
+            ~start:(1, 0)
             ~stop:(2, 3)
             (Name
                (Name.Attribute
