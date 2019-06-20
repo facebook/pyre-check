@@ -164,6 +164,7 @@ module Record = struct
       type 'annotation variable =
         | Concrete of 'annotation
         | Variadic of Variable.RecordVariadic.RecordList.record
+        | Map of OrderedTypes.RecordMap.t
       [@@deriving compare, eq, sexp, show, hash]
 
       type 'annotation t =
@@ -201,6 +202,8 @@ module Record = struct
         | KeywordOnly named -> print_named ~kind:"KeywordOnly" named
         | Variable (Concrete annotation) -> Format.asprintf "Variable(%a)" pp_type annotation
         | Variable (Variadic { name; _ }) -> Format.asprintf "Variable(%s)" name
+        | Variable (Map map) ->
+            Format.asprintf "Variable(%a)" OrderedTypes.RecordMap.pp_concise map
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
     end
 
@@ -610,6 +613,8 @@ let rec pp_concise format annotation =
                 | Parameter.Variable (Concrete annotation) ->
                     Format.asprintf "*(%a)" pp_concise annotation
                 | Parameter.Variable (Variadic { name; _ }) -> Format.asprintf "*(%s)" name
+                | Parameter.Variable (Map map) ->
+                    Format.asprintf "*(%a)" Record.OrderedTypes.RecordMap.pp_concise map
                 | Parameter.Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
               List.map parameters ~f:parameter
@@ -849,9 +854,7 @@ let rec expression annotation =
                 let convert_parameter parameter =
                   let call ?(default = false) ?name kind annotation =
                     let arguments =
-                      let annotation =
-                        [{ Call.Argument.name = None; value = expression annotation }]
-                      in
+                      let annotation = [{ Call.Argument.name = None; value = annotation }] in
                       let default =
                         if default then
                           [ { Call.Argument.name = None;
@@ -876,14 +879,17 @@ let rec expression annotation =
                   in
                   match parameter with
                   | Parameter.Anonymous { annotation; default; _ } ->
-                      call ~default "Anonymous" annotation
-                  | Parameter.Keywords annotation -> call "Keywords" annotation
+                      call ~default "Anonymous" (expression annotation)
+                  | Parameter.Keywords annotation -> call "Keywords" (expression annotation)
                   | Parameter.Named { name; annotation; default } ->
-                      call ~default ~name "Named" annotation
+                      call ~default ~name "Named" (expression annotation)
                   | Parameter.KeywordOnly { name; annotation; default } ->
-                      call ~default ~name "KeywordOnly" annotation
-                  | Parameter.Variable (Concrete annotation) -> call "Variable" annotation
-                  | Parameter.Variable (Variadic { name; _ }) -> call "Variable" (Primitive name)
+                      call ~default ~name "KeywordOnly" (expression annotation)
+                  | Parameter.Variable (Concrete annotation) ->
+                      call "Variable" (expression annotation)
+                  | Parameter.Variable (Variadic { name; _ }) ->
+                      call "Variable" (expression (Primitive name))
+                  | Parameter.Variable (Map map) -> call "Variable" (map_expression map)
                 in
                 List (List.map ~f:convert_parameter parameters) |> Node.create ~location
             | Undefined -> Node.create ~location Ellipsis
@@ -970,25 +976,15 @@ let rec expression annotation =
     | Tuple (Bounded (Concrete [])) ->
         get_item_call "typing.Tuple" [Node.create ~location (Expression.Tuple [])]
     | Tuple elements ->
-        let rec map_annotation map =
-          let single_wrap ~mapper ~inner =
-            Parametric { name = "MapOperator"; parameters = [Primitive mapper; inner] }
-          in
-          match map with
-          | { Record.OrderedTypes.RecordMap.mappee = Variable { name; _ }; mapper } ->
-              single_wrap ~mapper ~inner:(Primitive name)
-          | { mappee = SubMap submap; mapper } ->
-              single_wrap ~mapper ~inner:(map_annotation submap)
-        in
         let parameters =
           match elements with
-          | Bounded Any -> [Primitive "..."]
-          | Bounded (Variable { name; _ }) -> [Primitive name]
-          | Bounded (Concrete parameters) -> parameters
-          | Bounded (Map map) -> [map_annotation map]
-          | Unbounded parameter -> [parameter; Primitive "..."]
+          | Bounded Any -> [expression (Primitive "...")]
+          | Bounded (Variable { name; _ }) -> [expression (Primitive name)]
+          | Bounded (Concrete parameters) -> List.map ~f:expression parameters
+          | Bounded (Map map) -> [map_expression map]
+          | Unbounded parameter -> List.map ~f:expression [parameter; Primitive "..."]
         in
-        get_item_call "typing.Tuple" (List.map ~f:expression parameters)
+        get_item_call "typing.Tuple" parameters
     | TypedDictionary { name; fields; total } ->
         let argument =
           let tail =
@@ -1020,6 +1016,19 @@ let rec expression annotation =
     | _ -> convert_annotation annotation
   in
   Node.create_with_default_location value
+
+
+and map_expression map =
+  let rec map_annotation map =
+    let single_wrap ~mapper ~inner =
+      Parametric { name = "MapOperator"; parameters = [Primitive mapper; inner] }
+    in
+    match map with
+    | { Record.OrderedTypes.RecordMap.mappee = Variable { name; _ }; mapper } ->
+        single_wrap ~mapper ~inner:(Primitive name)
+    | { mappee = SubMap submap; mapper } -> single_wrap ~mapper ~inner:(map_annotation submap)
+  in
+  map_annotation map |> expression
 
 
 module Transform = struct
@@ -1056,6 +1065,7 @@ module Transform = struct
                         { named with annotation = visit_annotation annotation ~state }
                   | RecordParameter.Variable (Concrete annotation) ->
                       RecordParameter.Variable (Concrete (visit_annotation annotation ~state))
+                  | RecordParameter.Variable (Map _) as parameter -> parameter
                   | RecordParameter.Variable (Variadic _) as parameter -> parameter
                   | RecordParameter.Keywords annotation ->
                       RecordParameter.Keywords (visit_annotation annotation ~state)
@@ -1355,6 +1365,17 @@ let primitive_name = function
   | _ -> None
 
 
+let rec create_map_operator_from_annotation annotation ~variable_aliases =
+  match annotation with
+  | Parametric { name; parameters = [Primitive left_parameter; Primitive right_parameter] }
+    when Identifier.equal name "pyre_extensions.MapOperator" -> (
+    match variable_aliases right_parameter with
+    | Some (Record.Variable.ListVariadic variable) ->
+        Some { Record.OrderedTypes.RecordMap.mappee = Variable variable; mapper = left_parameter }
+    | _ -> None )
+  | _ -> None
+
+
 type alias =
   | TypeAlias of t
   | VariableAlias of t Record.Variable.record
@@ -1500,6 +1521,17 @@ let rec create_logic ?(use_cache = true)
             let get_signature = function
               | Expression.Tuple [parameters; annotation] ->
                   let parameters =
+                    let parse_as_variadic parsed_parameter =
+                      let variable_alias =
+                        parsed_parameter |> primitive_name >>= variable_aliases
+                      in
+                      match variable_alias with
+                      | Some (Record.Variable.ListVariadic variable) ->
+                          Some (Parameter.Variadic variable)
+                      | _ ->
+                          create_map_operator_from_annotation parsed_parameter ~variable_aliases
+                          >>| fun map -> Parameter.Map map
+                    in
                     let extract_parameter index parameter =
                       match Node.value parameter with
                       | Call
@@ -1546,21 +1578,16 @@ let rec create_logic ?(use_cache = true)
                                     create_logic (Node.create_with_default_location annotation);
                                   default
                                 }
-                          | "Variable", tail -> (
+                          | "Variable", tail ->
                               let annotation =
                                 match tail with
                                 | annotation :: _ ->
                                     create_logic (Node.create_with_default_location annotation)
                                 | _ -> Top
                               in
-                              let concrete = Parameter.Variable (Concrete annotation) in
-                              match annotation with
-                              | Primitive name -> (
-                                match variable_aliases name with
-                                | Some (Record.Variable.ListVariadic variable) ->
-                                    Parameter.Variable (Variadic variable)
-                                | _ -> concrete )
-                              | _ -> concrete )
+                              parse_as_variadic annotation
+                              |> Option.value ~default:(Parameter.Concrete annotation)
+                              |> fun variable -> Parameter.Variable variable
                           | "Keywords", tail ->
                               let annotation =
                                 match tail with
@@ -1577,13 +1604,9 @@ let rec create_logic ?(use_cache = true)
                     match Node.value parameters with
                     | List [parameter] -> (
                         let normal () = Defined [extract_parameter 0 parameter] in
-                        let variable_alias =
-                          create_logic parameter |> primitive_name >>= variable_aliases
-                        in
-                        match variable_alias with
-                        | Some (Record.Variable.ListVariadic variable) ->
-                            Defined [Parameter.Variable (Variadic variable)]
-                        | _ -> normal () )
+                        match parse_as_variadic (create_logic parameter) with
+                        | Some variadic -> Defined [Parameter.Variable variadic]
+                        | None -> normal () )
                     | List parameters -> Defined (List.mapi ~f:extract_parameter parameters)
                     | _ -> (
                       match variable_aliases (Expression.show parameters) with
@@ -1821,15 +1844,10 @@ let rec create_logic ?(use_cache = true)
                     match variable_aliases parameter with
                     | Some (Record.Variable.ListVariadic variable) -> Bounded (Variable variable)
                     | _ -> Bounded (Concrete parameters) )
-                  | [ Parametric
-                        { name;
-                          parameters = [Primitive left_parameter; Primitive right_parameter]
-                        } ]
-                    when Identifier.equal name "pyre_extensions.MapOperator" -> (
-                    match variable_aliases right_parameter with
-                    | Some (Record.Variable.ListVariadic variable) ->
-                        Bounded (Map { mappee = Variable variable; mapper = left_parameter })
-                    | _ -> Bounded (Concrete parameters) )
+                  | [parameter] -> (
+                    match create_map_operator_from_annotation parameter ~variable_aliases with
+                    | Some map -> Bounded (Map map)
+                    | None -> Bounded (Concrete parameters) )
                   | _ -> Bounded (Concrete parameters)
                 in
                 Tuple tuple
@@ -2063,8 +2081,19 @@ module OrderedTypes = struct
 
   type ordered_types_t = t
 
+  let pp_concise = pp_concise ~pp_type
+
   module Map = struct
     include Record.OrderedTypes.RecordMap
+
+    let parse expression ~aliases =
+      let variable_aliases name =
+        match aliases name with
+        | Some (VariableAlias variable) -> Some variable
+        | _ -> None
+      in
+      create expression ~aliases |> create_map_operator_from_annotation ~variable_aliases
+
 
     let create ~mappers ~variable =
       match List.rev mappers with
@@ -2103,6 +2132,9 @@ module OrderedTypes = struct
     let rec variable = function
       | { mappee = Variable variable; _ } -> variable
       | { mappee = SubMap submap; _ } -> variable submap
+
+
+    let expression = map_expression
   end
 
   let union_upper_bound ordered =
@@ -2627,19 +2659,26 @@ end = struct
         | Callable callable ->
             let map = function
               | Defined parameters ->
+                  let encode_ordered_types_into_parameters = function
+                    | OrderedTypes.Variable new_variable ->
+                        [Callable.Parameter.Variable (Variadic new_variable)]
+                    | Any -> [Callable.Parameter.Variable (Concrete Any)]
+                    | Concrete concretes ->
+                        let make_anonymous annotation =
+                          Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+                        in
+                        List.map concretes ~f:make_anonymous
+                    | Map map -> [Variable (Map map)]
+                  in
                   let replace_variadic = function
-                    | Callable.Parameter.Variable (Variadic variable) -> (
-                      match replacement variable with
-                      | None -> [Callable.Parameter.Variable (Variadic variable)]
-                      | Some (Variable new_variable) ->
-                          [Callable.Parameter.Variable (Variadic new_variable)]
-                      | Some Any -> [Callable.Parameter.Variable (Concrete Any)]
-                      | Some (Concrete concretes) ->
-                          let make_anonymous annotation =
-                            Callable.Parameter.Anonymous { index = 0; annotation; default = false }
-                          in
-                          List.map concretes ~f:make_anonymous
-                      | Some (Map _) -> failwith "ignore for now" )
+                    | Callable.Parameter.Variable (Variadic variable) ->
+                        replacement variable
+                        >>| encode_ordered_types_into_parameters
+                        |> Option.value ~default:[Callable.Parameter.Variable (Variadic variable)]
+                    | Variable (Map map) ->
+                        OrderedTypes.Map.replace_variable map ~replacement
+                        >>| encode_ordered_types_into_parameters
+                        |> Option.value ~default:[Callable.Parameter.Variable (Map map)]
                     | parameter -> [parameter]
                   in
                   let correct_indices index = function
@@ -2669,6 +2708,7 @@ end = struct
               | { parameters = Defined parameters; _ } ->
                   let collect_variadic = function
                     | Callable.Parameter.Variable (Variadic variable) -> Some variable
+                    | Variable (Map map) -> Some (OrderedTypes.Map.variable map)
                     | _ -> None
                   in
                   List.filter_map parameters ~f:collect_variadic

@@ -36,7 +36,7 @@ and invalid_argument =
   | Keyword of { expression: Expression.t; annotation: Type.t }
   | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
   | ListVariadicVariable of
-      { variable: Type.Variable.Variadic.List.t;
+      { variable: Type.OrderedTypes.t;
         mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
       }
 

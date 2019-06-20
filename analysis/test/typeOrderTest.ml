@@ -3441,6 +3441,10 @@ let test_solve_less_or_equal _ =
       "typing.Tuple[typing.Tuple[pyre_extensions.MapOperator[typing.Iterable, Ts]], \
        typing.Tuple[pyre_extensions.MapOperator[typing.Iterable, Ts]]]"
     [];
+  assert_solve
+    ~left:"typing.Callable[[typing.List[int], typing.List[str], typing.List[bool]], int]"
+    ~right:"typing.Callable[[Variable(pyre_extensions.MapOperator[typing.List, Ts])], int]"
+    [["Ts", "int, str, bool"]];
   ()
 
 

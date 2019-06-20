@@ -1043,6 +1043,72 @@ let test_map _ =
     |}
     [ "Revealed type [-1]: Revealed type for `wrap((x, y))` is `typing.Tuple[List[int], List[str]]`.";
       "Revealed type [-1]: Revealed type for `unwrap((lx, ly))` is `typing.Tuple[int, str]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    def unwrap( *args: MapOperator[List, Ts]) -> Tuple[Ts]: ...
+    def foo(lx: List[int], ly: List[str]) -> None:
+      reveal_type(unwrap(lx, ly))
+    |}
+    ["Revealed type [-1]: Revealed type for `unwrap(lx, ly)` is `typing.Tuple[int, str]`."];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar, Callable, TypeVar
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    def unwrap_with(c: Callable[[MapOperator[List, Ts]], TReturn], t: Tuple[MapOperator[List, Ts]]) -> TReturn:
+      return c( *t)
+    def foo(lx: List[int], ly: List[str]) -> bool:
+      return False
+    def bar() -> None:
+      reveal_type(unwrap_with(foo, ([2,3], ["A", "B"])))
+    |}
+    [ "Revealed type [-1]: Revealed type for `unwrap_with(foo, ([2, 3], [\"A\", \"B\"]))` is `bool`."
+    ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar, Callable, Iterable
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    def better_map(func: Callable[[Ts], TReturn], *args: MapOperator[Iterable, Ts]) -> TReturn: ...
+    def takes_int(x: int) -> str: ...
+    def takes_int_str(x: int, y: str) -> str: ...
+    def foo() -> None:
+      reveal_type(better_map(takes_int, [1,2]))
+      reveal_type(better_map(takes_int_str, [1,2], ["A", "B"]))
+      better_map(takes_int_str, ["A", "B"], [1, 2])
+    |}
+    [ "Revealed type [-1]: Revealed type for `better_map(takes_int, [1, 2])` is `str`.";
+      "Revealed type [-1]: Revealed type for `better_map(takes_int_str, [1, 2], [\"A\", \"B\"])` \
+       is `str`.";
+      "Invalid argument [32]: Types `typing.List[str], typing.List[int]` conflict with existing \
+       constraints on `MapOperator[typing.Iterable, Ts]`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar, Callable, Iterable, Awaitable
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    TReturn = TypeVar("TReturn")
+    class AbstractEventLoop: pass
+    def better_gather( *args: MapOperator[Awaitable, Ts],
+         loop: AbstractEventLoop = ..., return_exceptions: bool = ...) -> Awaitable[Tuple[Ts]]: ...
+    def foo(i: Awaitable[int], s: Awaitable[str]) -> None:
+      reveal_type(await better_gather(i))
+      reveal_type(await better_gather(i, s))
+      many = (i, s, i, s, i, s, i, s, i)
+      reveal_type(await better_gather( *many))
+    |}
+    [ "Revealed type [-1]: Revealed type for `await better_gather($parameter$i)` is \
+       `typing.Tuple[int]`.";
+      "Revealed type [-1]: Revealed type for `await better_gather($parameter$i,$parameter$s)` is \
+       `typing.Tuple[int, str]`.";
+      "Revealed type [-1]: Revealed type for `await better_gather(*$local_foo$many)` is \
+       `typing.Tuple[int, str, int, str, int, str, int, str, int]`." ];
+
   ()
 
 

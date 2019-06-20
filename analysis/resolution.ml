@@ -451,6 +451,8 @@ let parse_as_list_variadic ({ aliases; _ } as resolution) name =
   | _ -> None
 
 
+let parse_as_list_variadic_map_operator { aliases; _ } = Type.OrderedTypes.Map.parse ~aliases
+
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },

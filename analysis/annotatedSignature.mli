@@ -39,7 +39,7 @@ type reason =
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
   | MismatchWithListVariadicTypeVariable of
-      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
+      Type.OrderedTypes.t * mismatch_with_list_variadic_type_variable
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }

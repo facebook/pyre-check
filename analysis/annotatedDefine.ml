@@ -74,6 +74,11 @@ let decorate
                       ~annotation:(Type.expression (Primitive name))
                       ~name:"*args"
                       ()
+                | Type.Callable.Parameter.Variable (Map map) ->
+                    Ast.Parameter.create
+                      ~annotation:(Type.OrderedTypes.Map.expression map)
+                      ~name:"*args"
+                      ()
                 | Type.Callable.Parameter.Keywords annotation ->
                     Ast.Parameter.create
                       ~annotation:(Type.expression annotation)

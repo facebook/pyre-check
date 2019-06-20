@@ -633,7 +633,7 @@ let test_select _ =
       ( "[[Variable(Ts)], int]",
         Some
           (MismatchWithListVariadicTypeVariable
-             ( Type.Variable.Variadic.List.create "Ts",
+             ( Variable (Type.Variable.Variadic.List.create "Ts"),
                NotDefiniteTuple
                  { expression = +Name (Name.Identifier "unbounded_tuple");
                    annotation = Type.Tuple (Unbounded Type.integer)
@@ -645,8 +645,22 @@ let test_select _ =
       ( "[[typing.Tuple[$literal_one, $literal_string], $literal_one, $literal_string], int]",
         Some
           (MismatchWithListVariadicTypeVariable
-             (Type.Variable.Variadic.List.create "Ts", ConstraintFailure (Concrete [Type.float])))
-      ));
+             ( Variable (Type.Variable.Variadic.List.create "Ts"),
+               ConstraintFailure (Concrete [Type.float]) )) ));
+  assert_select
+    "[[pyre_extensions.MapOperator[typing.List, Ts]], int]"
+    "([1,2,3], ['string', 'string'])"
+    (`Found "[[typing.List[int], typing.List[str]], int]");
+  assert_select
+    "[[pyre_extensions.MapOperator[typing.List, Ts]], \
+     typing.Tuple[pyre_extensions.MapOperator[typing.Type, Ts]]]"
+    "([1,2,3], ['string', 'string'])"
+    (`Found
+      "[[typing.List[int], typing.List[str]], typing.Tuple[typing.Type[int], typing.Type[str]]]");
+  assert_select
+    "[[bool, Variable(pyre_extensions.MapOperator[typing.List, Ts])], int]"
+    "(True, [1,2,3], ['string', 'string'])"
+    (`Found "[[bool, typing.List[int], typing.List[str]], int]");
   ()
 
 

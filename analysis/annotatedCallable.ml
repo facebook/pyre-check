@@ -70,14 +70,22 @@ let create_overload ~resolution
           Named { named with annotation = parse_as_annotation annotation }
       | KeywordOnly ({ annotation; _ } as named) ->
           KeywordOnly { named with annotation = parse_as_annotation annotation }
-      | Variable (Variadic _) -> failwith "impossible"
+      | Variable (Map _)
+      | Variable (Variadic _) ->
+          failwith "impossible"
       | Variable (Concrete annotation) -> (
-          let parsed_as_list_variadic =
+          let parsed_as_list_variadic () =
             annotation >>= Resolution.parse_as_list_variadic resolution
           in
-          match parsed_as_list_variadic with
+          let parsed_as_map_operator () =
+            annotation >>= Resolution.parse_as_list_variadic_map_operator resolution
+          in
+          match parsed_as_list_variadic () with
           | Some variable -> Parameter.Variable (Variadic variable)
-          | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) )
+          | None -> (
+            match parsed_as_map_operator () with
+            | Some map -> Parameter.Variable (Map map)
+            | None -> Parameter.Variable (Concrete (parse_as_annotation annotation)) ) )
       | Keywords annotation -> Keywords (parse_as_annotation annotation)
     in
     List.map parameters ~f:parameter

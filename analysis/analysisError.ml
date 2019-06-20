@@ -45,7 +45,7 @@ and invalid_argument =
   | Keyword of { expression: Expression.t; annotation: Type.t }
   | ConcreteVariable of { expression: Expression.t; annotation: Type.t }
   | ListVariadicVariable of
-      { variable: Type.Variable.Variadic.List.t;
+      { variable: Type.OrderedTypes.t;
         mismatch: AnnotatedSignature.mismatch_with_list_variadic_type_variable
       }
 
@@ -631,18 +631,18 @@ let messages ~concise ~signature location kind =
     | ListVariadicVariable { variable; mismatch = ConstraintFailure _ } ->
         [ Format.asprintf
             "Variable argument conflicts with constraints on `%a`."
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable) ]
+            Type.OrderedTypes.pp_concise
+            variable ]
     | ListVariadicVariable { variable; mismatch = NotDefiniteTuple _ } ->
         [ Format.asprintf
             "Variable argument for `%a` must be a definite tuple."
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable) ]
+            Type.OrderedTypes.pp_concise
+            variable ]
     | ListVariadicVariable { variable; mismatch = CantConcatenate _ } ->
         [ Format.asprintf
             "Concatenating ListVariadics for variable `%a` is not yet supported."
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable) ] )
+            Type.OrderedTypes.pp_concise
+            variable ] )
   | InvalidArgument argument -> (
     match argument with
     | Keyword { expression; annotation } ->
@@ -660,10 +660,10 @@ let messages ~concise ~signature location kind =
     | ListVariadicVariable { variable; mismatch = ConstraintFailure ordered_types } ->
         [ Format.asprintf
             "Types `%a` conflict with existing constraints on `%a`."
-            (Type.OrderedTypes.pp_concise ~pp_type)
+            (Type.Record.OrderedTypes.pp_concise ~pp_type)
             ordered_types
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable) ]
+            (Type.Record.OrderedTypes.pp_concise ~pp_type)
+            variable ]
     | ListVariadicVariable { variable; mismatch = NotDefiniteTuple { expression; annotation } } ->
         [ Format.asprintf
             "Variable argument `%s` has type `%a` but must be a definite tuple to be included in \
@@ -671,20 +671,20 @@ let messages ~concise ~signature location kind =
             (Expression.show_sanitized expression)
             pp_type
             annotation
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable) ]
+            (Type.Record.OrderedTypes.pp_concise ~pp_type)
+            variable ]
     | ListVariadicVariable { variable; mismatch = CantConcatenate unconcatenatable } ->
         let unconcatenatable =
           List.map
             unconcatenatable
-            ~f:(Format.asprintf "%a" (Type.OrderedTypes.pp_concise ~pp_type))
+            ~f:(Format.asprintf "%a" (Type.Record.OrderedTypes.pp_concise ~pp_type))
           |> String.concat ~sep:", "
         in
         [ Format.asprintf
             "Variadic type variable `%a` cannot be made to contain `%s`, concatenation of \
              variadic type variables is not yet implemented."
-            Type.Variable.pp_concise
-            (Type.Variable.ListVariadic variable)
+            (Type.Record.OrderedTypes.pp_concise ~pp_type)
+            variable
             unconcatenatable ] )
   | InvalidMethodSignature { annotation = Some annotation; name } ->
       [Format.asprintf "`%a` cannot be the type of `%a`." pp_type annotation pp_identifier name]

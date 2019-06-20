@@ -87,6 +87,7 @@ module Record : sig
       and 'annotation variable =
         | Concrete of 'annotation
         | Variadic of Variable.RecordVariadic.RecordList.record
+        | Map of OrderedTypes.RecordMap.t
 
       and 'annotation t =
         | Anonymous of { index: int; annotation: 'annotation; default: bool }
@@ -439,10 +440,14 @@ module OrderedTypes : sig
 
   type ordered_types_t = t
 
+  val pp_concise : Format.formatter -> t -> unit
+
   module Map : sig
     include module type of struct
       include Record.OrderedTypes.RecordMap
     end
+
+    val parse : Expression.t -> aliases:(primitive -> alias option) -> t option
 
     (* For testing only *)
     val create
@@ -458,6 +463,8 @@ module OrderedTypes : sig
       :  t ->
       replacement:(Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
       ordered_types_t option
+
+    val expression : t -> Expression.t
   end
 
   val union_upper_bound : t -> type_t

@@ -41,7 +41,7 @@ type reason =
   | InvalidVariableArgument of invalid_argument Node.t
   | Mismatch of mismatch Node.t
   | MismatchWithListVariadicTypeVariable of
-      Type.Variable.Variadic.List.t * mismatch_with_list_variadic_type_variable
+      Type.OrderedTypes.t * mismatch_with_list_variadic_type_variable
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
   | TooManyArguments of { expected: int; provided: int }
@@ -295,87 +295,92 @@ let select
   in
   let check_annotations ({ argument_mapping; _ } as signature_match) =
     let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
+      let bind_arguments_to_variadic ~expected ~arguments =
+        let extract arguments =
+          let extracted, errors =
+            let arguments =
+              List.map arguments ~f:(function
+                  | Argument argument -> argument
+                  | Default -> failwith "Variable parameters do not have defaults")
+            in
+            let extract { Argument.kind; resolved; expression; _ } =
+              match kind with
+              | SingleStar -> (
+                match resolved with
+                | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
+                (* We don't support expanding indefinite containers into ListVariadics *)
+                | annotation -> `Snd { expression; annotation } )
+              | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
+            in
+            List.rev arguments |> List.partition_map ~f:extract
+          in
+          match errors with
+          | [] -> Ok extracted
+          | not_definite_tuple :: _ ->
+              Error
+                (MismatchWithListVariadicTypeVariable
+                   (expected, NotDefiniteTuple not_definite_tuple))
+        in
+        let concatenate extracted =
+          let concatenated =
+            match extracted with
+            | [] -> Some (Type.OrderedTypes.Concrete [])
+            | head :: tail ->
+                let concatenate sofar next =
+                  let concatenate sofar =
+                    match sofar, next with
+                    | Type.OrderedTypes.Concrete sofar, Type.OrderedTypes.Concrete next ->
+                        Some (Type.OrderedTypes.Concrete (sofar @ next))
+                    (* Any can masquerade as the empty list *)
+                    | other, Any
+                    | Any, other
+                    | other, Concrete []
+                    | Concrete [], other ->
+                        Some other
+                    | _, Map _
+                    | Map _, _
+                    | Variable _, Variable _
+                    | Concrete _, Variable _
+                    | Variable _, Concrete _ ->
+                        (* TODO(T45636537): support these when we have support for concatenation *)
+                        None
+                  in
+                  sofar >>= concatenate
+                in
+                List.fold tail ~f:concatenate ~init:(Some head)
+          in
+          match concatenated with
+          | Some concatenated -> Ok concatenated
+          | None ->
+              Error (MismatchWithListVariadicTypeVariable (expected, CantConcatenate extracted))
+        in
+        let solve concatenated =
+          match
+            List.concat_map signature_match.constraints_set ~f:(fun constraints ->
+                Resolution.solve_ordered_types_less_or_equal
+                  resolution
+                  ~left:concatenated
+                  ~right:expected
+                  ~constraints)
+          with
+          | [] ->
+              Error
+                (MismatchWithListVariadicTypeVariable (expected, ConstraintFailure concatenated))
+          | updated_constraints_set -> Ok updated_constraints_set
+        in
+        let make_signature_match = function
+          | Ok constraints_set -> { signature_match with constraints_set }
+          | Error error ->
+              { signature_match with reasons = { reasons with arity = error :: arity } }
+        in
+        let open Result in
+        extract arguments >>= concatenate >>= solve |> make_signature_match
+      in
       match key, data with
       | Parameter.Variable (Variadic variable), arguments ->
-          let extract arguments =
-            let extracted, errors =
-              let arguments =
-                List.map arguments ~f:(function
-                    | Argument argument -> argument
-                    | Default -> failwith "Variable parameters do not have defaults")
-              in
-              let extract { Argument.kind; resolved; expression; _ } =
-                match kind with
-                | SingleStar -> (
-                  match resolved with
-                  | Type.Tuple (Bounded ordered_types) -> `Fst ordered_types
-                  (* We don't support expanding indefinite containers into ListVariadics *)
-                  | annotation -> `Snd { expression; annotation } )
-                | _ -> `Fst (Type.OrderedTypes.Concrete [resolved])
-              in
-              List.rev arguments |> List.partition_map ~f:extract
-            in
-            match errors with
-            | [] -> Ok extracted
-            | not_definite_tuple :: _ ->
-                Error
-                  (MismatchWithListVariadicTypeVariable
-                     (variable, NotDefiniteTuple not_definite_tuple))
-          in
-          let concatenate extracted =
-            let concatenated =
-              match extracted with
-              | [] -> Some (Type.OrderedTypes.Concrete [])
-              | head :: tail ->
-                  let concatenate sofar next =
-                    let concatenate sofar =
-                      match sofar, next with
-                      | Type.OrderedTypes.Concrete sofar, Type.OrderedTypes.Concrete next ->
-                          Some (Type.OrderedTypes.Concrete (sofar @ next))
-                      (* Any can masquerade as the empty list *)
-                      | other, Any
-                      | Any, other
-                      | other, Concrete []
-                      | Concrete [], other ->
-                          Some other
-                      | _, Map _
-                      | Map _, _
-                      | Variable _, Variable _
-                      | Concrete _, Variable _
-                      | Variable _, Concrete _ ->
-                          (* TODO(T45636537): support these when we have support for concatenation *)
-                          None
-                    in
-                    sofar >>= concatenate
-                  in
-                  List.fold tail ~f:concatenate ~init:(Some head)
-            in
-            match concatenated with
-            | Some concatenated -> Ok concatenated
-            | None ->
-                Error (MismatchWithListVariadicTypeVariable (variable, CantConcatenate extracted))
-          in
-          let solve concatenated =
-            match
-              List.concat_map signature_match.constraints_set ~f:(fun constraints ->
-                  Resolution.solve_ordered_types_less_or_equal
-                    resolution
-                    ~left:concatenated
-                    ~right:(Variable variable)
-                    ~constraints)
-            with
-            | [] ->
-                Error
-                  (MismatchWithListVariadicTypeVariable (variable, ConstraintFailure concatenated))
-            | updated_constraints_set -> Ok updated_constraints_set
-          in
-          let make_signature_match = function
-            | Ok constraints_set -> { signature_match with constraints_set }
-            | Error error ->
-                { signature_match with reasons = { reasons with arity = error :: arity } }
-          in
-          let open Result in
-          extract arguments >>= concatenate >>= solve |> make_signature_match
+          bind_arguments_to_variadic ~expected:(Type.OrderedTypes.Variable variable) ~arguments
+      | Parameter.Variable (Map map), arguments ->
+          bind_arguments_to_variadic ~expected:(Type.OrderedTypes.Map map) ~arguments
       | Parameter.Variable _, []
       | Parameter.Keywords _, [] ->
           (* Parameter was not matched, but empty is acceptable for variable arguments and keyword

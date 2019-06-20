@@ -146,6 +146,8 @@ val parse_annotation
 
 val parse_as_list_variadic : t -> Expression.t -> Type.Variable.Variadic.List.t option
 
+val parse_as_list_variadic_map_operator : t -> Expression.t -> Type.OrderedTypes.Map.t option
+
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val solve_less_or_equal

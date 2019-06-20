@@ -516,26 +516,30 @@ module OrderImplementation = struct
                   Some annotation
               | _ -> None
             in
-            let add_bound, continue =
+            let continue =
               if is_lower_bound then
-                ( OrderedConstraints.add_lower_bound,
-                  solve_parameters
-                    ~left_parameters:after_first_keyword_inclusive
-                    ~right_parameters:tail )
+                solve_parameters
+                  ~left_parameters:after_first_keyword_inclusive
+                  ~right_parameters:tail
               else
-                ( OrderedConstraints.add_upper_bound,
-                  solve_parameters
-                    ~left_parameters:tail
-                    ~right_parameters:after_first_keyword_inclusive )
+                solve_parameters
+                  ~left_parameters:tail
+                  ~right_parameters:after_first_keyword_inclusive
+            in
+            let add_bound concretes =
+              let left, right =
+                if is_lower_bound then
+                  concretes, variable
+                else
+                  variable, concretes
+              in
+              solve_ordered_types_less_or_equal order ~left ~right ~constraints
             in
             List.map before_first_keyword ~f:single_annotation
             |> Option.all
-            >>= (fun concretes ->
-                  add_bound
-                    constraints
-                    ~order
-                    ~pair:(Type.Variable.ListVariadicPair (variable, Concrete concretes)))
-            >>| continue
+            >>| (fun concretes -> Type.OrderedTypes.Concrete concretes)
+            >>| add_bound
+            >>| List.concat_map ~f:continue
             |> Option.value ~default:[]
           and solve_parameters ~left_parameters ~right_parameters constraints =
             match left_parameters, right_parameters with
@@ -592,19 +596,29 @@ module OrderImplementation = struct
                   ~right:(Type.OrderedTypes.Variable right_variable)
                   ~constraints
                 |> List.concat_map ~f:(solve_parameters ~left_parameters ~right_parameters)
-            | left, Parameter.Variable (Variadic right_variable) :: right_parameters
-              when Type.Variable.Variadic.List.is_free right_variable ->
+            | left, Parameter.Variable (Variadic right_variable) :: right_parameters ->
                 solve_parameters_against_list_variadic
                   ~is_lower_bound:false
                   ~concretes:left
-                  ~variable:right_variable
+                  ~variable:(Variable right_variable)
                   ~tail:right_parameters
-            | Parameter.Variable (Variadic left_variable) :: left_parameters, right
-              when Type.Variable.Variadic.List.is_free left_variable ->
+            | Parameter.Variable (Variadic left_variable) :: left_parameters, right ->
                 solve_parameters_against_list_variadic
                   ~is_lower_bound:true
                   ~concretes:right
-                  ~variable:left_variable
+                  ~variable:(Variable left_variable)
+                  ~tail:left_parameters
+            | left, Parameter.Variable (Map map) :: right_parameters ->
+                solve_parameters_against_list_variadic
+                  ~is_lower_bound:false
+                  ~concretes:left
+                  ~variable:(Map map)
+                  ~tail:right_parameters
+            | Parameter.Variable (Map map) :: left_parameters, right ->
+                solve_parameters_against_list_variadic
+                  ~is_lower_bound:true
+                  ~concretes:right
+                  ~variable:(Map map)
                   ~tail:left_parameters
             | Parameter.Variable _ :: left_parameters, []
             | Parameter.Keywords _ :: left_parameters, [] ->

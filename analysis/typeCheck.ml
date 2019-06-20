@@ -1024,16 +1024,28 @@ module State (Context : Context) = struct
           in
           let state, { Annotation.annotation; mutability } =
             if (not (String.is_prefix ~prefix:"**" name)) && String.is_prefix ~prefix:"*" name then
-              let parsed_as_list_variadic =
-                annotation >>= Resolution.parse_as_list_variadic resolution
+              let make_tuple bounded =
+                Type.Tuple (Bounded bounded)
+                |> Type.Variable.mark_all_variables_as_bound
+                |> Annotation.create
+                |> fun annotation -> state, annotation
               in
-              match parsed_as_list_variadic with
-              | Some variable ->
-                  ( state,
-                    { Annotation.annotation = Type.Tuple (Bounded (Variable variable));
-                      mutability = Mutable
-                    } )
-              | None -> parse_as_unary ()
+              let parsed_as_list_variadic () =
+                annotation
+                >>= Resolution.parse_as_list_variadic resolution
+                >>| fun variable -> Type.OrderedTypes.Variable variable
+              in
+              let parsed_as_list_variadic_map_operator () =
+                annotation
+                >>= Resolution.parse_as_list_variadic_map_operator resolution
+                >>| fun map -> Type.OrderedTypes.Map map
+              in
+              match parsed_as_list_variadic () with
+              | Some variable -> make_tuple variable
+              | None -> (
+                match parsed_as_list_variadic_map_operator () with
+                | Some map -> make_tuple map
+                | None -> parse_as_unary () )
             else
               parse_as_unary ()
           in
@@ -1330,9 +1342,11 @@ module State (Context : Context) = struct
                             in
                             List.find_map overriding_parameters ~f:find_variable_parameter
                             |> validate_match ~expected:annotation
+                        | Variable (Map _)
                         | Variable (Variadic _) ->
-                            (* There is currently no way to write a parameter with a variadic type
-                             * in an actual class, so this case can be ignored for now *)
+                            (* TODO(T44178876): There is no reasonable way to compare either of
+                               these alone, which is the central issue with this comparison
+                               strategy. For now, let's just ignore this *)
                             errors
                       in
                       Type.Callable.Overload.parameters implementation
