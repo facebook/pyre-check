@@ -111,8 +111,6 @@ class Start(Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         filter_directories = self._get_directories_to_analyze()
-        if self._taint_models_path:
-            flags.extend(["-taint-models", self._taint_models_path])
         if len(filter_directories):
             flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         if len(self._configuration.ignore_all_errors):
