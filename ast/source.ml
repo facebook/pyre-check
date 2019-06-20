@@ -324,6 +324,27 @@ let qualifier ~handle =
   Reference.create_from_list qualifier
 
 
+let top_level_define { qualifier; statements; metadata = { Metadata.version; _ }; _ } =
+  let statements =
+    if version < 3 then
+      []
+    else
+      statements
+  in
+  Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements
+
+
+let top_level_define_node ({ handle; _ } as source) =
+  let location =
+    { Location.path = File.Handle.show handle;
+      start = { Location.line = 1; column = 1 };
+      stop = { Location.line = 1; column = 1 }
+    }
+    |> Location.reference
+  in
+  Node.create ~location (top_level_define source)
+
+
 let expand_relative_import ?handle ~qualifier ~from =
   match Reference.show from with
   | "builtins" -> Reference.empty

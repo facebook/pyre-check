@@ -305,7 +305,7 @@ end
 
 (* Lol functors... *)
 module Scheduler (State : State) (Context : Context) = struct
-  let run ({ Source.qualifier; statements; _ } as source) =
+  let run source =
     Hashtbl.clear Context.transformations;
     let module Fixpoint = Fixpoint.Make (State) in
     let rec run ~state ~define =
@@ -318,7 +318,7 @@ module Scheduler (State : State) (Context : Context) = struct
                    run ~state:(Some state) ~define:nested_define))
       |> ignore
     in
-    let define = Define.create_toplevel ~qualifier:(Some qualifier) ~statements in
+    let define = Source.top_level_define source in
     run ~state:None ~define;
     let module Transform = Transform.MakeStatementTransformer (struct
       type t = unit
@@ -341,11 +341,9 @@ module Scheduler (State : State) (Context : Context) = struct
     Transform.transform () source |> Transform.source
 end
 
-let run
-    ~configuration:_
-    ~environment
-    ~source:({ Source.qualifier; statements; handle; _ } as source)
-  =
+let run ~configuration:_
+        ~environment
+        ~source:({ Source.qualifier; _ } as source) =
   let module Context = struct
     let environment = environment
 
@@ -691,6 +689,5 @@ let run
     Transform.transform () source |> Transform.source
   in
   (* Create error. *)
-  let location = Location.Reference.create_with_handle ~handle in
-  let define = Define.create_toplevel ~qualifier:(Some qualifier) ~statements in
+  let { Node.location; value = define } = Source.top_level_define_node source in
   [Error.create ~location ~kind:(Error.Deobfuscation source) ~define:(Node.create define ~location)]

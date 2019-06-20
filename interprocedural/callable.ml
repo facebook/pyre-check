@@ -134,9 +134,7 @@ let get_definition ~resolution = function
       String.drop_suffix name 10
       |> Reference.create
       |> SharedMemory.Sources.get_for_qualifier
-      >>| fun { Source.handle; qualifier; statements; _ } ->
-      Define.create_toplevel ~qualifier:(Some qualifier) ~statements
-      |> Node.create ~location:(Location.Reference.create_with_handle ~handle)
+      >>| Source.top_level_define_node
   | `Function name ->
       Reference.create name
       |> Resolution.function_definitions resolution

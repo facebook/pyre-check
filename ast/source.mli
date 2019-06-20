@@ -68,6 +68,10 @@ val statements : t -> Statement.t list
 
 val qualifier : handle:File.Handle.t -> Reference.t
 
+val top_level_define : t -> Statement.Define.t
+
+val top_level_define_node : t -> Statement.Define.t Node.t
+
 val expand_relative_import
   :  ?handle:File.Handle.t ->
   qualifier:Reference.t ->

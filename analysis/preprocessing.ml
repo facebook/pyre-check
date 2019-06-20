@@ -1285,12 +1285,10 @@ let expand_implicit_returns source =
   ExpandingTransform.transform () source |> ExpandingTransform.source
 
 
-let defines
-    ?(include_stubs = false)
-    ?(include_nested = false)
-    ?(include_toplevels = false)
-    ({ Source.qualifier; statements; _ } as source)
-  =
+let defines ?(include_stubs = false)
+            ?(include_nested = false)
+            ?(include_toplevels = false)
+            source =
   let module Collector = Visit.StatementCollector (struct
     type t = Define.t Node.t
 
@@ -1315,10 +1313,7 @@ let defines
   in
   let defines = Collector.collect source in
   if include_toplevels then
-    let toplevel =
-      Node.create_with_default_location
-        (Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements)
-    in
+    let toplevel = Source.top_level_define_node source in
     toplevel :: defines
   else
     defines
