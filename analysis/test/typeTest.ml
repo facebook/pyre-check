@@ -1807,17 +1807,22 @@ let test_map_operator_singleton_replace_variable _ =
   ()
 
 
-let test_map_operator_union_upper_bound _ =
+let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
-    assert_equal (Type.OrderedTypes.Map.union_upper_bound map) expected
+    assert_equal (Type.OrderedTypes.union_upper_bound map) expected
   in
-  let variable = Type.Variable.Variadic.List.create "Ts" in
   assert_union_upper_bound
-    (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
-    (Parametric
-       { name = "Foo";
-         parameters = [Parametric { name = "Bar"; parameters = [Type.object_primitive] }]
-       });
+    (Concrete [Type.integer; Type.string; Type.bool])
+    (Type.union [Type.integer; Type.string; Type.bool]);
+
+  assert_union_upper_bound Any Any;
+
+  let variable = Type.Variable.Variadic.List.create "Ts" in
+  assert_union_upper_bound (Variable variable) Type.object_primitive;
+
+  assert_union_upper_bound
+    (Type.OrderedTypes.Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable))
+    Type.object_primitive;
   ()
 
 
@@ -1914,7 +1919,7 @@ let () =
          "map_operator_variable" >:: test_map_operator_variable;
          "map_operator_singleton_replace_variable" >:: test_map_operator_singleton_replace_variable;
          "map_operator_replace_variable" >:: test_map_operator_replace_variable;
-         "map_operator_union_upper_bound" >:: test_map_operator_union_upper_bound ]
+         "map_operator_union_upper_bound" >:: test_union_upper_bound ]
   |> Test.run;
   "callable"
   >::: [ "from_overloads" >:: test_from_overloads;

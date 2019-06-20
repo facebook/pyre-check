@@ -1009,6 +1009,23 @@ let test_list_variadics _ =
       "Invalid argument [32]: Variadic type variable `ListVariadic[Ts]` cannot be made to contain \
        `int, str, ListVariadic[Ts]`, concatenation of variadic type variables is not yet \
        implemented." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar
+    from pyre_extensions import ListVariadic, MapOperator
+    Ts = ListVariadic("Ts")
+    def foo(x: Tuple[MapOperator[List, Ts]], y: Tuple[Ts]) -> None:
+      reveal_type(x)
+      reveal_type(y)
+      for i in x:
+        reveal_type(i)
+      for i in y:
+        reveal_type(i)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[MapOperator[list, Ts]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[ListVariadic[Ts]]`.";
+      "Revealed type [-1]: Revealed type for `i` is `object`.";
+      "Revealed type [-1]: Revealed type for `i` is `object`." ];
   ()
 
 

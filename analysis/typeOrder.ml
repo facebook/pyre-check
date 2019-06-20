@@ -1174,11 +1174,10 @@ module OrderImplementation = struct
             let parameter =
               match tuple with
               | Type.Unbounded parameter -> parameter
+              (* TODO(T46072994) have concrete use union instead of join *)
               | Type.Bounded (Concrete parameters) ->
                   List.fold ~init:Type.Bottom ~f:(join order) parameters
-              | Type.Bounded Any -> Type.Any
-              | Type.Bounded (Variable _) -> Type.object_primitive
-              | Type.Bounded (Map map) -> Type.OrderedTypes.Map.union_upper_bound map
+              | Type.Bounded bound -> Type.OrderedTypes.union_upper_bound bound
             in
             let parametric = Type.parametric "tuple" [parameter] in
             less_or_equal order ~left:parametric ~right
@@ -1929,17 +1928,26 @@ module OrderImplementation = struct
           |> Handler.find (Handler.edges ())
           >>= get_generic_parameters ~generic_index
           >>| List.map ~f:(fun _ -> Type.Any)
-      | _ -> (
-        match Type.split source with
-        | primitive, Concrete parameters when contains handler primitive ->
-            let parameters =
-              match primitive with
-              | Type.Primitive "tuple" ->
-                  (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-                  [List.fold ~init:Type.Bottom ~f:(join order) parameters]
-                  |> List.map ~f:Type.weaken_literals
-              | _ -> parameters
-            in
+      | _ ->
+          let split =
+            match Type.split source with
+            | primitive, _ when not (contains handler primitive) -> None
+            | (Primitive "tuple" as primitive), parameters ->
+                let union =
+                  match parameters with
+                  (* TODO(T46072994) have concrete use union instead of join *)
+                  | Concrete concretes ->
+                      (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
+                      List.fold ~init:Type.Bottom ~f:(join order) concretes |> Type.weaken_literals
+                  | bound -> Type.OrderedTypes.union_upper_bound bound
+                in
+                Some (primitive, [union])
+            | primitive, Concrete concretes -> Some (primitive, concretes)
+            | _, _ ->
+                (* TODO(T45097646): we don't generally support propagating list variadics yet *)
+                None
+          in
+          let handle_split (primitive, parameters) =
             let worklist = Queue.create () in
             Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
             let rec iterate worklist =
@@ -1959,9 +1967,8 @@ module OrderImplementation = struct
               | None -> None
             in
             iterate worklist
-        | _, _ ->
-            (* TODO(T45097646): we don't support propagating list variadics yet *)
-            None )
+          in
+          split >>= handle_split
 
 
     and instantiate_predecessors_parameters

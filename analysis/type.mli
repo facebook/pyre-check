@@ -454,13 +454,13 @@ module OrderedTypes : sig
 
     val singleton_replace_variable : t -> replacement:type_t -> type_t
 
-    val union_upper_bound : t -> type_t
-
     val replace_variable
       :  t ->
       replacement:(Record.Variable.RecordVariadic.RecordList.record -> ordered_types_t option) ->
       ordered_types_t option
   end
+
+  val union_upper_bound : t -> type_t
 end
 
 val split : t -> t * OrderedTypes.t

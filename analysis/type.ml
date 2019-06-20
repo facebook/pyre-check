@@ -2100,12 +2100,17 @@ module OrderedTypes = struct
       replace_variable map ~replacement:(fun _ -> Some (Concrete [replacement])) |> extract
 
 
-    let union_upper_bound = singleton_replace_variable ~replacement:object_primitive
-
     let rec variable = function
       | { mappee = Variable variable; _ } -> variable
       | { mappee = SubMap submap; _ } -> variable submap
   end
+
+  let union_upper_bound ordered =
+    match ordered with
+    | Concrete concretes -> union concretes
+    | Variable _ -> object_primitive
+    | Any -> Any
+    | Map _ -> object_primitive
 end
 
 let split annotation =
