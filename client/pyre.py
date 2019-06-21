@@ -46,6 +46,11 @@ def main() -> int:
         return file_path
 
     def writable_directory(path: str) -> str:
+        # Create the directory if it does not exist.
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            pass
         assert_writable_directory(path)
         return path
 
