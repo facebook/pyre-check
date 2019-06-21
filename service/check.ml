@@ -141,7 +141,7 @@ let check
   in
   check_directory_exists local_root;
   check_directory_exists project_root;
-  search_path |> List.map ~f:Path.SearchPath.to_path |> List.iter ~f:check_directory_exists;
+  search_path |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   let scheduler =
     let bucket_multiplier =
       try

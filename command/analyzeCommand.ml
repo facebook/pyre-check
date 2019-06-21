@@ -67,7 +67,7 @@ let run_analysis
       ?filter_directories
       ?ignore_all_errors
       ~number_of_workers
-      ~search_path:(List.map search_path ~f:Path.SearchPath.create)
+      ~search_path:(List.map search_path ~f:SearchPath.create)
       ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
       ~excludes
       ~extensions

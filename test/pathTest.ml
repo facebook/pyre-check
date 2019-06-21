@@ -34,27 +34,6 @@ let test_create context =
   assert_equal (Path.current_working_directory () |> Path.show) (Sys.getcwd ())
 
 
-let test_create_search_path context =
-  let _, root = root context in
-  (* Create root/subdirectory. *)
-  let subdirectory = Path.create_relative ~root ~relative:"subdirectory" in
-  subdirectory |> Path.show |> Sys_utils.mkdir_no_fail;
-  assert_equal
-    ~cmp:Path.SearchPath.equal
-    (Path.SearchPath.Root root)
-    (Path.SearchPath.create (Path.show root));
-  assert_equal
-    ~cmp:Path.SearchPath.equal
-    (Path.SearchPath.Root subdirectory)
-    (Path.SearchPath.create (Path.show subdirectory));
-  assert_equal
-    ~cmp:Path.SearchPath.equal
-    (Path.SearchPath.Subdirectory { root; subdirectory = "subdirectory" })
-    (Path.SearchPath.create (Path.show root ^ "$subdirectory"));
-  assert_raises (Failure "Unable to create search path from too$many$levels") (fun () ->
-      Path.SearchPath.create "too$many$levels")
-
-
 let test_relative context =
   let _, root = root context in
   assert_is_none (root |> Path.relative);
@@ -238,31 +217,6 @@ let test_build_symlink_map context =
   assert_keys ~links:[link; broken_link; nonexistent] [target, link]
 
 
-let test_search_for_path context =
-  let root = OUnit2.bracket_tmpdir context |> Path.create_absolute in
-  let assert_path ~search_path ~path ~expected =
-    assert_equal (Some expected) (Path.search_for_path ~search_path ~path >>= Path.relative)
-  in
-  let search_path =
-    [ Path.SearchPath.Subdirectory { root; subdirectory = "a" };
-      Path.SearchPath.Subdirectory
-        { root = Path.create_relative ~root ~relative:"b"; subdirectory = "c" };
-      Path.SearchPath.Subdirectory { root; subdirectory = "b" } ]
-  in
-  assert_path
-    ~search_path
-    ~path:(Path.create_relative ~root ~relative:"a/file.py")
-    ~expected:"a/file.py";
-  assert_path
-    ~search_path
-    ~path:(Path.create_relative ~root ~relative:"b/c/file.py")
-    ~expected:"c/file.py";
-  assert_path
-    ~search_path
-    ~path:(Path.create_relative ~root ~relative:"b/other/file.py")
-    ~expected:"b/other/file.py"
-
-
 let () =
   "path"
   >::: [ "create" >:: test_create;
@@ -279,7 +233,5 @@ let () =
          "last" >:: test_last;
          "link" >:: test_link;
          "remove" >:: test_remove;
-         "create_search_path" >:: test_create_search_path;
-         "build_symlink_map" >:: test_build_symlink_map;
-         "search_for_path" >:: test_search_for_path ]
+         "build_symlink_map" >:: test_build_symlink_map ]
   |> Test.run

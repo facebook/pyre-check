@@ -113,7 +113,7 @@ let test_filter_directories context =
    *                       of check. The practical case here is resource_cache/typeshed. *)
   assert_errors
     ~root
-    ~search_path:[Path.SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
+    ~search_path:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
     ~files:
       [ File.create ~content (Path.create_relative ~root ~relative:"check/file.py");

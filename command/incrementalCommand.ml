@@ -68,7 +68,7 @@ let run
         ?filter_directories
         ?ignore_all_errors
         ~number_of_workers
-        ~search_path:(List.map search_path ~f:Path.SearchPath.create)
+        ~search_path:(List.map search_path ~f:SearchPath.create)
         ~project_root:(Path.create_absolute project_root)
         ~excludes
         ~extensions

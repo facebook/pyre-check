@@ -122,6 +122,27 @@
 
 
 (library
+ (name searchPath)
+ (public_name pyrelib.search_path)
+ (modules searchPath)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.log
+  pyrelib.path
+))
+
+
+(library
  (name file)
  (modules file)
  (public_name pyrelib.file)
@@ -140,7 +161,8 @@
   hack_parallel
   pyrelib.configuration
   pyrelib.pyre
-  pyrelib.path))
+  pyrelib.path
+  pyrelib.search_path))
 
 
 (library
@@ -175,7 +197,8 @@
   core
   ppx_deriving
   pyrelib.pyre
-  pyrelib.path))
+  pyrelib.path
+  pyrelib.search_path))
 
 
 (library

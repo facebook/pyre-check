@@ -203,7 +203,7 @@ let log_parse_errors ~syntax_error ~system_error =
 let find_stubs ({ Configuration.Analysis.local_root; search_path; excludes; _ } as configuration) =
   let stubs =
     let stubs root =
-      let search_root = Path.SearchPath.to_path root in
+      let search_root = SearchPath.to_path root in
       Log.info "Finding type stubs in `%a`..." Path.pp search_root;
       let directory_filter path =
         let is_python_2_directory path =
@@ -225,13 +225,13 @@ let find_stubs ({ Configuration.Analysis.local_root; search_path; excludes; _ } 
           File.create path
           |> File.handle ~configuration
           |> File.Handle.show
-          |> fun relative -> Path.create_relative ~root:(Path.SearchPath.get_root root) ~relative
+          |> fun relative -> Path.create_relative ~root:(SearchPath.get_root root) ~relative
         in
         Path.equal reconstructed path
       in
       Path.list ~file_filter ~directory_filter ~root:search_root () |> List.filter ~f:keep
     in
-    List.map ~f:stubs (Path.SearchPath.Root local_root :: search_path)
+    List.map ~f:stubs (SearchPath.Root local_root :: search_path)
   in
   let modules =
     let modules root =
@@ -245,7 +245,7 @@ let find_stubs ({ Configuration.Analysis.local_root; search_path; excludes; _ } 
       in
       Path.list ~file_filter ~directory_filter ~root ()
     in
-    search_path |> List.map ~f:Path.SearchPath.to_path |> List.map ~f:modules
+    search_path |> List.map ~f:SearchPath.to_path |> List.map ~f:modules
   in
   List.append stubs modules |> List.concat
 

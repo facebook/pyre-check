@@ -21,6 +21,7 @@
   fileTest
   logTest
   pathTest
+  searchPathTest
   statisticsTest
   profilingTest)
  (modules :standard \ test)

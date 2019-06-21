@@ -42,11 +42,11 @@ let test_handle _ =
       Configuration.Analysis.create
         ~local_root:(path "/root")
         ~search_path:
-          [ Path.SearchPath.Root (path "/root/stubs");
-            Path.SearchPath.Root (path "/external");
-            Path.SearchPath.Subdirectory { root = path "/virtualenv"; subdirectory = "importMe" };
-            Path.SearchPath.Root (path "/typeshed/stdlib/3");
-            Path.SearchPath.Root (path "/typeshed/third_party/3") ]
+          [ SearchPath.Root (path "/root/stubs");
+            SearchPath.Root (path "/external");
+            SearchPath.Subdirectory { root = path "/virtualenv"; subdirectory = "importMe" };
+            SearchPath.Root (path "/typeshed/stdlib/3");
+            SearchPath.Root (path "/typeshed/third_party/3") ]
         ()
     in
     match handle with
@@ -101,8 +101,8 @@ let test_handle_to_path context =
     Configuration.Analysis.create
       ~local_root
       ~search_path:
-        [ Path.SearchPath.Root other_root;
-          Path.SearchPath.Subdirectory
+        [ SearchPath.Root other_root;
+          SearchPath.Subdirectory
             { root = Path.create_absolute virtualenv; subdirectory = "importMe" } ]
       ()
   in

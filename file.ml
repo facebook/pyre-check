@@ -70,12 +70,12 @@ module Handle = struct
     let construct_relative_to_root root =
       let should_be_considered =
         match root with
-        | Path.SearchPath.Root _ -> true
-        | Path.SearchPath.Subdirectory { subdirectory; _ } ->
+        | SearchPath.Root _ -> true
+        | SearchPath.Subdirectory { subdirectory; _ } ->
             (* Ensure that we don't reconstruct paths that live outside the subdirectory. *)
             String.is_prefix ~prefix:subdirectory handle
       in
-      let root = Path.SearchPath.get_root root in
+      let root = SearchPath.get_root root in
       let path = Path.create_relative ~root ~relative:handle in
       if should_be_considered && Path.file_exists path then
         Some path
@@ -136,7 +136,7 @@ let is_stub { path; _ } = Path.absolute path |> Handle.create_for_testing |> Han
 
 let handle ~configuration { path; _ } =
   let search_path = Configuration.Analysis.search_path configuration in
-  let handle = Path.search_for_path ~search_path ~path >>= Path.relative in
+  let handle = SearchPath.search_for_path ~search_path ~path >>= Path.relative in
   match handle with
   | Some handle -> handle
   | None ->
@@ -144,6 +144,6 @@ let handle ~configuration { path; _ } =
         Format.sprintf
           "Unable to construct handle for %s. Possible roots: %s"
           (Path.absolute path)
-          (search_path |> List.map ~f:Path.SearchPath.to_path |> List.to_string ~f:Path.absolute)
+          (search_path |> List.map ~f:SearchPath.to_path |> List.to_string ~f:Path.absolute)
       in
       raise (NonexistentHandle message)

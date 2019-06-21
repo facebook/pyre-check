@@ -21,7 +21,7 @@ module Analysis = struct
     sections: string list;
     debug: bool;
     project_root: Path.t;
-    search_path: Path.SearchPath.t list;
+    search_path: SearchPath.t list;
     taint_models_directory: Path.t option;
     verbose: bool;
     expected_version: string option;
@@ -126,7 +126,7 @@ module Analysis = struct
   let search_path { local_root; search_path; _ } =
     (* Have an ordering of search_path > local_root with the parser. search_path precedes
      * local_root due to the possibility of having a subdirectory of the root in the search path. *)
-    search_path @ [Path.SearchPath.Root local_root]
+    search_path @ [SearchPath.Root local_root]
 end
 
 module Server = struct

@@ -122,9 +122,9 @@ let test_find_stubs_and_sources context =
       ~local_root
       ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
       ~search_path:
-        [ Path.SearchPath.Root local_subdirectory_root;
-          Path.SearchPath.Root module_root;
-          Path.SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" } ]
+        [ SearchPath.Root local_subdirectory_root;
+          SearchPath.Root module_root;
+          SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" } ]
       ()
   in
   assert_sources
@@ -162,7 +162,7 @@ let test_find_sources context =
         ~local_root
         ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.py"]
         ~extensions:[".cconf"; ""]
-        ~search_path:[Path.SearchPath.Root module_root]
+        ~search_path:[SearchPath.Root module_root]
         ()
     in
     Service.Parser.find_stubs_and_sources configuration
@@ -197,10 +197,7 @@ let test_external_sources context =
     write_file local_root "b.py";
     write_file external_root "a.py";
     let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~search_path:[Path.SearchPath.Root external_root]
-        ()
+      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root external_root] ()
     in
     ( local_root,
       external_root,
@@ -270,7 +267,7 @@ let test_parse_sources context =
       ~src:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
       ~dst:(Path.absolute local_root ^/ "d.pyi");
     let configuration =
-      Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root module_root] ()
+      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root module_root] ()
     in
     Service.Parser.parse_all scheduler ~configuration
     |> List.map ~f:File.Handle.show
@@ -285,7 +282,7 @@ let test_parse_sources context =
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
     let configuration =
-      Configuration.Analysis.create ~local_root ~search_path:[Path.SearchPath.Root stub_root] ()
+      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root stub_root] ()
     in
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
