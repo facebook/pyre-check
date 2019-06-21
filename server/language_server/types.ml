@@ -813,10 +813,18 @@ module TextDocumentDefinitionResponse = struct
   include ResponseMessage.Make (DefinitionResult) (DefinitionError)
 end
 
+module MarkedString = struct
+  type t = {
+    language: string;
+    value: string
+  }
+  [@@deriving yojson]
+end
+
 module HoverResponse = struct
   module HoverResult = struct
     type t = {
-      contents: string;
+      contents: MarkedString.t;
       range: Range.t option
     }
     [@@deriving yojson]

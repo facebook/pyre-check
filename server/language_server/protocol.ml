@@ -228,7 +228,9 @@ module HoverResponse = struct
       result =
         ( result
         >>| fun { location = { Ast.Location.start; stop; _ }; contents } ->
-        { HoverResult.contents; range = Some (Range.create ~start ~stop) } );
+        { HoverResult.contents = { language = "python"; value = contents };
+          range = Some (Range.create ~start ~stop)
+        } );
       error = None
     }
 end

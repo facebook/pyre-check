@@ -773,7 +773,8 @@ let test_language_server_hover_response _ =
         "jsonrpc", `String "2.0";
         ( "result",
           `Assoc
-            [ "contents", `String "Hover response contents";
+            [ ( "contents",
+                `Assoc ["language", `String "python"; "value", `String "Hover response contents"] );
               ( "range",
                 `Assoc
                   [ "end", `Assoc ["character", `Int (-1); "line", `Int (-2)];
