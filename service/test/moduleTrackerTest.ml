@@ -132,6 +132,7 @@ let test_creation context =
         ~local_root
         ~excludes:[".*/thereisnospoon.py"]
         ~search_path:[SearchPath.Root external_root]
+        ~filter_directories:[local_root]
         ()
     in
     let create_exn = create_exn ~configuration in
@@ -301,6 +302,7 @@ let test_creation context =
       Configuration.Analysis.create
         ~local_root
         ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
+        ~filter_directories:[local_root]
         ()
     in
     let create_exn = create_exn ~configuration in
@@ -375,9 +377,62 @@ let test_creation context =
       ~is_stub:true
       ~is_external:true
   in
+  let test_directory_filter () =
+    (* SETUP:
+     * - all_root is the parent of both local_root and external_root
+     * - local_root is the local root
+     * - search_root is the root of other search paths
+     * - both derp and durp lives under search_root
+     * - search_root is whitelisted with filter_directories and durp is blacklisted with ignore_all_errors
+     * We want to make sure that the is_external field is correct for this setup. *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let derp_path = Path.absolute search_root ^ "/derp" in
+    Sys_utils.mkdir_no_fail derp_path;
+    let durp_path = Path.absolute search_root ^ "/durp" in
+    Sys_utils.mkdir_no_fail durp_path;
+    let derp = Path.create_absolute derp_path in
+    let durp = Path.create_absolute durp_path in
+    touch local_root "a.py";
+    touch search_root "b.py";
+    touch derp "c.py";
+    touch durp "d.py";
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root search_root]
+        ~filter_directories:[search_root]
+        ~ignore_all_errors:[durp]
+        ()
+    in
+    let create_exn = create_exn ~configuration in
+    assert_source_file
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_source_file
+      (create_exn search_root "b.py")
+      ~search_root
+      ~relative:"b.py"
+      ~is_external:false;
+    assert_source_file
+      (create_exn search_root "derp/c.py")
+      ~search_root
+      ~relative:"derp/c.py"
+      ~is_external:false;
+    assert_source_file
+      (create_exn search_root "durp/d.py")
+      ~search_root
+      ~relative:"durp/d.py"
+      ~is_external:true
+  in
   let test_overlapping () =
-    (* SETUP: external_root0 lives under local_root external_root1 lives under external_root0
-       Module resolution boils down to which root comes first in the search path *)
+    (* SETUP:
+     * - external_root0 lives under local_root
+     * - external_root1 lives under external_root0
+     * Module resolution boils down to which root comes first in the search path *)
     let local_root = bracket_tmpdir context |> Path.create_absolute in
     let external_root0_path = Path.absolute local_root ^ "/external0" in
     Sys_utils.mkdir_no_fail external_root0_path;
@@ -395,6 +450,8 @@ let test_creation context =
         Configuration.Analysis.create
           ~local_root
           ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
+          ~filter_directories:[local_root]
+          ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
       let create_exn = create_exn ~configuration in
@@ -436,6 +493,8 @@ let test_creation context =
         Configuration.Analysis.create
           ~local_root
           ~search_path:[SearchPath.Root external_root1; SearchPath.Root external_root0]
+          ~filter_directories:[local_root]
+          ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
       let create_exn = create_exn ~configuration in
@@ -474,6 +533,7 @@ let test_creation context =
     test_external_root_1_before_0 ()
   in
   test_basic ();
+  test_directory_filter ();
   test_priority ();
   test_overlapping ()
 

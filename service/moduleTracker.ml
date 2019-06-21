@@ -35,16 +35,31 @@ module SourceFile = struct
     Some { relative_path; priority; is_stub; is_external; is_init }
 
 
-  let create ~configuration:{ Configuration.Analysis.local_root; search_path; excludes; _ } path =
+  let should_type_check
+      ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
+      path
+    =
+    let directory_contains ~path directory =
+      Path.directory_contains ~follow_symlinks:true ~directory path
+    in
+    let filter_directories = Option.value filter_directories ~default:[] in
+    let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
+    List.exists filter_directories ~f:(directory_contains ~path)
+    && not (List.exists ignore_all_errors ~f:(directory_contains ~path))
+
+
+  let create
+      ~configuration:( { Configuration.Analysis.local_root; search_path; excludes; _ } as
+                     configuration )
+      path
+    =
     let absolute_path = Path.absolute path in
     match List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) with
     | true -> None
-    | false -> (
-      match create_from_search_path ~is_external:true ~search_path path with
-      | Some _ as result -> result
-      | None ->
-          let search_path = [SearchPath.Root local_root] in
-          create_from_search_path ~is_external:false ~search_path path )
+    | false ->
+        let search_path = List.append search_path [SearchPath.Root local_root] in
+        let is_external = not (should_type_check ~configuration path) in
+        create_from_search_path ~is_external ~search_path path
 
 
   (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
