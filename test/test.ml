@@ -1197,14 +1197,26 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     |> Preprocessing.preprocess;
     parse
       ~qualifier:(Reference.create "pyre_extensions")
-      ~handle:"pyre_extensions.pyi"
+      ~handle:"pyre_extensions/__init__.pyi"
       {|
         from typing import List, Optional, Type, TypeVar
+        import type_variable_operators
 
         _T = TypeVar("_T")
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
+        def ListVariadic(__name: str) -> Type: ...
+      |}
+    |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "pyre_extensions.type_variable_operators")
+      ~handle:"pyre_extensions/type_variable_operators.pyi"
+      {|
+        from typing import List, Optional, Type, TypeVar, _SpecialForm
+        Map: _SpecialForm
+        PositionalArgumentsOf: _SpecialForm
+        ArgumentsOf: _SpecialForm
       |}
     |> Preprocessing.preprocess ]
 

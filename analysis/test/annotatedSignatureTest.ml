@@ -648,17 +648,17 @@ let test_select _ =
              ( Variable (Type.Variable.Variadic.List.create "Ts"),
                ConstraintFailure (Concrete [Type.float]) )) ));
   assert_select
-    "[[pyre_extensions.MapOperator[typing.List, Ts]], int]"
+    "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], int]"
     "([1,2,3], ['string', 'string'])"
     (`Found "[[typing.List[int], typing.List[str]], int]");
   assert_select
-    "[[pyre_extensions.MapOperator[typing.List, Ts]], \
-     typing.Tuple[pyre_extensions.MapOperator[typing.Type, Ts]]]"
+    "[[pyre_extensions.type_variable_operators.Map[typing.List, Ts]], \
+     typing.Tuple[pyre_extensions.type_variable_operators.Map[typing.Type, Ts]]]"
     "([1,2,3], ['string', 'string'])"
     (`Found
       "[[typing.List[int], typing.List[str]], typing.Tuple[typing.Type[int], typing.Type[str]]]");
   assert_select
-    "[[bool, Variable(pyre_extensions.MapOperator[typing.List, Ts])], int]"
+    "[[bool, Variable(pyre_extensions.type_variable_operators.Map[typing.List, Ts])], int]"
     "(True, [1,2,3], ['string', 'string'])"
     (`Found "[[bool, typing.List[int], typing.List[str]], int]");
   ()

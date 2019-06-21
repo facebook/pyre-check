@@ -353,7 +353,7 @@ let test_create _ =
     ~aliases:(function
       | "Ts" -> Some (Type.VariableAlias (ListVariadic (Type.Variable.Variadic.List.create "Ts")))
       | _ -> None)
-    "typing.Tuple[pyre_extensions.MapOperator[typing.List, Ts]]"
+    "typing.Tuple[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]"
     (Type.Tuple
        (Bounded
           (Map

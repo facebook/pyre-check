@@ -105,8 +105,9 @@ module Record = struct
           [@@deriving compare, eq, sexp, show, hash]
 
           let component_name = function
-            | KeywordArguments -> "pyre_extensions.KeywordArgumentsOf"
-            | PositionalArguments -> "pyre_extensions.PositionalArgumentsOf"
+            | KeywordArguments -> "pyre_extensions.type_variable_operators.KeywordArgumentsOf"
+            | PositionalArguments ->
+                "pyre_extensions.type_variable_operators.PositionalArgumentsOf"
 
 
           let pp_concise format { component; variable_name; _ } =
@@ -149,9 +150,12 @@ module Record = struct
 
       let rec pp_concise format = function
         | { mappee = Variable { name; _ }; mapper } ->
-            Format.fprintf format "MapOperator[%s, %s]" mapper name
+            Format.fprintf format "Map[%s, %s]" mapper name
         | { mappee = SubMap submap; mapper } ->
-            Format.fprintf format "MapOperator[%s, %a]" mapper pp_concise submap
+            Format.fprintf format "Map[%s, %a]" mapper pp_concise submap
+
+
+      let public_name = "pyre_extensions.type_variable_operators.Map"
     end
 
     type 'annotation record =
@@ -1060,7 +1064,10 @@ let rec expression annotation =
 and map_expression map =
   let rec map_annotation map =
     let single_wrap ~mapper ~inner =
-      Parametric { name = "MapOperator"; parameters = [Primitive mapper; inner] }
+      Parametric
+        { name = Record.OrderedTypes.RecordMap.public_name;
+          parameters = [Primitive mapper; inner]
+        }
     in
     match map with
     | { Record.OrderedTypes.RecordMap.mappee = Variable { name; _ }; mapper } ->
@@ -1415,7 +1422,7 @@ let primitive_name = function
 let rec create_map_operator_from_annotation annotation ~variable_aliases =
   match annotation with
   | Parametric { name; parameters = [Primitive left_parameter; Primitive right_parameter] }
-    when Identifier.equal name "pyre_extensions.MapOperator" -> (
+    when Identifier.equal name Record.OrderedTypes.RecordMap.public_name -> (
     match variable_aliases right_parameter with
     | Some (Record.Variable.ListVariadic variable) ->
         Some { Record.OrderedTypes.RecordMap.mappee = Variable variable; mapper = left_parameter }
@@ -2694,11 +2701,11 @@ end = struct
             create_type keywords_parameter_annotation ~aliases )
         with
         | ( Parametric
-              { name = "pyre_extensions.PositionalArgumentsOf";
+              { name = "pyre_extensions.type_variable_operators.PositionalArgumentsOf";
                 parameters = [Primitive positional_name]
               },
             Parametric
-              { name = "pyre_extensions.KeywordArgumentsOf";
+              { name = "pyre_extensions.type_variable_operators.KeywordArgumentsOf";
                 parameters = [Primitive keywords_name]
               } )
           when Identifier.equal positional_name keywords_name ->
