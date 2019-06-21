@@ -305,30 +305,22 @@ let create ~resolution ?(verify = true) ~configuration source =
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let signature { Node.value; _ } =
                     match value with
-                    | Define
-                        { Define.signature =
-                            { Define.name; parameters; return_annotation; _ } as signature
-                        ; _
-                        } ->
+                    | Define { Define.signature = { Define.name; parameters; _ } as signature; _ }
+                      ->
                         let signature =
                           let parameters =
-                            match sink_annotation with
-                            | Some base ->
-                                let sink_parameter parameter =
-                                  let update_annotation parameter =
-                                    { parameter with Parameter.annotation = Some base }
-                                  in
-                                  Node.map parameter ~f:update_annotation
-                                in
-                                List.map parameters ~f:sink_parameter
-                            | None -> parameters
+                            let sink_parameter parameter =
+                              let update_annotation parameter =
+                                { parameter with Parameter.annotation = sink_annotation }
+                              in
+                              Node.map parameter ~f:update_annotation
+                            in
+                            List.map parameters ~f:sink_parameter
                           in
-                          let return_annotation =
-                            match source_annotation with
-                            | Some annotation -> Some annotation
-                            | None -> return_annotation
-                          in
-                          { signature with Define.parameters; return_annotation }
+                          { signature with
+                            Define.parameters;
+                            return_annotation = source_annotation
+                          }
                         in
                         Some (signature, Callable.create_method name)
                     | _ -> None

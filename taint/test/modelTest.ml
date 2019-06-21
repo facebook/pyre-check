@@ -134,8 +134,6 @@ let test_class_models _ =
     ~model_source:
       {|
         class Source(TaintSource[UserControlled]):
-          # Note: the methods are specified here to have them added to the test environment.
-          # These need not be specified in actual sink class models.
           def Source.method(parameter): ...
           def Source.method_with_multiple_parameters(first, second): ...
           # TODO(T46075946): Support attributes.
@@ -146,7 +144,25 @@ let test_class_models _ =
         outcome
           ~kind:`Method
           ~returns:[Sources.UserControlled]
-          "Source.method_with_multiple_parameters" ]
+          "Source.method_with_multiple_parameters" ];
+  assert_model
+    ~model_source:
+      {|
+        class AnnotatedSink(TaintSink[TestSink]):
+          def AnnotatedSink.method(parameter: int) -> None: ...
+      |}
+    ~expect:
+      [ outcome
+          ~kind:`Method
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          "AnnotatedSink.method" ];
+  assert_model
+    ~model_source:
+      {|
+        class AnnotatedSource(TaintSource[UserControlled]):
+          def AnnotatedSource.method(parameter: int) -> None: ...
+      |}
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"]
 
 
 let test_taint_in_taint_out_models _ =
