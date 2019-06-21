@@ -104,6 +104,18 @@ and unawaited_awaitable = {
 and abstract_class_kind =
   | Instantiation of Reference.t
   | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
+
+and incompatible_overload_kind =
+  | ReturnType of
+      { implementation_annotation: Type.t;
+        name: Reference.t;
+        overload_annotation: Type.t
+      }
+  | Unmatchable of
+      { name: Reference.t;
+        matched_location: Location.t;
+        unmatched_location: Location.t
+      }
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
@@ -127,11 +139,7 @@ type kind =
         define_location: Location.t
       }
   | IncompatibleVariableType of incompatible_type
-  | IncompatibleOverload of
-      { implementation_annotation: Type.t;
-        name: Reference.t;
-        overload_annotation: Type.t
-      }
+  | IncompatibleOverload of incompatible_overload_kind
   | IncompleteType of
       { target: Expression.t;
         annotation: Type.t;

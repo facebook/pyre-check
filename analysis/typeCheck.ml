@@ -560,7 +560,7 @@ module State (Context : Context) = struct
     in
     let overload_errors errors =
       let annotation = Resolution.get_local resolution ~reference:name in
-      let check_implementation errors =
+      let check_implementation_exists errors =
         match annotation with
         | Some { annotation = Type.Callable { implementation; _ }; _ }
           when Statement.Define.is_overloaded_method define
@@ -600,14 +600,64 @@ module State (Context : Context) = struct
                       ~location
                       ~kind:
                         (Error.IncompatibleOverload
-                           { implementation_annotation; overload_annotation = annotation; name })
+                           (ReturnType
+                              { implementation_annotation; overload_annotation = annotation; name }))
                       ~define:Context.define
                   in
                   error :: sofar)
               overloads
         | _ -> errors
       in
-      check_implementation errors |> check_compatible_return_types
+      let check_unmatched_overloads errors =
+        match annotation with
+        | Some { annotation = Type.Callable { overloads; _ }; _ }
+          when not (Statement.Define.is_overloaded_method define) ->
+            let _remaining_overloads overloads = List.tl overloads |> Option.value ~default:[] in
+            let rec compare_parameters errors_sofar overloads =
+              match overloads with
+              | left :: overloads ->
+                  let create_unmatched_error matched errors_sofar unmatched =
+                    match unmatched, matched with
+                    | ( Type.Callable
+                          { implementation = { define_location = Some unmatched_location; _ }; _ },
+                        Type.Callable
+                          { implementation = { define_location = Some matched_location; _ }; _ } )
+                      ->
+                        let error =
+                          Error.create
+                            ~location
+                            ~define:Context.define
+                            ~kind:
+                              (Error.IncompatibleOverload
+                                 (Unmatchable { name; unmatched_location; matched_location }))
+                        in
+                        error :: errors_sofar
+                    | _, _ -> failwith "Callables missing locations."
+                  in
+                  let errors_sofar =
+                    overloads
+                    |> List.filter ~f:(fun right ->
+                           Resolution.less_or_equal resolution ~left ~right)
+                    |> List.fold ~init:errors_sofar ~f:(create_unmatched_error left)
+                  in
+                  compare_parameters errors_sofar overloads
+              | _ -> errors_sofar
+            in
+            let overload_to_callable overload =
+              Type.Callable
+                { implementation = { overload with annotation = Type.Any };
+                  kind = Anonymous;
+                  overloads = [];
+                  implicit = None
+                }
+            in
+            overloads |> List.map ~f:overload_to_callable |> compare_parameters errors
+        | _ -> errors
+      in
+      errors
+      |> check_implementation_exists
+      |> check_compatible_return_types
+      |> check_unmatched_overloads
     in
     Map.data errors
     |> Error.deduplicate
