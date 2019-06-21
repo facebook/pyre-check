@@ -1,4 +1,7 @@
-from typing import TypeVar
+# pyre-ignore-all-errors
+from typing import Any, TypeVar
+
+from . import tests, type_variable_operators  # noqa F401
 
 
 _T = TypeVar("_T")
@@ -37,3 +40,7 @@ def ParameterSpecification(name):
     a list of types
     """
     return []
+
+
+def ListVariadic(name):
+    return Any
