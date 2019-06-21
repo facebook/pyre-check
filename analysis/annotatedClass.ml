@@ -487,7 +487,7 @@ let create_attribute
         in
         let apply_decorators define =
           ( Define.is_overloaded_method define,
-            Callable.apply_decorators ~define ~resolution ~location:(Some location) )
+            Callable.apply_decorators ~resolution ~location define )
         in
         List.map defines ~f:apply_decorators
         |> Callable.create ~resolution ~parent ~name:(Reference.show name)
@@ -1023,7 +1023,7 @@ let inferred_callable_type definition ~resolution =
       >>| fun define ->
       ( Reference.show name,
         Define.is_overloaded_method define,
-        Callable.create_overload ~define ~resolution ~location:None )
+        Callable.create_overload define ~resolution )
     in
     methods definition |> List.filter_map ~f:extract_callable
   in

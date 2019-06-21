@@ -668,7 +668,7 @@ let register_undecorated_functions (module Handler : Handler)
           else
             Handler.register_undecorated_function
               ~reference:name
-              ~annotation:(Annotated.Callable.create_overload ~resolution ~location:None ~define)
+              ~annotation:(Annotated.Callable.create_overload ~resolution define)
       | _ -> ()
   end)
   in
@@ -724,7 +724,7 @@ let register_values
             else
               None
           in
-          Annotated.Callable.apply_decorators ~resolution ~define ~location:(Some location)
+          Annotated.Callable.apply_decorators ~resolution ~location define
           |> (fun overload -> [Define.is_overloaded_method define, overload])
           |> Annotated.Callable.create ~resolution ~parent ~name:(Reference.show name)
           |> Node.create ~location

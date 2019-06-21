@@ -51,11 +51,9 @@ let return_annotation
     annotation
 
 
-let create_overload
-    ~resolution
-    ~location
-    ~define:({ Define.signature = { parameters; _ }; _ } as define)
-  =
+let create_overload ?location
+                    ~resolution
+                    ({ Define.signature = { parameters; _ }; _ } as define) =
   let open Type.Callable in
   let parameters =
     let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
@@ -174,9 +172,9 @@ let create ~resolution ~parent ~name overloads =
 
 
 let apply_decorators
-    ~location
-    ~define:({ Define.signature = { Define.decorators; _ }; _ } as define)
+    ?location
     ~resolution
+    ({ Define.signature = { Define.decorators; _ }; _ } as define)
   =
   ignore location;
   let apply_decorator
@@ -288,4 +286,4 @@ let apply_decorators
   in
   decorators
   |> List.rev
-  |> List.fold ~init:(create_overload ~define ~resolution ~location) ~f:apply_decorator
+  |> List.fold ~init:(create_overload define ~resolution ?location) ~f:apply_decorator

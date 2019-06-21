@@ -4037,7 +4037,7 @@ module State (Context : Context) = struct
     | YieldFrom _ -> state
     | Define define ->
         if Reference.is_local define.signature.name then
-          AnnotatedCallable.create_overload ~resolution ~define
+          AnnotatedCallable.create_overload ~resolution ~location define
           |> Type.Callable.create_from_implementation
           |> Type.Variable.mark_all_variables_as_bound
                ~specific:(Resolution.all_type_variables_in_scope resolution)
@@ -4124,10 +4124,7 @@ module State (Context : Context) = struct
               ~define:(Define.create_class_toplevel ~parent:name ~statements:body)
         | Define define ->
             let variables =
-              AnnotatedCallable.create_overload
-                ~resolution
-                ~location:(Some (Node.location statement))
-                ~define
+              AnnotatedCallable.create_overload ~resolution ~location define
               |> (fun { parameters; _ } ->
                    Type.Callable.create ~parameters ~annotation:Type.Top ())
               |> Type.Variable.all_free_variables
