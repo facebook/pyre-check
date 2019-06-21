@@ -27,11 +27,13 @@ let parse_lsp ~configuration ~request =
     let search_path = Configuration.Analysis.search_path configuration in
     Path.from_uri uri
     >>= fun path ->
-    match SearchPath.search_for_path ~search_path ~path with
-    | Some path -> Some path
+    match SearchPath.search_for_path ~search_path path with
+    | Some SearchPath.{ relative_path; _ } -> Some (Path.Relative relative_path)
     | None ->
         Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
-        >>= fun path -> SearchPath.search_for_path ~search_path ~path
+        >>= fun path ->
+        SearchPath.search_for_path ~search_path path
+        >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
   in
   let string_path_to_file string_path =
     File.create (Path.create_absolute ~follow_symbolic_links:false string_path)

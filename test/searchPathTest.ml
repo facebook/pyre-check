@@ -35,7 +35,10 @@ let test_create_search_path context =
 let test_search_for_path context =
   let root = OUnit2.bracket_tmpdir context |> Path.create_absolute in
   let assert_path ~search_path ~path ~expected =
-    assert_equal (Some expected) (SearchPath.search_for_path ~search_path ~path >>= Path.relative)
+    assert_equal
+      (Some expected)
+      ( SearchPath.search_for_path ~search_path path
+      >>| fun SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path )
   in
   let search_path =
     [ SearchPath.Subdirectory { root; subdirectory = "a" };

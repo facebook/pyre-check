@@ -66,6 +66,10 @@ module Handle = struct
 
   let is_stub path = String.is_suffix ~suffix:".pyi" path
 
+  let is_init path =
+    String.is_suffix ~suffix:"__init__.py" path || String.is_suffix ~suffix:"__init__.pyi" path
+
+
   let to_path ~configuration handle =
     let construct_relative_to_root root =
       let should_be_considered =
@@ -136,9 +140,8 @@ let is_stub { path; _ } = Path.absolute path |> Handle.create_for_testing |> Han
 
 let handle ~configuration { path; _ } =
   let search_path = Configuration.Analysis.search_path configuration in
-  let handle = SearchPath.search_for_path ~search_path ~path >>= Path.relative in
-  match handle with
-  | Some handle -> handle
+  match SearchPath.search_for_path ~search_path path with
+  | Some SearchPath.{ relative_path; _ } -> Path.RelativePath.relative relative_path
   | None ->
       let message =
         Format.sprintf

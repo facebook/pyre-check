@@ -3,6 +3,7 @@
   environmentTest
   ignoreTest
   memoryTest
+  moduleTrackerTest
   parserTest
   typeCheckTest
   typeOrderTest)

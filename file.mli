@@ -33,6 +33,8 @@ module Handle : sig
 
   val is_stub : t -> bool
 
+  val is_init : t -> bool
+
   val to_path : configuration:Configuration.Analysis.t -> t -> Path.t option
 
   include Hashable with type t := t

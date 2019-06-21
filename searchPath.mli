@@ -10,10 +10,15 @@ type t =
   | Subdirectory of { root: Path.t; subdirectory: string }
 [@@deriving sexp, compare, hash, show, eq]
 
+type search_result = {
+  relative_path: Path.RelativePath.t;  (** The searched path relative to one of the search root *)
+  priority: int  (** Smaller int means higher priority *)
+}
+
 val get_root : t -> Path.t
 
 val to_path : t -> Path.t
 
 val create : string -> t
 
-val search_for_path : search_path:t list -> path:Path.t -> Path.t option
+val search_for_path : search_path:t list -> Path.t -> search_result option
