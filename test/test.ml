@@ -1322,7 +1322,20 @@ let assert_errors
       let configuration = Configuration.Analysis.create ~debug ~strict ~declare ~infer () in
       check ~configuration ~environment ~source
     in
-    List.map (check source) ~f:(fun error -> Error.description error ~show_error_traces ~concise)
+    let errors = check source in
+    let errors_with_any_location =
+      List.map ~f:Error.location errors
+      |> List.filter ~f:(Location.Instantiated.equal Location.Instantiated.any)
+    in
+    let found_any = not (List.is_empty errors_with_any_location) in
+    ( if found_any then
+        let errors =
+          List.map ~f:(fun error -> Error.description error ~show_error_traces ~concise) errors
+          |> String.concat ~sep:"\n"
+        in
+        Format.sprintf "\nLocation.any cannot be attached to errors: %s\n" errors |> ignore );
+    assert_false found_any;
+    List.map ~f:(fun error -> Error.description error ~show_error_traces ~concise) errors
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
