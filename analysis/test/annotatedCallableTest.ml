@@ -129,24 +129,22 @@ let test_apply_decorators _ =
     in
     assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_count actual_count
   in
-  create_define
-    ~decorators:[]
-    ~parameters:[Parameter.create ~name:"test" ()]
-    ~return_annotation:None
+  let create_parameter ~name = Parameter.create ~location:Location.Reference.any ~name () in
+  create_define ~decorators:[] ~parameters:[create_parameter ~name:"test"] ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:1;
   create_define
     ~decorators:["click.neither_command_nor_group()"]
-    ~parameters:[Parameter.create ~name:"test" ()]
+    ~parameters:[create_parameter ~name:"test"]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:1;
   create_define
     ~decorators:["click.command()"]
-    ~parameters:[Parameter.create ~name:"test" ()]
+    ~parameters:[create_parameter ~name:"test"]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:2;
   create_define
     ~decorators:["click.group()"]
-    ~parameters:[Parameter.create ~name:"test" ()]
+    ~parameters:[create_parameter ~name:"test"]
     ~return_annotation:None
   |> assert_apply_click_decorators ~expected_count:2;
 
@@ -154,7 +152,7 @@ let test_apply_decorators _ =
   let resolution = resolution () in
   create_define
     ~decorators:["$strip_first_parameter"]
-    ~parameters:[Parameter.create ~name:"self" (); Parameter.create ~name:"other" ()]
+    ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
   |> (fun define -> Callable.apply_decorators ~resolution define)
   |> fun { Type.Callable.parameters; _ } ->

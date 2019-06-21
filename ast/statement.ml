@@ -239,7 +239,7 @@ module Attribute = struct
     let open Expression in
     match Node.value target with
     | Name (Name.Attribute { base; attribute; _ })
-      when Expression.equal base (Reference.expression parent) ->
+      when Expression.equal base (Reference.expression ~location:Location.Reference.any parent) ->
         Some attribute
     | _ -> None
 end
@@ -950,7 +950,9 @@ module Class = struct
                                    })
                           };
                         arguments =
-                          [{ Call.Argument.name = None; value = Reference.expression name }]
+                          [ { Call.Argument.name = None;
+                              value = Reference.expression ~location:Location.Reference.any name
+                            } ]
                       }
                 }
               in

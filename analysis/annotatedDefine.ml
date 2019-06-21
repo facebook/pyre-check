@@ -52,35 +52,51 @@ let decorate
         match parameters with
         | Defined parameters ->
             let convert (placed_single_star, sofar) parameter =
+              let location = Location.Reference.any in
               let placed_single_star, sofar =
                 match placed_single_star, parameter with
                 | false, Type.Callable.Parameter.KeywordOnly _ ->
-                    true, Ast.Parameter.create ~name:"*" () :: sofar
+                    true, Ast.Parameter.create ~location ~name:"*" () :: sofar
                 | _ -> placed_single_star, sofar
               in
               let new_parameter =
                 match parameter with
                 | Type.Callable.Parameter.Anonymous { annotation; _ } ->
                     (* This means it will be read back in as an anonymous *)
-                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"__" ()
+                    Ast.Parameter.create
+                      ~location
+                      ~annotation:(Type.expression annotation)
+                      ~name:"__"
+                      ()
                 | Type.Callable.Parameter.KeywordOnly { name; annotation; _ }
                 | Type.Callable.Parameter.Named { name; annotation; _ } ->
-                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name ()
+                    Ast.Parameter.create
+                      ~location
+                      ~annotation:(Type.expression annotation)
+                      ~name
+                      ()
                 | Type.Callable.Parameter.Variable (Concrete annotation) ->
-                    Ast.Parameter.create ~annotation:(Type.expression annotation) ~name:"*args" ()
+                    Ast.Parameter.create
+                      ~location
+                      ~annotation:(Type.expression annotation)
+                      ~name:"*args"
+                      ()
                 | Type.Callable.Parameter.Variable (Variadic variable) ->
                     let name = Type.Variable.Variadic.List.name variable in
                     Ast.Parameter.create
+                      ~location
                       ~annotation:(Type.expression (Primitive name))
                       ~name:"*args"
                       ()
                 | Type.Callable.Parameter.Variable (Map map) ->
                     Ast.Parameter.create
+                      ~location
                       ~annotation:(Type.OrderedTypes.Map.expression map)
                       ~name:"*args"
                       ()
                 | Type.Callable.Parameter.Keywords annotation ->
                     Ast.Parameter.create
+                      ~location
                       ~annotation:(Type.expression annotation)
                       ~name:"**kwargs"
                       ()

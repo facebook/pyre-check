@@ -16,7 +16,7 @@ type 'expression parameter = {
 type 'expression t = 'expression parameter Node.t
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
-let create ?(location = Location.Reference.any) ?value ?annotation ~name () =
+let create ~location ?value ?annotation ~name () =
   { Node.location; value = { name; value; annotation } }
 
 

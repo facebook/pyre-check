@@ -384,7 +384,9 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
           if in_class_body then target else Reference.combine qualifier target
         in
         let target_annotation =
-          Type.create ~aliases:Handler.aliases (Reference.expression target)
+          Type.create
+            ~aliases:Handler.aliases
+            (Reference.expression ~location:Location.Reference.any target)
         in
         match Node.value value, annotation with
         | ( _,
@@ -529,7 +531,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
             | _ ->
                 [ { UnresolvedAlias.handle;
                     target = qualified_name;
-                    value = Reference.expression original_name
+                    value = Reference.expression ~location:Location.Reference.any original_name
                   } ]
         in
         List.rev_append (List.concat_map ~f:import_to_alias imports) aliases

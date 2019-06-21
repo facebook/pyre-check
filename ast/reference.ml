@@ -116,7 +116,7 @@ let from_name_exn name =
            (Expression.Name.show Expression.pp name))
 
 
-let name ?(location = Location.Reference.any) reference =
+let name ~location reference =
   let rec create = function
     | [] -> Name (Name.Identifier "") |> Node.create ~location
     | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
@@ -129,7 +129,7 @@ let name ?(location = Location.Reference.any) reference =
   | _ -> failwith "Impossible."
 
 
-let expression ?(location = Location.Reference.any) reference =
+let expression ~location reference =
   name ~location reference |> (fun name -> Name name) |> Node.create ~location
 
 

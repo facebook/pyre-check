@@ -366,7 +366,8 @@ let create ~resolution ?(verify = true) ~configuration source =
           let name = Reference.from_name_exn name in
           let signature =
             { Define.name;
-              parameters = [Parameter.create ~annotation ~name:"$global" ()];
+              parameters =
+                [Parameter.create ~location:Location.Reference.any ~annotation ~name:"$global" ()];
               decorators = [];
               docstring = None;
               return_annotation = None;
@@ -387,7 +388,7 @@ let create ~resolution ?(verify = true) ~configuration source =
     (* Make sure we know about what we model. *)
     try
       let call_target = (call_target :> Callable.t) in
-      let annotation = Resolution.resolve resolution (Reference.expression name) in
+      let annotation = Resolution.resolve_reference resolution name in
       let () =
         if Type.is_top annotation && not (Resolution.is_global resolution ~reference:name) then
           raise_invalid_model "Modeled entity is not part of the environment!"

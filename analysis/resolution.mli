@@ -72,6 +72,8 @@ val order : t -> (module TypeOrder.Handler)
 
 val resolve : t -> Expression.t -> Type.t
 
+val resolve_reference : t -> Reference.t -> Type.t
+
 val resolve_literal : t -> Expression.t -> Type.t
 
 val resolve_mutable_literals

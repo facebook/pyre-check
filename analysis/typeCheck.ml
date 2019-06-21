@@ -1312,8 +1312,7 @@ module State (Context : Context) = struct
                   | Type.Callable { Type.Callable.implementation; _ }
                     when not (Statement.Define.is_static_method define) ->
                       let original_implementation =
-                        Reference.expression name
-                        |> Resolution.resolve resolution
+                        Resolution.resolve_reference resolution name
                         |> function
                         | Type.Callable
                             { Type.Callable.implementation = original_implementation; _ } ->

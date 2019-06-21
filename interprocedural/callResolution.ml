@@ -12,7 +12,7 @@ open Pyre
 let normalize_global ~resolution reference =
   (* Determine if this is a constructor call, as we need to add the uninitialized object argument
      for self. *)
-  let global_type = Resolution.resolve resolution (Reference.expression reference) in
+  let global_type = Resolution.resolve_reference resolution reference in
   if Type.is_meta global_type then
     let dummy_self =
       { Expression.Call.Argument.name = None;
@@ -153,7 +153,9 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
 
 
 let get_global_targets ~resolution ~global =
-  Name (Reference.name global) |> Node.create_with_default_location |> resolve_target ~resolution
+  Name (Reference.name ~location:Location.Reference.any global)
+  |> Node.create_with_default_location
+  |> resolve_target ~resolution
 
 
 let resolve_call_targets ~resolution { Call.callee; _ } =

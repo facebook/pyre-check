@@ -115,7 +115,7 @@ let transform_ast ({ Source.statements; _ } as source) =
     in
     let tuple_constructor ~parent ~location attributes =
       let parameters =
-        let self_parameter = Parameter.create ~name:"$parameter$cls" () in
+        let self_parameter = Parameter.create ~location ~name:"$parameter$cls" () in
         let to_parameter (name, annotation, value) =
           let value =
             match value with

@@ -152,6 +152,10 @@ let order { order; _ } = order
 
 let resolve ({ resolve; _ } as resolution) = resolve ~resolution
 
+let resolve_reference ({ resolve; _ } as resolution) reference =
+  Reference.expression ~location:Location.Reference.any reference |> resolve ~resolution
+
+
 let global { global; _ } = global
 
 let module_definition { module_definition; _ } = module_definition
@@ -440,7 +444,7 @@ let parse_annotation
 
 
 let parse_reference ?(allow_untracked = false) resolution reference =
-  Reference.expression reference
+  Reference.expression ~location:Location.Reference.any reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
