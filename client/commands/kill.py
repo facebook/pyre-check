@@ -23,7 +23,12 @@ class Kill(Command):
     def _run(self) -> None:
         # Kills all processes that have the same binary as the one specified
         # in the configuration.
-        subprocess.run(["pkill", "{}".format(BINARY_NAME)])
+        overridden_binary = os.getenv("PYRE_BINARY")
+        if overridden_binary is not None:
+            binary_to_kill = os.path.basename(overridden_binary)
+        else:
+            binary_to_kill = BINARY_NAME
+        subprocess.run(["pkill", "{}".format(binary_to_kill)])
         server_root = os.path.join(
             os.path.realpath(self._analysis_directory.get_root()), ".pyre", "server"
         )
