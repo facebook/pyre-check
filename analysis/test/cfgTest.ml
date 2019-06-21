@@ -270,7 +270,7 @@ let test_if _ =
 
 
 let test_raise _ =
-  let error = +Raise None in
+  let error = +Raise { Raise.expression = None; from = None } in
   assert_cfg
     [error]
     [ node 0 Node.Entry [] [5];
@@ -443,7 +443,7 @@ let test_try _ =
       (* normal *)
       node 10 (Node.Block [!!"body"; return]) [5] [8];
       node 11 (Node.Block [!!"handler"]) [6] [9] ];
-  let error = +Raise None in
+  let error = +Raise { Raise.expression = None; from = None } in
   let block =
     { Try.body = [!!"body"; error; !!"unreached"];
       handlers = [handler "handler"];
@@ -532,7 +532,7 @@ let test_try _ =
       node 9 (Node.Block [+Return { Return.expression = None; is_implicit = false }]) [10] [1];
       (* normal *)
       node 10 (Node.Block [!!"body"]) [5] [9] ];
-  let error = +Raise None in
+  let error = +Raise { Raise.expression = None; from = None } in
   let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [error] } in
   assert_cfg
     [+Try block; !!"unreached"]

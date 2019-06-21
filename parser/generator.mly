@@ -552,12 +552,12 @@ small_statement:
         | None, None -> Location.create ~start ~stop
         | Some node, None ->
           location_create_with_stop ~start ~stop:(Node.stop node)
-        | _, Some location ->
+        | _, Some { Node.location; _ } ->
           location_create_with_stop ~start ~stop:(location.Location.stop)
       in
       [{
         Node.location;
-        value = Raise test;
+        value = Raise { Raise.expression = test; from = raise_from };
       }]
     }
 
@@ -616,7 +616,7 @@ small_statement:
   ;
 
 raise_from:
-  | FROM; test_list = test_list { test_list.Node.location }
+  | FROM; test_list = test_list { test_list }
   ;
 
 compound_statement:

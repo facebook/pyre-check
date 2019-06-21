@@ -130,6 +130,14 @@ module Assign : sig
   val is_static_attribute_initialization : t -> bool
 end
 
+module Raise : sig
+  type t = {
+    expression: Expression.t option;
+    from: Expression.t option
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
 module Return : sig
   type t = {
     is_implicit: bool;
@@ -153,7 +161,7 @@ type statement =
   | Import of Import.t
   | Nonlocal of Identifier.t list
   | Pass
-  | Raise of Expression.t option
+  | Raise of Raise.t
   | Return of Return.t
   | Try of t Record.Try.record
   | With of t Record.With.record

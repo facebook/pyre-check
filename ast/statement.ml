@@ -139,6 +139,14 @@ module Assign = struct
   let is_static_attribute_initialization { parent; _ } = Option.is_some parent
 end
 
+module Raise = struct
+  type t = {
+    expression: Expression.t option;
+    from: Expression.t option
+  }
+  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+end
+
 module Return = struct
   type t = {
     is_implicit: bool;
@@ -162,7 +170,7 @@ type statement =
   | Import of Import.t
   | Nonlocal of Identifier.t list
   | Pass
-  | Raise of Expression.t option
+  | Raise of Raise.t
   | Return of Return.t
   | Try of t Record.Try.record
   | With of t Record.With.record
@@ -1488,7 +1496,8 @@ module PrettyPrinter = struct
         Format.fprintf formatter "@[<v>%aimport %a@]" pp_reference_option from pp_imports imports
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
-    | Raise expression -> Format.fprintf formatter "raise %a" pp_expression_option ("", expression)
+    | Raise { Raise.expression; _ } ->
+        Format.fprintf formatter "raise %a" pp_expression_option ("", expression)
     | Return { Return.expression; _ } ->
         Format.fprintf formatter "return %a" pp_expression_option ("", expression)
     | Try { Record.Try.body; handlers; orelse; finally } ->

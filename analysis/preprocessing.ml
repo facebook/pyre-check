@@ -765,8 +765,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
       | Nonlocal identifiers -> scope, Nonlocal identifiers
-      | Raise expression ->
-          scope, Raise (expression >>| qualify_expression ~qualify_strings:false ~scope)
+      | Raise { Raise.expression; from } ->
+          ( scope,
+            Raise
+              { Raise.expression = expression >>| qualify_expression ~qualify_strings:false ~scope;
+                from = from >>| qualify_expression ~qualify_strings:false ~scope
+              } )
       | Return ({ Return.expression; _ } as return) ->
           ( scope,
             Return

@@ -1121,19 +1121,27 @@ let test_operator_locations _ =
 
 
 let test_raise_locations _ =
-  assert_source_locations "raise" [node ~start:(1, 0) ~stop:(1, 5) (Raise None)];
+  assert_source_locations
+    "raise"
+    [node ~start:(1, 0) ~stop:(1, 5) (Raise { Raise.expression = None; from = None })];
   assert_source_locations
     "raise a"
     [ node
         ~start:(1, 0)
         ~stop:(1, 7)
-        (Raise (Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a"))))) ];
+        (Raise
+           { Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
+             from = None
+           }) ];
   assert_source_locations
     "raise a from b"
     [ node
         ~start:(1, 0)
         ~stop:(1, 14)
-        (Raise (Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a"))))) ]
+        (Raise
+           { Raise.expression = Some (node ~start:(1, 6) ~stop:(1, 7) (Name (Name.Identifier "a")));
+             from = Some (node ~start:(1, 13) ~stop:(1, 14) (Name (Name.Identifier "b")))
+           }) ]
 
 
 let test_return_locations _ =

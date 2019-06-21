@@ -2674,9 +2674,9 @@ let test_with _ =
 
 
 let test_raise _ =
-  assert_parsed_equal "raise" [+Raise None];
-  assert_parsed_equal "raise a" [+Raise (Some !"a")];
-  assert_parsed_equal "raise a from b" [+Raise (Some !"a")]
+  assert_parsed_equal "raise" [+Raise { Raise.expression = None; from = None }];
+  assert_parsed_equal "raise a" [+Raise { Raise.expression = Some !"a"; from = None }];
+  assert_parsed_equal "raise a from b" [+Raise { Raise.expression = Some !"a"; from = Some !"b" }]
 
 
 let test_try _ =

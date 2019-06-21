@@ -333,8 +333,8 @@ module State (Context : Context) = struct
             state
         in
         forward_expression ~state ~expression
-    | Raise None -> state
-    | Raise (Some expression) -> forward_expression ~state ~expression
+    | Raise { Raise.expression = None; _ } -> state
+    | Raise { Raise.expression = Some expression; _ } -> forward_expression ~state ~expression
     | Return { expression = Some expression; _ } ->
         let state = forward_expression ~state ~expression in
         forward_return ~state ~expression

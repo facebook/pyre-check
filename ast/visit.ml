@@ -139,7 +139,9 @@ module Make (Visitor : Visitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
-      | Raise expression -> Option.iter ~f:visit_expression expression
+      | Raise { Raise.expression; from } ->
+          Option.iter ~f:visit_expression expression;
+          Option.iter ~f:visit_expression from
       | Return { Return.expression; _ } -> Option.iter ~f:visit_expression expression
       | Try { Try.body; handlers; orelse; finally } ->
           let visit_handler { Try.kind; handler_body; _ } =

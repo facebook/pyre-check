@@ -4005,8 +4005,9 @@ module State (Context : Context) = struct
         imports
         |> List.filter ~f:(fun import -> not (Resolution.is_suppressed_module resolution import))
         |> List.fold ~init:state ~f:add_import_error
-    | Raise (Some expression) -> forward_expression ~state ~expression |> fun { state; _ } -> state
-    | Raise None -> state
+    | Raise { Raise.expression = Some expression; _ } ->
+        forward_expression ~state ~expression |> fun { state; _ } -> state
+    | Raise _ -> state
     | Return { Return.expression; is_implicit } ->
         let { state; resolved = actual; _ } =
           Option.value_map

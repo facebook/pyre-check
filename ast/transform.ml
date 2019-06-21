@@ -252,7 +252,11 @@ module Make (Transformer : Transformer) = struct
         | Import _ -> value
         | Nonlocal _ -> value
         | Pass -> value
-        | Raise expression -> Raise (expression >>| transform_expression)
+        | Raise { Raise.expression; from } ->
+            Raise
+              { Raise.expression = expression >>| transform_expression;
+                from = from >>| transform_expression
+              }
         | Return ({ Return.expression; _ } as return) ->
             Return { return with Return.expression = expression >>| transform_expression }
         | Try { Try.body; handlers; orelse; finally } ->
