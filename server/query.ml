@@ -48,7 +48,10 @@ let help () =
         Some "type_at_position('path', line, column): Returns the type for the given cursor."
     | TypesInFile _ ->
         Some "types_in_file('path'): Returns the list of all types for a given path."
-    | ValidateTaintModels -> Some "validate_taint_models(): Validates models and returns errors."
+    | ValidateTaintModels _ ->
+        Some
+          "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
+           to model path in configuration if no parameter is passed in."
   in
   let path = Path.current_working_directory () in
   let file = File.create path in
@@ -74,7 +77,7 @@ let help () =
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { file; position = Location.any_position };
       TypesInFile file;
-      ValidateTaintModels ]
+      ValidateTaintModels None ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
   |> Format.sprintf "Possible queries:\n  %s"
@@ -222,7 +225,16 @@ let parse_query
             |> List.map ~f:File.create
           in
           Request.TypeCheckRequest files
-      | "validate_taint_models", [] -> Request.TypeQueryRequest ValidateTaintModels
+      | "validate_taint_models", [] -> Request.TypeQueryRequest (ValidateTaintModels None)
+      | "validate_taint_models", [argument] ->
+          let path =
+            let path = string argument in
+            if String.is_prefix ~prefix:"/" path then
+              Path.create_absolute path
+            else
+              Path.create_relative ~root ~relative:(string argument)
+          in
+          Request.TypeQueryRequest (ValidateTaintModels (Some path))
       | _ -> raise (InvalidQuery "unexpected query call") )
   | _ -> raise (InvalidQuery "unexpected query")
   | exception PyreParser.Parser.Error message ->

@@ -157,7 +157,11 @@ let test_parse_query context =
            { serialized_key = "second_key";
              first_serialized_value = "second_value";
              second_serialized_value = "third_value"
-           } ])
+           } ]);
+  assert_parses "validate_taint_models()" (ValidateTaintModels None);
+  assert_parses
+    (Format.sprintf "validate_taint_models('%s')" (Path.absolute (File.path file)))
+    (ValidateTaintModels (Some (File.path file)))
 
 
 let test_to_yojson _ =

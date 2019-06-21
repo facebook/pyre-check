@@ -991,11 +991,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
         |> Option.value ~default
-    | TypeQuery.ValidateTaintModels -> (
+    | TypeQuery.ValidateTaintModels path -> (
       try
         let directory =
-          configuration.Configuration.Analysis.taint_models_directory
-          |> fun value -> Option.value_exn value
+          match path with
+          | Some path -> path
+          | None ->
+              configuration.Configuration.Analysis.taint_models_directory
+              |> fun value -> Option.value_exn value
         in
         let configuration = Taint.TaintConfiguration.create ~directory in
         let create_models sources =

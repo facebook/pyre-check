@@ -53,7 +53,7 @@ module TypeQuery : sig
     | Type of Expression.t
     | TypeAtPosition of { file: File.t; position: Location.position }
     | TypesInFile of File.t
-    | ValidateTaintModels
+    | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
 
   type coverage_level =
