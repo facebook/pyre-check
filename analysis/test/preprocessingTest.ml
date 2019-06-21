@@ -201,8 +201,23 @@ let test_expand_format_string _ =
                        node ~start:(1, 12) ~stop:(1, 15) (Integer 456) ];
                  value = "foo{123}a{456}"
                })) ];
-
-  (* TODO:(T46070919) Preprocesser needs to keep track of newlines inside substrings. *)
+  assert_locations
+    "return f'foo{123}a{456}'"
+    [ +Return
+         { is_implicit = false;
+           expression =
+             Some
+               (node
+                  ~start:(1, 7)
+                  ~stop:(1, 24)
+                  (String
+                     { StringLiteral.kind =
+                         StringLiteral.Format
+                           [ node ~start:(1, 13) ~stop:(1, 16) (Integer 123);
+                             node ~start:(1, 19) ~stop:(1, 22) (Integer 456) ];
+                       value = "foo{123}a{456}"
+                     }))
+         } ];
   assert_locations
     {|
        f'''
@@ -217,9 +232,9 @@ let test_expand_format_string _ =
             (String
                { StringLiteral.kind =
                    StringLiteral.Format
-                     [ node ~start:(2, 9) ~stop:(2, 12) (Integer 123);
-                       node ~start:(2, 15) ~stop:(2, 18) (Integer 456);
-                       node ~start:(2, 22) ~stop:(2, 25) (Integer 789) ];
+                     [ node ~start:(3, 4) ~stop:(3, 7) (Integer 123);
+                       node ~start:(3, 10) ~stop:(3, 13) (Integer 456);
+                       node ~start:(4, 2) ~stop:(4, 5) (Integer 789) ];
                  value = "\nfoo{123}a{456}\nb{789}\n"
                })) ]
 
