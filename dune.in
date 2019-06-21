@@ -243,6 +243,7 @@
 (executable
  (name main)
  (modules main)
+ (ocamlc_flags (:standard -custom))
  (libraries pyrelib))
 
 
