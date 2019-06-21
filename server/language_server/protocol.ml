@@ -27,10 +27,10 @@ module TextDocumentDefinitionRequest = Types.TextDocumentDefinitionRequest
 module PublishDiagnostics = struct
   include Types.PublishDiagnostics
 
-  let diagnostic_severity { Error.severity; _ } =
-    match severity with
-    | Error.Hint -> Some DiagnosticSeverity.Information
-    | _ -> Some DiagnosticSeverity.Error
+  let diagnostic_severity error =
+    match Error.language_server_hint error with
+    | true -> Some DiagnosticSeverity.Information
+    | false -> Some DiagnosticSeverity.Error
 
 
   let of_errors ~configuration handle errors =

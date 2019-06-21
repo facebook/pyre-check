@@ -27,16 +27,10 @@ end
 module type Error = sig
   type kind
 
-  type severity =
-    | Hint
-    | Error
-  [@@deriving compare, eq, show, sexp, hash]
-
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    signature: Define.signature Node.t;
-    severity: severity
+    signature: Define.signature Node.t
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -51,8 +45,6 @@ module type Error = sig
   val location : t -> Location.Instantiated.t
 
   val key : t -> Location.t
-
-  val is_hint : t -> bool
 
   val code : t -> int
 

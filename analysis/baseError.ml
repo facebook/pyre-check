@@ -27,16 +27,10 @@ end
 module type Error = sig
   type kind
 
-  type severity =
-    | Hint
-    | Error
-  [@@deriving compare, eq, show, sexp, hash]
-
   type t = {
     location: Location.Instantiated.t;
     kind: kind;
-    signature: Define.signature Node.t;
-    severity: severity
+    signature: Define.signature Node.t
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -52,8 +46,6 @@ module type Error = sig
 
   val key : t -> Location.t
 
-  val is_hint : t -> bool
-
   val code : t -> int
 
   val description : ?separator:string -> ?concise:bool -> t -> show_error_traces:bool -> string
@@ -62,16 +54,10 @@ module type Error = sig
 end
 
 module Make (Kind : Kind) = struct
-  type severity =
-    | Hint
-    | Error
-  [@@deriving compare, eq, show, sexp, hash]
-
   type t = {
     location: Location.Instantiated.t;
     kind: Kind.t;
-    signature: Define.signature Node.t;
-    severity: severity
+    signature: Define.signature Node.t
   }
   [@@deriving compare, eq, show, sexp, hash]
 
@@ -96,8 +82,7 @@ module Make (Kind : Kind) = struct
     { location =
         Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location;
       kind;
-      signature = { Node.value = signature; location = define_location };
-      severity = Error
+      signature = { Node.value = signature; location = define_location }
     }
 
 
@@ -110,12 +95,6 @@ module Make (Kind : Kind) = struct
   let key { location = { Location.start = { Location.line; _ }; path; _ }; _ } =
     let start = { Location.line; column = -1 } in
     { Location.start; stop = start; path } |> Location.reference
-
-
-  let is_hint { severity; _ } =
-    match severity with
-    | Hint -> true
-    | _ -> false
 
 
   let description

@@ -2202,7 +2202,7 @@ let join ~resolution left right =
     else
       right.location
   in
-  { location; kind; signature = left.signature; severity = Error }
+  { location; kind; signature = left.signature }
 
 
 let meet ~resolution:_ left _ =

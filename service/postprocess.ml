@@ -128,8 +128,7 @@ let ignore ~configuration scheduler handles errors =
         signature =
           { Node.location = Ignore.location unused_ignore;
             value = Statement.Define.Signature.create_toplevel ~qualifier:None
-          };
-        severity = Error
+          }
       }
     in
     error :: errors
