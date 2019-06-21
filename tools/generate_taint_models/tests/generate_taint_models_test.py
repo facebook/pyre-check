@@ -120,6 +120,29 @@ class GenerateTaintModelsTest(unittest.TestCase):
             generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
             load_function_definition.assert_called_once_with(arguments, "indirect.view")
 
+        # Recursive `include()` calls.
+        with patch(
+            "tools.pyre.tools.generate_taint_models.generate_taint_models."
+            "_load_function_definition"
+        ) as load_function_definition:
+            open.side_effect = _open_implementation(
+                {
+                    "urls.py": """url(r"derp", include("indirect.urls"))""",
+                    "indirect/urls.py": textwrap.dedent(
+                        """
+                        url(r"^p-ng/?$", include("admin.admin_urls"))
+                        """
+                    ),
+                    "admin/admin_urls.py": textwrap.dedent(
+                        """
+                        url(r"^p-ng/?$", "admin.view")
+                        """
+                    ),
+                }
+            )
+            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            load_function_definition.assert_called_once_with(arguments, "admin.view")
+
         # Patterns.
         with patch(
             "tools.pyre.tools.generate_taint_models.generate_taint_models."
@@ -265,6 +288,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
     def test_get_REST_api_sources(
         self, os_path_exists: unittest.mock._patch, open: unittest.mock._patch
     ) -> None:
+
         open.side_effect = _open_implementation(
             {
                 "urls.py": textwrap.dedent(
@@ -286,6 +310,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
         )
         arguments = MagicMock()
         arguments.urls_path = "urls.py"
+        arguments.graphql_path = None
         arguments.whitelisted_class = ["HttpRequest"]
         models = generate_taint_models._get_REST_api_sources(arguments)
         self.assertSetEqual(
@@ -295,7 +320,218 @@ class GenerateTaintModelsTest(unittest.TestCase):
                 "TaintSource[UserControlled]): ...",
                 "def module.view.unannotated("
                 "request: TaintSource[UserControlled], "
-                "other: TaintSource[UserControlled], *starred): ...",
+                "other: TaintSource[UserControlled], "
+                "*starred): ...",
+            },
+        )
+
+    @patch("pathlib.Path.iterdir")
+    @patch("builtins.open")
+    @patch("os.path.exists", return_value=True)
+    def test_get_graphql_sources(
+        self,
+        os_path_exists: unittest.mock._patch,
+        open: unittest.mock._patch,
+        path_iter: unittest.mock._patch,
+    ) -> None:
+
+        path_iter.side_effect = [["custom/custom_objects.py"]] * 10
+
+        arguments = MagicMock()
+        arguments.urls_path = None
+        arguments.graphql_path = "custom_objects.py"
+        arguments.whitelisted_class = ["HttpRequest"]
+
+        # 'GraphQLField' direct nested within 'GraphQLObjectType'
+        open.side_effect = _open_implementation(
+            {
+                "custom/custom_objects.py": textwrap.dedent(
+                    """
+                    from graphql.type import (
+                        GraphQLBoolean,
+                        GraphQLField,
+                        GraphQLObjectType
+                    )
+                    from fetchers.user import function, unannotated, unrelated
+                    GraphUserType = GraphQLObjectType(
+                        name="GraphUser",
+                        description="User in Instagram Graph",
+                        fields={
+                            "field1": GraphQLField(GraphQLBoolean,
+                                                   resolver=function),
+                            "field2": GraphQLField(GraphQLBoolean,
+                                                   resolver=unannotated),
+                        }
+                    )
+                    """
+                ),
+                "fetchers/user.py": textwrap.dedent(
+                    """
+                    def function(obj: None, info: ResolveInfo, **args) -> bool:
+                        pass
+                    def unannotated(obj, info, **args):
+                        pass
+                    def unrelated() -> None:
+                        pass
+                """
+                ),
+            }
+        )
+
+        models = generate_taint_models._get_graphql_sources(arguments)
+        self.assertSetEqual(
+            models,
+            {
+                "def fetchers.user.function(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+                "def fetchers.user.unannotated(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+            },
+        )
+
+        # 'GraphQLField' indirectly nested within 'GraphQLObjectType'
+        open.side_effect = _open_implementation(
+            {
+                "custom/custom_objects.py": textwrap.dedent(
+                    """
+                    from graphql.type import (
+                        GraphQLBoolean,
+                        GraphQLField,
+                        GraphQLObjectType
+                    )
+                    from fetchers.user import function, unannotated, unrelated
+
+                    fields_dict = {
+                        "field1": GraphQLField(GraphQLBoolean,
+                                               resolver=function),
+                        "field2": GraphQLField(GraphQLBoolean,
+                                               resolver=unannotated),
+                    }
+
+                    GraphUserType = GraphQLObjectType(
+                        name="GraphUser",
+                        description="User in Instagram Graph",
+                        fields=fields_dict
+                    )
+                    """
+                ),
+                "fetchers/user.py": textwrap.dedent(
+                    """
+                    def function(obj: None, info: ResolveInfo, **args) -> bool:
+                        pass
+                    def unannotated(obj, info, **args):
+                        pass
+                    def unrelated() -> None:
+                        pass
+                """
+                ),
+            }
+        )
+
+        models = generate_taint_models._get_graphql_sources(arguments)
+
+        self.assertSetEqual(
+            models,
+            {
+                "def fetchers.user.function(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+                "def fetchers.user.unannotated(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+            },
+        )
+
+        # 'GraphQLField' nested within 'GraphQLInterfaceType'
+        open.side_effect = _open_implementation(
+            {
+                "custom/custom_objects.py": textwrap.dedent(
+                    """
+                    from graphql.type import (
+                        GraphQLBoolean,
+                        GraphQLField,
+                        GraphQLInterfaceType
+                    )
+                    from fetchers.user import function, unannotated, unrelated
+
+                    GraphUserType = GraphQLInterfaceType(
+                        name="GraphMediaResourceInterface",
+                        description="One possible source of a media object",
+                        fields={
+                            "field1": GraphQLField(GraphQLBoolean,
+                                                   resolver=function),
+                            "field2": GraphQLField(GraphQLBoolean,
+                                                   resolver=unannotated),
+                        }
+                    )
+                    """
+                ),
+                "fetchers/user.py": textwrap.dedent(
+                    """
+                    def function(obj: None, info: ResolveInfo, **args) -> bool:
+                        pass
+                    def unannotated(obj, info, **args):
+                        pass
+                    def unrelated() -> None:
+                        pass
+                """
+                ),
+            }
+        )
+
+        models = generate_taint_models._get_graphql_sources(arguments)
+        self.assertSetEqual(
+            models,
+            {
+                "def fetchers.user.function(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+                "def fetchers.user.unannotated(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+            },
+        )
+
+        # Resolver passed into 'add_connection' function
+        open.side_effect = _open_implementation(
+            {
+                "custom/custom_objects.py": textwrap.dedent(
+                    """
+                    from graphql.type import (
+                        GraphQLBoolean,
+                        GraphQLField,
+                        GraphQLObjectType
+                    )
+                    from fetchers.user import function, unannotated, unrelated
+                    from schemas.connection import add_connection
+
+                    add_connection(None, connection_resolver=function)
+                    add_connection(None, connection_resolver=unannotated)
+                    """
+                ),
+                "fetchers/user.py": textwrap.dedent(
+                    """
+                    def function(obj: None, info: ResolveInfo, **args) -> bool:
+                        pass
+                    def unannotated(obj, info, **args):
+                        pass
+                    def unrelated() -> None:
+                        pass
+                """
+                ),
+                "schemas/connection.py": textwrap.dedent(
+                    """
+                    def add_connection(some_arg, connection_resolver: Callable):
+                        pass
+                """
+                ),
+            }
+        )
+
+        models = generate_taint_models._get_graphql_sources(arguments)
+        self.assertSetEqual(
+            models,
+            {
+                "def fetchers.user.function(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
+                "def fetchers.user.unannotated(obj, info, "
+                "**args: TaintSource[UserControlled]): ...",
             },
         )
 

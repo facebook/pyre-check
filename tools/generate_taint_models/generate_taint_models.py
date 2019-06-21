@@ -11,9 +11,12 @@ import functools
 import glob
 import logging
 import os
+from pathlib import Path
 from typing import Callable, Dict, Mapping, Optional, Set, Union
 
 import _ast
+
+from .taint_annotator import Model, annotate_function
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -49,7 +52,8 @@ def _load_function_definition(
     arguments: argparse.Namespace, function: str
 ) -> Optional[FunctionDefinition]:
     split = function.split(".")
-    assert len(split) > 1, f"Got unqualified or builtin function `{function}`"
+    if len(split) <= 1:
+        return
     module = ".".join(split[:-1])
     parent = None
     base = None
@@ -177,12 +181,12 @@ def _globals(root: str, path: str) -> Set[str]:
 
 def _visit_views(
     arguments: argparse.Namespace,
-    urls_path: Optional[str],
+    path: Optional[str],
     callback: Callable[[str, FunctionDefinition], None],
 ) -> None:
     functions: Set[str] = set()
 
-    if not urls_path:
+    if not path:
         return
 
     class UrlVisitor(ast.NodeVisitor):
@@ -251,6 +255,15 @@ def _visit_views(
                     if isinstance(name, ast.Name) and name.id == "url":
                         self._handle_url(argument, base)
 
+        def _handle_graphql_field(self, call: _ast.Call, base: str = "") -> None:
+            kwargs = call.keywords
+
+            # Note: resolver could be a lambda, which _handle_view will politely
+            # ignore for now
+            for kwarg in kwargs:
+                if kwarg.arg == "resolver":
+                    self._handle_view(kwarg.value, base)
+
         def visit_ImportFrom(self, import_from: _ast.ImportFrom) -> None:
             for name in import_from.names:
                 if not isinstance(name, ast.alias):
@@ -265,15 +278,15 @@ def _visit_views(
 
         def visit_FunctionDef(self, definition: _ast.FunctionDef) -> None:
             name = definition.name
-            module = urls_path.replace("/", ".")[:-3]
+            module = path.replace("/", ".")[:-3]
             self._aliases[name] = f"{module}.{name}"
 
         def visit_AsyncFunctionDef(self, definition: _ast.AsyncFunctionDef) -> None:
             name = definition.name
-            module = urls_path.replace("/", ".")[:-3]
+            module = path.replace("/", ".")[:-3]
             self._aliases[name] = f"{module}.{name}"
 
-        def visit_Call(self, call: _ast.Call) -> None:
+        def handle_call(self, call: _ast.Call) -> None:
             name = call.func
             if not isinstance(name, ast.Name):
                 return
@@ -281,10 +294,34 @@ def _visit_views(
                 self._handle_url(call)
             elif name.id == "patterns":
                 self._handle_patterns(call)
+            elif name.id == "GraphQLField":
+                self._handle_graphql_field(call)
+            elif name.id == "add_connection":
+                resolver_arg = next(
+                    (
+                        keyword
+                        for keyword in call.keywords
+                        if keyword.arg == "connection_resolver"
+                    ),
+                    None,
+                )
+                if resolver_arg:
+                    self._handle_view(resolver_arg.value)
 
-    LOG.info(f"Reading urls from `{urls_path}`...")
-    with open(urls_path, "r") as file:
-        UrlVisitor().visit(ast.parse(file.read()))
+    LOG.info(f"Reading file `{path}`...")
+    with open(path, "r") as file:
+        visitor = UrlVisitor()
+        root = ast.parse(file.read())
+
+        # First pass to build up our knowledge of what functions are defined
+        # where
+        visitor.visit(root)
+
+        # Second pass to find all places where the functions (which we now have
+        # fully qualified names for) are incorporated into django, graphql, etc.
+        for node in ast.walk(root):
+            if isinstance(node, _ast.Call):
+                visitor.handle_call(node)
 
     for function in functions:
         definition = _load_function_definition(arguments, function)
@@ -303,57 +340,59 @@ def _file_exists(path: str) -> str:
 def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
     exit_nodes: Set[str] = set()
 
+    if not arguments.urls_path:
+        LOG.warn("Ran in get_exit_nodes mode, but didn't supply urls_path")
+        return exit_nodes
+
     def callback(function: str, definition: FunctionDefinition) -> None:
-        call_arguments = definition.args
-        modified_arguments = ", ".join(
-            [argument.arg for argument in call_arguments.args]
-        )
-
-        variable = call_arguments.vararg
-        if variable:
-            modified_arguments += f", *{variable.arg}"
-        keywords = call_arguments.kwarg
-        if keywords:
-            modified_arguments += f", **{keywords.arg}"
-
-        exit_nodes.add(
-            f"def {function}({modified_arguments}) -> TaintSink[ReturnedToUser]: ..."
-        )
+        model = Model(returns=" -> TaintSink[ReturnedToUser]")
+        exit_nodes.add(annotate_function(function, definition, model))
 
     _visit_views(arguments, arguments.urls_path, callback)
     return exit_nodes
 
 
 def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
-    sources: Set[str] = set()
+    sources = set()
+
+    if not arguments.urls_path:
+        LOG.warn("Ran in get_REST_api_sources mode, but didn't supply urls_path")
+        return sources
+
+    whitelist = arguments.whitelisted_class
 
     def callback(function: str, definition: FunctionDefinition) -> None:
-        def annotated_argument(argument: _ast.arg) -> str:
-            annotation = argument.annotation
-            whitelisted = annotation and any(
-                element in ast.dump(annotation)
-                for element in arguments.whitelisted_class
-            )
-            if whitelisted:
-                return argument.arg
-            else:
-                return argument.arg + ": TaintSource[UserControlled]"
-
-        call_arguments = definition.args
-
-        modified_arguments = ", ".join(
-            [annotated_argument(argument) for argument in call_arguments.args]
+        model = Model(
+            arg=": TaintSource[UserControlled]",
+            # These are commented out to preserve existing behaviour, but
+            # I actually think it's more correct to uncomment them:
+            # vararg=": TaintSource[UserControlled]",
+            # kwarg=": TaintSource[UserControlled]",
         )
-        variable = call_arguments.vararg
-        if variable:
-            modified_arguments += f", *{variable.arg}"
-        keywords = call_arguments.kwarg
-        if keywords:
-            modified_arguments += f", **{keywords.arg}"
-
-        sources.add(f"def {function}({modified_arguments}): ...")
+        sources.add(annotate_function(function, definition, model, whitelist))
 
     _visit_views(arguments, arguments.urls_path, callback)
+
+    return sources
+
+
+def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
+    sources = set()
+
+    if not arguments.graphql_path:
+        LOG.warn("Ran in get_graphql_sources mode, but didn't supply graphql_path")
+        return sources
+
+    def callback(function: str, definition: FunctionDefinition) -> None:
+        model = Model(
+            vararg=": TaintSource[UserControlled]",
+            kwarg=": TaintSource[UserControlled]",
+        )
+        sources.add(annotate_function(function, definition, model))
+
+    for module in Path(arguments.graphql_path).iterdir():
+        _visit_views(arguments, str(module), callback)
+
     return sources
 
 
@@ -377,9 +416,10 @@ def _get_globals(arguments: argparse.Namespace) -> Set[str]:
 
 
 MODES: Mapping[str, Callable[[argparse.Namespace], Set[str]]] = {
+    "get_globals": _get_globals,
     "get_exit_nodes": _get_exit_nodes,
     "get_REST_api_sources": _get_REST_api_sources,
-    "get_globals": _get_globals,
+    "get_graphql_sources": _get_graphql_sources,
 }
 
 if __name__ == "__main__":
@@ -387,6 +427,12 @@ if __name__ == "__main__":
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument(
         "urls_path", type=_file_exists, help="Path to django `urls.py` file"
+    )
+    parser.add_argument(
+        "--graphql-path",
+        type=_file_exists,
+        help="Path to directory containing GraphQL definitions "
+        "for which to generate taint models",
     )
     parser.add_argument("--whitelisted-class", action="append")
     parser.add_argument("--as-view-base", action="append")
@@ -398,7 +444,11 @@ if __name__ == "__main__":
     arguments: argparse.Namespace = parser.parse_args()
 
     if not arguments.mode:
-        arguments.mode = ["get_exit_nodes", "get_REST_api_sources"]
+        arguments.mode = [
+            "get_exit_nodes",
+            "get_REST_api_sources",
+            "get_graphql_sources",
+        ]
 
     if not arguments.whitelisted_class:
         arguments.whitelisted_class = ["HttpRequest"]
