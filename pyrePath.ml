@@ -5,19 +5,25 @@
 
 open Core
 
-type path = string [@@deriving eq, show, sexp, hash]
+type path = string [@@deriving compare, eq, show, sexp, hash]
 
-type absolute = path [@@deriving eq, show, sexp, hash]
+module AbsolutePath = struct
+  type t = path [@@deriving compare, eq, show, sexp, hash]
+end
 
-type relative = {
-  root: path;
-  relative: path
-}
-[@@deriving eq, show, sexp, hash]
+module RelativePath = struct
+  type t = {
+    root: path;
+    relative: path
+  }
+  [@@deriving compare, eq, show, sexp, hash]
+
+  let relative { relative; _ } = relative
+end
 
 type t =
-  | Absolute of absolute
-  | Relative of relative
+  | Absolute of AbsolutePath.t
+  | Relative of RelativePath.t
 [@@deriving sexp, hash]
 
 type path_t = t
@@ -87,6 +93,21 @@ module AppendOperator = struct
 end
 
 let is_directory path = absolute path |> fun path -> Sys.is_directory path = `Yes
+
+let get_suffix_path = function
+  | Absolute path -> path
+  | Relative { relative; _ } -> relative
+
+
+let is_python_stub path =
+  let path = get_suffix_path path in
+  String.is_suffix ~suffix:".pyi" path
+
+
+let is_python_init path =
+  let path = get_suffix_path path in
+  String.is_suffix ~suffix:"__init__.pyi" path || String.is_suffix ~suffix:"__init__.py" path
+
 
 let file_exists path = absolute path |> fun path -> Sys.file_exists path = `Yes
 

@@ -5,15 +5,21 @@
 
 open Core
 
-type path = string [@@deriving eq, show, sexp, hash]
+type path = string [@@deriving compare, eq, show, sexp, hash]
 
-type absolute [@@deriving eq, show, sexp, hash]
+module AbsolutePath : sig
+  type t [@@deriving compare, eq, show, sexp, hash]
+end
 
-type relative [@@deriving eq, show, sexp, hash]
+module RelativePath : sig
+  type t [@@deriving compare, eq, show, sexp, hash]
+
+  val relative : t -> path
+end
 
 type t =
-  | Absolute of absolute
-  | Relative of relative
+  | Absolute of AbsolutePath.t
+  | Relative of RelativePath.t
 [@@deriving compare, eq, show, sexp, hash]
 
 type path_t = t
@@ -45,6 +51,10 @@ end
 val real_path : t -> t
 
 val is_directory : t -> bool
+
+val is_python_stub : t -> bool
+
+val is_python_init : t -> bool
 
 val file_exists : t -> bool
 

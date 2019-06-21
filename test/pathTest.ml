@@ -131,6 +131,38 @@ let test_is_directory context =
   assert_true (!path |> Path.is_directory)
 
 
+let test_is_python_file _ =
+  let assert_stub ~path expected =
+    let actual = Path.is_python_stub path in
+    if expected then assert_true actual else assert_false actual
+  in
+  let assert_init ~path expected =
+    let actual = Path.is_python_init path in
+    if expected then assert_true actual else assert_false actual
+  in
+  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "test.py") false;
+  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "test.pyi") true;
+  assert_stub ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/test.pyi") true;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "test.py") false;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "test.pyi") false;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "__init__.py") true;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "__init__.pyi") true;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/__init__.py") true;
+  assert_init ~path:(Path.create_absolute ~follow_symbolic_links:false "durp/__init__.pyi") true;
+
+  let root = Path.create_absolute ~follow_symbolic_links:false "root" in
+  assert_stub ~path:(Path.create_relative ~root ~relative:"test") false;
+  assert_stub ~path:(Path.create_relative ~root ~relative:"test.py") false;
+  assert_stub ~path:(Path.create_relative ~root ~relative:"test.pyi") true;
+  assert_stub ~path:(Path.create_relative ~root ~relative:"durp/test.pyi") true;
+  assert_init ~path:(Path.create_relative ~root ~relative:"test.py") false;
+  assert_init ~path:(Path.create_relative ~root ~relative:"test.pyi") false;
+  assert_init ~path:(Path.create_relative ~root ~relative:"__init__.py") true;
+  assert_init ~path:(Path.create_relative ~root ~relative:"__init__.pyi") true;
+  assert_init ~path:(Path.create_relative ~root ~relative:"durp/__init__.py") true;
+  assert_init ~path:(Path.create_relative ~root ~relative:"durp/__init__.pyi") true
+
+
 let test_file_exists context =
   let path, _ = bracket_tmpfile context in
   assert_true (!path |> Path.file_exists);
@@ -242,6 +274,7 @@ let () =
          "get_relative_to_root" >:: test_get_relative_to_root;
          "append" >:: test_append;
          "is_directory" >:: test_is_directory;
+         "is_python_file" >:: test_is_python_file;
          "file_exists" >:: test_file_exists;
          "last" >:: test_last;
          "link" >:: test_link;
