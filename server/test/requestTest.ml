@@ -708,6 +708,25 @@ let test_open_document_state _ =
     ~expected:Path.Set.empty
 
 
+let test_resolution_shared_memory_added_for_open_documents _ =
+  let test_file_a = write_file ("a.py", "def foo() -> int: return 3") in
+  let test_file_b = write_file ("b.py", "def foo() -> int: return 3") in
+  let files = [test_file_a; test_file_b] in
+  let configuration, state = initialize [] in
+  let configuration = { configuration with store_type_check_resolution = false } in
+  let state = { state with open_documents = Path.Set.singleton (File.path test_file_a) } in
+  let contains_resolution_shared_memory_reference key_string =
+    key_string |> Reference.create |> Analysis.ResolutionSharedMemory.get |> Option.is_some
+  in
+  (* Before type checking request, shared memory does not have a.foo and b.foo *)
+  assert_false (contains_resolution_shared_memory_reference "a.foo");
+  assert_false (contains_resolution_shared_memory_reference "b.foo");
+  let _ = Request.process_type_check_request ~state ~configuration ~files in
+  (* Before type checking request, shared memory only has a.foo because a.py is open. *)
+  assert_true (contains_resolution_shared_memory_reference "a.foo");
+  assert_false (contains_resolution_shared_memory_reference "b.foo")
+
+
 let () =
   "request"
   >::: [ "generate_lsp_response" >:: test_generate_lsp_response;
@@ -717,5 +736,7 @@ let () =
          "process_type_check_request" >:: test_process_type_check_request;
          "process_get_definition_request" >:: test_process_get_definition_request;
          "open_document_state" >:: test_open_document_state;
-         "create_annotation_edit" >:: test_create_annotation_edit ]
+         "create_annotation_edit" >:: test_create_annotation_edit;
+         "test_resolution_shared_memory_added_for_open_documents"
+         >:: test_resolution_shared_memory_added_for_open_documents ]
   |> Test.run

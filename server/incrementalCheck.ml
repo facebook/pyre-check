@@ -26,7 +26,7 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
 
 
 let recheck
-    ~state:({ State.environment; errors; scheduler; _ } as state)
+    ~state:({ State.environment; errors; scheduler; open_documents; _ } as state)
     ~configuration:({ debug; _ } as configuration)
     ~files
   =
@@ -188,10 +188,12 @@ let recheck
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulate_handles);
   let new_errors =
     Service.Check.analyze_sources
+      ~open_documents
       ~scheduler
       ~configuration
       ~environment
       ~handles:repopulate_handles
+      ()
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter ~f:(Hashtbl.remove errors) (removed_handles @ repopulate_handles);

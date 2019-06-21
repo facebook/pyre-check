@@ -20,11 +20,13 @@ type analyze_source_results = {
 (** Internal result type; not exposed. *)
 
 let analyze_sources
+    ?(open_documents = Path.Set.empty)
     ~scheduler
     ~configuration:( { Configuration.Analysis.local_root; filter_directories; ignore_all_errors; _ }
                    as configuration )
     ~environment
     ~handles
+    ()
   =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
@@ -83,6 +85,15 @@ let analyze_sources
         let analyze_source { errors; number_files } handle =
           match SharedMemory.Sources.get handle with
           | Some source ->
+              let configuration =
+                match File.Handle.to_path ~configuration handle with
+                | None -> configuration
+                | Some handle_path ->
+                    if PyrePath.Set.mem open_documents handle_path then
+                      { configuration with store_type_check_resolution = true }
+                    else
+                      configuration
+              in
               let new_errors = Check.run ~configuration ~environment ~source in
               { errors = List.append new_errors errors; number_files = number_files + 1 }
           | _ -> { errors; number_files = number_files + 1 }
@@ -147,7 +158,7 @@ let check
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources in
+  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources () in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root

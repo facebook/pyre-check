@@ -12,10 +12,12 @@ type result = {
 }
 
 val analyze_sources
-  :  scheduler:Scheduler.t ->
+  :  ?open_documents:Pyre.Path.Set.t ->
+  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:(module Environment.Handler) ->
   handles:File.Handle.t list ->
+  unit ->
   Error.t list
 
 val check : scheduler:Scheduler.t option -> configuration:Configuration.Analysis.t -> result

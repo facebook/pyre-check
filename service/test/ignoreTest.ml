@@ -54,7 +54,7 @@ let assert_errors ?(show_error_traces = false)
   add_defaults_to_environment ~configuration environment;
   Service.Postprocess.register_ignores ~configuration scheduler handles;
   let descriptions =
-    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
+    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
     |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
   in
   Handler.purge handles;

@@ -36,7 +36,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   Test.populate_shared_memory ~configuration ~sources:handles;
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   let actual_errors =
-    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles
+    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
   Handler.purge handles;
