@@ -389,6 +389,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
              ~default:
                (TypeQuery.Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
+    | TypeQuery.Callees caller ->
+        TypeQuery.Response (TypeQuery.Callees (Dependencies.Callgraph.get ~caller))
     | TypeQuery.ComputeHashesToKeys ->
         let open Service.EnvironmentSharedMemory in
         (* Type order. *)

@@ -34,6 +34,7 @@ module TypeQuery : sig
 
   type request =
     | Attributes of Reference.t
+    | Callees of Reference.t
     | ComputeHashesToKeys
     | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
@@ -137,6 +138,7 @@ module TypeQuery : sig
 
   type base_response =
     | Boolean of bool
+    | Callees of Dependencies.Callgraph.callee list
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded

@@ -270,7 +270,21 @@ module Callgraph = struct
   and callee =
     | Function of Reference.t
     | Method of { direct_target: Reference.t; static_target: Reference.t; dispatch: dispatch }
-  [@@deriving show]
+  [@@deriving eq, show, to_yojson]
+
+  let callee_to_yojson = function
+    | Function name -> `Assoc ["kind", `String "function"; "target", `String (Reference.show name)]
+    | Method { direct_target; static_target; dispatch } ->
+        `Assoc
+          [ "kind", `String "method";
+            "direct_target", `String (Reference.show direct_target);
+            "static_target", `String (Reference.show static_target);
+            ( "dispatch",
+              `String
+                ( match dispatch with
+                | Dynamic -> "dynamic"
+                | Static -> "static" ) ) ]
+
 
   module CalleeValue = struct
     type t = callee list

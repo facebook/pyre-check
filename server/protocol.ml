@@ -34,6 +34,7 @@ module TypeQuery = struct
 
   type request =
     | Attributes of Reference.t
+    | Callees of Reference.t
     | ComputeHashesToKeys
     | CoverageInFile of File.t
     | DecodeOcamlValues of serialized_ocaml_value list
@@ -139,6 +140,7 @@ module TypeQuery = struct
 
   type base_response =
     | Boolean of bool
+    | Callees of Dependencies.Callgraph.callee list
     | Compatibility of compatibility
     | CoverageAtLocations of coverage_at_location list
     | Decoded of decoded
@@ -158,6 +160,8 @@ module TypeQuery = struct
 
   let base_response_to_yojson = function
     | Boolean boolean -> `Assoc ["boolean", `Bool boolean]
+    | Callees callees ->
+        `Assoc ["callees", `List (List.map callees ~f:Dependencies.Callgraph.callee_to_yojson)]
     | Compatibility { actual; expected; result } ->
         `Assoc
           [ "actual", Type.to_yojson actual;

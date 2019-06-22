@@ -79,7 +79,7 @@ module Callgraph : sig
   and callee =
     | Function of Reference.t
     | Method of { direct_target: Reference.t; static_target: Reference.t; dispatch: dispatch }
-  [@@deriving show]
+  [@@deriving eq, show, to_yojson]
 
   module CalleeValue : Value.Type with type t = callee list
 

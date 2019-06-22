@@ -17,6 +17,7 @@ let help () =
     | Attributes _ ->
         Some
           "attributes(class_name): Returns a list of attributes, including functions, for a class."
+    | Callees _ -> Some "callees(function): calls from a given function."
     | ComputeHashesToKeys -> None
     | CoverageInFile _ ->
         Some "coverage_in_file('path'): Gives detailed coverage information for the given path."
@@ -59,6 +60,7 @@ let help () =
   List.filter_map
     ~f:help
     [ Attributes (Reference.create "");
+      Callees (Reference.create "");
       ComputeHashesToKeys;
       CoverageInFile file;
       DecodeOcamlValues [];
@@ -114,6 +116,7 @@ let parse_query
       let string argument = argument |> expression |> string_of_expression in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.TypeQueryRequest (Attributes (reference name))
+      | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->
           let file = Path.create_relative ~root ~relative:(string path) |> File.create in
