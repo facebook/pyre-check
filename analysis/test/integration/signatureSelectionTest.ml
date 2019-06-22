@@ -722,12 +722,12 @@ let test_check_function_overloads _ =
       @typing.overload
       def derp(x: int) -> int: ...
       def derp(x: str) -> str: ...
-      def derp(): ...
+      def derp(x: object): ...
 
       reveal_type(derp)
     |}
     [ "Revealed type [-1]: Revealed type for `derp` is "
-      ^ "`typing.Callable(derp)[[], unknown][[[Named(x, int)], int]]`." ]
+      ^ "`typing.Callable(derp)[[Named(x, object)], unknown][[[Named(x, int)], int]]`." ]
 
 
 let test_check_constructor_overloads _ =

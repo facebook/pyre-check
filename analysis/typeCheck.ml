@@ -560,6 +560,14 @@ module State (Context : Context) = struct
     in
     let overload_errors errors =
       let annotation = Resolution.get_local resolution ~reference:name in
+      let overload_to_callable overload =
+        Type.Callable
+          { implementation = { overload with annotation = Type.Any };
+            kind = Anonymous;
+            overloads = [];
+            implicit = None
+          }
+      in
       let check_implementation_exists errors =
         match annotation with
         | Some { annotation = Type.Callable { implementation; _ }; _ }
@@ -579,33 +587,65 @@ module State (Context : Context) = struct
         | Some
             { annotation =
                 Type.Callable
-                  { overloads; implementation = { annotation = implementation_annotation; _ }; _ }
+                  { overloads;
+                    implementation =
+                      { annotation = implementation_annotation; _ } as implementation
+                  ; _
+                  }
             ; _
             }
           when not (Statement.Define.is_overloaded_method define) ->
-            List.fold
-              ~init:errors
-              ~f:(fun sofar { annotation; _ } ->
-                if
-                  Resolution.is_consistent_with
-                    resolution
-                    annotation
-                    implementation_annotation
-                    ~expression:None
-                then
-                  sofar
-                else
-                  let error =
-                    Error.create
-                      ~location
-                      ~kind:
-                        (Error.IncompatibleOverload
-                           (ReturnType
-                              { implementation_annotation; overload_annotation = annotation; name }))
-                      ~define:Context.define
-                  in
-                  error :: sofar)
-              overloads
+            overloads
+            |> List.fold
+                 ~init:errors
+                 ~f:(fun errors_sofar
+                         ({ Type.Callable.annotation; define_location; _ } as overload)
+                         ->
+                   let errors_sofar =
+                     if
+                       Resolution.is_consistent_with
+                         resolution
+                         annotation
+                         implementation_annotation
+                         ~expression:None
+                     then
+                       errors_sofar
+                     else
+                       let error =
+                         Error.create
+                           ~location
+                           ~kind:
+                             (Error.IncompatibleOverload
+                                (ReturnType
+                                   { implementation_annotation;
+                                     overload_annotation = annotation;
+                                     name
+                                   }))
+                           ~define:Context.define
+                       in
+                       error :: errors_sofar
+                   in
+                   if
+                     not
+                       (Resolution.less_or_equal
+                          resolution
+                          ~right:(overload_to_callable overload)
+                          ~left:(overload_to_callable implementation))
+                   then
+                     let error =
+                       Error.create
+                         ~location
+                         ~define:Context.define
+                         ~kind:
+                           (Error.IncompatibleOverload
+                              (Parameters
+                                 { name;
+                                   location = define_location |> Option.value ~default:location
+                                 }))
+                     in
+                     error :: errors_sofar
+                   else
+                     errors_sofar)
         | _ -> errors
       in
       let check_unmatched_overloads errors =
@@ -642,14 +682,6 @@ module State (Context : Context) = struct
                   in
                   compare_parameters errors_sofar overloads
               | _ -> errors_sofar
-            in
-            let overload_to_callable overload =
-              Type.Callable
-                { implementation = { overload with annotation = Type.Any };
-                  kind = Anonymous;
-                  overloads = [];
-                  implicit = None
-                }
             in
             overloads |> List.map ~f:overload_to_callable |> compare_parameters errors
         | _ -> errors

@@ -125,6 +125,7 @@ and incompatible_overload_kind =
         matched_location: Location.t;
         unmatched_location: Location.t
       }
+  | Parameters of { name: Reference.t; location: Location.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
@@ -479,7 +480,14 @@ let messages ~concise ~signature location kind =
             pp_reference
             name
             (Location.line unmatched_location)
-            (Location.line matched_location) ] )
+            (Location.line matched_location) ]
+    | Parameters { name; location } ->
+        [ Format.asprintf
+            "The implementation of `%a` does not accept all possible arguments of overload \
+             defined on line `%d`."
+            pp_reference
+            name
+            (Location.line location) ] )
   | IncompatibleParameterType
       { name; position; callee; mismatch = { actual; expected; due_to_invariance; _ } } ->
       let trace =

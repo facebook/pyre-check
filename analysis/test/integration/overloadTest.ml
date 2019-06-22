@@ -53,10 +53,10 @@ let test_check_implementation _ =
           pass
 
       @overload
-      def foo(x: str) -> int:
+      def foo(x: object) -> int:
           pass
 
-      def foo(x: str) -> float:
+      def foo(x: object) -> float:
           return 1
     |}
     [ "Incompatible overload [43]: The return type of overloaded function `foo` (`bool`) is \
@@ -77,7 +77,7 @@ let test_check_implementation _ =
          def foo(bar: str, x: str) -> object:
              pass
 
-         def foo(bar: str) -> object: pass
+         def foo(bar: object, x: object) -> object: pass
        |}
     [ "Incompatible overload [43]: The overloaded function `foo` on line 9 will never be matched. \
        The signature of overload on line 5 is the same or broader.";
@@ -99,9 +99,10 @@ let test_check_implementation _ =
          def foo(bar: object, x: object) -> int:
              pass
 
-         def foo(bar: str) -> object: pass
+         def foo(bar: object, x: object) -> object: pass
        |}
     [];
+
   assert_type_errors
     {|
          from typing import overload
@@ -111,12 +112,37 @@ let test_check_implementation _ =
              pass
 
          @overload
-         def foo(bar: str, x: str, x: int) -> object:
+         def foo(bar: str, x: str, y: int) -> object:
              pass
 
-         def foo(bar: str) -> object: pass
+         def foo(bar: object, x: object, y:object) -> object: pass
        |}
-    []
+    [ "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+       arguments of overload defined on line `5`." ];
+
+  assert_type_errors
+    {|
+      from typing import overload
+      @overload
+      def foo(bar: object) -> None:
+        pass
+      def foo(bar: int) -> None:
+        pass
+    |}
+    [ "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+       arguments of overload defined on line `4`." ];
+
+  assert_type_errors
+    {|
+      from typing import overload
+      @overload
+      def foo() -> None:
+        pass
+      def foo(bar: int) -> None:
+        pass
+    |}
+    [ "Incompatible overload [43]: The implementation of `foo` does not accept all possible \
+       arguments of overload defined on line `4`." ]
 
 
 let () = "method" >::: ["check_implementation" >:: test_check_implementation] |> Test.run

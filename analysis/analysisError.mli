@@ -116,6 +116,7 @@ and incompatible_overload_kind =
         matched_location: Location.t;
         unmatched_location: Location.t
       }
+  | Parameters of { name: Reference.t; location: Location.t }
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =

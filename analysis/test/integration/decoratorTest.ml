@@ -418,8 +418,8 @@ let test_check_callable_class_decorators _ =
            coroutine: typing.Callable[..., typing.Coroutine[typing.Any, typing.Any, T]]
         ) -> typing.Callable[..., T]: ...
         @typing.overload
-        def __call__(self, coro: int) -> int: ...
-        def __call__(self, coro: typing.Any) -> typing.Any: ...
+        def __call__(self, coroutine: int) -> int: ...
+        def __call__(self, coroutine: typing.Any) -> typing.Any: ...
       @synchronize
       async def am_i_async(x: int) -> str:
         return str(x)
@@ -427,7 +427,7 @@ let test_check_callable_class_decorators _ =
     |}
     [ "Missing parameter annotation [2]: Parameter `coroutine` must have a type that does not \
        contain `Any`.";
-      "Missing parameter annotation [2]: Parameter `coro` must have a type other than `Any`.";
+      "Missing parameter annotation [2]: Parameter `coroutine` must have a type other than `Any`.";
       "Revealed type [-1]: Revealed type for `am_i_async` is \
        `typing.Callable(am_i_async)[[Named(x, int)], typing.Coroutine[typing.Any, typing.Any, \
        str]]`." ]
