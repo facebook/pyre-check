@@ -70,8 +70,8 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
             { Source.qualifier;
               handle;
               statements;
-              metadata = { Source.Metadata.local_mode; _ }
-            ; _
+              metadata = { Source.Metadata.local_mode; _ };
+              _
             }
           =
           Module.create

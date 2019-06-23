@@ -39,8 +39,7 @@ let sum left right =
 
 
 let aggregate annotations =
-  let aggregate ({ full; partial; untyped; _ } as coverage)
-                { Annotation.annotation; _ } =
+  let aggregate ({ full; partial; untyped; _ } as coverage) { Annotation.annotation; _ } =
     if Type.is_untyped annotation then
       { coverage with untyped = untyped + 1 }
     else if Type.is_partially_typed annotation then

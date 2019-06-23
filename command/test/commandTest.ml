@@ -25,9 +25,7 @@ let mock_analysis_configuration
   Configuration.Analysis.create ~debug:false ~parallel:false ?expected_version ~local_root ()
 
 
-let mock_server_configuration ~local_root
-                              ?expected_version
-                              () =
+let mock_server_configuration ~local_root ?expected_version () =
   let temporary = Filename.temp_file "" "" in
   Server.Operations.create_configuration
     ~log_path:(Path.create_absolute temporary)
@@ -131,8 +129,8 @@ let poll_for_deletion path =
 
 let stop_server
     { Configuration.Server.configuration = { Configuration.Analysis.local_root; _ };
-      socket = { path = socket_path; _ }
-    ; _
+      socket = { path = socket_path; _ };
+      _
     }
   =
   Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;

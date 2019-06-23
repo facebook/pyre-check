@@ -186,11 +186,7 @@ let widen
     }
 
 
-let widen_if_necessary step
-                       callable
-                       ~old_model
-                       ~new_model
-                       result =
+let widen_if_necessary step callable ~old_model ~new_model result =
   (* Check if we've reached a fixed point *)
   if reached_fixpoint ~iteration:step.Fixpoint.iteration ~previous:old_model ~next:new_model then (
     Log.log

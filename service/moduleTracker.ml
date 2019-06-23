@@ -68,14 +68,14 @@ module SourceFile = struct
       { priority = left_priority;
         is_stub = left_is_stub;
         is_external = left_is_external;
-        is_init = left_is_init
-      ; _
+        is_init = left_is_init;
+        _
       }
       { priority = right_priority;
         is_stub = right_is_stub;
         is_external = right_is_external;
-        is_init = right_is_init
-      ; _
+        is_init = right_is_init;
+        _
       }
     =
     (* Stub file always takes precedence *)

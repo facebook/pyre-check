@@ -39,10 +39,10 @@ module NoCache (Key : KeyType) (Value : Value.Type) : sig
 
   include
     SharedMemory.NoCache
-    with type t = Value.t
-     and type key = Key.t
-     and module KeySet = Set.Make(Key)
-     and module KeyMap = MyMap.Make(Key)
+      with type t = Value.t
+       and type key = Key.t
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
 end
 
 module WithCache (Key : KeyType) (Value : Value.Type) : sig
@@ -56,10 +56,10 @@ module WithCache (Key : KeyType) (Value : Value.Type) : sig
 
   include
     SharedMemory.WithCache
-    with type t = Value.t
-     and type key = Key.t
-     and module KeySet = Set.Make(Key)
-     and module KeyMap = MyMap.Make(Key)
+      with type t = Value.t
+       and type key = Key.t
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
 end
 
 val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle

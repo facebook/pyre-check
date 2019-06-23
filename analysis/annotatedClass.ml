@@ -156,8 +156,7 @@ module Method = struct
 
   let parent { parent; _ } = parent
 
-  let parameter_annotations { define = { Define.signature = { parameters; _ }; _ }; _ }
-                            ~resolution
+  let parameter_annotations { define = { Define.signature = { parameters; _ }; _ }; _ } ~resolution
     =
     let element { Node.value = { Parameter.name; annotation; _ }; _ } =
       let annotation =
@@ -366,17 +365,17 @@ let is_protocol { Node.value = { Class.bases; _ }; _ } =
                               Name
                                 (Name.Attribute
                                   { base = { Node.value = Name (Name.Identifier typing); _ };
-                                    attribute = "Protocol"
-                                  ; _
-                                  })
-                          ; _
+                                    attribute = "Protocol";
+                                    _
+                                  });
+                            _
                           };
-                        attribute = "__getitem__"
-                      ; _
-                      })
-              ; _
-              }
-          ; _
+                        attribute = "__getitem__";
+                        _
+                      });
+                _
+              };
+            _
           } )
     | ( None,
         Name

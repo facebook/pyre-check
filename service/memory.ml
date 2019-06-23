@@ -116,10 +116,10 @@ module NoCache (Key : KeyType) (Value : Value.Type) : sig
 
   include
     SharedMemory.NoCache
-    with type t = Value.t
-     and type key = Key.t
-     and module KeySet = Set.Make(Key)
-     and module KeyMap = MyMap.Make(Key)
+      with type t = Value.t
+       and type key = Key.t
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
 end = struct
   include Register (Key) (Value) ()
 
@@ -137,10 +137,10 @@ module WithCache (Key : KeyType) (Value : Value.Type) : sig
 
   include
     SharedMemory.WithCache
-    with type t = Value.t
-     and type key = Key.t
-     and module KeySet = Set.Make(Key)
-     and module KeyMap = MyMap.Make(Key)
+      with type t = Value.t
+       and type key = Key.t
+       and module KeySet = Set.Make(Key)
+       and module KeyMap = MyMap.Make(Key)
 end = struct
   include Register (Key) (Value) ()
 

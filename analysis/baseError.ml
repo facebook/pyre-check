@@ -121,8 +121,8 @@ module Make (Kind : Kind) = struct
       ( { location =
             { Location.path; start = { Location.line = start_line; column = start_column }; _ };
           kind;
-          signature = { Node.value = signature; _ } as signature_node
-        ; _
+          signature = { Node.value = signature; _ } as signature_node;
+          _
         } as error )
     =
     `Assoc

@@ -444,10 +444,7 @@ let test_attributes _ =
     (Some ("foo", Some Type.integer, None, false));
 
   (* Test class attributes. *)
-  let assert_attributes ?(in_test = false)
-                        ?(include_generated_attributes = true)
-                        source
-                        expected =
+  let assert_attributes ?(in_test = false) ?(include_generated_attributes = true) source expected =
     let expected =
       let attribute (name, location, annotation, value, setter, number_of_defines) =
         let location =

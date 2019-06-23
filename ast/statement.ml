@@ -416,12 +416,12 @@ module Define = struct
               { Node.value =
                   Expression.Call
                     { callee =
-                        { Node.value = Expression.Name (Expression.Name.Identifier identifier); _ }
-                    ; _
-                    }
-              ; _
-              }
-        ; _
+                        { Node.value = Expression.Name (Expression.Name.Identifier identifier); _ };
+                      _
+                    };
+                _
+              };
+          _
         }
         when String.equal identifier name ->
           true
@@ -469,10 +469,10 @@ module Define = struct
                   Name
                     (Name.Attribute
                       { base = { Node.value = Name (Name.Identifier self); _ };
-                        attribute = name
-                      ; _
-                      })
-              ; _
+                        attribute = name;
+                        _
+                      });
+                _
               }
               when Identifier.equal self (self_identifier define) ->
                 let attribute =
@@ -500,10 +500,10 @@ module Define = struct
                         Name
                           (Name.Attribute
                             { base = { Node.value = Name (Name.Identifier _); _ };
-                              attribute = target
-                            ; _
-                            })
-                    ; _
+                              attribute = target;
+                              _
+                            });
+                      _
                     },
                     { Node.value = Name (Name.Identifier value); _ } )
                   when is_reassignment target value ->
@@ -589,21 +589,21 @@ module Define = struct
                           Name
                             (Name.Attribute
                               { base = { Node.value = Name (Name.Identifier self); _ };
-                                attribute = name
-                              ; _
-                              })
-                      ; _
-                      }
-                  ; _
-                  }
-            ; _
+                                attribute = name;
+                                _
+                              });
+                        _
+                      };
+                    _
+                  };
+              _
             }
           when Identifier.equal self (self_identifier define) ->
             (* Look for method in class definition. *)
             let inline = function
               | { Node.value =
-                    Define { signature = { name = callee; parent = Some parent; _ }; body }
-                ; _
+                    Define { signature = { name = callee; parent = Some parent; _ }; body };
+                  _
                 }
                 when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
@@ -746,14 +746,14 @@ module Class = struct
                       Name
                         (Name.Attribute
                           { base = { value = Name (Name.Identifier "dataclasses"); _ };
-                            attribute = "dataclass"
-                          ; _
-                          })
-                  ; _
+                            attribute = "dataclass";
+                            _
+                          });
+                    _
                   };
                 arguments
-              }
-        ; _
+              };
+          _
         } ->
           let has_frozen_argument Expression.Call.Argument.{ name; value } =
             match name, value with
@@ -774,8 +774,8 @@ module Class = struct
       (* Handle multiple assignments on same line *)
       | Assign
           { Assign.target = { Node.value = Tuple targets; _ };
-            value = { Node.value = Tuple values; _ }
-          ; _
+            value = { Node.value = Tuple values; _ };
+            _
           } ->
           let add_attribute map ({ Node.location; _ } as target) value =
             Attribute.name ~parent:name target
@@ -840,8 +840,7 @@ module Class = struct
     List.fold ~init:Identifier.SerializableMap.empty ~f:assigned_attributes body
 
 
-  let implicit_attributes ?(in_test = false)
-                          ({ Record.Class.name; body; _ } as definition) =
+  let implicit_attributes ?(in_test = false) ({ Record.Class.name; body; _ } as definition) =
     (* Bias towards the right (previously occuring map in the `|> merge other_map` flow). *)
     let merge _ left right =
       match right with
@@ -862,8 +861,8 @@ module Class = struct
           | Some
               ( { Node.value =
                     { Attribute.name; setter = new_setter; annotation = new_annotation; _ } as
-                    attribute
-                ; _
+                    attribute;
+                  _
                 } as attribute_node ) ->
               let merged_attribute =
                 let existing_attribute = Identifier.SerializableMap.find_opt name map in
@@ -1006,8 +1005,8 @@ module Class = struct
         match value with
         | Assign
             { Assign.target = { Node.value = target_value; _ };
-              value = { Node.value = List attributes; location }
-            ; _
+              value = { Node.value = List attributes; location };
+              _
             }
           when is_slots target_value ->
             let add_attribute map { Node.value; _ } =
@@ -1030,9 +1029,7 @@ module Class = struct
     |> Identifier.SerializableMap.merge merge slots_attributes
 
 
-  let attributes ?(include_generated_attributes = true)
-                 ?(in_test = false)
-                 definition =
+  let attributes ?(include_generated_attributes = true) ?(in_test = false) definition =
     let explicit_attributes = explicitly_assigned_attributes definition in
     if not include_generated_attributes then
       explicit_attributes
@@ -1046,8 +1043,7 @@ module Class = struct
       |> Identifier.SerializableMap.merge merge (implicit_attributes ~in_test definition)
 
 
-  let update { Record.Class.body = stub; _ }
-             ~definition:({ Record.Class.body; _ } as definition) =
+  let update { Record.Class.body = stub; _ } ~definition:({ Record.Class.body; _ } as definition) =
     let updated, undefined =
       let update (updated, undefined) statement =
         match statement with
@@ -1062,8 +1058,8 @@ module Class = struct
             | Some
                 { Node.value =
                     Assign
-                      { Assign.annotation; value = { Node.value = Expression.Ellipsis; _ }; _ }
-                ; _
+                      { Assign.annotation; value = { Node.value = Expression.Ellipsis; _ }; _ };
+                  _
                 } ->
                 let updated_assign =
                   { Node.location; value = Assign { assign with Assign.annotation } }
@@ -1078,10 +1074,10 @@ module Class = struct
               | { Node.value =
                     Define
                       { signature =
-                          { Record.Define.name = stub_name; parameters = stub_parameters; _ }
-                      ; _
-                      }
-                ; _
+                          { Record.Define.name = stub_name; parameters = stub_parameters; _ };
+                        _
+                      };
+                  _
                 }
                 when Reference.equal name stub_name
                      && List.length parameters = List.length stub_parameters ->
@@ -1091,8 +1087,8 @@ module Class = struct
             match List.find ~f:is_stub stub with
             | Some
                 { Node.value =
-                    Define ({ signature = { parameters; return_annotation; _ }; _ } as stub)
-                ; _
+                    Define ({ signature = { parameters; return_annotation; _ }; _ } as stub);
+                  _
                 }
               when Define.is_stub stub ->
                 let updated_signature = { define.signature with parameters; return_annotation } in
@@ -1132,10 +1128,10 @@ module Class = struct
             Expression.Name
               (Name.Attribute
                 { base = { Node.value = Name (Name.Identifier "abc"); _ };
-                  attribute = "ABCMeta" | "ABC"
-                ; _
-                })
-        ; _
+                  attribute = "ABCMeta" | "ABC";
+                  _
+                });
+          _
         } ->
           true
       | _ -> false
@@ -1327,8 +1323,8 @@ let extract_docstring statements =
   in
   match statements with
   | { Node.value =
-        Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ }
-    ; _
+        Expression { Node.value = Expression.String { Expression.StringLiteral.value; _ }; _ };
+      _
     }
     :: _ ->
       Some (unindent value)

@@ -44,10 +44,10 @@ let test_parse_stubs_modules_list _ =
       | Some
           { Source.statements =
               [ { Node.value =
-                    Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define)
-                ; _
-                } ]
-          ; _
+                    Statement.Define ({ Statement.Define.signature = { name; _ }; _ } as define);
+                  _
+                } ];
+            _
           }
         when Statement.Define.is_stub define ->
           name
@@ -60,8 +60,8 @@ let test_parse_stubs_modules_list _ =
       match Ast.SharedMemory.Sources.get (get_handle_at handle) with
       | Some
           { Source.statements =
-              [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }]
-          ; _
+              [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }];
+            _
           } ->
           name
       | _ -> failwith "Could not get source."

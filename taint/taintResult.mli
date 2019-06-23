@@ -40,5 +40,5 @@ type result = Flow.issue list
 
 include
   Interprocedural.Result.ANALYSIS_RESULT_WITH_REGISTRATION
-  with type result := result
-   and type call_model := call_model
+    with type result := result
+     and type call_model := call_model

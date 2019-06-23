@@ -196,8 +196,8 @@ let create_of_source environment source =
 let get_best_location lookup_table ~position =
   let location_contains_position
       { Location.start = { Location.column = start_column; line = start_line };
-        stop = { Location.column = stop_column; line = stop_line }
-      ; _
+        stop = { Location.column = stop_column; line = stop_line };
+        _
       }
       { Location.column; line }
     =
@@ -207,8 +207,8 @@ let get_best_location lookup_table ~position =
   in
   let weight
       { Location.start = { Location.column = start_column; line = start_line };
-        stop = { Location.column = stop_column; line = stop_line }
-      ; _
+        stop = { Location.column = stop_column; line = stop_line };
+        _
       }
     =
     ((stop_line - start_line) * 1000) + stop_column - start_column

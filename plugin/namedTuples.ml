@@ -22,10 +22,10 @@ let transform_ast ({ Source.statements; _ } as source) =
                       Name
                         (Name.Attribute
                           { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "NamedTuple"
-                          ; _
-                          })
-                  ; _
+                            attribute = "NamedTuple";
+                            _
+                          });
+                    _
                   };
                 arguments
               }
@@ -38,10 +38,10 @@ let transform_ast ({ Source.statements; _ } as source) =
                       Name
                         (Name.Attribute
                           { base = { Node.value = Name (Name.Identifier "collections"); _ };
-                            attribute = "namedtuple"
-                          ; _
-                          })
-                  ; _
+                            attribute = "namedtuple";
+                            _
+                          });
+                    _
                   };
                 arguments
               }
@@ -51,10 +51,10 @@ let transform_ast ({ Source.statements; _ } as source) =
           in
           let attributes =
             match arguments with
-            | [ _
-              ; { Call.Argument.value =
-                    { value = String { StringLiteral.value = serialized; _ }; _ }
-                ; _
+            | [ _;
+                { Call.Argument.value =
+                    { value = String { StringLiteral.value = serialized; _ }; _ };
+                  _
                 } ] ->
                 String.split serialized ~on:' '
                 |> List.map ~f:(fun name -> name, any_annotation, None)
@@ -174,12 +174,12 @@ let transform_ast ({ Source.statements; _ } as source) =
                       Name
                         (Name.Attribute
                           { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                            attribute = "NamedTuple"
-                          ; _
-                          })
-                  ; _
-                  }
-              ; _
+                            attribute = "NamedTuple";
+                            _
+                          });
+                    _
+                  };
+                _
               } ->
                 true
             | _ -> false
@@ -188,8 +188,8 @@ let transform_ast ({ Source.statements; _ } as source) =
             let extract_assign = function
               | { Node.value =
                     Assign
-                      { Assign.target = { Node.value = Name target; _ }; value; annotation; _ }
-                ; _
+                      { Assign.target = { Node.value = Name target; _ }; value; annotation; _ };
+                  _
                 } ->
                   let last =
                     match target with

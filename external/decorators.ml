@@ -5,9 +5,7 @@
 
 open Core
 
-let apply ~overload:{ Type.Callable.annotation; parameters; define_location }
-          ~resolution:_
-          ~name =
+let apply ~overload:{ Type.Callable.annotation; parameters; define_location } ~resolution:_ ~name =
   match name with
   | "$strip_first_parameter" ->
       let parameters =

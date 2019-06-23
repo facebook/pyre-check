@@ -164,8 +164,8 @@ module ConstantPropagationState (Context : Context) = struct
               Assert.If
                 { statement = { Node.location; value = If ({ If.test; _ } as conditional) };
                   true_branch = true
-                }
-          ; _
+                };
+            _
           } ->
           let transformed_test = transform_expression test in
           if not (Expression.equal test transformed_test) then
@@ -341,9 +341,7 @@ module Scheduler (State : State) (Context : Context) = struct
     Transform.transform () source |> Transform.source
 end
 
-let run ~configuration:_
-        ~environment
-        ~source:({ Source.qualifier; _ } as source) =
+let run ~configuration:_ ~environment ~source:({ Source.qualifier; _ } as source) =
   let module Context = struct
     let environment = environment
 

@@ -378,8 +378,8 @@ let weaken_literals kind =
 
 let messages ~concise ~signature location kind =
   let { Location.start = { Location.line = start_line; _ };
-        Location.stop = { Location.line = stop_line; _ }
-      ; _
+        Location.stop = { Location.line = stop_line; _ };
+        _
       }
     =
     location
@@ -1433,8 +1433,8 @@ let messages ~concise ~signature location kind =
 
 let inference_information
     ~signature:{ Node.value =
-                   { Define.name; parameters; return_annotation; decorators; parent; async; _ }
-               ; _
+                   { Define.name; parameters; return_annotation; decorators; parent; async; _ };
+                 _
                }
     kind
   =
@@ -1651,8 +1651,8 @@ let due_to_mismatch_with_any resolution { kind; _ } =
       Type.is_any actual
   | ImpossibleIsinstance { mismatch = { actual; actual_expressions; expected; _ }; _ }
   | InconsistentOverride
-      { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ })
-      ; _
+      { override = StrengthenedPrecondition (Found { actual; actual_expressions; expected; _ });
+        _
       }
   | InconsistentOverride
       { override = WeakenedPostcondition { actual; actual_expressions; expected; _ }; _ }
@@ -2497,8 +2497,8 @@ let dequalify
     dequalify_map
     ~resolution
     ( { kind;
-        signature = { Node.location; value = { parameters; return_annotation; _ } as signature }
-      ; _
+        signature = { Node.location; value = { parameters; return_annotation; _ } as signature };
+        _
       } as error )
   =
   let dequalify = Type.dequalify dequalify_map in

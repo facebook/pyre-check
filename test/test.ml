@@ -190,9 +190,7 @@ let parse_list named_sources =
   parsed
 
 
-let parse_single_statement ?(preprocess = false)
-                           ?(coerce_special_methods = false)
-                           source =
+let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) source =
   let source =
     if preprocess then
       Preprocessing.preprocess (parse ~coerce_special_methods source)
@@ -222,9 +220,7 @@ let parse_single_class source =
   | _ -> failwith "Could not parse single class"
 
 
-let parse_single_expression ?(preprocess = false)
-                            ?(coerce_special_methods = false)
-                            source =
+let parse_single_expression ?(preprocess = false) ?(coerce_special_methods = false) source =
   match parse_single_statement ~preprocess ~coerce_special_methods source with
   | { Node.value = Statement.Expression expression; _ } -> expression
   | _ -> failwith "Could not parse single expression."
@@ -267,8 +263,7 @@ let map_printer ~key_pp ~data_pp map =
   Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
-let node ~start:(start_line, start_column)
-         ~stop:(stop_line, stop_column) =
+let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
     { Location.path = String.hash "test.py";
       start = { Location.line = start_line; Location.column = start_column };
@@ -1229,9 +1224,7 @@ let populate_shared_memory =
   Service.Environment.populate_shared_memory ~scheduler:(Scheduler.mock ())
 
 
-let environment ?(sources = typeshed_stubs ())
-                ?(configuration = mock_configuration)
-                () =
+let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
   let environment =
     let environment = Environment.Builder.create () in
     Environment.handler environment

@@ -182,7 +182,7 @@ let test_signature_hash _ =
       let metadata = String.split ~on:'\n' source |> Source.Metadata.parse "test.py" in
       Source.create ~metadata statements
     in
-    let equal = if equal then ( = ) else ( <> ) in
+    let equal = if equal then (=) else (<>) in
     assert_equal
       ~cmp:equal
       (Source.signature_hash (parse left))

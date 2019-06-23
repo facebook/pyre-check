@@ -21,24 +21,24 @@ let transform_ast ({ Source.statements; qualifier; _ } as source) =
                             Name
                               (Name.Attribute
                                 { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                  attribute = "NewType"
-                                ; _
-                                })
-                        ; _
+                                  attribute = "NewType";
+                                  _
+                                });
+                          _
                         };
                       arguments =
                         [ { Call.Argument.value =
-                              { Node.value = String { StringLiteral.value = name; _ }; _ }
-                          ; _
-                          }
-                        ; ( { (* TODO (T44209017): Error on invalid annotation expression *)
-                              Call.Argument.value = base
-                            ; _
+                              { Node.value = String { StringLiteral.value = name; _ }; _ };
+                            _
+                          };
+                          ( { (* TODO (T44209017): Error on invalid annotation expression *)
+                              Call.Argument.value = base;
+                              _
                             } as base_argument ) ]
-                    }
-              ; _
-              }
-          ; _
+                    };
+                _
+              };
+            _
           } ->
           let name = Reference.create ~prefix:qualifier name in
           let constructor =

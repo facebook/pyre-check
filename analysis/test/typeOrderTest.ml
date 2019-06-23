@@ -53,8 +53,7 @@ let less_or_equal
     }
 
 
-let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-                       handler =
+let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   is_compatible_with
     { handler;
       constructor;
@@ -65,8 +64,7 @@ let is_compatible_with ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     }
 
 
-let join ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-         handler =
+let join ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   join
     { handler;
       constructor;
@@ -77,8 +75,7 @@ let join ?(constructor = fun _ ~protocol_assumptions:_ -> None)
     }
 
 
-let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None)
-         handler =
+let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
   meet
     { handler;
       constructor;

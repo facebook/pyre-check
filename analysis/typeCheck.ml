@@ -112,8 +112,7 @@ module State (Context : Context) = struct
     Format.fprintf format "%a" Reference.pp name
 
 
-  let pp format
-         { resolution; errors; nested_defines; bottom; _ } =
+  let pp format { resolution; errors; nested_defines; bottom; _ } =
     let expected =
       Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
     in
@@ -465,7 +464,10 @@ module State (Context : Context) = struct
             errors
         in
         let check_protocol_and_abstract_attributes_initialized
-            ~is_class_type ~error_kind class_definition errors
+            ~is_class_type
+            ~error_kind
+            class_definition
+            errors
           =
           let uninitialized_attributes =
             let superclasses =
@@ -589,10 +591,10 @@ module State (Context : Context) = struct
                 Type.Callable
                   { overloads;
                     implementation =
-                      { annotation = implementation_annotation; _ } as implementation
-                  ; _
-                  }
-            ; _
+                      { annotation = implementation_annotation; _ } as implementation;
+                    _
+                  };
+              _
             }
           when not (Statement.Define.is_overloaded_method define) ->
             overloads
@@ -887,8 +889,8 @@ module State (Context : Context) = struct
   let rec initial ~resolution =
     let { Node.location;
           value =
-            { Define.signature = { name; parent; parameters; return_annotation; decorators; _ }
-            ; _
+            { Define.signature = { name; parent; parameters; return_annotation; decorators; _ };
+              _
             } as define
         }
       =
@@ -1236,12 +1238,12 @@ module State (Context : Context) = struct
                 ~kind:(Error.InvalidMethodSignature { annotation = None; name })
             in
             state, Resolution.annotations resolution
-        | ( [ { Node.value = { name = first_name; value = None; annotation = Some first_annotation }
-              ; _
-              }
-            ; { Node.value =
-                  { name = second_name; value = None; annotation = Some second_annotation }
-              ; _
+        | ( [ { Node.value = { name = first_name; value = None; annotation = Some first_annotation };
+                _
+              };
+              { Node.value =
+                  { name = second_name; value = None; annotation = Some second_annotation };
+                _
               } ],
             _ )
           when number_of_stars first_name = 1 && number_of_stars second_name = 2 -> (
@@ -1609,8 +1611,7 @@ module State (Context : Context) = struct
     |> check_constructor_return
 
 
-  and forward_expression ~state:({ resolution; _ } as state)
-                         ~expression:{ Node.location; value } =
+  and forward_expression ~state:({ resolution; _ } as state) ~expression:{ Node.location; value } =
     let rec forward_entry ~state ~entry:{ Dictionary.key; value } =
       let { state; resolved = key_resolved; _ } = forward_expression ~state ~expression:key in
       let { state; resolved = value_resolved; _ } = forward_expression ~state ~expression:value in
@@ -2209,8 +2210,8 @@ module State (Context : Context) = struct
                 Name
                   (Name.Attribute
                     { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "cast"
-                    ; _
+                      attribute = "cast";
+                      _
                     })
             };
           arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }]
@@ -2297,8 +2298,8 @@ module State (Context : Context) = struct
     | Call
         { callee =
             { Node.value =
-                Name (Name.Attribute { attribute = "assertIsNotNone" | "assertTrue"; _ })
-            ; _
+                Name (Name.Attribute { attribute = "assertIsNotNone" | "assertTrue"; _ });
+              _
             } as callee;
           arguments = [{ Call.Argument.value = expression; _ }] as arguments
         } ->
@@ -2819,8 +2820,8 @@ module State (Context : Context) = struct
             { Define.signature =
                 { async;
                   parent = define_parent;
-                  return_annotation = return_annotation_expression
-                ; _
+                  return_annotation = return_annotation_expression;
+                  _
                 };
               body
             } as define
@@ -2863,8 +2864,8 @@ module State (Context : Context) = struct
           && not (Type.is_none actual && Type.is_noreturn return_annotation)
         then
           let rec check_unimplemented = function
-            | [ { Node.value = Statement.Pass; _ }
-              ; { Node.value = Statement.Return { Return.expression = None; _ }; _ } ] ->
+            | [ { Node.value = Statement.Pass; _ };
+                { Node.value = Statement.Return { Return.expression = None; _ }; _ } ] ->
                 true
             | { Node.value = Statement.Expression { Node.value = Expression.String _; _ }; _ }
               :: tail ->
@@ -3133,10 +3134,10 @@ module State (Context : Context) = struct
                           Some
                             ( { Node.value =
                                   { Annotated.Attribute.class_attribute = true;
-                                    name = class_variable
-                                  ; _
-                                  }
-                              ; _
+                                    name = class_variable;
+                                    _
+                                  };
+                                _
                               },
                               _ ) )
                         when Option.is_none original_annotation && not (Type.is_meta parent) ->
@@ -3711,8 +3712,8 @@ module State (Context : Context) = struct
                       { callee = { Node.value = Name (Name.Identifier "type"); _ };
                         arguments =
                           [{ Call.Argument.name = None; value = { Node.value = Name name; _ } }]
-                      }
-                ; _
+                      };
+                  _
                 };
               operator = ComparisonOperator.Is;
               right = annotation
@@ -3720,8 +3721,8 @@ module State (Context : Context) = struct
         | Call
             { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
               arguments =
-                [ { Call.Argument.name = None; value = { Node.value = Name name; _ } }
-                ; { Call.Argument.name = None; value = annotation } ]
+                [ { Call.Argument.name = None; value = { Node.value = Name name; _ } };
+                  { Call.Argument.name = None; value = annotation } ]
             }
           when Expression.is_simple_name name ->
             let reference = Reference.from_name_exn name in
@@ -3763,12 +3764,12 @@ module State (Context : Context) = struct
                     Call
                       { callee =
                           { Node.value =
-                              Name (Name.Identifier ("type" as type_refinement_function_name))
-                          ; _
+                              Name (Name.Identifier ("type" as type_refinement_function_name));
+                            _
                           };
                         arguments = [{ Call.Argument.name = None; value }]
-                      }
-                ; _
+                      };
+                  _
                 };
               operator = ComparisonOperator.IsNot;
               right = annotation_expression
@@ -3781,14 +3782,14 @@ module State (Context : Context) = struct
                       { callee =
                           { Node.value =
                               Name
-                                (Name.Identifier ("isinstance" as type_refinement_function_name))
-                          ; _
+                                (Name.Identifier ("isinstance" as type_refinement_function_name));
+                            _
                           };
                         arguments =
-                          [ { Call.Argument.name = None; value }
-                          ; { Call.Argument.name = None; value = annotation_expression } ]
-                      }
-                ; _
+                          [ { Call.Argument.name = None; value };
+                            { Call.Argument.name = None; value = annotation_expression } ]
+                      };
+                  _
                 }
             } -> (
             let annotation = parse_refinement_annotation annotation_expression in
@@ -3867,8 +3868,8 @@ module State (Context : Context) = struct
               | Some
                   { Annotation.annotation =
                       Type.Parametric { name; parameters = [Type.Optional parameter] } as
-                      annotation
-                  ; _
+                      annotation;
+                    _
                   }
                 when Resolution.less_or_equal
                        resolution

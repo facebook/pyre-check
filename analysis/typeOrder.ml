@@ -209,10 +209,7 @@ let insert (module Handler : Handler) annotation =
     Handler.set (Handler.backedges ()) ~key:index ~data:Target.Set.empty )
 
 
-let connect ?(parameters = [])
-            ((module Handler : Handler) as order)
-            ~predecessor
-            ~successor =
+let connect ?(parameters = []) ((module Handler : Handler) as order) ~predecessor ~successor =
   if
     (not (Handler.contains (Handler.indices ()) predecessor))
     || not (Handler.contains (Handler.indices ()) successor)
@@ -492,7 +489,10 @@ module OrderImplementation = struct
 
     (* TODO(T40105833): merge this with actual signature select *)
     let rec simulate_signature_select
-        order ~callable:{ Type.Callable.implementation; overloads; _ } ~called_as ~constraints
+        order
+        ~callable:{ Type.Callable.implementation; overloads; _ }
+        ~called_as
+        ~constraints
       =
       let open Callable in
       let solve implementation ~initial_constraints =
@@ -1056,8 +1056,8 @@ module OrderImplementation = struct
             constructor;
             any_is_bottom;
             is_protocol;
-            protocol_assumptions
-          ; _
+            protocol_assumptions;
+            _
           } as order )
         ~left
         ~right
@@ -1411,8 +1411,8 @@ module OrderImplementation = struct
         ( { handler = (module Handler : Handler) as handler;
             constructor;
             is_protocol;
-            protocol_assumptions
-          ; _
+            protocol_assumptions;
+            _
           } as order )
         left
         right
@@ -1672,8 +1672,8 @@ module OrderImplementation = struct
         ( { handler = (module Handler : Handler) as handler;
             constructor;
             is_protocol;
-            protocol_assumptions
-          ; _
+            protocol_assumptions;
+            _
           } as order )
         left
         right
@@ -2335,9 +2335,7 @@ let remove_extra_edges (module Handler : Handler) ~bottom ~top annotations =
   ReverseDisconnector.disconnect keys ~edges:backedges ~backedges:edges (index_of bottom)
 
 
-let connect_annotations_to_top ((module Handler : Handler) as handler)
-                               ~top
-                               annotations =
+let connect_annotations_to_top ((module Handler : Handler) as handler) ~top annotations =
   let indices = Handler.indices () in
   let connect_to_top annotation =
     let index = Handler.find_unsafe indices annotation in

@@ -149,8 +149,8 @@ val get_analysis
    To register the analysis, call the Register functor in the resulting module. *)
 module Make (Analysis : ANALYSIS_PROVIDED) :
   ANALYSIS_RESULT_WITH_REGISTRATION
-  with type result := Analysis.result
-   and type call_model := Analysis.call_model
+    with type result := Analysis.result
+     and type call_model := Analysis.call_model
 
 val empty_model : model_t
 

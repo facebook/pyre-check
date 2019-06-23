@@ -13,7 +13,9 @@ open Test
 let test_of_expression _ =
   let ( !+ ) expression = Test.parse_single_expression expression in
   let assert_of_expression
-      ?(resolution = Test.resolution ~configuration:Test.mock_configuration ()) expression expected
+      ?(resolution = Test.resolution ~configuration:Test.mock_configuration ())
+      expression
+      expected
     =
     assert_equal
       ~cmp:(Option.equal AccessPath.equal)

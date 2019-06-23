@@ -124,7 +124,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               :: features
             in
             let translate_tito
-                argument_taint { BackwardState.Tree.path = tito_path; tip = element; _ }
+                argument_taint
+                { BackwardState.Tree.path = tito_path; tip = element; _ }
               =
               let compute_parameter_tito ~key:kind ~data:element argument_taint =
                 let extra_paths =
@@ -414,8 +415,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             let global_taint =
               Model.get_global_model ~resolution ~expression:target
               >>| (fun { Model.model =
-                           { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }
-                       ; _
+                           { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
+                         _
                        } ->
                     BackwardState.read
                       ~root:(Root.PositionalParameter { position = 0; name = "$global" })

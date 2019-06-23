@@ -83,10 +83,7 @@ let populate
   Resolution.Cache.clear ()
 
 
-let build ((module Handler : Environment.Handler) as handler)
-          ~configuration
-          ~scheduler
-          ~sources =
+let build ((module Handler : Environment.Handler) as handler) ~configuration ~scheduler ~sources =
   Log.info "Building type environment...";
 
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built

@@ -5,7 +5,8 @@ break-infix=fit-or-vertical
 break-infix-before-func
 break-separators=after-and-docked
 break-sequences
-break-string-literals=wrap
+break-string-literals=newlines-and-wrap
+exp-grouping=preserve
 field-space=tight-decl
 if-then-else=fit-or-vertical
 indicate-nested-or-patterns=unsafe-no

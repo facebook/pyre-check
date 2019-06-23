@@ -38,10 +38,7 @@ let socket_path ?(create = false) ?(name = "server") configuration =
     socket_path
 
 
-let create_configuration ?(daemonize = true)
-                         ?log_path
-                         ?saved_state_action
-                         configuration =
+let create_configuration ?(daemonize = true) ?log_path ?saved_state_action configuration =
   let server_root = Constants.Server.root configuration in
   (* Allow absolute log_path path (e.g., for /dev/null) *)
   let log_path = Option.value log_path ~default:(Constants.Server.log_path configuration) in
@@ -110,8 +107,8 @@ let start
     ~connections
     ~configuration:( { Configuration.Server.configuration =
                          { Configuration.Analysis.expected_version; _ } as configuration;
-                       saved_state_action
-                     ; _
+                       saved_state_action;
+                       _
                      } as server_configuration )
     ()
   =
@@ -148,8 +145,8 @@ let stop
     ~reason
     ~configuration:{ Configuration.Server.socket = { path = socket_path; link = socket_link; _ };
                      json_socket = { path = json_socket_path; link = json_socket_link; _ };
-                     pid_path
-                   ; _
+                     pid_path;
+                     _
                    }
   =
   Statistics.event ~flush:true ~name:"stop server" ~normals:["reason", reason] ();

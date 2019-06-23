@@ -106,8 +106,8 @@ let test_server_stops context =
   let pid = Pid.of_int (CommandTest.start_server ~local_root ()) in
   Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
   let { Configuration.Server.socket = { path = socket_path; _ };
-        json_socket = { path = json_socket_path; _ }
-      ; _
+        json_socket = { path = json_socket_path; _ };
+        _
       }
     =
     Operations.create_configuration (Configuration.Analysis.create ~local_root ())
@@ -228,9 +228,7 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty)
   TypeCheck.run ~configuration ~environment ~source
 
 
-let mock_server_state ~local_root
-                      ?(initial_environment = environment ~local_root)
-                      errors =
+let mock_server_state ~local_root ?(initial_environment = environment ~local_root) errors =
   let configuration = configuration ~local_root in
   let environment = Environment.handler initial_environment in
   add_defaults_to_environment ~configuration environment;
@@ -1277,8 +1275,8 @@ let test_connect context =
   CommandTest.start_server ~local_root ~expected_version:"A" () |> ignore;
   let { Configuration.Server.configuration;
         socket = { path = socket_path; _ };
-        json_socket = { path = json_socket_path; _ }
-      ; _
+        json_socket = { path = json_socket_path; _ };
+        _
       }
     =
     CommandTest.mock_server_configuration ~local_root ~expected_version:"B" ()

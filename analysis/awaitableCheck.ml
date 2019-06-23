@@ -135,8 +135,7 @@ module State (Context : Context) = struct
     forward_expression ~state ~expression:iterator
 
 
-  and forward_expression ~state
-                         ~expression:{ Node.value; _ } =
+  and forward_expression ~state ~expression:{ Node.value; _ } =
     let open Expression in
     match value with
     | Await { Node.value = Name name; _ } when Expression.is_simple_name name ->
@@ -203,7 +202,11 @@ module State (Context : Context) = struct
 
 
   let rec forward_assign
-      ~resolution ~state:({ unawaited; locals } as state) ~annotation ~expression ~target
+      ~resolution
+      ~state:({ unawaited; locals } as state)
+      ~annotation
+      ~expression
+      ~target
     =
     let open Expression in
     let is_nonuniform_sequence ~minimum_length annotation =
@@ -295,9 +298,7 @@ module State (Context : Context) = struct
     | _ -> state
 
 
-  let forward ?key
-              ({ unawaited; locals } as state)
-              ~statement:{ Node.value; _ } =
+  let forward ?key ({ unawaited; locals } as state) ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = Context.define in
     let resolution =
       TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key

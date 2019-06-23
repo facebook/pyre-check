@@ -28,16 +28,14 @@ module Make (Visitor : Visitor) = struct
     visit_expression value
 
 
-  let visit_parameter { Node.value = { Parameter.value; annotation; _ }; _ }
-                      ~visit_expression =
+  let visit_parameter { Node.value = { Parameter.value; annotation; _ }; _ } ~visit_expression =
     Option.iter ~f:visit_expression value;
     Option.iter ~f:visit_expression annotation
 
 
   let rec visit_expression ~state ~visitor expression =
     let visit_expression = visit_expression ~state ~visitor in
-    let visit_generator { Comprehension.target; iterator; conditions; _ }
-                        ~visit_expression =
+    let visit_generator { Comprehension.target; iterator; conditions; _ } ~visit_expression =
       visit_expression target;
       visit_expression iterator;
       List.iter conditions ~f:visit_expression

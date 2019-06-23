@@ -37,8 +37,8 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
 
 
 let decorate
-    ( { Define.signature = { Define.decorators; parameters = original_parameters; _ } as signature
-      ; _
+    ( { Define.signature = { Define.decorators; parameters = original_parameters; _ } as signature;
+        _
       } as define )
     ~resolution
   =

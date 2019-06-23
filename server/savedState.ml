@@ -32,7 +32,8 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
 (* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
    to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
 let compute_locally_changed_files
-    ~scheduler ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
+    ~scheduler
+    ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
   =
   Log.info "Computing files that changed since the saved state was created.";
   let timer = Timer.start () in
@@ -97,11 +98,11 @@ let load
                               { Configuration.Analysis.expected_version;
                                 project_root;
                                 local_root;
-                                configuration_file_hash
-                              ; _
+                                configuration_file_hash;
+                                _
                               } as configuration;
-                            saved_state_action
-                          ; _
+                            saved_state_action;
+                            _
                           }
     ~connections
   =

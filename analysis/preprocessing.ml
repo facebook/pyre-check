@@ -64,10 +64,10 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
                   { Node.value =
                       Name
                         (Name.Attribute
-                          { base = { Node.value = Name base; _ }; attribute = "__getitem__"; _ })
-                  ; _
-                  }
-              ; _
+                          { base = { Node.value = Name base; _ }; attribute = "__getitem__"; _ });
+                    _
+                  };
+                _
               }
             when ends_with_literal base ->
               (* Don't transform arguments in Literals. This will hit any generic type named
@@ -163,8 +163,8 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
     let expression _ expression =
       let transform_arguments = function
         | [ ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
-            type_argument )
-          ; value_argument ] ->
+            type_argument );
+            value_argument ] ->
             let annotation = transform_string_annotation_expression handle value in
             [{ type_argument with value = annotation }; value_argument]
         | arguments -> arguments
@@ -374,7 +374,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
     in
     List.fold statements ~init:scope ~f:explore_scope
   and qualify_function_name
-      ~scope:({ aliases; locals; immutables; is_in_function; qualifier; _ } as scope) name
+      ~scope:({ aliases; locals; immutables; is_in_function; qualifier; _ } as scope)
+      name
     =
     if is_in_function then
       match Reference.as_list name with
@@ -458,10 +459,10 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           | { Node.value =
                 Call
                   { callee =
-                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ }
-                  ; _
-                  }
-            ; _
+                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                    _
+                  };
+              _
             } ->
               qualify_expression ~qualify_strings:is_top_level value ~scope
           | _ -> qualify_expression ~qualify_strings:false value ~scope
@@ -591,8 +592,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       let qualify_define
           ({ qualifier; _ } as original_scope)
           ( { Define.signature = { name; parameters; decorators; return_annotation; parent; _ };
-              body
-            ; _
+              body;
+              _
             } as define )
         =
         let scope = { original_scope with is_top_level = false } in
@@ -1100,8 +1101,8 @@ let replace_version_specific_code source =
           match extract_single_comparison test with
           | Comparison
               ( left,
-                { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _)
-                ; _
+                { Node.value = Expression.Tuple ({ Node.value = Expression.Integer 3; _ } :: _);
+                  _
                 } )
             when String.equal (Expression.show left) "sys.version_info" ->
               (), add_pass_statement ~location orelse
@@ -1188,8 +1189,8 @@ let expand_type_checking_imports source =
         | Name
             (Name.Attribute
               { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                attribute = "TYPE_CHECKING"
-              ; _
+                attribute = "TYPE_CHECKING";
+                _
               })
         | Name (Name.Identifier "TYPE_CHECKING") ->
             true
@@ -1199,8 +1200,8 @@ let expand_type_checking_imports source =
       | If { If.test; body; _ } when is_type_checking test -> (), body
       | If
           { If.test = { Node.value = UnaryOperator { UnaryOperator.operator = Not; operand }; _ };
-            orelse
-          ; _
+            orelse;
+            _
           }
         when is_type_checking operand ->
           (), orelse
@@ -1328,10 +1329,7 @@ let expand_implicit_returns source =
   ExpandingTransform.transform () source |> ExpandingTransform.source
 
 
-let defines ?(include_stubs = false)
-            ?(include_nested = false)
-            ?(include_toplevels = false)
-            source =
+let defines ?(include_stubs = false) ?(include_nested = false) ?(include_toplevels = false) source =
   let module Collector = Visit.StatementCollector (struct
     type t = Define.t Node.t
 
@@ -1546,23 +1544,23 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                               (Name.Attribute
                                 { base =
                                     { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
-                                  attribute = "TypedDict"
-                                ; _
-                                })
-                        ; _
+                                  attribute = "TypedDict";
+                                  _
+                                });
+                          _
                         };
                       arguments =
                         { Call.Argument.name = None; value = name }
                         :: { Call.Argument.name = None;
-                             value = { Node.value = Dictionary { Dictionary.entries; _ }; _ }
-                           ; _
+                             value = { Node.value = Dictionary { Dictionary.entries; _ }; _ };
+                             _
                            }
                            :: argument_tail
-                    }
-              ; _
+                    };
+                _
               };
-            parent
-          ; _
+            parent;
+            _
           } ->
           typed_dictionary_declaration_assignment
             ~name
@@ -1579,10 +1577,10 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                       Name
                         (Name.Attribute
                           { base = { Node.value = Name (Name.Identifier "mypy_extensions"); _ };
-                            attribute = "TypedDict"
-                          ; _
-                          })
-                  ; _
+                            attribute = "TypedDict";
+                            _
+                          });
+                    _
                   }
               }
               :: bases_tail;
@@ -1602,8 +1600,8 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                         annotation = Some annotation;
                         value = { Node.value = Ellipsis; _ };
                         parent = _
-                      }
-                ; _
+                      };
+                  _
                 } ->
                   Reference.drop_prefix ~prefix:class_name (Reference.from_name_exn name)
                   |> Reference.single

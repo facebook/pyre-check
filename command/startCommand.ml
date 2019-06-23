@@ -357,8 +357,8 @@ let run
         json_socket = { path = json_socket_path; _ };
         log_path;
         daemonize;
-        configuration
-      ; _
+        configuration;
+        _
       } as server_configuration )
   =
   (fun () ->

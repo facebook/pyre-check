@@ -511,11 +511,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
 
       ancestors is accumulated down the recursion and returned when we reach the end of that path.
       That way the recursion is tail-recursive. *)
-  let rec read_raw ~ancestors
-                   path
-                   { children; element }
-                   ~use_precise_fields
-                   ~transform_non_leaves =
+  let rec read_raw ~ancestors path { children; element } ~use_precise_fields ~transform_non_leaves =
     match path with
     | [] -> ancestors, create_node_option element children
     | label_element :: rest -> (
@@ -523,9 +519,7 @@ module Make (Config : CONFIG) (Element : AbstractDomain.S) () = struct
         match label_element with
         | Label.Any when not use_precise_fields ->
             (* lookup all index fields and join result *)
-            let find_index_and_join ~key:_
-                                    ~data:subtree
-                                    (ancestors_accumulator, tree_accumulator) =
+            let find_index_and_join ~key:_ ~data:subtree (ancestors_accumulator, tree_accumulator) =
               let ancestors_result, subtree =
                 read_raw ~ancestors ~use_precise_fields ~transform_non_leaves rest subtree
               in

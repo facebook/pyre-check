@@ -67,18 +67,18 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                                           (Name.Attribute
                                             { base =
                                                 { Node.value =
-                                                    Expression.Name (Name.Identifier "dataclasses")
-                                                ; _
+                                                    Expression.Name (Name.Identifier "dataclasses");
+                                                  _
                                                 };
-                                              attribute = "field"
-                                            ; _
-                                            })
-                                    ; _
+                                              attribute = "field";
+                                              _
+                                            });
+                                      _
                                     };
-                                  arguments
-                                ; _
-                                }
-                          ; _
+                                  arguments;
+                                  _
+                                };
+                            _
                           } ->
                             Some arguments
                         | _ -> None
@@ -144,8 +144,8 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                             let rec override_existing_parameters unchecked_parameters =
                               match unchecked_parameters with
                               | [] -> [Parameter.create ~location ~name ~annotation ?value ()]
-                              | { Node.value = { Parameter.name = old_name; value = old_value; _ }
-                                ; _
+                              | { Node.value = { Parameter.name = old_name; value = old_value; _ };
+                                  _
                                 }
                                 :: tail
                                 when Identifier.equal old_name name ->
@@ -237,7 +237,14 @@ let transform_environment ~options (module Handler : Handler) resolution source 
 
 
 let extract_options_from_decorator
-    ~resolution ~names ~default ~init ~repr ~eq ~order annotated_class
+    ~resolution
+    ~names
+    ~default
+    ~init
+    ~repr
+    ~eq
+    ~order
+    annotated_class
   =
   let get_decorators ~names annotated =
     let get_decorator decorator = Annotated.Class.get_decorator annotated ~resolution ~decorator in

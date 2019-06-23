@@ -37,9 +37,7 @@ module Forward = struct
     { source_taint = ForwardState.join left right }
 
 
-  let widen ~iteration
-            ~previous:{ source_taint = previous }
-            ~next:{ source_taint = next } =
+  let widen ~iteration ~previous:{ source_taint = previous } ~next:{ source_taint = next } =
     { source_taint = ForwardState.widen ~iteration ~previous ~next }
 
 

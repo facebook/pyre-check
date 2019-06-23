@@ -560,8 +560,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       (* Assignments of the form a[1][2] = 3 translate to a.__getitem__(1).__setitem__(2, 3).*)
       | Call
           { callee =
-              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ }
-          ; _
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            _
           } ->
           analyze_assignment ~resolution base taint surrounding_taint state
       | _ ->
@@ -570,8 +570,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           let sink_tree =
             Model.get_global_model ~resolution ~expression:target
             >>| (fun { Model.model =
-                         { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }
-                     ; _
+                         { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
+                       _
                      } ->
                   BackwardState.read
                     ~root:(Root.PositionalParameter { position = 0; name = "$global" })
@@ -663,9 +663,7 @@ let extract_source_model ~define ~resolution exit_taint =
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.empty
 
 
-let run ~environment
-        ~define
-        ~existing_model =
+let run ~environment ~define ~existing_model =
   let { Node.value = { Define.signature = { parameters; return_annotation; _ }; _ }; _ } =
     define
   in

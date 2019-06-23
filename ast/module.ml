@@ -73,8 +73,8 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       match value with
       | Assign
           { Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Name value; _ }
-          ; _
+            value = { Node.value = Name value; _ };
+            _
           } -> (
         match Reference.from_name value with
         | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
@@ -123,8 +123,8 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
       match value with
       | Assign
           { Assign.target = { Node.value = Name (Name.Identifier target); _ };
-            value = { Node.value = Expression.List names; _ }
-          ; _
+            value = { Node.value = Expression.List names; _ };
+            _
           }
         when String.equal (Identifier.sanitized target) "__all__" ->
           let to_reference = function

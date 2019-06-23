@@ -47,8 +47,7 @@ module State (Context : Context) = struct
     bottom: bool
   }
 
-  let pp format
-         { resolution; errors; bottom; _ } =
+  let pp format { resolution; errors; bottom; _ } =
     let expected =
       Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
     in
@@ -92,9 +91,7 @@ module State (Context : Context) = struct
     && left.bottom = right.bottom
 
 
-  let create ?(bottom = false)
-             ~resolution
-             () =
+  let create ?(bottom = false) ~resolution () =
     { resolution; errors = TypeCheck.ErrorMap.Map.empty; bottom }
 
 
@@ -317,8 +314,7 @@ module State (Context : Context) = struct
     let { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ } =
       Context.define
     in
-    let add_parameter_errors errors
-                             { Node.value = { Parameter.name; annotation; _ }; location } =
+    let add_parameter_errors errors { Node.value = { Parameter.name; annotation; _ }; location } =
       let add_missing_parameter_error ~given_annotation =
         let reference = Reference.create name in
         Resolution.get_local resolution ~reference
@@ -354,9 +350,7 @@ module State (Context : Context) = struct
     { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors }
 
 
-  let backward ?key:_
-               ({ resolution; _ } as state)
-               ~statement =
+  let backward ?key:_ ({ resolution; _ } as state) ~statement =
     Type.Variable.Namespace.reset ();
     let resolve_assign annotation target_annotation =
       match annotation, target_annotation with
@@ -377,8 +371,8 @@ module State (Context : Context) = struct
         match resolved with
         | Type.Callable
             { Type.Callable.implementation =
-                { Type.Callable.parameters = Type.Callable.Defined parameters; _ }
-            ; _
+                { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
+              _
             } ->
             let rec infer_annotations_list parameters arguments resolution =
               let rec infer_annotation resolution parameter_annotation argument =
@@ -500,9 +494,7 @@ end
 
 let name = "Inference"
 
-let run ~configuration
-        ~environment
-        ~source:({ Source.handle; _ } as source) =
+let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = TypeCheck.resolution environment () in
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -617,8 +609,8 @@ let run ~configuration
         match error with
         | { Error.kind =
               Error.MissingAttributeAnnotation
-                { parent; missing_annotation = { Error.name; annotation = Some annotation; _ } }
-          ; _
+                { parent; missing_annotation = { Error.name; annotation = Some annotation; _ } };
+            _
           } as error ->
             add_missing_annotation_error
               ~reference:(Reference.combine (Type.show parent |> Reference.create) name)
@@ -626,8 +618,8 @@ let run ~configuration
               ~location:(Error.location error |> Location.reference)
               ~annotation
         | { Error.kind =
-              Error.MissingGlobalAnnotation { Error.name; annotation = Some annotation; _ }
-          ; _
+              Error.MissingGlobalAnnotation { Error.name; annotation = Some annotation; _ };
+            _
           } as error ->
             add_missing_annotation_error
               ~reference:name

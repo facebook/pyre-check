@@ -145,8 +145,8 @@ module Make (Analysis : ANALYSIS_PROVIDED) = struct
 
   module Register
       (Analyzer : ANALYZER
-                  with type result := Analysis.result
-                   and type call_model := Analysis.call_model) =
+                    with type result := Analysis.result
+                     and type call_model := Analysis.call_model) =
   Register (struct
     include Analysis
 
@@ -216,9 +216,7 @@ let apply_to_partial_kind
 
 (* Polymorphic extractor for package values: given a map of 'part package values indexed by ikind,
    and given a 'part pkind, extracts the analysis specific 'part value in a generic way. *)
-let get (type part a)
-        (partial_kind : (part, a) partial_kind)
-        (values : part pkg Kind.Map.t) =
+let get (type part a) (partial_kind : (part, a) partial_kind) (values : part pkg Kind.Map.t) =
   let get kind (partial_kind : (part, a) partial_kind) =
     match Kind.Map.find_opt (Kind.abstract kind) values, partial_kind with
     | None, _ -> None

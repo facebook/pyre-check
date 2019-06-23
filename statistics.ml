@@ -20,10 +20,7 @@ let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Unix.gethostname (
 
 let disable () = enabled := false
 
-let sample ?(integers = [])
-           ?(normals = [])
-           ?(metadata = true)
-           () =
+let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
   let open Configuration.Analysis in
   let local_root, start_time, log_identifier =
     match get_global () with

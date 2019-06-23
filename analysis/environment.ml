@@ -403,15 +403,15 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                                           (Name.Attribute
                                             { base =
                                                 { Node.value = Name (Name.Identifier "typing"); _ };
-                                              attribute = "Type"
-                                            ; _
-                                            })
-                                    ; _
+                                              attribute = "Type";
+                                              _
+                                            });
+                                      _
                                     };
-                                  attribute = "__getitem__"
-                                ; _
-                                })
-                        ; _
+                                  attribute = "__getitem__";
+                                  _
+                                });
+                          _
                         };
                       arguments =
                         [ { Call.Argument.value =
@@ -429,27 +429,27 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                                                                 { Node.value =
                                                                     Name
                                                                       (Name.Identifier
-                                                                        "mypy_extensions")
-                                                                ; _
+                                                                        "mypy_extensions");
+                                                                  _
                                                                 };
-                                                              attribute = "TypedDict"
-                                                            ; _
-                                                            })
-                                                    ; _
+                                                              attribute = "TypedDict";
+                                                              _
+                                                            });
+                                                      _
                                                     };
-                                                  attribute = "__getitem__"
-                                                ; _
-                                                })
-                                        ; _
-                                        }
-                                    ; _
-                                    }
-                              ; _
-                              }
-                          ; _
+                                                  attribute = "__getitem__";
+                                                  _
+                                                });
+                                          _
+                                        };
+                                      _
+                                    };
+                                _
+                              };
+                            _
                           } ]
-                    }
-              ; _
+                    };
+                _
               } ) ->
             if not (Type.is_top target_annotation) then
               { UnresolvedAlias.handle; target; value } :: aliases
@@ -461,10 +461,10 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                     Name
                       (Name.Attribute
                         { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                          attribute = "Any"
-                        ; _
-                        })
-                ; _
+                          attribute = "Any";
+                          _
+                        });
+                  _
                 } as value ) ) ->
             if not (Type.is_top target_annotation) then
               { UnresolvedAlias.handle; target; value } :: aliases
@@ -638,9 +638,7 @@ let register_aliases (module Handler : Handler) sources =
   Type.Cache.enable ()
 
 
-let register_undecorated_functions (module Handler : Handler)
-                                   resolution
-                                   source =
+let register_undecorated_functions (module Handler : Handler) resolution source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -703,9 +701,7 @@ let register_values
 
 
     let statement { Source.handle; _ } callables statement =
-      let collect_callable ~name
-                           callables
-                           callable =
+      let collect_callable ~name callables callable =
         Handler.DependencyHandler.add_function_key ~handle name;
 
         (* Register callable global. *)
@@ -884,8 +880,7 @@ let register_dependencies (module Handler : Handler) source =
 
 
 let propagate_nested_classes (module Handler : Handler) resolution annotation =
-  let propagate { Node.location; value = { Statement.Class.name; _ } as definition }
-                successors =
+  let propagate { Node.location; value = { Statement.Class.name; _ } as definition } successors =
     let handle =
       Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
       |> fun { Location.path; _ } -> File.Handle.create_for_testing path

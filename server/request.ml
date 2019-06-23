@@ -48,8 +48,8 @@ let parse_lsp ~configuration ~request =
                 { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
                   position = { Position.line; character }
                 };
-            id
-          ; _
+            id;
+            _
           } ->
           uri_to_path ~uri
           >>| File.create
@@ -70,10 +70,10 @@ let parse_lsp ~configuration ~request =
       | Ok
           { DidCloseTextDocument.parameters =
               Some
-                { DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ }
-                ; _
-                }
-          ; _
+                { DidCloseTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
+                  _
+                };
+            _
           } ->
           uri_to_path ~uri
           >>| File.create
@@ -90,8 +90,8 @@ let parse_lsp ~configuration ~request =
       match DidOpenTextDocument.of_yojson request with
       | Ok
           { DidOpenTextDocument.parameters =
-              Some { DidOpenTextDocumentParameters.textDocument = { TextDocumentItem.uri; _ }; _ }
-          ; _
+              Some { DidOpenTextDocumentParameters.textDocument = { TextDocumentItem.uri; _ }; _ };
+            _
           } ->
           uri_to_path ~uri
           >>| File.create
@@ -111,8 +111,8 @@ let parse_lsp ~configuration ~request =
               Some
                 { DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
                   text
-                }
-          ; _
+                };
+            _
           } ->
           uri_to_path ~uri >>| File.create ?content:text >>| fun file -> SaveDocument file
       | Ok _ ->
@@ -129,8 +129,8 @@ let parse_lsp ~configuration ~request =
                 { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
                   position = { Position.line; character }
                 };
-            id
-          ; _
+            id;
+            _
           } ->
           uri_to_path ~uri
           >>| File.create
@@ -152,11 +152,11 @@ let parse_lsp ~configuration ~request =
           { CodeActionRequest.parameters =
               Some
                 { CodeActionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  context = { diagnostics; _ }
-                ; _
+                  context = { diagnostics; _ };
+                  _
                 };
-            id
-          ; _
+            id;
+            _
           } ->
           uri_to_path ~uri
           >>| File.create
@@ -170,8 +170,8 @@ let parse_lsp ~configuration ~request =
       | Ok
           { TypeCoverage.parameters =
               Some { TypeCoverageParameters.textDocument = { TextDocumentIdentifier.uri; _ }; _ };
-            id
-          ; _
+            id;
+            _
           } ->
           uri_to_path ~uri >>| File.create >>| fun file -> TypeCoverageRequest { file; id }
       | Ok _ -> None
@@ -182,8 +182,8 @@ let parse_lsp ~configuration ~request =
       match ExecuteCommandRequest.of_yojson request with
       | Ok
           { ExecuteCommandRequest.parameters = Some { ExecuteCommandParameters.arguments; _ };
-            id
-          ; _
+            id;
+            _
           } ->
           Some (ExecuteCommandRequest { id; arguments })
       | Ok _ -> None
@@ -308,8 +308,7 @@ module AnnotationEdit = struct
     | _, _ -> None
 
 
-  let create ~file
-             ~error =
+  let create ~file ~error =
     error
     >>| (fun error ->
           let error_kind = Error.kind error in
@@ -1041,9 +1040,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   { state; response = Some (TypeQueryResponse response) }
 
 
-let process_type_check_request ~state
-                               ~configuration
-                               ~files =
+let process_type_check_request ~state ~configuration ~files =
   let state, response = IncrementalCheck.recheck ~state ~configuration ~files in
   { state; response = Some (TypeCheckResponse response) }
 

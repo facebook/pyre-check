@@ -146,8 +146,7 @@ let optional_map_compare left right =
 
 let optional_map_print map = map >>| TypeConstraints.Solution.show |> Option.value ~default:"None"
 
-let assert_solution ~sequentially_applied_bounds
-                    expected =
+let assert_solution ~sequentially_applied_bounds expected =
   let result =
     List.fold sequentially_applied_bounds ~init:(Some empty) ~f:add_bound
     >>= DiamondOrderedConstraints.solve ~order:()
@@ -399,7 +398,10 @@ let test_multiple_variable_solution _ =
 
 let test_partial_solution _ =
   let expect_split_solution
-      ~bounds ~variables expected_partial_solution expected_remainder_solution
+      ~bounds
+      ~variables
+      expected_partial_solution
+      expected_remainder_solution
     =
     let partial_result, remainder_solution =
       List.fold bounds ~init:(Some empty) ~f:add_bound

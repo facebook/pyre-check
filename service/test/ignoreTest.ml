@@ -31,9 +31,7 @@ let create_files ~root content =
       (Path.create_relative ~root ~relative:path) ]
 
 
-let assert_errors ?(show_error_traces = false)
-                  input_source
-                  expected_errors =
+let assert_errors ?(show_error_traces = false) input_source expected_errors =
   let root = Path.current_working_directory () in
   let configuration =
     Configuration.Analysis.create ~local_root:root ~project_root:(Path.create_absolute "/") ()

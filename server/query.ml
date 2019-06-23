@@ -93,10 +93,10 @@ let parse_query
   | [ { Node.value =
           Statement.Expression
             { Node.value =
-                Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments }
-            ; _
-            }
-      ; _
+                Call { callee = { Node.value = Name (Name.Identifier name); _ }; arguments };
+              _
+            };
+        _
       } ] -> (
       let expression { Call.Argument.value; _ } = value in
       let access = function
@@ -123,16 +123,16 @@ let parse_query
           Request.TypeQueryRequest (CoverageInFile file)
       | "decode_ocaml_values", values ->
           let parse_values_to_decode = function
-            | { Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ }
-              ; _
+            | { Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
+                _
               } ->
                 SerializedValue
                   { serialized_key = string_of_expression serialized_key;
                     serialized_value = string_of_expression serialized_value
                   }
             | { Call.Argument.value =
-                  { Node.value = Tuple [serialized_key; first_value; second_value]; _ }
-              ; _
+                  { Node.value = Tuple [serialized_key; first_value; second_value]; _ };
+                _
               } ->
                 SerializedPair
                   { serialized_key = string_of_expression serialized_key;
@@ -211,9 +211,9 @@ let parse_query
       | "superclasses", [name] -> Request.TypeQueryRequest (Superclasses (access name))
       | "type", [argument] -> Request.TypeQueryRequest (Type (expression argument))
       | ( "type_at_position",
-          [ path
-          ; { Call.Argument.value = { Node.value = Integer line; _ }; _ }
-          ; { Call.Argument.value = { Node.value = Integer column; _ }; _ } ] ) ->
+          [ path;
+            { Call.Argument.value = { Node.value = Integer line; _ }; _ };
+            { Call.Argument.value = { Node.value = Integer column; _ }; _ } ] ) ->
           let file = Path.create_relative ~root ~relative:(string path) |> File.create in
           let position = { Location.line; column } in
           Request.TypeQueryRequest (TypeAtPosition { file; position })

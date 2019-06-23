@@ -1360,12 +1360,7 @@ module Callable = struct
     }
 
 
-  let create ?name
-             ?(overloads = [])
-             ?(parameters = Undefined)
-             ?implicit
-             ~annotation
-             () =
+  let create ?name ?(overloads = []) ?(parameters = Undefined) ?implicit ~annotation () =
     let kind = name >>| (fun name -> Named name) |> Option.value ~default:Anonymous in
     Callable
       { kind;
@@ -1435,10 +1430,7 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
-let rec create_logic ?(use_cache = true)
-                     ~aliases
-                     ~variable_aliases
-                     { Node.value = expression; _ } =
+let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value = expression; _ } =
   match Cache.find expression with
   | Some result when use_cache -> result
   | _ ->
@@ -1494,8 +1486,8 @@ let rec create_logic ?(use_cache = true)
             | Name
                 (Name.Attribute
                   { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                    attribute = "Callable"
-                  ; _
+                    attribute = "Callable";
+                    _
                   }) ->
                 true
             | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
@@ -1512,8 +1504,8 @@ let rec create_logic ?(use_cache = true)
                 | Name
                     (Name.Attribute
                       { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                        attribute = "Callable"
-                      ; _
+                        attribute = "Callable";
+                        _
                       }) ->
                     None, implementation_argument, overloads_argument
                 | _ ->
@@ -1533,17 +1525,17 @@ let rec create_logic ?(use_cache = true)
                                             { Node.value =
                                                 Name
                                                   (Name.Attribute
-                                                    { base; attribute = "__getitem__"; _ })
-                                            ; _
+                                                    { base; attribute = "__getitem__"; _ });
+                                              _
                                             };
                                           arguments = [{ Call.Argument.value = argument; _ }]
-                                        }
-                                  ; _
+                                        };
+                                    _
                                   };
-                                attribute = "__getitem__"
-                              ; _
-                              })
-                      ; _
+                                attribute = "__getitem__";
+                                _
+                              });
+                        _
                       };
                     arguments = [{ Call.Argument.value = overloads_argument; _ }]
                   } ->
@@ -1551,8 +1543,8 @@ let rec create_logic ?(use_cache = true)
                   get_from_base base (Some argument) (Some overloads_argument)
               | Call
                   { callee =
-                      { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ })
-                      ; _
+                      { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                        _
                       };
                     arguments = [{ Call.Argument.value = argument; _ }]
                   } ->
@@ -1564,8 +1556,8 @@ let rec create_logic ?(use_cache = true)
               match modifiers with
               | Some
                   ({ Call.Argument.value =
-                       { Node.value = Expression.String { StringLiteral.value; _ }; _ }
-                   ; _
+                       { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+                     _
                    }
                   :: _) ->
                   Named (Reference.create value)
@@ -1681,8 +1673,8 @@ let rec create_logic ?(use_cache = true)
                 | List arguments -> [get_signature (Tuple arguments)]
                 | Call
                     { callee =
-                        { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ })
-                        ; _
+                        { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ });
+                          _
                         };
                       arguments = [{ Call.Argument.value = argument; _ }]
                     } ->
@@ -1699,8 +1691,8 @@ let rec create_logic ?(use_cache = true)
           | Call
               { callee;
                 arguments =
-                  { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
-                  ; _
+                  { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                    _
                   }
                   :: arguments
               }
@@ -1750,8 +1742,8 @@ let rec create_logic ?(use_cache = true)
           | Call
               { callee;
                 arguments =
-                  [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
-                    ; _
+                  [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                      _
                     } ]
               }
             when Expression.name_is ~name:"typing_extensions.IntVar" callee ->
@@ -1764,11 +1756,11 @@ let rec create_logic ?(use_cache = true)
                         { Node.value =
                             Expression.Tuple
                               ({ Node.value =
-                                   Expression.String { value = typed_dictionary_name; _ }
-                               ; _
+                                   Expression.String { value = typed_dictionary_name; _ };
+                                 _
                                }
-                              :: { Node.value = true_or_false; _ } :: fields)
-                        ; _
+                              :: { Node.value = true_or_false; _ } :: fields);
+                          _
                         }
                     } ]
               }
@@ -1784,9 +1776,9 @@ let rec create_logic ?(use_cache = true)
                   let tuple_to_field = function
                     | { Node.value =
                           Expression.Tuple
-                            [ { Node.value = Expression.String { value = field_name; _ }; _ }
-                            ; field_annotation ]
-                      ; _
+                            [ { Node.value = Expression.String { value = field_name; _ }; _ };
+                              field_annotation ];
+                        _
                       } ->
                         Some { name = field_name; annotation = create_logic field_annotation }
                     | _ -> None
@@ -2221,8 +2213,8 @@ let split annotation =
 let class_name annotation =
   let strip_calls =
     let rec collect_identifiers identifiers = function
-      | { Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ }
-        ; _
+      | { Node.value = Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
+          _
         } ->
           collect_identifiers identifiers base
       | { Node.value = Name (Name.Identifier identifier); _ } -> identifier :: identifiers
@@ -2674,22 +2666,24 @@ end = struct
                             { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                               attribute = "ParameterSpecification";
                               special = false
-                            })
-                    ; _
+                            });
+                      _
                     };
                   arguments =
-                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
-                      ; _
+                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                        _
                       } ]
-                }
-          ; _
+                };
+            _
           } ->
             Some (create value)
         | _ -> None
 
 
       let parse_instance_annotation
-          ~variable_parameter_annotation ~keywords_parameter_annotation ~aliases
+          ~variable_parameter_annotation
+          ~keywords_parameter_annotation
+          ~aliases
         =
         let get_variable name =
           match aliases name with
@@ -2872,15 +2866,15 @@ end = struct
                             { base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
                               attribute = "ListVariadic";
                               special = false
-                            })
-                    ; _
+                            });
+                      _
                     };
                   arguments =
-                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }
-                      ; _
+                    [ { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ };
+                        _
                       } ]
-                }
-          ; _
+                };
+            _
           } ->
             Some (create value)
         | _ -> None

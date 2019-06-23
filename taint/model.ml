@@ -157,8 +157,8 @@ let rec parse_annotations ~configuration ~parameters annotation =
   in
   let base_matches expected = function
     | { Node.value =
-          Name (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ })
-      ; _
+          Name (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ });
+        _
       } ->
         Identifier.equal expected identifier
     | _ -> false
@@ -331,8 +331,8 @@ let create ~resolution ?(verify = true) ~configuration source =
             []
       | { Node.value =
             Assign
-              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
-        ; _
+              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+          _
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
@@ -350,8 +350,8 @@ let create ~resolution ?(verify = true) ~configuration source =
           [signature, Callable.create_object name]
       | { Node.value =
             Assign
-              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
-        ; _
+              { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ };
+          _
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
@@ -392,11 +392,11 @@ let create ~resolution ?(verify = true) ~configuration source =
         | ( true,
             ( Type.Callable
                 { Type.Callable.implementation =
-                    { Type.Callable.parameters = Type.Callable.Defined implementation_parameters
-                    ; _
+                    { Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
+                      _
                     };
-                  implicit
-                ; _
+                  implicit;
+                  _
                 } as callable ) ) ->
             let model_compatible =
               let optional_parameters =

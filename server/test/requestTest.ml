@@ -15,7 +15,10 @@ let int_request_id id = LanguageServer.Types.RequestId.Int id
 let string_request_id id = LanguageServer.Types.RequestId.String id
 
 let mock_server_state
-    ?(persistent_clients = []) ?(sources = []) ?(errors = File.Handle.Table.create ()) ()
+    ?(persistent_clients = [])
+    ?(sources = [])
+    ?(errors = File.Handle.Table.create ())
+    ()
   =
   let configuration = Test.mock_configuration in
   let environment =

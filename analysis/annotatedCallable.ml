@@ -51,9 +51,7 @@ let return_annotation
     annotation
 
 
-let create_overload ?location
-                    ~resolution
-                    ({ Define.signature = { parameters; _ }; _ } as define) =
+let create_overload ?location ~resolution ({ Define.signature = { parameters; _ }; _ } as define) =
   let open Type.Callable in
   let parameters =
     let parameter { Node.value = { Ast.Parameter.name; annotation; value }; _ } =
@@ -91,8 +89,8 @@ let create_overload ?location
         | Keywords annotation -> Keywords (parse_as_annotation annotation)
       in
       match parameters with
-      | [ Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation))
-        ; Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation) ] -> (
+      | [ Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
+          Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation) ] -> (
         match
           Resolution.parse_as_parameter_specification_instance_annotation
             resolution
@@ -233,8 +231,8 @@ let apply_decorators
             { Type.Callable.annotation = return_annotation;
               parameters =
                 Type.Callable.Defined
-                  [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }]
-            ; _
+                  [Type.Callable.Parameter.Named { annotation = parameter_annotation; _ }];
+              _
             } -> (
             let decorated_annotation =
               Resolution.solve_less_or_equal
@@ -259,8 +257,8 @@ let apply_decorators
                     { Type.Callable.parameters = decorated_parameters;
                       annotation = decorated_annotation;
                       define_location
-                    }
-                ; _
+                    };
+                  _
                 } -> (
               (* Typeshed currently exhibits the common behavior of decorating with `Callable[...,
                  T] -> Modified[T]` when the parameters are meant to be left alone. Support this by
