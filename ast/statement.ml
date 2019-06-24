@@ -1137,6 +1137,46 @@ module Class = struct
       | _ -> false
     in
     List.exists bases ~f:abstract_metaclass
+
+
+  let is_protocol { bases; _ } =
+    let is_protocol { Expression.Call.Argument.name; value = { Node.value; _ } } =
+      match name, value with
+      | ( None,
+          Expression.Call
+            { callee =
+                { Node.value =
+                    Name
+                      (Name.Attribute
+                        { base =
+                            { Node.value =
+                                Name
+                                  (Name.Attribute
+                                    { base = { Node.value = Name (Name.Identifier typing); _ };
+                                      attribute = "Protocol";
+                                      _
+                                    });
+                              _
+                            };
+                          attribute = "__getitem__";
+                          _
+                        });
+                  _
+                };
+              _
+            } )
+      | ( None,
+          Name
+            (Name.Attribute
+              { base = { Node.value = Name (Name.Identifier typing); _ };
+                attribute = "Protocol";
+                _
+              }) )
+        when String.equal typing "typing" || String.equal typing "typing_extensions" ->
+          true
+      | _ -> false
+    in
+    List.exists ~f:is_protocol bases
 end
 
 module For = struct

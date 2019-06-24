@@ -326,6 +326,13 @@ let test_check_protocol _ =
 
     |}
     [];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        pass
+      P()
+    |}
+    ["Invalid class instantiation [45]: Cannot instantiate protocol `P`."];
   ()
 
 

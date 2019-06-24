@@ -15,7 +15,7 @@ type missing_annotation = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type uninitialized_attribute_kind =
+type class_kind =
   | Class
   | Protocol of Reference.t
   | Abstract of Reference.t
@@ -154,6 +154,7 @@ type kind =
       }
   | InvalidArgument of invalid_argument
   | InvalidClass of Reference.t
+  | InvalidClassInstantiation of class_kind
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
@@ -189,7 +190,7 @@ type kind =
       { name: Identifier.t;
         parent: Type.t;
         mismatch: mismatch;
-        kind: uninitialized_attribute_kind
+        kind: class_kind
       }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list

@@ -341,6 +341,8 @@ module Class : sig
   val is_final : t -> bool
 
   val is_abstract : t -> bool
+
+  val is_protocol : t -> bool
 end
 
 module For : sig

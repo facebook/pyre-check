@@ -42,6 +42,7 @@ type reason =
       Type.OrderedTypes.t * mismatch_with_list_variadic_type_variable
   | MissingArgument of missing_argument
   | MutuallyRecursiveTypeVariables
+  | ProtocolInstantiation of Reference.t
   | TooManyArguments of { expected: int; provided: int }
   | UnexpectedKeyword of Identifier.t
 [@@deriving eq, show, compare]

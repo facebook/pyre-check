@@ -351,43 +351,7 @@ let has_abstract_methods { Node.value; _ } =
     |> List.is_empty )
 
 
-let is_protocol { Node.value = { Class.bases; _ }; _ } =
-  let is_protocol { Call.Argument.name; value = { Node.value; _ } } =
-    match name, value with
-    | ( None,
-        Call
-          { callee =
-              { Node.value =
-                  Name
-                    (Name.Attribute
-                      { base =
-                          { Node.value =
-                              Name
-                                (Name.Attribute
-                                  { base = { Node.value = Name (Name.Identifier typing); _ };
-                                    attribute = "Protocol";
-                                    _
-                                  });
-                            _
-                          };
-                        attribute = "__getitem__";
-                        _
-                      });
-                _
-              };
-            _
-          } )
-    | ( None,
-        Name
-          (Name.Attribute
-            { base = { Node.value = Name (Name.Identifier typing); _ }; attribute = "Protocol"; _ })
-      )
-      when String.equal typing "typing" || String.equal typing "typing_extensions" ->
-        true
-    | _ -> false
-  in
-  List.exists ~f:is_protocol bases
-
+let is_protocol { Node.value; _ } = Statement.Class.is_protocol value
 
 let create_attribute
     ~resolution

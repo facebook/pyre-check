@@ -24,7 +24,7 @@ type missing_annotation = {
 }
 [@@deriving compare, eq, sexp, show, hash]
 
-type uninitialized_attribute_kind =
+type class_kind =
   | Class
   | Protocol of Reference.t
   | Abstract of Reference.t
@@ -163,6 +163,7 @@ type kind =
       }
   | InvalidArgument of invalid_argument
   | InvalidClass of Reference.t
+  | InvalidClassInstantiation of class_kind
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
   | InvalidTypeParameters of Resolution.type_parameters_mismatch
@@ -198,7 +199,7 @@ type kind =
       { name: Identifier.t;
         parent: Type.t;
         mismatch: mismatch;
-        kind: uninitialized_attribute_kind
+        kind: class_kind
       }
   | Unpack of { expected_count: int; unpack_problem: unpack_problem }
   | UnusedIgnore of int list
@@ -258,6 +259,7 @@ let code = function
   | MissingOverloadImplementation _ -> 42
   | IncompatibleOverload _ -> 43
   | InvalidClass _ -> 44
+  | InvalidClassInstantiation _ -> 45
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
   | Deobfuscation _ -> 102
@@ -280,6 +282,7 @@ let name = function
   | InvalidArgument _ -> "Invalid argument"
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidClass _ -> "Invalid class"
+  | InvalidClassInstantiation _ -> "Invalid class instantiation"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
@@ -901,6 +904,14 @@ let messages ~concise ~signature location kind =
            abstract?"
           pp_reference
           name ]
+  | InvalidClassInstantiation kind ->
+      let class_type, class_name =
+        match kind with
+        | Protocol class_name -> "protocol", class_name
+        | Abstract class_name -> "abstract class", class_name
+        | Class -> failwith "Impossible"
+      in
+      [Format.asprintf "Cannot instantiate %s `%a`." class_type pp_reference class_name]
   | MissingArgument { parameter = AnnotatedSignature.Named name; _ } when concise ->
       [Format.asprintf "Argument `%a` expected." pp_identifier name]
   | MissingArgument { parameter = AnnotatedSignature.Anonymous index; _ } when concise ->
@@ -1602,6 +1613,7 @@ let due_to_analysis_limitations { kind; _ } =
   | InvalidOverride _
   | InvalidAssignment _
   | InvalidClass _
+  | InvalidClassInstantiation _
   | InvalidType _
   | IncompatibleOverload _
   | IncompleteType _
@@ -1698,6 +1710,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidOverride _
   | InvalidAssignment _
   | InvalidClass _
+  | InvalidClassInstantiation _
   | MissingAttributeAnnotation _
   | MissingGlobalAnnotation _
   | MissingOverloadImplementation _
@@ -1835,6 +1848,12 @@ let less_or_equal ~resolution left right =
       MissingArgument { callee = right_callee; parameter = Anonymous right_index } ) ->
       Option.equal Reference.equal_sanitized left_callee right_callee && left_index = right_index
   | InvalidClass left, InvalidClass right -> Reference.equal left right
+  | InvalidClassInstantiation left, InvalidClassInstantiation right -> (
+    match left, right with
+    | Protocol left_name, Protocol right_name
+    | Abstract left_name, Protocol right_name ->
+        Reference.equal left_name right_name
+    | _, _ -> false )
   | ProhibitedAny left, ProhibitedAny right
   | MissingParameterAnnotation left, MissingParameterAnnotation right
   | MissingReturnAnnotation left, MissingReturnAnnotation right
@@ -1916,6 +1935,7 @@ let less_or_equal ~resolution left right =
   | InvalidOverride _, _
   | InvalidAssignment _, _
   | InvalidClass _, _
+  | InvalidClassInstantiation _, _
   | MissingArgument _, _
   | MissingAttributeAnnotation _, _
   | MissingGlobalAnnotation _, _
@@ -2197,6 +2217,7 @@ let join ~resolution left right =
     | InvalidOverride _, _
     | InvalidAssignment _, _
     | InvalidClass _, _
+    | InvalidClassInstantiation _, _
     | MissingArgument _, _
     | MissingAttributeAnnotation _, _
     | MissingGlobalAnnotation _, _
@@ -2558,6 +2579,7 @@ let dequalify
     | InvalidOverride { parent; decorator } -> InvalidOverride { parent; decorator }
     | InvalidAssignment kind -> InvalidAssignment kind
     | InvalidClass name -> InvalidClass name
+    | InvalidClassInstantiation kind -> InvalidClassInstantiation kind
     | TooManyArguments extra_argument -> TooManyArguments extra_argument
     | Top -> Top
     | MissingParameterAnnotation ({ annotation; _ } as missing_annotation) ->

@@ -1944,6 +1944,9 @@ module State (Context : Context) = struct
                         if Statement.Class.is_abstract definition then
                           Annotated.Signature.NotFound
                             { callable; reason = Some (AbstractClassInstantiation class_name) }
+                        else if Statement.Class.is_protocol definition then
+                          Annotated.Signature.NotFound
+                            { callable; reason = Some (ProtocolInstantiation class_name) }
                         else
                           signature)
               |> Option.value ~default:signature
@@ -2066,6 +2069,11 @@ module State (Context : Context) = struct
                   Error.create
                     ~location
                     ~kind:(Error.MutuallyRecursiveTypeVariables callee)
+                    ~define:Context.define
+              | ProtocolInstantiation class_name ->
+                  Error.create
+                    ~location
+                    ~kind:(Error.InvalidClassInstantiation (Protocol class_name))
                     ~define:Context.define
               | TooManyArguments { expected; provided } ->
                   Error.create
