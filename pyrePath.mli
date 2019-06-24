@@ -48,6 +48,8 @@ end
 
 val real_path : t -> t
 
+val follow_symbolic_link : t -> t option
+
 val is_directory : t -> bool
 
 val is_python_stub : t -> bool
@@ -63,7 +65,7 @@ val list
   unit ->
   t list
 
-val directory_contains : ?follow_symlinks:bool -> directory:t -> t -> bool
+val directory_contains : directory:t -> t -> bool
 
 val search_upwards : target:string -> root:t -> t option
 

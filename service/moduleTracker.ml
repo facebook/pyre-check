@@ -39,9 +39,7 @@ module SourceFile = struct
       ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
       path
     =
-    let directory_contains ~path directory =
-      Path.directory_contains ~follow_symlinks:true ~directory path
-    in
+    let directory_contains ~path directory = Path.directory_contains ~directory path in
     let filter_directories = Option.value filter_directories ~default:[] in
     let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
     List.exists filter_directories ~f:(directory_contains ~path)

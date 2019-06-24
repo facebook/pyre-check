@@ -120,6 +120,11 @@ let real_path path =
   | Relative _ -> absolute path |> create_absolute
 
 
+let follow_symbolic_link path =
+  try absolute path |> create_absolute ~follow_symbolic_links:true |> Option.some with
+  | Unix.Unix_error _ -> None
+
+
 (* Variant of Sys.readdir where names are sorted in alphabetical order *)
 let read_directory_ordered path =
   let entries = Core.Sys.readdir path in
@@ -148,20 +153,10 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
   list [] (absolute root)
 
 
-let directory_contains ?(follow_symlinks = false) ~directory path =
-  try
-    let path =
-      if follow_symlinks then
-        absolute path |> Filename.realpath
-      else
-        absolute path
-    in
-    let directory = absolute directory in
-    String.is_prefix ~prefix:directory path
-  with
-  | Unix.Unix_error (error, name, parameters) ->
-      Log.log_unix_error (error, name, parameters);
-      false
+let directory_contains ~directory path =
+  let path = absolute path in
+  let directory = absolute directory in
+  String.is_prefix ~prefix:directory path
 
 
 (* Walk up from the root to try and find a directory/target. *)

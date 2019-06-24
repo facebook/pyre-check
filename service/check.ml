@@ -35,7 +35,11 @@ let analyze_sources
   let handles =
     let filter_path_by_directories handle =
       let directory_contains directory =
-        Path.directory_contains ~follow_symlinks:true ~directory handle
+        match Path.follow_symbolic_link handle with
+        | None ->
+            Log.error "Cannot follow symbolic link %a" Path.pp handle;
+            false
+        | Some handle -> Path.directory_contains ~directory handle
       in
       let should_keep =
         filter_directories >>| List.exists ~f:directory_contains |> Option.value ~default:true
