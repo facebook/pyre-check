@@ -451,7 +451,7 @@ let test_concise _ =
         def foo() -> None:
           Foo()
         |}
-    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."]
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."]
 
 
 let () =

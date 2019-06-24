@@ -465,7 +465,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -479,7 +479,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -528,7 +528,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -606,7 +606,7 @@ let test_check_constructors _ =
       def foo() -> None:
         Foo()
       |}
-    ["Abstract class [38]: Cannot instantiate abstract class `Foo`."];
+    ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."];
 
   (* Explicit call. *)
   assert_type_errors

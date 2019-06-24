@@ -110,10 +110,6 @@ and unawaited_awaitable = {
   expression: Expression.t
 }
 
-and abstract_class_kind =
-  | Instantiation of Reference.t
-  | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
-
 and incompatible_overload_kind =
   | ReturnType of
       { implementation_annotation: Type.t;
@@ -129,7 +125,7 @@ and incompatible_overload_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | AbstractClass of abstract_class_kind
+  | AbstractClass of { class_name: Reference.t; method_names: Identifier.t list }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }
@@ -1396,12 +1392,12 @@ let messages ~concise ~signature location kind =
           start_line
           pp_type
           actual ]
-  | AbstractClass (Unimplemented { class_name; _ }) when concise ->
+  | AbstractClass { class_name; _ } when concise ->
       [ Format.asprintf
           "`%a` does not implement all inherited abstract methods."
           pp_reference
           class_name ]
-  | AbstractClass (Unimplemented { class_name; method_names }) ->
+  | AbstractClass { class_name; method_names } ->
       let method_names = List.map method_names ~f:(fun name -> Format.asprintf "`%s`" name) in
       let method_message =
         if List.length method_names > 3 then
@@ -1425,8 +1421,6 @@ let messages ~concise ~signature location kind =
           class_name
           method_pluralization
           method_message ]
-  | AbstractClass (Instantiation class_name) ->
-      [Format.asprintf "Cannot instantiate abstract class `%a`." pp_reference class_name]
   | UnusedIgnore codes ->
       let string_from_codes codes =
         if List.length codes > 0 then
@@ -1904,13 +1898,8 @@ let less_or_equal ~resolution left right =
           Resolution.less_or_equal resolution ~left ~right
       | CountMismatch left, CountMismatch right -> left = right
       | _ -> false )
-  | AbstractClass left, AbstractClass right -> (
-    match left, right with
-    | Instantiation left_class_name, Instantiation right_class_name ->
-        Reference.equal_sanitized left_class_name right_class_name
-    | Unimplemented left, Unimplemented right ->
-        Reference.equal_sanitized left.class_name right.class_name
-    | _, _ -> false )
+  | AbstractClass left, AbstractClass right ->
+      Reference.equal_sanitized left.class_name right.class_name
   | _, Top -> true
   | AnalysisFailure _, _
   | Deobfuscation _, _

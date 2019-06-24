@@ -101,10 +101,6 @@ and unawaited_awaitable = {
   expression: Expression.t
 }
 
-and abstract_class_kind =
-  | Instantiation of Reference.t
-  | Unimplemented of { class_name: Reference.t; method_names: Identifier.t list }
-
 and incompatible_overload_kind =
   | ReturnType of
       { implementation_annotation: Type.t;
@@ -120,7 +116,7 @@ and incompatible_overload_kind =
 [@@deriving compare, eq, sexp, show, hash]
 
 type kind =
-  | AbstractClass of abstract_class_kind
+  | AbstractClass of { class_name: Reference.t; method_names: Identifier.t list }
   | AnalysisFailure of Type.t
   | IllegalAnnotationTarget of Expression.t
   | ImpossibleIsinstance of { expression: Expression.t; mismatch: mismatch }

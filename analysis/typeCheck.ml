@@ -440,10 +440,9 @@ module State (Context : Context) = struct
                   ~location
                   ~kind:
                     (Error.AbstractClass
-                       (Unimplemented
-                          { class_name = AnnotatedClass.name definition;
-                            method_names = abstract_methods
-                          }))
+                       { class_name = AnnotatedClass.name definition;
+                         method_names = abstract_methods
+                       })
                   ~define:Context.define
               in
               error :: errors
@@ -2002,7 +2001,7 @@ module State (Context : Context) = struct
               | AbstractClassInstantiation class_name ->
                   Error.create
                     ~location
-                    ~kind:(Error.AbstractClass (Instantiation class_name))
+                    ~kind:(Error.InvalidClassInstantiation (Abstract class_name))
                     ~define:Context.define
               | CallingParameterVariadicTypeVariable ->
                   Error.create
