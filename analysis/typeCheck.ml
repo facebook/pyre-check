@@ -3181,30 +3181,11 @@ module State (Context : Context) = struct
                             ~kind:(Error.InvalidAssignment (ReadOnly reference))
                       | _ -> state
                     in
-                    let check_undefined_attribute_target state =
-                      match resolved_base, attribute with
-                      | Some parent, Some (attribute, name)
-                        when not (Annotated.Attribute.defined attribute) ->
-                          emit_error
-                            ~state
-                            ~location
-                            ~kind:
-                              (Error.UndefinedAttribute
-                                 { attribute = name;
-                                   origin =
-                                     Error.Class
-                                       { annotation = parent;
-                                         class_attribute = Type.is_meta resolved
-                                       }
-                                 })
-                      | _ -> state
-                    in
                     check_global_final_reassignment state
                     |> check_class_final_reassignment
                     |> check_assign_class_variable_on_instance
                     |> check_final_is_outermost_qualifier
                     |> check_is_readonly_property
-                    |> check_undefined_attribute_target
                 | _ -> state
               in
               let expected, is_immutable =
