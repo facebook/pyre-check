@@ -15,6 +15,8 @@ module SourceFile : sig
   }
   [@@deriving sexp, compare, eq]
 
+  val pp : Format.formatter -> t -> unit
+
   val create : configuration:Configuration.Analysis.t -> Path.t -> t option
 
   val qualifier : t -> Ast.Reference.t
@@ -23,8 +25,23 @@ module SourceFile : sig
   val same_module_compare : t -> t -> int
 end
 
+module IncrementalUpdate : sig
+  type t =
+    | New of SourceFile.t
+    | Delete of Ast.Reference.t
+  [@@deriving sexp, compare, eq]
+end
+
 type t
 
 val create : Configuration.Analysis.t -> t
 
 val lookup : t -> Ast.Reference.t -> SourceFile.t option
+
+val source_files : t -> SourceFile.t list
+
+val update
+  :  configuration:Configuration.Analysis.t ->
+  paths:Path.t list ->
+  t ->
+  IncrementalUpdate.t list

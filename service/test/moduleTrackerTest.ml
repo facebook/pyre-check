@@ -10,25 +10,36 @@ open OUnit2
 module ModuleTracker = Service.ModuleTracker
 module SourceFile = ModuleTracker.SourceFile
 
+let touch path = File.create path ~content:"" |> File.write
+
+let create_source_file ~configuration root relative =
+  let path = Path.create_relative ~root ~relative in
+  SourceFile.create ~configuration path
+
+
+let create_source_file_exn ~configuration root relative =
+  match create_source_file ~configuration root relative with
+  | None ->
+      let message =
+        Format.asprintf "Failed to create source file %s under %a" relative Path.pp root
+      in
+      assert_failure message
+  | Some result -> result
+
+
+let lookup_exn tracker reference =
+  match ModuleTracker.lookup tracker reference with
+  | Some source_file -> source_file
+  | None ->
+      let message =
+        Format.asprintf "Cannot find module %a in the module tracker" Reference.pp reference
+      in
+      assert_failure message
+
+
 let test_creation context =
-  let touch root relative =
-    Path.create_relative ~root ~relative |> File.create ~content:"" |> File.write
-  in
-  let create ~configuration root relative =
-    let path = Path.create_relative ~root ~relative in
-    SourceFile.create ~configuration path
-  in
-  let create_exn ~configuration root relative =
-    match create ~configuration root relative with
-    | None ->
-        let message =
-          Format.asprintf "Failed to create source file %s under %a" relative Path.pp root
-        in
-        assert_failure message
-    | Some result -> result
-  in
   let assert_create_fail ~configuration root relative =
-    match create ~configuration root relative with
+    match create_source_file ~configuration root relative with
     | None -> ()
     | Some _ ->
         let message =
@@ -37,15 +48,6 @@ let test_creation context =
             relative
             Path.pp
             root
-        in
-        assert_failure message
-  in
-  let lookup_exn tracker reference =
-    match ModuleTracker.lookup tracker reference with
-    | Some source_file -> source_file
-    | None ->
-        let message =
-          Format.asprintf "Cannot find module %a in the module tracker" Reference.pp reference
         in
         assert_failure message
   in
@@ -97,6 +99,7 @@ let test_creation context =
     in
     assert_bool message (compare_result > 0)
   in
+  let touch root relative = touch (Path.create_relative ~root ~relative) in
   let test_basic () =
     (* SETUP:
      * local_root/a.py
@@ -135,7 +138,7 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let create_exn = create_exn ~configuration in
+    let create_exn = create_source_file_exn ~configuration in
     let assert_create_fail = assert_create_fail ~configuration in
     (* Creation test *)
     let local_a = create_exn local_root "a.py" in
@@ -305,7 +308,7 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let create_exn = create_exn ~configuration in
+    let create_exn = create_source_file_exn ~configuration in
     (* Creation test *)
     List.iter local_paths ~f:(fun path ->
         assert_source_file
@@ -406,7 +409,7 @@ let test_creation context =
         ~ignore_all_errors:[durp]
         ()
     in
-    let create_exn = create_exn ~configuration in
+    let create_exn = create_source_file_exn ~configuration in
     assert_source_file
       (create_exn local_root "a.py")
       ~search_root:local_root
@@ -454,7 +457,7 @@ let test_creation context =
           ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
-      let create_exn = create_exn ~configuration in
+      let create_exn = create_source_file_exn ~configuration in
       assert_source_file
         (create_exn local_root "a.py")
         ~search_root:local_root
@@ -497,7 +500,7 @@ let test_creation context =
           ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
-      let create_exn = create_exn ~configuration in
+      let create_exn = create_source_file_exn ~configuration in
       assert_source_file
         (create_exn local_root "a.py")
         ~search_root:local_root
@@ -538,4 +541,211 @@ let test_creation context =
   test_overlapping ()
 
 
-let () = "environment" >::: ["creation" >:: test_creation] |> Test.run
+module Root = struct
+  type t =
+    | Local
+    | External
+end
+
+module FileSystemEvent = struct
+  type kind =
+    | Update
+    | Remove
+
+  type t = {
+    kind: kind;
+    root: Root.t;
+    relative: string
+  }
+end
+
+module ModuleTrackerEvent = struct
+  type t =
+    | New of { root: Root.t; relative: string }
+    | Delete of string
+end
+
+let simulate_filesystem_event kind path =
+  begin
+    match kind with
+    | FileSystemEvent.Update -> touch path
+    | FileSystemEvent.Remove -> Path.remove path
+  end;
+  path
+
+
+let test_update context =
+  let assert_modules ~expected tracker =
+    let expected = List.map expected ~f:Reference.create |> List.sort ~compare:Reference.compare in
+    let actual =
+      ModuleTracker.source_files tracker
+      |> List.map ~f:SourceFile.qualifier
+      |> List.sort ~compare:Reference.compare
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:Reference.equal)
+      ~printer:(List.to_string ~f:Reference.show)
+      expected
+      actual
+  in
+  let assert_module_paths ~expected tracker =
+    let expected = List.sort ~compare:Path.compare expected in
+    let actual =
+      ModuleTracker.source_files tracker
+      |> List.map ~f:(fun { SourceFile.relative_path; _ } -> Path.Relative relative_path)
+      |> List.sort ~compare:Path.compare
+    in
+    assert_equal
+      ~cmp:(List.equal ~equal:Path.equal)
+      ~printer:(List.to_string ~f:Path.show)
+      expected
+      actual
+  in
+  let setup_environment () =
+    (* SETUP:
+     * local_root/a.py
+     * local_root/b.py
+     * local_root/c.py
+     * external_root/a.pyi
+     * external_root/b.pyi
+     * external_root/b/__init__.pyi
+     * external_root/d.py
+     *)
+    let touch root relative = touch (Path.create_relative ~root ~relative) in
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_b_path = Path.absolute external_root ^ "/b" in
+    Sys_utils.mkdir_no_fail external_b_path;
+    List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"];
+    let () =
+      let path = external_b_path |> Path.create_absolute in
+      touch path "__init__.pyi"
+    in
+    List.iter ~f:(touch external_root) ["a.pyi"; "b.pyi"; "d.py"];
+    ( local_root,
+      external_root,
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root external_root]
+        ~filter_directories:[local_root]
+        () )
+  in
+  let test_setup () =
+    (* Make sure our setup is sane *)
+    let local_root, external_root, configuration = setup_environment () in
+    let tracker = ModuleTracker.create configuration in
+    assert_modules tracker ~expected:["a"; "b"; "c"; "d"];
+    assert_module_paths
+      tracker
+      ~expected:
+        [ Path.create_relative ~root:external_root ~relative:"a.pyi";
+          Path.create_relative ~root:external_root ~relative:"b/__init__.pyi";
+          Path.create_relative ~root:local_root ~relative:"c.py";
+          Path.create_relative ~root:external_root ~relative:"d.py" ]
+  in
+  let assert_incremental ~expected events =
+    let local_root, external_root, configuration = setup_environment () in
+    let tracker = ModuleTracker.create configuration in
+    let root_path = function
+      | Root.Local -> local_root
+      | Root.External -> external_root
+    in
+    let create_incremental_update_exn = function
+      | ModuleTrackerEvent.New { root; relative } ->
+          let source_file = create_source_file_exn ~configuration (root_path root) relative in
+          ModuleTracker.IncrementalUpdate.New source_file
+      | ModuleTrackerEvent.Delete name ->
+          ModuleTracker.IncrementalUpdate.Delete (Reference.create name)
+    in
+    let update_paths =
+      List.map events ~f:(fun { FileSystemEvent.kind; root; relative } ->
+          Path.create_relative ~root:(root_path root) ~relative |> simulate_filesystem_event kind)
+    in
+    let expected =
+      List.map expected ~f:create_incremental_update_exn
+      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+    in
+    let actual =
+      ModuleTracker.update ~configuration ~paths:update_paths tracker
+      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+    in
+    (* Check that the computed incremental update is expected *)
+    assert_equal
+      ~cmp:(List.equal ~equal:ModuleTracker.IncrementalUpdate.equal)
+      ~printer:(fun updates ->
+        List.map updates ~f:ModuleTracker.IncrementalUpdate.sexp_of_t
+        |> (fun sexps -> Sexp.List sexps)
+        |> Format.asprintf "%a" Sexp.pp_hum)
+      expected
+      actual;
+
+    (* Also check that the module tracker is in a consistent state: we should track exactly the
+       same modules and source files after the update as if we build a fresh module tracker from
+       scratch. *)
+    let fresh_tracker = ModuleTracker.create configuration in
+    let expect_modules =
+      ModuleTracker.source_files fresh_tracker
+      |> List.map ~f:SourceFile.qualifier
+      |> List.map ~f:Reference.show
+    in
+    assert_modules ~expected:expect_modules tracker;
+    let expect_paths =
+      ModuleTracker.source_files fresh_tracker
+      |> List.map ~f:(fun { SourceFile.relative_path; _ } -> Path.Relative relative_path)
+    in
+    assert_module_paths ~expected:expect_paths tracker
+  in
+  let test_incremental () =
+    (* Adding new file for a new module *)
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.py" }]
+      [{ FileSystemEvent.kind = Update; root = Local; relative = "e.py" }];
+
+    (* Adding new shadowing file for an existing module *)
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "c.pyi" }]
+      [{ FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" }];
+
+    (* Adding new shadowed file for an existing module *)
+    assert_incremental
+      ~expected:[]
+      [{ FileSystemEvent.kind = Update; root = Local; relative = "b/__init__.py" }];
+
+    (* Removing a module *)
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "c"]
+      [{ FileSystemEvent.kind = Remove; root = Local; relative = "c.py" }];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "d"]
+      [{ FileSystemEvent.kind = Remove; root = External; relative = "d.py" }];
+
+    (* Removing shadowing file for a module *)
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "a.py" }]
+      [{ FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" }];
+
+    (* Removing shadowed file for a module *)
+    assert_incremental
+      ~expected:[]
+      [{ FileSystemEvent.kind = Remove; root = Local; relative = "a.py" }];
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "b.py" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" } ];
+
+    (* Removing and adding the same file *)
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "e.py" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "c.py" }]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "c.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "c.py" } ]
+  in
+  test_setup ();
+  test_incremental ();
+  ()
+
+
+let () = "environment" >::: ["creation" >:: test_creation; "update" >:: test_update] |> Test.run
