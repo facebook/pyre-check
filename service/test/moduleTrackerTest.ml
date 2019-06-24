@@ -700,16 +700,48 @@ let test_update context =
     assert_incremental
       ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.py" }]
       [{ FileSystemEvent.kind = Update; root = Local; relative = "e.py" }];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.py" } ];
 
     (* Adding new shadowing file for an existing module *)
     assert_incremental
       ~expected:[ModuleTrackerEvent.New { root = Local; relative = "c.pyi" }]
       [{ FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" }];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = External; relative = "c.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" };
+        { FileSystemEvent.kind = Update; root = External; relative = "c.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = External; relative = "c.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = External; relative = "c.pyi" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = External; relative = "a/__init__.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = External; relative = "a.py" };
+        { FileSystemEvent.kind = Update; root = External; relative = "a/__init__.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = External; relative = "a/__init__.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = External; relative = "a/__init__.pyi" };
+        { FileSystemEvent.kind = Update; root = External; relative = "a.py" } ];
 
     (* Adding new shadowed file for an existing module *)
     assert_incremental
       ~expected:[]
       [{ FileSystemEvent.kind = Update; root = Local; relative = "b/__init__.py" }];
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Update; root = External; relative = "a.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" } ];
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" };
+        { FileSystemEvent.kind = Update; root = External; relative = "a.py" } ];
 
     (* Removing a module *)
     assert_incremental
@@ -718,11 +750,45 @@ let test_update context =
     assert_incremental
       ~expected:[ModuleTrackerEvent.Delete "d"]
       [{ FileSystemEvent.kind = Remove; root = External; relative = "d.py" }];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "a"]
+      [ { FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "a.py" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "a"]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "a.py" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "b"]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "b.py" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b/__init__.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "b"]
+      [ { FileSystemEvent.kind = Remove; root = External; relative = "b/__init__.pyi" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "b.py" } ];
 
     (* Removing shadowing file for a module *)
     assert_incremental
       ~expected:[ModuleTrackerEvent.New { root = Local; relative = "a.py" }]
       [{ FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" }];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "a.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "a.pyi" }]
+      [ { FileSystemEvent.kind = Remove; root = External; relative = "a.pyi" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "b.py" }]
+      [ { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b/__init__.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "b.py" }]
+      [ { FileSystemEvent.kind = Remove; root = External; relative = "b/__init__.pyi" };
+        { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" } ];
 
     (* Removing shadowed file for a module *)
     assert_incremental
@@ -732,6 +798,14 @@ let test_update context =
       ~expected:[]
       [ { FileSystemEvent.kind = Remove; root = Local; relative = "b.py" };
         { FileSystemEvent.kind = Remove; root = External; relative = "b.pyi" } ];
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "a.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" } ];
+    assert_incremental
+      ~expected:[]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "a.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "a.py" } ];
 
     (* Removing and adding the same file *)
     assert_incremental
@@ -741,7 +815,43 @@ let test_update context =
     assert_incremental
       ~expected:[ModuleTrackerEvent.New { root = Local; relative = "c.py" }]
       [ { FileSystemEvent.kind = Remove; root = Local; relative = "c.py" };
-        { FileSystemEvent.kind = Update; root = Local; relative = "c.py" } ]
+        { FileSystemEvent.kind = Update; root = Local; relative = "c.py" } ];
+
+    (* Removing and adding the same module *)
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "e.py" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.pyi" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.py" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.py" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "e.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "e.py" }]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "e.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "e.pyi" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "e.py" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.New { root = Local; relative = "c.pyi" }]
+      [ { FileSystemEvent.kind = Remove; root = Local; relative = "c.py" };
+        { FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "c"]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "c.py" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "c.pyi" } ];
+    assert_incremental
+      ~expected:[ModuleTrackerEvent.Delete "c"]
+      [ { FileSystemEvent.kind = Update; root = Local; relative = "c.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "c.pyi" };
+        { FileSystemEvent.kind = Remove; root = Local; relative = "c.py" } ]
   in
   test_setup ();
   test_incremental ();

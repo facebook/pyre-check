@@ -219,6 +219,7 @@ module IncrementalUpdate = struct
 end
 
 let update ~configuration ~paths tracker =
+  (* Process a single filesystem event *)
   let process_filesystem_event ~configuration tracker = function
     | FileSystemEvent.Update path -> (
       match SourceFile.create ~configuration path with
@@ -269,7 +270,32 @@ let update ~configuration ~paths tracker =
                 else (* Removing source_file un-shadows another source file. *)
                   Some (IncrementalUpdate.New new_source_file) ) ) )
   in
+  (* Make sure we have only one update per module *)
+  let merge_updates updates =
+    let table = Reference.Table.create () in
+    let process_update update =
+      match update with
+      | IncrementalUpdate.New source_file ->
+          let qualifier = SourceFile.qualifier source_file in
+          Hashtbl.set table ~key:qualifier ~data:update
+      | IncrementalUpdate.Delete qualifier ->
+          let update = function
+            | None
+            | Some (IncrementalUpdate.New _) ->
+                Some update
+            | Some (IncrementalUpdate.Delete _) ->
+                let message =
+                  Format.asprintf "Illegal state: double delete module %a" Reference.pp qualifier
+                in
+                failwith message
+          in
+          Hashtbl.change table qualifier ~f:update
+    in
+    List.iter updates ~f:process_update;
+    Hashtbl.data table
+  in
   (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem events *)
   List.dedup_and_sort ~compare:Path.compare paths
   |> List.map ~f:FileSystemEvent.create
   |> List.filter_map ~f:(process_filesystem_event ~configuration tracker)
+  |> merge_updates
