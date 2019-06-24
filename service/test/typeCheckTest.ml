@@ -101,9 +101,11 @@ let test_filter_directories context =
     ~files
     [ "Incompatible return type [7]: Expected `C` but got `D`.";
       "Incompatible return type [7]: Expected `C` but got `D`." ];
+
   assert_errors
     ~root
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
     ~files
     ["Incompatible return type [7]: Expected `C` but got `D`."];
 
@@ -115,6 +117,7 @@ let test_filter_directories context =
     ~root
     ~search_path:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[Path.create_relative ~root ~relative:"check/search"]
     ~files:
       [ File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
         File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py") ]

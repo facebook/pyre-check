@@ -22,8 +22,8 @@ type analyze_source_results = {
 let analyze_sources
     ?(open_documents = Path.Set.empty)
     ~scheduler
-    ~configuration:( { Configuration.Analysis.local_root; filter_directories; ignore_all_errors; _ }
-                   as configuration )
+    ~configuration:( { Configuration.Analysis.filter_directories; ignore_all_errors; _ } as
+                   configuration )
     ~environment
     ~handles
     ()
@@ -33,7 +33,7 @@ let analyze_sources
   Resolution.Cache.clear ();
   let timer = Timer.start () in
   let handles =
-    let filter_by_directories handle =
+    let filter_path_by_directories handle =
       let directory_contains directory =
         Path.directory_contains ~follow_symlinks:true ~directory handle
       in
@@ -47,23 +47,20 @@ let analyze_sources
       else
         false
     in
-    let filter_by_root handle =
+    let filter_handle_by_directories handle =
       let path = File.Handle.to_path ~configuration handle in
       match path with
       | Some path ->
           (* Only analyze handles which live directly under the source root - in case we have a
              search path under the source root, we don't want to analyze them since they're not
              part of a user's project. *)
-          Path.equal
-            path
-            (Path.create_relative ~root:local_root ~relative:(File.Handle.show handle))
-          && filter_by_directories path
+          filter_path_by_directories path
       | _ -> false
     in
     Scheduler.map_reduce
       scheduler
       ~configuration
-      ~map:(fun _ handles -> List.filter handles ~f:filter_by_root)
+      ~map:(fun _ handles -> List.filter handles ~f:filter_handle_by_directories)
       ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
       ~initial:[]
       ~inputs:handles
