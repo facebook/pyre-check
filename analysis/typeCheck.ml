@@ -2206,6 +2206,13 @@ module State (Context : Context) = struct
         } ->
         (* Special case reveal_type(). *)
         let { state; resolved = annotation; _ } = forward_expression ~state ~expression:value in
+        let annotation =
+          if Type.is_untyped annotation then
+            let parsed = Resolution.parse_annotation resolution value in
+            if Type.is_untyped parsed then annotation else Type.meta parsed
+          else
+            annotation
+        in
         let state =
           emit_error ~state ~location ~kind:(Error.RevealedType { expression = value; annotation })
         in

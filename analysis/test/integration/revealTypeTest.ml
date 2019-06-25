@@ -87,7 +87,13 @@ let test_reveal_type _ =
           reveal_type(bar)
     |}
     [ "Revealed type [-1]: Revealed type for `bar` is `int`.";
-      "Revealed type [-1]: Revealed type for `bar` is `str`." ]
+      "Revealed type [-1]: Revealed type for `bar` is `str`." ];
+  assert_type_errors
+    {|
+      reveal_type(typing.List[int])
+    |}
+    [ "Revealed type [-1]: Revealed type for `typing.List.__getitem__(int)` is \
+       `typing.Type[typing.List[int]]`." ]
 
 
 let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run
