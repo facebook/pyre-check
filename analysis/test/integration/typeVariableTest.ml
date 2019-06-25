@@ -785,6 +785,16 @@ let test_callable_parameter_variadics _ =
         return decorated
     |}
     [];
+  assert_type_errors
+    {|
+  from typing import Callable
+  from pyre_extensions import ParameterSpecification
+
+  TParams = ParameterSpecification("TParams")
+  def eek(x: Callable[TParams, int]) -> Callable[TParams, float]:
+      return x
+  |}
+    [];
   ()
 
 

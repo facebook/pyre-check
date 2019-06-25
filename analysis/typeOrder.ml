@@ -661,6 +661,9 @@ module OrderImplementation = struct
             when Type.Variable.Variadic.Parameters.is_free variable ->
               let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
               OrderedConstraints.add_upper_bound initial_constraints ~order ~pair |> Option.to_list
+          | ParameterVariadicTypeVariable left, ParameterVariadicTypeVariable right
+            when Type.Variable.Variadic.Parameters.equal left right ->
+              [initial_constraints]
           | _, _ -> []
         with
         | _ -> []
