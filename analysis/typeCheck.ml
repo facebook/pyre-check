@@ -3111,16 +3111,7 @@ module State (Context : Context) = struct
                 | Some annotation, _ -> annotation
                 | None, Some ({ Node.value = { Annotated.Attribute.annotation; _ }; _ }, _) ->
                     annotation
-                | _ ->
-                    let { state = { errors; _ }; resolved; _ } =
-                      forward_expression
-                        ~state:{ state with errors = ErrorMap.Map.empty }
-                        ~expression:target
-                    in
-                    if Map.is_empty errors then
-                      Annotation.create_immutable ~global:true resolved
-                    else
-                      Annotation.create Type.Top
+                | _ -> Annotation.create Type.Top
               in
               let state =
                 match reference with
