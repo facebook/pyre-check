@@ -1861,6 +1861,8 @@ module OrderImplementation = struct
         | Type.Literal _, _
         | _, Type.Literal _ ->
             Type.Bottom
+        | Type.Primitive _, _ when less_or_equal order ~left ~right -> left
+        | _, Type.Primitive _ when less_or_equal order ~left:right ~right:left -> right
         | _ when is_protocol right ~protocol_assumptions && less_or_equal order ~left ~right ->
             left
         | _

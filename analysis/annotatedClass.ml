@@ -309,19 +309,54 @@ let unimplemented_abstract_methods definition ~resolution =
     []
 
 
-let metaclass definition ~resolution =
-  let get_metaclass { Node.value = { Class.bases; _ }; _ } =
-    let get_metaclass = function
-      | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
-          Some (Resolution.parse_annotation resolution value)
-      | _ -> None
-    in
-    List.find_map ~f:get_metaclass bases
-  in
+let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resolution =
   (* See https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
      for why we need to consider all metaclasses. *)
   let metaclass_candidates =
-    definition :: superclasses ~resolution definition |> List.filter_map ~f:get_metaclass
+    let explicit_metaclass =
+      let find_explicit_metaclass = function
+        | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
+            Some (Resolution.parse_annotation resolution value)
+        | _ -> None
+      in
+      List.find_map ~f:find_explicit_metaclass bases
+    in
+    let metaclass_of_bases =
+      let explicit_bases =
+        let base_to_class { Call.Argument.value; _ } =
+          Expression.delocalize value
+          |> Resolution.parse_annotation resolution
+          |> Type.split
+          |> fst
+        in
+        List.filter
+          ~f:(function
+            | { Expression.Call.Argument.name = None; _ } -> true
+            | _ -> false)
+          bases
+        |> List.map ~f:base_to_class
+        |> List.filter_map ~f:(Resolution.class_definition resolution)
+        |> List.filter ~f:(fun base_class -> not (equal base_class original))
+      in
+      let filter_generic_meta base_metaclasses =
+        (* We only want a class directly inheriting from Generic to have a metaclass of
+           GenericMeta. *)
+        if
+          List.exists
+            ~f:(fun base -> Reference.equal (Reference.create "typing.Generic") (name base))
+            explicit_bases
+        then
+          base_metaclasses
+        else
+          List.filter
+            ~f:(fun metaclass -> not (Type.equal (Type.Primitive "typing.GenericMeta") metaclass))
+            base_metaclasses
+      in
+      explicit_bases |> List.map ~f:(metaclass ~resolution) |> filter_generic_meta
+    in
+    match explicit_metaclass with
+    | Some metaclass -> metaclass :: metaclass_of_bases
+    | None -> metaclass_of_bases
   in
   match metaclass_candidates with
   | [] -> Type.Primitive "type"

@@ -165,9 +165,15 @@ let test_check_method_parameters _ =
       class StringEnum(Enum, str): ...
 
       reveal_type(StringEnum["key"])
+
+      class StringEnumTwo(str, Enum): ...
+
+      reveal_type(StringEnumTwo["key"])
     |}
     [ "Invalid method signature [36]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
-      "Revealed type [-1]: Revealed type for `StringEnum.__getitem__(\"key\")` is `StringEnum`." ];
+      "Revealed type [-1]: Revealed type for `StringEnum.__getitem__(\"key\")` is `StringEnum`.";
+      "Revealed type [-1]: Revealed type for `StringEnumTwo.__getitem__(\"key\")` is \
+       `StringEnumTwo`." ];
 
   (* Defining methods *)
   assert_type_errors
