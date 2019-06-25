@@ -25,37 +25,40 @@ let record_overrides overrides =
 
 
 let callables ~resolution ~source =
-  let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
-  let record_toplevel_definition definition =
-    let name = definition.Node.value.Define.signature.name in
-    match definition.Node.value.Define.signature.parent with
-    | None ->
-        (* Only record top-level definitions. *)
-        Some (Callable.create_function name, definition)
-    | Some class_name ->
-        let class_annotation = Type.Primitive (Reference.show class_name) in
-        let class_exists =
-          Resolution.class_definition resolution class_annotation |> Option.is_some
-        in
-        if not class_exists then
-          Log.warning
-            "Class %a for method %a is not part of the type environment"
-            Reference.pp
-            class_name
-            Reference.pp
-            name;
-        let is_test_function =
-          Resolution.less_or_equal
-            resolution
-            ~left:(Resolution.parse_reference resolution class_name)
-            ~right:(Type.Primitive "unittest.case.TestCase")
-        in
-        if is_test_function then
-          None
-        else
-          Some (Callable.create_method name, definition)
-  in
-  List.filter_map ~f:record_toplevel_definition defines
+  if Resolution.source_is_unit_test resolution ~source then
+    []
+  else
+    let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
+    let record_toplevel_definition definition =
+      let name = definition.Node.value.Define.signature.name in
+      match definition.Node.value.Define.signature.parent with
+      | None ->
+          (* Only record top-level definitions. *)
+          Some (Callable.create_function name, definition)
+      | Some class_name ->
+          let class_annotation = Type.Primitive (Reference.show class_name) in
+          let class_exists =
+            Resolution.class_definition resolution class_annotation |> Option.is_some
+          in
+          if not class_exists then
+            Log.warning
+              "Class %a for method %a is not part of the type environment"
+              Reference.pp
+              class_name
+              Reference.pp
+              name;
+          let is_test_function =
+            Resolution.less_or_equal
+              resolution
+              ~left:(Resolution.parse_reference resolution class_name)
+              ~right:(Type.Primitive "unittest.case.TestCase")
+          in
+          if is_test_function then
+            None
+          else
+            Some (Callable.create_method name, definition)
+    in
+    List.filter_map ~f:record_toplevel_definition defines
 
 
 let analyze

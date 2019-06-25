@@ -192,3 +192,5 @@ val solve_ordered_types_less_or_equal
   right:Type.OrderedTypes.t ->
   constraints:TypeConstraints.t ->
   TypeConstraints.t list
+
+val source_is_unit_test : t -> source:Ast.Source.t -> bool

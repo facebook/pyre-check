@@ -363,6 +363,25 @@ let test_resolution_shared_memory _ =
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
 
 
+let test_source_is_unit_test _ =
+  let assert_is_unit_test ?(expected = true) source =
+    let resolution = make_resolution source in
+    assert_equal expected (Resolution.source_is_unit_test resolution ~source:(Test.parse source))
+  in
+  let assert_not_unit_test = assert_is_unit_test ~expected:false in
+  assert_is_unit_test "class C(unittest.case.TestCase): ...";
+  assert_not_unit_test {|
+    from unittest import TestCase
+    class C: pass
+  |};
+  assert_is_unit_test
+    {|
+    class C:
+      def foo():
+        class Nested(unittest.case.TestCase): ...
+  |}
+
+
 let () =
   "resolution"
   >::: [ "set_local" >:: test_set_local;
@@ -371,5 +390,6 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
          "function_definitions" >:: test_function_definitions;
-         "resolve_shared_memory" >:: test_resolution_shared_memory ]
+         "resolve_shared_memory" >:: test_resolution_shared_memory;
+         "source_is_unit_test" >:: test_source_is_unit_test ]
   |> Test.run
