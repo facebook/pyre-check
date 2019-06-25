@@ -1135,7 +1135,7 @@ let rec process
             let result =
               LookupCache.find_annotation ~state ~configuration ~file ~position
               >>| fun (location, annotation) ->
-              { HoverResponse.location; contents = Type.show_concise annotation }
+              { HoverResponse.location; contents = Type.show_for_hover annotation }
             in
             HoverResponse.create ~id ~result
             |> HoverResponse.to_yojson

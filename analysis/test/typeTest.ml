@@ -496,7 +496,7 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:Type.Callable.Undefined
        ())
-    "Callable[..., int]";
+    "(...) -> int";
   assert_concise
     (Type.Callable.create
        ~name:!&"foo"
@@ -507,7 +507,28 @@ let test_concise _ =
               Type.Callable.Parameter.Named { name = "y"; annotation = Type.float; default = true }
             ])
        ())
-    "Callable[[Any, float], int]";
+    "(x: Any, y: float) -> int";
+  assert_concise
+    (Type.Callable.create
+       ~name:!&"foo"
+       ~annotation:Type.integer
+       ~parameters:
+         (Type.Callable.Defined
+            [ Type.Callable.Parameter.Named
+                { name = "callable";
+                  default = true;
+                  annotation =
+                    Type.Callable.create
+                      ~name:!&"bar"
+                      ~annotation:Type.float
+                      ~parameters:
+                        (Type.Callable.Defined
+                           [ Type.Callable.Parameter.Named
+                               { name = "x"; annotation = Type.integer; default = true } ])
+                      ()
+                } ])
+       ())
+    "(callable: (x: int) -> float) -> int";
   assert_concise Type.Any "Any";
   assert_concise (Type.Optional Type.Bottom) "None";
   assert_concise (Type.Optional Type.integer) "Optional[int]";

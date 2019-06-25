@@ -221,7 +221,7 @@ let test_concise _ =
     def foo(x: int) -> None: ...
     await foo
   |}
-    ["Incompatible awaitable type [12]: Expected an awaitable but got `Callable[[int], None]`."];
+    ["Incompatible awaitable type [12]: Expected an awaitable but got `(x: int) -> None`."];
 
   (* Prohibited Any *)
   assert_type_errors

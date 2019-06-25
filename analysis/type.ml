@@ -643,9 +643,10 @@ let rec pp_concise format annotation =
           | Defined parameters ->
               let parameter = function
                 | Parameter.Anonymous { annotation; _ }
-                | Parameter.KeywordOnly { annotation; _ }
-                | Parameter.Named { annotation; _ } ->
+                | Parameter.KeywordOnly { annotation; _ } ->
                     Format.asprintf "%a" pp_concise annotation
+                | Parameter.Named { name; annotation; _ } ->
+                    Format.asprintf "%s: %a" (Identifier.sanitized name) pp_concise annotation
                 | Parameter.Variable (Concrete annotation) ->
                     Format.asprintf "*(%a)" pp_concise annotation
                 | Parameter.Variable (Variadic { name; _ }) -> Format.asprintf "*(%s)" name
@@ -653,13 +654,11 @@ let rec pp_concise format annotation =
                     Format.asprintf "*(%a)" Record.OrderedTypes.RecordMap.pp_concise map
                 | Parameter.Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
               in
-              List.map parameters ~f:parameter
-              |> String.concat ~sep:", "
-              |> fun parameters -> Format.asprintf "[%s]" parameters
+              List.map parameters ~f:parameter |> String.concat ~sep:", "
         in
-        Format.asprintf "%s, %a" parameters pp_concise annotation
+        Format.asprintf "(%s) -> %a" parameters pp_concise annotation
       in
-      Format.fprintf format "Callable[%s]" (signature_to_string implementation)
+      Format.fprintf format "%s" (signature_to_string implementation)
   | Any -> Format.fprintf format "Any"
   | Literal (Boolean literal) ->
       Format.fprintf format "typing_extensions.Literal[%s]" (if literal then "True" else "False")
@@ -701,6 +700,14 @@ let rec pp_concise format annotation =
 
 
 and show_concise annotation = Format.asprintf "%a" pp_concise annotation
+
+let show_for_hover annotation =
+  match annotation with
+  | Callable { kind = Named reference; _ } ->
+      (* add def [function name] : ... to provide better syntax highlighting for hover *)
+      Format.asprintf "def %s%s: ..." (Reference.last reference) (show_concise annotation)
+  | _ -> show_concise annotation
+
 
 let rec serialize = function
   | Bottom -> "$bottom"
