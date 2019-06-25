@@ -1,6 +1,0 @@
-[flake8]
-max-line-length = 88
-
-[flake8:local-plugins]
-extension =
-  PYRETEST = ast_linter:AstChecker
