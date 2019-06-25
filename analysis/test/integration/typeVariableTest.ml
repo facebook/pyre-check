@@ -773,11 +773,12 @@ let test_callable_parameter_variadics _ =
     [ "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
       ^ "Classes parameterized by callable parameter variadics are not supported at this time" ];
   assert_type_errors
+    ~qualifier:(Ast.Reference.create "qualifier")
     {|
       from typing import Callable
       from pyre_extensions import ParameterSpecification
       from pyre_extensions.type_variable_operators import PositionalArgumentsOf, KeywordArgumentsOf
-      V = pyre_extensions.ParameterSpecification("V")
+      V = ParameterSpecification("V")
       def f(x: Callable[V, int]) -> Callable[V, typing.List[int]]:
         def decorated( *args: PositionalArgumentsOf[V], **kwargs: KeywordArgumentsOf[V]) -> typing.List[int]:
           return [x( *args, **kwargs)]
@@ -1043,6 +1044,7 @@ let test_map _ =
     [ "Revealed type [-1]: Revealed type for `wrap((x, y))` is `typing.Tuple[List[int], List[str]]`.";
       "Revealed type [-1]: Revealed type for `unwrap((lx, ly))` is `typing.Tuple[int, str]`." ];
   assert_type_errors
+    ~qualifier:(Ast.Reference.create "qualifier")
     {|
     from typing import Tuple, List, Generic, TypeVar
     from pyre_extensions import ListVariadic
@@ -1052,7 +1054,8 @@ let test_map _ =
     def foo(lx: List[int], ly: List[str]) -> None:
       reveal_type(unwrap(lx, ly))
     |}
-    ["Revealed type [-1]: Revealed type for `unwrap(lx, ly)` is `typing.Tuple[int, str]`."];
+    [ "Revealed type [-1]: Revealed type for `qualifier.unwrap(lx, ly)` is `typing.Tuple[int, str]`."
+    ];
   assert_type_errors
     {|
     from typing import Tuple, List, Generic, TypeVar, Callable, TypeVar

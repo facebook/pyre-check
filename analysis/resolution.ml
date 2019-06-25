@@ -457,10 +457,23 @@ let parse_as_list_variadic ({ aliases; _ } as resolution) name =
   | _ -> None
 
 
-let parse_as_list_variadic_map_operator { aliases; _ } = Type.OrderedTypes.Map.parse ~aliases
+let parse_as_list_variadic_map_operator { aliases; _ } expression =
+  Expression.delocalize expression |> Type.OrderedTypes.Map.parse ~aliases
 
-let parse_as_parameter_specification_instance_annotation { aliases; _ } =
-  Type.Variable.Variadic.Parameters.parse_instance_annotation ~aliases
+
+let parse_as_parameter_specification_instance_annotation
+    { aliases; _ }
+    ~variable_parameter_annotation
+    ~keywords_parameter_annotation
+  =
+  let variable_parameter_annotation, keywords_parameter_annotation =
+    ( Expression.delocalize variable_parameter_annotation,
+      Expression.delocalize keywords_parameter_annotation )
+  in
+  Type.Variable.Variadic.Parameters.parse_instance_annotation
+    ~aliases
+    ~variable_parameter_annotation
+    ~keywords_parameter_annotation
 
 
 let is_invariance_mismatch resolution ~left ~right =
