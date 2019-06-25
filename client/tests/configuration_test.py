@@ -572,6 +572,29 @@ class ConfigurationTest(unittest.TestCase):
             ]
             Configuration()
 
+        def exists_side_effect(path):
+            if "INVALID_IGNORE_ELEMENT" in path:
+                return False
+            else:
+                return True
+
+        exists.side_effect = exists_side_effect
+        with self.assertRaises(EnvironmentException):
+            json_loads.side_effect = [
+                {
+                    "source_directories": ["a"],
+                    "binary": "abc",
+                    "logger": "/usr/logger",
+                    "version": "VERSION",
+                    "typeshed": "TYPE/%V/SHED/",
+                    "strict": False,
+                    "ignore_all_errors": ["INVALID_IGNORE_ELEMENT"],
+                    "extensions": [".a", ".b", ""],
+                },
+                {},
+            ]
+            Configuration()
+
     @patch.object(Configuration, "_read")
     @patch.object(Configuration, "_override_version_hash")
     @patch.object(Configuration, "_resolve_versioned_paths")

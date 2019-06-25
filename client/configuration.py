@@ -241,6 +241,15 @@ class Configuration:
                     "the root of the `typeshed` directory.".format(self.typeshed)
                 )
 
+            for element in self.ignore_all_errors:
+                if not os.path.exists(element):
+                    raise InvalidConfiguration(
+                        "Nonexistent path passed in to `ignore_all_errors` \
+                        field: `{}`".format(
+                            element
+                        )
+                    )
+
             typeshed_subdirectories = os.listdir(self.typeshed)
             if "stdlib" not in typeshed_subdirectories:
                 raise InvalidConfiguration(
