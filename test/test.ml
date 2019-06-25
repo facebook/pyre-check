@@ -981,10 +981,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
       {|
+        from typing import Type, TypeVar
         _T = TypeVar('_T')
         class ABCMeta(type):
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         def abstractmethod(callable: _FuncT) -> _FuncT: ...
+        class ABC(metaclass=ABCMeta): ...
       |}
     |> Preprocessing.preprocess;
     Source.create ~qualifier:(Reference.create "unittest.mock") [];
@@ -1020,17 +1022,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def call(command, shell): ...
         def check_call(command, shell): ...
         def check_output(command, shell): ...
-      |}
-    |> Preprocessing.preprocess;
-    parse
-      ~qualifier:(Reference.create "abc")
-      ~handle:"abc.pyi"
-      {|
-        from typing import Type, TypeVar
-        _T = TypeVar('_T')
-        class ABCMeta(type):
-          def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
-        class ABC(metaclass=ABCMeta): ...
       |}
     |> Preprocessing.preprocess;
     parse
