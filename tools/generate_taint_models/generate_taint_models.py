@@ -113,6 +113,10 @@ def _load_function_definition(
 
 
 def _qualifier(root: str, path: str) -> str:
+    # Normalize out symlinks, etc
+    root = os.path.realpath(root)
+    path = os.path.realpath(path)
+
     path = os.path.relpath(path, root)
     if path.endswith(".pyi"):
         path = path[:-4]
@@ -278,12 +282,12 @@ def _visit_views(
 
         def visit_FunctionDef(self, definition: _ast.FunctionDef) -> None:
             name = definition.name
-            module = path.replace("/", ".")[:-3]
+            module = _qualifier(os.getcwd(), path)
             self._aliases[name] = f"{module}.{name}"
 
         def visit_AsyncFunctionDef(self, definition: _ast.AsyncFunctionDef) -> None:
             name = definition.name
-            module = path.replace("/", ".")[:-3]
+            module = _qualifier(os.getcwd(), path)
             self._aliases[name] = f"{module}.{name}"
 
         def handle_call(self, call: _ast.Call) -> None:
