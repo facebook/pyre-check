@@ -226,20 +226,29 @@ fi
 
 # Build.
 python3 setup.py bdist_wheel
+python3 setup.py sdist
 
 # Move artifact outside the build directory.
 mkdir -p "${SCRIPTS_DIRECTORY}/dist"
 files_count="$(find "${BUILD_ROOT}/dist/" -type f | wc -l | tr -d ' ')"
-[[ "${files_count}" == '1' ]] || \
-  die "${files_count} files created in ${BUILD_ROOT}/dist, but only one was expected"
-source_file="$(find "${BUILD_ROOT}/dist/" -type f)"
-destination="$(basename "${source_file}")"
-destination="${destination/%-any.whl/-${WHEEL_DISTRIBUTION_PLATFORM}.whl}"
-mv "${source_file}" "${SCRIPTS_DIRECTORY}/dist/${destination}"
+[[ "${files_count}" == '2' ]] || \
+  die "${files_count} files created in ${BUILD_ROOT}/dist, but only two were expected"
+wheel_source_file="$(find "${BUILD_ROOT}/dist/" -type f | grep any)"
+wheel_destination="$(basename "${wheel_source_file}")"
+wheel_destination="${wheel_destination/%-any.whl/-${WHEEL_DISTRIBUTION_PLATFORM}.whl}"
+mv "${wheel_source_file}" "${SCRIPTS_DIRECTORY}/dist/${wheel_destination}"
+
+source_distribution_file="$(find "${BUILD_ROOT}/dist/" -type f | grep pyre-check)"
+source_distribution_destination="$(basename "${source_distribution_file}")"
+source_distribution_destination="${source_distribution_destination/%.tar.gz/-${WHEEL_DISTRIBUTION_PLATFORM}.tar.gz}"
+mv "${source_distribution_file}" "${SCRIPTS_DIRECTORY}/dist/${source_distribution_destination}"
 
 # Cleanup.
 cd "${SCRIPTS_DIRECTORY}"
 rm -rf "${BUILD_ROOT}"
 
-printf '\nAll done. Build artifact available at:\n  %s\n' "${SCRIPTS_DIRECTORY}/dist/${destination}"
+
+printf '\nAll done.'
+printf '\n Build artifact available at:\n  %s\n' "${SCRIPTS_DIRECTORY}/dist/${wheel_destination}"
+printf '\n Source distribution available at:\n   %s\n' "${SCRIPTS_DIRECTORY}/dist/${source_distribution_destination}"
 exit 0
