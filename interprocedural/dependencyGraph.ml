@@ -193,34 +193,37 @@ let from_overrides overrides =
 
 let create_overrides ~environment ~source =
   let resolution = TypeCheck.resolution environment () in
-  let class_method_overrides class_node =
-    let get_method_overrides class_ child_method =
-      let method_name = Statement.Define.unqualified_name (Annotated.Method.define child_method) in
-      Annotated.Class.overrides class_ ~name:method_name ~resolution
-      >>| fun ancestor ->
-      let ancestor_parent =
-        Annotated.Attribute.parent ancestor
-        |> Type.expression
-        |> Expression.show
-        |> Reference.create
+  if Resolution.source_is_unit_test resolution ~source then
+    Reference.Map.empty
+  else
+    let class_method_overrides class_node =
+      let get_method_overrides class_ child_method =
+        let method_name =
+          Statement.Define.unqualified_name (Annotated.Method.define child_method)
+        in
+        Annotated.Class.overrides class_ ~name:method_name ~resolution
+        >>| fun ancestor ->
+        let parent_annotation = Annotated.Attribute.parent ancestor in
+        let ancestor_parent =
+          parent_annotation |> Type.expression |> Expression.show |> Reference.create
+        in
+        Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
       in
-      Reference.create ~prefix:ancestor_parent method_name, Annotated.Class.name class_
+      let annotated_class = Annotated.Class.create class_node in
+      let methods = Annotated.Class.methods annotated_class in
+      List.filter_map methods ~f:(get_method_overrides annotated_class)
     in
-    let annotated_class = Annotated.Class.create class_node in
-    let methods = Annotated.Class.methods annotated_class in
-    List.filter_map methods ~f:(get_method_overrides annotated_class)
-  in
-  let record_overrides map (ancestor_method, overriding_type) =
-    let update_types = function
-      | Some types -> overriding_type :: types
-      | None -> [overriding_type]
+    let record_overrides map (ancestor_method, overriding_type) =
+      let update_types = function
+        | Some types -> overriding_type :: types
+        | None -> [overriding_type]
+      in
+      Reference.Map.update map ancestor_method ~f:update_types
     in
-    Reference.Map.update map ancestor_method ~f:update_types
-  in
-  let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
-  Preprocessing.classes source
-  |> List.map ~f:class_method_overrides
-  |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
+    let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
+    Preprocessing.classes source
+    |> List.map ~f:class_method_overrides
+    |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
 
 
 let union left right =

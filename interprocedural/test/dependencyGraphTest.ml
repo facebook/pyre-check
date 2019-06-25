@@ -262,17 +262,17 @@ let test_type_collection _ =
 
 
 let test_method_overrides _ =
-  let assert_method_overrides source ~expected =
+  let assert_method_overrides ?(update_environment_with = []) ?qualifier source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
         !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
-    let source = parse_source source in
+    let source = parse_source ?qualifier source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
-    Test.populate ~configuration environment [source];
+    Test.populate ~configuration environment (source :: update_environment_with);
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal ~equal:Reference.equal in
@@ -297,7 +297,38 @@ let test_method_overrides _ =
       class Qux(Foo):
         def foo(): pass
     |}
-    ~expected:["Bar.foo", ["Baz"]; "Foo.foo", ["Bar"; "Qux"]]
+    ~expected:["Bar.foo", ["Baz"]; "Foo.foo", ["Bar"; "Qux"]];
+
+  (* We don't register any overrides at all for classes in test files. *)
+  assert_method_overrides
+    {|
+      class Foo:
+        def foo(): pass
+      class Bar(Foo):
+        def foo(): pass
+      class Test(unittest.case.TestCase):
+        class Baz(Foo):
+          def foo(): pass
+    |}
+    ~expected:[];
+  assert_method_overrides
+    ~update_environment_with:
+      [ parse
+          ~qualifier:(Reference.create "module")
+          {|
+        import module
+        class Baz(module.Foo):
+          def foo(): pass
+      |}
+      ]
+    ~qualifier:(Reference.create "test_module")
+    {|
+      import module
+      class Test(unittest.case.TestCase):
+        class Bar(module.Foo):
+          def foo(): pass
+    |}
+    ~expected:[]
 
 
 let test_strongly_connected_components _ =
