@@ -633,7 +633,7 @@ let test_join _ =
     let environment = Environment.handler (Environment.Builder.create ()) in
     let resolution = TypeCheck.resolution environment () in
     let result = Error.join ~resolution left right in
-    assert_equal ~printer:Error.show ~cmp:Error.equal result expected
+    assert_equal ~printer:Error.show ~cmp:Error.equal expected result
   in
   assert_join
     (error
@@ -859,12 +859,20 @@ let test_join _ =
     (error (Error.AnalysisFailure (Type.Primitive "herp")))
     (error (Error.AnalysisFailure (Type.union [Type.Primitive "derp"; Type.Primitive "herp"])));
   assert_join
-    (error (revealed_type "a" Type.integer))
-    (error (revealed_type "a" Type.float))
-    (error (revealed_type "a" Type.float));
+    (error (revealed_type "a" (Annotation.create Type.integer)))
+    (error (revealed_type "a" (Annotation.create Type.float)))
+    (error (revealed_type "a" (Annotation.create Type.float)));
   assert_join
-    (error (revealed_type "a" Type.integer))
-    (error (revealed_type "b" Type.float))
+    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.float)))
+    (error Error.Top);
+  assert_join
+    (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
+    (error (revealed_type "a" (Annotation.create_immutable ~global:false Type.integer)))
+    (error Error.Top);
+  assert_join
+    (error (revealed_type "a" (Annotation.create Type.integer)))
+    (error (revealed_type "b" (Annotation.create Type.float)))
     (error Error.Top);
   assert_join
     (error
@@ -872,19 +880,19 @@ let test_join _ =
          { Location.Instantiated.synthetic with
            Location.start = { Location.line = 1; column = 0 }
          }
-       (revealed_type "a" Type.integer))
+       (revealed_type "a" (Annotation.create Type.integer)))
     (error
        ~location:
          { Location.Instantiated.synthetic with
            Location.start = { Location.line = 2; column = 1 }
          }
-       (revealed_type "a" Type.float))
+       (revealed_type "a" (Annotation.create Type.float)))
     (error
        ~location:
          { Location.Instantiated.synthetic with
            Location.start = { Location.line = 1; column = 0 }
          }
-       (revealed_type "a" Type.float))
+       (revealed_type "a" (Annotation.create Type.float)))
 
 
 let test_less_or_equal _ =
@@ -942,7 +950,17 @@ let test_less_or_equal _ =
        (error (Error.Unpack { expected_count = 2; unpack_problem = Error.CountMismatch 2 }))
        (error
           (Error.Unpack
-             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })))
+             { expected_count = 2; unpack_problem = Error.UnacceptableType Type.integer })));
+  assert_true
+    (Error.less_or_equal
+       ~resolution
+       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
+       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer))));
+  assert_false
+    (Error.less_or_equal
+       ~resolution
+       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.integer)))
+       (error (revealed_type "a" (Annotation.create_immutable ~global:true Type.float))))
 
 
 let test_filter _ =
@@ -1051,11 +1069,11 @@ let test_suppress _ =
   assert_suppressed Source.Default (missing_return Type.Top);
   assert_not_suppressed Source.Default (incompatible_return_type Type.integer Type.float);
   assert_suppressed Source.Default (incompatible_return_type Type.integer Type.Any);
-  assert_not_suppressed Source.Default (revealed_type "a" Type.integer);
+  assert_not_suppressed Source.Default (revealed_type "a" (Annotation.create Type.integer));
   assert_not_suppressed
     ~signature:untyped_signature
     Source.Default
-    (revealed_type "a" Type.integer);
+    (revealed_type "a" (Annotation.create Type.integer));
   assert_suppressed Source.Default (Error.UndefinedName !&"reveal_type");
   assert_not_suppressed Source.Default (Error.AnalysisFailure Type.integer);
   assert_suppressed

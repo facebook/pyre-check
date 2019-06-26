@@ -23,7 +23,7 @@ and t = {
   annotation: Type.t;
   mutability: mutability
 }
-[@@deriving eq, show, hash, sexp]
+[@@deriving compare, eq, show, hash, sexp]
 
 let pp format { annotation; mutability } =
   let mutability =
@@ -96,3 +96,13 @@ let instantiate { annotation; mutability } ~constraints =
         Immutable { scope; original = instantiate original; final = false }
   in
   { annotation = instantiate annotation; mutability }
+
+
+let dequalify dequalify_map { annotation; mutability } =
+  let mutability =
+    match mutability with
+    | Mutable -> Mutable
+    | Immutable { scope; original; _ } ->
+        Immutable { scope; original = Type.dequalify dequalify_map original; final = false }
+  in
+  { annotation = Type.dequalify dequalify_map annotation; mutability }

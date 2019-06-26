@@ -181,7 +181,7 @@ type kind =
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
-  | RevealedType of { expression: Expression.t; annotation: Type.t }
+  | RevealedType of { expression: Expression.t; annotation: Annotation.t }
   | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
@@ -402,6 +402,7 @@ let messages ~concise ~signature location kind =
     ^ "-with-subclassing for mutable container errors."
   in
   let pp_type = if concise then Type.pp_concise else Type.pp in
+  let pp_annotation format { Annotation.annotation; _ } = pp_type format annotation in
   let pp_reference format reference =
     if concise then
       Reference.last reference |> Reference.create |> Reference.pp_sanitized format
@@ -1230,7 +1231,7 @@ let messages ~concise ~signature location kind =
       [ Format.asprintf
           "Revealed type for `%s` is `%a`."
           (Expression.show_sanitized expression)
-          pp_type
+          pp_annotation
           annotation ]
   | TooManyArguments { expected; _ } when concise ->
       [ Format.asprintf
@@ -1864,8 +1865,15 @@ let less_or_equal ~resolution left right =
   | NotCallable left, NotCallable right -> Resolution.less_or_equal resolution ~left ~right
   | RedundantCast left, RedundantCast right -> Resolution.less_or_equal resolution ~left ~right
   | RevealedType left, RevealedType right ->
+      let less_or_equal_annotation
+          { Annotation.annotation = left_annotation; mutability = left_mutability }
+          { Annotation.annotation = right_annotation; mutability = right_mutability }
+        =
+        Annotation.equal_mutability left_mutability right_mutability
+        && Resolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
+      in
       Expression.equal left.expression right.expression
-      && Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+      && less_or_equal_annotation left.annotation right.annotation
   | TooManyArguments left, TooManyArguments right ->
       Option.equal Reference.equal_sanitized left.callee right.callee
       && left.expected = right.expected
@@ -2039,10 +2047,24 @@ let join ~resolution left right =
     | ProhibitedAny left, ProhibitedAny right -> ProhibitedAny (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
         RedundantCast (Resolution.join resolution left right)
-    | RevealedType left, RevealedType right when Expression.equal left.expression right.expression
-      ->
+    | ( RevealedType
+          { annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
+            expression = left_expression
+          },
         RevealedType
-          { left with annotation = Resolution.join resolution left.annotation right.annotation }
+          { annotation =
+              { Annotation.annotation = right_annotation; mutability = right_mutability };
+            expression = right_expression
+          } )
+      when Expression.equal left_expression right_expression
+           && Annotation.equal_mutability left_mutability right_mutability ->
+        RevealedType
+          { expression = left_expression;
+            annotation =
+              { Annotation.annotation = Resolution.join resolution left_annotation right_annotation;
+                mutability = left_mutability
+              }
+          }
     | IncompatibleParameterType left, IncompatibleParameterType right
       when Option.equal Identifier.equal_sanitized left.name right.name
            && left.position = right.position
@@ -2509,6 +2531,7 @@ let dequalify
       } as error )
   =
   let dequalify = Type.dequalify dequalify_map in
+  let dequalify_annotation = Annotation.dequalify dequalify_map in
   let dequalify_mismatch ({ actual; expected; _ } as mismatch) =
     { mismatch with actual = dequalify actual; expected = dequalify expected }
   in
@@ -2588,7 +2611,7 @@ let dequalify
         ProhibitedAny { missing_annotation with annotation = annotation >>| dequalify }
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
     | RevealedType { expression; annotation } ->
-        RevealedType { expression; annotation = dequalify annotation }
+        RevealedType { expression; annotation = dequalify_annotation annotation }
     | IncompatibleParameterType ({ mismatch; _ } as parameter) ->
         IncompatibleParameterType { parameter with mismatch = dequalify_mismatch mismatch }
     | IncompatibleReturnType ({ mismatch; _ } as return) ->

@@ -2,6 +2,7 @@
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
+open Ast
 
 type scope =
   | Local
@@ -21,7 +22,7 @@ and t = {
   annotation: Type.t;
   mutability: mutability
 }
-[@@deriving eq, show, hash, sexp]
+[@@deriving compare, eq, show, hash, sexp]
 
 val create : ?mutability:mutability -> Type.t -> t
 
@@ -42,3 +43,5 @@ val is_immutable : t -> bool
 val is_final : t -> bool
 
 val instantiate : t -> constraints:(Type.t -> Type.t option) -> t
+
+val dequalify : Reference.t Reference.Map.t -> t -> t

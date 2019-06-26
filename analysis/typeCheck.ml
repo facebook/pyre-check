@@ -2214,7 +2214,11 @@ module State (Context : Context) = struct
             annotation
         in
         let state =
-          emit_error ~state ~location ~kind:(Error.RevealedType { expression = value; annotation })
+          emit_error
+            ~state
+            ~location
+            ~kind:
+              (Error.RevealedType { expression = value; annotation = Annotation.create annotation })
         in
         { state; resolved = Type.none; base = None }
     | Call

@@ -172,7 +172,7 @@ type kind =
   | NotCallable of Type.t
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
-  | RevealedType of { expression: Expression.t; annotation: Type.t }
+  | RevealedType of { expression: Expression.t; annotation: Annotation.t }
   | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
