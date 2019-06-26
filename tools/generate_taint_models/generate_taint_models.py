@@ -395,7 +395,8 @@ def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
         sources.add(annotate_function(function, definition, model))
 
     for module in Path(arguments.graphql_path).iterdir():
-        _visit_views(arguments, str(module), callback)
+        if module.is_file():
+            _visit_views(arguments, str(module), callback)
 
     return sources
 

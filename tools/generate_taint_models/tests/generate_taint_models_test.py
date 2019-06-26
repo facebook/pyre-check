@@ -335,7 +335,11 @@ class GenerateTaintModelsTest(unittest.TestCase):
         path_iter: unittest.mock._patch,
     ) -> None:
 
-        path_iter.side_effect = [["custom/custom_objects.py"]] * 10
+        custom_objects = MagicMock()
+        # pyre-ignore: repr needs to be overridden in this fashion.
+        custom_objects.__repr__ = lambda self: "custom/custom_objects.py"
+        custom_objects.is_file = lambda: True
+        path_iter.side_effect = [[custom_objects]] * 10
 
         arguments = MagicMock()
         arguments.urls_path = None
