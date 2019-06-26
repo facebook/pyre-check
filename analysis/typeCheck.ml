@@ -4030,9 +4030,14 @@ module State (Context : Context) = struct
               state
         | _ -> state )
     | Delete expression ->
-        (* TODO(T41338881): Actually remove bindings from resolution. *)
+        let resolution =
+          match Node.value expression with
+          | Name (Identifier identifier) ->
+              Resolution.unset_local resolution ~reference:(Reference.create identifier)
+          | _ -> resolution
+        in
         let { state; _ } = forward_expression ~state ~expression in
-        state
+        { state with resolution }
     | Expression
         { Node.value = Call { callee; arguments = { Call.Argument.value = test; _ } :: _ }; _ }
       when Core.Set.mem Recognized.assert_functions (Expression.show callee) ->

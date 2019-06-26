@@ -23,6 +23,7 @@
   controlFlowTest
   dataClassTest
   decoratorTest
+  deleteTest
   enumerationTest
   errorMessageTest
   finalTest
