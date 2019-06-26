@@ -159,7 +159,3 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
 let aliased_export { aliased_exports; _ } reference =
   let aliased_exports = Reference.Map.of_tree aliased_exports in
   Map.find aliased_exports reference
-
-
-let in_wildcard_exports { wildcard_exports; _ } reference =
-  List.exists ~f:(Reference.equal reference) wildcard_exports
