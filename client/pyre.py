@@ -144,6 +144,11 @@ def main() -> int:
         help="Use Pyre's experimental builder for Buck projects.",
     )
     buck_arguments.add_argument(
+        "--use-legacy-builder",
+        action="store_true",
+        help="Use Pyre's legacy builder for Buck projects.",
+    )
+    buck_arguments.add_argument(
         "--buck-builder-debug", action="store_true", help=argparse.SUPPRESS
     )
 
