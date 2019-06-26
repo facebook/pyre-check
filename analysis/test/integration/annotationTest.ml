@@ -371,7 +371,9 @@ let test_check_illegal_annotation_target _ =
           self.a: int = 1
           x.a: int = 1
     |}
-    ["Illegal annotation target [35]: Target `x.a` cannot be annotated."];
+    [ "Undefined attribute [16]: `Foo` has no attribute `a`.";
+      "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
+      "Undefined attribute [16]: `Bar` has no attribute `a`." ];
   assert_type_errors
     {|
       class Foo:

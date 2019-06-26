@@ -197,7 +197,8 @@ let test_concise _ =
       class Foo: ...
       Foo().a: int = 1
     |}
-    ["Illegal annotation target [35]: Target cannot be annotated."];
+    [ "Illegal annotation target [35]: Target cannot be annotated.";
+      "Undefined attribute [16]: `Foo` has no attribute `a`." ];
 
   (* Impossible Isinstance *)
   assert_type_errors

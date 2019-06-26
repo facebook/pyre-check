@@ -537,7 +537,6 @@ let test_check_function_parameter_errors _ =
     |}
     [ "Incompatible parameter type [6]: Expected `str` for 1st anonymous parameter "
       ^ "to call `str_float_to_int` but got `unknown`.";
-      "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`." ];
   assert_type_errors
     {|
