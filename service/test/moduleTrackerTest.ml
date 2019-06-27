@@ -107,7 +107,7 @@ let test_creation context =
      * local_root/c.py
      * local_root/c.pyi
      * local_root/d.py
-     * local_root/d/__init__.pyi
+     * local_root/d/__init__.py
      * local_root/e.py
      * external_root/a.py
      * external_root/b.pyi
@@ -123,7 +123,7 @@ let test_creation context =
     List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
     let () =
       let path = local_d_path |> Path.create_absolute in
-      touch path "__init__.pyi"
+      touch path "__init__.py"
     in
     List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
     let () =
@@ -181,12 +181,12 @@ let test_creation context =
       ~is_stub:false
       ~is_external:false
       ~is_init:false;
-    let local_dinit = create_exn local_root "d/__init__.pyi" in
+    let local_dinit = create_exn local_root "d/__init__.py" in
     assert_source_file
       local_dinit
       ~search_root:local_root
-      ~relative:"d/__init__.pyi"
-      ~is_stub:true
+      ~relative:"d/__init__.py"
+      ~is_stub:false
       ~is_external:false
       ~is_init:true;
     let local_e = create_exn local_root "e.py" in
@@ -279,8 +279,8 @@ let test_creation context =
     assert_source_file
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:local_root
-      ~relative:"d/__init__.pyi"
-      ~is_stub:true
+      ~relative:"d/__init__.py"
+      ~is_stub:false
       ~is_external:false
       ~is_init:true;
     assert_source_file
@@ -535,10 +535,85 @@ let test_creation context =
     test_external_root_0_before_1 ();
     test_external_root_1_before_0 ()
   in
+  let test_overlapping2 () =
+    (* SETUP:
+     * - stubs_root lives under local_root (project-internal stubs)
+     * - venv_root lives outside local_root (project-external stubs)
+     *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let stubs_path = Path.absolute local_root ^ "/stubs" in
+    Sys_utils.mkdir_no_fail stubs_path;
+    let stubs_root = Path.create_absolute stubs_path in
+    let venv_root = bracket_tmpdir context |> Path.create_absolute in
+    touch local_root "a.py";
+    touch local_root "b.pyi";
+    touch local_root "c.pyi";
+    touch stubs_root "a.pyi";
+    touch venv_root "a.pyi";
+    touch venv_root "b.pyi";
+    touch venv_root "c.py";
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root stubs_root; SearchPath.Root venv_root]
+        ~filter_directories:[local_root]
+        ()
+    in
+    let create_exn = create_source_file_exn ~configuration in
+    assert_source_file
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~is_stub:false
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_source_file
+      (create_exn stubs_root "a.pyi")
+      ~search_root:stubs_root
+      ~relative:"a.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_file
+      (create_exn venv_root "a.pyi")
+      ~search_root:venv_root
+      ~relative:"a.pyi"
+      ~is_stub:true
+      ~is_external:true;
+    assert_source_file
+      (create_exn venv_root "b.pyi")
+      ~search_root:venv_root
+      ~relative:"b.pyi"
+      ~is_stub:true
+      ~is_external:true;
+    assert_source_file
+      (create_exn local_root "b.pyi")
+      ~search_root:local_root
+      ~relative:"b.pyi"
+      ~is_stub:true
+      ~is_external:false;
+    assert_source_file
+      (create_exn venv_root "c.py")
+      ~search_root:venv_root
+      ~relative:"c.py"
+      ~is_stub:false
+      ~is_external:true;
+    assert_source_file
+      (create_exn local_root "c.pyi")
+      ~search_root:local_root
+      ~relative:"c.pyi"
+      ~is_stub:true
+      ~is_external:false;
+
+    assert_same_module_greater (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
+    assert_same_module_greater (create_exn stubs_root "a.pyi") (create_exn local_root "a.py");
+    assert_same_module_greater (create_exn venv_root "a.pyi") (create_exn local_root "a.py");
+    assert_same_module_greater (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
+    assert_same_module_greater (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
+  in
   test_basic ();
   test_directory_filter ();
   test_priority ();
-  test_overlapping ()
+  test_overlapping ();
+  test_overlapping2 ()
 
 
 module Root = struct

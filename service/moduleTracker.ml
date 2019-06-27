@@ -79,36 +79,23 @@ module SourceFile = struct
   (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
      only. Do NOT use it on aribitrary SourceFiles. *)
   let same_module_compare
-      { priority = left_priority;
-        is_stub = left_is_stub;
-        is_external = left_is_external;
-        is_init = left_is_init;
-        _
-      }
-      { priority = right_priority;
-        is_stub = right_is_stub;
-        is_external = right_is_external;
-        is_init = right_is_init;
-        _
-      }
+      { priority = left_priority; is_stub = left_is_stub; is_init = left_is_init; _ }
+      { priority = right_priority; is_stub = right_is_stub; is_init = right_is_init; _ }
     =
     (* Stub file always takes precedence *)
     match left_is_stub, right_is_stub with
     | true, false -> 1
     | false, true -> -1
     | _, _ -> (
-      (* External source takes precedence over user code *)
-      match left_is_external, right_is_external with
-      | true, false -> 1
-      | false, true -> -1
-      | _, _ -> (
+      (* Smaller int means higher priority *)
+      match Int.compare right_priority left_priority with
+      | 0 -> (
         (* Package takes precedence over file module with the same name *)
         match left_is_init, right_is_init with
         | true, false -> 1
         | false, true -> -1
-        | _, _ ->
-            (* Smaller int means higher priority *)
-            Int.compare right_priority left_priority ) )
+        | _, _ -> 0 )
+      | _ as result -> result )
 end
 
 type t = SourceFile.t list Reference.Table.t
