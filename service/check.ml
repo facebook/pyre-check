@@ -20,7 +20,7 @@ type analyze_source_results = {
 (** Internal result type; not exposed. *)
 
 let analyze_sources
-    ?(open_documents = Path.Set.empty)
+    ?(open_documents = Path.Map.empty)
     ~scheduler
     ~configuration:( { Configuration.Analysis.filter_directories; ignore_all_errors; _ } as
                    configuration )
@@ -90,7 +90,7 @@ let analyze_sources
                 match File.Handle.to_path ~configuration handle with
                 | None -> configuration
                 | Some handle_path ->
-                    if PyrePath.Set.mem open_documents handle_path then
+                    if PyrePath.Map.mem open_documents handle_path then
                       { configuration with store_type_check_resolution = true }
                     else
                       configuration

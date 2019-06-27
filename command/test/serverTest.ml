@@ -248,7 +248,7 @@ let mock_server_state ~local_root ?(initial_environment = environment ~local_roo
             }
       };
     scheduler = Scheduler.mock ();
-    open_documents = Path.Set.empty
+    open_documents = Path.Map.empty
   }
 
 

@@ -189,7 +189,7 @@ end
 module DidChangeTextDocumentParameters = struct
   module TextDocumentContentChangeEvent = struct
     type t = {
-      range: Range.t;
+      range: Range.t option; [@default None]
       rangeLength: int option; [@default None]
       text: string
     }

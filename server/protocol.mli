@@ -184,6 +184,7 @@ module Request : sig
     | LanguageServerProtocolRequest of string
     | OpenDocument of File.t
     | RageRequest of LanguageServer.Types.RequestId.t
+    | DocumentChange of File.t
     | SaveDocument of File.t
     | StopRequest
     | TypeCheckRequest of File.t list

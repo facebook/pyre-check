@@ -104,6 +104,29 @@ let parse_lsp ~configuration ~request =
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
           None )
+    | "textDocument/didChange" -> (
+      match DidChangeTextDocument.of_yojson request with
+      | Ok
+          { DidChangeTextDocument.parameters =
+              Some
+                { DidChangeTextDocumentParameters.textDocument =
+                    { VersionedTextDocumentIdentifier.uri; _ };
+                  contentChanges = content_changes
+                };
+            _
+          } ->
+          (* We only care about the last text update since we receive full text. *)
+          Option.both
+            (uri_to_path ~uri)
+            (content_changes |> List.last >>| fun change -> change.text)
+          >>| (fun (path, content) -> File.create ~content path)
+          >>| fun file -> DocumentChange file
+      | Ok _ ->
+          log_method_error request_method;
+          None
+      | Error yojson_error ->
+          Log.log ~section:`Server "Error: %s" yojson_error;
+          None )
     | "textDocument/didSave" -> (
       match DidSaveTextDocument.of_yojson request with
       | Ok
@@ -1223,15 +1246,30 @@ let rec process
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
           let { State.open_documents; _ } = state in
-          let open_documents = Path.Set.add open_documents (File.path file) in
+          let open_documents =
+            Path.Map.set
+              open_documents
+              ~key:(File.path file)
+              ~data:(File.content file |> Option.value ~default:"")
+          in
           process_type_check_request
             ~state:{ state with open_documents }
             ~configuration
             ~files:[file]
       | CloseDocument file ->
           let { State.open_documents; _ } = state in
-          let open_documents = Path.Set.remove open_documents (File.path file) in
+          let open_documents = Path.Map.remove open_documents (File.path file) in
           LookupCache.evict ~state ~configuration file;
+          { state = { state with open_documents }; response = None }
+      | DocumentChange file ->
+          (* On change, update open document's content but do not trigger recheck. *)
+          let { State.open_documents; _ } = state in
+          let open_documents =
+            Path.Map.set
+              open_documents
+              ~key:(File.path file)
+              ~data:(File.content file |> Option.value ~default:"")
+          in
           { state = { state with open_documents }; response = None }
       | SaveDocument file ->
           (* On save, evict entries from the lookup cache. The updated source will be picked up at

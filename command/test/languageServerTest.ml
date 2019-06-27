@@ -455,7 +455,7 @@ let test_initialize_response _ =
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
-              "change": 0,
+              "change": 1,
               "openClose": true,
               "save": { "includeText": false }
             }
@@ -480,7 +480,7 @@ let test_initialize_response _ =
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
-              "change": 0,
+              "change": 1,
               "openClose": true,
               "save": { "includeText": false }
             }
@@ -827,7 +827,7 @@ let test_request_parser context =
         Some
           { DidChangeTextDocumentParameters.textDocument =
               { VersionedTextDocumentIdentifier.uri = "file://" ^ absolute; version = 1 };
-            contentChanges = []
+            contentChanges = [{ text = "changed source"; range = None; rangeLength = None }]
           }
     }
     |> DidChangeTextDocument.to_yojson
@@ -878,7 +878,11 @@ let test_request_parser context =
   assert_parsed_request_equals
     save_message
     (Some (Protocol.Request.SaveDocument (Path.create_absolute absolute |> File.create)));
-  assert_parsed_request_equals change_message None;
+  assert_parsed_request_equals
+    change_message
+    (Some
+       (Protocol.Request.DocumentChange
+          (Path.create_absolute absolute |> File.create ~content:"changed source")));
   let absolute_file = Path.create_absolute absolute |> File.create in
   let linked_file =
     Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create

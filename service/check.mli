@@ -12,7 +12,7 @@ type result = {
 }
 
 val analyze_sources
-  :  ?open_documents:Pyre.Path.Set.t ->
+  :  ?open_documents:string Pyre.Path.Map.t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   environment:(module Environment.Handler) ->

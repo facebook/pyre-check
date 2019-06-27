@@ -98,7 +98,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
     last_integrity_check = Unix.time ();
     connections;
     lookups = String.Table.create ();
-    open_documents = Path.Set.empty
+    open_documents = Path.Map.empty
   }
 
 

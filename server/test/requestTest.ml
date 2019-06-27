@@ -50,7 +50,7 @@ let mock_server_state
             }
       };
     scheduler = Scheduler.mock ();
-    open_documents = Path.Set.empty
+    open_documents = Path.Map.empty
   }
 
 
@@ -680,10 +680,9 @@ let test_open_document_state _ =
     Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:name
     |> File.create ~content:""
   in
-  let mock_set name =
-    let set = Path.Set.empty in
+  let mock_map ~name ~content =
     let file = create_file name in
-    Path.Set.add set (File.path file)
+    Path.Map.singleton (File.path file) content
   in
   let configuration, state = initialize [] in
   let assert_open_documents ~start ~request ~expected =
@@ -692,25 +691,28 @@ let test_open_document_state _ =
     let ({ state = { open_documents; _ }; _ } : Request.response) =
       Request.process ~configuration ~state ~request
     in
-    assert_true (Path.Set.equal open_documents expected)
+    assert_true (Path.Map.equal String.equal open_documents expected)
   in
   assert_open_documents
-    ~start:Path.Set.empty
+    ~start:Path.Map.empty
     ~request:(Protocol.Request.OpenDocument (create_file "a.py"))
-    ~expected:(mock_set "a.py");
+    ~expected:(mock_map ~name:"a.py" ~content:"");
   assert_open_documents
-    ~start:(mock_set "a.py")
+    ~start:(mock_map ~name:"a.py" ~content:"")
     ~request:(Protocol.Request.CloseDocument (create_file "a.py"))
-    ~expected:Path.Set.empty
+    ~expected:Path.Map.empty
 
 
 let test_resolution_shared_memory_added_for_open_documents _ =
-  let test_file_a = write_file ("a.py", "def foo() -> int: return 3") in
-  let test_file_b = write_file ("b.py", "def foo() -> int: return 3") in
+  let test_code = "def foo() -> int: return 3" in
+  let test_file_a = write_file ("a.py", test_code) in
+  let test_file_b = write_file ("b.py", test_code) in
   let files = [test_file_a; test_file_b] in
   let configuration, state = initialize [] in
   let configuration = { configuration with store_type_check_resolution = false } in
-  let state = { state with open_documents = Path.Set.singleton (File.path test_file_a) } in
+  let state =
+    { state with open_documents = Path.Map.singleton (File.path test_file_a) test_code }
+  in
   let contains_resolution_shared_memory_reference key_string =
     key_string |> Reference.create |> Analysis.ResolutionSharedMemory.get |> Option.is_some
   in

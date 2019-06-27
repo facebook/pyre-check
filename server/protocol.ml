@@ -260,6 +260,7 @@ module Request = struct
     | LanguageServerProtocolRequest of string
     | OpenDocument of File.t
     | RageRequest of LanguageServer.Types.RequestId.t
+    | DocumentChange of File.t
     | SaveDocument of File.t
     | StopRequest
     | TypeCheckRequest of File.t list
@@ -295,6 +296,7 @@ module Request = struct
     | HoverRequest _ -> "Hover"
     | OpenDocument _ -> "OpenDocument"
     | CloseDocument _ -> "CloseDocument"
+    | DocumentChange _ -> "DocumentChange"
     | SaveDocument _ -> "SaveDocument"
     | CodeActionRequest _ -> "CodeAction"
     | ExecuteCommandRequest _ -> "ExecuteCommandRequest"

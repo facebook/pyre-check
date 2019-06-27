@@ -156,7 +156,7 @@ module InitializeResponse = struct
                   { text_document_sync =
                       Some
                         { open_close = Some true;
-                          change = Some (Kind.get_change Kind.None_);
+                          change = Some (Kind.get_change Kind.Full);
                           will_save = None;
                           will_save_wait_until = None;
                           save = Some { SaveOptions.include_text = Some false }
