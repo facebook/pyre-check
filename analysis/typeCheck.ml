@@ -70,6 +70,7 @@ module type Signature = sig
   and resolved = {
     state: t;
     resolved: Type.t;
+    resolved_annotation: Annotation.t option;
     base: base option
   }
   [@@deriving show]
@@ -881,6 +882,7 @@ module State (Context : Context) = struct
   and resolved = {
     state: t;
     resolved: Type.t;
+    resolved_annotation: Annotation.t option;
     base: base option
   }
   [@@deriving show]
@@ -1721,7 +1723,11 @@ module State (Context : Context) = struct
         |> fun state -> forward_expression ~state ~expression:element
       in
       (* Discard generator-local variables. *)
-      { state = { state with resolution }; resolved = Type.weaken_literals resolved; base = None }
+      { state = { state with resolution };
+        resolved = Type.weaken_literals resolved;
+        resolved_annotation = None;
+        base = None
+      }
     in
     let forward_elements ~state ~elements =
       let forward_element { state = { resolution; _ } as state; resolved; _ } expression =
@@ -1733,10 +1739,18 @@ module State (Context : Context) = struct
               | Type.Parametric { parameters = [parameter]; _ } -> parameter
               | _ -> Type.Any
             in
-            { state; resolved = Resolution.join resolution resolved parameter; base = None }
+            { state;
+              resolved = Resolution.join resolution resolved parameter;
+              resolved_annotation = None;
+              base = None
+            }
         | _ ->
             let { state; resolved = new_resolved; _ } = forward_expression ~state ~expression in
-            { state; resolved = Resolution.join resolution resolved new_resolved; base = None }
+            { state;
+              resolved = Resolution.join resolution resolved new_resolved;
+              resolved_annotation = None;
+              base = None
+            }
       in
       let correct_bottom { state; resolved; _ } =
         let resolved =
@@ -1745,11 +1759,18 @@ module State (Context : Context) = struct
           else
             resolved
         in
-        { state; resolved; base = None }
+        { state; resolved; resolved_annotation = None; base = None }
       in
-      List.fold elements ~init:{ state; resolved = Type.Bottom; base = None } ~f:forward_element
+      List.fold
+        elements
+        ~init:{ state; resolved = Type.Bottom; resolved_annotation = None; base = None }
+        ~f:forward_element
       |> (fun { state; resolved; _ } ->
-           { state; resolved = Type.weaken_literals resolved; base = None })
+           { state;
+             resolved = Type.weaken_literals resolved;
+             resolved_annotation = None;
+             base = None
+           })
       |> correct_bottom
     in
     let forward_reference ~state reference =
@@ -1788,8 +1809,17 @@ module State (Context : Context) = struct
           let state =
             Error.UndefinedName reference |> fun kind -> emit_error ~state ~location ~kind
           in
-          { state; resolved = Annotation.annotation annotation; base = None }
-      | Some annotation -> { state; resolved = Annotation.annotation annotation; base = None }
+          { state;
+            resolved = Annotation.annotation annotation;
+            resolved_annotation = Some annotation;
+            base = None
+          }
+      | Some annotation ->
+          { state;
+            resolved = Annotation.annotation annotation;
+            resolved_annotation = Some annotation;
+            base = None
+          }
       | None -> (
         match Resolution.module_definition resolution reference with
         | None when not (Resolution.is_suppressed_module resolution reference) ->
@@ -1810,8 +1840,8 @@ module State (Context : Context) = struct
                     ~define:Context.define
                   |> emit_raw_error ~state
             in
-            { state; resolved = Type.Top; base = None }
-        | _ -> { state; resolved = Type.Top; base = None } )
+            { state; resolved = Type.Top; resolved_annotation = None; base = None }
+        | _ -> { state; resolved = Type.Top; resolved_annotation = None; base = None } )
     in
     let forward_callable ~state ~target ~dynamic ~callee ~resolved ~arguments =
       let state =
@@ -1983,7 +2013,7 @@ module State (Context : Context) = struct
       in
       match signature with
       | Some (Annotated.Signature.Found { implementation = { annotation; _ }; _ }) ->
-          { state; resolved = annotation; base = None }
+          { state; resolved = annotation; resolved_annotation = None; base = None }
       | Some
           (Annotated.Signature.NotFound
             { callable = { implementation = { annotation; _ }; kind; implicit; _ } as callable;
@@ -2087,7 +2117,7 @@ module State (Context : Context) = struct
             in
             emit_raw_error ~state error
           in
-          { state; resolved = annotation; base = None }
+          { state; resolved = annotation; resolved_annotation = None; base = None }
       | _ ->
           let state =
             if Type.equal Type.Any resolved || Type.equal Type.Top resolved then
@@ -2097,11 +2127,12 @@ module State (Context : Context) = struct
               |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
               |> emit_raw_error ~state
           in
-          { state; resolved = Type.Top; base = None }
+          { state; resolved = Type.Top; resolved_annotation = None; base = None }
     in
     let join_resolved ~resolution left right =
       { state = join left.state right.state;
         resolved = Resolution.join resolution left.resolved right.resolved;
+        resolved_annotation = None;
         base = None
       }
     in
@@ -2128,7 +2159,7 @@ module State (Context : Context) = struct
         let resolved =
           Resolution.join resolution (Type.awaitable Type.Bottom) resolved |> Type.awaitable_value
         in
-        { state; resolved; base = None }
+        { state; resolved; resolved_annotation = None; base = None }
     | BooleanOperator { BooleanOperator.left; operator; right } ->
         let assume =
           let assume =
@@ -2156,7 +2187,7 @@ module State (Context : Context) = struct
           | resolved_left, resolved_right, _ ->
               Resolution.join resolution resolved_left resolved_right
         in
-        { state = join state_left state_right; resolved; base = None }
+        { state = join state_left state_right; resolved; resolved_annotation = None; base = None }
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments }
       -> (
         (* Resolve `super()` calls. *)
@@ -2172,7 +2203,7 @@ module State (Context : Context) = struct
         match superclass with
         | Some superclass ->
             let resolved = Type.Primitive superclass in
-            { state; resolved; base = Some (Super resolved) }
+            { state; resolved; resolved_annotation = None; base = Some (Super resolved) }
         | None ->
             let { resolved; _ } = forward_expression ~state ~expression:callee in
             forward_callable ~state ~target:None ~callee ~dynamic:false ~resolved ~arguments )
@@ -2182,7 +2213,7 @@ module State (Context : Context) = struct
         } ->
         (* Resolve `type()` calls. *)
         let resolved = Resolution.resolve resolution value |> Type.meta in
-        { state; resolved; base = None }
+        { state; resolved; resolved_annotation = None; base = None }
     | Call
         { callee = { Node.value = Name (Name.Identifier (("abs" | "repr" | "str") as name)); _ };
           arguments = [{ Call.Argument.value; _ }]
@@ -2220,7 +2251,7 @@ module State (Context : Context) = struct
             ~kind:
               (Error.RevealedType { expression = value; annotation = Annotation.create annotation })
         in
-        { state; resolved = Type.none; base = None }
+        { state; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
         { callee =
             { Node.location;
@@ -2255,7 +2286,7 @@ module State (Context : Context) = struct
           else
             state
         in
-        { state; resolved = cast_annotation; base = None }
+        { state; resolved = cast_annotation; resolved_annotation = None; base = None }
     | Call
         { callee = { Node.value = Name (Name.Identifier "isinstance"); _ };
           arguments =
@@ -2312,7 +2343,7 @@ module State (Context : Context) = struct
             >>| add_incompatible_non_meta_error state
             |> Option.value ~default:state
         in
-        { state; resolved = Type.bool; base = None }
+        { state; resolved = Type.bool; resolved_annotation = None; base = None }
     | Call
         { callee =
             { Node.value =
@@ -2353,7 +2384,7 @@ module State (Context : Context) = struct
           ~resolved:resolved_callee
           ~arguments
     | Call { callee; arguments } ->
-        let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base } =
+        let { state = { errors = callee_errors; _ }; resolved = resolved_callee; base; _ } =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:callee
         in
         let { state = { errors = updated_errors; _ } as updated_state; resolved; _ } =
@@ -2379,13 +2410,17 @@ module State (Context : Context) = struct
               callee_errors
               updated_errors
           in
-          { state = { updated_state with errors }; resolved; base = None }
+          { state = { updated_state with errors };
+            resolved;
+            resolved_annotation = None;
+            base = None
+          }
         else (* Do not throw more errors if callee already contains terminating error. *)
           let errors =
             Map.fold callee_errors ~init:state.errors ~f:(fun ~key:_ ~data errors ->
                 ErrorMap.add ~errors data)
           in
-          { state = { state with errors }; resolved; base = None }
+          { state = { state with errors }; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
         let { state; resolved = iterator; _ } = forward_expression ~state ~expression:right in
@@ -2498,7 +2533,7 @@ module State (Context : Context) = struct
           forward_expression ~state ~expression:left
           |> (fun { state; _ } -> forward_expression ~state ~expression:right)
           |> fun state -> { state with resolved = Type.bool; base = None } )
-    | Complex _ -> { state; resolved = Type.complex; base = None }
+    | Complex _ -> { state; resolved = Type.complex; resolved_annotation = None; base = None }
     | Dictionary { Dictionary.entries; keywords } ->
         let key, value, state =
           let forward_entry (key, value, state) entry =
@@ -2530,7 +2565,7 @@ module State (Context : Context) = struct
           in
           List.fold keywords ~f:forward_keyword ~init:(Type.dictionary ~key ~value, state)
         in
-        { state; resolved; base = None }
+        { state; resolved; resolved_annotation = None; base = None }
     | DictionaryComprehension { Comprehension.element; generators } ->
         let key, value, state =
           List.fold
@@ -2540,14 +2575,24 @@ module State (Context : Context) = struct
           |> fun state -> forward_entry ~state ~entry:element
         in
         (* Discard generator-local variables. *)
-        { state = { state with resolution }; resolved = Type.dictionary ~key ~value; base = None }
-    | Ellipsis -> { state; resolved = Type.Any; base = None }
-    | False -> { state; resolved = Type.Literal (Type.Boolean false); base = None }
-    | Float _ -> { state; resolved = Type.float; base = None }
+        { state = { state with resolution };
+          resolved = Type.dictionary ~key ~value;
+          resolved_annotation = None;
+          base = None
+        }
+    | Ellipsis -> { state; resolved = Type.Any; resolved_annotation = None; base = None }
+    | False ->
+        { state;
+          resolved = Type.Literal (Type.Boolean false);
+          resolved_annotation = None;
+          base = None
+        }
+    | Float _ -> { state; resolved = Type.float; resolved_annotation = None; base = None }
     | Generator { Comprehension.element; generators } ->
         let { state; resolved; _ } = forward_comprehension ~element ~generators in
-        { state; resolved = Type.generator resolved; base = None }
-    | Integer literal -> { state; resolved = Type.literal_integer literal; base = None }
+        { state; resolved = Type.generator resolved; resolved_annotation = None; base = None }
+    | Integer literal ->
+        { state; resolved = Type.literal_integer literal; resolved_annotation = None; base = None }
     | Lambda { Lambda.body; parameters } ->
         let resolution_with_parameters =
           let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =
@@ -2578,18 +2623,20 @@ module State (Context : Context) = struct
         in
         { state = { state with resolution };
           resolved = Type.Callable.create ~parameters ~annotation:resolved ();
+          resolved_annotation = None;
           base = None
         }
     | List elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
-        { state; resolved = Type.list resolved; base = None }
+        { state; resolved = Type.list resolved; resolved_annotation = None; base = None }
     | ListComprehension { Comprehension.element; generators } ->
         let { state; resolved; _ } = forward_comprehension ~element ~generators in
-        { state; resolved = Type.list resolved; base = None }
+        { state; resolved = Type.list resolved; resolved_annotation = None; base = None }
     | Name (Name.Identifier identifier) -> forward_reference ~state (Reference.create identifier)
     | Name (Name.Attribute { base; attribute; special } as name) ->
         let reference = Reference.from_name name in
-        let { state = { errors = base_errors; _ }; resolved = resolved_base; base = super_base } =
+        let { state = { errors = base_errors; _ }; resolved = resolved_base; base = super_base; _ }
+          =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:base
         in
         let ({ errors; _ } as state), resolved_base =
@@ -2615,19 +2662,24 @@ module State (Context : Context) = struct
               >>| (fun kind -> emit_error ~state ~location ~kind)
               |> Option.value ~default:state
             in
-            { state; resolved = resolved_base; base = None }
+            { state; resolved = resolved_base; resolved_annotation = None; base = None }
           else if Type.equal resolved_base Type.Top then (* Global or local. *)
             reference
             >>| forward_reference ~state
-            |> Option.value ~default:{ state; resolved = Type.Top; base = None }
+            |> Option.value
+                 ~default:{ state; resolved = Type.Top; resolved_annotation = None; base = None }
           else if Type.is_callable resolved_base then (* Nested function. *)
             let resolved =
               reference >>= fun reference -> Resolution.get_local resolution ~reference
             in
             match resolved with
             | Some annotation ->
-                { state; resolved = Annotation.annotation annotation; base = None }
-            | None -> { state; resolved = Type.Top; base = None }
+                { state;
+                  resolved = Annotation.annotation annotation;
+                  resolved_annotation = Some annotation;
+                  base = None
+                }
+            | None -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
           else (* Attribute access. *)
             match Annotated.Class.resolve_class ~resolution resolved_base with
             | None ->
@@ -2639,8 +2691,8 @@ module State (Context : Context) = struct
                   |> (fun kind -> Error.create ~location ~kind ~define:Context.define)
                   |> emit_raw_error ~state
                 in
-                { state; resolved = Type.Top; base = None }
-            | Some [] -> { state; resolved = Type.Top; base = None }
+                { state; resolved = Type.Top; resolved_annotation = None; base = None }
+            | Some [] -> { state; resolved = Type.Top; resolved_annotation = None; base = None }
             | Some (head :: tail) ->
                 let name = attribute in
                 let find_attribute
@@ -2721,11 +2773,13 @@ module State (Context : Context) = struct
                     let refined = Refinement.join ~resolution sofar element in
                     { refined with annotation = Type.union [sofar.annotation; element.annotation] }
                   in
-                  List.fold tail_resolveds ~init:head_resolved ~f:join
-                  |> apply_global_override
-                  |> Annotation.annotation
+                  List.fold tail_resolveds ~init:head_resolved ~f:join |> apply_global_override
                 in
-                { state; resolved; base = None }
+                { state;
+                  resolved = Annotation.annotation resolved;
+                  resolved_annotation = Some resolved;
+                  base = None
+                }
         in
         let base =
           match super_base with
@@ -2756,19 +2810,19 @@ module State (Context : Context) = struct
             Map.fold base_errors ~init:updated_errors ~f:(fun ~key:_ ~data errors ->
                 ErrorMap.add ~errors data)
           in
-          { state = { updated_state with errors }; resolved; base }
+          { state = { updated_state with errors }; resolved; resolved_annotation = None; base }
         else (* Do not throw more errors if base already contains terminating error. *)
           let errors =
             Map.fold base_errors ~init:errors ~f:(fun ~key:_ ~data errors ->
                 ErrorMap.add ~errors data)
           in
-          { state = { state with errors }; resolved; base }
+          { state = { state with errors }; resolved; resolved_annotation = None; base }
     | Set elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
-        { state; resolved = Type.set resolved; base = None }
+        { state; resolved = Type.set resolved; resolved_annotation = None; base = None }
     | SetComprehension { Comprehension.element; generators } ->
         let { state; resolved; _ } = forward_comprehension ~element ~generators in
-        { state; resolved = Type.set resolved; base = None }
+        { state; resolved = Type.set resolved; resolved_annotation = None; base = None }
     | Starred starred ->
         let state =
           match starred with
@@ -2785,15 +2839,15 @@ module State (Context : Context) = struct
               forward_expression ~state ~expression |> fun { state; _ } -> state)
             ~init:state
         in
-        { state; resolved = Type.string; base = None }
+        { state; resolved = Type.string; resolved_annotation = None; base = None }
     | String { StringLiteral.kind = StringLiteral.Bytes; _ } ->
-        { state; resolved = Type.bytes; base = None }
+        { state; resolved = Type.bytes; resolved_annotation = None; base = None }
     | String { StringLiteral.kind = StringLiteral.String; value } ->
-        { state; resolved = Type.literal_string value; base = None }
+        { state; resolved = Type.literal_string value; resolved_annotation = None; base = None }
     | String { StringLiteral.kind = StringLiteral.Mixed _; _ } ->
         (* NOTE: We may run into this case with nested f-strings. Treat them as literal strings
            until the parser gets full support of them. *)
-        { state; resolved = Type.string; base = None }
+        { state; resolved = Type.string; resolved_annotation = None; base = None }
     | Ternary { Ternary.target; test; alternative } ->
         let state = { state with resolution } in
         let target =
@@ -2806,8 +2860,13 @@ module State (Context : Context) = struct
         in
         let { state; resolved; _ } = join_resolved ~resolution target alternative in
         (* The resolution is local to the ternary expression and should not be propagated out. *)
-        { state = { state with resolution }; resolved; base = None }
-    | True -> { state; resolved = Type.Literal (Type.Boolean true); base = None }
+        { state = { state with resolution }; resolved; resolved_annotation = None; base = None }
+    | True ->
+        { state;
+          resolved = Type.Literal (Type.Boolean true);
+          resolved_annotation = None;
+          base = None
+        }
     | Tuple elements ->
         let state, resolved =
           let forward_element (state, resolved) expression =
@@ -2816,17 +2875,22 @@ module State (Context : Context) = struct
           in
           List.fold elements ~f:forward_element ~init:(state, [])
         in
-        { state; resolved = Type.tuple (List.rev resolved); base = None }
+        { state;
+          resolved = Type.tuple (List.rev resolved);
+          resolved_annotation = None;
+          base = None
+        }
     | UnaryOperator ({ UnaryOperator.operand; _ } as operator) -> (
       match UnaryOperator.override operator with
       | Some expression -> forward_expression ~state ~expression
       | None ->
           let state = forward_expression ~state ~expression:operand in
-          { state with resolved = Type.bool; base = None } )
+          { state with resolved = Type.bool; resolved_annotation = None; base = None } )
     | Expression.Yield (Some expression) ->
         let { state; resolved; _ } = forward_expression ~state ~expression in
-        { state; resolved = Type.generator resolved; base = None }
-    | Expression.Yield None -> { state; resolved = Type.generator Type.none; base = None }
+        { state; resolved = Type.generator resolved; resolved_annotation = None; base = None }
+    | Expression.Yield None ->
+        { state; resolved = Type.generator Type.none; resolved_annotation = None; base = None }
 
 
   and forward_statement
@@ -4108,7 +4172,7 @@ module State (Context : Context) = struct
         let { state; resolved = actual; _ } =
           Option.value_map
             expression
-            ~default:{ state; resolved = Type.none; base = None }
+            ~default:{ state; resolved = Type.none; resolved_annotation = None; base = None }
             ~f:(fun expression -> forward_expression ~state ~expression)
         in
         validate_return ~expression ~state ~actual ~is_implicit
@@ -4117,8 +4181,17 @@ module State (Context : Context) = struct
           match return with
           | Some expression ->
               let { state; resolved; _ } = forward_expression ~state ~expression in
-              { state; resolved = Type.generator ~async resolved; base = None }
-          | None -> { state; resolved = Type.generator ~async Type.none; base = None }
+              { state;
+                resolved = Type.generator ~async resolved;
+                resolved_annotation = None;
+                base = None
+              }
+          | None ->
+              { state;
+                resolved = Type.generator ~async Type.none;
+                resolved_annotation = None;
+                base = None
+              }
         in
         validate_return ~expression:None ~state ~actual ~is_implicit:false
     | Statement.Yield _ -> state

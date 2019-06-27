@@ -59,6 +59,7 @@ module type Signature = sig
   and resolved = {
     state: t;
     resolved: Type.t;
+    resolved_annotation: Annotation.t option;
     base: base option
   }
   [@@deriving show]
