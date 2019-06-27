@@ -1085,73 +1085,51 @@ module OrderImplementation = struct
             false
         | Type.Annotated left, _ -> less_or_equal order ~left ~right
         | _, Type.Annotated right -> less_or_equal order ~left ~right
-        | ( Type.Parametric { name = left_name; parameters = left_parameters },
-            Type.Parametric { name = right_name; parameters = right_parameters } ) ->
-            let compare_parameter left right variable =
-              match left, right, variable with
-              | Type.Bottom, _, _ ->
-                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
-                  true
-              | _, Type.Top, _ ->
-                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-                  true
-              | Type.Top, _, _ -> false
-              | _, _, Type.Variable { variance = Covariant; _ } -> less_or_equal order ~left ~right
-              | _, _, Type.Variable { variance = Contravariant; _ } ->
-                  less_or_equal order ~left:right ~right:left
-              | _, _, Type.Variable { variance = Invariant; _ } ->
-                  less_or_equal order ~left ~right && less_or_equal order ~left:right ~right:left
-              | _ ->
-                  Log.warning
-                    "Cannot compare %a and %a, not a variable: %a"
-                    Type.pp
-                    left
-                    Type.pp
-                    right
-                    Type.pp
-                    variable;
-                  false
-            in
-            raise_if_untracked handler (Type.Primitive left_name);
-            raise_if_untracked handler (Type.Primitive right_name);
-            let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
-            let left_variables = variables handler left in
-            if Identifier.equal left_name right_name then
-              (* Left and right primitives coincide, a simple parameter comparison is enough. *)
+        | Type.Parametric _, Type.Parametric { name = right_name; parameters = right_parameters }
+          ->
+            let handle_left_parameters left_parameters =
               let compare_parameters ~left ~right variables =
+                let compare_parameter left right variable =
+                  match left, right, variable with
+                  | Type.Bottom, _, _ ->
+                      (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
+                         variance. *)
+                      true
+                  | _, Type.Top, _ ->
+                      (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+                      true
+                  | Type.Top, _, _ -> false
+                  | _, _, Type.Variable { variance = Covariant; _ } ->
+                      less_or_equal order ~left ~right
+                  | _, _, Type.Variable { variance = Contravariant; _ } ->
+                      less_or_equal order ~left:right ~right:left
+                  | _, _, Type.Variable { variance = Invariant; _ } ->
+                      less_or_equal order ~left ~right
+                      && less_or_equal order ~left:right ~right:left
+                  | _ ->
+                      Log.warning
+                        "Cannot compare %a and %a, not a variable: %a"
+                        Type.pp
+                        left
+                        Type.pp
+                        right
+                        Type.pp
+                        variable;
+                      false
+                in
                 List.length variables = List.length left
                 && List.length variables = List.length right
                 && List.map3_exn ~f:compare_parameter left right variables |> List.for_all ~f:Fn.id
               in
-              left_variables
+              variables handler right
               >>| compare_parameters ~left:left_parameters ~right:right_parameters
-              |> Option.value ~default:false
-            else (* Perform one step in all appropriate directions. *)
-              let parametric ~primitive ~parameters =
-                match primitive with
-                | Type.Primitive name -> Some (Type.Parametric { name; parameters })
-                | _ -> None
-              in
-              (* Go one level down in the class hierarchy and try from there. *)
-              let target_to_parametric { Target.target; parameters } =
-                let parameters =
-                  Handler.find (Handler.edges ()) target
-                  >>| get_instantiated_successors ~generic_index ~parameters
-                  >>= get_generic_parameters ~generic_index
-                  |> Option.value ~default:[]
-                in
-                Handler.find (Handler.annotations ()) target
-                >>| Type.split
-                >>| fst
-                >>= fun primitive -> parametric ~primitive ~parameters
-              in
-              let successors =
-                let left_index = index_of handler (Type.Primitive left_name) in
-                Handler.find (Handler.edges ()) left_index |> Option.value ~default:[]
-              in
-              get_instantiated_successors ~generic_index ~parameters:left_parameters successors
-              |> List.filter_map ~f:target_to_parametric
-              |> List.exists ~f:(fun left -> less_or_equal order ~left ~right)
+            in
+            instantiate_successors_parameters
+              order
+              ~source:left
+              ~target:(Type.Primitive right_name)
+            >>= handle_left_parameters
+            |> Option.value ~default:false
         (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
         | Type.Union left, right ->
             List.fold
@@ -1880,33 +1858,6 @@ module OrderImplementation = struct
               Type.Bottom )
 
 
-    (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has concrete
-       parameters, all occurrences of _T1, _T2, etc. in other supertypes need to be replaced with
-       the concrete parameter corresponding to the type variable. This function takes a target with
-       concrete parameters and its supertypes, and instantiates the supertypes accordingly. *)
-    and get_instantiated_successors ~generic_index ~parameters successors =
-      let variables =
-        get_generic_parameters successors ~generic_index |> Option.value ~default:[]
-      in
-      let parameters =
-        if List.length variables = List.length parameters then
-          parameters
-        else
-          (* This is the specified behavior for empty parameters, and other mismatched lengths
-             should have an error at the declaration site, and this behavior seems reasonable *)
-          List.init (List.length variables) ~f:(fun _ -> Type.Any)
-      in
-      let constraints =
-        List.zip_exn variables parameters
-        |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
-        |> Map.find
-      in
-      let instantiate_parameters { Target.target; parameters } =
-        { Target.target; parameters = List.map parameters ~f:(Type.instantiate ~constraints) }
-      in
-      List.map successors ~f:instantiate_parameters
-
-
     and get_instantiated_predecessors
         ({ handler = (module Handler : Handler); _ } as order)
         ~generic_index
@@ -1980,6 +1931,37 @@ module OrderImplementation = struct
               match Queue.dequeue worklist with
               | Some { Target.target = target_index; parameters } ->
                   let instantiated_successors =
+                    (* If a node on the graph has Generic[_T1, _T2, ...] as a supertype and has
+                       concrete parameters, all occurrences of _T1, _T2, etc. in other supertypes
+                       need to be replaced with the concrete parameter corresponding to the type
+                       variable. This function takes a target with concrete parameters and its
+                       supertypes, and instantiates the supertypes accordingly. *)
+                    let get_instantiated_successors ~generic_index ~parameters successors =
+                      let variables =
+                        get_generic_parameters successors ~generic_index
+                        |> Option.value ~default:[]
+                      in
+                      let parameters =
+                        if List.length variables = List.length parameters then
+                          parameters
+                        else
+                          (* This is the specified behavior for empty parameters, and other
+                             mismatched lengths should have an error at the declaration site, and
+                             this behavior seems reasonable *)
+                          List.init (List.length variables) ~f:(fun _ -> Type.Any)
+                      in
+                      let constraints =
+                        List.zip_exn variables parameters
+                        |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
+                        |> Map.find
+                      in
+                      let instantiate_parameters { Target.target; parameters } =
+                        { Target.target;
+                          parameters = List.map parameters ~f:(Type.instantiate ~constraints)
+                        }
+                      in
+                      List.map successors ~f:instantiate_parameters
+                    in
                     Handler.find (Handler.edges ()) target_index
                     >>| get_instantiated_successors ~generic_index ~parameters
                   in
