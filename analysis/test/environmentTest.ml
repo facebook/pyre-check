@@ -107,17 +107,17 @@ let test_register_class_definitions _ =
        |})
   in
   assert_equal
-    ~cmp:Type.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ Type.show next))
-    (Type.Set.singleton (Type.Primitive "C"))
+    ~cmp:TypeOrder.Node.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ TypeOrder.Node.show next))
+    (TypeOrder.Node.Set.singleton (TypeOrder.Node.Primitive "C"))
     new_annotations;
   let new_annotations =
     Environment.register_class_definitions (module Handler) (parse "class int: pass")
   in
   assert_equal
-    ~cmp:Type.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ Type.show next))
-    (Type.Set.singleton Type.integer)
+    ~cmp:TypeOrder.Node.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ TypeOrder.Node.show next))
+    (TypeOrder.Node.Set.singleton (TypeOrder.Node.Primitive "int"))
     new_annotations
 
 
@@ -146,14 +146,11 @@ let test_register_class_metadata _ =
   let resolution = TypeCheck.resolution (module Handler) () in
   Environment.connect_type_order (module Handler) resolution source;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-  TypeOrder.connect_annotations_to_top
-    (module Handler.TypeOrderHandler)
-    ~top:Type.Any
-    all_annotations;
+  TypeOrder.connect_annotations_to_top (module Handler.TypeOrderHandler) ~top:Any all_annotations;
   TypeOrder.remove_extra_edges
     (module Handler.TypeOrderHandler)
-    ~bottom:Type.Bottom
-    ~top:Type.Any
+    ~bottom:Bottom
+    ~top:Any
     all_annotations;
   Handler.register_class_metadata "A";
   Handler.register_class_metadata "B";
@@ -449,8 +446,8 @@ let test_connect_definition _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
   let (module TypeOrderHandler : TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) (Type.Primitive "C");
-  TypeOrder.insert (module TypeOrderHandler) (Type.Primitive "D");
+  TypeOrder.insert (module TypeOrderHandler) (Primitive "C");
+  TypeOrder.insert (module TypeOrderHandler) (Primitive "D");
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
       TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) predecessor
@@ -470,15 +467,15 @@ let test_connect_definition _ =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
   in
   Environment.connect_definition ~resolution ~definition:class_definition;
-  assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "C");
+  assert_edge ~predecessor:Bottom ~successor:(Primitive "C");
   let definition = +Test.parse_single_class {|
        class D(int, float):
          ...
      |} in
   Environment.connect_definition ~resolution ~definition;
-  assert_edge ~predecessor:Type.Bottom ~successor:(Type.Primitive "D");
-  assert_edge ~predecessor:(Type.Primitive "D") ~successor:Type.integer;
-  assert_edge ~predecessor:(Type.Primitive "D") ~successor:Type.float
+  assert_edge ~predecessor:Bottom ~successor:(Primitive "D");
+  assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "int");
+  assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "float")
 
 
 let test_register_globals _ =
@@ -599,7 +596,7 @@ let test_connect_type_order _ =
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors "C" [];
   assert_successors "D" ["C"];
-  TypeOrder.connect_annotations_to_top order ~top:Type.Any all_annotations;
+  TypeOrder.connect_annotations_to_top order ~top:Any all_annotations;
   assert_successors "C" [];
   assert_successors "D" ["C"];
   assert_successors "CallMe" ["typing.Callable"; "object"]
@@ -647,9 +644,7 @@ let test_populate _ =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
     in
     let targets =
-      Handler.TypeOrderHandler.find
-        (Handler.TypeOrderHandler.edges ())
-        (index (Type.Primitive base))
+      Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.edges ()) (index (Primitive base))
     in
     let to_target annotation =
       { TypeOrder.Target.target = index annotation; parameters = superclass_parameters annotation }
@@ -661,7 +656,7 @@ let test_populate _ =
             let index = Int.to_string target in
             let target =
               Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.annotations ()) target
-              |> Type.show
+              |> TypeOrder.Node.show
             in
             let parameters = List.to_string parameters ~f:Type.show in
             Format.sprintf "%s: %s%s" index target parameters
@@ -683,7 +678,7 @@ let test_populate _ =
         class C(metaclass=abc.ABCMeta): ...
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
+  assert_superclasses ~environment "C" ~superclasses:[Primitive "object"];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
@@ -696,7 +691,7 @@ let test_populate _ =
           pass
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Type.object_primitive];
+  assert_superclasses ~environment "C" ~superclasses:[Primitive "object"];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -842,8 +837,8 @@ let test_populate _ =
   |}
   in
   let type_parameters annotation =
-    match Type.show annotation with
-    | "typing.Callable" ->
+    match annotation with
+    | TypeOrder.Node.Primitive "typing.Callable" ->
         [ parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
           |> Type.create ~aliases:(fun _ -> None) ]
     | _ -> []
@@ -852,7 +847,7 @@ let test_populate _ =
     ~superclass_parameters:type_parameters
     ~environment
     "CallMe"
-    ~superclasses:[Type.Primitive "typing.Callable"];
+    ~superclasses:[Primitive "typing.Callable"];
   ();
   let (module Handler : Environment.Handler) =
     populate {|

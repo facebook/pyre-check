@@ -12,8 +12,6 @@ exception Cyclic
 
 exception Incomplete
 
-exception Untracked of Type.t
-
 exception InconsistentMethodResolutionOrder of Type.primitive
 
 module Target = struct
@@ -96,13 +94,69 @@ module Target = struct
   end
 end
 
+module Node = struct
+  type t =
+    | Top
+    | Bottom
+    | Any
+    | Primitive of Identifier.t
+  [@@deriving compare, eq, sexp, show, hash]
+
+  include Hashable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_t
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  module Set = Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  let primitive_name = function
+    | Primitive name -> Some name
+    | _ -> None
+
+
+  let generic_primitive = Primitive "typing.Generic"
+
+  let object_primitive = Primitive "object"
+
+  let integer = Primitive "int"
+
+  let float = Primitive "float"
+
+  let complex = Primitive "complex"
+
+  let annotation = function
+    | Primitive primitive -> Type.Primitive primitive
+    | Top -> Type.Top
+    | Bottom -> Type.Bottom
+    | Any -> Type.Any
+end
+
+exception Untracked of Type.t
+
 (* `edges` mapping from type index to a set of targets. `indices` mapping from annotation to its
    vertex index. `annotations` inverse of `indices`. *)
 type t = {
   edges: Target.t list Int.Table.t;
   backedges: Target.Set.t Int.Table.t;
-  indices: int Type.Table.t;
-  annotations: Type.t Int.Table.t
+  indices: int Node.Table.t;
+  annotations: Node.t Int.Table.t
 }
 
 module type Handler = sig
@@ -112,9 +166,9 @@ module type Handler = sig
 
   val backedges : unit -> (int, Target.Set.t) lookup
 
-  val indices : unit -> (Type.t, int) lookup
+  val indices : unit -> (Node.t, int) lookup
 
-  val annotations : unit -> (int, Type.t) lookup
+  val annotations : unit -> (int, Node.t) lookup
 
   val find : ('key, 'value) lookup -> 'key -> 'value option
 
@@ -135,7 +189,7 @@ end
 
 let pp format { edges; backedges; annotations; _ } =
   let print_edge (source, targets) =
-    let annotation index = Hashtbl.find_exn annotations index |> Format.asprintf "%a" Type.pp in
+    let annotation index = Hashtbl.find_exn annotations index |> Format.asprintf "%a" Node.pp in
     let targets =
       let target { Target.target; parameters } =
         Format.sprintf
@@ -193,7 +247,7 @@ let insert (module Handler : Handler) annotation =
   if not (Handler.contains (Handler.indices ()) annotation) then (
     let annotations = Handler.annotations () in
     let index =
-      let initial = Type.hash annotation in
+      let initial = Node.hash annotation in
       let rec pick_index index =
         if Handler.contains annotations index then
           pick_index (initial + 1)
@@ -217,7 +271,7 @@ let connect ?(parameters = []) ((module Handler : Handler) as order) ~predecesso
     Statistics.event
       ~name:"invalid type order connection"
       ~integers:[]
-      ~normals:["Predecessor", Type.show predecessor; "Successor", Type.show successor]
+      ~normals:["Predecessor", Node.show predecessor; "Successor", Node.show successor]
       ()
   else
     let predecessor = index_of order predecessor in
@@ -287,7 +341,7 @@ let is_instantiated (module Handler : Handler) annotation =
     | Type.Variable { constraints = Type.Variable.Unary.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
-        not (Handler.contains (Handler.indices ()) (Type.Primitive name))
+        not (Handler.contains (Handler.indices ()) (Node.Primitive name))
     | _ -> false
   in
   not (Type.exists ~predicate:is_invalid annotation)
@@ -295,7 +349,7 @@ let is_instantiated (module Handler : Handler) annotation =
 
 let raise_if_untracked order annotation =
   if not (contains order annotation) then
-    raise (Untracked annotation)
+    raise (Untracked (Node.annotation annotation))
 
 
 let method_resolution_order_linearize
@@ -335,9 +389,9 @@ let method_resolution_order_linearize
   let rec linearize class_name =
     let linearized_successors =
       let create_annotation { Target.target = index; _ } =
-        index |> Handler.find_unsafe (Handler.annotations ()) |> Type.primitive_name
+        index |> Handler.find_unsafe (Handler.annotations ()) |> Node.primitive_name
       in
-      index_of order (Type.Primitive class_name)
+      index_of order (Node.Primitive class_name)
       |> get_successors
       |> Option.value ~default:[]
       |> List.filter_map ~f:create_annotation
@@ -360,20 +414,19 @@ let successors ((module Handler : Handler) as order) annotation =
   | [] -> []
 
 
-let variables (module Handler : Handler) annotation =
-  match Type.split annotation with
-  | left, _ when String.equal (Type.show left) "type" ->
+let variables (module Handler : Handler) = function
+  | Node.Primitive "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
       Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
-  | left, _ when String.equal (Type.show left) "typing.Callable" ->
+  | Node.Primitive "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
       Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
-  | primitive, _ ->
-      Handler.find (Handler.indices ()) Type.generic_primitive
+  | node ->
+      Handler.find (Handler.indices ()) Node.generic_primitive
       >>= fun generic_index ->
-      Handler.find (Handler.indices ()) primitive
+      Handler.find (Handler.indices ()) node
       >>= fun primitive_index ->
       Handler.find (Handler.edges ()) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
@@ -447,9 +500,9 @@ module type FullOrderTypeWithoutT = sig
 
   val less_or_equal : order -> left:Type.t -> right:Type.t -> bool
 
-  val least_upper_bound : (module Handler) -> Type.t -> Type.t -> Type.t list
+  val least_upper_bound : (module Handler) -> Node.t -> Node.t -> Node.t list
 
-  val greatest_lower_bound : (module Handler) -> Type.t -> Type.t -> Type.t list
+  val greatest_lower_bound : (module Handler) -> Node.t -> Node.t -> Node.t list
 
   val meet : order -> Type.t -> Type.t -> Type.t
 
@@ -458,7 +511,7 @@ module type FullOrderTypeWithoutT = sig
   val instantiate_successors_parameters
     :  order ->
     source:Type.t ->
-    target:Type.t ->
+    target:Node.t ->
     Type.t List.t Option.t
 
   val instantiate_protocol_parameters
@@ -842,7 +895,7 @@ module OrderImplementation = struct
                 let zip_on_parameters variables =
                   List.zip left_parameters right_parameters >>= List.zip variables
                 in
-                variables handler right
+                variables handler (Primitive right_name)
                 >>= zip_on_parameters
                 >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
               in
@@ -851,7 +904,7 @@ module OrderImplementation = struct
                   instantiate_successors_parameters
                     order
                     ~source:left
-                    ~target:(Type.Primitive right_name)
+                    ~target:(Node.Primitive right_name)
                 in
                 match parameters with
                 | None when is_protocol right ~protocol_assumptions ->
@@ -1121,13 +1174,10 @@ module OrderImplementation = struct
                 && List.length variables = List.length right
                 && List.map3_exn ~f:compare_parameter left right variables |> List.for_all ~f:Fn.id
               in
-              variables handler right
+              variables handler (Primitive right_name)
               >>| compare_parameters ~left:left_parameters ~right:right_parameters
             in
-            instantiate_successors_parameters
-              order
-              ~source:left
-              ~target:(Type.Primitive right_name)
+            instantiate_successors_parameters order ~source:left ~target:(Primitive right_name)
             >>= handle_left_parameters
             |> Option.value ~default:false
         (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
@@ -1234,15 +1284,17 @@ module OrderImplementation = struct
             less_or_equal order ~left ~right:(Type.Primitive "TypedDictionary")
         | _, Type.Literal _ -> false
         | Type.Literal _, _ -> less_or_equal order ~left:(Type.weaken_literals left) ~right
-        | _ ->
-            raise_if_untracked handler left;
-            raise_if_untracked handler right;
+        | Type.Primitive left, Type.Primitive right ->
+            raise_if_untracked handler (Primitive left);
+            raise_if_untracked handler (Primitive right);
             let worklist = Queue.create () in
-            Queue.enqueue worklist { Target.target = index_of handler left; parameters = [] };
+            Queue.enqueue
+              worklist
+              { Target.target = index_of handler (Primitive left); parameters = [] };
             let rec iterate worklist =
               match Queue.dequeue worklist with
               | Some { Target.target; _ } ->
-                  if target = index_of handler right then
+                  if target = index_of handler (Primitive right) then
                     true
                   else (
                     Option.iter
@@ -1270,7 +1322,7 @@ module OrderImplementation = struct
     and least_common_successor ((module Handler : Handler) as order) ~successors left right =
       raise_if_untracked order left;
       raise_if_untracked order right;
-      if Type.compare left right = 0 then
+      if Node.compare left right = 0 then
         [left]
       else
         (let rec iterate left right =
@@ -1440,92 +1492,107 @@ module OrderImplementation = struct
         | _, Type.Variable _
         | Type.Variable _, _ ->
             union
-        | Type.Parametric _, Type.Parametric _
-        | Type.Parametric _, Type.Primitive _
-        | Type.Primitive _, Type.Parametric _ ->
+        | ( Type.Parametric { name = left_primitive; _ },
+            Type.Parametric { name = right_primitive; _ } )
+        | Type.Parametric { name = left_primitive; _ }, Type.Primitive right_primitive
+        | Type.Primitive left_primitive, Type.Parametric { name = right_primitive; _ } ->
             if less_or_equal order ~left ~right then
               right
             else if less_or_equal order ~left:right ~right:left then
               left
             else
-              let left_primitive, _ = Type.split left in
-              let right_primitive, _ = Type.split right in
               let target =
                 try
-                  if less_or_equal ~left:left_primitive ~right:right_primitive order then
-                    right_primitive
-                  else if less_or_equal ~left:right_primitive ~right:left_primitive order then
-                    left_primitive
+                  if
+                    less_or_equal
+                      ~left:(Primitive left_primitive)
+                      ~right:(Primitive right_primitive)
+                      order
+                  then
+                    Some right_primitive
+                  else if
+                    less_or_equal
+                      ~left:(Primitive right_primitive)
+                      ~right:(Primitive left_primitive)
+                      order
+                  then
+                    Some left_primitive
                   else
-                    join order left_primitive right_primitive
+                    match join order (Primitive left_primitive) (Primitive right_primitive) with
+                    | Primitive target -> Some target
+                    | _ -> None
                 with
-                | Untracked _ -> Type.Any
+                | Untracked _ -> None
               in
-              if Handler.contains (Handler.indices ()) target then
-                let left_parameters =
-                  instantiate_successors_parameters order ~source:left ~target
-                in
-                let right_parameters =
-                  instantiate_successors_parameters order ~source:right ~target
-                in
-                let variables = variables handler target in
-                let parameters =
-                  let join_parameters left right variable =
-                    match left, right, variable with
-                    | Type.Bottom, other, _
-                    | other, Type.Bottom, _ ->
-                        other
-                    | Type.Top, _, _
-                    | _, Type.Top, _ ->
-                        Type.Top
-                    | _, _, Type.Variable { variance = Covariant; _ } -> join order left right
-                    | _, _, Type.Variable { variance = Contravariant; _ } -> meet order left right
-                    | _, _, Type.Variable { variance = Invariant; _ } ->
-                        if
-                          less_or_equal order ~left ~right
-                          && less_or_equal order ~left:right ~right:left
-                        then
-                          left
-                        else
-                          (* We fallback to Type.Any if type equality fails to help display
-                             meaningful error messages. *)
-                          Type.Any
-                    | _ ->
-                        Log.warning
-                          "Cannot join %a and %a, not a variable: %a"
-                          Type.pp
-                          left
-                          Type.pp
-                          right
-                          Type.pp
-                          variable;
-                        Type.Any
+              let handle_target target =
+                if Handler.contains (Handler.indices ()) (Primitive target) then
+                  let left_parameters =
+                    instantiate_successors_parameters order ~source:left ~target:(Primitive target)
                   in
-                  match left_parameters, right_parameters, variables with
-                  | Some left, Some right, Some variables
-                    when List.length left = List.length right
-                         && List.length left = List.length variables ->
-                      let join_parameters left right variable =
-                        let replace_free_unary_variables_with_top =
-                          let replace_if_free variable =
-                            Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                  let right_parameters =
+                    instantiate_successors_parameters
+                      order
+                      ~source:right
+                      ~target:(Primitive target)
+                  in
+                  let variables = variables handler (Primitive target) in
+                  let parameters =
+                    let join_parameters left right variable =
+                      match left, right, variable with
+                      | Type.Bottom, other, _
+                      | other, Type.Bottom, _ ->
+                          other
+                      | Type.Top, _, _
+                      | _, Type.Top, _ ->
+                          Type.Top
+                      | _, _, Type.Variable { variance = Covariant; _ } -> join order left right
+                      | _, _, Type.Variable { variance = Contravariant; _ } ->
+                          meet order left right
+                      | _, _, Type.Variable { variance = Invariant; _ } ->
+                          if
+                            less_or_equal order ~left ~right
+                            && less_or_equal order ~left:right ~right:left
+                          then
+                            left
+                          else
+                            (* We fallback to Type.Any if type equality fails to help display
+                               meaningful error messages. *)
+                            Type.Any
+                      | _ ->
+                          Log.warning
+                            "Cannot join %a and %a, not a variable: %a"
+                            Type.pp
+                            left
+                            Type.pp
+                            right
+                            Type.pp
+                            variable;
+                          Type.Any
+                    in
+                    match left_parameters, right_parameters, variables with
+                    | Some left, Some right, Some variables
+                      when List.length left = List.length right
+                           && List.length left = List.length variables ->
+                        let join_parameters left right variable =
+                          let replace_free_unary_variables_with_top =
+                            let replace_if_free variable =
+                              Option.some_if (Type.Variable.Unary.is_free variable) Type.Top
+                            in
+                            Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
                           in
-                          Type.Variable.GlobalTransforms.Unary.replace_all replace_if_free
+                          join_parameters left right variable
+                          |> replace_free_unary_variables_with_top
                         in
-                        join_parameters left right variable
-                        |> replace_free_unary_variables_with_top
-                      in
-                      Some (List.map3_exn ~f:join_parameters left right variables)
-                  | _ -> None
-                in
-                match target, parameters with
-                | Type.Primitive name, Some parameters -> Type.Parametric { name; parameters }
-                | Type.Primitive _, None -> target
-                | _ ->
-                    (* TODO(T41082573) throw here instead of unioning *)
-                    union
-              else (* TODO(T41082573) throw here instead of unioning *)
-                union
+                        Some (List.map3_exn ~f:join_parameters left right variables)
+                    | _ -> None
+                  in
+                  match parameters with
+                  | Some parameters -> Type.Parametric { name = target; parameters }
+                  | None -> Type.Primitive target
+                else (* TODO(T41082573) throw here instead of unioning *)
+                  union
+              in
+              target >>| handle_target |> Option.value ~default:union
         (* Special case joins of optional collections with their uninstantated counterparts. *)
         | ( Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
             Type.Optional (Type.Parametric ({ parameters = [parameter]; _ } as collection)) )
@@ -1637,15 +1704,17 @@ module OrderImplementation = struct
           when is_protocol left ~protocol_assumptions
                && less_or_equal order ~left:right ~right:left ->
             left
-        | _ -> (
-          match List.hd (least_upper_bound handler left right) with
+        | Primitive left, Primitive right -> (
+          match List.hd (least_upper_bound handler (Primitive left) (Primitive right)) with
           | Some joined ->
-              if Type.equal joined left || Type.equal joined right then
-                joined
+              if Node.equal joined (Primitive left) then
+                Type.Primitive left
+              else if Node.equal joined (Primitive right) then
+                Type.Primitive right
               else
                 union
           | None ->
-              Log.debug "Couldn't find a upper bound for %a and %a" Type.pp left Type.pp right;
+              Log.debug "Couldn't find a upper bound for %s and %s" left right;
               union )
 
 
@@ -1695,70 +1764,70 @@ module OrderImplementation = struct
               other
             else
               List.map elements ~f:(meet order other) |> List.fold ~f:(meet order) ~init:Type.Top
-        | Type.Parametric _, Type.Parametric _ ->
+        | ( Type.Parametric { name = left_primitive; _ },
+            Type.Parametric { name = right_primitive; _ } ) -> (
             if less_or_equal order ~left ~right then
               left
             else if less_or_equal order ~left:right ~right:left then
               right
             else
-              let left_primitive, _ = Type.split left in
-              let right_primitive, _ = Type.split right in
-              let target = meet order left_primitive right_primitive in
-              if Handler.contains (Handler.indices ()) target then
-                let left_parameters =
-                  instantiate_predecessors_parameters order ~source:left ~target
-                in
-                let right_parameters =
-                  instantiate_predecessors_parameters order ~source:right ~target
-                in
-                let variables = variables handler target in
-                let parameters =
-                  let meet_parameters left right variable =
-                    match left, right, variable with
-                    | Type.Bottom, _, _
-                    | _, Type.Bottom, _ ->
-                        Type.Bottom
-                    | Type.Top, other, _
-                    | other, Type.Top, _ ->
-                        other
-                    | Type.Any, _, _
-                    | _, Type.Any, _ ->
-                        Type.Bottom
-                    | _, _, Type.Variable { variance = Covariant; _ } -> meet order left right
-                    | _, _, Type.Variable { variance = Contravariant; _ } -> join order left right
-                    | _, _, Type.Variable { variance = Invariant; _ } ->
-                        if
-                          less_or_equal order ~left ~right
-                          && less_or_equal order ~left:right ~right:left
-                        then
-                          left
-                        else
-                          (* We fallback to Type.Bottom if type equality fails to help display
-                             meaningful error messages. *)
-                          Type.Bottom
-                    | _ ->
-                        Log.warning
-                          "Cannot meet %a and %a, not a variable: %a"
-                          Type.pp
-                          left
-                          Type.pp
-                          right
-                          Type.pp
-                          variable;
-                        Type.Bottom
+              let target = meet order (Primitive left_primitive) (Primitive right_primitive) in
+              match target with
+              | Primitive target when Handler.contains (Handler.indices ()) (Primitive target) -> (
+                  let left_parameters =
+                    instantiate_predecessors_parameters order ~source:left ~target
                   in
-                  match left_parameters, right_parameters, variables with
-                  | Some left, Some right, Some variables
-                    when List.length left = List.length right
-                         && List.length left = List.length variables ->
-                      Some (List.map3_exn ~f:meet_parameters left right variables)
-                  | _ -> None
-                in
-                match target, parameters with
-                | Type.Primitive name, Some parameters -> Type.Parametric { name; parameters }
-                | _ -> Type.Bottom
-              else
-                Type.Bottom
+                  let right_parameters =
+                    instantiate_predecessors_parameters order ~source:right ~target
+                  in
+                  let variables = variables handler (Primitive target) in
+                  let parameters =
+                    let meet_parameters left right variable =
+                      match left, right, variable with
+                      | Type.Bottom, _, _
+                      | _, Type.Bottom, _ ->
+                          Type.Bottom
+                      | Type.Top, other, _
+                      | other, Type.Top, _ ->
+                          other
+                      | Type.Any, _, _
+                      | _, Type.Any, _ ->
+                          Type.Bottom
+                      | _, _, Type.Variable { variance = Covariant; _ } -> meet order left right
+                      | _, _, Type.Variable { variance = Contravariant; _ } ->
+                          join order left right
+                      | _, _, Type.Variable { variance = Invariant; _ } ->
+                          if
+                            less_or_equal order ~left ~right
+                            && less_or_equal order ~left:right ~right:left
+                          then
+                            left
+                          else
+                            (* We fallback to Type.Bottom if type equality fails to help display
+                               meaningful error messages. *)
+                            Type.Bottom
+                      | _ ->
+                          Log.warning
+                            "Cannot meet %a and %a, not a variable: %a"
+                            Type.pp
+                            left
+                            Type.pp
+                            right
+                            Type.pp
+                            variable;
+                          Type.Bottom
+                    in
+                    match left_parameters, right_parameters, variables with
+                    | Some left, Some right, Some variables
+                      when List.length left = List.length right
+                           && List.length left = List.length variables ->
+                        Some (List.map3_exn ~f:meet_parameters left right variables)
+                    | _ -> None
+                  in
+                  match parameters with
+                  | Some parameters -> Type.Parametric { name = target; parameters }
+                  | _ -> Type.Bottom )
+              | _ -> Type.Bottom )
         (* A <= B -> glb(A, Optional[B]) = A. *)
         | other, Type.Optional parameter
         | Type.Optional parameter, other ->
@@ -1850,12 +1919,15 @@ module OrderImplementation = struct
           when is_protocol left ~protocol_assumptions
                && less_or_equal order ~left:right ~right:left ->
             right
-        | _ -> (
-          match List.hd (greatest_lower_bound handler left right) with
-          | Some bound -> bound
+        | Type.Primitive left, Type.Primitive right -> (
+          match List.hd (greatest_lower_bound handler (Primitive left) (Primitive right)) with
+          | Some node -> Node.annotation node
           | None ->
-              Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
+              Log.debug "No lower bound found for %s and %s" left right;
               Type.Bottom )
+        | _ ->
+            Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
+            Type.Bottom
 
 
     and get_instantiated_predecessors
@@ -1900,10 +1972,10 @@ module OrderImplementation = struct
     and instantiate_successors_parameters
         { handler = (module Handler : Handler) as handler; _ }
         ~source
-        ~target
+        ~(target : Node.t)
       =
       raise_if_untracked handler target;
-      let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
+      let generic_index = Handler.find (Handler.indices ()) Node.generic_primitive in
       match source with
       | Type.Bottom ->
           index_of handler target
@@ -1913,20 +1985,22 @@ module OrderImplementation = struct
       | _ ->
           let split =
             match Type.split source with
-            | primitive, _ when not (contains handler primitive) -> None
-            | (Primitive "tuple" as primitive), parameters ->
+            | Primitive primitive, _ when not (contains handler (Primitive primitive)) -> None
+            | Primitive "tuple", parameters ->
                 let union =
                   Type.OrderedTypes.union_upper_bound parameters |> Type.weaken_literals
                 in
-                Some (primitive, [union])
-            | primitive, Concrete concretes -> Some (primitive, concretes)
+                Some ("tuple", [union])
+            | Primitive primitive, Concrete concretes -> Some (primitive, concretes)
             | _, _ ->
                 (* TODO(T45097646): we don't generally support propagating list variadics yet *)
                 None
           in
           let handle_split (primitive, parameters) =
             let worklist = Queue.create () in
-            Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+            Queue.enqueue
+              worklist
+              { Target.target = index_of handler (Primitive primitive); parameters };
             let rec iterate worklist =
               match Queue.dequeue worklist with
               | Some { Target.target = target_index; parameters } ->
@@ -1967,7 +2041,7 @@ module OrderImplementation = struct
                   in
                   if target_index = index_of handler target then
                     match target with
-                    | Type.Primitive "typing.Callable" -> Some parameters
+                    | Primitive "typing.Callable" -> Some parameters
                     | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
                   else (
                     instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
@@ -1984,18 +2058,19 @@ module OrderImplementation = struct
         ~source
         ~target
       =
-      let primitive, parameters = Type.split source in
-      raise_if_untracked handler primitive;
-      raise_if_untracked handler target;
-      match parameters with
-      | Concrete parameters ->
-          let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
+      match Type.split source with
+      | Type.Primitive primitive, Concrete parameters ->
+          raise_if_untracked handler (Primitive primitive);
+          raise_if_untracked handler (Primitive target);
+          let generic_index = Handler.find (Handler.indices ()) Node.generic_primitive in
           let worklist = Queue.create () in
-          Queue.enqueue worklist { Target.target = index_of handler primitive; parameters };
+          Queue.enqueue
+            worklist
+            { Target.target = index_of handler (Primitive primitive); parameters };
           let rec iterate worklist =
             match Queue.dequeue worklist with
             | Some { Target.target = target_index; parameters } ->
-                if target_index = index_of handler target then
+                if target_index = index_of handler (Primitive target) then
                   Some parameters
                 else (
                   Handler.find (Handler.backedges ()) target_index
@@ -2019,8 +2094,8 @@ module OrderImplementation = struct
         ~protocol
       =
       let find_generic_parameters name =
-        let generic_index = Handler.find (Handler.indices ()) Type.generic_primitive in
-        let index = index_of handler (Type.Primitive name) in
+        let generic_index = Handler.find (Handler.indices ()) Node.generic_primitive in
+        let index = index_of handler (Primitive name) in
         Handler.find (Handler.edges ()) index >>= get_generic_parameters ~generic_index
       in
       match candidate with
@@ -2058,7 +2133,7 @@ module OrderImplementation = struct
               in
               let protocol_attributes =
                 let is_not_object_or_generic_method
-                    { Node.value = { AnnotatedAttribute.parent; _ }; _ }
+                    { Ast.Node.value = { AnnotatedAttribute.parent; _ }; _ }
                   =
                   (not (Type.is_object parent)) && not (Type.is_generic_primitive parent)
                 in
@@ -2069,7 +2144,7 @@ module OrderImplementation = struct
                 match candidate with
                 | Type.Callable _ as callable ->
                     let attributes =
-                      [ Node.create_with_default_location
+                      [ Ast.Node.create_with_default_location
                           { AnnotatedAttribute.annotation = Annotation.create callable;
                             async = false;
                             class_attribute = false;
@@ -2080,7 +2155,7 @@ module OrderImplementation = struct
                             property = None;
                             parent = callable;
                             static = false;
-                            value = Node.create_with_default_location Expression.Ellipsis
+                            value = Ast.Node.create_with_default_location Expression.Ellipsis
                           } ]
                       |> Option.some
                     in
@@ -2336,7 +2411,7 @@ let connect_annotations_to_top ((module Handler : Handler) as handler) ~top anno
         protocol_assumptions = ProtocolAssumptions.empty
       }
     in
-    if not (less_or_equal order ~left:top ~right:annotation) then
+    if not (less_or_equal order ~left:Type.Top ~right:(Node.annotation annotation)) then
       match Handler.find (Handler.edges ()) index with
       | Some targets when List.length targets > 0 -> ()
       | _ -> connect handler ~predecessor:annotation ~successor:top
@@ -2358,7 +2433,7 @@ let sort_bottom_edges (module Handler : Handler) ~bottom =
 let check_integrity (module Handler : Handler) =
   (* Check `Top` and `Bottom`. *)
   let contains annotation = Handler.contains (Handler.indices ()) annotation in
-  if not (contains Type.Bottom && contains Type.Top) then (
+  if not (contains Node.Bottom && contains Node.Top) then (
     Log.error "Order is missing either Bottom or Top:\n%s" (Handler.show ());
     raise Incomplete );
 
@@ -2387,7 +2462,7 @@ let check_integrity (module Handler : Handler) =
             List.rev_map
               ~f:(Handler.find_unsafe (Handler.annotations ()))
               (index :: reverse_visited)
-            |> List.map ~f:(Format.asprintf "%a" Type.pp)
+            |> List.map ~f:(Format.asprintf "%a" Node.pp)
             |> String.concat ~sep:" -> "
           in
           Log.error "Order is cyclic:\nTrace: %s" (* (Handler.show ()) *) trace;
@@ -2419,9 +2494,9 @@ let check_integrity (module Handler : Handler) =
           if not has_backedge then (
             Log.error
               "No back-edge found for %a -> %a"
-              Type.pp
+              Node.pp
               (Handler.find_unsafe (Handler.annotations ()) index)
-              Type.pp
+              Node.pp
               (Handler.find_unsafe (Handler.annotations ()) target);
             raise Incomplete )
         in
@@ -2449,10 +2524,15 @@ let to_dot (module Handler : Handler) =
   in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
+  let show = function
+    | Node.Top -> "unknown"
+    | Bottom -> "undefined"
+    | Primitive primitive -> primitive
+    | Any -> "typing.Any"
+  in
   List.iter
     ~f:(fun (index, annotation) ->
-      Format.asprintf "  %d[label=\"%s\"]\n" index (Type.show annotation)
-      |> Buffer.add_string buffer)
+      Format.asprintf "  %d[label=\"%s\"]\n" index (show annotation) |> Buffer.add_string buffer)
     nodes;
   let add_edges index =
     Handler.find (Handler.edges ()) index
@@ -2474,7 +2554,7 @@ module Builder = struct
   let create () =
     { edges = Int.Table.create ();
       backedges = Int.Table.create ();
-      indices = Type.Table.create ();
+      indices = Node.Table.create ();
       annotations = Int.Table.create ()
     }
 
@@ -2488,43 +2568,43 @@ module Builder = struct
 
 
   let default_annotations =
-    let singleton annotation = [Type.Bottom; annotation; Type.object_primitive] in
-    [ [Type.Bottom; Type.object_primitive; Type.Any; Type.Top];
+    let singleton annotation = [Node.Bottom; annotation; Node.object_primitive] in
+    [ [Node.Bottom; Node.object_primitive; Node.Any; Node.Top];
       (* Special forms *)
-      singleton (Type.Primitive "typing.Annotated");
-      singleton (Type.Primitive "typing.Tuple");
-      singleton Type.named_tuple;
-      singleton Type.generic_primitive;
-      singleton (Type.Primitive "typing.GenericMeta");
-      singleton (Type.Primitive "typing.Protocol");
-      singleton (Type.Primitive "typing.Callable");
-      singleton (Type.Primitive "typing.FrozenSet");
-      singleton (Type.Primitive "typing.Optional");
-      singleton (Type.Primitive "typing.TypeVar");
-      singleton (Type.Primitive "typing.Undeclared");
-      singleton (Type.Primitive "typing.Union");
-      singleton (Type.Primitive "typing.NoReturn");
+      singleton (Primitive "typing.Annotated");
+      singleton (Primitive "typing.Tuple");
+      singleton (Primitive "typing.NamedTuple");
+      singleton Node.generic_primitive;
+      singleton (Primitive "typing.GenericMeta");
+      singleton (Primitive "typing.Protocol");
+      singleton (Primitive "typing.Callable");
+      singleton (Primitive "typing.FrozenSet");
+      singleton (Primitive "typing.Optional");
+      singleton (Primitive "typing.TypeVar");
+      singleton (Primitive "typing.Undeclared");
+      singleton (Primitive "typing.Union");
+      singleton (Primitive "typing.NoReturn");
       (* Ensure unittest.mock.Base is there because we check against it. *)
-      singleton (Type.Primitive "unittest.mock.Base");
-      singleton (Type.Primitive "unittest.mock.NonCallableMock");
-      singleton (Type.Primitive "typing.ClassVar");
-      singleton (Type.Primitive "typing.Final");
-      [Type.Bottom; Type.Primitive "dict"; Type.Primitive "typing.Dict"; Type.object_primitive];
-      singleton (Type.Primitive "None");
+      singleton (Primitive "unittest.mock.Base");
+      singleton (Primitive "unittest.mock.NonCallableMock");
+      singleton (Primitive "typing.ClassVar");
+      singleton (Primitive "typing.Final");
+      [Node.Bottom; Primitive "dict"; Primitive "typing.Dict"; Node.object_primitive];
+      singleton (Primitive "None");
       (* Numerical hierarchy. *)
-      [ Type.Bottom;
-        Type.integer;
-        Type.float;
-        Type.complex;
-        Type.Primitive "numbers.Complex";
-        Type.Primitive "numbers.Number";
-        Type.object_primitive ];
-      [Type.integer; Type.Primitive "numbers.Integral"; Type.object_primitive];
-      [Type.float; Type.Primitive "numbers.Rational"; Type.object_primitive];
-      [Type.float; Type.Primitive "numbers.Real"; Type.object_primitive] ]
+      [ Node.Bottom;
+        Node.integer;
+        Node.float;
+        Node.complex;
+        Primitive "numbers.Complex";
+        Primitive "numbers.Number";
+        Node.object_primitive ];
+      [Node.integer; Primitive "numbers.Integral"; Node.object_primitive];
+      [Node.float; Primitive "numbers.Rational"; Node.object_primitive];
+      [Node.float; Primitive "numbers.Real"; Node.object_primitive] ]
 
 
-  let builtin_types = List.concat default_annotations |> Type.Set.of_list
+  let builtin_types = List.concat default_annotations |> Node.Set.of_list
 
   let default () =
     let order = create () in
@@ -2540,22 +2620,22 @@ module Builder = struct
     List.iter ~f:connect_primitive_chain default_annotations;
 
     (* Since the builtin type hierarchy is not primitive, it's special cased. *)
-    let type_builtin = Type.Primitive "type" in
+    let type_builtin = Node.Primitive "type" in
     let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
     insert handler type_builtin;
-    connect handler ~predecessor:Type.Bottom ~successor:type_builtin;
+    connect handler ~predecessor:Node.Bottom ~successor:type_builtin;
     connect
       handler
       ~predecessor:type_builtin
       ~parameters:[type_variable]
-      ~successor:Type.generic_primitive;
-    let typed_dictionary = Type.Primitive "TypedDictionary" in
-    let non_total_typed_dictionary = Type.Primitive "NonTotalTypedDictionary" in
-    let typing_mapping = Type.Primitive "typing.Mapping" in
+      ~successor:Node.generic_primitive;
+    let typed_dictionary = Node.Primitive "TypedDictionary" in
+    let non_total_typed_dictionary = Node.Primitive "NonTotalTypedDictionary" in
+    let typing_mapping = Node.Primitive "typing.Mapping" in
     insert handler non_total_typed_dictionary;
     insert handler typed_dictionary;
     insert handler typing_mapping;
-    connect handler ~predecessor:Type.Bottom ~successor:non_total_typed_dictionary;
+    connect handler ~predecessor:Node.Bottom ~successor:non_total_typed_dictionary;
     connect handler ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
     connect
       handler
@@ -2568,6 +2648,6 @@ module Builder = struct
         [ Type.Variable (Type.Variable.Unary.create "_T");
           Type.Variable (Type.Variable.Unary.create "_T2") ]
       ~predecessor:typing_mapping
-      ~successor:Type.generic_primitive;
+      ~successor:Node.generic_primitive;
     order
 end

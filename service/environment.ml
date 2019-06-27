@@ -43,16 +43,16 @@ let populate
       TypeOrder.check_integrity (module Handler.TypeOrderHandler);
     TypeOrder.connect_annotations_to_top
       (module Handler.TypeOrderHandler)
-      ~top:Type.object_primitive
+      ~top:TypeOrder.Node.object_primitive
       all_annotations;
     TypeOrder.remove_extra_edges
       (module Handler.TypeOrderHandler)
-      ~bottom:Type.Bottom
-      ~top:Type.object_primitive
+      ~bottom:TypeOrder.Node.Bottom
+      ~top:TypeOrder.Node.object_primitive
       all_annotations;
-    TypeOrder.sort_bottom_edges (module Handler.TypeOrderHandler) ~bottom:Type.Bottom;
+    TypeOrder.sort_bottom_edges (module Handler.TypeOrderHandler) ~bottom:TypeOrder.Node.Bottom;
     List.iter all_annotations ~f:(fun annotation ->
-        match Type.primitive_name annotation with
+        match TypeOrder.Node.primitive_name annotation with
         | Some name -> Handler.register_class_metadata name
         | _ -> ());
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
@@ -378,7 +378,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
     (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
     List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
-    |> List.map ~f:(fun name -> Type.Primitive name)
+    |> List.map ~f:(fun name -> TypeOrder.Node.Primitive name)
     |> TypeOrder.disconnect_successors (module TypeOrderHandler);
     let class_keys =
       List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles

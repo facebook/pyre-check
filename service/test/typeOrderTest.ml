@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Analysis
 open OUnit2
 
 let test_compute_hashes_to_keys _ =
@@ -19,9 +18,9 @@ let test_compute_hashes_to_keys _ =
   assert_equal
     ~cmp:(String.Map.equal String.equal)
     (String.Map.of_alist_exn
-       [ ( OrderIndices.hash_of_key (Type.Primitive "fifteen"),
-           OrderIndices.serialize_key (Type.Primitive "fifteen") ) ])
-    (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:[Type.Primitive "fifteen"])
+       [ ( OrderIndices.hash_of_key (Primitive "fifteen"),
+           OrderIndices.serialize_key (Primitive "fifteen") ) ])
+    (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:[Primitive "fifteen"])
 
 
 let () = "typeOrder" >::: ["compute_hashes_to_keys" >:: test_compute_hashes_to_keys] |> Test.run

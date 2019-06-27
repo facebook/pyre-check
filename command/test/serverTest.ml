@@ -900,18 +900,18 @@ let test_compute_hashes_to_keys context =
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.annotations ())
       ~key:15
-      ~data:(Type.Primitive "fifteen");
+      ~data:(Primitive "fifteen");
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.indices ())
-      ~key:(Type.Primitive "fifteen")
+      ~key:(Primitive "fifteen")
       ~data:15;
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.annotations ())
       ~key:16
-      ~data:(Type.Primitive "sixteen");
+      ~data:(Primitive "sixteen");
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.indices ())
-      ~key:(Type.Primitive "sixteen")
+      ~key:(Primitive "sixteen")
       ~data:16;
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.edges ())
@@ -934,7 +934,7 @@ let test_compute_hashes_to_keys context =
     OrderBackedges.remove_batch (OrderBackedges.KeySet.of_list [15; 16]);
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
     OrderIndices.remove_batch
-      (OrderIndices.KeySet.of_list [Type.Primitive "fifteen"; Type.Primitive "sixteen"]);
+      (OrderIndices.KeySet.of_list [Primitive "fifteen"; Primitive "sixteen"]);
     Ast.SharedMemory.HandleKeys.clear ()
   in
   OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
@@ -951,14 +951,14 @@ let test_compute_hashes_to_keys context =
           (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
           (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
         to_binding
-          (OrderIndices.hash_of_key (Type.Primitive "sixteen"))
-          (OrderIndices.serialize_key (Type.Primitive "sixteen"));
+          (OrderIndices.hash_of_key (Primitive "sixteen"))
+          (OrderIndices.serialize_key (Primitive "sixteen"));
         to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
         to_binding (OrderEdges.hash_of_key 16) (OrderEdges.serialize_key 16);
         to_binding (OrderEdges.hash_of_key 15) (OrderEdges.serialize_key 15);
         to_binding
-          (OrderIndices.hash_of_key (Type.Primitive "fifteen"))
-          (OrderIndices.serialize_key (Type.Primitive "fifteen"));
+          (OrderIndices.hash_of_key (Primitive "fifteen"))
+          (OrderIndices.serialize_key (Primitive "fifteen"));
         to_binding (OrderBackedges.hash_of_key 15) (OrderBackedges.serialize_key 15);
         to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
         to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);

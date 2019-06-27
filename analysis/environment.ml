@@ -113,24 +113,24 @@ let connect_definition
     in
     let primitive_cycle =
       (* Primitive cycles can be introduced by meta-programming. *)
-      Type.equal predecessor successor
+      TypeOrder.Node.equal predecessor successor
     in
     let cycle_with_top =
       match predecessor, successor with
-      | Type.Top, _ -> true
-      | Type.Any, successor when not (Type.is_top successor) -> true
+      | Top, _ -> true
+      | Any, successor when not (TypeOrder.Node.equal successor Top) -> true
       | _ -> false
     in
     if annotations_tracked && (not primitive_cycle) && not cycle_with_top then
       TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
   in
-  let primitive = Type.Primitive (Reference.show name) in
-  connect ~predecessor:Type.Bottom ~successor:primitive ~parameters:[];
+  let primitive = TypeOrder.Node.Primitive (Reference.show name) in
+  connect ~predecessor:Bottom ~successor:primitive ~parameters:[];
   ( match Annotated.Class.inferred_callable_type annotated ~resolution with
   | Some callable ->
       connect
         ~predecessor:primitive
-        ~successor:(Type.Primitive "typing.Callable")
+        ~successor:(Primitive "typing.Callable")
         ~parameters:[Type.Callable callable]
   | None -> () );
 
@@ -149,21 +149,26 @@ let connect_definition
             value
           |> Type.split
         in
-        if (not (TypeOrder.contains (module Handler) supertype)) && not (Type.is_top supertype)
-        then
-          Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
-        else if Type.is_top supertype then
-          Statistics.event
-            ~name:"superclass of top"
-            ~section:`Environment
-            ~normals:["unresolved name", Expression.show value]
-            ()
-        else
+        match supertype with
+        | Type.Top ->
+            Statistics.event
+              ~name:"superclass of top"
+              ~section:`Environment
+              ~normals:["unresolved name", Expression.show value]
+              ()
+        | Type.Primitive primitive
+          when not (TypeOrder.contains (module Handler) (Primitive primitive)) ->
+            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
+        | Type.Any -> connect ~predecessor:primitive ~successor:Any ~parameters:[]
+        | Type.Primitive supertype -> (
           match parameters with
-          | Concrete parameters -> connect ~predecessor:primitive ~successor:supertype ~parameters
+          | Concrete parameters ->
+              connect ~predecessor:primitive ~successor:(Primitive supertype) ~parameters
           | _ ->
               (* TODO(T45097646): support propagating list variadics *)
               () )
+        | _ ->
+            Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype )
     | _ -> ()
   in
   let inferred_base = Annotated.Class.inferred_generic_base annotated ~resolution in
@@ -355,14 +360,14 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
 let register_class_definitions (module Handler : Handler) source =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let module Visit = Visit.MakeStatementVisitor (struct
-    type t = Type.Set.t
+    type t = TypeOrder.Node.Set.t
 
     let visit_children _ = true
 
     let statement { Source.handle; _ } new_annotations = function
       | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
           let name = Reference.show name in
-          let primitive = Type.Primitive name in
+          let primitive = TypeOrder.Node.Primitive name in
           Handler.DependencyHandler.add_class_key ~handle name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
           if not (TypeOrder.contains order primitive) then
@@ -371,7 +376,7 @@ let register_class_definitions (module Handler : Handler) source =
       | _ -> new_annotations
   end)
   in
-  Visit.visit Type.Set.empty source
+  Visit.visit TypeOrder.Node.Set.empty source
 
 
 let collect_aliases (module Handler : Handler) { Source.handle; statements; qualifier; _ } =
@@ -519,7 +524,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
           if
             TypeOrder.contains
               (module Handler.TypeOrderHandler)
-              (Type.Primitive (Reference.show qualified_name))
+              (Primitive (Reference.show qualified_name))
           then
             []
           else
@@ -914,7 +919,7 @@ let propagate_nested_classes (module Handler : Handler) resolution annotation =
     |> List.fold ~f:create_alias ~init:own_nested_classes
   in
   annotation
-  |> Type.primitive_name
+  |> TypeOrder.Node.primitive_name
   >>= (fun name ->
         Handler.class_definition name
         >>= fun definition ->
@@ -924,7 +929,8 @@ let propagate_nested_classes (module Handler : Handler) resolution annotation =
 
 
 let built_in_annotations =
-  [Type.Primitive "TypedDictionary"; Type.Primitive "NonTotalTypedDictionary"] |> Type.Set.of_list
+  [TypeOrder.Node.Primitive "TypedDictionary"; TypeOrder.Node.Primitive "NonTotalTypedDictionary"]
+  |> TypeOrder.Node.Set.of_list
 
 
 module Builder = struct
@@ -1041,7 +1047,7 @@ module Builder = struct
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set aliases ~key:"PathLike" ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));
     Hashtbl.set aliases ~key:"TSelf" ~data:(Type.TypeAlias (Type.variable "_PathLike"));
-    TypeOrder.insert (TypeOrder.handler order) (Type.Primitive "typing_extensions.Literal");
+    TypeOrder.insert (TypeOrder.handler order) (Primitive "typing_extensions.Literal");
     { class_definitions;
       class_metadata;
       modules;

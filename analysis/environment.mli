@@ -91,7 +91,7 @@ val register_module : (module Handler) -> Source.t -> unit
 
 val register_implicit_submodules : (module Handler) -> Reference.t -> unit
 
-val register_class_definitions : (module Handler) -> Source.t -> Type.Set.t
+val register_class_definitions : (module Handler) -> Source.t -> TypeOrder.Node.Set.t
 
 val register_aliases : (module Handler) -> Source.t list -> unit
 
@@ -103,9 +103,9 @@ val connect_type_order : (module Handler) -> Resolution.t -> Source.t -> unit
 
 val register_dependencies : (module Handler) -> Source.t -> unit
 
-val propagate_nested_classes : (module Handler) -> Resolution.t -> Type.t -> unit
+val propagate_nested_classes : (module Handler) -> Resolution.t -> TypeOrder.Node.t -> unit
 
-val built_in_annotations : Type.Set.t
+val built_in_annotations : TypeOrder.Node.Set.t
 
 module Builder : sig
   val create : unit -> t
