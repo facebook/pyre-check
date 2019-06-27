@@ -81,7 +81,6 @@ class TimedStreamHandler(logging.StreamHandler):
         # Preamble preparing terminal.
         sys.stderr.write(
             Format.NEWLINE
-            + Format.TRUNCATE_OVERFLOW
             + Format.CLEAR_LINE
             + Format.CURSOR_UP_LINE
             + Format.HIDE_CURSOR
@@ -138,12 +137,13 @@ class TimedStreamHandler(logging.StreamHandler):
 
         timed_record = copy.copy(record)
         timed_record.msg = (
-            "{clear_line}{color} {cursor}{clear} " "{message}{suffix}"
+            "{clear_line}{color} {cursor}{clear} " "{truncate}{message}{suffix}"
         ).format(
             clear_line=self.clear_lines(),
             color=color,
             cursor=Character.LAMBDA,
             clear=Format.CLEAR,
+            truncate=Format.TRUNCATE_OVERFLOW,
             message=record.msg,
             suffix=suffix,
         )
