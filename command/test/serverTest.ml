@@ -133,10 +133,9 @@ let test_server_exits_on_directory_removal context =
     ~seconds:6
     (fun () ->
       match Unix.waitpid pid with
-      | Ok _
       (* I was only able to get non-zero exits in the OUnit test environment, doing the equivalent
          calls in the command line always resulted in an exit of 0. *)
-      
+      | Ok _
       | Error (`Exit_non_zero 2) ->
           assert true
       | _ -> assert false)
@@ -563,7 +562,7 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypeAtLocation
           { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
-            annotation = Type.literal_integer 2
+            annotation = Type.integer
           }));
   assert_type_query_response
     ~source:{|
@@ -595,11 +594,11 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ( [ 2, 19, 2, 22, Type.meta Type.string;
-              5, 8, 5, 9, Type.literal_integer 4;
+              5, 8, 5, 9, Type.integer;
               2, 27, 2, 30, Type.meta Type.string;
               4, 1, 4, 2, Type.string;
               4, 5, 4, 6, Type.literal_integer 5;
-              3, 1, 3, 2, Type.literal_integer 4;
+              3, 1, 3, 2, Type.integer;
               2, 11, 2, 14, Type.meta Type.integer;
               3, 5, 3, 6, Type.literal_integer 4;
               2, 8, 2, 9, Type.integer;
@@ -614,8 +613,8 @@ let test_query context =
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
           ( [ 2, 4, 2, 5, Type.literal_integer 4;
-              2, 0, 2, 1, Type.literal_integer 4;
-              3, 0, 3, 1, Type.literal_integer 3;
+              2, 0, 2, 1, Type.integer;
+              3, 0, 3, 1, Type.integer;
               3, 4, 3, 5, Type.literal_integer 3 ]
           |> create_types_at_locations )));
   assert_type_query_response

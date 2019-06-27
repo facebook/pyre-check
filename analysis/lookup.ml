@@ -37,11 +37,16 @@ module ExpressionVisitor = struct
     let resolution = if postcondition then post_resolution else pre_resolution in
     let resolve ~expression =
       try
-        let annotation = Resolution.resolve resolution expression in
-        if Type.is_top annotation || Type.is_unbound annotation then
-          None
+        let annotation = Resolution.resolve_to_annotation resolution expression in
+        let original = Annotation.original annotation in
+        if Type.is_top original || Type.is_unbound original then
+          let annotation = Annotation.annotation annotation in
+          if Type.is_top annotation || Type.is_unbound annotation then
+            None
+          else
+            Some annotation
         else
-          Some annotation
+          Some original
       with
       | TypeOrder.Untracked _ -> None
     in
