@@ -873,7 +873,55 @@ let test_forward_expression _ =
   (* Yield. *)
   assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
   assert_forward ~errors:(`Undefined 1) "yield undefined" (Type.generator Type.Top);
-  assert_forward "yield" (Type.generator Type.none)
+  assert_forward "yield" (Type.generator Type.none);
+
+  (* Resolved annotation field. *)
+  let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =
+    let expression =
+      let expression = parse expression |> Preprocessing.expand_format_string in
+      expression
+      |> function
+      | { Source.statements = [{ Node.value = Statement.Expression expression; _ }]; _ } ->
+          expression
+      | { Source.statements = [{ Node.value = Statement.Yield expression; _ }]; _ } -> expression
+      | _ -> failwith "Unable to extract expression"
+    in
+    let resolution =
+      parse environment
+      |> (fun source -> source :: Test.typeshed_stubs ())
+      |> fun sources -> Test.resolution ~sources ()
+    in
+    let { State.resolved_annotation; _ } =
+      State.forward_expression ~state:(create ~resolution precondition) ~expression
+    in
+    assert_equal
+      ~cmp:(Option.equal Annotation.equal)
+      ~printer:(fun annotation -> annotation >>| Annotation.show |> Option.value ~default:"None")
+      annotation
+      resolved_annotation
+  in
+  assert_annotation "1" None;
+  assert_annotation
+    ~environment:"x = 1"
+    "x"
+    (Some (Annotation.create_immutable ~global:true Type.integer));
+  assert_annotation
+    ~environment:"x: typing.Union[int, str] = 1"
+    "x"
+    (Some
+       (Annotation.create_immutable
+          ~global:true
+          ~original:(Some (Type.union [Type.string; Type.integer]))
+          (Type.union [Type.string; Type.integer])));
+  assert_annotation
+    ~environment:
+      {|
+        class Foo:
+          def __init__(self):
+            self.attribute: int = 1
+      |}
+    "Foo().attribute"
+    (Some (Annotation.create_immutable ~global:true Type.integer))
 
 
 let test_forward_statement _ =

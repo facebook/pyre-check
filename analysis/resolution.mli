@@ -31,7 +31,7 @@ type type_parameters_mismatch = {
 val create
   :  annotations:Annotation.t Reference.Map.t ->
   order:(module TypeOrder.Handler) ->
-  resolve:(resolution:t -> Expression.t -> Type.t) ->
+  resolve:(resolution:t -> Expression.t -> Annotation.t) ->
   aliases:(Type.primitive -> Type.alias option) ->
   global:(Reference.t -> global option) ->
   module_definition:(Reference.t -> Module.t option) ->
@@ -71,6 +71,8 @@ val with_parent : t -> parent:Reference.t option -> t
 val order : t -> (module TypeOrder.Handler)
 
 val resolve : t -> Expression.t -> Type.t
+
+val resolve_to_annotation : t -> Expression.t -> Annotation.t
 
 val resolve_reference : t -> Reference.t -> Type.t
 

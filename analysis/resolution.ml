@@ -42,7 +42,7 @@ type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
   order: (module TypeOrder.Handler);
-  resolve: resolution:t -> Expression.t -> Type.t;
+  resolve: resolution:t -> Expression.t -> Annotation.t;
   aliases: Type.primitive -> Type.alias option;
   global: Reference.t -> global option;
   undecorated_signature: Reference.t -> Type.t Type.Callable.overload option;
@@ -150,10 +150,18 @@ let with_parent resolution ~parent = { resolution with parent }
 
 let order { order; _ } = order
 
-let resolve ({ resolve; _ } as resolution) = resolve ~resolution
+let resolve ({ resolve; _ } as resolution) expression =
+  resolve ~resolution expression |> Annotation.annotation
+
+
+let resolve_to_annotation ({ resolve; _ } as resolution) expression =
+  resolve ~resolution expression
+
 
 let resolve_reference ({ resolve; _ } as resolution) reference =
-  Reference.expression ~location:Location.Reference.any reference |> resolve ~resolution
+  Reference.expression ~location:Location.Reference.any reference
+  |> resolve ~resolution
+  |> Annotation.annotation
 
 
 let global { global; _ } = global

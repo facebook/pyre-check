@@ -2532,7 +2532,8 @@ module State (Context : Context) = struct
       | None ->
           forward_expression ~state ~expression:left
           |> (fun { state; _ } -> forward_expression ~state ~expression:right)
-          |> fun state -> { state with resolved = Type.bool; base = None } )
+          |> fun state ->
+          { state with resolved = Type.bool; resolved_annotation = None; base = None } )
     | Complex _ -> { state; resolved = Type.complex; resolved_annotation = None; base = None }
     | Dictionary { Dictionary.entries; keywords } ->
         let key, value, state =
@@ -2654,7 +2655,12 @@ module State (Context : Context) = struct
           else
             state, resolved_base
         in
-        let { state = { errors = updated_errors; _ } as updated_state; resolved; _ } =
+        let { state = { errors = updated_errors; _ } as updated_state;
+              resolved;
+              resolved_annotation;
+              _
+            }
+          =
           if Type.is_undeclared resolved_base then
             let state =
               reference
@@ -2810,13 +2816,13 @@ module State (Context : Context) = struct
             Map.fold base_errors ~init:updated_errors ~f:(fun ~key:_ ~data errors ->
                 ErrorMap.add ~errors data)
           in
-          { state = { updated_state with errors }; resolved; resolved_annotation = None; base }
+          { state = { updated_state with errors }; resolved; resolved_annotation; base }
         else (* Do not throw more errors if base already contains terminating error. *)
           let errors =
             Map.fold base_errors ~init:errors ~f:(fun ~key:_ ~data errors ->
                 ErrorMap.add ~errors data)
           in
-          { state = { state with errors }; resolved; resolved_annotation = None; base }
+          { state = { state with errors }; resolved; resolved_annotation; base }
     | Set elements ->
         let { state; resolved; _ } = forward_elements ~state ~elements in
         { state; resolved = Type.set resolved; resolved_annotation = None; base = None }
@@ -2830,7 +2836,7 @@ module State (Context : Context) = struct
           | Starred.Twice expression ->
               forward_expression ~state ~expression
         in
-        { state with resolved = Type.Top; base = None }
+        { state with resolved = Type.Top; resolved_annotation = None; base = None }
     | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
         let state =
           List.fold
@@ -3170,17 +3176,7 @@ module State (Context : Context) = struct
                     in
                     reference, attribute, Some resolved
               in
-              let target_annotation =
-                let local =
-                  Reference.from_name name
-                  >>= fun reference -> Resolution.get_local resolution ~reference
-                in
-                match local, attribute with
-                | Some annotation, _ -> annotation
-                | None, Some ({ Node.value = { Annotated.Attribute.annotation; _ }; _ }, _) ->
-                    annotation
-                | _ -> Annotation.create Type.Top
-              in
+              let target_annotation = Resolution.resolve_to_annotation resolution target in
               let state =
                 match reference with
                 | Some reference ->
@@ -4346,7 +4342,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
       Resolution.create
         ~annotations:Reference.Map.empty
         ~order:(module Handler.TypeOrderHandler)
-        ~resolve:(fun ~resolution:_ _ -> Type.Top)
+        ~resolve:(fun ~resolution:_ _ -> Annotation.create Type.Top)
         ~aliases:(fun _ -> None)
         ~global:(fun _ -> None)
         ~module_definition:(fun _ -> None)
@@ -4369,7 +4365,9 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
   in
   let resolve ~resolution expression =
     let state = { state_without_resolution with State.resolution } in
-    State.forward_expression ~state ~expression |> fun { State.resolved; _ } -> resolved
+    State.forward_expression ~state ~expression
+    |> fun { State.resolved; resolved_annotation; _ } ->
+    resolved_annotation |> Option.value ~default:(Annotation.create resolved)
   in
   let constructor ~resolution class_name =
     let instantiated = Type.Primitive class_name in
