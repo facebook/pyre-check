@@ -47,7 +47,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
         )
         source = "TaintSource[UserControlled]"
         self.assertEqual(
-            list(RESTApiSourceGenerator([]).compute_models(visit_all_views)),
+            list(RESTApiSourceGenerator([], []).compute_models(visit_all_views)),
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x: {source}): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
@@ -60,12 +60,15 @@ class GetRESTApiSourcesTest(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            list(RESTApiSourceGenerator(["int"]).compute_models(visit_all_views)),
+            list(
+                RESTApiSourceGenerator(["int"], [f"{qualifier}.testA"]).compute_models(
+                    visit_all_views
+                )
+            ),
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
                 ": ...",
-                f"def {qualifier}.testA(): ...",
                 f"def {qualifier}.testB(x: {source}): ...",
                 f"def {qualifier}.testC(x): ...",
                 f"def {qualifier}.testD(x, *args): ...",

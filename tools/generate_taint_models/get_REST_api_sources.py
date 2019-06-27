@@ -15,8 +15,11 @@ from .model_generator import ModelGenerator
 
 
 class RESTApiSourceGenerator(ModelGenerator):
-    def __init__(self, whitelist: Iterable[str]) -> None:
-        self.whitelist = whitelist
+    def __init__(
+        self, whitelisted_classes: Iterable[str], whitelisted_views: Iterable[str]
+    ) -> None:
+        self.whitelisted_classes = whitelisted_classes
+        self.whitelisted_views = whitelisted_views
 
     def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
         entry_points = set()
@@ -24,7 +27,7 @@ class RESTApiSourceGenerator(ModelGenerator):
         # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
         def entry_point_visitor(view_func: Callable) -> None:
             view_name = extract_view_name(view_func)
-            if view_name in self.WHITELISTED_VIEWS:
+            if view_name in self.whitelisted_views:
                 return
             params = []
             if isinstance(view_func, types.FunctionType):
@@ -32,7 +35,7 @@ class RESTApiSourceGenerator(ModelGenerator):
                 for parameter_name in view_params:
                     parameter = view_params[parameter_name]
                     annotation = extract_annotation(parameter)
-                    if annotation is None or annotation not in self.whitelist:
+                    if annotation is None or annotation not in self.whitelisted_classes:
                         params.append(
                             f"{extract_name(parameter)}: TaintSource[UserControlled]"
                         )
@@ -44,7 +47,7 @@ class RESTApiSourceGenerator(ModelGenerator):
                 for parameter_name in view_params:
                     parameter = view_params[parameter_name]
 
-                    if extract_annotation(parameter) not in self.whitelist:
+                    if extract_annotation(parameter) not in self.whitelisted_classes:
                         params.append(
                             f"{extract_name(parameter)}: TaintSource[UserControlled]"
                         )

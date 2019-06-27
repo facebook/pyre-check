@@ -42,12 +42,6 @@ def qualifier(root: str, path: str) -> str:
 
 
 class ModelGenerator(ABC):
-    WHITELISTED_VIEWS = [
-        "django.views.generic.base.TemplateView",
-        "django.views.static.serve",
-        "django.views.generic.base.RedirectView",
-    ]
-
     @abstractmethod
     def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
         pass

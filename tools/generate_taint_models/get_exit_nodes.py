@@ -15,15 +15,15 @@ from .model_generator import ModelGenerator
 
 
 class ExitNodeGenerator(ModelGenerator):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, whitelisted_views: Iterable[str]) -> None:
+        self.whitelisted_views = whitelisted_views
 
     def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
         exit_nodes = set()
 
         def exit_point_visitor(view_func: Callable[..., object]) -> None:
             view_name = extract_view_name(view_func)
-            if view_name in self.WHITELISTED_VIEWS:
+            if view_name in self.whitelisted_views:
                 return
             if isinstance(view_func, types.FunctionType):
                 all_parameters = inspect.signature(view_func).parameters

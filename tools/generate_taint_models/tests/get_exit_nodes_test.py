@@ -45,9 +45,24 @@ class GetExitNodesTest(unittest.TestCase):
         qualifier = f"{__name__}.GetExitNodesTest.test_compute_models.visit_all_views"
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
-            list(ExitNodeGenerator().compute_models(visit_all_views)),
+            list(ExitNodeGenerator([]).compute_models(visit_all_views)),
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
+                f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
+                f"def {qualifier}.testA() -> {sink}: ...",
+                f"def {qualifier}.testB(x) -> {sink}: ...",
+                f"def {qualifier}.testC(x) -> {sink}: ...",
+                f"def {qualifier}.testD(x, *args) -> {sink}: ...",
+                f"def {qualifier}.testE(x, **kwargs) -> {sink}: ...",
+            ],
+        )
+        self.assertEqual(
+            list(
+                ExitNodeGenerator([f"{qualifier}.TestClass.methodA"]).compute_models(
+                    visit_all_views
+                )
+            ),
+            [
                 f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
                 f"def {qualifier}.testA() -> {sink}: ...",
                 f"def {qualifier}.testB(x) -> {sink}: ...",
