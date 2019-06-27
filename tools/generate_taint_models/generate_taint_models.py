@@ -113,10 +113,6 @@ def _load_function_definition(
 
 
 def _qualifier(root: str, path: str) -> str:
-    # Normalize out symlinks, etc
-    root = os.path.realpath(root)
-    path = os.path.realpath(path)
-
     path = os.path.relpath(path, root)
     if path.endswith(".pyi"):
         path = path[:-4]
@@ -185,6 +181,7 @@ def _globals(root: str, path: str) -> Set[str]:
 
 def _visit_views(
     arguments: argparse.Namespace,
+    root: str,
     path: Optional[str],
     callback: Callable[[str, FunctionDefinition], None],
 ) -> None:
@@ -227,7 +224,7 @@ def _visit_views(
                 if not isinstance(argument, ast.Str):
                     return
                 include = argument.s
-                _visit_views(arguments, _find_module(include), callback)
+                _visit_views(arguments, root, _find_module(include), callback)
 
             elif isinstance(argument, ast.Attribute) or isinstance(argument, ast.Name):
                 functions.add(self._resolve_name(argument))
@@ -282,12 +279,12 @@ def _visit_views(
 
         def visit_FunctionDef(self, definition: _ast.FunctionDef) -> None:
             name = definition.name
-            module = _qualifier(os.getcwd(), path)
+            module = _qualifier(root, path)
             self._aliases[name] = f"{module}.{name}"
 
         def visit_AsyncFunctionDef(self, definition: _ast.AsyncFunctionDef) -> None:
             name = definition.name
-            module = _qualifier(os.getcwd(), path)
+            module = _qualifier(root, path)
             self._aliases[name] = f"{module}.{name}"
 
         def handle_call(self, call: _ast.Call) -> None:
@@ -315,15 +312,15 @@ def _visit_views(
     LOG.info(f"Reading file `{path}`...")
     with open(path, "r") as file:
         visitor = UrlVisitor()
-        root = ast.parse(file.read())
+        module = ast.parse(file.read())
 
         # First pass to build up our knowledge of what functions are defined
         # where
-        visitor.visit(root)
+        visitor.visit(module)
 
         # Second pass to find all places where the functions (which we now have
         # fully qualified names for) are incorporated into django, graphql, etc.
-        for node in ast.walk(root):
+        for node in ast.walk(module):
             if isinstance(node, _ast.Call):
                 visitor.handle_call(node)
 
@@ -352,7 +349,7 @@ def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
         model = Model(returns=" -> TaintSink[ReturnedToUser]")
         exit_nodes.add(annotate_function(function, definition, model))
 
-    _visit_views(arguments, arguments.urls_path, callback)
+    _visit_views(arguments, os.getcwd(), arguments.urls_path, callback)
     return exit_nodes
 
 
@@ -375,7 +372,7 @@ def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
         )
         sources.add(annotate_function(function, definition, model, whitelist))
 
-    _visit_views(arguments, arguments.urls_path, callback)
+    _visit_views(arguments, os.getcwd(), arguments.urls_path, callback)
 
     return sources
 
@@ -394,9 +391,10 @@ def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
         )
         sources.add(annotate_function(function, definition, model))
 
+    root = os.path.dirname(os.path.abspath(arguments.graphql_path))
     for module in Path(arguments.graphql_path).iterdir():
         if module.is_file():
-            _visit_views(arguments, str(module), callback)
+            _visit_views(arguments, root, str(module), callback)
 
     return sources
 

@@ -52,7 +52,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     )
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_has_calls(
                 [
                     call(arguments, "module.views.function"),
@@ -76,7 +78,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     )
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_called_once_with(
                 arguments, "module.view.Class.method"
             )
@@ -96,7 +100,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     )
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_has_calls(
                 [call(arguments, "some.view"), call(arguments, "some.other.view")],
                 any_order=True,
@@ -117,7 +123,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     ),
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_called_once_with(arguments, "indirect.view")
 
         # Recursive `include()` calls.
@@ -140,7 +148,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     ),
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_called_once_with(arguments, "admin.view")
 
         # Patterns.
@@ -171,7 +181,9 @@ class GenerateTaintModelsTest(unittest.TestCase):
                     ),
                 }
             )
-            generate_taint_models._visit_views(arguments, "urls.py", lambda *_: None)
+            generate_taint_models._visit_views(
+                arguments, ".", "urls.py", lambda *_: None
+            )
             load_function_definition.assert_has_calls(
                 [
                     call(arguments, "base.first_view"),
@@ -342,7 +354,7 @@ class GenerateTaintModelsTest(unittest.TestCase):
         path_iter.side_effect = [[custom_objects]] * 10
 
         arguments = MagicMock()
-        arguments.urls_path = None
+        arguments.urls_path = "urls.py"
         arguments.graphql_path = "custom_objects.py"
         arguments.whitelisted_class = ["HttpRequest"]
 
