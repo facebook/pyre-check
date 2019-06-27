@@ -16,6 +16,8 @@ from typing import Callable, Dict, Mapping, Optional, Set, Union
 
 import _ast
 
+from .get_globals import GlobalModelGenerator
+from .model_generator import load_module, qualifier
 from .taint_annotator import Model, annotate_function
 
 
@@ -29,19 +31,6 @@ def _find_module(module: str) -> Optional[str]:
     path = os.path.dirname(path) + "/__init__.py"
     if os.path.exists(path):
         return path
-    return None
-
-
-@functools.lru_cache(maxsize=1024)
-def _load_module(module_path: str) -> Optional[ast.Module]:
-    try:
-        with open(module_path, "r") as file:
-            parsed = ast.parse(file.read())
-            if not isinstance(parsed, ast.Module):
-                return None
-            return parsed
-    except (FileNotFoundError, SyntaxError) as error:
-        LOG.warning(f"Could not load `{module_path}`: {str(error)}")
     return None
 
 
@@ -69,7 +58,7 @@ def _load_function_definition(
             LOG.warning(f"Could not find module for `{function}`.")
             return None
 
-    tree = _load_module(module_path)
+    tree = load_module(module_path)
     if not tree:
         return
 
@@ -110,73 +99,6 @@ def _load_function_definition(
             return statement
 
     return None
-
-
-def _qualifier(root: str, path: str) -> str:
-    path = os.path.relpath(path, root)
-    if path.endswith(".pyi"):
-        path = path[:-4]
-    elif path.endswith(".py"):
-        path = path[:-3]
-    qualifier = path.replace("/", ".")
-    if qualifier.endswith(".__init__"):
-        qualifier = qualifier[:-9]
-    return qualifier
-
-
-def _globals(root: str, path: str) -> Set[str]:
-    module = _load_module(path)
-
-    globals = set()
-    if not module:
-        return globals
-
-    class NameVisitor(ast.NodeVisitor):
-        def __init__(self, globals: Set[str]) -> None:
-            self.globals = globals
-
-        def visit_Name(self, name: ast.Name) -> None:
-            self.globals.add(name.id)
-
-        # Ensure that we stop recursing when we're in a complex assign, such as
-        # a.b = ... or a[b] = ... .
-        def visit_Attribute(self, attribute: ast.Attribute) -> None:
-            return
-
-        def visit_Subscript(self, subscript: ast.Subscript) -> None:
-            return
-
-    visitor = NameVisitor(globals)
-
-    def visit_assignment(target: ast.expr, value: Optional[ast.expr]) -> None:
-        if value is not None:
-            # namedtuples get preprocessed out by Pyre, and shouldn't be added
-            # as globals.
-            if isinstance(value, ast.Call):
-                callee = value.func
-                if isinstance(callee, ast.Attribute) and callee.attr == "namedtuple":
-                    return
-                if isinstance(callee, ast.Name) and callee.id == "namedtuple":
-                    return
-            # Omit pure aliases of the form `x = alias`.
-            if isinstance(value, ast.Name) or isinstance(value, ast.Attribute):
-                return
-        visitor.visit(target)
-
-    for statement in module.body:
-        if isinstance(statement, ast.Assign):
-            # Omit pure aliases of the form `x = alias`.
-            for target in statement.targets:
-                visit_assignment(target, statement.value)
-        elif isinstance(statement, ast.AugAssign):
-            visitor.visit(statement.target)
-        elif isinstance(statement, ast.AnnAssign):
-            visit_assignment(statement.target, statement.value)
-
-    def formatted_target(target: str) -> str:
-        return f"{_qualifier(root, path)}.{target}: TaintSink[Global] = ..."
-
-    return {formatted_target(target) for target in globals if target != "__all__"}
 
 
 def _visit_views(
@@ -279,12 +201,12 @@ def _visit_views(
 
         def visit_FunctionDef(self, definition: _ast.FunctionDef) -> None:
             name = definition.name
-            module = _qualifier(root, path)
+            module = qualifier(root, path)
             self._aliases[name] = f"{module}.{name}"
 
         def visit_AsyncFunctionDef(self, definition: _ast.AsyncFunctionDef) -> None:
             name = definition.name
-            module = _qualifier(root, path)
+            module = qualifier(root, path)
             self._aliases[name] = f"{module}.{name}"
 
         def handle_call(self, call: _ast.Call) -> None:
@@ -400,22 +322,9 @@ def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
 
 
 def _get_globals(arguments: argparse.Namespace) -> Set[str]:
-    sinks: Set[str] = set()
     root = os.path.abspath(os.getcwd())
-    paths = [path for path in glob.glob(root + "/**/*.py", recursive=True)]
-    for path in paths:
-        # Stubs take precedence if both module.py and module.pyi exist.
-        stub_path = f"{path}i"
-        if os.path.exists(stub_path):
-            path = stub_path
-        sinks = sinks.union(_globals(root, path))
     stub_root = arguments.stub_root
-    if stub_root:
-        stub_root = os.path.abspath(stub_root)
-        paths = [path for path in glob.glob(stub_root + "/**/*.pyi", recursive=True)]
-        for path in paths:
-            sinks = sinks.union(_globals(stub_root, path))
-    return sinks
+    return set(GlobalModelGenerator(root, stub_root).compute_models(lambda _: None))
 
 
 MODES: Mapping[str, Callable[[argparse.Namespace], Set[str]]] = {
