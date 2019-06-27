@@ -40,8 +40,16 @@ val lookup : t -> Ast.Reference.t -> SourceFile.t option
 
 val source_files : t -> SourceFile.t list
 
+val source_file_paths : t -> Path.t list
+
 val update
   :  configuration:Configuration.Analysis.t ->
   paths:Path.t list ->
   t ->
   IncrementalUpdate.t list
+
+module SharedMemory : sig
+  val store : t -> unit
+
+  val load : unit -> t
+end

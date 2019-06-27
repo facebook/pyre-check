@@ -21,6 +21,7 @@ let mock_server_state
     ()
   =
   let configuration = Test.mock_configuration in
+  let module_tracker = Service.ModuleTracker.create configuration in
   let environment =
     let environment =
       let environment = Analysis.Environment.Builder.create () in
@@ -34,7 +35,8 @@ let mock_server_state
   in
   let persistent_clients = Network.Socket.Map.of_alist_exn persistent_clients in
   add_defaults_to_environment ~configuration environment;
-  { State.environment;
+  { State.module_tracker;
+    environment;
     errors;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();

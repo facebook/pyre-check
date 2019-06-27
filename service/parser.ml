@@ -291,8 +291,7 @@ let find_stubs_and_sources configuration =
   filter_interfering_sources ~configuration stubs sources
 
 
-let parse_all scheduler ~configuration =
-  let paths = find_stubs_and_sources configuration in
+let parse_all ~scheduler ~configuration paths =
   let timer = Timer.start () in
   Log.info "Parsing %d stubs and sources..." (List.length paths);
   let { parsed; syntax_error; system_error } =

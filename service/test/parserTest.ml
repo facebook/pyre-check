@@ -247,6 +247,10 @@ let test_parse_sources context =
   let content = "def foo() -> int: ..." in
   let source_handles =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let typeshed_root =
+      Path.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
+    in
+    Sys_utils.mkdir_p (Path.absolute typeshed_root);
     let module_root = Path.create_absolute (bracket_tmpdir context) in
     let link_root = Path.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
@@ -257,7 +261,7 @@ let test_parse_sources context =
     write_file module_root "b.pyi";
     write_file local_root "b.py";
     write_file local_root "c.py";
-    write_file local_root ".pyre/resource_cache/typeshed/ignoreme.py";
+    write_file local_root ".pyre/resource_cache/typeshed/foo.pyi";
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
     Unix.symlink
@@ -267,16 +271,21 @@ let test_parse_sources context =
       ~src:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
       ~dst:(Path.absolute local_root ^/ "d.pyi");
     let configuration =
-      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root module_root] ()
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
+        ()
     in
-    Service.Parser.parse_all scheduler ~configuration
+    let module_tracker = Service.ModuleTracker.create configuration in
+    Service.ModuleTracker.source_file_paths module_tracker
+    |> Service.Parser.parse_all ~scheduler ~configuration
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
   assert_equal
     ~cmp:(List.equal ~equal:String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"]
+    ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
   let local_root = Path.create_absolute (bracket_tmpdir context) in
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
@@ -292,12 +301,18 @@ let test_parse_sources context =
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove
       ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "stub.pyi"];
-    Service.Parser.parse_all scheduler ~configuration
+    let module_tracker = Service.ModuleTracker.create configuration in
+    Service.ModuleTracker.source_file_paths module_tracker
+    |> Service.Parser.parse_all ~scheduler ~configuration
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
   assert_equal
     ~printer:(List.to_string ~f:File.Handle.show)
+    ~cmp:(fun left_handles right_handles ->
+      let left_handles = List.sort ~compare:File.Handle.compare left_handles in
+      let right_handles = List.sort ~compare:File.Handle.compare right_handles in
+      List.equal ~equal:File.Handle.equal left_handles right_handles)
     source_handles
     [File.Handle.create_for_testing "stub.pyi"; File.Handle.create_for_testing "a.py"];
   match Ast.SharedMemory.Sources.get (File.Handle.create_for_testing "c.py") with
@@ -407,7 +422,14 @@ let test_parse_repository context =
     List.iter repository ~f:prepare_file;
     let actual =
       let handles =
-        Service.Parser.parse_all (Scheduler.mock ()) ~configuration
+        let scheduler = Scheduler.mock () in
+        let module_tracker = Service.ModuleTracker.create configuration in
+        let tracked_paths =
+          Service.ModuleTracker.source_files module_tracker
+          |> List.map ~f:(fun { Service.ModuleTracker.SourceFile.relative_path; _ } ->
+                 Path.Relative relative_path)
+        in
+        Service.Parser.parse_all ~scheduler ~configuration tracked_paths
         |> List.sort ~compare:File.Handle.compare
       in
       List.map handles ~f:(fun handle ->

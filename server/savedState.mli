@@ -21,8 +21,4 @@ val compute_locally_changed_files
 
 val load : server_configuration:Configuration.Server.t -> connections:State.connections -> State.t
 
-val save
-  :  configuration:Configuration.Analysis.t ->
-  errors:Analysis.Error.t list File.Handle.Table.t ->
-  saved_state_path:string ->
-  unit
+val save : configuration:Configuration.Analysis.t -> saved_state_path:string -> State.t -> unit

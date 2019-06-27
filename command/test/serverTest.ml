@@ -230,9 +230,11 @@ let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty)
 
 let mock_server_state ~local_root ?(initial_environment = environment ~local_root) errors =
   let configuration = configuration ~local_root in
+  let module_tracker = Service.ModuleTracker.create configuration in
   let environment = Environment.handler initial_environment in
   add_defaults_to_environment ~configuration environment;
-  { State.environment;
+  { State.module_tracker;
+    environment;
     errors;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();

@@ -154,6 +154,7 @@ let load
   in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
+  let module_tracker = ModuleTracker.SharedMemory.load () in
   let changed_files =
     match changed_paths with
     | Some changed_paths ->
@@ -166,7 +167,8 @@ let load
     EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> File.Handle.Table.of_alist_exn
   in
   let state =
-    { State.environment;
+    { State.module_tracker;
+      environment;
       errors;
       scheduler;
       last_request_time = Unix.time ();
@@ -181,9 +183,10 @@ let load
   state
 
 
-let save ~configuration ~errors ~saved_state_path =
+let save ~configuration ~saved_state_path { State.errors; module_tracker; _ } =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.SharedMemory.collect `aggressive;
+  ModuleTracker.SharedMemory.store module_tracker;
   EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
   EnvironmentSharedMemory.ServerErrors.add "errors" (Hashtbl.to_alist errors);
   Memory.save_shared_memory ~path:saved_state_path

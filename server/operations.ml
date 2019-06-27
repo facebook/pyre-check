@@ -70,7 +70,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.handles; environment; errors } =
+  let { Check.handles; module_tracker; environment; errors } =
     Check.check ~scheduler:(Some scheduler) ~configuration
   in
   File.Handle.Set.Tree.of_list handles
@@ -91,7 +91,8 @@ let start_from_scratch ?old_state ~connections ~configuration () =
     List.iter errors ~f:add_error;
     table
   in
-  { environment;
+  { module_tracker;
+    environment;
     errors;
     scheduler;
     last_request_time = Unix.time ();
@@ -112,7 +113,7 @@ let start
                      } as server_configuration )
     ()
   =
-  let ({ State.errors; _ } as state) =
+  let state =
     let matches_configuration_version = Some (Version.version ()) = expected_version in
     match saved_state_action, matches_configuration_version with
     | Some (Load (LoadFromProject _)), true
@@ -136,7 +137,7 @@ let start
     | _ -> start_from_scratch ?old_state ~connections ~configuration ()
   in
   ( match saved_state_action with
-  | Some (Save saved_state_path) -> SavedState.save ~configuration ~errors ~saved_state_path
+  | Some (Save saved_state_path) -> SavedState.save ~configuration ~saved_state_path state
   | _ -> () );
   state
 

@@ -188,6 +188,11 @@ let lookup tracker module_name =
 
 let source_files tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
 
+let source_file_paths tracker =
+  source_files tracker
+  |> List.map ~f:(fun { SourceFile.relative_path; _ } -> Path.Relative relative_path)
+
+
 module FileSystemEvent = struct
   type t =
     | Update of Path.t
@@ -286,3 +291,23 @@ let update ~configuration ~paths tracker =
   |> List.map ~f:FileSystemEvent.create
   |> List.filter_map ~f:(process_filesystem_event ~configuration tracker)
   |> merge_updates
+
+
+module SharedMemoryValue = struct
+  type t = (Reference.t * SourceFile.t list) list
+
+  let prefix = Prefix.make ()
+
+  let description = "Module tracker"
+end
+
+module SharedMemory = struct
+  module Table = Memory.WithCache (Memory.SingletonKey) (SharedMemoryValue)
+
+  let store tracker =
+    let data = Hashtbl.to_alist tracker in
+    Table.add Memory.SingletonKey.key data
+
+
+  let load () = Table.find_unsafe Memory.SingletonKey.key |> Reference.Table.of_alist_exn
+end

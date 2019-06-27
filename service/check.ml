@@ -9,6 +9,7 @@ open Pyre
 
 type result = {
   handles: File.Handle.t list;
+  module_tracker: ModuleTracker.t;
   environment: (module Analysis.Environment.Handler);
   errors: Analysis.Error.t list
 }
@@ -154,8 +155,11 @@ let check
     | None -> Scheduler.create ~configuration ~bucket_multiplier ()
     | Some scheduler -> scheduler
   in
+  (* Find sources to parse *)
+  let module_tracker = ModuleTracker.create configuration in
+  let tracked_paths = ModuleTracker.source_file_paths module_tracker in
   (* Parse sources. *)
-  let sources = Parser.parse_all scheduler ~configuration in
+  let sources = Parser.parse_all ~scheduler ~configuration tracked_paths in
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~sources;
@@ -198,4 +202,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { handles = sources; environment; errors }
+  { handles = sources; module_tracker; environment; errors }
