@@ -36,6 +36,10 @@ let test_equal _ =
        (Configuration.Analysis.create ~number_of_workers:84 ()));
   assert_true
     (Configuration.Analysis.equal
+       (Configuration.Analysis.create ~ignore_dependencies:false ())
+       (Configuration.Analysis.create ()));
+  assert_true
+    (Configuration.Analysis.equal
        (Configuration.Analysis.create ~search_path:[] ())
        (Configuration.Analysis.create ~search_path:[SearchPath.Root root] ()));
   assert_true

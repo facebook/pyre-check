@@ -16,6 +16,7 @@ module Analysis = struct
     parallel: bool;
     filter_directories: Path.t list option;
     ignore_all_errors: Path.t list option;
+    ignore_dependencies: bool;
     number_of_workers: int;
     local_root: Path.t;
     sections: string list;
@@ -58,6 +59,7 @@ module Analysis = struct
       ?(parallel = true)
       ?filter_directories
       ?ignore_all_errors
+      ?(ignore_dependencies = false)
       ?(number_of_workers = 4)
       ?(local_root = Path.current_working_directory ())
       ?(sections = [])
@@ -88,6 +90,7 @@ module Analysis = struct
       parallel;
       filter_directories;
       ignore_all_errors;
+      ignore_dependencies;
       number_of_workers;
       local_root;
       sections;

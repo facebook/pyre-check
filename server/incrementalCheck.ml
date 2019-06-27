@@ -27,7 +27,7 @@ let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } e
 
 let recheck
     ~state:({ State.environment; errors; scheduler; open_documents; _ } as state)
-    ~configuration:({ debug; _ } as configuration)
+    ~configuration:({ debug; ignore_dependencies; _ } as configuration)
     ~files
   =
   let timer = Timer.start () in
@@ -64,10 +64,13 @@ let recheck
   let scheduler = Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck > 5) in
   (* Also recheck dependencies of the changed files. *)
   let recheck =
-    Set.union
-      (File.Set.of_list recheck)
-      (ServerDependencies.compute_dependencies recheck ~state ~configuration)
-    |> Set.to_list
+    if ignore_dependencies then
+      recheck
+    else
+      Set.union
+        (File.Set.of_list recheck)
+        (ServerDependencies.compute_dependencies recheck ~state ~configuration)
+      |> Set.to_list
   in
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";

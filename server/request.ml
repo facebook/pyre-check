@@ -1252,9 +1252,12 @@ let rec process
               ~key:(File.path file)
               ~data:(File.content file |> Option.value ~default:"")
           in
+          (* We do not recheck dependencies because nothing changes when we open a document, and we
+             do the type checking here just to make type checking resolution appear in shared
+             memory. *)
           process_type_check_request
             ~state:{ state with open_documents }
-            ~configuration
+            ~configuration:{ configuration with ignore_dependencies = true }
             ~files:[file]
       | CloseDocument file ->
           let { State.open_documents; _ } = state in

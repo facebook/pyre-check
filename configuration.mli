@@ -15,6 +15,7 @@ module Analysis : sig
     parallel: bool;
     filter_directories: Path.t list option;
     ignore_all_errors: Path.t list option;
+    ignore_dependencies: bool;
     number_of_workers: int;
     local_root: Path.t;
     sections: string list;
@@ -47,6 +48,7 @@ module Analysis : sig
     ?parallel:bool ->
     ?filter_directories:Path.t list ->
     ?ignore_all_errors:Path.t list ->
+    ?ignore_dependencies:bool ->
     ?number_of_workers:int ->
     ?local_root:Path.t ->
     ?sections:string list ->
