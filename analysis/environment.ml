@@ -115,17 +115,15 @@ let connect_definition
       (* Primitive cycles can be introduced by meta-programming. *)
       TypeOrder.Node.equal predecessor successor
     in
-    let cycle_with_top =
-      match predecessor, successor with
-      | Top, _ -> true
-      | Any, successor when not (TypeOrder.Node.equal successor Top) -> true
+    let cycle_with_any =
+      match predecessor with
+      | Any -> true
       | _ -> false
     in
-    if annotations_tracked && (not primitive_cycle) && not cycle_with_top then
+    if annotations_tracked && (not primitive_cycle) && not cycle_with_any then
       TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
   in
   let primitive = TypeOrder.Node.Primitive (Reference.show name) in
-  connect ~predecessor:Bottom ~successor:primitive ~parameters:[];
   ( match Annotated.Class.inferred_callable_type annotated ~resolution with
   | Some callable ->
       connect

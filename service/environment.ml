@@ -41,16 +41,8 @@ let populate
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)
       TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-    TypeOrder.connect_annotations_to_top
-      (module Handler.TypeOrderHandler)
-      ~top:TypeOrder.Node.object_primitive
-      all_annotations;
-    TypeOrder.remove_extra_edges
-      (module Handler.TypeOrderHandler)
-      ~bottom:TypeOrder.Node.Bottom
-      ~top:TypeOrder.Node.object_primitive
-      all_annotations;
-    TypeOrder.sort_bottom_edges (module Handler.TypeOrderHandler) ~bottom:TypeOrder.Node.Bottom;
+    TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
+    TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
     List.iter all_annotations ~f:(fun annotation ->
         match TypeOrder.Node.primitive_name annotation with
         | Some name -> Handler.register_class_metadata name

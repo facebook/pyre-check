@@ -96,8 +96,6 @@ end
 
 module Node = struct
   type t =
-    | Top
-    | Bottom
     | Any
     | Primitive of Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
@@ -143,8 +141,6 @@ module Node = struct
 
   let annotation = function
     | Primitive primitive -> Type.Primitive primitive
-    | Top -> Type.Top
-    | Bottom -> Type.Bottom
     | Any -> Type.Any
 end
 
@@ -1713,9 +1709,7 @@ module OrderImplementation = struct
                 Type.Primitive right
               else
                 union
-          | None ->
-              Log.debug "Couldn't find a upper bound for %s and %s" left right;
-              union )
+          | None -> union )
 
 
     and meet
@@ -1922,9 +1916,7 @@ module OrderImplementation = struct
         | Type.Primitive left, Type.Primitive right -> (
           match List.hd (greatest_lower_bound handler (Primitive left) (Primitive right)) with
           | Some node -> Node.annotation node
-          | None ->
-              Log.debug "No lower bound found for %s and %s" left right;
-              Type.Bottom )
+          | None -> Type.Bottom )
         | _ ->
             Log.debug "No lower bound found for %a and %a" Type.pp left Type.pp right;
             Type.Bottom
@@ -2360,44 +2352,37 @@ let deduplicate (module Handler : Handler) ~annotations =
   |> List.iter ~f:deduplicate_annotation
 
 
-let remove_extra_edges (module Handler : Handler) ~bottom ~top annotations =
-  let module Disconnector (Edges : Target.ListOrSet) (Backedges : Target.ListOrSet) = struct
-    let disconnect keys ~edges ~backedges special_index =
-      let remove_extra_references key =
-        Handler.find edges key
-        >>| (fun connected ->
-              let disconnected =
-                Edges.filter connected ~f:(fun { Target.target; _ } -> target <> special_index)
-              in
-              if Edges.is_empty disconnected then
-                []
-              else (
-                Handler.set edges ~key ~data:disconnected;
-                [key] ))
-        |> Option.value ~default:[]
-      in
-      let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
-      Handler.find backedges special_index
-      >>| (fun edges ->
-            let edges =
-              Backedges.filter edges ~f:(fun { Target.target; _ } ->
-                  not (Set.mem removed_indices target))
-            in
-            Handler.set backedges ~key:special_index ~data:edges)
-      |> Option.value ~default:()
-  end
-  in
+let remove_extra_edges_to_object (module Handler : Handler) annotations =
   let edges = Handler.edges () in
-  let backedges = Handler.backedges () in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
   let keys = List.map annotations ~f:index_of in
-  let module ForwardDisconnector = Disconnector (Target.List) (Target.Set) in
-  ForwardDisconnector.disconnect keys ~edges ~backedges (index_of top);
-  let module ReverseDisconnector = Disconnector (Target.Set) (Target.List) in
-  ReverseDisconnector.disconnect keys ~edges:backedges ~backedges:edges (index_of bottom)
+  let backedges = Handler.backedges () in
+  let object_index = index_of Node.object_primitive in
+  let remove_extra_references key =
+    Handler.find edges key
+    >>| (fun connected ->
+          let disconnected =
+            Target.List.filter connected ~f:(fun { Target.target; _ } -> target <> object_index)
+          in
+          if Target.List.is_empty disconnected then
+            []
+          else (
+            Handler.set edges ~key ~data:disconnected;
+            [key] ))
+    |> Option.value ~default:[]
+  in
+  let removed_indices = List.concat_map ~f:remove_extra_references keys |> Int.Set.of_list in
+  Handler.find backedges object_index
+  >>| (fun edges ->
+        let edges =
+          Target.Set.filter edges ~f:(fun { Target.target; _ } ->
+              not (Set.mem removed_indices target))
+        in
+        Handler.set backedges ~key:object_index ~data:edges)
+  |> Option.value ~default:()
 
 
-let connect_annotations_to_top ((module Handler : Handler) as handler) ~top annotations =
+let connect_annotations_to_object ((module Handler : Handler) as handler) annotations =
   let indices = Handler.indices () in
   let connect_to_top annotation =
     let index = Handler.find_unsafe indices annotation in
@@ -2414,29 +2399,12 @@ let connect_annotations_to_top ((module Handler : Handler) as handler) ~top anno
     if not (less_or_equal order ~left:Type.Top ~right:(Node.annotation annotation)) then
       match Handler.find (Handler.edges ()) index with
       | Some targets when List.length targets > 0 -> ()
-      | _ -> connect handler ~predecessor:annotation ~successor:top
+      | _ -> connect handler ~predecessor:annotation ~successor:Node.object_primitive
   in
   List.iter ~f:connect_to_top annotations
 
 
-let sort_bottom_edges (module Handler : Handler) ~bottom =
-  let bottom_index = Handler.find_unsafe (Handler.indices ()) bottom in
-  match Handler.find (Handler.edges ()) bottom_index with
-  | None -> ()
-  | Some edges ->
-      Handler.set
-        (Handler.edges ())
-        ~key:bottom_index
-        ~data:(List.rev (List.sort edges ~compare:Target.compare))
-
-
 let check_integrity (module Handler : Handler) =
-  (* Check `Top` and `Bottom`. *)
-  let contains annotation = Handler.contains (Handler.indices ()) annotation in
-  if not (contains Node.Bottom && contains Node.Top) then (
-    Log.error "Order is missing either Bottom or Top:\n%s" (Handler.show ());
-    raise Incomplete );
-
   (* Ensure keys are consistent. *)
   let key_consistent key =
     let raise_if_none value =
@@ -2525,9 +2493,7 @@ let to_dot (module Handler : Handler) =
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
   let show = function
-    | Node.Top -> "unknown"
-    | Bottom -> "undefined"
-    | Primitive primitive -> primitive
+    | Node.Primitive primitive -> primitive
     | Any -> "typing.Any"
   in
   List.iter
@@ -2568,8 +2534,8 @@ module Builder = struct
 
 
   let default_annotations =
-    let singleton annotation = [Node.Bottom; annotation; Node.object_primitive] in
-    [ [Node.Bottom; Node.object_primitive; Node.Any; Node.Top];
+    let singleton annotation = [annotation; Node.object_primitive] in
+    [ [Node.object_primitive; Node.Any];
       (* Special forms *)
       singleton (Primitive "typing.Annotated");
       singleton (Primitive "typing.Tuple");
@@ -2589,11 +2555,10 @@ module Builder = struct
       singleton (Primitive "unittest.mock.NonCallableMock");
       singleton (Primitive "typing.ClassVar");
       singleton (Primitive "typing.Final");
-      [Node.Bottom; Primitive "dict"; Primitive "typing.Dict"; Node.object_primitive];
+      [Primitive "dict"; Primitive "typing.Dict"; Node.object_primitive];
       singleton (Primitive "None");
       (* Numerical hierarchy. *)
-      [ Node.Bottom;
-        Node.integer;
+      [ Node.integer;
         Node.float;
         Node.complex;
         Primitive "numbers.Complex";
@@ -2623,7 +2588,6 @@ module Builder = struct
     let type_builtin = Node.Primitive "type" in
     let type_variable = Type.Variable (Type.Variable.Unary.create "_T") in
     insert handler type_builtin;
-    connect handler ~predecessor:Node.Bottom ~successor:type_builtin;
     connect
       handler
       ~predecessor:type_builtin
@@ -2635,7 +2599,6 @@ module Builder = struct
     insert handler non_total_typed_dictionary;
     insert handler typed_dictionary;
     insert handler typing_mapping;
-    connect handler ~predecessor:Node.Bottom ~successor:non_total_typed_dictionary;
     connect handler ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
     connect
       handler

@@ -146,12 +146,8 @@ let test_register_class_metadata _ =
   let resolution = TypeCheck.resolution (module Handler) () in
   Environment.connect_type_order (module Handler) resolution source;
   TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-  TypeOrder.connect_annotations_to_top (module Handler.TypeOrderHandler) ~top:Any all_annotations;
-  TypeOrder.remove_extra_edges
-    (module Handler.TypeOrderHandler)
-    ~bottom:Bottom
-    ~top:Any
-    all_annotations;
+  TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
+  TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
   Handler.register_class_metadata "A";
   Handler.register_class_metadata "B";
   Handler.register_class_metadata "C";
@@ -165,10 +161,10 @@ let test_register_class_metadata _ =
       expected
       successors
   in
-  assert_successors "C" [];
-  assert_successors "D" ["C"];
-  assert_successors "B" ["A"];
-  assert_successors "E" ["D"; "C"; "A"]
+  assert_successors "C" ["object"];
+  assert_successors "D" ["C"; "object"];
+  assert_successors "B" ["A"; "object"];
+  assert_successors "E" ["D"; "C"; "A"; "object"]
 
 
 let test_register_aliases _ =
@@ -467,13 +463,11 @@ let test_connect_definition _ =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
   in
   Environment.connect_definition ~resolution ~definition:class_definition;
-  assert_edge ~predecessor:Bottom ~successor:(Primitive "C");
   let definition = +Test.parse_single_class {|
        class D(int, float):
          ...
      |} in
   Environment.connect_definition ~resolution ~definition;
-  assert_edge ~predecessor:Bottom ~successor:(Primitive "D");
   assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "int");
   assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "float")
 
@@ -596,9 +590,9 @@ let test_connect_type_order _ =
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors "C" [];
   assert_successors "D" ["C"];
-  TypeOrder.connect_annotations_to_top order ~top:Any all_annotations;
-  assert_successors "C" [];
-  assert_successors "D" ["C"];
+  TypeOrder.connect_annotations_to_object order all_annotations;
+  assert_successors "C" ["object"];
+  assert_successors "D" ["C"; "object"];
   assert_successors "CallMe" ["typing.Callable"; "object"]
 
 

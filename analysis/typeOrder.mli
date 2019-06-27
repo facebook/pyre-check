@@ -11,8 +11,6 @@ exception Incomplete
 
 module Node : sig
   type t =
-    | Top
-    | Bottom
     | Any
     | Primitive of Ast.Identifier.t
   [@@deriving compare, eq, sexp, show, hash]
@@ -215,11 +213,9 @@ val consistent_solution_exists : order -> Type.t -> Type.t -> bool
 
 val deduplicate : (module Handler) -> annotations:Node.t list -> unit
 
-val remove_extra_edges : (module Handler) -> bottom:Node.t -> top:Node.t -> Node.t list -> unit
+val remove_extra_edges_to_object : (module Handler) -> Node.t list -> unit
 
-val connect_annotations_to_top : (module Handler) -> top:Node.t -> Node.t list -> unit
-
-val sort_bottom_edges : (module Handler) -> bottom:Node.t -> unit
+val connect_annotations_to_object : (module Handler) -> Node.t list -> unit
 
 val check_integrity : (module Handler) -> unit
 
