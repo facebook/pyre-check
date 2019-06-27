@@ -402,7 +402,6 @@ let messages ~concise ~signature location kind =
     ^ "-with-subclassing for mutable container errors."
   in
   let pp_type = if concise then Type.pp_concise else Type.pp in
-  let pp_annotation format { Annotation.annotation; _ } = pp_type format annotation in
   let pp_reference format reference =
     if concise then
       Reference.last reference |> Reference.create |> Reference.pp_sanitized format
@@ -1227,12 +1226,24 @@ let messages ~concise ~signature location kind =
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
-  | RevealedType { expression; annotation } ->
+  | RevealedType { expression; annotation = { Annotation.annotation; mutability } } ->
+      let annotation, detail =
+        match mutability with
+        | Mutable -> Format.asprintf "%a" pp_type annotation, ""
+        | Immutable { Annotation.original; _ } ->
+            if Type.is_unknown original then
+              Format.asprintf "%a" pp_type annotation, ""
+            else if Type.equal annotation original then
+              Format.asprintf "%a" pp_type original, ""
+            else
+              ( Format.asprintf "%a" pp_type original,
+                Format.asprintf " (inferred: `%a`)" pp_type annotation )
+      in
       [ Format.asprintf
-          "Revealed type for `%s` is `%a`."
+          "Revealed type for `%s` is `%s`%s."
           (Expression.show_sanitized expression)
-          pp_annotation
-          annotation ]
+          annotation
+          detail ]
   | TooManyArguments { expected; _ } when concise ->
       [ Format.asprintf
           "Expected %d positional argument%s."

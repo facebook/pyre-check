@@ -13,6 +13,14 @@ let test_reveal_type _ =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `str`."];
+  assert_type_errors
+    {|
+      def foo(x: typing.Union[int, str]) -> None:
+        x = 1
+        reveal_type(x)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Union[int, str]` (inferred: \
+       `typing_extensions.Literal[1]`)." ];
   assert_default_type_errors
     {|
       def foo(x) -> None:
@@ -93,7 +101,35 @@ let test_reveal_type _ =
       reveal_type(typing.List[int])
     |}
     [ "Revealed type [-1]: Revealed type for `typing.List.__getitem__(int)` is \
-       `typing.Type[typing.List[int]]`." ]
+       `typing.Type[typing.List[int]]`." ];
+  assert_type_errors
+    {|
+       x = 1.0
+       def foo() -> None:
+         global x
+         x = 1
+         reveal_type(x)
+     |}
+    [ "Revealed type [-1]: Revealed type for `x` is `float` (inferred: \
+       `typing_extensions.Literal[1]`)." ];
+  assert_type_errors
+    {|
+       class Foo:
+         attribute: typing.Optional[int] = 1
+       def foo() -> None:
+         reveal_type(Foo.attribute)
+     |}
+    ["Revealed type [-1]: Revealed type for `Foo.attribute` is `typing.Optional[int]`."];
+  assert_type_errors
+    {|
+       class Foo:
+         attribute: typing.Optional[int] = 1
+       def foo() -> None:
+         Foo.attribute = 1
+         reveal_type(Foo.attribute)
+     |}
+    [ "Revealed type [-1]: Revealed type for `Foo.attribute` is `typing.Optional[int]` (inferred: \
+       `typing_extensions.Literal[1]`)." ]
 
 
 let () = "revealType" >::: ["reveal_type" >:: test_reveal_type] |> Test.run

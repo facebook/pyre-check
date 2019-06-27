@@ -380,7 +380,8 @@ let test_unbound_variables _ =
         x = []
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.List[int]`."];
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Optional[typing.List[int]]` \
+       (inferred: `typing.List[int]`)." ];
   assert_type_errors
     {|
       def foo() -> None:

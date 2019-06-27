@@ -12,7 +12,7 @@ let test_assert_is_none _ =
       from typing import Optional
       import unittest
       class A:
-        def __init__(self, x:Optional[int]) -> None:
+        def __init__(self, x: Optional[int]) -> None:
           self.x = x
 
       class FakeTest(unittest.TestCase):
@@ -21,7 +21,7 @@ let test_assert_is_none _ =
           self.assertIsNotNone(a.x)
           reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `int`."];
+    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
       from typing import Optional
@@ -36,7 +36,7 @@ let test_assert_is_none _ =
       from typing import Optional
       import unittest
       class A:
-        def __init__(self, x:Optional[int]) -> None:
+        def __init__(self, x: Optional[int]) -> None:
           self.x = x
 
       class FakeTest(unittest.TestCase):
@@ -45,13 +45,13 @@ let test_assert_is_none _ =
           self.assertTrue(a.x is not None)
           reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `int`."];
+    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."];
   assert_type_errors
     {|
       from typing import Optional
       import unittest
       class A:
-        def __init__(self, x:Optional[int]) -> None:
+        def __init__(self, x: Optional[int]) -> None:
           self.x = x
 
       class FakeTest(unittest.TestCase):
@@ -60,7 +60,7 @@ let test_assert_is_none _ =
           self.assertFalse(a.x is None)
           reveal_type(a.x)
     |}
-    ["Revealed type [-1]: Revealed type for `a.x` is `int`."]
+    ["Revealed type [-1]: Revealed type for `a.x` is `Optional[int]` (inferred: `int`)."]
 
 
 let () = "assert_is_not_none" >::: ["check_assert_is_none" >:: test_assert_is_none] |> Test.run

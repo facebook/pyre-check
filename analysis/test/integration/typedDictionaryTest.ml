@@ -728,8 +728,9 @@ let test_check_typed_dictionaries _ =
         reveal_type(movie)
         return movie['name']
     |}
-    [ "Revealed type [-1]: Revealed type for `movie` is `TypedDict with fields (name: str, year: \
-       int, bonus: bool)`." ];
+    [ "Revealed type [-1]: Revealed type for `movie` is `TypedDict `Movie` with fields (name: \
+       str, year: int)` (inferred: `TypedDict with fields (name: str, year: int, bonus: bool)`)."
+    ];
   assert_test_typed_dictionary
     {|
       Movie = mypy_extensions.TypedDict('Movie', {'name': str, 'year': 'int'})
