@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 from collections import namedtuple
 from typing import Dict, Iterable, List, Optional, Set, Tuple, cast  # noqa
 
@@ -60,14 +61,37 @@ class FastBuckBuilder(BuckBuilder):
             + list(targets)
         )
         try:
-            debug_output = json.loads(subprocess.check_output(command).decode().strip())
-            self.conflicting_files += debug_output["conflictingFiles"]
-            self.unsupported_files += debug_output["unsupportedFiles"]
-            return [self._output_directory]
+            with subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            ) as buck_builder_process:
+                # Java's logging conflicts with Python's logging, we capture the
+                # logs and re-log them with python's logger.
+                log_processor = threading.Thread(
+                    target=self._read_stderr, args=(buck_builder_process.stderr,)
+                )
+                log_processor.daemon = True
+                log_processor.start()
+                debug_output = json.loads(
+                    "".join([line.decode() for line in buck_builder_process.stdout])
+                )
+                self.conflicting_files += debug_output["conflictingFiles"]
+                self.unsupported_files += debug_output["unsupportedFiles"]
+                return [self._output_directory]
         except subprocess.CalledProcessError:
             raise BuckException(
                 "Buck builder failure. Read the log printed above for more information."
             )
+
+    def _read_stderr(self, stream: Iterable[bytes]) -> None:
+        for line in stream:
+            line = line.decode().rstrip()
+            if line.startswith("INFO: "):
+                LOG.info(line[5:])
+            elif line.startswith("WARNING: "):
+                LOG.warning(line[8:])
+            elif line.startswith("ERROR: "):
+                LOG.error(line[6:])
+        pass
 
 
 class SimpleBuckBuilder(BuckBuilder):
