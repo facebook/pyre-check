@@ -589,6 +589,13 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
           coverage = Coverage.create ~crashes:1 ()
         }
   in
+  let format_errors errors =
+    errors
+    |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
+    |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
+           { error with kind = Error.weaken_literals kind })
+    |> List.sort ~compare:Error.compare
+  in
   let rec recursive_infer_source added_global_errors iterations =
     let add_errors_to_environment errors =
       let add_error (changed, globals_added_sofar) error =
@@ -643,9 +650,7 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
     if changed && iterations <= widening_threshold then
       recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
     else
-      errors @ added_global_errors
-      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
-      |> List.sort ~compare:Error.compare
+      errors @ added_global_errors |> format_errors
   in
   if File.Handle.is_stub handle then
     []
@@ -657,10 +662,7 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
       List.map results ~f:SingleSourceResult.errors
       |> List.concat
       |> Error.join_at_source ~resolution
-      |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
-      |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
-             { error with kind = Error.weaken_literals kind })
-      |> List.sort ~compare:Error.compare
+      |> format_errors
     in
     let coverage =
       List.map results ~f:SingleSourceResult.coverage |> Coverage.aggregate_over_source ~source
