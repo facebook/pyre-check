@@ -18,7 +18,7 @@
     "define": "integration_test.containers.dictionary_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 9,
+    "line": 10,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -42,7 +42,7 @@
     "define": "integration_test.containers.list_append",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 14,
+    "line": 16,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -78,7 +78,7 @@
     "define": "integration_test.containers.list_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 21,
+    "line": 23,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -90,7 +90,7 @@
     "define": "integration_test.containers.list_insert",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 27,
+    "line": 29,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -102,7 +102,7 @@
     "define": "integration_test.containers.set_add",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 34,
+    "line": 36,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -114,7 +114,7 @@
     "define": "integration_test.containers.set_intersection_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 41,
+    "line": 43,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"
@@ -126,7 +126,7 @@
     "define": "integration_test.containers.set_update",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
-    "line": 48,
+    "line": 50,
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/containers.py"

@@ -2,11 +2,13 @@
 
 from django.http import HttpRequest
 
+
 def dictionary_update(request: HttpRequest):
     result = {}
     source = {"source": request.GET["bad"]}
     result.update(source)
     eval(result)
+
 
 def list_append(request: HttpRequest):
     l = []
