@@ -364,7 +364,11 @@ class PyreTest(unittest.TestCase):
 
     def test_field_stubs(self) -> None:
         self.assert_stub(
-            [build_json({"annotation": "int", "field_name": "global", "parent": None})],
+            [
+                build_json(
+                    {"annotation": "int", "attribute_name": "global", "parent": None}
+                )
+            ],
             """\
             global: int = ...
             """,
@@ -374,14 +378,14 @@ class PyreTest(unittest.TestCase):
                 build_json(
                     {
                         "annotation": "int",
-                        "field_name": "field_name",
+                        "attribute_name": "attribute_name",
                         "parent": "test.Test",
                     }
                 )
             ],
             """\
             class Test:
-                field_name: int = ...
+                attribute_name: int = ...
             """,
         )
 
@@ -484,7 +488,7 @@ class PyreTest(unittest.TestCase):
                 build_json(
                     {
                         "annotation": "typing.Union[typing.List[int], typing.Any]",
-                        "field_name": "global",
+                        "attribute_name": "global",
                         "parent": None,
                     }
                 )

@@ -130,12 +130,12 @@ class FunctionStub:
 
 class FieldStub:
     def __init__(self, stub) -> None:
-        self.name = stub.get("field_name")
+        self.name = stub.get("attribute_name")
         self.actual = stub.get("annotation")
 
     @staticmethod
     def is_instance(stub) -> bool:
-        required_fields = ["annotation", "field_name"]
+        required_fields = ["annotation", "attribute_name"]
         return all(field in stub.keys() for field in required_fields)
 
     def _get_name(self):
