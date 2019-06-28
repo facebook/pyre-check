@@ -47,13 +47,7 @@ module type Handler = sig
 
   val class_metadata : Identifier.t -> Resolution.class_metadata option
 
-  val register_module
-    :  qualifier:Reference.t ->
-    local_mode:Source.mode ->
-    handle:File.Handle.t option ->
-    stub:bool ->
-    statements:Statement.t list ->
-    unit
+  val register_module : Source.t -> unit
 
   val register_implicit_submodule : Reference.t -> unit
 
@@ -310,11 +304,8 @@ let handler
 
     let class_metadata = Hashtbl.find class_metadata
 
-    let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-      Hashtbl.set
-        ~key:qualifier
-        ~data:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
-        modules
+    let register_module ({ Source.qualifier; _ } as source) =
+      Hashtbl.set ~key:qualifier ~data:(Module.create source) modules
 
 
     let register_implicit_submodule qualifier =
@@ -335,8 +326,7 @@ let handler
       | Some _ as result -> result
       | None -> (
         match Hashtbl.mem implicit_submodules name with
-        | true ->
-            Some (Module.create ~qualifier:name ~local_mode:Ast.Source.Declare ~stub:false [])
+        | true -> Some (Module.create_implicit ())
         | false -> None )
 
 
@@ -358,17 +348,7 @@ let handler
 
 let dependencies (module Handler : Handler) = Handler.dependencies
 
-let register_module
-    (module Handler : Handler)
-    { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
-  =
-  Handler.register_module
-    ~qualifier
-    ~local_mode
-    ~handle:(Some handle)
-    ~stub:(File.Handle.is_stub handle)
-    ~statements
-
+let register_module (module Handler : Handler) source = Handler.register_module source
 
 let register_implicit_submodules (module Handler : Handler) qualifier =
   let rec register_submodules = function
@@ -969,21 +949,9 @@ module Builder = struct
     let undecorated_functions = Reference.Table.create () in
     (* Register dummy module for `builtins` and `future.builtins`. *)
     let builtins = Reference.create "builtins" in
-    Hashtbl.set
-      modules
-      ~key:builtins
-      ~data:
-        (Ast.Module.create ~qualifier:builtins ~local_mode:Ast.Source.PlaceholderStub ~stub:true []);
+    Hashtbl.set modules ~key:builtins ~data:(Ast.Module.create_implicit ~empty_stub:true ());
     let future_builtins = Reference.create "future.builtins" in
-    Hashtbl.set
-      modules
-      ~key:future_builtins
-      ~data:
-        (Ast.Module.create
-           ~qualifier:future_builtins
-           ~local_mode:Ast.Source.PlaceholderStub
-           ~stub:true
-           []);
+    Hashtbl.set modules ~key:future_builtins ~data:(Ast.Module.create_implicit ~empty_stub:true ());
 
     (* Add `None` constant to globals. *)
     let annotation annotation =

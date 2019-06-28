@@ -171,12 +171,8 @@ let test_register_aliases _ =
   let register_all sources =
     let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
     let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
-    let register
-        ( { Source.handle; qualifier; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
-        as source )
-      =
-      let stub = String.is_suffix (File.Handle.show handle) ~suffix:".pyi" in
-      Handler.register_module ~qualifier ~local_mode ~handle:(Some handle) ~stub ~statements;
+    let register source =
+      Handler.register_module source;
       Environment.register_class_definitions (module Handler) source |> ignore
     in
     List.iter sources ~f:register;

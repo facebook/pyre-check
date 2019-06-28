@@ -10,23 +10,31 @@ open Test
 
 let test_empty_stub _ =
   assert_true
-    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:true []
+    ( Module.create_for_testing
+        ~qualifier:Reference.empty
+        ~local_mode:Source.PlaceholderStub
+        ~stub:true
+        []
     |> Module.empty_stub );
   assert_false
-    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.PlaceholderStub ~stub:false []
+    ( Module.create_for_testing
+        ~qualifier:Reference.empty
+        ~local_mode:Source.PlaceholderStub
+        ~stub:false
+        []
     |> Module.empty_stub );
   assert_false
-    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
+    ( Module.create_for_testing ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
     |> Module.empty_stub )
 
 
 let test_handle _ =
   assert_equal
-    ( Module.create ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
+    ( Module.create_for_testing ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
     |> Module.handle )
     None;
   assert_equal
-    ( Module.create
+    ( Module.create_for_testing
         ~qualifier:Reference.empty
         ~local_mode:Source.Default
         ~handle:(File.Handle.create_for_testing "voodoo.py")
@@ -40,7 +48,12 @@ let test_aliased_export _ =
   let assert_aliased_exports ?(qualifier = Reference.empty) ?handle source aliased_exports =
     let module_definition =
       let { Source.statements; _ } = parse source in
-      Module.create ?handle ~qualifier ~local_mode:Source.Default ~stub:false statements
+      Module.create_for_testing
+        ?handle
+        ~qualifier
+        ~local_mode:Source.Default
+        ~stub:false
+        statements
     in
     let assert_aliased_export (source, expected_target) =
       let actual_target =

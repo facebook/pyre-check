@@ -1156,7 +1156,7 @@ let test_decode_serialized_ocaml_values context =
   assert_decode
     ~key:(Ast.SharedMemory.Modules.Modules.serialize_key !&"handle")
     ~value:
-      (Ast.Module.create
+      (Ast.Module.create_for_testing
          ~qualifier:!&"handle"
          ~local_mode:Ast.Source.Default
          ~stub:false

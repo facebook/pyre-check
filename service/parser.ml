@@ -66,20 +66,8 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
         | None -> source
       in
       let store_result ~preprocessed ~file =
-        let add_module_from_source
-            { Source.qualifier;
-              handle;
-              statements;
-              metadata = { Source.Metadata.local_mode; _ };
-              _
-            }
-          =
-          Module.create
-            ~qualifier
-            ~local_mode
-            ~handle
-            ~stub:(File.Handle.is_stub handle)
-            statements
+        let add_module_from_source ({ Source.qualifier; _ } as source) =
+          Module.create source
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source preprocessed;

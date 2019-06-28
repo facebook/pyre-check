@@ -5,14 +5,6 @@
 
 type t [@@deriving eq, sexp, show]
 
-val create
-  :  qualifier:Reference.t ->
-  local_mode:Source.mode ->
-  ?handle:File.Handle.t ->
-  stub:bool ->
-  Statement.t list ->
-  t
-
 val empty_stub : t -> bool
 
 val from_empty_stub : reference:Reference.t -> module_definition:(Reference.t -> t option) -> bool
@@ -26,3 +18,16 @@ val aliased_export : t -> Reference.t -> Reference.t option
 module Cache : sig
   val clear : unit -> unit
 end
+
+val create : Source.t -> t
+
+val create_implicit : ?empty_stub:bool -> unit -> t
+
+(* Exposed for testing only *)
+val create_for_testing
+  :  qualifier:Reference.t ->
+  local_mode:Source.mode ->
+  ?handle:File.Handle.t ->
+  stub:bool ->
+  Statement.t list ->
+  t

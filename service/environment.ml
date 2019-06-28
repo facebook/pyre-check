@@ -260,10 +260,8 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
   let class_metadata = ClassMetadata.get
 
-  let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-    Ast.SharedMemory.Modules.add
-      ~qualifier
-      ~ast_module:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
+  let register_module ({ Source.qualifier; _ } as source) =
+    Ast.SharedMemory.Modules.add ~qualifier ~ast_module:(Module.create source)
 
 
   let register_implicit_submodule qualifier =
@@ -291,7 +289,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     | Some _ as result -> result
     | None -> (
       match ImplicitSubmodules.get qualifier with
-      | Some _ -> Some (Module.create ~qualifier ~local_mode:Ast.Source.Declare ~stub:false [])
+      | Some _ -> Some (Module.create_implicit ())
       | None -> None )
 
 

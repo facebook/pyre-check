@@ -67,7 +67,7 @@ let handle { handle; _ } = handle
 
 let wildcard_exports { wildcard_exports; _ } = wildcard_exports
 
-let create ~qualifier ~local_mode ?handle ~stub statements =
+let create_for_testing ~qualifier ~local_mode ?handle ~stub statements =
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
@@ -153,6 +153,20 @@ let create ~qualifier ~local_mode ?handle ~stub statements =
     empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
     handle;
     wildcard_exports = Option.value dunder_all ~default:toplevel_public
+  }
+
+
+let create
+    { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
+  =
+  create_for_testing ~qualifier ~local_mode ~handle ~stub:(File.Handle.is_stub handle) statements
+
+
+let create_implicit ?(empty_stub = false) () =
+  { aliased_exports = Reference.Map.empty |> Map.to_tree;
+    empty_stub;
+    handle = None;
+    wildcard_exports = []
   }
 
 

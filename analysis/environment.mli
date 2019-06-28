@@ -47,13 +47,7 @@ module type Handler = sig
 
   val class_metadata : Identifier.t -> Resolution.class_metadata option
 
-  val register_module
-    :  qualifier:Reference.t ->
-    local_mode:Source.mode ->
-    handle:File.Handle.t option ->
-    stub:bool ->
-    statements:Statement.t list ->
-    unit
+  val register_module : Source.t -> unit
 
   val register_implicit_submodule : Reference.t -> unit
 
