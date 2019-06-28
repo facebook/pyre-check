@@ -647,7 +647,9 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
       |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
       |> List.sort ~compare:Error.compare
   in
-  if configuration.recursive_infer then
+  if File.Handle.is_stub handle then
+    []
+  else if configuration.recursive_infer then
     recursive_infer_source [] 0
   else
     let results = source |> Preprocessing.defines |> List.map ~f:check in
