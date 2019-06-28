@@ -652,7 +652,7 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
   else if configuration.recursive_infer then
     recursive_infer_source [] 0
   else
-    let results = source |> Preprocessing.defines |> List.map ~f:check in
+    let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     let errors =
       List.map results ~f:SingleSourceResult.errors
       |> List.concat

@@ -407,7 +407,24 @@ let test_infer _ =
           return 5
       from typing import Optional
     |}
-    [{|[{"name":"x","type":"Optional[str]","value":null}]|}]
+    [{|[{"name":"x","type":"Optional[str]","value":null}]|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo() -> int:
+        return 1234
+      class A:
+        x = foo()
+    |}
+    [{|"int"|}];
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo() -> int:
+        return 1234
+      x = foo()
+    |}
+    [{|"int"|}]
 
 
 let test_infer_backward _ =
