@@ -287,18 +287,6 @@ let handler
     let class_metadata = Hashtbl.find class_metadata
 
     let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-      let string =
-        Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
-      in
-      let global_key = Reference.create ~prefix:qualifier in
-      Hashtbl.set globals ~key:(global_key "__file__") ~data:string;
-      Hashtbl.set globals ~key:(global_key "__name__") ~data:string;
-      let dictionary_annotation =
-        Type.dictionary ~key:Type.string ~value:Type.Any
-        |> Annotation.create_immutable ~global:true
-        |> Node.create_with_default_location
-      in
-      Hashtbl.set globals ~key:(global_key "__dict__") ~data:dictionary_annotation;
       Hashtbl.set
         ~key:qualifier
         ~data:(Module.create ~qualifier ~local_mode ?handle ~stub statements)

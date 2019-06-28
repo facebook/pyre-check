@@ -315,7 +315,7 @@ let test_check_return_control_flow _ =
       def f() -> int:
         return builtins.__name__
     |}
-    ["Incompatible return type [7]: Expected `int` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
 
   (* Meta. *)
   assert_type_errors

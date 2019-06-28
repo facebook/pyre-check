@@ -86,34 +86,6 @@ let test_global_keys _ =
   assert_global_keys ["a"; "b"; "f"] ~expected:["f"; "b"; "a"]
 
 
-let test_register_modules _ =
-  ["a.__name__"; "a.__file__"; "a.__dict__"]
-  |> List.map ~f:Reference.create
-  |> Service.EnvironmentSharedMemory.Globals.KeySet.of_list
-  |> Service.EnvironmentSharedMemory.Globals.remove_batch;
-  Handler.register_module
-    ~qualifier:!&"a"
-    ~local_mode:Ast.Source.Default
-    ~handle:None
-    ~stub:false
-    ~statements:[];
-  let annotation annotation =
-    annotation |> Annotation.create_immutable ~global:true |> Node.create_with_default_location
-  in
-  assert_equal
-    ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe !&"a.__name__")
-    (annotation Type.string);
-  assert_equal
-    ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe !&"a.__file__")
-    (annotation Type.string);
-  assert_equal
-    ~printer:(Node.show Annotation.pp)
-    (Globals.find_unsafe !&"a.__dict__")
-    (annotation (Type.dictionary ~key:Type.string ~value:Type.Any))
-
-
 let test_normalize_dependencies _ =
   let handle = File.Handle.create_for_testing "dummy.py" in
   DependencyHandler.clear_keys_batch [handle];
@@ -269,7 +241,6 @@ let () =
          "global_keys" >:: test_global_keys;
          "normalize_dependencies" >:: test_normalize_dependencies;
          "normalize" >:: test_normalize;
-         "register_modules" >:: test_register_modules;
          "populate" >:: test_populate;
          "purge" >:: test_purge ]
   |> Test.run

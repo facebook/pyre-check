@@ -261,18 +261,6 @@ module SharedHandler : Analysis.Environment.Handler = struct
   let class_metadata = ClassMetadata.get
 
   let register_module ~qualifier ~local_mode ~handle ~stub ~statements =
-    let string =
-      Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
-    in
-    let global_key = Reference.create ~prefix:qualifier in
-    Globals.add (global_key "__file__") string;
-    Globals.add (global_key "__name__") string;
-    let dictionary_annotation =
-      Type.dictionary ~key:Type.string ~value:Type.Any
-      |> Annotation.create_immutable ~global:true
-      |> Node.create_with_default_location
-    in
-    Globals.add (global_key "__dict__") dictionary_annotation;
     Ast.SharedMemory.Modules.add
       ~qualifier
       ~ast_module:(Module.create ~qualifier ~local_mode ?handle ~stub statements)

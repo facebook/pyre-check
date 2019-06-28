@@ -4391,12 +4391,31 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
     >>| AnnotatedClass.create
     >>| AnnotatedClass.attributes ~resolution ~transitive:true ~instantiated:annotation
   in
+  let global reference =
+    (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
+       for module and for class *)
+    match Reference.last reference with
+    | "__file__"
+    | "__name__" ->
+        let annotation =
+          Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
+        in
+        Some annotation
+    | "__dict__" ->
+        let annotation =
+          Type.dictionary ~key:Type.string ~value:Type.Any
+          |> Annotation.create_immutable ~global:true
+          |> Node.create_with_default_location
+        in
+        Some annotation
+    | _ -> Handler.globals reference
+  in
   Resolution.create
     ~annotations
     ~order
     ~resolve
     ~aliases
-    ~global:Handler.globals
+    ~global
     ~module_definition:Handler.module_definition
     ~class_definition:Handler.class_definition
     ~class_metadata:Handler.class_metadata
