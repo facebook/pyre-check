@@ -13,6 +13,7 @@ type t = {
   class_definitions: Class.t Node.t Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
+  implicit_submodules: int Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
@@ -53,6 +54,8 @@ module type Handler = sig
     stub:bool ->
     statements:Statement.t list ->
     unit
+
+  val register_implicit_submodule : Reference.t -> unit
 
   val is_module : Reference.t -> bool
 
@@ -180,6 +183,7 @@ let handler
     { class_definitions;
       class_metadata;
       modules;
+      implicit_submodules;
       order;
       aliases;
       globals;
@@ -260,6 +264,25 @@ let handler
           ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
           keys
       in
+      let purge_submodules qualifier =
+        let rec do_purge = function
+          | None -> ()
+          | Some qualifier ->
+              ( if not (Hashtbl.mem modules qualifier) then
+                  let change = function
+                    | None
+                    | Some 0 ->
+                        None
+                    | Some count -> (
+                      match count - 1 with
+                      | 0 -> None
+                      | _ as count -> Some count )
+                  in
+                  Hashtbl.change implicit_submodules qualifier ~f:change );
+              do_purge (Reference.prefix qualifier)
+        in
+        do_purge (Reference.prefix qualifier)
+      in
       let class_keys =
         List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
       in
@@ -275,8 +298,9 @@ let handler
       List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
       |> purge_dependents;
       DependencyHandler.clear_keys_batch handles;
-      List.map handles ~f:(fun handle -> Source.qualifier ~handle)
-      |> List.iter ~f:(Hashtbl.remove modules);
+      let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+      List.iter ~f:purge_submodules qualifiers;
+      List.iter ~f:(Hashtbl.remove modules) qualifiers;
       SharedMem.collect `aggressive;
       if debug then
         TypeOrder.check_integrity (TypeOrder.handler order)
@@ -293,9 +317,28 @@ let handler
         modules
 
 
-    let is_module name = Hashtbl.mem modules name
+    let register_implicit_submodule qualifier =
+      match Hashtbl.mem modules qualifier with
+      | true -> ()
+      | false ->
+          let update = function
+            | None -> 1
+            | Some count -> count + 1
+          in
+          Hashtbl.update implicit_submodules qualifier ~f:update
 
-    let module_definition name = Hashtbl.find modules name
+
+    let is_module name = Hashtbl.mem modules name || Hashtbl.mem implicit_submodules name
+
+    let module_definition name =
+      match Hashtbl.find modules name with
+      | Some _ as result -> result
+      | None -> (
+        match Hashtbl.mem implicit_submodules name with
+        | true ->
+            Some (Module.create ~qualifier:name ~local_mode:Ast.Source.Declare ~stub:false [])
+        | false -> None )
+
 
     let in_class_definition_keys = Hashtbl.mem class_definitions
 
@@ -331,13 +374,7 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
   let rec register_submodules = function
     | None -> ()
     | Some qualifier ->
-        if not (Handler.is_module qualifier) then
-          Handler.register_module
-            ~handle:None
-            ~qualifier
-            ~local_mode:Ast.Source.Declare
-            ~stub:false
-            ~statements:[];
+        Handler.register_implicit_submodule qualifier;
         register_submodules (Reference.prefix qualifier)
   in
   register_submodules (Reference.prefix qualifier)
@@ -924,6 +961,7 @@ module Builder = struct
     let class_definitions = Identifier.Table.create () in
     let class_metadata = Identifier.Table.create () in
     let modules = Reference.Table.create () in
+    let implicit_submodules = Reference.Table.create () in
     let order = TypeOrder.Builder.default () in
     let aliases = Identifier.Table.create () in
     let globals = Reference.Table.create () in
@@ -1037,6 +1075,7 @@ module Builder = struct
     { class_definitions;
       class_metadata;
       modules;
+      implicit_submodules;
       order;
       aliases;
       globals;
@@ -1049,6 +1088,7 @@ module Builder = struct
       { class_definitions;
         class_metadata;
         modules;
+        implicit_submodules;
         order;
         aliases;
         globals;
@@ -1059,6 +1099,7 @@ module Builder = struct
     { class_definitions = Hashtbl.copy class_definitions;
       class_metadata = Hashtbl.copy class_metadata;
       modules = Hashtbl.copy modules;
+      implicit_submodules = Hashtbl.copy implicit_submodules;
       order = TypeOrder.Builder.copy order;
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;

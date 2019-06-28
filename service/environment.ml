@@ -266,13 +266,34 @@ module SharedHandler : Analysis.Environment.Handler = struct
       ~ast_module:(Module.create ~qualifier ~local_mode ?handle ~stub statements)
 
 
+  let register_implicit_submodule qualifier =
+    match Ast.SharedMemory.Modules.get ~qualifier with
+    | Some _ -> ()
+    | None -> (
+      match ImplicitSubmodules.get qualifier with
+      | None -> ImplicitSubmodules.add qualifier 1
+      | Some count ->
+          let count = count + 1 in
+          ImplicitSubmodules.remove_batch (ImplicitSubmodules.KeySet.of_list [qualifier]);
+          ImplicitSubmodules.add qualifier count )
+
+
   let register_undecorated_function ~reference ~annotation =
     UndecoratedFunctions.add reference annotation
 
 
-  let is_module qualifier = Ast.SharedMemory.Modules.exists ~qualifier
+  let is_module qualifier =
+    Ast.SharedMemory.Modules.exists ~qualifier || ImplicitSubmodules.mem qualifier
 
-  let module_definition qualifier = Ast.SharedMemory.Modules.get ~qualifier
+
+  let module_definition qualifier =
+    match Ast.SharedMemory.Modules.get ~qualifier with
+    | Some _ as result -> result
+    | None -> (
+      match ImplicitSubmodules.get qualifier with
+      | Some _ -> Some (Module.create ~qualifier ~local_mode:Ast.Source.Declare ~stub:false [])
+      | None -> None )
+
 
   let in_class_definition_keys annotation = ClassDefinitions.mem annotation
 
@@ -399,6 +420,7 @@ let populate_shared_memory
       { Environment.class_definitions;
         class_metadata;
         modules;
+        implicit_submodules;
         aliases;
         globals;
         order;
@@ -441,6 +463,7 @@ let populate_shared_memory
     add_table
       (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
       modules;
+    add_table ImplicitSubmodules.add implicit_submodules;
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in
   let environment = Environment.Builder.create () in

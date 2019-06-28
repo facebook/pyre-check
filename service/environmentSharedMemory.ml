@@ -182,6 +182,14 @@ module ErrorsValue = struct
   let description = "All errors"
 end
 
+module IntValue = struct
+  type t = int
+
+  let prefix = Prefix.make ()
+
+  let description = "Refcount of implicit submodules"
+end
+
 module UndecoratedFunctionValue = struct
   type t = Type.t Type.Callable.overload
 
@@ -194,6 +202,7 @@ module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 (** Shared memory maps *)
 
 module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
+module ImplicitSubmodules = Memory.NoCache (Ast.SharedMemory.ReferenceKey) (IntValue)
 module Aliases = Memory.NoCache (StringKey) (AliasValue)
 module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
 module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)

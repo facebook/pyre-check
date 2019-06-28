@@ -420,22 +420,8 @@ let test_register_implicit_submodules _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
   Environment.register_implicit_submodules (module Handler) (Reference.create "a.b.c");
   assert_equal None (Handler.module_definition (Reference.create "a.b.c"));
-  assert_equal
-    (Some
-       (Ast.Module.create
-          ~qualifier:(Reference.create "a.b")
-          ~local_mode:Source.Declare
-          ~stub:false
-          []))
-    (Handler.module_definition (Reference.create "a.b"));
-  assert_equal
-    (Some
-       (Ast.Module.create
-          ~qualifier:(Reference.create "a")
-          ~local_mode:Source.Declare
-          ~stub:false
-          []))
-    (Handler.module_definition (Reference.create "a"))
+  assert_true (Handler.is_module (Reference.create "a.b"));
+  assert_true (Handler.is_module (Reference.create "a"))
 
 
 let test_connect_definition _ =

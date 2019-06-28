@@ -10,6 +10,7 @@ type t = {
   class_definitions: Class.t Node.t Identifier.Table.t;
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
+  implicit_submodules: int Reference.Table.t;
   order: TypeOrder.t;
   aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
@@ -53,6 +54,8 @@ module type Handler = sig
     stub:bool ->
     statements:Statement.t list ->
     unit
+
+  val register_implicit_submodule : Reference.t -> unit
 
   val is_module : Reference.t -> bool
 
