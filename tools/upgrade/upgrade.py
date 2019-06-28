@@ -5,6 +5,7 @@
 
 
 import argparse
+import ast
 import itertools
 import json
 import logging
@@ -230,6 +231,10 @@ def _split_across_lines(
     return result
 
 
+def ast_equal(before_ast, after_ast):
+    return ast.dump(before_ast) == ast.dump(after_ast)
+
+
 def fix_file(
     arguments: argparse.Namespace,
     filename: str,
@@ -244,6 +249,7 @@ def fix_file(
     if "@" "generated" in text:
         LOG.warning("Attempting to upgrade generated file %s, skipping.", filename)
         return
+    ast_before = ast.parse(text)
     lines = text.split("\n")  # type: List[str]
 
     # Replace lines in file.
@@ -297,7 +303,12 @@ def fix_file(
         )
         new_lines.extend(comments)
         new_lines.append(line)
-    path.write_text("\n".join(new_lines))
+    new_text = "\n".join(new_lines)
+    ast_after = ast.parse(new_text)
+    if not ast_equal(ast_before, ast_after):
+        LOG.warning("Attempted upgrade changed the AST in file %s, skipping.", filename)
+        return
+    path.write_text(new_text)
 
 
 def _commit_message(directory, summary_override: Optional[str] = None):

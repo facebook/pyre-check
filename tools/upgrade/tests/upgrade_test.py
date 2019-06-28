@@ -3,9 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import itertools
+import argparse
 import json
-import os
 import pathlib
 import subprocess
 import unittest
@@ -323,6 +322,27 @@ class FixmeAllTest(unittest.TestCase):
         ]
         subprocess.assert_has_calls(calls)
 
+    @patch.object(pathlib.Path, "read_text")
+    @patch.object(pathlib.Path, "write_text")
+    def test_preserve_ast(self, path_write, path_read) -> None:
+        mock_arguments = argparse.Namespace()
+        mock_arguments.max_line_length = 88
+        mock_arguments.truncate = True
+        error_map = {7: [{"code": "6", "description": "Foo"}]}
+        path_read.return_value = """
+def foo(x: int) -> str:
+    return str(x)
+
+def bar(x: str) -> str:
+    return f\'\'\'
+    first line
+    second {foo(x)}
+    \'\'\'
+        """
+        upgrade.fix_file(mock_arguments, "test.py", error_map)
+
+        path_write.assert_not_called()
+
     @patch("subprocess.run")
     @patch.object(upgrade.Configuration, "gather_local_configurations")
     @patch.object(upgrade.Configuration, "find_project_configuration")
@@ -465,10 +485,10 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "  1\n2"
+            path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
-                "  # pyre-fixme[1]: description\n  1\n2"
+                "# pyre-fixme[1]: description\n1\n2"
             )
 
         # Generated files.
@@ -499,11 +519,11 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "  1\n2"
+            path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             calls = [
-                call("  # pyre-fixme[1]: description\n  1\n2"),
-                call("  # pyre-fixme[1]: description\n  1\n2"),
+                call("# pyre-fixme[1]: description\n1\n2"),
+                call("# pyre-fixme[1]: description\n1\n2"),
             ]
             path_write_text.assert_has_calls(calls)
             calls = [
@@ -535,11 +555,11 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "  1\n2"
+            path_read_text.return_value = "1\n2"
             arguments.comment = "T1234"
             upgrade.run_fixme(arguments)
             arguments.comment = None
-            path_write_text.assert_called_once_with("  # pyre-fixme[1]: T1234\n  1\n2")
+            path_write_text.assert_called_once_with("# pyre-fixme[1]: T1234\n1\n2")
 
         # Test multiple errors and multiple lines.
         with patch.object(pathlib.Path, "write_text") as path_write_text:
@@ -855,14 +875,14 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "line 1\nline 2\nline 3"
+            path_read_text.return_value = "line = 1\nline = 2\nline = 3"
             upgrade.run_fixme(arguments_short)
             path_write_text.assert_called_once_with(
                 """# FIXME[1]: description one...
-                line 1
+                line = 1
                 # FIXME[2]: description-tha...
-                line 2
-                line 3""".replace(
+                line = 2
+                line = 3""".replace(
                     "                ", ""
                 ).replace(
                     "FIXME", "pyre-fixme"
@@ -881,10 +901,10 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "  1\n2"
+            path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
             path_write_text.assert_called_once_with(
-                "  # pyre-fixme[1]: description\n  1\n2"
+                "# pyre-fixme[1]: description\n1\n2"
             )
 
         # Ensure that we prefer concise descriptions.
@@ -899,11 +919,9 @@ class FixmeTest(unittest.TestCase):
             ]
             stdin_errors.return_value = errors
             run_errors.return_value = errors
-            path_read_text.return_value = "  1\n2"
+            path_read_text.return_value = "1\n2"
             upgrade.run_fixme(arguments)
-            path_write_text.assert_called_once_with(
-                "  # pyre-fixme[1]: Concise.\n  1\n2"
-            )
+            path_write_text.assert_called_once_with("# pyre-fixme[1]: Concise.\n1\n2")
 
 
 class DecodeTest(unittest.TestCase):
