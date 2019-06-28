@@ -400,6 +400,8 @@ val is_unbound : t -> bool
 
 val contains_any : t -> bool
 
+val contains_unknown : t -> bool
+
 val expression_contains_any : Expression.t -> bool
 
 (* Contains `Bottom` or variables. *)

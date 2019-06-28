@@ -590,11 +590,21 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
         }
   in
   let format_errors errors =
+    let contains_unknown error =
+      match Error.kind error with
+      | MissingReturnAnnotation { annotation = Some annotation; _ }
+      | MissingParameterAnnotation { annotation = Some annotation; _ }
+      | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
+      | MissingGlobalAnnotation { annotation = Some annotation; _ } ->
+          Type.contains_unknown annotation
+      | _ -> false
+    in
     errors
     |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
     |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
            { error with kind = Error.weaken_literals kind })
     |> List.sort ~compare:Error.compare
+    |> List.filter ~f:(fun error -> not (contains_unknown error))
   in
   let rec recursive_infer_source added_global_errors iterations =
     let add_errors_to_environment errors =

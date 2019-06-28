@@ -1934,6 +1934,8 @@ let contains_callable annotation = exists annotation ~predicate:is_callable
 
 let contains_any annotation = exists annotation ~predicate:is_any
 
+let contains_unknown annotation = exists annotation ~predicate:is_unknown
+
 module LiteralAnyVisitor = struct
   module Visitor = struct
     type t = bool

@@ -424,7 +424,17 @@ let test_infer _ =
         return 1234
       x = foo()
     |}
-    [{|"int"|}]
+    [{|"int"|}];
+
+  (* Don't add annotations containing unknown *)
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+      def foo(a):
+          x, _, z = a.b(':')
+          return z, x
+      |}
+    []
 
 
 let test_infer_backward _ =
