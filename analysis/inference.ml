@@ -319,6 +319,7 @@ module State (Context : Context) = struct
         let reference = Reference.create name in
         Resolution.get_local resolution ~reference
         >>| (fun { Annotation.annotation; _ } ->
+              let annotation = Type.remove_undeclared annotation in
               let error =
                 Error.create
                   ~location

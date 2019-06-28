@@ -434,7 +434,20 @@ let test_infer _ =
           x, _, z = a.b(':')
           return z, x
       |}
-    []
+    [];
+
+  (* Remove undeclared from parameter annotations *)
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+      def foo(a, x = 15):
+        b = a.c()
+        b = int(b)
+        if b > x:
+            x = b
+    |}
+    [ {|[{"name":"a","type":null,"value":null},{"name":"x","type":null,"value":"15"}]|};
+      {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|} ]
 
 
 let test_infer_backward _ =
