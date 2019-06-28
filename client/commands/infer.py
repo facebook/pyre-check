@@ -388,6 +388,7 @@ class Infer(Reporting):
         self._local_configuration = arguments.local_configuration
 
     def run(self) -> Command:
+        self._analysis_directory.prepare()
         result = self._call_client(command=Check.NAME)
         errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
