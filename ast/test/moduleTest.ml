@@ -10,51 +10,16 @@ open Test
 
 let test_empty_stub _ =
   assert_true
-    ( Module.create_for_testing
-        ~qualifier:Reference.empty
-        ~local_mode:Source.PlaceholderStub
-        ~stub:true
-        []
-    |> Module.empty_stub );
+    (Module.create_for_testing ~local_mode:Source.PlaceholderStub ~stub:true |> Module.empty_stub);
   assert_false
-    ( Module.create_for_testing
-        ~qualifier:Reference.empty
-        ~local_mode:Source.PlaceholderStub
-        ~stub:false
-        []
-    |> Module.empty_stub );
+    (Module.create_for_testing ~local_mode:Source.PlaceholderStub ~stub:false |> Module.empty_stub);
   assert_false
-    ( Module.create_for_testing ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
-    |> Module.empty_stub )
-
-
-let test_handle _ =
-  assert_equal
-    ( Module.create_for_testing ~qualifier:Reference.empty ~local_mode:Source.Default ~stub:true []
-    |> Module.handle )
-    None;
-  assert_equal
-    ( Module.create_for_testing
-        ~qualifier:Reference.empty
-        ~local_mode:Source.Default
-        ~handle:(File.Handle.create_for_testing "voodoo.py")
-        ~stub:false
-        []
-    |> Module.handle )
-    (Some (File.Handle.create_for_testing "voodoo.py"))
+    (Module.create_for_testing ~local_mode:Source.Default ~stub:true |> Module.empty_stub)
 
 
 let test_aliased_export _ =
-  let assert_aliased_exports ?(qualifier = Reference.empty) ?handle source aliased_exports =
-    let module_definition =
-      let { Source.statements; _ } = parse source in
-      Module.create_for_testing
-        ?handle
-        ~qualifier
-        ~local_mode:Source.Default
-        ~stub:false
-        statements
-    in
+  let assert_aliased_exports ?(qualifier = Reference.empty) source aliased_exports =
+    let module_definition = Module.create (parse ~qualifier source) in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
         Reference.create source
@@ -117,7 +82,6 @@ let test_aliased_export _ =
   (* Exports through assignments. *)
   assert_aliased_exports
     ~qualifier:(Reference.create "requests")
-    ~handle:(File.Handle.create_for_testing "requests/__init__.pyi")
     {|
       from . import api
       $local_requests$post = requests.api.post
@@ -129,7 +93,5 @@ let test_aliased_export _ =
 
 let () =
   "module"
-  >::: [ "empty_stub" >:: test_empty_stub;
-         "handle" >:: test_handle;
-         "aliased_export" >:: test_aliased_export ]
+  >::: ["empty_stub" >:: test_empty_stub; "aliased_export" >:: test_aliased_export]
   |> Test.run

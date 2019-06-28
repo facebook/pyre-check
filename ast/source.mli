@@ -72,8 +72,4 @@ val top_level_define : t -> Statement.Define.t
 
 val top_level_define_node : t -> Statement.Define.t Node.t
 
-val expand_relative_import
-  :  ?handle:File.Handle.t ->
-  qualifier:Reference.t ->
-  from:Reference.t ->
-  Reference.t
+val expand_relative_import : from:Reference.t -> t -> Reference.t

@@ -12,7 +12,7 @@ open Statement
 
 exception MissingWildcardImport
 
-let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
+let expand_relative_imports ({ Source.qualifier; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
 
@@ -22,10 +22,7 @@ let expand_relative_imports ({ Source.handle; qualifier; _ } as source) =
         | Import { Import.from = Some from; imports }
           when (not (String.equal (Reference.show from) "builtins"))
                && not (String.equal (Reference.show from) "future.builtins") ->
-            Import
-              { Import.from = Some (Source.expand_relative_import ~handle ~qualifier ~from);
-                imports
-              }
+            Import { Import.from = Some (Source.expand_relative_import source ~from); imports }
         | _ -> value
       in
       qualifier, [{ Node.location; value }]

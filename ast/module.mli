@@ -24,10 +24,4 @@ val create : Source.t -> t
 val create_implicit : ?empty_stub:bool -> unit -> t
 
 (* Exposed for testing only *)
-val create_for_testing
-  :  qualifier:Reference.t ->
-  local_mode:Source.mode ->
-  ?handle:File.Handle.t ->
-  stub:bool ->
-  Statement.t list ->
-  t
+val create_for_testing : local_mode:Source.mode -> stub:bool -> t

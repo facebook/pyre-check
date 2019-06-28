@@ -67,7 +67,18 @@ let handle { handle; _ } = handle
 
 let wildcard_exports { wildcard_exports; _ } = wildcard_exports
 
-let create_for_testing ~qualifier ~local_mode ?handle ~stub statements =
+let create_for_testing ~local_mode ~stub =
+  { aliased_exports = Reference.Map.empty |> Map.to_tree;
+    empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
+    handle = None;
+    wildcard_exports = []
+  }
+
+
+let create
+    ( { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ } as
+    source )
+  =
   let aliased_exports =
     let aliased_exports aliases { Node.value; _ } =
       match value with
@@ -81,7 +92,7 @@ let create_for_testing ~qualifier ~local_mode ?handle ~stub statements =
             Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
         | _ -> aliases )
       | Import { Import.from = Some from; imports } ->
-          let from = Source.expand_relative_import ?handle ~qualifier ~from in
+          let from = Source.expand_relative_import source ~from in
           let export aliases { Import.name; alias } =
             let alias = Option.value alias ~default:name in
             let name =
@@ -150,16 +161,10 @@ let create_for_testing ~qualifier ~local_mode ?handle ~stub statements =
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
   { aliased_exports;
-    empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    handle;
+    empty_stub = File.Handle.is_stub handle && Source.equal_mode local_mode Source.PlaceholderStub;
+    handle = Some handle;
     wildcard_exports = Option.value dunder_all ~default:toplevel_public
   }
-
-
-let create
-    { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ }
-  =
-  create_for_testing ~qualifier ~local_mode ~handle ~stub:(File.Handle.is_stub handle) statements
 
 
 let create_implicit ?(empty_stub = false) () =

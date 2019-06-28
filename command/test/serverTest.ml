@@ -1154,18 +1154,6 @@ let test_decode_serialized_ocaml_values context =
     ~value:(File.Handle.create_for_testing "handle.py")
     ~response:("File handle", "handle", Some "handle.py");
   assert_decode
-    ~key:(Ast.SharedMemory.Modules.Modules.serialize_key !&"handle")
-    ~value:
-      (Ast.Module.create_for_testing
-         ~qualifier:!&"handle"
-         ~local_mode:Ast.Source.Default
-         ~stub:false
-         [Test.parse_single_statement "x = 2"])
-    ~response:
-      ( "Module",
-        "handle",
-        Some "((aliased_exports())(empty_stub false)(handle())(wildcard_exports((x))))" );
-  assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
     ~value:(File.Handle.create_for_testing "five.py")
     ~response:("Path", "5", Some "five.py");

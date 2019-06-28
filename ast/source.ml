@@ -343,7 +343,7 @@ let top_level_define_node ({ handle; _ } as source) =
   Node.create ~location (top_level_define source)
 
 
-let expand_relative_import ?handle ~qualifier ~from =
+let expand_relative_import ~from { handle; qualifier; _ } =
   match Reference.show from with
   | "builtins" -> Reference.empty
   | serialized ->
@@ -358,20 +358,17 @@ let expand_relative_import ?handle ~qualifier ~from =
       let prefix =
         if not (String.is_empty dots) then
           let initializer_module_offset =
-            match handle with
-            | Some handle ->
-                let path = File.Handle.show handle in
-                (* `.` corresponds to the directory containing the module. For non-init modules,
-                   the qualifier matches the path, so we drop exactly the number of dots. However,
-                   for __init__ modules, the directory containing it represented by the qualifier. *)
-                if
-                  String.is_suffix path ~suffix:"/__init__.py"
-                  || String.is_suffix path ~suffix:"/__init__.pyi"
-                then
-                  1
-                else
-                  0
-            | None -> 0
+            let path = File.Handle.show handle in
+            (* `.` corresponds to the directory containing the module. For non-init modules, the
+               qualifier matches the path, so we drop exactly the number of dots. However, for
+               __init__ modules, the directory containing it represented by the qualifier. *)
+            if
+              String.is_suffix path ~suffix:"/__init__.py"
+              || String.is_suffix path ~suffix:"/__init__.pyi"
+            then
+              1
+            else
+              0
           in
           List.rev (Reference.as_list qualifier)
           |> (fun reversed -> List.drop reversed (String.length dots - initializer_module_offset))
