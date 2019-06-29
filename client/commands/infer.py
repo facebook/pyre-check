@@ -408,6 +408,9 @@ class Infer(Reporting):
     def _flags(self) -> List[str]:
         flags = super()._flags()
         flags.extend(["-infer"])
+        filter_directories = self._get_directories_to_analyze()
+        if len(filter_directories):
+            flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
         search_path = self._configuration.search_path + typeshed_search_path(
             self._configuration.typeshed
         )
