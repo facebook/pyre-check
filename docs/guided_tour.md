@@ -74,6 +74,7 @@ $ pyre check
 See [Configuring Pyre](configuration.md) for examples and
 additional configuration settings.
 
+
 # Using pyre-upgrade
 
 `pyre-upgrade` is a tool to help you convert files to use `# pyre-strict`. You can use it
@@ -82,3 +83,13 @@ to automatically add `fixmes` to errors in the code, and help you improve strict
 Steps
 1. Add `# pyre-strict` to the toplevel of your files
 2. Run `pyre --output=json | pyre-upgrade fixme` to automatically add fixmes to all new errors
+
+
+# Using pyre infer
+Pyre infer helps you generate stubs and add annotations to your code. To generate stubs, simply run
+
+`pyre infer`
+
+to automatically add these annotations to your code, run
+
+`pyre infer -i`
