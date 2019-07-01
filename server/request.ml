@@ -15,6 +15,11 @@ open Pyre
 
 exception IncorrectParameters of Type.t
 
+let to_pyre_position { LanguageServer.Types.Position.line; character } =
+  (* The LSP protocol starts a file at line 0, column 0. Pyre starts a file at line 1, column 0. *)
+  { Location.line = line + 1; column = character }
+
+
 let parse_lsp ~configuration ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -46,7 +51,7 @@ let parse_lsp ~configuration ~request =
           { TextDocumentDefinitionRequest.parameters =
               Some
                 { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position = { Position.line; character }
+                  position
                 };
             id;
             _
@@ -54,13 +59,7 @@ let parse_lsp ~configuration ~request =
           uri_to_path ~uri
           >>| File.create
           >>| fun file ->
-          GetDefinitionRequest
-            { DefinitionRequest.id;
-              file;
-              (* The LSP protocol starts a file at line 0, column 0. Pyre starts a file at line 1,
-                 column 0. *)
-              position = { Ast.Location.line = line + 1; column = character }
-            }
+          GetDefinitionRequest { DefinitionRequest.id; file; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.dump "%s" yojson_error;
@@ -144,13 +143,38 @@ let parse_lsp ~configuration ~request =
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
           None )
+    | "textDocument/completion" -> (
+      match CompletionRequest.of_yojson request with
+      | Ok
+          { CompletionRequest.parameters =
+              Some
+                { textDocument = { TextDocumentIdentifier.uri; _ };
+                  position;
+                  context = Some { triggerKind; triggerCharacter = Some "." };
+                  _
+                };
+            id;
+            _
+          } ->
+          let open CompletionParameters in
+          if triggerKindNumber TriggerCharacter <> triggerKind then
+            None
+          else
+            uri_to_path ~uri
+            >>| fun path ->
+            CompletionRequest
+              { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
+      | Ok _ -> None
+      | Error yojson_error ->
+          Log.log ~section:`Server "Error: %s" yojson_error;
+          None )
     | "textDocument/hover" -> (
       match HoverRequest.of_yojson request with
       | Ok
           { HoverRequest.parameters =
               Some
                 { TextDocumentPositionParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  position = { Position.line; character }
+                  position
                 };
             id;
             _
@@ -158,13 +182,7 @@ let parse_lsp ~configuration ~request =
           uri_to_path ~uri
           >>| File.create
           >>| fun file ->
-          HoverRequest
-            { DefinitionRequest.id;
-              file;
-              (* The LSP protocol starts a file at line 0, column 0. Pyre starts a file at line 1,
-                 column 0. *)
-              position = { Ast.Location.line = line + 1; column = character }
-            }
+          HoverRequest { DefinitionRequest.id; file; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
@@ -1153,6 +1171,17 @@ let rec process
           { state; response }
       | GetDefinitionRequest request ->
           process_get_definition_request ~state ~configuration ~request
+      | CompletionRequest { CompletionRequest.id; path; position = cursor_position; _ } ->
+          let completion_items =
+            AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position
+          in
+          let response =
+            LanguageServer.Protocol.CompletionResponse.create ~id ~items:completion_items
+            |> LanguageServer.Protocol.CompletionResponse.to_yojson
+            |> Yojson.Safe.to_string
+            |> fun response -> Some (LanguageServerProtocolResponse response)
+          in
+          { state; response }
       | HoverRequest { DefinitionRequest.id; file; position } ->
           let response =
             let open LanguageServer.Protocol in

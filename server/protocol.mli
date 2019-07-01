@@ -8,6 +8,15 @@ open Ast
 open Analysis
 open Pyre
 
+module CompletionRequest : sig
+  type t = {
+    id: LanguageServer.Types.RequestId.t;
+    path: Path.t;
+    position: Location.position
+  }
+  [@@deriving eq, show]
+end
+
 module DefinitionRequest : sig
   type t = {
     id: LanguageServer.Types.RequestId.t;
@@ -180,6 +189,7 @@ module Request : sig
           arguments: LanguageServer.Types.CommandArguments.t list
         }
     | GetDefinitionRequest of DefinitionRequest.t
+    | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
     | LanguageServerProtocolRequest of string
     | OpenDocument of File.t

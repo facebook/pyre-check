@@ -170,6 +170,33 @@ module TextDocumentPositionParameters = struct
   [@@deriving yojson]
 end
 
+module CompletionParameters = struct
+  type triggerKind =
+    | Invoked
+    | TriggerCharacter
+    | TriggerForIncompleteCompletions
+  [@@deriving eq, show]
+
+  let triggerKindNumber = function
+    | Invoked -> 1
+    | TriggerCharacter -> 2
+    | TriggerForIncompleteCompletions -> 3
+
+
+  type context = {
+    triggerKind: int;
+    triggerCharacter: string option [@default None]
+  }
+  [@@deriving yojson]
+
+  type t = {
+    textDocument: TextDocumentIdentifier.t;
+    position: Position.t;
+    context: context option [@default None]
+  }
+  [@@deriving yojson]
+end
+
 module DidCloseTextDocumentParameters = struct
   type t = { textDocument: TextDocumentIdentifier.t } [@@deriving yojson]
 end
@@ -766,6 +793,7 @@ module RageRequest = struct
   include RequestMessage.Make (RageParameters)
 end
 
+module CompletionRequest = RequestMessage.Make (CompletionParameters)
 module HoverRequest = RequestMessage.Make (TextDocumentPositionParameters)
 module DidCloseTextDocument = NotificationMessage.Make (DidCloseTextDocumentParameters)
 module DidSaveTextDocument = NotificationMessage.Make (DidSaveTextDocumentParameters)
@@ -812,6 +840,11 @@ module CompletionItems = struct
   [@@deriving show, yojson]
 
   type t = item list [@@deriving show, yojson]
+end
+
+module CompletionResponse = struct
+  module CompletionError = ResponseError.Make (Null)
+  include ResponseMessage.Make (CompletionItems) (CompletionError)
 end
 
 module TextDocumentDefinitionResponse = struct

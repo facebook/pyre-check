@@ -162,7 +162,11 @@ module InitializeResponse = struct
                           save = Some { SaveOptions.include_text = Some false }
                         };
                     hover_provider = Some true;
-                    completion_provider = None;
+                    completion_provider =
+                      Some
+                        { CompletionOptions.resolve_provider = Some false;
+                          trigger_characters = Some ["."]
+                        };
                     signature_help_provider = None;
                     definition_provider = Some true;
                     references_provider = None;
@@ -190,6 +194,12 @@ module ShutdownResponse = struct
   include Types.ShutdownResponse
 
   let default id = { jsonrpc = "2.0"; id; result = None; error = None }
+end
+
+module CompletionResponse = struct
+  include Types.CompletionResponse
+
+  let create ~id ~items = { jsonrpc = "2.0"; id; result = Some items; error = None }
 end
 
 module TextDocumentDefinitionResponse = struct

@@ -73,6 +73,12 @@ module ShutdownResponse : sig
   (** default [id] [response] the shutdown response *)
 end
 
+module CompletionResponse : sig
+  type t [@@deriving to_yojson]
+
+  val create : id:Types.RequestId.t -> items:Types.CompletionItems.t -> t
+end
+
 module TextDocumentDefinitionResponse : sig
   type t [@@deriving to_yojson]
 

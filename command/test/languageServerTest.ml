@@ -450,6 +450,10 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
+            "completionProvider": {
+              "resolveProvider": false,
+              "triggerCharacters": ["."]
+            },
             "definitionProvider": true,
             "executeCommandProvider": { "commands": [ "add_annotation" ] },
             "hoverProvider": true,
@@ -475,6 +479,10 @@ let test_initialize_response _ =
         "result": {
           "capabilities": {
             "codeActionProvider": { "codeActionKind": [ "refactor.rewrite" ] },
+            "completionProvider": {
+              "resolveProvider": false,
+              "triggerCharacters": ["."]
+            },
             "definitionProvider": true,
             "executeCommandProvider": { "commands": [ "add_annotation" ] },
             "hoverProvider": true,

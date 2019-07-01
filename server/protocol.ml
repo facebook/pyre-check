@@ -8,6 +8,15 @@ open Ast
 open Analysis
 open Pyre
 
+module CompletionRequest = struct
+  type t = {
+    id: LanguageServer.Types.RequestId.t;
+    path: Path.t;
+    position: Location.position
+  }
+  [@@deriving eq, show]
+end
+
 module DefinitionRequest = struct
   type t = {
     id: LanguageServer.Types.RequestId.t;
@@ -256,6 +265,7 @@ module Request = struct
           arguments: LanguageServer.Types.CommandArguments.t list
         }
     | GetDefinitionRequest of DefinitionRequest.t
+    | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
     | LanguageServerProtocolRequest of string
     | OpenDocument of File.t
@@ -293,6 +303,7 @@ module Request = struct
     | StopRequest -> "Stop"
     | ClientShutdownRequest _ -> "ClientConnection"
     | GetDefinitionRequest _ -> "GetDefinition"
+    | CompletionRequest _ -> "Completion"
     | HoverRequest _ -> "Hover"
     | OpenDocument _ -> "OpenDocument"
     | CloseDocument _ -> "CloseDocument"
