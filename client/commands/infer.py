@@ -230,15 +230,6 @@ class StubFile:
         typing_imports = set()
         contents = ""
 
-        # import necessary modules from typing
-        for stub in self._stubs:
-            typing_imports.update(stub.get_typing_imports())
-        alphabetical_imports = sorted(list(typing_imports))
-        if alphabetical_imports:
-            contents += "from typing import {}\n\n".format(
-                ", ".join(str(type_import) for type_import in alphabetical_imports)
-            )
-
         for stub in self._fields:
             parent = _relativize_access(stub.parent, stub.path)
             # Ignore nested classes
@@ -260,6 +251,19 @@ class StubFile:
             contents += "\nclass {}:\n".format(parent)
             for stub in stubs:
                 contents += "    {}\n".format(stub.to_string().replace("\n", "\n    "))
+
+        for stub in self._stubs:
+            typing_imports.update(stub.get_typing_imports())
+            alphabetical_imports = sorted(list(typing_imports))
+            if alphabetical_imports and contents != "":
+                contents = (
+                    "from typing import {}\n\n".format(
+                        ", ".join(
+                            str(type_import) for type_import in alphabetical_imports
+                        )
+                    )
+                    + contents
+                )
         return contents
 
     def is_empty(self):
