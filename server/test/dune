@@ -1,5 +1,6 @@
 (tests
  (names
+  autoCompleteTest
   connectionsTest
   queryTest
   requestTest
@@ -7,9 +8,11 @@
   savedStateTest)
  (preprocess
   (pps
+   ppx_deriving.show
    ppx_deriving_yojson))
  (libraries
   oUnit
+  ppx_deriving
   pyrelib.test
   pyrelib.languageServer
   pyrelib.network

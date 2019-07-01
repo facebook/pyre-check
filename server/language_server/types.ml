@@ -804,6 +804,16 @@ module ShutdownResponse = struct
   include ResponseMessage.Make (ShutdownResult) (ShutdownError)
 end
 
+module CompletionItems = struct
+  type item = {
+    label: string;
+    detail: string
+  }
+  [@@deriving show, yojson]
+
+  type t = item list [@@deriving show, yojson]
+end
+
 module TextDocumentDefinitionResponse = struct
   module DefinitionResult = struct
     type t = Location.t list [@@deriving yojson]
