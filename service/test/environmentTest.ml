@@ -135,13 +135,13 @@ let test_normalize_dependencies _ =
 
 
 let test_normalize _ =
-  TypeOrder.insert (module Handler.TypeOrderHandler) (Primitive "int");
-  TypeOrder.insert (module Handler.TypeOrderHandler) (Primitive "str");
+  TypeOrder.insert (module Handler.TypeOrderHandler) "int";
+  TypeOrder.insert (module Handler.TypeOrderHandler) "str";
   let indices =
     let index_of annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
     in
-    [index_of (Primitive "int"); index_of (Primitive "str")] |> List.sort ~compare:Int.compare
+    [index_of "int"; index_of "str"] |> List.sort ~compare:Int.compare
   in
   Service.Environment.normalize_shared_memory ();
   assert_equal

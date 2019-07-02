@@ -895,22 +895,10 @@ let test_compute_hashes_to_keys context =
   let set_up_shared_memory _ =
     Handler.TypeOrderHandler.add_key 15;
     Handler.TypeOrderHandler.add_key 16;
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.annotations ())
-      ~key:15
-      ~data:(Primitive "fifteen");
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.indices ())
-      ~key:(Primitive "fifteen")
-      ~data:15;
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.annotations ())
-      ~key:16
-      ~data:(Primitive "sixteen");
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.indices ())
-      ~key:(Primitive "sixteen")
-      ~data:16;
+    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.annotations ()) ~key:15 ~data:"fifteen";
+    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.indices ()) ~key:"fifteen" ~data:15;
+    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.annotations ()) ~key:16 ~data:"sixteen";
+    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.indices ()) ~key:"sixteen" ~data:16;
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.edges ())
       ~key:15
@@ -931,8 +919,7 @@ let test_compute_hashes_to_keys context =
     OrderEdges.remove_batch (OrderEdges.KeySet.of_list [15; 16]);
     OrderBackedges.remove_batch (OrderBackedges.KeySet.of_list [15; 16]);
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
-    OrderIndices.remove_batch
-      (OrderIndices.KeySet.of_list [Primitive "fifteen"; Primitive "sixteen"]);
+    OrderIndices.remove_batch (OrderIndices.KeySet.of_list ["fifteen"; "sixteen"]);
     Ast.SharedMemory.HandleKeys.clear ()
   in
   OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
@@ -948,15 +935,11 @@ let test_compute_hashes_to_keys context =
     @ [ to_binding
           (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
           (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
-        to_binding
-          (OrderIndices.hash_of_key (Primitive "sixteen"))
-          (OrderIndices.serialize_key (Primitive "sixteen"));
+        to_binding (OrderIndices.hash_of_key "sixteen") (OrderIndices.serialize_key "sixteen");
         to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
         to_binding (OrderEdges.hash_of_key 16) (OrderEdges.serialize_key 16);
         to_binding (OrderEdges.hash_of_key 15) (OrderEdges.serialize_key 15);
-        to_binding
-          (OrderIndices.hash_of_key (Primitive "fifteen"))
-          (OrderIndices.serialize_key (Primitive "fifteen"));
+        to_binding (OrderIndices.hash_of_key "fifteen") (OrderIndices.serialize_key "fifteen");
         to_binding (OrderBackedges.hash_of_key 15) (OrderBackedges.serialize_key 15);
         to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
         to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);

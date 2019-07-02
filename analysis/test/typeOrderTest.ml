@@ -12,8 +12,6 @@ open Test
 open TypeOrder
 open Annotated
 
-let ( ! ) name = TypeOrder.Node.Primitive name
-
 let connect ?(parameters = []) handler ~predecessor ~successor =
   connect ~parameters handler ~predecessor ~successor
 
@@ -92,14 +90,14 @@ let meet ?(constructor = fun _ ~protocol_assumptions:_ -> None) handler =
  *  1 - 3 *)
 let butterfly =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order !"0";
-  insert order !"1";
-  insert order !"2";
-  insert order !"3";
-  connect order ~predecessor:!"0" ~successor:!"2";
-  connect order ~predecessor:!"0" ~successor:!"3";
-  connect order ~predecessor:!"1" ~successor:!"2";
-  connect order ~predecessor:!"1" ~successor:!"3";
+  insert order "0";
+  insert order "1";
+  insert order "2";
+  insert order "3";
+  connect order ~predecessor:"0" ~successor:"2";
+  connect order ~predecessor:"0" ~successor:"3";
+  connect order ~predecessor:"1" ~successor:"2";
+  connect order ~predecessor:"1" ~successor:"3";
   order
 
 
@@ -109,22 +107,22 @@ let butterfly =
  *          |  \       /
  *          4 -- 2 --- *)
 let order =
-  let bottom = !"bottom" in
+  let bottom = "bottom" in
   let order = Builder.create () |> TypeOrder.handler in
   insert order bottom;
-  insert order !"0";
-  insert order !"1";
-  insert order !"2";
-  insert order !"3";
-  insert order !"4";
-  insert order !"5";
-  connect order ~predecessor:!"0" ~successor:!"3";
-  connect order ~predecessor:!"1" ~successor:!"3";
-  connect order ~predecessor:!"4" ~successor:!"2";
-  connect order ~predecessor:bottom ~successor:!"0";
-  connect order ~predecessor:bottom ~successor:!"1";
-  connect order ~predecessor:bottom ~successor:!"2";
-  connect order ~predecessor:bottom ~successor:!"4";
+  insert order "0";
+  insert order "1";
+  insert order "2";
+  insert order "3";
+  insert order "4";
+  insert order "5";
+  connect order ~predecessor:"0" ~successor:"3";
+  connect order ~predecessor:"1" ~successor:"3";
+  connect order ~predecessor:"4" ~successor:"2";
+  connect order ~predecessor:bottom ~successor:"0";
+  connect order ~predecessor:bottom ~successor:"1";
+  connect order ~predecessor:bottom ~successor:"2";
+  connect order ~predecessor:bottom ~successor:"4";
   order
 
 
@@ -141,21 +139,21 @@ let order =
  *)
 let diamond_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order !"A";
-  insert order !"B";
-  insert order !"C";
-  insert order !"D";
-  connect order ~predecessor:!"D" ~successor:!"B";
-  connect order ~predecessor:!"D" ~successor:!"C";
-  connect order ~predecessor:!"B" ~successor:!"A";
-  connect order ~predecessor:!"C" ~successor:!"A";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  insert order "D";
+  connect order ~predecessor:"D" ~successor:"B";
+  connect order ~predecessor:"D" ~successor:"C";
+  connect order ~predecessor:"B" ~successor:"A";
+  connect order ~predecessor:"C" ~successor:"A";
   order
 
 
 let disconnected_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order !"A";
-  insert order !"B";
+  insert order "A";
+  insert order "B";
   order
 
 
@@ -172,48 +170,47 @@ let disconnected_order =
  *)
 let triangle_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order !"A";
-  insert order !"B";
-  insert order !"C";
-  connect order ~predecessor:!"B" ~successor:!"A";
-  connect order ~predecessor:!"C" ~successor:!"B";
-  connect order ~predecessor:!"C" ~successor:!"A";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  connect order ~predecessor:"B" ~successor:"A";
+  connect order ~predecessor:"C" ~successor:"B";
+  connect order ~predecessor:"C" ~successor:"A";
   order
 
 
 let variance_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order Any;
-  insert order !"object";
-  insert order !"bool";
-  insert order !"str";
-  insert order !"int";
-  insert order !"float";
-  connect order ~predecessor:!"int" ~successor:!"float";
-  insert order !"typing.Generic";
+  insert order "object";
+  insert order "bool";
+  insert order "str";
+  insert order "int";
+  insert order "float";
+  connect order ~predecessor:"int" ~successor:"float";
+  insert order "typing.Generic";
 
   (* Variance examples borrowed from https://www.python.org/dev/peps/pep-0483 *)
   let variable_t = Type.variable "_T" in
   let variable_t_2 = Type.variable "_T_2" in
   let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
   let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
-  insert order !"LinkedList";
-  insert order !"Map";
-  insert order !"Box";
-  insert order !"Sink";
-  connect order ~predecessor:!"LinkedList" ~successor:!"typing.Generic" ~parameters:[variable_t];
+  insert order "LinkedList";
+  insert order "Map";
+  insert order "Box";
+  insert order "Sink";
+  connect order ~predecessor:"LinkedList" ~successor:"typing.Generic" ~parameters:[variable_t];
   connect
     order
-    ~predecessor:!"Map"
-    ~successor:!"typing.Generic"
+    ~predecessor:"Map"
+    ~successor:"typing.Generic"
     ~parameters:[variable_t; variable_t_2];
-  connect order ~predecessor:!"Box" ~successor:!"typing.Generic" ~parameters:[variable_t_co];
-  connect order ~predecessor:!"Sink" ~successor:!"typing.Generic" ~parameters:[variable_t_contra];
-  insert order !"Base";
-  insert order !"Derived";
-  connect order ~predecessor:!"Base" ~successor:!"typing.Generic" ~parameters:[variable_t_contra];
-  connect order ~predecessor:!"Derived" ~successor:!"Base" ~parameters:[variable_t_co];
-  connect order ~predecessor:!"Derived" ~successor:!"typing.Generic" ~parameters:[variable_t_co];
+  connect order ~predecessor:"Box" ~successor:"typing.Generic" ~parameters:[variable_t_co];
+  connect order ~predecessor:"Sink" ~successor:"typing.Generic" ~parameters:[variable_t_contra];
+  insert order "Base";
+  insert order "Derived";
+  connect order ~predecessor:"Base" ~successor:"typing.Generic" ~parameters:[variable_t_contra];
+  connect order ~predecessor:"Derived" ~successor:"Base" ~parameters:[variable_t_co];
+  connect order ~predecessor:"Derived" ~successor:"typing.Generic" ~parameters:[variable_t_co];
   order
 
 
@@ -245,33 +242,32 @@ let variance_order =
  *)
 let multiplane_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order Any;
-  insert order !"str";
-  insert order !"int";
-  insert order !"float";
-  insert order !"object";
-  insert order !"bool";
-  connect order ~predecessor:!"int" ~successor:!"float";
-  insert order !"typing.Generic";
+  insert order "str";
+  insert order "int";
+  insert order "float";
+  insert order "object";
+  insert order "bool";
+  connect order ~predecessor:"int" ~successor:"float";
+  insert order "typing.Generic";
   let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
   let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
-  insert order !"A";
-  insert order !"B";
-  insert order !"C";
-  insert order !"D";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  insert order "D";
   connect
     order
-    ~predecessor:!"A"
-    ~successor:!"typing.Generic"
+    ~predecessor:"A"
+    ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:!"B" ~successor:!"A" ~parameters:[variable_t_contra; variable_t_co];
+  connect order ~predecessor:"B" ~successor:"A" ~parameters:[variable_t_contra; variable_t_co];
   connect
     order
-    ~predecessor:!"B"
-    ~successor:!"typing.Generic"
+    ~predecessor:"B"
+    ~successor:"typing.Generic"
     ~parameters:[variable_t_contra; variable_t_co];
-  connect order ~predecessor:!"C" ~successor:!"B" ~parameters:[Type.integer; Type.integer];
-  connect order ~predecessor:!"D" ~successor:!"B" ~parameters:[Type.float; Type.float];
+  connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
+  connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
   order
 
 
@@ -303,32 +299,31 @@ let multiplane_variance_order =
  *)
 let parallel_planes_variance_order =
   let order = Builder.create () |> TypeOrder.handler in
-  insert order Any;
-  insert order !"str";
-  insert order !"int";
-  insert order !"float";
-  insert order !"object";
-  connect order ~predecessor:!"int" ~successor:!"float";
-  insert order !"typing.Generic";
+  insert order "str";
+  insert order "int";
+  insert order "float";
+  insert order "object";
+  connect order ~predecessor:"int" ~successor:"float";
+  insert order "typing.Generic";
   let variable_t_co = Type.variable "_T_co" ~variance:Covariant in
   let variable_t_contra = Type.variable "_T_contra" ~variance:Contravariant in
-  insert order !"A";
-  insert order !"B";
-  insert order !"C";
-  insert order !"D";
+  insert order "A";
+  insert order "B";
+  insert order "C";
+  insert order "D";
   connect
     order
-    ~predecessor:!"A"
-    ~successor:!"typing.Generic"
+    ~predecessor:"A"
+    ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:!"B" ~successor:!"A" ~parameters:[variable_t_co; variable_t_contra];
+  connect order ~predecessor:"B" ~successor:"A" ~parameters:[variable_t_co; variable_t_contra];
   connect
     order
-    ~predecessor:!"B"
-    ~successor:!"typing.Generic"
+    ~predecessor:"B"
+    ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:!"C" ~successor:!"B" ~parameters:[Type.integer; Type.integer];
-  connect order ~predecessor:!"D" ~successor:!"B" ~parameters:[Type.float; Type.float];
+  connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
+  connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
   order
 
 
@@ -337,114 +332,103 @@ let default =
   let variable = Type.variable "_T" in
   let other_variable = Type.variable "_T2" in
   let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
-  insert order !"typing.Sequence";
-  connect order ~predecessor:!"typing.Sequence" ~successor:!"typing.Generic" ~parameters:[variable];
-  insert order !"list";
-  insert order !"typing.Sized";
-  connect order ~predecessor:!"list" ~successor:!"typing.Sized";
-  connect order ~predecessor:!"list" ~successor:!"typing.Generic" ~parameters:[variable];
+  insert order "typing.Sequence";
+  connect order ~predecessor:"typing.Sequence" ~successor:"typing.Generic" ~parameters:[variable];
+  insert order "list";
+  insert order "typing.Sized";
+  connect order ~predecessor:"list" ~successor:"typing.Sized";
+  connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
 
-  connect order ~predecessor:!"typing.Sized" ~successor:Any;
-  connect order ~predecessor:!"list" ~successor:!"typing.Sequence" ~parameters:[variable];
-  insert order !"typing.AbstractSet";
-  insert order !"set";
-  connect order ~predecessor:!"set" ~successor:!"typing.Sized";
-  connect order ~predecessor:!"set" ~successor:!"typing.Generic" ~parameters:[variable];
+  connect order ~predecessor:"list" ~successor:"typing.Sequence" ~parameters:[variable];
+  insert order "typing.AbstractSet";
+  insert order "set";
+  connect order ~predecessor:"set" ~successor:"typing.Sized";
+  connect order ~predecessor:"set" ~successor:"typing.Generic" ~parameters:[variable];
+  connect order ~predecessor:"typing.AbstractSet" ~successor:"typing.Generic" ~parameters:[variable];
+  connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~parameters:[variable];
+  insert order "typing.Iterator";
+  connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
   connect
     order
-    ~predecessor:!"typing.AbstractSet"
-    ~successor:!"typing.Generic"
-    ~parameters:[variable];
-  connect order ~predecessor:!"set" ~successor:!"typing.AbstractSet" ~parameters:[variable];
-  insert order !"typing.Iterator";
-  connect order ~predecessor:!"list" ~successor:!"typing.Iterator" ~parameters:[variable];
-  connect
-    order
-    ~predecessor:!"typing.Iterator"
-    ~successor:!"typing.Generic"
+    ~predecessor:"typing.Iterator"
+    ~successor:"typing.Generic"
     ~parameters:[variable_covariant];
-  insert order !"typing.Iterable";
+  insert order "typing.Iterable";
   connect
     order
-    ~predecessor:!"typing.Iterator"
-    ~successor:!"typing.Iterable"
+    ~predecessor:"typing.Iterator"
+    ~successor:"typing.Iterable"
     ~parameters:[variable_covariant];
   connect
     order
-    ~predecessor:!"typing.Iterable"
-    ~successor:!"typing.Generic"
+    ~predecessor:"typing.Iterable"
+    ~successor:"typing.Generic"
     ~parameters:[variable_covariant];
-  connect order ~predecessor:!"list" ~successor:!"typing.Iterable" ~parameters:[variable];
-  insert order !"tuple";
-  connect order ~predecessor:!"tuple" ~successor:!"typing.Iterator" ~parameters:[variable];
-  connect order ~predecessor:!"tuple" ~successor:!"typing.Generic" ~parameters:[variable];
-  insert order !"typing.Generator";
+  connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
+  insert order "tuple";
+  connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
+  connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
+  insert order "typing.Generator";
+  connect order ~predecessor:"typing.Generator" ~successor:"typing.Iterator" ~parameters:[variable];
+  connect order ~predecessor:"typing.Generator" ~successor:"typing.Generic" ~parameters:[variable];
+  insert order "str";
+  connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:[Type.Primitive "str"];
+  insert order "AnyIterable";
+  connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
+  insert order "typing.Mapping";
   connect
     order
-    ~predecessor:!"typing.Generator"
-    ~successor:!"typing.Iterator"
-    ~parameters:[variable];
-  connect order ~predecessor:!"typing.Generator" ~successor:!"typing.Generic" ~parameters:[variable];
-  insert order !"str";
-  connect order ~predecessor:!"str" ~successor:!"typing.Iterable" ~parameters:[Type.Primitive "str"];
-  insert order !"AnyIterable";
-  connect order ~predecessor:!"AnyIterable" ~successor:!"typing.Iterable";
-  insert order !"typing.Mapping";
-  connect
-    order
-    ~predecessor:!"typing.Mapping"
-    ~successor:!"typing.Generic"
+    ~predecessor:"typing.Mapping"
+    ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
-  insert order !"dict";
+  insert order "dict";
 
-  connect order ~predecessor:!"dict" ~successor:Any ~parameters:[variable; other_variable];
   connect
     order
-    ~predecessor:!"dict"
-    ~successor:!"typing.Generic"
+    ~predecessor:"dict"
+    ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
   connect
     order
-    ~predecessor:!"dict"
-    ~successor:!"typing.Mapping"
+    ~predecessor:"dict"
+    ~successor:"typing.Mapping"
     ~parameters:[variable; other_variable];
-  connect order ~predecessor:!"dict" ~successor:!"typing.Iterator" ~parameters:[variable];
-  insert order !"collections.OrderedDict";
+  connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
+  insert order "collections.OrderedDict";
   connect
     order
-    ~predecessor:!"collections.OrderedDict"
-    ~successor:!"typing.Generic"
+    ~predecessor:"collections.OrderedDict"
+    ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
   connect
     order
-    ~predecessor:!"collections.OrderedDict"
-    ~successor:!"dict"
+    ~predecessor:"collections.OrderedDict"
+    ~successor:"dict"
     ~parameters:[variable; other_variable];
-  insert order !"PartiallySpecifiedDict";
+  insert order "PartiallySpecifiedDict";
   connect
     order
-    ~predecessor:!"PartiallySpecifiedDict"
-    ~successor:!"dict"
+    ~predecessor:"PartiallySpecifiedDict"
+    ~successor:"dict"
     ~parameters:[Primitive "int"];
-  insert order !"OverSpecifiedDict";
+  insert order "OverSpecifiedDict";
   connect
     order
-    ~predecessor:!"OverSpecifiedDict"
-    ~successor:!"dict"
+    ~predecessor:"OverSpecifiedDict"
+    ~successor:"dict"
     ~parameters:[Primitive "int"; Primitive "int"; Primitive "str"];
-  insert order !"GenericContainer";
+  insert order "GenericContainer";
   connect
     order
-    ~predecessor:!"GenericContainer"
-    ~successor:!"typing.Generic"
+    ~predecessor:"GenericContainer"
+    ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
 
-  connect order ~predecessor:!"GenericContainer" ~successor:Any;
-  insert order !"NonGenericContainerChild";
+  insert order "NonGenericContainerChild";
   connect
     order
-    ~predecessor:!"NonGenericContainerChild"
-    ~successor:!"GenericContainer"
+    ~predecessor:"NonGenericContainerChild"
+    ~successor:"GenericContainer"
     ~parameters:[Primitive "int"; Primitive "str"];
   order
 
@@ -459,7 +443,7 @@ let test_default _ =
 
   (* Test special forms. *)
   let assert_has_special_form primitive_name =
-    assert_true (TypeOrder.contains order (Primitive primitive_name))
+    assert_true (TypeOrder.contains order primitive_name)
   in
   assert_has_special_form "typing.Tuple";
   assert_has_special_form "typing.Generic";
@@ -680,47 +664,44 @@ let test_less_or_equal _ =
        ~right:(Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))));
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order Any;
-    insert order !"object";
+    insert order "object";
 
-    insert order !"str";
-    insert order !"int";
-    insert order !"float";
-    connect order ~predecessor:!"int" ~successor:!"float";
-    insert order !"tuple";
-    insert order !"A";
-    insert order !"B";
-    insert order !"C";
-    insert order !"typing.Generic";
-    insert order !"FloatToStrCallable";
-    insert order !"ParametricCallableToStr";
-    insert order !"typing.Callable";
+    insert order "str";
+    insert order "int";
+    insert order "float";
+    connect order ~predecessor:"int" ~successor:"float";
+    insert order "tuple";
+    insert order "A";
+    insert order "B";
+    insert order "C";
+    insert order "typing.Generic";
+    insert order "FloatToStrCallable";
+    insert order "ParametricCallableToStr";
+    insert order "typing.Callable";
     connect
       order
-      ~predecessor:!"A"
-      ~successor:!"typing.Generic"
+      ~predecessor:"A"
+      ~successor:"typing.Generic"
       ~parameters:[Type.variable "_1"; Type.variable "_2"];
-    connect order ~predecessor:!"B" ~successor:!"typing.Generic" ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:!"C" ~successor:!"typing.Generic" ~parameters:[Type.variable "_T"];
+    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
+    connect order ~predecessor:"C" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
 
-    connect order ~predecessor:!"typing.Generic" ~successor:Any;
     connect
       order
-      ~predecessor:!"A"
-      ~successor:!"B"
+      ~predecessor:"A"
+      ~successor:"B"
       ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     connect
       order
-      ~predecessor:!"B"
-      ~successor:!"C"
+      ~predecessor:"B"
+      ~successor:"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
 
-    connect order ~predecessor:!"typing.Generic" ~successor:Any;
     connect
       order
       ~parameters:[parse_callable "typing.Callable[[float], str]"]
-      ~predecessor:!"FloatToStrCallable"
-      ~successor:!"typing.Callable";
+      ~predecessor:"FloatToStrCallable"
+      ~successor:"typing.Callable";
     let callable =
       let aliases = function
         | "_T" -> Some (Type.variable "_T")
@@ -732,15 +713,15 @@ let test_less_or_equal _ =
     connect
       order
       ~parameters:[callable]
-      ~predecessor:!"ParametricCallableToStr"
-      ~successor:!"typing.Callable";
+      ~predecessor:"ParametricCallableToStr"
+      ~successor:"typing.Callable";
     connect
       order
       ~parameters:[Type.variable "_T"]
-      ~predecessor:!"ParametricCallableToStr"
-      ~successor:!"typing.Generic";
-    let typed_dictionary = !"TypedDictionary" in
-    let typing_mapping = !"typing.Mapping" in
+      ~predecessor:"ParametricCallableToStr"
+      ~successor:"typing.Generic";
+    let typed_dictionary = "TypedDictionary" in
+    let typing_mapping = "typing.Mapping" in
     insert order typed_dictionary;
     insert order typing_mapping;
     connect
@@ -752,10 +733,10 @@ let test_less_or_equal _ =
       order
       ~parameters:[Type.variable "_T"; Type.variable "_T2"]
       ~predecessor:typing_mapping
-      ~successor:!"typing.Generic";
-    insert order !"dict";
-    insert order !"MatchesProtocol";
-    insert order !"DoesNotMatchProtocol";
+      ~successor:"typing.Generic";
+    insert order "dict";
+    insert order "MatchesProtocol";
+    insert order "DoesNotMatchProtocol";
     order
   in
   assert_true
@@ -1767,45 +1748,43 @@ let test_join _ =
     "typing.Union[typing.Tuple[int, int], typing.Tuple[int, int, str]]";
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order Any;
-    insert order !"object";
+    insert order "object";
 
-    insert order !"str";
-    insert order !"int";
-    insert order !"float";
-    insert order !"A";
-    insert order !"B";
-    insert order !"C";
-    insert order !"CallableClass";
-    insert order !"ParametricCallableToStr";
-    insert order !"typing.Callable";
-    insert order !"typing.Generic";
-    connect order ~predecessor:!"int" ~successor:!"float";
-    connect order ~predecessor:!"float" ~successor:!"object";
+    insert order "str";
+    insert order "int";
+    insert order "float";
+    insert order "A";
+    insert order "B";
+    insert order "C";
+    insert order "CallableClass";
+    insert order "ParametricCallableToStr";
+    insert order "typing.Callable";
+    insert order "typing.Generic";
+    connect order ~predecessor:"int" ~successor:"float";
+    connect order ~predecessor:"float" ~successor:"object";
     connect
       order
-      ~predecessor:!"A"
-      ~successor:!"B"
+      ~predecessor:"A"
+      ~successor:"B"
       ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
     connect
       order
-      ~predecessor:!"A"
-      ~successor:!"typing.Generic"
+      ~predecessor:"A"
+      ~successor:"typing.Generic"
       ~parameters:[Type.variable "_1"; Type.variable "_2"];
-    connect order ~predecessor:!"B" ~successor:!"typing.Generic" ~parameters:[Type.variable "_T"];
+    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
     connect
       order
-      ~predecessor:!"B"
-      ~successor:!"C"
+      ~predecessor:"B"
+      ~successor:"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
-    connect order ~predecessor:!"C" ~successor:!"typing.Generic" ~parameters:[Type.variable "_T"];
+    connect order ~predecessor:"C" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
 
-    connect order ~predecessor:!"typing.Generic" ~successor:Any;
     connect
       order
       ~parameters:[parse_callable "typing.Callable[[int], str]"]
-      ~predecessor:!"CallableClass"
-      ~successor:!"typing.Callable";
+      ~predecessor:"CallableClass"
+      ~successor:"typing.Callable";
     let callable =
       let aliases = function
         | "_T" -> Some (Type.variable "_T")
@@ -1817,13 +1796,13 @@ let test_join _ =
     connect
       order
       ~parameters:[callable]
-      ~predecessor:!"ParametricCallableToStr"
-      ~successor:!"typing.Callable";
+      ~predecessor:"ParametricCallableToStr"
+      ~successor:"typing.Callable";
     connect
       order
       ~parameters:[Type.variable "_T"]
-      ~predecessor:!"ParametricCallableToStr"
-      ~successor:!"typing.Generic";
+      ~predecessor:"ParametricCallableToStr"
+      ~successor:"typing.Generic";
     order
   in
   let aliases =
@@ -2375,67 +2354,65 @@ let test_meet _ =
      * class Y(B[int, str]): pass
      * class M(A[T], X[T], Y[T]): pass *)
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"A";
-    insert order !"B";
-    insert order !"X";
-    insert order !"Y";
-    insert order !"M";
-    insert order !"typing.Generic";
-    insert order !"str";
-    insert order !"int";
+    insert order "A";
+    insert order "B";
+    insert order "X";
+    insert order "Y";
+    insert order "M";
+    insert order "typing.Generic";
+    insert order "str";
+    insert order "int";
     let variable = Type.Variable (Type.Variable.Unary.create "T") in
     let variable2 = Type.Variable (Type.Variable.Unary.create "T2") in
-    connect order ~predecessor:!"M" ~successor:!"typing.Generic" ~parameters:[variable];
-    connect order ~predecessor:!"M" ~successor:!"A" ~parameters:[variable];
-    connect order ~predecessor:!"M" ~successor:!"X" ~parameters:[variable];
-    connect order ~predecessor:!"M" ~successor:!"Y" ~parameters:[variable];
-    connect order ~predecessor:!"A" ~successor:!"typing.Generic" ~parameters:[variable];
+    connect order ~predecessor:"M" ~successor:"typing.Generic" ~parameters:[variable];
+    connect order ~predecessor:"M" ~successor:"A" ~parameters:[variable];
+    connect order ~predecessor:"M" ~successor:"X" ~parameters:[variable];
+    connect order ~predecessor:"M" ~successor:"Y" ~parameters:[variable];
+    connect order ~predecessor:"A" ~successor:"typing.Generic" ~parameters:[variable];
     let connect_x () =
-      connect order ~predecessor:!"X" ~successor:!"typing.Generic" ~parameters:[variable];
-      connect order ~predecessor:!"X" ~successor:!"B" ~parameters:[variable; Type.string]
+      connect order ~predecessor:"X" ~successor:"typing.Generic" ~parameters:[variable];
+      connect order ~predecessor:"X" ~successor:"B" ~parameters:[variable; Type.string]
     in
     if x_before_y then connect_x ();
-    connect order ~predecessor:!"Y" ~successor:!"typing.Generic" ~parameters:[variable];
-    connect order ~predecessor:!"Y" ~successor:!"B" ~parameters:[Type.integer; variable];
+    connect order ~predecessor:"Y" ~successor:"typing.Generic" ~parameters:[variable];
+    connect order ~predecessor:"Y" ~successor:"B" ~parameters:[Type.integer; variable];
     if not x_before_y then connect_x ();
-    connect order ~predecessor:!"B" ~successor:!"typing.Generic" ~parameters:[variable; variable2];
+    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[variable; variable2];
     order
   in
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:true)
     "B[int, str]"
     "A[str]"
-    "M[$bottom]";
+    "M[str]";
   assert_meet
     ~order:(make_potentially_inconsistent_order ~x_before_y:false)
     "B[int, str]"
     "A[str]"
-    "M[$bottom]";
+    "M[str]";
   ()
 
 
 let test_least_upper_bound _ =
-  assert_equal (least_upper_bound order !"3" !"1") [!"3"];
-  assert_equal (least_upper_bound order !"4" !"bottom") [!"4"];
-  assert_equal (least_upper_bound order !"0" !"1") [!"3"];
-  assert_equal (least_upper_bound order !"0" !"2") [];
-  assert_equal (least_upper_bound order !"0" !"2") [];
-  assert_equal (least_upper_bound butterfly !"0" !"1") [!"2"; !"3"]
+  assert_equal (least_upper_bound order "3" "1") ["3"];
+  assert_equal (least_upper_bound order "4" "bottom") ["4"];
+  assert_equal (least_upper_bound order "0" "1") ["3"];
+  assert_equal (least_upper_bound order "0" "2") [];
+  assert_equal (least_upper_bound order "0" "2") [];
+  assert_equal (least_upper_bound butterfly "0" "1") ["2"; "3"]
 
 
 let test_greatest_lower_bound _ =
   let assert_greatest_lower_bound ~order type1 type2 expected =
-    let actual =
-      greatest_lower_bound order type1 type2 |> List.sort ~compare:TypeOrder.Node.compare
-    in
-    assert_equal ~printer:(List.to_string ~f:TypeOrder.Node.show) actual expected
+    let actual = greatest_lower_bound order type1 type2 |> List.sort ~compare:String.compare in
+    assert_equal ~printer:(List.to_string ~f:Fn.id) actual expected
   in
-  assert_greatest_lower_bound ~order:diamond_order !"A" !"C" [!"C"];
-  assert_greatest_lower_bound ~order:diamond_order !"A" !"B" [!"B"];
-  assert_greatest_lower_bound ~order:diamond_order !"A" !"D" [!"D"];
-  assert_greatest_lower_bound ~order:diamond_order !"B" !"D" [!"D"];
-  assert_greatest_lower_bound ~order:diamond_order !"B" !"C" [!"D"];
-  assert_greatest_lower_bound ~order:butterfly !"2" !"3" [!"0"; !"1"]
+  assert_greatest_lower_bound ~order:diamond_order "A" "C" ["C"];
+  assert_greatest_lower_bound ~order:diamond_order "A" "B" ["B"];
+  assert_greatest_lower_bound ~order:diamond_order "A" "D" ["D"];
+  assert_greatest_lower_bound ~order:diamond_order "B" "D" ["D"];
+  assert_greatest_lower_bound ~order:diamond_order "B" "C" ["D"];
+  assert_greatest_lower_bound ~order:butterfly "2" "3" ["0"; "1"]
 
 
 let test_instantiate_parameters _ =
@@ -2452,35 +2429,35 @@ let test_instantiate_parameters _ =
     (instantiate_successors_parameters
        order
        ~source:(Type.list Type.string)
-       ~target:!"typing.Iterator")
+       ~target:"typing.Iterator")
     (Some [Type.string]);
   assert_equal
     (instantiate_successors_parameters
        order
        ~source:(Type.dictionary ~key:Type.integer ~value:Type.string)
-       ~target:!"typing.Iterator")
+       ~target:"typing.Iterator")
     (Some [Type.integer]);
   assert_equal
-    (instantiate_successors_parameters order ~source:Type.string ~target:!"typing.Iterable")
+    (instantiate_successors_parameters order ~source:Type.string ~target:"typing.Iterable")
     (Some [Type.string]);
   assert_equal
     (instantiate_successors_parameters
        order
        ~source:(Type.tuple [Type.integer; Type.integer])
-       ~target:!"typing.Iterable")
+       ~target:"typing.Iterable")
     (Some [Type.integer]);
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"AnyIterable" ~target:!"typing.Iterable")
+    (instantiate_successors_parameters order ~source:!!"AnyIterable" ~target:"typing.Iterable")
     (Some [Type.Any]);
 
   (* If you're not completely specified, fill all with anys *)
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"PartiallySpecifiedDict" ~target:!"dict")
+    (instantiate_successors_parameters order ~source:!!"PartiallySpecifiedDict" ~target:"dict")
     (Some [Type.Any; Type.Any]);
 
   (* If you're over-specified, fill all with anys *)
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"OverSpecifiedDict" ~target:!"dict")
+    (instantiate_successors_parameters order ~source:!!"OverSpecifiedDict" ~target:"dict")
     (Some [Type.Any; Type.Any]);
 
   (* Don't do a search when starting from bottom *)
@@ -2488,10 +2465,10 @@ let test_instantiate_parameters _ =
     (instantiate_successors_parameters
        order
        ~source:!!"NonGenericContainerChild"
-       ~target:!"GenericContainer")
+       ~target:"GenericContainer")
     (Some [Type.integer; Type.string]);
   assert_equal
-    (instantiate_successors_parameters order ~source:Type.Bottom ~target:!"GenericContainer")
+    (instantiate_successors_parameters order ~source:Type.Bottom ~target:"GenericContainer")
     (Some [Type.Any; Type.Any]);
   ()
 
@@ -2499,11 +2476,11 @@ let test_instantiate_parameters _ =
 let test_deduplicate _ =
   let (module Handler : TypeOrder.Handler) =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    connect order ~parameters:[Type.Top; Type.Top] ~predecessor:!"0" ~successor:!"1";
-    connect order ~parameters:[Type.Top] ~predecessor:!"0" ~successor:!"1";
-    deduplicate order ~annotations:[!"0"; !"1"];
+    insert order "0";
+    insert order "1";
+    connect order ~parameters:[Type.Top; Type.Top] ~predecessor:"0" ~successor:"1";
+    connect order ~parameters:[Type.Top] ~predecessor:"0" ~successor:"1";
+    deduplicate order ~annotations:["0"; "1"];
     order
   in
   let index_of annotation = Handler.find_unsafe (Handler.indices ()) annotation in
@@ -2512,8 +2489,8 @@ let test_deduplicate _ =
       assert_equal
         ~cmp:ListOrSet.equal
         ~printer:(ListOrSet.to_string ~f:Target.show)
-        (Handler.find_unsafe edges (index_of !from))
-        (create { Target.target = index_of !target; parameters })
+        (Handler.find_unsafe edges (index_of from))
+        (create { Target.target = index_of target; parameters })
   end
   in
   let module ForwardAsserter = TargetAsserter (TypeOrder.Target.List) in
@@ -2530,21 +2507,21 @@ let test_remove_extra_edges_to_object _ =
    *)
   let (module Handler : TypeOrder.Handler) =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    insert order !"2";
-    insert order !"object";
-    connect order ~predecessor:!"0" ~successor:!"1";
-    connect order ~predecessor:!"0" ~successor:!"object";
-    connect order ~predecessor:!"1" ~successor:!"2";
-    connect order ~predecessor:!"2" ~successor:!"object";
-    remove_extra_edges_to_object order [!"0"; !"1"; !"2"; !"object"];
+    insert order "0";
+    insert order "1";
+    insert order "2";
+    insert order "object";
+    connect order ~predecessor:"0" ~successor:"1";
+    connect order ~predecessor:"0" ~successor:"object";
+    connect order ~predecessor:"1" ~successor:"2";
+    connect order ~predecessor:"2" ~successor:"object";
+    remove_extra_edges_to_object order ["0"; "1"; "2"; "object"];
     order
   in
-  let zero_index = Handler.find_unsafe (Handler.indices ()) !"0" in
-  let one_index = Handler.find_unsafe (Handler.indices ()) !"1" in
-  let two_index = Handler.find_unsafe (Handler.indices ()) !"2" in
-  let object_index = Handler.find_unsafe (Handler.indices ()) !"object" in
+  let zero_index = Handler.find_unsafe (Handler.indices ()) "0" in
+  let one_index = Handler.find_unsafe (Handler.indices ()) "1" in
+  let two_index = Handler.find_unsafe (Handler.indices ()) "2" in
+  let object_index = Handler.find_unsafe (Handler.indices ()) "object" in
   assert_equal
     (Handler.find_unsafe (Handler.edges ()) zero_index)
     [{ Target.target = one_index; parameters = [] }];
@@ -2561,19 +2538,19 @@ let test_connect_annotations_to_top _ =
    *  1   object *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    insert order !"2";
-    insert order !"object";
-    connect order ~predecessor:!"0" ~successor:!"2";
-    connect order ~predecessor:!"0" ~successor:!"1";
-    connect_annotations_to_object order [!"0"; !"1"; !"2"; !"object"];
+    insert order "0";
+    insert order "1";
+    insert order "2";
+    insert order "object";
+    connect order ~predecessor:"0" ~successor:"2";
+    connect order ~predecessor:"0" ~successor:"1";
+    connect_annotations_to_object order ["0"; "1"; "2"; "object"];
     order
   in
-  assert_equal (least_upper_bound order !"1" !"2") [!"object"];
+  assert_equal (least_upper_bound order "1" "2") ["object"];
 
   (* Ensure that the backedge gets added as well *)
-  assert_equal (greatest_lower_bound order !"1" !"object") [!"1"]
+  assert_equal (greatest_lower_bound order "1" "object") ["1"]
 
 
 let test_check_integrity _ =
@@ -2583,10 +2560,10 @@ let test_check_integrity _ =
   (* 0 <-> 1 *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    connect order ~predecessor:!"0" ~successor:!"1";
-    connect order ~predecessor:!"1" ~successor:!"0";
+    insert order "0";
+    insert order "1";
+    connect order ~predecessor:"0" ~successor:"1";
+    connect order ~predecessor:"1" ~successor:"0";
     order
   in
   assert_raises TypeOrder.Cyclic (fun _ -> check_integrity order);
@@ -2597,14 +2574,14 @@ let test_check_integrity _ =
    * .  - 2 -> 3 *)
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    insert order !"2";
-    insert order !"3";
-    connect order ~predecessor:!"0" ~successor:!"1";
-    connect order ~predecessor:!"1" ~successor:!"2";
-    connect order ~predecessor:!"2" ~successor:!"0";
-    connect order ~predecessor:!"2" ~successor:!"3";
+    insert order "0";
+    insert order "1";
+    insert order "2";
+    insert order "3";
+    connect order ~predecessor:"0" ~successor:"1";
+    connect order ~predecessor:"1" ~successor:"2";
+    connect order ~predecessor:"2" ~successor:"0";
+    connect order ~predecessor:"2" ~successor:"3";
     order
   in
   assert_raises TypeOrder.Cyclic (fun _ -> check_integrity order)
@@ -2613,13 +2590,13 @@ let test_check_integrity _ =
 let test_to_dot _ =
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"0";
-    insert order !"1";
-    insert order !"2";
-    insert order !"object";
-    connect order ~predecessor:!"0" ~successor:!"2";
-    connect order ~predecessor:!"0" ~successor:!"1" ~parameters:[Type.string];
-    connect_annotations_to_object order [!"0"; !"1"; !"2"; !"object"];
+    insert order "0";
+    insert order "1";
+    insert order "2";
+    insert order "object";
+    connect order ~predecessor:"0" ~successor:"2";
+    connect order ~predecessor:"0" ~successor:"1" ~parameters:[Type.string];
+    connect_annotations_to_object order ["0"; "1"; "2"; "object"];
     order
   in
   let (module Handler) = order in
@@ -2627,15 +2604,14 @@ let test_to_dot _ =
     ~printer:ident
     ( {|
       digraph {
-        324358148[label="object"]
-        365816445[label="0"]
-        389505666[label="2"]
-        962655241[label="1"]
-        324358148 -> 324358148
-        365816445 -> 389505666
-        365816445 -> 962655241[label="(str)"]
-        389505666 -> 324358148
-        962655241 -> 324358148
+        343776663[label="object"]
+        453441034[label="1"]
+        564400327[label="2"]
+        680650890[label="0"]
+        453441034 -> 343776663
+        564400327 -> 343776663
+        680650890 -> 453441034[label="(str)"]
+        680650890 -> 564400327
       }
     |}
     |> Test.trim_extra_indentation )
@@ -2645,14 +2621,14 @@ let test_to_dot _ =
 let test_variables _ =
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"typing.Generic";
-    insert order !"A";
-    insert order !"B";
-    connect order ~parameters:[Type.variable "T"] ~predecessor:!"A" ~successor:!"typing.Generic";
+    insert order "typing.Generic";
+    insert order "A";
+    insert order "B";
+    connect order ~parameters:[Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
     order
   in
   let assert_variables ~expected source =
-    assert_equal expected (TypeOrder.variables order (Primitive source))
+    assert_equal expected (TypeOrder.variables order source)
   in
   assert_variables ~expected:None "B";
   assert_variables ~expected:(Some [Type.variable "T"]) "A";
@@ -2663,9 +2639,9 @@ let test_variables _ =
 let test_is_instantiated _ =
   let order =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"typing.Generic";
-    insert order !"A";
-    insert order !"B";
+    insert order "typing.Generic";
+    insert order "A";
+    insert order "B";
     order
   in
   assert_true (TypeOrder.is_instantiated order (Type.Primitive "A"));
@@ -3597,13 +3573,13 @@ let test_instantiate_protocol_parameters _ =
 let test_disconnect_successors _ =
   let order () =
     let order = Builder.create () |> TypeOrder.handler in
-    insert order !"a";
-    insert order !"b";
-    insert order !"1";
-    insert order !"2";
-    connect order ~predecessor:!"a" ~successor:!"1";
-    connect order ~predecessor:!"b" ~successor:!"1";
-    connect order ~predecessor:!"1" ~successor:!"2";
+    insert order "a";
+    insert order "b";
+    insert order "1";
+    insert order "2";
+    connect order ~predecessor:"a" ~successor:"1";
+    connect order ~predecessor:"b" ~successor:"1";
+    connect order ~predecessor:"1" ~successor:"2";
     order
   in
   let assert_backedges_equal wrapped_left unwrapped_right =
@@ -3614,8 +3590,8 @@ let test_disconnect_successors _ =
   in
   let () =
     let (module Handler) = order () in
-    let index key = Handler.find_unsafe (Handler.indices ()) !key in
-    TypeOrder.disconnect_successors (module Handler) [!"1"];
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    TypeOrder.disconnect_successors (module Handler) ["1"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "1")) [];
     assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "2")) [];
     assert_equal
@@ -3624,8 +3600,8 @@ let test_disconnect_successors _ =
   in
   let () =
     let (module Handler) = order () in
-    let index key = Handler.find_unsafe (Handler.indices ()) !key in
-    TypeOrder.disconnect_successors (module Handler) [!"a"];
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    TypeOrder.disconnect_successors (module Handler) ["a"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
     assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
@@ -3633,8 +3609,8 @@ let test_disconnect_successors _ =
   in
   let () =
     let (module Handler) = order () in
-    let index key = Handler.find_unsafe (Handler.indices ()) !key in
-    TypeOrder.disconnect_successors (module Handler) [!"b"];
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    TypeOrder.disconnect_successors (module Handler) ["b"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
     assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
@@ -3642,8 +3618,8 @@ let test_disconnect_successors _ =
   in
   let () =
     let (module Handler) = order () in
-    let index key = Handler.find_unsafe (Handler.indices ()) !key in
-    TypeOrder.disconnect_successors (module Handler) [!"a"; !"b"];
+    let index key = Handler.find_unsafe (Handler.indices ()) key in
+    TypeOrder.disconnect_successors (module Handler) ["a"; "b"];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
     assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "1")) []

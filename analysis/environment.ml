@@ -110,22 +110,17 @@ let connect_definition
     in
     let primitive_cycle =
       (* Primitive cycles can be introduced by meta-programming. *)
-      TypeOrder.Node.equal predecessor successor
+      String.equal predecessor successor
     in
-    let cycle_with_any =
-      match predecessor with
-      | Any -> true
-      | _ -> false
-    in
-    if annotations_tracked && (not primitive_cycle) && not cycle_with_any then
+    if annotations_tracked && not primitive_cycle then
       TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
   in
-  let primitive = TypeOrder.Node.Primitive (Reference.show name) in
+  let primitive = Reference.show name in
   ( match Annotated.Class.inferred_callable_type annotated ~resolution with
   | Some callable ->
       connect
         ~predecessor:primitive
-        ~successor:(Primitive "typing.Callable")
+        ~successor:"typing.Callable"
         ~parameters:[Type.Callable callable]
   | None -> () );
 
@@ -151,13 +146,11 @@ let connect_definition
               ~section:`Environment
               ~normals:["unresolved name", Expression.show value]
               ()
-        | Type.Primitive primitive
-          when not (TypeOrder.contains (module Handler) (Primitive primitive)) ->
+        | Type.Primitive primitive when not (TypeOrder.contains (module Handler) primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
         | Type.Primitive supertype -> (
           match parameters with
-          | Concrete parameters ->
-              connect ~predecessor:primitive ~successor:(Primitive supertype) ~parameters
+          | Concrete parameters -> connect ~predecessor:primitive ~successor:supertype ~parameters
           | _ ->
               (* TODO(T45097646): support propagating list variadics *)
               () )
@@ -371,14 +364,14 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
 let register_class_definitions (module Handler : Handler) source =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let module Visit = Visit.MakeStatementVisitor (struct
-    type t = TypeOrder.Node.Set.t
+    type t = Type.Primitive.Set.t
 
     let visit_children _ = true
 
     let statement { Source.handle; _ } new_annotations = function
       | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
           let name = Reference.show name in
-          let primitive = TypeOrder.Node.Primitive name in
+          let primitive = name in
           Handler.DependencyHandler.add_class_key ~handle name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
           if not (TypeOrder.contains order primitive) then
@@ -387,7 +380,7 @@ let register_class_definitions (module Handler : Handler) source =
       | _ -> new_annotations
   end)
   in
-  Visit.visit TypeOrder.Node.Set.empty source
+  Visit.visit Type.Primitive.Set.empty source
 
 
 let collect_aliases (module Handler : Handler) { Source.handle; statements; qualifier; _ } =
@@ -532,10 +525,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
           let original_name = Reference.combine from name in
           (* A module might import T and define a T that shadows it. In this case, we do not want
              to create the alias. *)
-          if
-            TypeOrder.contains
-              (module Handler.TypeOrderHandler)
-              (Primitive (Reference.show qualified_name))
+          if TypeOrder.contains (module Handler.TypeOrderHandler) (Reference.show qualified_name)
           then
             []
           else
@@ -594,8 +584,7 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.handle; target; v
             if Module.from_empty_stub ~reference ~module_definition then
               (), Type.Any
             else if
-              TypeOrder.contains order (Primitive primitive)
-              || Handler.is_module (Reference.create primitive)
+              TypeOrder.contains order primitive || Handler.is_module (Reference.create primitive)
             then
               (), annotation
             else
@@ -930,18 +919,16 @@ let propagate_nested_classes (module Handler : Handler) resolution annotation =
     |> List.fold ~f:create_alias ~init:own_nested_classes
   in
   annotation
-  |> TypeOrder.Node.primitive_name
-  >>= (fun name ->
-        Handler.class_definition name
-        >>= fun definition ->
-        Handler.class_metadata name
-        >>| fun { Resolution.successors; _ } -> propagate definition successors)
+  |> (fun name ->
+       Handler.class_definition name
+       >>= fun definition ->
+       Handler.class_metadata name
+       >>| fun { Resolution.successors; _ } -> propagate definition successors)
   |> ignore
 
 
 let built_in_annotations =
-  [TypeOrder.Node.Primitive "TypedDictionary"; TypeOrder.Node.Primitive "NonTotalTypedDictionary"]
-  |> TypeOrder.Node.Set.of_list
+  ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
 
 
 module Builder = struct
@@ -1052,7 +1039,7 @@ module Builder = struct
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set aliases ~key:"PathLike" ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));
     Hashtbl.set aliases ~key:"TSelf" ~data:(Type.TypeAlias (Type.variable "_PathLike"));
-    TypeOrder.insert (TypeOrder.handler order) (Primitive "typing_extensions.Literal");
+    TypeOrder.insert (TypeOrder.handler order) "typing_extensions.Literal";
     { class_definitions;
       class_metadata;
       modules;

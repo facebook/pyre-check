@@ -9,18 +9,6 @@ open Ast
 module SharedMemory = Memory
 
 (** Keys *)
-module OrderNodeKey = struct
-  type t = Analysis.TypeOrder.Node.t
-
-  let to_string key = Analysis.TypeOrder.Node.sexp_of_t key |> Sexp.to_string
-
-  let compare = Analysis.TypeOrder.Node.compare
-
-  type out = string
-
-  let from_string x = x
-end
-
 module StringKey = struct
   type t = string
 
@@ -135,7 +123,7 @@ module OrderIndexValue = struct
 end
 
 module OrderAnnotationValue = struct
-  type t = Analysis.TypeOrder.Node.t
+  type t = string
 
   let prefix = Prefix.make ()
 
@@ -217,7 +205,7 @@ module GlobalKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (GlobalKeyValu
 module AliasKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (AliasKeyValue)
 module DependentKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (DependentKeyValue)
 
-module OrderIndices = Memory.WithCache (OrderNodeKey) (OrderIndexValue)
+module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
 (** Type order maps *)
 
 module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)

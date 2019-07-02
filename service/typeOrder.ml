@@ -94,8 +94,7 @@ module Handler = struct
     let serialized_keys = List.to_string ~f:Int.to_string keys in
     let serialized_annotations =
       let serialize_annotation key =
-        find (annotations ()) key
-        >>| fun annotation -> Format.asprintf "%d->%a\n" key TypeOrder.Node.pp annotation
+        find (annotations ()) key >>| fun annotation -> Format.asprintf "%d->%s\n" key annotation
       in
       List.filter_map ~f:serialize_annotation keys |> String.concat
     in
@@ -103,7 +102,7 @@ module Handler = struct
       let serialize edges =
         let edges_of_key key =
           let show_successor { TypeOrder.Target.target = successor; _ } =
-            Option.value_exn (find (annotations ()) successor) |> TypeOrder.Node.show
+            Option.value_exn (find (annotations ()) successor)
           in
           find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
         in

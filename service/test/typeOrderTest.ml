@@ -18,9 +18,8 @@ let test_compute_hashes_to_keys _ =
   assert_equal
     ~cmp:(String.Map.equal String.equal)
     (String.Map.of_alist_exn
-       [ ( OrderIndices.hash_of_key (Primitive "fifteen"),
-           OrderIndices.serialize_key (Primitive "fifteen") ) ])
-    (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:[Primitive "fifteen"])
+       [OrderIndices.hash_of_key "fifteen", OrderIndices.serialize_key "fifteen"])
+    (Service.TypeOrder.compute_hashes_to_keys ~indices:[] ~annotations:["fifteen"])
 
 
 let () = "typeOrder" >::: ["compute_hashes_to_keys" >:: test_compute_hashes_to_keys] |> Test.run

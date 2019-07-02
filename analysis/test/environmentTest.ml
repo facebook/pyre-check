@@ -107,17 +107,17 @@ let test_register_class_definitions _ =
        |})
   in
   assert_equal
-    ~cmp:TypeOrder.Node.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ TypeOrder.Node.show next))
-    (TypeOrder.Node.Set.singleton (TypeOrder.Node.Primitive "C"))
+    ~cmp:Type.Primitive.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ next))
+    (Type.Primitive.Set.singleton "C")
     new_annotations;
   let new_annotations =
     Environment.register_class_definitions (module Handler) (parse "class int: pass")
   in
   assert_equal
-    ~cmp:TypeOrder.Node.Set.equal
-    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ TypeOrder.Node.show next))
-    (TypeOrder.Node.Set.singleton (TypeOrder.Node.Primitive "int"))
+    ~cmp:Type.Primitive.Set.equal
+    ~printer:(Set.fold ~init:"" ~f:(fun sofar next -> sofar ^ " " ^ next))
+    (Type.Primitive.Set.singleton "int")
     new_annotations
 
 
@@ -437,8 +437,8 @@ let test_connect_definition _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
   let (module TypeOrderHandler : TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) (Primitive "C");
-  TypeOrder.insert (module TypeOrderHandler) (Primitive "D");
+  TypeOrder.insert (module TypeOrderHandler) "C";
+  TypeOrder.insert (module TypeOrderHandler) "D";
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
       TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) predecessor
@@ -463,8 +463,8 @@ let test_connect_definition _ =
          ...
      |} in
   Environment.connect_definition ~resolution ~definition;
-  assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "int");
-  assert_edge ~predecessor:(Primitive "D") ~successor:(Primitive "float")
+  assert_edge ~predecessor:"D" ~successor:"int";
+  assert_edge ~predecessor:"D" ~successor:"float"
 
 
 let test_register_globals _ =
@@ -632,9 +632,7 @@ let test_populate _ =
     let index annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
     in
-    let targets =
-      Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.edges ()) (index (Primitive base))
-    in
+    let targets = Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.edges ()) (index base) in
     let to_target annotation =
       { TypeOrder.Target.target = index annotation; parameters = superclass_parameters annotation }
     in
@@ -645,7 +643,6 @@ let test_populate _ =
             let index = Int.to_string target in
             let target =
               Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.annotations ()) target
-              |> TypeOrder.Node.show
             in
             let parameters = List.to_string parameters ~f:Type.show in
             Format.sprintf "%s: %s%s" index target parameters
@@ -667,7 +664,7 @@ let test_populate _ =
         class C(metaclass=abc.ABCMeta): ...
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Primitive "object"];
+  assert_superclasses ~environment "C" ~superclasses:["object"];
 
   (* Ensure object is a superclass if a class only has unsupported bases. *)
   let environment =
@@ -680,7 +677,7 @@ let test_populate _ =
           pass
       |}
   in
-  assert_superclasses ~environment "C" ~superclasses:[Primitive "object"];
+  assert_superclasses ~environment "C" ~superclasses:["object"];
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
@@ -827,7 +824,7 @@ let test_populate _ =
   in
   let type_parameters annotation =
     match annotation with
-    | TypeOrder.Node.Primitive "typing.Callable" ->
+    | "typing.Callable" ->
         [ parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
           |> Type.create ~aliases:(fun _ -> None) ]
     | _ -> []
@@ -836,7 +833,7 @@ let test_populate _ =
     ~superclass_parameters:type_parameters
     ~environment
     "CallMe"
-    ~superclasses:[Primitive "typing.Callable"];
+    ~superclasses:["typing.Callable"];
   ();
   let (module Handler : Environment.Handler) =
     populate {|

@@ -573,7 +573,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             in
             match annotation with
             | None -> Format.sprintf "Undecodable(%d)" index
-            | Some annotation -> TypeOrder.Node.show annotation
+            | Some annotation -> annotation
           in
           let decode_target { TypeOrder.Target.target; parameters } =
             Format.sprintf
@@ -646,8 +646,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | OrderIndices.Decoded (key, value) ->
               Some (OrderIndexValue.description, key, value >>| Int.to_string)
           | OrderAnnotations.Decoded (key, value) ->
-              Some
-                (OrderAnnotationValue.description, Int.to_string key, value >>| TypeOrder.Node.show)
+              Some (OrderAnnotationValue.description, Int.to_string key, value)
           | OrderEdges.Decoded (key, value) ->
               Some (EdgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
           | OrderBackedges.Decoded (key, value) ->
@@ -750,7 +749,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
                         Option.equal Int.equal first second
                     | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
-                        Option.equal TypeOrder.Node.equal first second
+                        Option.equal String.equal first second
                     | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
                         Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
                     | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
