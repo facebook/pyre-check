@@ -49,6 +49,15 @@ def sort_errors(errors: List[Dict[str, Any]]) -> List[Tuple[str, List[Any]]]:
     return itertools.groupby(sorted(errors, key=error_path), error_path)
 
 
+def filter_errors(arguments, errors) -> List[Dict[str, Any]]:
+    def matches_error_code(error) -> bool:
+        return error["code"] == arguments.only_fix_error_code
+
+    if arguments.only_fix_error_code:
+        errors = list(filter(matches_error_code, errors))
+    return errors
+
+
 class Configuration:
     def __init__(self, path: str, json_contents: Dict[str, Any]):
         self._path = path
@@ -157,7 +166,8 @@ class Configuration:
 
 def errors_from_stdin(_arguments) -> List[Dict[str, Any]]:
     input = sys.stdin.read()
-    return json_to_errors(input)
+    errors = json_to_errors(input)
+    return filter_errors(_arguments, errors)
 
 
 def errors_from_run(_arguments) -> List[Dict[str, Any]]:
@@ -168,7 +178,7 @@ def errors_from_run(_arguments) -> List[Dict[str, Any]]:
     with open(configuration_path) as configuration_file:
         configuration = Configuration(configuration_path, json.load(configuration_file))
         errors = configuration.get_errors()
-        return errors
+        return filter_errors(_arguments, errors)
 
 
 def _get_lint_status() -> int:
@@ -587,6 +597,12 @@ def main():
         type=int,
         help="Enforce maximum line length on new comments "
         + "(default: %(default)s, use 0 to set no maximum line length)",
+    )
+    parser.add_argument(
+        "--only-fix-error-code",
+        type=int,
+        help="Only add fixmes for errors with this specific error code.",
+        default=None,
     )
 
     commands = parser.add_subparsers()

@@ -1065,3 +1065,29 @@ class UpdateGlobalVersionTest(unittest.TestCase):
                 call(["jf", "submit", "--update-fields"]),
             ]
             subprocess.assert_has_calls(calls)
+
+
+class FilterErrorTest(unittest.TestCase):
+    def test_filter_errors(self) -> None:
+        arguments = MagicMock()
+        arguments.only_fix_error_code = 44
+        errors = [
+            {
+                "line": 2,
+                "column": 4,
+                "path": "local.py",
+                "code": 7,
+                "name": "Kind",
+                "concise_description": "Error",
+                "inference": {},
+                "ignore_error": False,
+                "external_to_global_root": False,
+            }
+        ]
+        self.assertEqual(upgrade.filter_errors(arguments, errors), [])
+
+        arguments.only_fix_error_code = 7
+        self.assertEqual(upgrade.filter_errors(arguments, errors), errors)
+
+        arguments.only_fix_error_code = None
+        self.assertEqual(upgrade.filter_errors(arguments, errors), errors)
