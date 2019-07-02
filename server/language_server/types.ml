@@ -68,6 +68,8 @@ module Position = struct
     character: int [@key "character"]
   }
   [@@deriving yojson, eq, show]
+
+  let from_pyre_position ~line ~column = { line = line - 1; character = column }
 end
 
 module Range = struct
@@ -835,7 +837,8 @@ end
 module CompletionItems = struct
   type item = {
     label: string;
-    detail: string
+    detail: string;
+    textEdit: TextEdit.t
   }
   [@@deriving show, yojson]
 

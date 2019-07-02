@@ -68,10 +68,13 @@ let test_get_completion_items _ =
   let completion_item_list =
     AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position
   in
-  let open LanguageServer.Types.CompletionItems in
+  let open LanguageServer.Types in
+  let position = { Position.line = 7; character = 4 } in
+  let range = { Range.start = position; end_ = position } in
   assert_equal
-    ~printer:show
-    [{ label = "bar"; detail = "() -> int" }; { label = "foo"; detail = "bool" }]
+    ~printer:CompletionItems.show
+    [ { label = "bar() -> int"; detail = "() -> int"; textEdit = { range; newText = "bar()" } };
+      { label = "foo"; detail = "bool"; textEdit = { range; newText = "foo" } } ]
     completion_item_list
 
 

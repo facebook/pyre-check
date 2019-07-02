@@ -34,7 +34,11 @@ let check ~state ~configuration file =
   state
 
 
-let get_completion_item_list ~resolution class_data_list =
+let get_completion_item_list ~resolution ~cursor_position:{ Location.line; column } class_data_list
+  =
+  let open LanguageServer.Types in
+  let position = Position.from_pyre_position ~line ~column in
+  let text_edit_range = { Range.start = position; end_ = position } in
   let filter_name_and_type
       { Node.value =
           { Annotated.Attribute.name = attribute_name;
@@ -48,9 +52,17 @@ let get_completion_item_list ~resolution class_data_list =
     if String.is_prefix ~prefix:"__" attribute_name then
       None
     else
+      let type_string = Type.show_concise attribute_type in
+      let display_text, new_text =
+        match attribute_type with
+        | Type.Callable _ ->
+            Format.sprintf "%s%s" attribute_name type_string, Format.sprintf "%s()" attribute_name
+        | _ -> attribute_name, attribute_name
+      in
       Some
-        { LanguageServer.Types.CompletionItems.label = attribute_name;
-          detail = Type.show_concise attribute_type
+        { CompletionItems.label = display_text;
+          detail = type_string;
+          textEdit = { range = text_edit_range; newText = new_text }
         }
   in
   let get_attributes_name_and_type { Annotated.Class.class_definition; _ } =
@@ -78,5 +90,5 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
         class_type
         |> Annotated.Class.resolve_class ~resolution
         |> Option.value ~default:[]
-        |> get_completion_item_list ~resolution)
+        |> get_completion_item_list ~resolution ~cursor_position)
   |> Option.value ~default:[]
