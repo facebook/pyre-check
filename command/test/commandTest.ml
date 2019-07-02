@@ -64,14 +64,6 @@ let make_errors ?handle ?qualifier source =
   TypeCheck.run ~configuration ~environment ~source
 
 
-let associate_errors_and_filenames error_list =
-  let error_file error = File.Handle.create_for_testing (Error.path error), error in
-  List.map ~f:error_file error_list
-  |> List.fold ~init:File.Handle.Map.empty ~f:(fun map (handle, error) ->
-         Map.add_multi map ~key:handle ~data:error)
-  |> Map.to_alist
-
-
 let run_command_tests test_category tests =
   (* We need this to fork off processes *)
   Scheduler.Daemon.check_entry_point ();

@@ -85,10 +85,6 @@ let run
       let response_json =
         match Socket.read socket with
         | Protocol.TypeCheckResponse errors ->
-            errors
-            |> List.map ~f:snd
-            |> List.concat
-            |> fun errors ->
             `Assoc
               [ ( "errors",
                   `List

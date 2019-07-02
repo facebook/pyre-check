@@ -53,10 +53,7 @@ let test_language_server_protocol_json_format context =
     |> String.filter ~f:(fun character -> not (Char.is_whitespace character))
   in
   let json_error =
-    LanguageServer.Protocol.PublishDiagnostics.of_errors
-      ~configuration
-      (File.Handle.create_for_testing filename)
-      [type_error]
+    LanguageServer.Protocol.PublishDiagnostics.of_errors ~configuration filename [type_error]
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.PublishDiagnostics.to_yojson
     |> Yojson.Safe.sort
@@ -95,7 +92,7 @@ let test_language_server_protocol_json_format context =
   let malformed_response =
     LanguageServer.Protocol.PublishDiagnostics.of_errors
       ~configuration
-      (File.Handle.create_for_testing "nonexistent_file")
+      "nonexistent_file"
       [type_error]
   in
   assert_true (Or_error.is_error malformed_response)
@@ -358,7 +355,7 @@ let test_protocol_type_check context =
     ~local_root
     ~source
     ~request:(Protocol.Request.DisplayTypeErrors [])
-    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
+    (Some (Protocol.TypeCheckResponse errors))
 
 
 let test_query context =
@@ -1320,7 +1317,7 @@ let test_incremental_typecheck context =
   in
   assert_response
     ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
-    (Protocol.TypeCheckResponse [File.Handle.create_for_testing handle, []]);
+    (Protocol.TypeCheckResponse []);
 
   (* The handles get updated in shared memory. *)
   let print_tree tree = File.Handle.Set.Tree.to_list tree |> List.to_string ~f:File.Handle.show in
@@ -1331,12 +1328,11 @@ let test_incremental_typecheck context =
   let files = [file ~local_root ~content:source path] in
   let request_with_content = Protocol.Request.TypeCheckRequest files in
   let errors =
-    CommandTest.associate_errors_and_filenames
-      (make_errors
-         ~local_root
-         ~handle
-         ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle))
-         source)
+    make_errors
+      ~local_root
+      ~handle
+      ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle))
+      source
   in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
 
@@ -1345,13 +1341,13 @@ let test_incremental_typecheck context =
   assert_response
     ~request:
       (Request.TypeCheckRequest [file ~local_root ~content:"def foo() -> int: return 1" path])
-    (Protocol.TypeCheckResponse [File.Handle.create_for_testing (Filename.basename path), []]);
+    (Protocol.TypeCheckResponse []);
   let () =
     let stub_file = file ~local_root ~content:"" stub_path in
     assert_response
       ~handle:(relativize stub_path)
       ~request:(Request.TypeCheckRequest [stub_file])
-      (Protocol.TypeCheckResponse [File.Handle.create_for_testing (Filename.basename stub_path), []]);
+      (Protocol.TypeCheckResponse []);
     assert_equal
       ~printer:print_tree
       (Ast.SharedMemory.HandleKeys.get ())
@@ -1362,17 +1358,14 @@ let test_incremental_typecheck context =
     ~request:(Request.TypeCheckRequest [file ~local_root ~content:source stub_path])
     (* We also error on stub files. *)
     (Protocol.TypeCheckResponse
-       (CommandTest.associate_errors_and_filenames
-          (make_errors
-             ~local_root
-             ~handle:(relativize stub_path)
-             ~qualifier:
-               (Source.qualifier ~handle:(File.Handle.create_for_testing (relativize stub_path)))
-             source)));
+       (make_errors
+          ~local_root
+          ~handle:(relativize stub_path)
+          ~qualifier:
+            (Source.qualifier ~handle:(File.Handle.create_for_testing (relativize stub_path)))
+          source));
   let file = file ~local_root ~content:"def foo() -> int: return 1" path in
-  assert_response
-    ~request:(Request.TypeCheckRequest [file])
-    (Protocol.TypeCheckResponse [File.Handle.create_for_testing handle, []])
+  assert_response ~request:(Request.TypeCheckRequest [file]) (Protocol.TypeCheckResponse [])
 
 
 let test_protocol_language_server_protocol context =
@@ -1415,7 +1408,7 @@ let test_did_save_with_content context =
     ~local_root:root
     ~source
     ~request:(Protocol.Request.LanguageServerProtocolRequest request)
-    (Some (Protocol.TypeCheckResponse (CommandTest.associate_errors_and_filenames errors)))
+    (Some (Protocol.TypeCheckResponse errors))
 
 
 let test_protocol_persistent context =
@@ -1553,22 +1546,12 @@ let test_incremental_dependencies context =
       | None -> "None"
       | Some response -> Protocol.show_response response
     in
-    assert_equal
-      ~printer
-      (Some
-         (Protocol.TypeCheckResponse
-            [File.Handle.create_for_testing "a.py", []; File.Handle.create_for_testing "b.py", []]))
-      response;
+    assert_equal ~printer (Some (Protocol.TypeCheckResponse [])) response;
     let { Request.response; _ } =
       process
         (Protocol.Request.TypeCheckRequest [file ~local_root "a.py"; file ~local_root "b.py"])
     in
-    assert_equal
-      ~printer
-      (Some
-         (Protocol.TypeCheckResponse
-            [File.Handle.create_for_testing "a.py", []; File.Handle.create_for_testing "b.py", []]))
-      response
+    assert_equal ~printer (Some (Protocol.TypeCheckResponse [])) response
   in
   let finally () =
     Ast.SharedMemory.Sources.remove

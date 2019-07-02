@@ -318,7 +318,7 @@ type response =
   | LanguageServerProtocolResponse of string
   | ClientConnectionResponse of client
   | ClientExitResponse of client
-  | TypeCheckResponse of (File.Handle.t * Error.t list) list
+  | TypeCheckResponse of Error.t list
   | TypeQueryResponse of TypeQuery.response
   | StopResponse
   | GetDefinitionResponse of Location.Instantiated.t option

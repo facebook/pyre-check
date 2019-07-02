@@ -189,26 +189,15 @@ let test_process_type_query_request _ =
 
 let assert_errors_equal ~actual_errors ~expected_errors =
   let actual_errors =
-    let errors (handle, errors) =
-      ( File.Handle.show handle,
-        List.map errors ~f:(Analysis.Error.description ~show_error_traces:false) )
-    in
-    List.map actual_errors ~f:errors
+    List.map actual_errors ~f:(Analysis.Error.description ~show_error_traces:false)
   in
-  let equal =
-    let equal left right =
-      String.equal (fst left) (fst right)
-      && List.equal
-           (snd left |> List.sort ~compare:String.compare)
-           (snd right |> List.sort ~compare:String.compare)
-           ~equal:String.equal
-    in
-    List.equal ~equal
+  let equal left right =
+    List.equal
+      (List.sort ~compare:String.compare left)
+      (List.sort ~compare:String.compare right)
+      ~equal:String.equal
   in
-  let printer errors =
-    let show (path, errors) = Format.asprintf "%s: [%s]" path (String.concat errors ~sep:", ") in
-    List.map errors ~f:show |> String.concat ~sep:"\n"
-  in
+  let printer errors = Format.asprintf "%s" (String.concat errors ~sep:", ") in
   assert_equal ~cmp:equal ~printer expected_errors actual_errors
 
 
@@ -244,17 +233,14 @@ let test_process_display_type_errors_request _ =
       | _ -> failwith "Unexpected response."
     in
     let expected_errors =
-      let expected_error (path, undefined_globals) =
-        let undefined_global global =
-          Format.asprintf
-            "Undefined name [18]: Global name `%s` is not defined, or there is at least one \
-             control flow path that doesn't define `%s`."
-            global
-            global
-        in
-        path, List.map undefined_globals ~f:undefined_global
+      let undefined_global global =
+        Format.asprintf
+          "Undefined name [18]: Global name `%s` is not defined, or there is at least one control \
+           flow path that doesn't define `%s`."
+          global
+          global
       in
-      List.map expected_errors ~f:expected_error
+      List.map expected_errors ~f:undefined_global
     in
     assert_errors_equal ~actual_errors ~expected_errors
   in
@@ -264,15 +250,15 @@ let test_process_display_type_errors_request _ =
   assert_response
     ~paths:[]
     ~errors:["one.py", ["one"]; "two.py", ["two"]]
-    ~expected_errors:["one.py", ["one"]; "two.py", ["two"]];
+    ~expected_errors:["one"; "two"];
   assert_response
     ~paths:[mock_path "one.py"]
     ~errors:["one.py", ["one"]; "two.py", ["two"]]
-    ~expected_errors:["one.py", ["one"]; "two.py", []];
+    ~expected_errors:["one"];
   assert_response
     ~paths:[Path.create_relative ~root:(Path.create_absolute "/tmp") ~relative:"nonexistent.py"]
     ~errors:["one.py", ["one"]]
-    ~expected_errors:["one.py", []]
+    ~expected_errors:[]
 
 
 let test_process_type_check_request context =
@@ -314,7 +300,7 @@ let test_process_type_check_request context =
         def foo() -> int:
           return 'asdf'
       |}]
-    ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
+    ~expected_errors:["Incompatible return type [7]: Expected `int` but got `str`."]
     ();
 
   (* Absolute paths *)
@@ -329,7 +315,7 @@ let test_process_type_check_request context =
         def foo() -> int:
           return 'asdf'
       |}]
-    ~expected_errors:["test.py", ["Incompatible return type [7]: Expected `int` but got `str`."]]
+    ~expected_errors:["Incompatible return type [7]: Expected `int` but got `str`."]
     ~temporary_directory
     ();
 
@@ -338,7 +324,7 @@ let test_process_type_check_request context =
     ~sources:
       ["library.py", "def function() -> int: ..."; "client.py", "from library import function"]
     ~check:["library.py", "def function() -> int: ..."] (* Unchanged. *)
-    ~expected_errors:["library.py", []]
+    ~expected_errors:[]
     ();
 
   (* Single dependency. *)
@@ -346,7 +332,7 @@ let test_process_type_check_request context =
     ~sources:
       ["library.py", "def function() -> int: ..."; "client.py", "from library import function"]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["client.py", []; "library.py", []]
+    ~expected_errors:[]
     ();
 
   (* Multiple depedencies. *)
@@ -356,7 +342,7 @@ let test_process_type_check_request context =
         "client.py", "from library import function";
         "other.py", "from library import function" ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["client.py", []; "library.py", []; "other.py", []]
+    ~expected_errors:[]
     ();
 
   (* Indirect dependency. *)
@@ -371,7 +357,7 @@ let test_process_type_check_request context =
       |} );
         "indirect.py", "from client import function" ]
     ~check:["library.py", "def function() -> str: ..."]
-    ~expected_errors:["client.py", []; "indirect.py", []; "library.py", []]
+    ~expected_errors:[]
     ();
 
   (* When multiple files match a qualifier, the existing file has priority. *)
@@ -385,23 +371,23 @@ let test_process_type_check_request context =
   assert_response
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
     ~check:["a.py", "var = 1337"]
-    ~expected_errors:["a.py", []; "b.py", []]
+    ~expected_errors:[]
     ();
   assert_response
     ~incremental_transitive_dependencies:true
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
     ~check:["a.py", "var = 1337"]
-    ~expected_errors:["a.py", []; "b.py", []; "c.py", []]
+    ~expected_errors:[]
     ();
   assert_response
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
     ~check:["b.py", "from a import *"]
-    ~expected_errors:["b.py", []]
+    ~expected_errors:[]
     ();
   assert_response
     ~sources:["a.py", "var = 42"; "b.py", "from a import *"; "c.py", "from b import *"]
     ~check:["a.py", "var = ''"]
-    ~expected_errors:["a.py", []; "b.py", []]
+    ~expected_errors:[]
     ();
   assert_response
     ~sources:[]
@@ -409,7 +395,7 @@ let test_process_type_check_request context =
       ["a.py", "def foo() -> int: return ''"; "a.pyi", "def foo() -> int: ..."]
       (* No errors due to getting shadowed by the stub. *)
       (* TODO(T44669208): We should not get any results for a.py here. *)
-    ~expected_errors:["a.py", []; "a.pyi", []]
+    ~expected_errors:[]
     ();
 
   (* Check nonexistent handles. *)

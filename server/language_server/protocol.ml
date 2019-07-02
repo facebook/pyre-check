@@ -33,7 +33,7 @@ module PublishDiagnostics = struct
     | false -> Some DiagnosticSeverity.Error
 
 
-  let of_errors ~configuration handle errors =
+  let of_errors ~configuration relative errors =
     let diagnostic_of_error error =
       let { Ast.Location.start; stop; _ } = TypeCheck.Error.location error in
       Diagnostic.
@@ -45,11 +45,11 @@ module PublishDiagnostics = struct
         }
     in
     let failed_response =
-      Format.asprintf "Valid path does not exist for %s." (File.Handle.show handle)
-      |> Or_error.error_string
+      Format.asprintf "Valid path does not exist for %s." relative |> Or_error.error_string
     in
+    (* TODO (T46153421): Do not rely on File.Handle *)
     try
-      let path = File.Handle.to_path ~configuration handle in
+      let path = File.Handle.create_for_testing relative |> File.Handle.to_path ~configuration in
       match path with
       | Some path ->
           Ok

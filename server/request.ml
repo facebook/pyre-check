@@ -1103,9 +1103,7 @@ let process_display_type_errors_request ~state ~configuration ~files =
         in
         List.concat_map ~f:errors files
   in
-  { state;
-    response = Some (TypeCheckResponse (IncrementalCheck.build_file_to_error_map ~state errors))
-  }
+  { state; response = Some (TypeCheckResponse errors) }
 
 
 let process_get_definition_request

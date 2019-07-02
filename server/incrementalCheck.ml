@@ -11,19 +11,7 @@ open State
 open Configuration.Analysis
 open Pyre
 
-type errors = (File.Handle.t * State.Error.t list) list [@@deriving show]
-
-let build_file_to_error_map ?(checked_files = None) ~state:{ State.errors; _ } error_list =
-  let initial_files = Option.value ~default:(Hashtbl.keys errors) checked_files in
-  let error_file error = File.Handle.create_for_testing (Error.path error) in
-  List.fold ~init:File.Handle.Map.empty ~f:(fun map key -> Map.set map ~key ~data:[]) initial_files
-  |> (fun map ->
-       List.fold
-         ~init:map
-         ~f:(fun map error -> Map.add_multi map ~key:(error_file error) ~data:error)
-         error_list)
-  |> Map.to_alist
-
+type errors = State.Error.t list [@@deriving show]
 
 let recheck
     ~state:({ State.environment; errors; scheduler; open_documents; _ } as state)
@@ -204,21 +192,10 @@ let recheck
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
       Hashtbl.add_multi errors ~key:(File.Handle.create_for_testing (Error.path error)) ~data:error);
-  let checked_files =
-    List.filter_map
-      ~f:(fun file ->
-        try Some (File.handle ~configuration file) with
-        | File.NonexistentHandle _ ->
-            Log.warning
-              "Could not create a handle for %s. It will be excluded from the type-check response."
-              (Path.absolute (File.path file));
-            None)
-      recheck
-    |> Option.some
-  in
+
   Statistics.performance
     ~name:"incremental check"
     ~timer
     ~integers:["number of direct files", List.length files; "number of files", List.length recheck]
     ();
-  state, build_file_to_error_map ~checked_files ~state new_errors
+  state, new_errors

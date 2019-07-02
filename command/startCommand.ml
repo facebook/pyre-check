@@ -29,7 +29,20 @@ let computation_thread
     ({ Configuration.Server.pid_path; configuration = analysis_configuration; _ } as configuration)
     state
   =
-  let errors_to_lsp_responses error_map =
+  let errors_to_lsp_responses errors =
+    let build_file_to_error_map error_list =
+      let table = String.Table.create () in
+      let add_to_table error =
+        let update = function
+          | None -> [error]
+          | Some errors -> error :: errors
+        in
+        let key = Error.path error in
+        Hashtbl.update table key ~f:update
+      in
+      List.iter error_list ~f:add_to_table;
+      Hashtbl.to_alist table
+    in
     let diagnostic_to_response = function
       | Ok diagnostic_error ->
           [ ( diagnostic_error
@@ -39,7 +52,7 @@ let computation_thread
           ]
       | Error _ -> []
     in
-    error_map
+    build_file_to_error_map errors
     |> List.map ~f:(fun (handle, errors) ->
            LanguageServer.Protocol.PublishDiagnostics.of_errors
              ~configuration:analysis_configuration
@@ -51,7 +64,7 @@ let computation_thread
   let broadcast_response state response =
     let responses =
       match response with
-      | TypeCheckResponse error_map -> errors_to_lsp_responses error_map
+      | TypeCheckResponse errors -> errors_to_lsp_responses errors
       | LanguageServerProtocolResponse _ -> [response]
       | ClientExitResponse Persistent -> [response]
       | _ -> []

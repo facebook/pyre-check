@@ -17,7 +17,7 @@ module PublishDiagnostics : sig
 
   val of_errors
     :  configuration:Configuration.Analysis.t ->
-    File.Handle.t ->
+    string ->
     TypeCheck.Error.t list ->
     t Or_error.t
   (** Turn a type check error into a PublishDiagnostics notification *)

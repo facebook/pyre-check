@@ -25,9 +25,6 @@ let run_query serialized local_root () =
           match Socket.read socket with
           | TypeQueryResponse response -> response_to_yojson response
           | TypeCheckResponse errors ->
-              errors
-              |> List.concat_map ~f:snd
-              |> fun errors ->
               `Assoc
                 [ ( "response",
                     `List (List.map ~f:(Analysis.Error.to_json ~show_error_traces:false) errors) )

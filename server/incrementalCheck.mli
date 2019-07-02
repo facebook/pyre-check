@@ -3,13 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
-type errors = (File.Handle.t * State.Error.t list) list [@@deriving show]
-
-val build_file_to_error_map
-  :  ?checked_files:File.Handle.t list option ->
-  state:State.t ->
-  State.Error.t list ->
-  errors
+type errors = State.Error.t list [@@deriving show]
 
 val recheck
   :  state:State.t ->
