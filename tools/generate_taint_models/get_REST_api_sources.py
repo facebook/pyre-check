@@ -12,6 +12,7 @@ from typing import Callable, Iterable
 
 from .inspect_parser import extract_annotation, extract_name, extract_view_name
 from .model_generator import ModelGenerator
+from .taint_annotator import Model
 
 
 class RESTApiSourceGenerator(ModelGenerator):
@@ -29,26 +30,14 @@ class RESTApiSourceGenerator(ModelGenerator):
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 return
-            parameters = []
-            if isinstance(view_function, types.FunctionType):
-                view_parameters = inspect.signature(view_function).parameters
-            elif isinstance(view_function, types.MethodType):
-                # pyre-fixme
-                view_parameters = inspect.signature(view_function.__func__).parameters
-            else:
-                return
-
-            for parameter_name in view_parameters:
-                parameter = view_parameters[parameter_name]
-                if extract_annotation(parameter) not in self.whitelisted_classes:
-                    parameters.append(
-                        f"{extract_name(parameter)}: TaintSource[UserControlled]"
-                    )
-                else:
-                    parameters.append(extract_name(parameter))
-
-            parameters = ", ".join(parameters) if len(parameters) > 0 else ""
-            entry_points.add(f"def {view_name}({parameters}): ...")
+            model = Model(
+                arg=": TaintSource[UserControlled]",
+                vararg=": TaintSource[UserControlled]",
+                kwarg=": TaintSource[UserControlled]",
+            )
+            callable = model.generate(view_function, self.whitelisted_classes)
+            if callable is not None:
+                entry_points.add(callable)
 
         visit_all_views(entry_point_visitor)
         return sorted(entry_points)

@@ -1,7 +1,11 @@
 import ast
-from typing import List, NamedTuple, Optional, Union
+import inspect
+import types
+from typing import Callable, Iterable, List, NamedTuple, Optional, Union
 
 import _ast
+
+from .inspect_parser import extract_annotation, extract_name, extract_view_name
 
 
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
@@ -12,6 +16,38 @@ class Model(NamedTuple):
     vararg: str = ""
     kwarg: str = ""
     returns: str = ""
+
+    def generate(
+        self,
+        view_function: Callable[..., object],
+        whitelisted_parameters: Optional[Iterable[str]] = None,
+    ) -> Optional[str]:
+        view_name = extract_view_name(view_function)
+        parameters = []
+        if isinstance(view_function, types.FunctionType):
+            view_parameters = inspect.signature(view_function).parameters
+        elif isinstance(view_function, types.MethodType):
+            # pyre-fixme
+            view_parameters = inspect.signature(view_function.__func__).parameters
+        else:
+            return
+        for parameter_name in view_parameters:
+            parameter = view_parameters[parameter_name]
+            if (
+                whitelisted_parameters is None
+                or extract_annotation(parameter) not in whitelisted_parameters
+            ):
+                if parameter.kind == inspect.Parameter.VAR_KEYWORD:
+                    parameters.append(f"{extract_name(parameter)}{self.kwarg}")
+                elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
+                    parameters.append(f"{extract_name(parameter)}{self.vararg}")
+                else:
+                    parameters.append(f"{extract_name(parameter)}{self.arg}")
+            else:
+                parameters.append(extract_name(parameter))
+
+        parameters = ", ".join(parameters) if len(parameters) > 0 else ""
+        return f"def {view_name}({parameters}){self.returns}: ..."
 
 
 def annotate_function(

@@ -12,6 +12,7 @@ from typing import Callable, Iterable
 
 from .inspect_parser import extract_name, extract_view_name
 from .model_generator import ModelGenerator
+from .taint_annotator import Model
 
 
 class ExitNodeGenerator(ModelGenerator):
@@ -25,20 +26,10 @@ class ExitNodeGenerator(ModelGenerator):
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 return
-            if isinstance(view_function, types.FunctionType):
-                all_parameters = inspect.signature(view_function).parameters
-            elif isinstance(view_function, types.MethodType):
-                # pyre-ignore[6]: `types._StaticFunctionType </: Callable[..., Any].
-                all_parameters = inspect.signature(view_function.__func__).parameters
-            else:
-                return
-            parameters = ", ".join(
-                extract_name(all_parameters[key]) for key in all_parameters
-            )
-            exit_node = (
-                f"def {view_name}({parameters}) -> TaintSink[ReturnedToUser]: ..."
-            )
-            exit_nodes.add(exit_node)
+            model = Model(returns=" -> TaintSink[ReturnedToUser]")
+            callable = model.generate(view_function)
+            if callable is not None:
+                exit_nodes.add(callable)
 
         visit_all_views(exit_point_visitor)
         return sorted(exit_nodes)

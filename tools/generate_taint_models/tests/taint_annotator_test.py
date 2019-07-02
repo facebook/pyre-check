@@ -54,3 +54,44 @@ class TaintAnnotatorTest(unittest.TestCase):
                 ),
                 "def function(a1: Annotated, a2, *v1, **k1): ...",
             )
+
+    def test_generate_model(self) -> None:
+        def test_function(argument: str, *variable: str, **keyword: str) -> None:
+            pass
+
+        name = f"{__name__}.TaintAnnotatorTest.test_generate_model.test_function"
+        self.assertEqual(
+            taint_annotator.Model(arg=": TaintSource[tainted]").generate(test_function),
+            f"def {name}(argument: TaintSource[tainted], *variable, **keyword): ...",
+        )
+        self.assertEqual(
+            taint_annotator.Model(arg=": TaintSource[tainted]").generate(
+                test_function, ["str"]
+            ),
+            f"def {name}(argument, *variable, **keyword): ...",
+        )
+        self.assertEqual(
+            taint_annotator.Model(vararg=": TaintSource[tainted]").generate(
+                test_function
+            ),
+            f"def {name}(argument, *variable: TaintSource[tainted], **keyword): ...",
+        )
+        self.assertEqual(
+            taint_annotator.Model(kwarg=": TaintSource[tainted]").generate(
+                test_function
+            ),
+            f"def {name}(argument, *variable, **keyword: TaintSource[tainted]): ...",
+        )
+        self.assertEqual(
+            taint_annotator.Model(returns=" -> TaintSink[returned]").generate(
+                test_function
+            ),
+            f"def {name}(argument, *variable, **keyword) -> TaintSink[returned]: ...",
+        )
+
+        # Ensure that we don't choke on malformed types of functions.
+        class CallMe:
+            def __call__(self) -> None:
+                pass
+
+        self.assertEqual(taint_annotator.Model().generate(CallMe), None)
