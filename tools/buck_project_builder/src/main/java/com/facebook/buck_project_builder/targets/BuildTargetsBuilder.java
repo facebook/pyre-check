@@ -94,6 +94,10 @@ public final class BuildTargetsBuilder {
         .parallelStream()
         .forEach(
             command -> {
+              if (command.contains("py:")
+                  && thriftLibraryBuildCommands.contains(command.replace("py:", "mstch_pyi:"))) {
+                return;
+              }
               try {
                 GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
               } catch (IOException exception) {
@@ -133,6 +137,10 @@ public final class BuildTargetsBuilder {
               File outputFile = new File(source);
               if (outputFile.exists()) {
                 // Do not generate stubs for files that has already been handled.
+                return;
+              }
+              if (source.endsWith(".py") && new File(source + "i").exists()) {
+                // Do not generate stubs for files if there is already a pyi file for it.
                 return;
               }
               String relativeUnsupportedFilename =
