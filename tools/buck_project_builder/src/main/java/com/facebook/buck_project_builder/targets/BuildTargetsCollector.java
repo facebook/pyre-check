@@ -19,8 +19,11 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 public final class BuildTargetsCollector {
+
+  private static final Logger LOGGER = Logger.getGlobal();
 
   /**
    * @return an array that contains all of the buck targets (including the dependencies), given a
@@ -137,8 +140,12 @@ public final class BuildTargetsCollector {
     if (targets.isEmpty()) {
       throw new BuilderException("Targets should not be empty.");
     }
+    LOGGER.info("Querying targets' information...");
+    long start = System.currentTimeMillis();
     try (InputStream commandLineOutput = getBuildTargetJsonStream(targets)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
+      long buckQueryTime = System.currentTimeMillis() - start;
+      LOGGER.info("Found targets' information in " + buckQueryTime + "ms.");
       if (!parsedJson.isJsonObject()) {
         throw new Error(
             "Unexpected buck query output. It should always be a json object. Bad json: "

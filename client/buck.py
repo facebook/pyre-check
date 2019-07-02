@@ -74,6 +74,7 @@ class FastBuckBuilder(BuckBuilder):
             # Wait until all stderr have been printed.
             log_processor.join()
             if return_code == 0:
+                LOG.info("Finished building targets.")
                 debug_output = json.loads(
                     "".join([line.decode() for line in buck_builder_process.stdout])
                 )
@@ -89,11 +90,11 @@ class FastBuckBuilder(BuckBuilder):
         for line in stream:
             line = line.decode().rstrip()
             if line.startswith("INFO: "):
-                LOG.info(line[5:])
+                LOG.info(line[6:])
             elif line.startswith("WARNING: "):
-                LOG.warning(line[8:])
+                LOG.warning(line[9:])
             elif line.startswith("ERROR: "):
-                LOG.error(line[6:])
+                LOG.error(line[7:])
 
 
 class SimpleBuckBuilder(BuckBuilder):

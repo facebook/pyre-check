@@ -43,6 +43,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonSources() {
+    LOGGER.info("Building python sources...");
     long start = System.currentTimeMillis();
     this.sources
         .entrySet()
@@ -53,6 +54,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonWheels() {
+    LOGGER.info("Building python wheels...");
     long start = System.currentTimeMillis();
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
@@ -86,6 +88,7 @@ public final class BuildTargetsBuilder {
     if (this.thriftLibraryBuildCommands.isEmpty()) {
       return;
     }
+    LOGGER.info("Building thrift libraries...");
     long start = System.currentTimeMillis();
     thriftLibraryBuildCommands
         .parallelStream()
@@ -105,6 +108,7 @@ public final class BuildTargetsBuilder {
     if (this.swigLibraryBuildCommands.isEmpty()) {
       return;
     }
+    LOGGER.info("Building swig libraries...");
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
     for (String command : this.swigLibraryBuildCommands) {
@@ -119,6 +123,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void generateEmptyStubs() {
+    LOGGER.info("Generating empty stubs...");
     long start = System.currentTimeMillis();
     Path outputPath = Paths.get(outputDirectory);
     this.unsupportedGeneratedSources
