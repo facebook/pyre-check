@@ -21,15 +21,15 @@ class ExitNodeGenerator(ModelGenerator):
     def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
         exit_nodes = set()
 
-        def exit_point_visitor(view_func: Callable[..., object]) -> None:
-            view_name = extract_view_name(view_func)
+        def exit_point_visitor(view_function: Callable[..., object]) -> None:
+            view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 return
-            if isinstance(view_func, types.FunctionType):
-                all_parameters = inspect.signature(view_func).parameters
-            elif isinstance(view_func, types.MethodType):
+            if isinstance(view_function, types.FunctionType):
+                all_parameters = inspect.signature(view_function).parameters
+            elif isinstance(view_function, types.MethodType):
                 # pyre-ignore[6]: `types._StaticFunctionType </: Callable[..., Any].
-                all_parameters = inspect.signature(view_func.__func__).parameters
+                all_parameters = inspect.signature(view_function.__func__).parameters
             else:
                 return
             parameters = ", ".join(

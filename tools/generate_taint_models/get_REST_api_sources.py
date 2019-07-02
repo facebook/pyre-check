@@ -25,42 +25,39 @@ class RESTApiSourceGenerator(ModelGenerator):
         entry_points = set()
 
         # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
-        def entry_point_visitor(view_func: Callable) -> None:
-            view_name = extract_view_name(view_func)
+        def entry_point_visitor(view_function: Callable) -> None:
+            view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 return
-            params = []
-            if isinstance(view_func, types.FunctionType):
-                view_params = inspect.signature(view_func).parameters
-                for parameter_name in view_params:
-                    parameter = view_params[parameter_name]
+            parameters = []
+            if isinstance(view_function, types.FunctionType):
+                view_parameters = inspect.signature(view_function).parameters
+                for parameter_name in view_parameters:
+                    parameter = view_parameters[parameter_name]
                     annotation = extract_annotation(parameter)
                     if annotation is None or annotation not in self.whitelisted_classes:
-                        params.append(
+                        parameters.append(
                             f"{extract_name(parameter)}: TaintSource[UserControlled]"
                         )
                     else:
-                        params.append(extract_name(parameter))
-            elif isinstance(view_func, types.MethodType):
+                        parameters.append(extract_name(parameter))
+            elif isinstance(view_function, types.MethodType):
                 # pyre-fixme
-                view_params = inspect.signature(view_func.__func__).parameters
-                for parameter_name in view_params:
-                    parameter = view_params[parameter_name]
+                view_parameters = inspect.signature(view_function.__func__).parameters
+                for parameter_name in view_parameters:
+                    parameter = view_parameters[parameter_name]
 
                     if extract_annotation(parameter) not in self.whitelisted_classes:
-                        params.append(
+                        parameters.append(
                             f"{extract_name(parameter)}: TaintSource[UserControlled]"
                         )
                     else:
-                        params.append(extract_name(parameter))
+                        parameters.append(extract_name(parameter))
             else:
                 return
 
-            params = ", ".join(params) if len(params) > 0 else ""
-            exit_node = "def {func_name}({params}): ...".format(
-                func_name=view_name, params=params
-            )
-            entry_points.add(exit_node)
+            parameters = ", ".join(parameters) if len(parameters) > 0 else ""
+            entry_points.add(f"def {view_name}({parameters}): ...")
 
         visit_all_views(entry_point_visitor)
         return sorted(entry_points)
