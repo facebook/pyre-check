@@ -27,12 +27,17 @@ class BuckException(Exception):
 
 class FastBuckBuilder(BuckBuilder):
     def __init__(
-        self, buck_root: str, output_directory: Optional[str] = None, debug_mode=False
+        self,
+        buck_root: str,
+        output_directory: Optional[str] = None,
+        buck_builder_binary: Optional[str] = None,
+        debug_mode=False,
     ) -> None:
         self._buck_root = buck_root
         self._output_directory = output_directory or tempfile.mkdtemp(
             prefix="pyre_tmp_"
         )
+        self._buck_builder_binary = buck_builder_binary
         self._debug_mode = debug_mode
         self.conflicting_files = []
         self.unsupported_files = []
@@ -47,10 +52,12 @@ class FastBuckBuilder(BuckBuilder):
                 "--debug",
             ]
         else:
-            dotslash_file_path = os.path.join(
-                self._buck_root, "tools/pyre/facebook/buck_project_builder"
+            builder_binary = self._buck_builder_binary
+            executable_parts = (
+                [builder_binary]
+                if builder_binary
+                else ["buck", "run", "//tools/pyre/tools/buck_project_builder", "--"]
             )
-            executable_parts = [dotslash_file_path]
         command = (
             executable_parts
             + [

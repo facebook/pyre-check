@@ -200,6 +200,12 @@ def main() -> int:
     )
 
     parser.add_argument(
+        "--buck-builder-binary",
+        default=None,
+        help="Location of the buck builder binary",
+    )
+
+    parser.add_argument(
         "--exclude",
         action="append",
         default=[],
