@@ -688,7 +688,7 @@ let attribute_table
           ~table
           ({ Node.value = { Class.name = parent_name; _ } as definition; _ } as parent)
         =
-        let add_actual =
+        let add_actual () =
           let collect_attributes attribute =
             create_attribute
               attribute
@@ -703,13 +703,7 @@ let attribute_table
           |> fun attribute_map ->
           Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
-        add_actual;
-        if
-          extends_placeholder_stub_class
-            parent
-            ~aliases:(Resolution.aliases resolution)
-            ~module_definition:(Resolution.module_definition resolution)
-        then
+        let add_placeholder_stub_inheritances () =
           if Option.is_none (Attribute.Table.lookup_name table "__init__") then
             Attribute.Table.add
               table
@@ -726,7 +720,33 @@ let attribute_table
                    property = None;
                    static = true;
                    value = Node.create_with_default_location Ellipsis
+                 });
+          if Option.is_none (Attribute.Table.lookup_name table "__getattr__") then
+            Attribute.Table.add
+              table
+              (Node.create_with_default_location
+                 { Attribute.annotation =
+                     Annotation.create (Type.Callable.create ~annotation:Type.Any ());
+                   async = false;
+                   class_attribute = false;
+                   defined = true;
+                   final = false;
+                   initialized = true;
+                   name = "__getattr__";
+                   parent = Primitive (Reference.show name);
+                   property = None;
+                   static = true;
+                   value = Node.create_with_default_location Ellipsis
                  })
+        in
+        add_actual ();
+        if
+          extends_placeholder_stub_class
+            parent
+            ~aliases:(Resolution.aliases resolution)
+            ~module_definition:(Resolution.module_definition resolution)
+        then
+          add_placeholder_stub_inheritances ()
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =

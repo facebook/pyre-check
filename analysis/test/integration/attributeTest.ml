@@ -538,6 +538,23 @@ let test_check_attributes _ =
     |}
     [];
 
+  (* Things that inherit from any have all attributes *)
+  assert_strict_type_errors
+    {|
+      from typing import Any
+      from placeholder_stub import StubbedBase
+      class Else(StubbedBase):
+          actually_there : int = 9
+      def main() -> None:
+          instance = Else()
+          reveal_type(instance.prop)
+          reveal_type(Else.class_prop)
+          reveal_type(instance.actually_there)
+    |}
+    [ "Revealed type [-1]: Revealed type for `instance.prop` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `Else.class_prop` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `instance.actually_there` is `int`." ];
+
   (* We allow instance attributes to be accessed via class objects. *)
   assert_type_errors {|
       class Foo:
