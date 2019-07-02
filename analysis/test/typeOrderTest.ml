@@ -516,7 +516,7 @@ let test_default _ =
 let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order ((module Handler : Handler) as order) annotation expected =
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.show_primitive next ^ " "))
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       expected
       (method_resolution_order_linearize
          order

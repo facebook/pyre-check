@@ -9,7 +9,7 @@ open Statement
 type global = Annotation.t Node.t [@@deriving eq, show]
 
 type class_metadata = {
-  successors: Type.primitive list;
+  successors: Type.Primitive.t list;
   is_test: bool;
   is_final: bool;
   extends_placeholder_stub_class: bool
@@ -33,12 +33,12 @@ val create
   :  annotations:Annotation.t Reference.Map.t ->
   order:(module TypeOrder.Handler) ->
   resolve:(resolution:t -> Expression.t -> Annotation.t) ->
-  aliases:(Type.primitive -> Type.alias option) ->
+  aliases:(Type.Primitive.t -> Type.alias option) ->
   global:(Reference.t -> global option) ->
   module_definition:(Reference.t -> Module.t option) ->
-  class_definition:(Type.primitive -> Class.t Node.t option) ->
-  class_metadata:(Type.primitive -> class_metadata option) ->
-  constructor:(resolution:t -> Type.primitive -> Type.t option) ->
+  class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
+  class_metadata:(Type.Primitive.t -> class_metadata option) ->
+  constructor:(resolution:t -> Type.Primitive.t -> Type.t option) ->
   generics:(resolution:t -> Class.t Node.t -> Type.t list) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   attributes:(resolution:t -> Type.t -> AnnotatedAttribute.t list option) ->
@@ -90,7 +90,7 @@ val resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val global : t -> Reference.t -> global option
 
-val aliases : t -> Type.primitive -> Type.alias option
+val aliases : t -> Type.Primitive.t -> Type.alias option
 
 val module_definition : t -> Reference.t -> Module.t option
 

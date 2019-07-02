@@ -160,8 +160,8 @@ let test_register_class_metadata _ =
   let assert_successors class_name expected =
     let { Resolution.successors; _ } = Option.value_exn (Handler.class_metadata class_name) in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.show_primitive next ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal_primitive)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
+      ~cmp:(List.equal ~equal:Type.Primitive.equal)
       expected
       successors
   in
@@ -578,7 +578,7 @@ let test_connect_type_order _ =
   Environment.connect_type_order (module Handler) resolution source;
   let assert_successors annotation successors =
     assert_equal
-      ~printer:(List.to_string ~f:Type.show_primitive)
+      ~printer:(List.to_string ~f:Type.Primitive.show)
       successors
       (TypeOrder.successors order annotation)
   in

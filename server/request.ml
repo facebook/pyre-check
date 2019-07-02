@@ -598,7 +598,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 | Some { Resolution.successors; is_test; is_final; extends_placeholder_stub_class }
                   ->
                     `Assoc
-                      [ "successors", `String (List.to_string ~f:Type.show_primitive successors);
+                      [ "successors", `String (List.to_string ~f:Type.Primitive.show successors);
                         "is_test", `Bool is_test;
                         "is_final", `Bool is_final;
                         "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class ]

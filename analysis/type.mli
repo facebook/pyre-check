@@ -132,9 +132,15 @@ module Record : sig
   end
 end
 
-type primitive = Identifier.t
+module Primitive : sig
+  type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
-and literal =
+  include Hashable with type t := t
+
+  module Set : Set.S with type Elt.t = t
+end
+
+type literal =
   | Boolean of bool
   | Integer of int
   | String of string
@@ -158,7 +164,7 @@ and t =
   | Parametric of { name: Identifier.t; parameters: t list }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
-  | Primitive of primitive
+  | Primitive of Primitive.t
   | Top
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
@@ -350,7 +356,7 @@ type alias =
   | VariableAlias of t Record.Variable.record
 [@@deriving compare, eq, sexp, show, hash]
 
-val create : aliases:(primitive -> alias option) -> Expression.t -> t
+val create : aliases:(Primitive.t -> alias option) -> Expression.t -> t
 
 val contains_callable : t -> bool
 
@@ -458,7 +464,7 @@ module OrderedTypes : sig
       include Record.OrderedTypes.RecordMap
     end
 
-    val parse : Expression.t -> aliases:(primitive -> alias option) -> t option
+    val parse : Expression.t -> aliases:(Primitive.t -> alias option) -> t option
 
     (* For testing only *)
     val create
@@ -592,7 +598,7 @@ module Variable : sig
       val parse_instance_annotation
         :  variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(primitive -> alias option) ->
+        aliases:(Primitive.t -> alias option) ->
         t option
 
       module Components : sig

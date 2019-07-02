@@ -109,8 +109,8 @@ let test_superclasses _ =
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.show_primitive next ^ " "))
-      ~cmp:(List.equal ~equal:Type.equal_primitive)
+      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
+      ~cmp:(List.equal ~equal:Type.Primitive.equal)
       expected
       actual
   in

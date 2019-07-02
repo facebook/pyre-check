@@ -33,7 +33,7 @@ val get_decorator : t -> resolution:Resolution.t -> decorator:string -> decorato
 
 val annotation : t -> Type.t
 
-val successors : t -> resolution:Resolution.t -> Type.primitive list
+val successors : t -> resolution:Resolution.t -> Type.Primitive.t list
 
 val successors_fold
   :  'a Class.record Node.t ->
@@ -148,7 +148,7 @@ val inferred_callable_type : t -> resolution:Resolution.t -> Type.Callable.t opt
 
 val extends_placeholder_stub_class
   :  t ->
-  aliases:(Type.primitive -> Type.alias option) ->
+  aliases:(Type.Primitive.t -> Type.alias option) ->
   module_definition:(Reference.t -> Module.t option) ->
   bool
 

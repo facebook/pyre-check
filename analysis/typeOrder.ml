@@ -12,7 +12,7 @@ exception Cyclic
 
 exception Incomplete
 
-exception InconsistentMethodResolutionOrder of Type.primitive
+exception InconsistentMethodResolutionOrder of Type.Primitive.t
 
 module Target = struct
   type t = {

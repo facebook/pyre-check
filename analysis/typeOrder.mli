@@ -135,10 +135,10 @@ val is_instantiated : (module Handler) -> Type.t -> bool
 val method_resolution_order_linearize
   :  (module Handler) ->
   get_successors:(int -> Target.t list option) ->
-  Type.primitive ->
-  Type.primitive list
+  Type.Primitive.t ->
+  Type.Primitive.t list
 
-val successors : (module Handler) -> Type.primitive -> Type.primitive list
+val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
 val variables : (module Handler) -> Node.t -> Type.t list option
 

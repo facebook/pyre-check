@@ -279,9 +279,35 @@ end
 open Record.Callable
 module Parameter = Record.Callable.RecordParameter
 
-type primitive = Identifier.t
+module Primitive = struct
+  type t = Identifier.t [@@deriving compare, eq, sexp, show, hash]
 
-and literal =
+  include Hashable.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let hash = Hashtbl.hash
+
+    let hash_fold_t = hash_fold_t
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+
+  module Set = Set.Make (struct
+    type nonrec t = t
+
+    let compare = compare
+
+    let sexp_of_t = sexp_of_t
+
+    let t_of_sexp = t_of_sexp
+  end)
+end
+
+type literal =
   | Boolean of bool
   | Integer of int
   | String of string
@@ -305,7 +331,7 @@ and t =
   | Parametric of { name: Identifier.t; parameters: t list }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
-  | Primitive of primitive
+  | Primitive of Primitive.t
   | Top
   | Tuple of tuple
   | TypedDictionary of { name: Identifier.t; fields: typed_dictionary_field list; total: bool }
@@ -2373,7 +2399,7 @@ module Variable : sig
       val parse_instance_annotation
         :  variable_parameter_annotation:Expression.t ->
         keywords_parameter_annotation:Expression.t ->
-        aliases:(primitive -> alias option) ->
+        aliases:(Primitive.t -> alias option) ->
         t option
 
       module Components : sig

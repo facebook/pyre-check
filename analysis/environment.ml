@@ -86,7 +86,7 @@ end
 module ResolvedAlias = struct
   type t = {
     handle: File.Handle.t;
-    name: Type.primitive;
+    name: Type.Primitive.t;
     annotation: Type.alias
   }
   [@@deriving sexp, compare, hash]
