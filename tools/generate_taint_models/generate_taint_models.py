@@ -268,7 +268,7 @@ def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
         return exit_nodes
 
     def callback(function: str, definition: FunctionDefinition) -> None:
-        model = Model(returns=" -> TaintSink[ReturnedToUser]")
+        model = Model(returns="TaintSink[ReturnedToUser]")
         exit_nodes.add(annotate_function(function, definition, model))
 
     _visit_views(arguments, os.getcwd(), arguments.urls_path, callback)
@@ -286,7 +286,7 @@ def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
 
     def callback(function: str, definition: FunctionDefinition) -> None:
         model = Model(
-            arg=": TaintSource[UserControlled]",
+            arg="TaintSource[UserControlled]",
             # These are commented out to preserve existing behaviour, but
             # I actually think it's more correct to uncomment them:
             # vararg=": TaintSource[UserControlled]",
@@ -308,8 +308,7 @@ def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
 
     def callback(function: str, definition: FunctionDefinition) -> None:
         model = Model(
-            vararg=": TaintSource[UserControlled]",
-            kwarg=": TaintSource[UserControlled]",
+            vararg="TaintSource[UserControlled]", kwarg="TaintSource[UserControlled]"
         )
         sources.add(annotate_function(function, definition, model))
 

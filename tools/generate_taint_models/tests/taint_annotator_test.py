@@ -17,28 +17,28 @@ class TaintAnnotatorTest(unittest.TestCase):
         function_name = "function"
 
         # Test just arg
-        model = taint_annotator.Model(arg=": Annotated")
+        model = taint_annotator.Model(arg="Annotated")
         self.assertEqual(
             taint_annotator.annotate_function(function_name, function_dfn, model),
             "def function(a1: Annotated, a2: Annotated, *v1, **k1): ...",
         )
 
         # Test just vararg
-        model = taint_annotator.Model(vararg=": Annotated")
+        model = taint_annotator.Model(vararg="Annotated")
         self.assertEqual(
             taint_annotator.annotate_function(function_name, function_dfn, model),
             "def function(a1, a2, *v1: Annotated, **k1): ...",
         )
 
         # Test just kwarg
-        model = taint_annotator.Model(kwarg=": Annotated")
+        model = taint_annotator.Model(kwarg="Annotated")
         self.assertEqual(
             taint_annotator.annotate_function(function_name, function_dfn, model),
             "def function(a1, a2, *v1, **k1: Annotated): ...",
         )
 
         # Test just returns
-        model = taint_annotator.Model(returns=" -> Annotated")
+        model = taint_annotator.Model(returns="Annotated")
         self.assertEqual(
             taint_annotator.annotate_function(function_name, function_dfn, model),
             "def function(a1, a2, *v1, **k1) -> Annotated: ...",
@@ -47,7 +47,7 @@ class TaintAnnotatorTest(unittest.TestCase):
         # Test whitelist
         with patch("ast.dump") as ast_dump:
             ast_dump.side_effect = ["SomeType", "Whitelisted"]
-            model = taint_annotator.Model(arg=": Annotated")
+            model = taint_annotator.Model(arg="Annotated")
             self.assertEqual(
                 taint_annotator.annotate_function(
                     function_name, function_dfn, model, ["Whitelisted"]
@@ -61,29 +61,29 @@ class TaintAnnotatorTest(unittest.TestCase):
 
         name = f"{__name__}.TaintAnnotatorTest.test_generate_model.test_function"
         self.assertEqual(
-            taint_annotator.Model(arg=": TaintSource[tainted]").generate(test_function),
+            taint_annotator.Model(arg="TaintSource[tainted]").generate(test_function),
             f"def {name}(argument: TaintSource[tainted], *variable, **keyword): ...",
         )
         self.assertEqual(
-            taint_annotator.Model(arg=": TaintSource[tainted]").generate(
+            taint_annotator.Model(arg="TaintSource[tainted]").generate(
                 test_function, ["str"]
             ),
             f"def {name}(argument, *variable, **keyword): ...",
         )
         self.assertEqual(
-            taint_annotator.Model(vararg=": TaintSource[tainted]").generate(
+            taint_annotator.Model(vararg="TaintSource[tainted]").generate(
                 test_function
             ),
             f"def {name}(argument, *variable: TaintSource[tainted], **keyword): ...",
         )
         self.assertEqual(
-            taint_annotator.Model(kwarg=": TaintSource[tainted]").generate(
+            taint_annotator.Model(kwarg="TaintSource[tainted]").generate(
                 test_function
             ),
             f"def {name}(argument, *variable, **keyword: TaintSource[tainted]): ...",
         )
         self.assertEqual(
-            taint_annotator.Model(returns=" -> TaintSink[returned]").generate(
+            taint_annotator.Model(returns="TaintSink[returned]").generate(
                 test_function
             ),
             f"def {name}(argument, *variable, **keyword) -> TaintSink[returned]: ...",

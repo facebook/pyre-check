@@ -18,8 +18,8 @@ class GraphQLSourceGenerator(ModelGenerator):
 
         for view_function in functions_to_model:
             model = Model(
-                vararg=": TaintSource[UserControlled]",
-                kwarg=": TaintSource[UserControlled]",
+                vararg="TaintSource[UserControlled]",
+                kwarg="TaintSource[UserControlled]",
             )
             callable = model.generate(view_function)
             if callable is not None:

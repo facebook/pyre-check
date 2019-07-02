@@ -28,7 +28,7 @@ class RequestSpecificDataGenerator(ModelGenerator):
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 continue
-            taint_kind = ": TaintSource[RequestSpecificData]"
+            taint_kind = "TaintSource[RequestSpecificData]"
             model = Model(arg=taint_kind, vararg=taint_kind, kwarg=taint_kind)
             callable = model.generate(view_function, self.whitelisted_classes)
             if callable is not None:

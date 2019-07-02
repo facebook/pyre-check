@@ -28,7 +28,7 @@ class ExitNodeGenerator(ModelGenerator):
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
                 continue
-            model = Model(returns=" -> TaintSink[ReturnedToUser]")
+            model = Model(returns="TaintSink[ReturnedToUser]")
             callable = model.generate(view_function)
             if callable is not None:
                 exit_nodes.add(callable)

@@ -32,9 +32,9 @@ class RESTApiSourceGenerator(ModelGenerator):
             if view_name in self.whitelisted_views:
                 continue
             model = Model(
-                arg=": TaintSource[UserControlled]",
-                vararg=": TaintSource[UserControlled]",
-                kwarg=": TaintSource[UserControlled]",
+                arg="TaintSource[UserControlled]",
+                vararg="TaintSource[UserControlled]",
+                kwarg="TaintSource[UserControlled]",
             )
             callable = model.generate(view_function, self.whitelisted_classes)
             if callable is not None:

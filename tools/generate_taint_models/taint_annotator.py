@@ -12,10 +12,10 @@ FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 
 
 class Model(NamedTuple):
-    arg: str = ""
-    vararg: str = ""
-    kwarg: str = ""
-    returns: str = ""
+    arg: Optional[str] = None
+    vararg: Optional[str] = None
+    kwarg: Optional[str] = None
+    returns: Optional[str] = None
 
     def generate(
         self,
@@ -33,21 +33,39 @@ class Model(NamedTuple):
             return
         for parameter_name in view_parameters:
             parameter = view_parameters[parameter_name]
+            annotation = ""
             if (
                 whitelisted_parameters is None
                 or extract_annotation(parameter) not in whitelisted_parameters
             ):
                 if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                    parameters.append(f"{extract_name(parameter)}{self.kwarg}")
+                    keywords = self.kwarg
+                    if keywords is not None:
+                        annotation = f": {keywords}"
+                    else:
+                        annotation = ""
                 elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
-                    parameters.append(f"{extract_name(parameter)}{self.vararg}")
+                    variable = self.vararg
+                    if variable is not None:
+                        annotation = f": {variable}"
+                    else:
+                        annotation = ""
                 else:
-                    parameters.append(f"{extract_name(parameter)}{self.arg}")
-            else:
-                parameters.append(extract_name(parameter))
+                    argument = self.arg
+                    if argument is not None:
+                        annotation = f": {argument}"
+                    else:
+                        annotation = ""
+
+            parameters.append(f"{extract_name(parameter)}{annotation}")
 
         parameters = ", ".join(parameters) if len(parameters) > 0 else ""
-        return f"def {view_name}({parameters}){self.returns}: ..."
+        returns = self.returns
+        if returns is not None:
+            returns = f" -> {returns}"
+        else:
+            returns = ""
+        return f"def {view_name}({parameters}){returns}: ..."
 
 
 def annotate_function(
@@ -64,10 +82,11 @@ def annotate_function(
             and whitelist
             and any(element in ast.dump(annotation) for element in whitelist)
         )
-        if whitelisted:
+        arg = model.arg
+        if whitelisted or arg is None:
             return argument.arg
         else:
-            return argument.arg + model.arg
+            return f"{argument.arg}: {arg}"
 
     call_arguments = definition.args
 
@@ -78,10 +97,23 @@ def annotate_function(
 
     variable = call_arguments.vararg
     if variable:
-        modified_arguments += f", *{variable.arg}{model.vararg}"
+        annotation = model.vararg
+        if annotation is not None:
+            modified_arguments += f", *{variable.arg}: {annotation}"
+        else:
+            modified_arguments += f", *{variable.arg}"
 
     keywords = call_arguments.kwarg
     if keywords:
-        modified_arguments += f", **{keywords.arg}{model.kwarg}"
+        annotation = model.kwarg
+        if annotation is not None:
+            modified_arguments += f", **{keywords.arg}: {annotation}"
+        else:
+            modified_arguments += f", **{keywords.arg}"
 
-    return f"def {function}({modified_arguments}){model.returns}: ..."
+    returns = model.returns
+    if returns is not None:
+        returns = f" -> {returns}"
+    else:
+        returns = ""
+    return f"def {function}({modified_arguments}){returns}: ..."
