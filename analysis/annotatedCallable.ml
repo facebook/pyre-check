@@ -135,15 +135,18 @@ let create ~resolution ~parent ~name overloads =
               { callable with implicit = Some implicit }
             in
             let solution =
-              Resolution.solve_less_or_equal
-                resolution
-                ~any_is_bottom:true
-                ~left:parent
-                ~right:annotation
-                ~constraints:TypeConstraints.empty
-              |> List.filter_map ~f:(Resolution.solve_constraints ~any_is_bottom:true resolution)
-              |> List.hd
-              |> Option.value ~default:TypeConstraints.Solution.empty
+              try
+                Resolution.solve_less_or_equal
+                  resolution
+                  ~any_is_bottom:true
+                  ~left:parent
+                  ~right:annotation
+                  ~constraints:TypeConstraints.empty
+                |> List.filter_map ~f:(Resolution.solve_constraints ~any_is_bottom:true resolution)
+                |> List.hd
+                |> Option.value ~default:TypeConstraints.Solution.empty
+              with
+              | TypeOrder.Untracked _ -> TypeConstraints.Solution.empty
             in
             let instantiated =
               TypeConstraints.Solution.instantiate solution (Type.Callable callable)
