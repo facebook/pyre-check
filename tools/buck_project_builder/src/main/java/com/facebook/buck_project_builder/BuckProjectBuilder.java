@@ -26,7 +26,9 @@ public final class BuckProjectBuilder {
       BuildTargetsCollector.collectBuckTargets(command.getTargets())
           .forEach(target -> target.addToBuilder(builder));
       DebugOutput debugOutput = builder.buildTargets();
-      System.out.println(new Gson().toJson(debugOutput));
+      if (command.isDebug()) {
+        System.out.println(new Gson().toJson(debugOutput));
+      }
     } catch (BuilderException exception) {
       LOGGER.severe(exception.getMessage());
       System.exit(1);

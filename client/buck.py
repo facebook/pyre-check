@@ -44,6 +44,7 @@ class FastBuckBuilder(BuckBuilder):
                 "run",
                 "//tools/pyre/tools/buck_project_builder",
                 "--",
+                "--debug",
             ]
         else:
             dotslash_file_path = os.path.join(
@@ -75,11 +76,12 @@ class FastBuckBuilder(BuckBuilder):
             log_processor.join()
             if return_code == 0:
                 LOG.info("Finished building targets.")
-                debug_output = json.loads(
-                    "".join([line.decode() for line in buck_builder_process.stdout])
-                )
-                self.conflicting_files += debug_output["conflictingFiles"]
-                self.unsupported_files += debug_output["unsupportedFiles"]
+                if self._debug_mode:
+                    debug_output = json.loads(
+                        "".join([line.decode() for line in buck_builder_process.stdout])
+                    )
+                    self.conflicting_files += debug_output["conflictingFiles"]
+                    self.unsupported_files += debug_output["unsupportedFiles"]
                 return [self._output_directory]
             else:
                 raise BuckException(

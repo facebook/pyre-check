@@ -14,11 +14,14 @@ import java.util.Objects;
 
 final class BuilderCommand {
 
+  private final boolean debug;
   private final String buckRoot;
   private final String outputDirectory;
   private final ImmutableList<String> targets;
 
-  BuilderCommand(String buckRoot, String outputDirectory, ImmutableList<String> targets) {
+  BuilderCommand(
+      boolean debug, String buckRoot, String outputDirectory, ImmutableList<String> targets) {
+    this.debug = debug;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
     this.targets = targets;
@@ -27,6 +30,7 @@ final class BuilderCommand {
   static BuilderCommand fromCommandLineArguments(String[] arguments) throws BuilderException {
     CommandLineParser parser = new DefaultParser();
     Options parsingOptions = new Options();
+    parsingOptions.addOption(Option.builder().longOpt("debug").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("buck_root").build());
     parsingOptions.addOption(Option.builder().hasArg().longOpt("output_directory").build());
     try {
@@ -40,11 +44,19 @@ final class BuilderCommand {
         throw new BuilderException("`output_directory` is a required command line argument.");
       }
       List<String> targets = parsedArguments.getArgList();
-      return new BuilderCommand(buckRoot, outputDirectory, ImmutableList.copyOf(targets));
+      return new BuilderCommand(
+          parsedArguments.hasOption("debug"),
+          buckRoot,
+          outputDirectory,
+          ImmutableList.copyOf(targets));
     } catch (ParseException exception) {
       throw new BuilderException(
           "Unexpected command line arguments. Detail: " + exception.getMessage());
     }
+  }
+
+  public boolean isDebug() {
+    return debug;
   }
 
   public String getBuckRoot() {
@@ -68,19 +80,21 @@ final class BuilderCommand {
       return false;
     }
     BuilderCommand builderCommand = (BuilderCommand) other;
-    return buckRoot.equals(builderCommand.buckRoot)
+    return debug == builderCommand.debug
+        && buckRoot.equals(builderCommand.buckRoot)
         && outputDirectory.equals(builderCommand.outputDirectory)
         && targets.equals(builderCommand.targets);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(buckRoot, outputDirectory, targets);
+    return Objects.hash(debug, buckRoot, outputDirectory, targets);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "{buckRoot=%s, outputDirectory=%s, targets=%s}", buckRoot, outputDirectory, targets);
+        "{debug=%b, buckRoot=%s, outputDirectory=%s, targets=%s}",
+        debug, buckRoot, outputDirectory, targets);
   }
 }
