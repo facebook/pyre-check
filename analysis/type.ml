@@ -668,11 +668,18 @@ let rec pp_concise format annotation =
           | ParameterVariadicTypeVariable { name; _ } -> name
           | Defined parameters ->
               let parameter = function
-                | Parameter.Anonymous { annotation; _ }
-                | Parameter.KeywordOnly { annotation; _ } ->
-                    Format.asprintf "%a" pp_concise annotation
-                | Parameter.Named { name; annotation; _ } ->
-                    Format.asprintf "%s: %a" (Identifier.sanitized name) pp_concise annotation
+                | Parameter.Anonymous { annotation; default; _ } ->
+                    if default then
+                      Format.asprintf "%a=..." pp_concise annotation
+                    else
+                      Format.asprintf "%a" pp_concise annotation
+                | Parameter.KeywordOnly { name; annotation; default }
+                | Parameter.Named { name; annotation; default } ->
+                    let name = Identifier.sanitized name in
+                    if default then
+                      Format.asprintf "%s: %a = ..." name pp_concise annotation
+                    else
+                      Format.asprintf "%s: %a" name pp_concise annotation
                 | Parameter.Variable (Concrete annotation) ->
                     Format.asprintf "*(%a)" pp_concise annotation
                 | Parameter.Variable (Variadic { name; _ }) -> Format.asprintf "*(%s)" name

@@ -503,9 +503,9 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
-            [ Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = true };
-              Type.Callable.Parameter.Named { name = "y"; annotation = Type.float; default = true }
-            ])
+            [ Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = false };
+              Type.Callable.Parameter.Named
+                { name = "y"; annotation = Type.float; default = false } ])
        ())
     "(x: Any, y: float) -> int";
   assert_concise
@@ -514,9 +514,27 @@ let test_concise _ =
        ~annotation:Type.integer
        ~parameters:
          (Type.Callable.Defined
+            [Type.Callable.Parameter.Anonymous { index = 0; annotation = Type.Any; default = true }])
+       ())
+    "(Any=...) -> int";
+  assert_concise
+    (Type.Callable.create
+       ~name:!&"foo"
+       ~annotation:Type.integer
+       ~parameters:
+         (Type.Callable.Defined
+            [Type.Callable.Parameter.Named { name = "x"; annotation = Type.Any; default = true }])
+       ())
+    "(x: Any = ...) -> int";
+  assert_concise
+    (Type.Callable.create
+       ~name:!&"foo"
+       ~annotation:Type.integer
+       ~parameters:
+         (Type.Callable.Defined
             [ Type.Callable.Parameter.Named
                 { name = "callable";
-                  default = true;
+                  default = false;
                   annotation =
                     Type.Callable.create
                       ~name:!&"bar"
@@ -524,7 +542,7 @@ let test_concise _ =
                       ~parameters:
                         (Type.Callable.Defined
                            [ Type.Callable.Parameter.Named
-                               { name = "x"; annotation = Type.integer; default = true } ])
+                               { name = "x"; annotation = Type.integer; default = false } ])
                       ()
                 } ])
        ())
