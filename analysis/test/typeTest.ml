@@ -635,47 +635,37 @@ let test_primitives _ =
 
 
 let test_elements _ =
-  let assert_equal = assert_equal ~printer:(List.to_string ~f:Type.show) in
+  let assert_equal = assert_equal ~printer:(List.to_string ~f:Fn.id) in
+  assert_equal ["typing.Callable"] (Type.elements (Type.Callable.create ~annotation:Type.Top ()));
   assert_equal
-    [Type.Primitive "typing.Callable"]
-    (Type.elements (Type.Callable.create ~annotation:Type.Top ()));
-  assert_equal
-    [Type.integer; Type.Primitive "typing.Callable"]
+    ["int"; "typing.Callable"]
     (Type.elements (Type.Callable.create ~annotation:Type.integer ()));
-  assert_equal
-    [Type.integer; Type.Primitive "typing.Optional"]
-    (Type.elements (Type.optional Type.integer));
-  assert_equal [Type.Primitive "tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.Top)));
-  assert_equal
-    [Type.integer; Type.Primitive "tuple"]
-    (Type.elements (Type.Tuple (Type.Unbounded Type.integer)));
+  assert_equal ["int"; "typing.Optional"] (Type.elements (Type.optional Type.integer));
+  assert_equal ["tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.Top)));
+  assert_equal ["int"; "tuple"] (Type.elements (Type.Tuple (Type.Unbounded Type.integer)));
   assert_equal
     []
     (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
   assert_equal
-    [Type.integer]
+    ["int"]
     (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
   assert_equal
-    [Type.integer; Type.Primitive "parametric"]
+    ["int"; "parametric"]
     (Type.elements (Type.parametric "parametric" [Type.integer; Type.Top]));
   assert_equal
-    [Type.integer; Type.string; Type.Primitive "parametric"]
+    ["int"; "str"; "parametric"]
     (Type.elements (Type.parametric "parametric" [Type.integer; Type.string]));
+  assert_equal ["str"; "tuple"] (Type.elements (Type.tuple [Type.Top; Type.string]));
+  assert_equal ["int"; "str"; "tuple"] (Type.elements (Type.tuple [Type.integer; Type.string]));
   assert_equal
-    [Type.string; Type.Primitive "tuple"]
-    (Type.elements (Type.tuple [Type.Top; Type.string]));
-  assert_equal
-    [Type.integer; Type.string; Type.Primitive "tuple"]
-    (Type.elements (Type.tuple [Type.integer; Type.string]));
-  assert_equal
-    [Type.integer; Type.string; Type.Primitive "typing.Union"]
+    ["int"; "str"; "typing.Union"]
     (Type.elements (Type.union [Type.integer; Type.string]));
   assert_equal [] (Type.elements Type.Top);
   assert_equal [] (Type.elements Type.Bottom);
-  assert_equal [Type.integer] (Type.elements Type.integer);
+  assert_equal ["int"] (Type.elements Type.integer);
   assert_equal [] (Type.elements Type.Any);
   assert_equal
-    [Type.integer; Type.string; Type.Primitive "TypedDictionary"]
+    ["int"; "str"; "TypedDictionary"]
     ( Type.TypedDictionary
         { name = "Movie";
           fields =

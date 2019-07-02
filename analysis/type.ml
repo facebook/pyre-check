@@ -2051,7 +2051,7 @@ let primitives annotation =
 
 let elements annotation =
   let module CollectorTransform = Transform.Make (struct
-    type state = t list
+    type state = Primitive.t list
 
     let visit_children_before _ _ = true
 
@@ -2060,15 +2060,15 @@ let elements annotation =
     let visit sofar annotation =
       let new_state =
         match annotation with
-        | Annotated _ -> Primitive "typing.Annotated" :: sofar
-        | Callable _ -> Primitive "typing.Callable" :: sofar
-        | Literal _ -> Primitive "typing_extensions.Literal" :: sofar
-        | Optional _ -> Primitive "typing.Optional" :: sofar
-        | Parametric { name; _ } -> Primitive name :: sofar
-        | Primitive _ -> annotation :: sofar
-        | Tuple _ -> Primitive "tuple" :: sofar
-        | TypedDictionary _ -> Primitive "TypedDictionary" :: sofar
-        | Union _ -> Primitive "typing.Union" :: sofar
+        | Annotated _ -> "typing.Annotated" :: sofar
+        | Callable _ -> "typing.Callable" :: sofar
+        | Literal _ -> "typing_extensions.Literal" :: sofar
+        | Optional _ -> "typing.Optional" :: sofar
+        | Parametric { name; _ } -> name :: sofar
+        | Primitive annotation -> annotation :: sofar
+        | Tuple _ -> "tuple" :: sofar
+        | TypedDictionary _ -> "TypedDictionary" :: sofar
+        | Union _ -> "typing.Union" :: sofar
         | ParameterVariadicComponent _
         | Bottom
         | Any

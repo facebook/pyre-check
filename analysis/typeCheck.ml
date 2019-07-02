@@ -202,44 +202,39 @@ module State (Context : Context) = struct
       ({ Node.location; _ } as expression)
     =
     let check_and_correct_annotation ~resolution ~location ~annotation ~resolved errors =
-      let is_aliased_to_any =
-        (* Special-case expressions typed as Any to be valid types. *)
-        match annotation with
-        | Type.Primitive _ -> Type.is_any resolved
-        | _ -> false
+      let untracked_annotation_error annotation =
+        match resolved with
+        | Type.Any -> None
+        | Top ->
+            Some
+              (Error.create
+                 ~location
+                 ~kind:(Error.UndefinedType (Primitive annotation))
+                 ~define:Context.define)
+        | _ ->
+            Some
+              (Error.create
+                 ~location
+                 ~kind:(Error.InvalidType (InvalidType (Primitive annotation)))
+                 ~define:Context.define)
       in
-      let check_untracked_annotation errors annotation =
-        if Resolution.is_tracked resolution annotation || is_aliased_to_any then
-          errors
-        else if not (Type.is_unknown resolved || Type.is_any resolved) then
+      let check_invalid_variables resolution variable =
+        if not (Resolution.type_variable_exists resolution ~variable) then
+          let origin =
+            if Define.is_toplevel (Node.value Context.define) then
+              Error.Toplevel
+            else if Define.is_class_toplevel (Node.value Context.define) then
+              Error.ClassToplevel
+            else
+              Error.Define
+          in
           Error.create
             ~location
-            ~kind:(Error.InvalidType (InvalidType annotation))
+            ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
             ~define:Context.define
-          :: errors
+          |> Option.some
         else
-          Error.create ~location ~kind:(Error.UndefinedType annotation) ~define:Context.define
-          :: errors
-      in
-      let check_invalid_variables resolution errors variable =
-        if not (Resolution.type_variable_exists resolution ~variable) then
-          let error =
-            let origin =
-              if Define.is_toplevel (Node.value Context.define) then
-                Error.Toplevel
-              else if Define.is_class_toplevel (Node.value Context.define) then
-                Error.ClassToplevel
-              else
-                Error.Define
-            in
-            Error.create
-              ~location
-              ~kind:(Error.InvalidTypeVariable { annotation = variable; origin })
-              ~define:Context.define
-          in
-          error :: errors
-        else
-          errors
+          None
       in
       let resolution =
         match annotation with
@@ -254,19 +249,30 @@ module State (Context : Context) = struct
               ~init:resolution
         | _ -> resolution
       in
-      let critical_errors =
-        List.fold ~init:[] ~f:check_untracked_annotation (Type.elements annotation)
-        |> fun errors ->
-        Type.Variable.all_free_variables annotation
-        |> List.fold ~f:(check_invalid_variables resolution) ~init:errors
+      let all_primitives_and_variables_are_valid, errors =
+        let untracked =
+          List.filter (Type.elements annotation) ~f:(Fn.non (Resolution.is_tracked resolution))
+        in
+        let untracked_annotation_errors =
+          List.filter_map untracked ~f:untracked_annotation_error |> List.rev
+        in
+        let invalid_variables_errors =
+          Type.Variable.all_free_variables annotation
+          |> List.filter_map ~f:(check_invalid_variables resolution)
+          |> List.rev
+        in
+        let add_errors errors ~add =
+          List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error) add
+        in
+        let errors =
+          add_errors errors ~add:untracked_annotation_errors
+          |> add_errors ~add:invalid_variables_errors
+        in
+        List.is_empty untracked && List.is_empty invalid_variables_errors, errors
       in
-      if List.is_empty critical_errors then
+      if all_primitives_and_variables_are_valid then
         add_invalid_type_parameters_errors annotation ~resolution ~location ~errors
       else
-        let errors =
-          List.fold critical_errors ~init:errors ~f:(fun errors error ->
-              ErrorMap.add ~errors error)
-        in
         errors, Type.Top
     in
     let annotation =

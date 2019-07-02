@@ -305,10 +305,7 @@ let widen resolution = full_order resolution |> TypeOrder.widen
 
 let is_instantiated { order; _ } = TypeOrder.is_instantiated order
 
-let is_tracked { order; _ } = function
-  | Type.Primitive primitive -> TypeOrder.contains order primitive
-  | _ -> false
-
+let is_tracked { order; _ } = TypeOrder.contains order
 
 let contains_untracked resolution annotation =
   List.exists

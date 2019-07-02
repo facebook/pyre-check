@@ -136,7 +136,7 @@ val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 
 val is_instantiated : t -> Type.t -> bool
 
-val is_tracked : t -> Type.t -> bool
+val is_tracked : t -> Type.Primitive.t -> bool
 
 val contains_untracked : t -> Type.t -> bool
 

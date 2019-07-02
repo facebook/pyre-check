@@ -421,7 +421,7 @@ val primitive_name : t -> Identifier.t option
 
 val primitives : t -> t list
 
-val elements : t -> t list
+val elements : t -> Primitive.t list
 
 val is_partially_typed : t -> bool
 
