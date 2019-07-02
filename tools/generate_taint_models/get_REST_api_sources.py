@@ -32,29 +32,20 @@ class RESTApiSourceGenerator(ModelGenerator):
             parameters = []
             if isinstance(view_function, types.FunctionType):
                 view_parameters = inspect.signature(view_function).parameters
-                for parameter_name in view_parameters:
-                    parameter = view_parameters[parameter_name]
-                    annotation = extract_annotation(parameter)
-                    if annotation is None or annotation not in self.whitelisted_classes:
-                        parameters.append(
-                            f"{extract_name(parameter)}: TaintSource[UserControlled]"
-                        )
-                    else:
-                        parameters.append(extract_name(parameter))
             elif isinstance(view_function, types.MethodType):
                 # pyre-fixme
                 view_parameters = inspect.signature(view_function.__func__).parameters
-                for parameter_name in view_parameters:
-                    parameter = view_parameters[parameter_name]
-
-                    if extract_annotation(parameter) not in self.whitelisted_classes:
-                        parameters.append(
-                            f"{extract_name(parameter)}: TaintSource[UserControlled]"
-                        )
-                    else:
-                        parameters.append(extract_name(parameter))
             else:
                 return
+
+            for parameter_name in view_parameters:
+                parameter = view_parameters[parameter_name]
+                if extract_annotation(parameter) not in self.whitelisted_classes:
+                    parameters.append(
+                        f"{extract_name(parameter)}: TaintSource[UserControlled]"
+                    )
+                else:
+                    parameters.append(extract_name(parameter))
 
             parameters = ", ".join(parameters) if len(parameters) > 0 else ""
             entry_points.add(f"def {view_name}({parameters}): ...")
