@@ -78,7 +78,9 @@ class GlobalModelGenerator(ModelGenerator):
             if target != "__all__"
         }
 
-    def compute_models(self, _visit_all_views: Callable[..., None]) -> Iterable[str]:
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., None]]
+    ) -> Iterable[str]:
         sinks: Set[str] = set()
 
         paths = [path for path in glob.glob(self.root + "/**/*.py", recursive=True)]

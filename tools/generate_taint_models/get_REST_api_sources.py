@@ -22,14 +22,15 @@ class RESTApiSourceGenerator(ModelGenerator):
         self.whitelisted_classes = whitelisted_classes
         self.whitelisted_views = whitelisted_views
 
-    def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[str]:
         entry_points = set()
 
-        # pyre-fixme[2]: Parameter annotation cannot contain `Any`.
-        def entry_point_visitor(view_function: Callable) -> None:
+        for view_function in functions_to_model:
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
-                return
+                continue
             model = Model(
                 arg=": TaintSource[UserControlled]",
                 vararg=": TaintSource[UserControlled]",
@@ -39,5 +40,4 @@ class RESTApiSourceGenerator(ModelGenerator):
             if callable is not None:
                 entry_points.add(callable)
 
-        visit_all_views(entry_point_visitor)
         return sorted(entry_points)

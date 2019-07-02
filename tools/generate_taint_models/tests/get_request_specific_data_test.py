@@ -11,18 +11,13 @@ from ..get_request_specific_data import RequestSpecificDataGenerator
 
 class GetRequestSpecificDataTest(unittest.TestCase):
     def test_compute_models(self):
-        def visit_all_views(callback: Callable[..., None]):
-            def testA(x: int, y: str, *args: int, **kwargs: str) -> None:
-                ...
+        def testA(x: int, y: str, *args: int, **kwargs: str) -> None:
+            ...
 
-            callback(testA)
-
-        qualifier = (
-            f"{__name__}.GetRequestSpecificDataTest.test_compute_models.visit_all_views"
-        )
+        qualifier = f"{__name__}.GetRequestSpecificDataTest.test_compute_models"
         source = "TaintSource[RequestSpecificData]"
         self.assertEqual(
-            list(RequestSpecificDataGenerator([], []).compute_models(visit_all_views)),
+            list(RequestSpecificDataGenerator([], []).compute_models([testA])),
             [
                 f"def {qualifier}.testA(x: {source}, y: {source}"
                 f", *args: {source}, **kwargs: {source}): ..."

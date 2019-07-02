@@ -39,7 +39,7 @@ class GetGlobalsTest(unittest.TestCase):
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
         ) as globals, patch("glob.glob", return_value=["/root/a.py", "/root/b.py"]):
-            GlobalModelGenerator("/root", None).compute_models(lambda _: None)
+            GlobalModelGenerator("/root", None).compute_models([])
             globals.assert_has_calls(
                 [call("/root", "/root/a.pyi"), call("/root", "/root/b.py")],
                 any_order=True,
@@ -53,7 +53,7 @@ class GetGlobalsTest(unittest.TestCase):
         ) as globals, patch(
             "glob.glob", side_effect=lambda root, recursive: directory_mapping[root]
         ):
-            GlobalModelGenerator("/root", "/stub_root").compute_models(lambda _: None)
+            GlobalModelGenerator("/root", "/stub_root").compute_models([])
             globals.assert_has_calls(
                 [
                     call("/root", "/root/a.pyi"),

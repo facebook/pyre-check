@@ -19,18 +19,19 @@ class RequestSpecificDataGenerator(ModelGenerator):
         self.whitelisted_classes = whitelisted_classes
         self.whitelisted_views = whitelisted_views
 
-    def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[str]:
         view_models = set()
 
-        def entry_point_visitor(view_function: Callable[..., object]) -> None:
+        for view_function in functions_to_model:
             view_name = extract_view_name(view_function)
             if view_name in self.whitelisted_views:
-                return
+                continue
             taint_kind = ": TaintSource[RequestSpecificData]"
             model = Model(arg=taint_kind, vararg=taint_kind, kwarg=taint_kind)
             callable = model.generate(view_function, self.whitelisted_classes)
             if callable is not None:
                 view_models.add(callable)
 
-        visit_all_views(entry_point_visitor)
         return sorted(view_models)

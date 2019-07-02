@@ -43,5 +43,7 @@ def qualifier(root: str, path: str) -> str:
 
 class ModelGenerator(ABC):
     @abstractmethod
-    def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., None]]
+    ) -> Iterable[str]:
         pass

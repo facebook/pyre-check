@@ -324,7 +324,7 @@ def _get_graphql_sources(arguments: argparse.Namespace) -> Set[str]:
 def _get_globals(arguments: argparse.Namespace) -> Set[str]:
     root = os.path.abspath(os.getcwd())
     stub_root = arguments.stub_root
-    return set(GlobalModelGenerator(root, stub_root).compute_models(lambda _: None))
+    return set(GlobalModelGenerator(root, stub_root).compute_models([]))
 
 
 MODES: Mapping[str, Callable[[argparse.Namespace], Set[str]]] = {

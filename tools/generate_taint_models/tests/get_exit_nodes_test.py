@@ -11,41 +11,41 @@ from ..get_exit_nodes import ExitNodeGenerator
 
 class GetExitNodesTest(unittest.TestCase):
     def test_compute_models(self):
-        def visit_all_views(callback: Callable[..., None]):
-            def testA():
-                pass
+        def testA():
+            pass
 
-            def testB(x):
-                pass
+        def testB(x):
+            pass
 
-            def testC(x: int):
-                pass
+        def testC(x: int):
+            pass
 
-            def testD(x: int, *args: int):
-                pass
+        def testD(x: int, *args: int):
+            pass
 
-            def testE(x: int, **kwargs: str):
-                pass
+        def testE(x: int, **kwargs: str):
+            pass
 
-            class TestClass:
-                def methodA(self, x: int):
-                    ...
+        class TestClass:
+            def methodA(self, x: int):
+                ...
 
-                def methodB(self, *args: str):
-                    ...
+            def methodB(self, *args: str):
+                ...
 
-            callback(testA)
-            callback(testB)
-            callback(testC)
-            callback(testD)
-            callback(testE)
-            callback(TestClass.methodA)
-            callback(TestClass.methodB)
-
-        qualifier = f"{__name__}.GetExitNodesTest.test_compute_models.visit_all_views"
+        all_views = [
+            testA,
+            testB,
+            testC,
+            testD,
+            testE,
+            TestClass.methodA,
+            TestClass.methodB,
+        ]
+        qualifier = f"{__name__}.GetExitNodesTest.test_compute_models"
         sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
-            list(ExitNodeGenerator([]).compute_models(visit_all_views)),
+            list(ExitNodeGenerator([]).compute_models(all_views)),
             [
                 f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
                 f"def {qualifier}.TestClass.methodB(self, *args) -> {sink}: ...",
@@ -59,7 +59,7 @@ class GetExitNodesTest(unittest.TestCase):
         self.assertEqual(
             list(
                 ExitNodeGenerator([f"{qualifier}.TestClass.methodA"]).compute_models(
-                    visit_all_views
+                    all_views
                 )
             ),
             [

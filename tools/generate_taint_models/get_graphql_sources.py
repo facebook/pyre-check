@@ -11,10 +11,12 @@ class GraphQLSourceGenerator(ModelGenerator):
     def __init__(self) -> None:
         pass
 
-    def compute_models(self, visit_all_views: Callable[..., None]) -> Iterable[str]:
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[str]:
         graphql_models = set()
 
-        def graphql_visitor(view_function: Callable[..., None]) -> None:
+        for view_function in functions_to_model:
             model = Model(
                 vararg=": TaintSource[UserControlled]",
                 kwarg=": TaintSource[UserControlled]",
@@ -23,5 +25,4 @@ class GraphQLSourceGenerator(ModelGenerator):
             if callable is not None:
                 graphql_models.add(callable)
 
-        visit_all_views(graphql_visitor)
         return sorted(graphql_models)
