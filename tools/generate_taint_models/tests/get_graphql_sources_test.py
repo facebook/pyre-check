@@ -7,45 +7,14 @@ import unittest
 from typing import Callable
 
 from ..get_graphql_sources import GraphQLSourceGenerator
+from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetGraphQLSourcesTest(unittest.TestCase):
     def test_compute_models(self):
-        def testA():
-            pass
-
-        def testB(x):
-            pass
-
-        def testC(x: int):
-            pass
-
-        def testD(x: int, *args: int):
-            pass
-
-        def testE(x: int, **kwargs: str):
-            pass
-
-        class TestClass:
-            def methodA(self, x: int):
-                ...
-
-            def methodB(self, *args: str):
-                ...
-
-        all_views = [
-            testA,
-            testB,
-            testC,
-            testD,
-            testE,
-            TestClass.methodA,
-            TestClass.methodB,
-        ]
-        qualifier = f"{__name__}.GetGraphQLSourcesTest.test_compute_models"
         source = "TaintSource[UserControlled]"
         self.assertEqual(
-            list(GraphQLSourceGenerator().compute_models(all_views)),
+            list(GraphQLSourceGenerator().compute_models(all_functions)),
             [
                 f"def {qualifier}.TestClass.methodA(self, x): ...",
                 f"def {qualifier}.TestClass.methodB(self, *args: {source}): ...",

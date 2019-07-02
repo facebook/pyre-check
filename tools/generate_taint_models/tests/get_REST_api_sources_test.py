@@ -7,45 +7,14 @@ import unittest
 from typing import Callable
 
 from ..get_REST_api_sources import RESTApiSourceGenerator
+from .test_functions import __name__ as qualifier, all_functions
 
 
 class GetRESTApiSourcesTest(unittest.TestCase):
     def test_compute_models(self):
-        def testA():
-            pass
-
-        def testB(x):
-            pass
-
-        def testC(x: int):
-            pass
-
-        def testD(x: int, *args: int):
-            pass
-
-        def testE(x: int, **kwargs: str):
-            pass
-
-        class TestClass:
-            def methodA(self, x: int):
-                ...
-
-            def methodB(self, *args: str):
-                ...
-
-        all_views = [
-            testA,
-            testB,
-            testC,
-            testD,
-            testE,
-            TestClass.methodA,
-            TestClass.methodB,
-        ]
-        qualifier = f"{__name__}.GetRESTApiSourcesTest.test_compute_models"
         source = "TaintSource[UserControlled]"
         self.assertEqual(
-            list(RESTApiSourceGenerator([], []).compute_models(all_views)),
+            list(RESTApiSourceGenerator([], []).compute_models(all_functions)),
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x: {source}): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
@@ -60,7 +29,7 @@ class GetRESTApiSourcesTest(unittest.TestCase):
         self.assertEqual(
             list(
                 RESTApiSourceGenerator(["int"], [f"{qualifier}.testA"]).compute_models(
-                    all_views
+                    all_functions
                 )
             ),
             [

@@ -23,6 +23,10 @@ class Model(NamedTuple):
         whitelisted_parameters: Optional[Iterable[str]] = None,
     ) -> Optional[str]:
         view_name = extract_view_name(view_function)
+        # Don't attempt to generate models for local functions that our static analysis
+        # can't handle.
+        if view_name is None:
+            return None
         parameters = []
         if isinstance(view_function, types.FunctionType):
             view_parameters = inspect.signature(view_function).parameters
