@@ -45,7 +45,7 @@ class HelperTest(unittest.TestCase):
     def test__relativize_access(self) -> None:
         self.assertEqual(
             _relativize_access(
-                "tools.pyre.client.infer.Stub", "tools/pyre/client/infer.py"
+                "tools.pyre.client.commands.infer.Stub", "client/commands/infer.py"
             ),
             ["Stub"],
         )

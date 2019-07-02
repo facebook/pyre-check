@@ -41,6 +41,10 @@ def _relativize_access(access, path):
     if not access:
         return []
     path = str(path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
+    first = path.split(".")[0]
+    if first not in access:
+        return [access]
+    access = first + (access.split(first))[1]
     return access.replace(path, "", 1).strip(".").split(".")
 
 
