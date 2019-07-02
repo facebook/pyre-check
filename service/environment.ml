@@ -44,9 +44,9 @@ let populate
     TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
     TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
     List.iter all_annotations ~f:(fun annotation ->
-        match TypeOrder.Node.primitive_name annotation with
-        | Some name -> Handler.register_class_metadata name
-        | _ -> ());
+        TypeOrder.Node.primitive_name annotation
+        >>| Handler.register_class_metadata
+        |> Option.value ~default:());
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
   in
   Handler.transaction ~f:populate ();
@@ -318,7 +318,15 @@ module SharedHandler : Analysis.Environment.Handler = struct
       let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
       List.exists ~f:is_unit_test successor_classes
     in
-    ClassMetadata.add class_name { Resolution.is_test = in_test; successors; is_final }
+    let extends_placeholder_stub_class =
+      ClassDefinitions.get class_name
+      >>| Annotated.Class.create
+      >>| Annotated.Class.extends_placeholder_stub_class ~aliases ~module_definition
+      |> Option.value ~default:false
+    in
+    ClassMetadata.add
+      class_name
+      { Resolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
   let register_dependency ~handle ~dependency =

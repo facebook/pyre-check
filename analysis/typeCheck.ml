@@ -2190,17 +2190,21 @@ module State (Context : Context) = struct
         { state = join state_left state_right; resolved; resolved_annotation = None; base = None }
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments }
       -> (
-        (* Resolve `super()` calls. *)
-        let superclass =
+        let metadata =
           Resolution.parent resolution
           >>| (fun parent -> Type.Primitive (Reference.show parent))
           >>= Resolution.class_metadata resolution
-          >>| (fun { Resolution.successors; _ } -> successors)
-          >>| List.filter ~f:(fun name ->
-                  Option.is_some (Resolution.class_definition resolution (Type.Primitive name)))
-          >>= List.hd
         in
-        match superclass with
+        (* Resolve `super()` calls. *)
+        let superclass { Resolution.successors; extends_placeholder_stub_class; _ } =
+          if extends_placeholder_stub_class then
+            None
+          else
+            List.filter successors ~f:(fun name ->
+                Option.is_some (Resolution.class_definition resolution (Type.Primitive name)))
+            |> List.hd
+        in
+        match metadata >>= superclass with
         | Some superclass ->
             let resolved = Type.Primitive superclass in
             { state; resolved; resolved_annotation = None; base = Some (Super resolved) }

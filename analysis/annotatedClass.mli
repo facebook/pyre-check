@@ -146,6 +146,12 @@ val has_method : ?transitive:bool -> t -> resolution:Resolution.t -> name:Identi
 
 val inferred_callable_type : t -> resolution:Resolution.t -> Type.Callable.t option
 
+val extends_placeholder_stub_class
+  :  t ->
+  aliases:(Type.primitive -> Type.alias option) ->
+  module_definition:(Reference.t -> Module.t option) ->
+  bool
+
 module AttributeCache : sig
   val clear : unit -> unit
 end

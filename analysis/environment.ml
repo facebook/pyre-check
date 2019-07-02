@@ -154,7 +154,6 @@ let connect_definition
         | Type.Primitive primitive
           when not (TypeOrder.contains (module Handler) (Primitive primitive)) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
-        | Type.Any -> connect ~predecessor:primitive ~successor:Any ~parameters:[]
         | Type.Primitive supertype -> (
           match parameters with
           | Concrete parameters ->
@@ -219,21 +218,6 @@ let handler
         | _ -> definition
       in
       Hashtbl.set class_definitions ~key:name ~data:definition
-
-
-    let register_class_metadata class_name =
-      let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
-      let in_test =
-        let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-        List.filter_map successors ~f:(Hashtbl.find class_definitions)
-        |> List.exists ~f:is_unit_test
-      in
-      let is_final =
-        Hashtbl.find class_definitions class_name
-        >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
-        |> Option.value ~default:false
-      in
-      Hashtbl.set class_metadata ~key:class_name ~data:{ is_test = in_test; successors; is_final }
 
 
     let register_alias ~handle ~key ~data =
@@ -302,8 +286,6 @@ let handler
 
     let class_definition annotation = Hashtbl.find class_definitions annotation
 
-    let class_metadata = Hashtbl.find class_metadata
-
     let register_module ({ Source.qualifier; _ } as source) =
       Hashtbl.set ~key:qualifier ~data:(Module.create source) modules
 
@@ -333,6 +315,32 @@ let handler
     let in_class_definition_keys = Hashtbl.mem class_definitions
 
     let aliases = Hashtbl.find aliases
+
+    let register_class_metadata class_name =
+      let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+      let in_test =
+        let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
+        List.filter_map successors ~f:(Hashtbl.find class_definitions)
+        |> List.exists ~f:is_unit_test
+      in
+      let is_final =
+        Hashtbl.find class_definitions class_name
+        >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
+        |> Option.value ~default:false
+      in
+      let extends_placeholder_stub_class =
+        Hashtbl.find class_definitions class_name
+        >>| AnnotatedClass.create
+        >>| AnnotatedClass.extends_placeholder_stub_class ~aliases ~module_definition
+        |> Option.value ~default:false
+      in
+      Hashtbl.set
+        class_metadata
+        ~key:class_name
+        ~data:{ is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+
+
+    let class_metadata = Hashtbl.find class_metadata
 
     let globals = Hashtbl.find globals
 
@@ -985,7 +993,12 @@ module Builder = struct
       in
       Hashtbl.set
         ~key:name
-        ~data:{ Resolution.successors; is_test = false; is_final = false }
+        ~data:
+          { Resolution.successors;
+            is_test = false;
+            is_final = false;
+            extends_placeholder_stub_class = false
+          }
         class_metadata;
       Hashtbl.set ~key:name ~data:(Node.create_with_default_location definition) class_definitions
     in

@@ -13,7 +13,8 @@ type global = Annotation.t Node.t [@@deriving eq, show]
 type class_metadata = {
   successors: Type.primitive list;
   is_test: bool;
-  is_final: bool
+  is_final: bool;
+  extends_placeholder_stub_class: bool
 }
 [@@deriving eq]
 
@@ -165,6 +166,8 @@ let resolve_reference ({ resolve; _ } as resolution) reference =
 
 
 let global { global; _ } = global
+
+let aliases { aliases; _ } = aliases
 
 let module_definition { module_definition; _ } = module_definition
 
@@ -408,6 +411,7 @@ let check_invalid_type_parameters resolution annotation =
 let parse_annotation
     ?(allow_untracked = false)
     ?(allow_invalid_type_parameters = false)
+    ?(allow_primitives_from_empty_stubs = false)
     ({ aliases; module_definition; _ } as resolution)
     expression
   =
@@ -424,19 +428,24 @@ let parse_annotation
       | result -> result
   in
   let parsed = Type.create ~aliases expression in
-  let constraints = function
-    | Type.Primitive name ->
-        let originates_from_empty_stub =
-          Reference.create name
-          |> fun reference -> Module.from_empty_stub ~reference ~module_definition
-        in
-        if originates_from_empty_stub then
-          Some Type.Any
-        else
-          None
-    | _ -> None
+  let annotation =
+    if allow_primitives_from_empty_stubs then
+      parsed
+    else
+      let constraints = function
+        | Type.Primitive name ->
+            let originates_from_empty_stub =
+              Reference.create name
+              |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+            in
+            if originates_from_empty_stub then
+              Some Type.Any
+            else
+              None
+        | _ -> None
+      in
+      Type.instantiate parsed ~constraints
   in
-  let annotation = Type.instantiate parsed ~constraints in
   if contains_untracked resolution annotation && not allow_untracked then
     Type.Top
   else if not allow_invalid_type_parameters then
@@ -700,3 +709,26 @@ let source_is_unit_test resolution ~source =
     less_or_equal resolution ~left:annotation ~right:(Type.Primitive "unittest.case.TestCase")
   in
   List.exists (Preprocessing.classes source) ~f:is_unittest
+
+
+let class_extends_placeholder_stub_class
+    ({ module_definition; _ } as resolution)
+    { Class.bases; _ }
+  =
+  let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
+    let parsed =
+      parse_annotation
+        ~allow_untracked:true
+        ~allow_invalid_type_parameters:true
+        ~allow_primitives_from_empty_stubs:true
+        resolution
+        value
+    in
+    match parsed with
+    | Type.Primitive primitive
+    | Parametric { name = primitive; _ } ->
+        Reference.create primitive
+        |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+    | _ -> false
+  in
+  List.exists bases ~f:is_from_placeholder_stub

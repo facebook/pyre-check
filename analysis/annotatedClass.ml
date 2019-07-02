@@ -641,6 +641,23 @@ let create_attribute
   }
 
 
+let extends_placeholder_stub_class
+    { Node.value = { Class.bases; _ }; _ }
+    ~aliases
+    ~module_definition
+  =
+  let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
+    let parsed = Type.create ~aliases value in
+    match parsed with
+    | Type.Primitive primitive
+    | Parametric { name = primitive; _ } ->
+        Reference.create primitive
+        |> fun reference -> Module.from_empty_stub ~reference ~module_definition
+    | _ -> false
+  in
+  List.exists bases ~f:is_from_placeholder_stub
+
+
 let attribute_table
     ~transitive
     ~class_attributes
@@ -671,19 +688,45 @@ let attribute_table
           ~table
           ({ Node.value = { Class.name = parent_name; _ } as definition; _ } as parent)
         =
-        let collect_attributes attribute =
-          create_attribute
-            attribute
-            ~resolution
-            ~parent
-            ~instantiated
-            ~inherited:(not (Reference.equal name parent_name))
-            ~default_class_attribute:class_attributes
-          |> Attribute.Table.add table
+        let add_actual =
+          let collect_attributes attribute =
+            create_attribute
+              attribute
+              ~resolution
+              ~parent
+              ~instantiated
+              ~inherited:(not (Reference.equal name parent_name))
+              ~default_class_attribute:class_attributes
+            |> Attribute.Table.add table
+          in
+          Statement.Class.attributes ~include_generated_attributes ~in_test definition
+          |> fun attribute_map ->
+          Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
         in
-        Statement.Class.attributes ~include_generated_attributes ~in_test definition
-        |> fun attribute_map ->
-        Identifier.SerializableMap.iter (fun _ data -> collect_attributes data) attribute_map
+        add_actual;
+        if
+          extends_placeholder_stub_class
+            parent
+            ~aliases:(Resolution.aliases resolution)
+            ~module_definition:(Resolution.module_definition resolution)
+        then
+          if Option.is_none (Attribute.Table.lookup_name table "__init__") then
+            Attribute.Table.add
+              table
+              (Node.create_with_default_location
+                 { Attribute.annotation =
+                     Annotation.create (Type.Callable.create ~annotation:Type.none ());
+                   async = false;
+                   class_attribute = false;
+                   defined = true;
+                   final = false;
+                   initialized = true;
+                   name = "__init__";
+                   parent = Primitive (Reference.show name);
+                   property = None;
+                   static = true;
+                   value = Node.create_with_default_location Ellipsis
+                 })
       in
       let superclass_definitions = superclasses ~resolution definition in
       let in_test =

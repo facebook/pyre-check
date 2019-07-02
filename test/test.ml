@@ -1208,6 +1208,14 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         PositionalArgumentsOf: _SpecialForm
         ArgumentsOf: _SpecialForm
       |}
+    |> Preprocessing.preprocess;
+    parse
+      ~qualifier:(Reference.create "placeholder_stub")
+      ~handle:"placeholder_stub.pyi"
+      ~local_mode:PlaceholderStub
+      {|
+        # pyre-placeholder-stub
+      |}
     |> Preprocessing.preprocess ]
 
 

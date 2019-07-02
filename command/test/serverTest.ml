@@ -1125,9 +1125,18 @@ let test_decode_serialized_ocaml_values context =
         Some (Yojson.Safe.to_string (Yojson.Safe.from_string json)) );
   assert_decode
     ~key:(ClassMetadata.serialize_key "int")
-    ~value:{ Resolution.successors = ["str"]; is_test = false; is_final = false }
+    ~value:
+      { Resolution.successors = ["str"];
+        is_test = false;
+        is_final = false;
+        extends_placeholder_stub_class = false
+      }
     ~response:
-      ("Class metadata", "int", Some {|{"successors":"(str)","is_test":false,"is_final":false}|});
+      ( "Class metadata",
+        "int",
+        Some
+          {|{"successors":"(str)","is_test":false,"is_final":false,"extends_placeholder_stub_class":false}|}
+      );
   assert_decode
     ~key:(Aliases.serialize_key "my_integer")
     ~value:(Type.TypeAlias Type.integer)

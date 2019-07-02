@@ -128,6 +128,7 @@ let test_register_class_metadata _ =
   let source =
     parse
       {|
+       from placeholder_stub import MadeUpClass
        class A: pass
        class B(A): pass
        class C:
@@ -138,7 +139,9 @@ let test_register_class_metadata _ =
            self.y = 4
          D.z = 5
        class E(D, A): pass
+       class F(B, MadeUpClass, A): pass
       |}
+    |> Preprocessing.preprocess
   in
   let all_annotations =
     Environment.register_class_definitions (module Handler) source |> Set.to_list
@@ -153,6 +156,7 @@ let test_register_class_metadata _ =
   Handler.register_class_metadata "C";
   Handler.register_class_metadata "D";
   Handler.register_class_metadata "E";
+  Handler.register_class_metadata "F";
   let assert_successors class_name expected =
     let { Resolution.successors; _ } = Option.value_exn (Handler.class_metadata class_name) in
     assert_equal
@@ -164,7 +168,16 @@ let test_register_class_metadata _ =
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
   assert_successors "B" ["A"; "object"];
-  assert_successors "E" ["D"; "C"; "A"; "object"]
+  assert_successors "E" ["D"; "C"; "A"; "object"];
+  let assert_extends_placeholder_stub_class class_name expected =
+    let { Resolution.extends_placeholder_stub_class; _ } =
+      Option.value_exn (Handler.class_metadata class_name)
+    in
+    assert_equal expected extends_placeholder_stub_class
+  in
+  assert_extends_placeholder_stub_class "A" false;
+  assert_extends_placeholder_stub_class "F" true;
+  ()
 
 
 let test_register_aliases _ =

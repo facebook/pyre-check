@@ -11,7 +11,8 @@ type global = Annotation.t Node.t [@@deriving eq, show]
 type class_metadata = {
   successors: Type.primitive list;
   is_test: bool;
-  is_final: bool
+  is_final: bool;
+  extends_placeholder_stub_class: bool
 }
 [@@deriving eq]
 
@@ -89,6 +90,8 @@ val resolve_exports : t -> reference:Reference.t -> Reference.t
 
 val global : t -> Reference.t -> global option
 
+val aliases : t -> Type.primitive -> Type.alias option
+
 val module_definition : t -> Reference.t -> Module.t option
 
 val class_definition : t -> Type.t -> Class.t Node.t option
@@ -146,6 +149,7 @@ val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 val parse_annotation
   :  ?allow_untracked:bool ->
   ?allow_invalid_type_parameters:bool ->
+  ?allow_primitives_from_empty_stubs:bool ->
   t ->
   Expression.t ->
   Type.t
@@ -196,3 +200,5 @@ val solve_ordered_types_less_or_equal
   TypeConstraints.t list
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
+
+val class_extends_placeholder_stub_class : t -> Statement.Class.t -> bool

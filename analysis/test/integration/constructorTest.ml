@@ -643,6 +643,23 @@ let test_check_constructors _ =
     |}
     [ "Incompatible parameter type [6]: "
       ^ "Expected `int` for 1st anonymous parameter to call `Super.__init__` but got `str`." ];
+  assert_type_errors
+    {|
+      from placeholder_stub import MadeUpClass
+      class Foo(MadeUpClass):
+        def __init__(self, i: int) -> None:
+          super().__init__('asdf')
+    |}
+    [];
+  assert_type_errors
+    {|
+      from placeholder_stub import MadeUpClass
+      class Foo(MadeUpClass):
+        pass
+      def foo() -> None:
+        Foo(7)
+    |}
+    [];
 
   (* The MRO of inheriting both a class and its direct parent will result in super() evaluating to
      the subclass, regardless of order. *)
