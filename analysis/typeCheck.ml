@@ -254,12 +254,11 @@ module State (Context : Context) = struct
           List.filter (Type.elements annotation) ~f:(Fn.non (Resolution.is_tracked resolution))
         in
         let untracked_annotation_errors =
-          List.filter_map untracked ~f:untracked_annotation_error |> List.rev
+          List.filter_map untracked ~f:untracked_annotation_error
         in
         let invalid_variables_errors =
           Type.Variable.all_free_variables annotation
           |> List.filter_map ~f:(check_invalid_variables resolution)
-          |> List.rev
         in
         let add_errors errors ~add =
           List.fold ~init:errors ~f:(fun errors error -> ErrorMap.add ~errors error) add
