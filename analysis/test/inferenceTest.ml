@@ -216,12 +216,10 @@ let test_infer _ =
           return 5
     |}
     ["\"Missing return annotation [3]: Returning `int` but no return type is specified.\""];
-  assert_infer
-    {|
+  assert_infer {|
       def returns_dict ():
           return {}
-    |}
-    ["\"Missing return annotation [3]: Return type is not specified.\""];
+    |} [];
   assert_infer
     ~fields:["inference.parameters"]
     {|
@@ -353,6 +351,19 @@ let test_infer _ =
           return 5
     |}
     [{|true|}];
+
+  (* Don't infer Undeclared *)
+  assert_infer
+    ~fields:["inference.annotation"]
+    {|
+    def foo():
+      if 1 > 2:
+        x = 2
+      else:
+        assert not True
+      return x
+    |}
+    [];
 
   (* Forward-backward iteration *)
   assert_infer

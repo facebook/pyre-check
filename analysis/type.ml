@@ -2099,6 +2099,13 @@ let is_untyped = function
 
 let is_partially_typed annotation = exists annotation ~predicate:is_untyped
 
+let is_variable = function
+  | Variable _ -> true
+  | _ -> false
+
+
+let contains_variable = exists ~predicate:is_variable
+
 let optional_value = function
   | Optional annotation -> annotation
   | annotation -> annotation
@@ -2605,11 +2612,6 @@ end = struct
 
 
     let contains_subvariable { constraints; _ } =
-      let is_variable = function
-        | Variable _ -> true
-        | _ -> false
-      in
-      let contains_variable = exists ~predicate:is_variable in
       match constraints with
       | Unconstrained -> false
       | Bound bound -> contains_variable bound

@@ -427,6 +427,8 @@ val is_partially_typed : t -> bool
 
 val is_untyped : t -> bool
 
+val contains_variable : t -> bool
+
 val optional_value : t -> t
 
 val async_generator_value : t -> t

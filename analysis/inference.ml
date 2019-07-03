@@ -598,6 +598,8 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
       | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
       | MissingGlobalAnnotation { annotation = Some annotation; _ } ->
           Type.contains_unknown annotation
+          || Type.is_undeclared annotation
+          || Type.contains_variable annotation
       | _ -> false
     in
     errors
