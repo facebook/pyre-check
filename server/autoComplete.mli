@@ -7,6 +7,8 @@ open Ast
 
 val remove_dot : cursor_position:Location.position -> string -> string
 
+val find_module_reference : cursor_position:Location.position -> string -> Reference.t option
+
 val get_completion_items
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
