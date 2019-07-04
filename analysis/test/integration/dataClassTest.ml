@@ -60,4 +60,35 @@ let test_check_data_class _ =
     []
 
 
-let () = "dataclass" >::: ["check_dataclass" >:: test_check_data_class] |> Test.run
+let test_check_attr _ =
+  assert_type_errors
+    ~update_environment_with:
+      [ { Test.qualifier = Ast.Reference.create "attr";
+          handle = "attr/__init__.pyi";
+          source =
+            {|
+        _T = typing.TypeVar("T")
+        class Attribute(typing.Generic[_T]):
+          name: str
+          default: Optional[_T]
+          validator: Optional[_ValidatorType[_T]]
+        def s( *args, **kwargs) -> typing.Any: ...
+        def ib(default: _T) -> _T: ...
+      |}
+        } ]
+    {|
+      import attr
+      @attr.s
+      class C:
+        x: typing.Optional[int] = attr.ib(default=None)
+        @x.validator
+        def check(self, attribute: attr.Attribute[int], value: typing.Optional[int]) -> None:
+          pass
+    |}
+    []
+
+
+let () =
+  "dataclass"
+  >::: ["check_dataclass" >:: test_check_data_class; "check_attr" >:: test_check_attr]
+  |> Test.run

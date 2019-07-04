@@ -926,9 +926,12 @@ module State (Context : Context) = struct
             || has_suffix decorator "getter"
             || has_suffix decorator "deleter"
           in
+          let is_attr_validator decorator = has_suffix decorator "validator" in
           let is_click_derivative decorator = has_suffix decorator "command" in
           (* TODO (T41383196): Properly deal with @property and @click *)
-          is_property_derivative decorator || is_click_derivative decorator
+          is_property_derivative decorator
+          || is_click_derivative decorator
+          || is_attr_validator decorator
         in
         if is_whitelisted decorator then
           state
