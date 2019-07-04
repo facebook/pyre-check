@@ -53,6 +53,13 @@ public class BuildTargetsCollectorTest {
     assertEquals(expectedTargets, actualBuiltTarget);
   }
 
+  @Test
+  public void normalizeTargetTest() {
+    assertEquals("//pyre/...", BuildTargetsCollector.normalizeTarget("//pyre/..."));
+    assertEquals("//pyre/...", BuildTargetsCollector.normalizeTarget("pyre/..."));
+    assertEquals("c//pyre/...", BuildTargetsCollector.normalizeTarget("c//pyre/..."));
+  }
+
   @Test(expected = BuilderException.class)
   public void emptyTargetListNotAllowed() throws BuilderException {
     BuildTargetsCollector.collectBuckTargets(ImmutableList.of());

@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class BuildTargetsCollector {
 
@@ -163,6 +164,13 @@ public final class BuildTargetsCollector {
     }
   }
 
+  static String normalizeTarget(String target) {
+    if (target.contains("//")) {
+      return target;
+    }
+    return "//" + target;
+  }
+
   private static InputStream getBuildTargetJsonStream(ImmutableList<String> targets)
       throws IOException {
     /*
@@ -185,7 +193,10 @@ public final class BuildTargetsCollector {
             .add("query")
             .add(
                 "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
-            .addAll(targets)
+            .addAll(
+                targets.stream()
+                    .map(BuildTargetsCollector::normalizeTarget)
+                    .collect(Collectors.toList()))
             .add("--output-attributes")
             .add("buck.type")
             .add("buck.base_path")
