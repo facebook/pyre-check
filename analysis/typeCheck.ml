@@ -659,7 +659,6 @@ module State (Context : Context) = struct
         match annotation with
         | Some { annotation = Type.Callable { overloads; _ }; _ }
           when not (Statement.Define.is_overloaded_method define) ->
-            let _remaining_overloads overloads = List.tl overloads |> Option.value ~default:[] in
             let rec compare_parameters errors_sofar overloads =
               match overloads with
               | left :: overloads ->
