@@ -458,7 +458,18 @@ let test_infer _ =
             x = b
     |}
     [ {|[{"name":"a","type":null,"value":null},{"name":"x","type":null,"value":"15"}]|};
-      {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|} ]
+      {|[{"name":"a","type":null,"value":null},{"name":"x","type":"int","value":"15"}]|} ];
+
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+      def foo(x=None):
+          if x:
+              x = ""
+
+    |}
+    [ {|[{"name":"x","type":null,"value":"None"}]|};
+      {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|} ]
 
 
 let test_infer_backward _ =

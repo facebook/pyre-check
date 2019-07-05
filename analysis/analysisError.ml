@@ -1460,8 +1460,19 @@ let inference_information
   in
   let parameters =
     let to_json { Node.value = { Parameter.name; annotation; value }; _ } =
+      let value_is_none =
+        match value with
+        | Some { Node.value = Expression.Name (Identifier "None"); _ } -> true
+        | _ -> false
+      in
       let annotation =
         match kind with
+        | MissingParameterAnnotation
+            { name = parameter_name; annotation = Some parameter_annotation; _ }
+          when Reference.equal_sanitized (Reference.create name) parameter_name
+               && value_is_none
+               && not (Type.is_optional parameter_annotation) ->
+            Type.Optional parameter_annotation |> print_annotation |> fun string -> `String string
         | MissingParameterAnnotation
             { name = parameter_name; annotation = Some parameter_annotation; _ }
           when Reference.equal_sanitized (Reference.create name) parameter_name ->
