@@ -45,31 +45,24 @@ public final class PythonTarget implements BuildTarget {
     this(null, basePath, baseModule, sources, ImmutableSet.of());
   }
 
-  private static void addSource(
-      JsonObject sourceObjectJson,
-      ImmutableMap.Builder<String, String> sourcesBuilder,
-      ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
-    for (Map.Entry<String, JsonElement> entry : sourceObjectJson.entrySet()) {
-      String source = entry.getValue().getAsString();
-      String outputFile = entry.getKey();
-      if (source.contains("//") || source.startsWith(":")) {
-        if (outputFile.endsWith(".py") || outputFile.endsWith(".pyi")) {
-          // We only care about unsupported generated python code.
-          unsupportedGeneratedSourcesBuilder.add(outputFile);
-        }
-      } else {
-        sourcesBuilder.put(source, outputFile);
-      }
-    }
-  }
-
   private static void addSources(
       JsonElement sourcesField,
       ImmutableMap.Builder<String, String> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
     if (sourcesField.isJsonObject()) {
       // Parse srcs of the form { "a": "b", "c": "d" } into Java Map.
-      addSource(sourcesField.getAsJsonObject(), sourcesBuilder, unsupportedGeneratedSourcesBuilder);
+      for (Map.Entry<String, JsonElement> entry : sourcesField.getAsJsonObject().entrySet()) {
+        String source = entry.getValue().getAsString();
+        String outputFile = entry.getKey();
+        if (source.contains("//") || source.startsWith(":")) {
+          if (outputFile.endsWith(".py") || outputFile.endsWith(".pyi")) {
+            // We only care about unsupported generated python code.
+            unsupportedGeneratedSourcesBuilder.add(outputFile);
+          }
+        } else {
+          sourcesBuilder.put(source, outputFile);
+        }
+      }
     } else if (sourcesField.isJsonArray()) {
       // Parse srcs of the form ["a", "b", "c"] into { "a": "a", "b": "b", "c": "c" }
       for (JsonElement sourceElement : sourcesField.getAsJsonArray()) {
@@ -85,7 +78,7 @@ public final class PythonTarget implements BuildTarget {
     }
   }
 
-  private static @Nullable JsonObject getSupportedVersionedSources(
+  private static @Nullable JsonElement getSupportedVersionedSources(
       JsonArray versionedSourcesArray) {
     for (String supportedPlatform : SUPPORTED_PLATFORMS) {
       for (String supportedPythonVersion : SUPPORTED_PYTHON_VERSIONS) {
@@ -100,7 +93,7 @@ public final class PythonTarget implements BuildTarget {
           if (!pythonVersion.equals(supportedPythonVersion)) {
             continue;
           }
-          return versionedSourcePair.get(1).getAsJsonObject();
+          return versionedSourcePair.get(1);
         }
       }
     }
@@ -111,11 +104,11 @@ public final class PythonTarget implements BuildTarget {
       JsonArray versionedSourcesArray,
       ImmutableMap.Builder<String, String> sourcesBuilder,
       ImmutableSet.Builder<String> unsupportedGeneratedSourcesBuilder) {
-    JsonObject sourceSet = getSupportedVersionedSources(versionedSourcesArray);
+    JsonElement sourceSet = getSupportedVersionedSources(versionedSourcesArray);
     if (sourceSet == null) {
       return;
     }
-    addSource(sourceSet, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
+    addSources(sourceSet, sourcesBuilder, unsupportedGeneratedSourcesBuilder);
   }
 
   private static void addPlatformSources(
@@ -125,8 +118,8 @@ public final class PythonTarget implements BuildTarget {
     for (JsonElement platformSourceElement : platformSourcesArray) {
       JsonArray platformSourcePair = platformSourceElement.getAsJsonArray();
       if (platformSourcePair.get(0).getAsString().equals("py3")) {
-        addSource(
-            platformSourcePair.get(1).getAsJsonObject(),
+        addSources(
+            platformSourcePair.get(1),
             sourcesBuilder,
             unsupportedGeneratedSourcesBuilder);
       }

@@ -118,20 +118,32 @@ public class BuildTargetsCollectorTest {
 
     // Python library with versioned sources
     targetJson =
-        "{\n"
-            + "  \"buck.base_path\": \"PATH\",\n"
-            + "  \"buck.type\": \"python_library\",\n"
-            + "  \"versioned_srcs\": [[{\n"
-            + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
-            + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
-            + "  }, {\n"
-            + "      \"a.py\": \"3.6/a.py\",\n"
-            + "      \"b.py\": \"3.6/b.py\"\n"
-            + "  }]]\n"
-            + "}";
+            "{\n"
+                    + "  \"buck.base_path\": \"PATH\",\n"
+                    + "  \"buck.type\": \"python_library\",\n"
+                    + "  \"versioned_srcs\": [[{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
+                    + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
+                    + "  }, {\n"
+                    + "      \"a.py\": \"3.6/a.py\",\n"
+                    + "      \"b.py\": \"3.6/b.py\"\n"
+                    + "  }]]\n"
+                    + "}";
     assertExpectedParsedBuildTarget(
-        targetJson,
-        new PythonTarget("PATH", null, ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
+            targetJson,
+            new PythonTarget("PATH", null, ImmutableMap.of("3.6/a.py", "a.py", "3.6/b.py", "b.py")));
+    targetJson =
+            "{\n"
+                    + "  \"buck.base_path\": \"PATH\",\n"
+                    + "  \"buck.type\": \"python_library\",\n"
+                    + "  \"versioned_srcs\": [[{\n"
+                    + "      \"//third-party-buck/platform007/build/python:__project__\": \"3.6\",\n"
+                    + "      \"//third-party-buck/gcc-5-glibc-2.23/build/python:__project__\": \"3.7\"\n"
+                    + "  }, [\"a.py\", \"b.py\"]]]\n"
+                    + "}";
+    assertExpectedParsedBuildTarget(
+            targetJson,
+            new PythonTarget("PATH", null, ImmutableMap.of("a.py", "a.py", "b.py", "b.py")));
 
     // Python library with sources AND versioned sources
     targetJson =
