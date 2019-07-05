@@ -469,7 +469,16 @@ let test_infer _ =
 
     |}
     [ {|[{"name":"x","type":null,"value":"None"}]|};
-      {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|} ]
+      {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|} ];
+
+  (* Don't infer default of None to be None *)
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+        def foo(x = None):
+          pass
+    |}
+    [{|[{"name":"x","type":null,"value":"None"}]|}; {|[{"name":"x","type":null,"value":"None"}]|}]
 
 
 let test_infer_backward _ =

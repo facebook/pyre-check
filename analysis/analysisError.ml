@@ -1468,6 +1468,16 @@ let inference_information
       let annotation =
         match kind with
         | MissingParameterAnnotation
+            { name = parameter_name;
+              annotation =
+                Some
+                  (Type.Parametric
+                    { name = "typing.Optional" | "Optional"; parameters = [Bottom] });
+              _
+            }
+          when Reference.equal_sanitized (Reference.create name) parameter_name ->
+            `Null
+        | MissingParameterAnnotation
             { name = parameter_name; annotation = Some parameter_annotation; _ }
           when Reference.equal_sanitized (Reference.create name) parameter_name
                && value_is_none
