@@ -647,6 +647,7 @@ let extends_placeholder_stub_class
     ~module_definition
   =
   let is_from_placeholder_stub { Expression.Call.Argument.value; _ } =
+    let value = Expression.delocalize value in
     let parsed = Type.create ~aliases value in
     match parsed with
     | Type.Primitive primitive

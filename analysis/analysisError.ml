@@ -88,6 +88,7 @@ and override_kind =
 and invalid_inheritance =
   | ClassName of Identifier.t
   | NonMethodFunction of Identifier.t
+  | UninheritableType of Type.t
 
 and invalid_override_kind =
   | Final
@@ -860,7 +861,11 @@ let messages ~concise ~signature location kind =
         [ Format.asprintf
             "`%a` cannot be used with non-method functions."
             pp_identifier
-            decorator_name ] )
+            decorator_name ]
+    | UninheritableType (TypedDictionary _) ->
+        [Format.asprintf "Building TypedDicts up through inheritance is not yet supported."]
+    | UninheritableType annotation ->
+        [Format.asprintf "`%a` is not a valid parent class." pp_type annotation] )
   | InvalidOverride { parent; decorator } ->
       let preamble, message =
         match decorator with

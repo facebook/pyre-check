@@ -1137,6 +1137,24 @@ let test_final_type _ =
     ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."]
 
 
+let test_check_invalid_inheritance _ =
+  assert_type_errors
+    {|
+      from typing import Callable
+      class MyCallable(Callable):
+        pass
+    |}
+    ["Invalid inheritance [39]: `typing.Callable[..., typing.Any]` is not a valid parent class."];
+  assert_type_errors
+    {|
+      from typing import Any
+      class MySpecialClass(Any, int):
+        pass
+    |}
+    ["Invalid inheritance [39]: `typing.Any` is not a valid parent class."];
+  ()
+
+
 let () =
   "annotation"
   >::: [ "check_undefined_type" >:: test_check_undefined_type;
@@ -1149,5 +1167,6 @@ let () =
          "check_incomplete_annotations" >:: test_check_incomplete_annotations;
          "check_refinement" >:: test_check_refinement;
          "check_aliases" >:: test_check_aliases;
-         "check_final_type" >:: test_final_type ]
+         "check_final_type" >:: test_final_type;
+         "check_invalid_inheritance" >:: test_check_invalid_inheritance ]
   |> Test.run

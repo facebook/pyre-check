@@ -1326,12 +1326,30 @@ module State (Context : Context) = struct
         let open Annotated in
         let check_base state { Call.Argument.value; _ } =
           let state_with_errors, parsed = parse_and_check_annotation ~state value in
+          let is_actual_any () =
+            match
+              Resolution.parse_annotation resolution value ~allow_primitives_from_empty_stubs:true
+            with
+            | Any -> true
+            | _ -> false
+          in
           match parsed with
           | Type.Parametric { name = "type"; parameters = [Type.Any] } ->
               (* Inheriting from type makes you a metaclass, and we don't want to
                * suggest that instead you need to use typing.Type[Something] *)
               state
-          | _ -> state_with_errors
+          | Top
+          (* There's some other problem we already errored on *)
+          
+          | Primitive _
+          | Parametric _ ->
+              state_with_errors
+          | Any when not (is_actual_any ()) -> state_with_errors
+          | annotation ->
+              emit_error
+                ~state:state_with_errors
+                ~location:(Node.location value)
+                ~kind:(InvalidInheritance (UninheritableType annotation))
         in
         let bases =
           Define.create define

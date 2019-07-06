@@ -79,6 +79,7 @@ and override_kind =
 and invalid_inheritance =
   | ClassName of Identifier.t
   | NonMethodFunction of Identifier.t
+  | UninheritableType of Type.t
 
 and invalid_override_kind =
   | Final
