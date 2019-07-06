@@ -532,6 +532,7 @@ def mock_arguments() -> MagicMock:
     arguments.log_identifier = None
     arguments.enable_profiling = None
     arguments.current_directory = "."
+    arguments.json = False
 
     return arguments
 
@@ -592,3 +593,21 @@ class InferTest(unittest.TestCase):
             )
             command.run()
             call_client.assert_called_once_with(command=commands.Check.NAME)
+
+        with patch.object(commands.Command, "_call_client") as call_client:
+            arguments.json = True
+            command = Infer(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-show-error-traces",
+                    "-project-root",
+                    ".",
+                    "-infer",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-recursive-infer",
+                ],
+            )
+            command.run()
+            call_client.assert_not_called()

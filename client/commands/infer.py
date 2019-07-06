@@ -10,13 +10,14 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, List, Optional, Set, Union  # noqa
 
 from .. import log
 from .check import Check
-from .command import Command, typeshed_search_path
+from .command import Command, Result, typeshed_search_path
 from .reporting import JSON, Reporting
 
 
@@ -394,11 +395,16 @@ class Infer(Reporting):
         self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
         self._local_configuration = arguments.local_configuration
+        self._json = arguments.json
 
     def run(self) -> Command:
         self._analysis_directory.prepare()
-        result = self._call_client(command=Check.NAME)
-        errors = self._get_errors(result, bypass_filtering=True)
+        if self._json:
+            result = self._errors_from_stdin()
+            errors = self._get_errors(result, bypass_filtering=True)
+        else:
+            result = self._call_client(command=Check.NAME)
+            errors = self._get_errors(result, bypass_filtering=True)
         if self._print_errors:
             self._print(errors)
         else:
@@ -427,3 +433,7 @@ class Infer(Reporting):
         if self._recursive:
             flags.append("-recursive-infer")
         return flags
+
+    def _errors_from_stdin(self) -> Result:
+        input = sys.stdin.read()
+        return Result(0, input)

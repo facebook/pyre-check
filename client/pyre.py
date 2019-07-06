@@ -440,6 +440,11 @@ def main() -> int:
         + " If no paths are given, all functions are annotated."
         + " WARNING: Modifies original files and requires infer flag and retype",
     )
+    infer.add_argument(
+        "--json",
+        action="store_true",
+        help="Accept JSON input instead of running full check.",
+    )
     infer.set_defaults(command=commands.Infer)
 
     arguments = parser.parse_args()
