@@ -48,14 +48,14 @@ def to_sink_via_side_effect(y):
 # Mocks that have models
 
 
-def change_arg0(x, y):
+def change_arg0(arg0, arg1):
     ...
 
 
-def change_arg1(x, y):
+def change_arg1(arg0, arg1):
     ...
 
 
 class MyList:
-    def append(self, data):
+    def append(self, arg):
         pass

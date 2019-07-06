@@ -237,6 +237,10 @@ let test_invalid_models _ =
               def sink(parameter) -> None: pass
               def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
               def source() -> None: pass
+              def function_with_args(normal_arg, __anonymous_arg, *args) -> None: pass
+              def function_with_kwargs(normal_arg, **kwargs) -> None: pass
+              def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
+              def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
             |}
           ]
         ()
@@ -287,14 +291,15 @@ let test_invalid_models _ =
   assert_invalid_model
     ~model_source:"def sink(): ..."
     ~expect:
-      ( "Invalid model for `sink`: Model signature parameters do not match implementation "
-      ^ "`typing.Callable(sink)[[Named(parameter, unknown)], None]`" );
+      "Invalid model for `sink`: Model signature parameters do not match implementation `def \
+       sink(parameter: unknown) -> None: ...`. Reason(s): missing named parameters: `parameter`.";
   assert_invalid_model
     ~model_source:"def sink_with_optional(): ..."
     ~expect:
       "Invalid model for `sink_with_optional`: Model signature parameters do not match \
-       implementation `typing.Callable(sink_with_optional)[[Named(parameter, unknown), \
-       Named(firstOptional, unknown, default), Named(secondOptional, unknown, default)], None]`";
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
+       `parameter`.";
   assert_valid_model ~model_source:"def sink_with_optional(parameter): ...";
   assert_valid_model ~model_source:"def sink_with_optional(parameter, firstOptional): ...";
   assert_valid_model
@@ -304,8 +309,45 @@ let test_invalid_models _ =
       "def sink_with_optional(parameter, firstOptional, secondOptional, thirdOptional): ..."
     ~expect:
       "Invalid model for `sink_with_optional`: Model signature parameters do not match \
-       implementation `typing.Callable(sink_with_optional)[[Named(parameter, unknown), \
-       Named(firstOptional, unknown, default), Named(secondOptional, unknown, default)], None]`";
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
+       `thirdOptional`.";
+  assert_invalid_model
+    ~model_source:"def sink_with_optional(parameter, firstBad, secondBad): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected named parameter: \
+       `firstBad`; unexpected named parameter: `secondBad`.";
+  assert_invalid_model
+    ~model_source:"def sink_with_optional(parameter, *args): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star parameter.";
+  assert_invalid_model
+    ~model_source:"def sink_with_optional(parameter, **kwargs): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): unexpected star star parameter.";
+  assert_invalid_model
+    ~model_source:"def sink_with_optional(__parameter): ..."
+    ~expect:
+      "Invalid model for `sink_with_optional`: Model signature parameters do not match \
+       implementation `def sink_with_optional(parameter: unknown, firstOptional: unknown = ..., \
+       secondOptional: unknown = ...) -> None: ...`. Reason(s): missing named parameters: \
+       `parameter`; unexpected anonymous parameter: `__parameter`.";
+  assert_valid_model
+    ~model_source:"def function_with_args(normal_arg, __random_name, named_arg, *args): ...";
+  assert_valid_model ~model_source:"def function_with_args(normal_arg, __random_name, *args): ...";
+  assert_valid_model
+    ~model_source:"def function_with_args(normal_arg, __random_name, __random_name_2, *args): ...";
+  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, **kwargs): ...";
+  assert_valid_model ~model_source:"def function_with_kwargs(normal_arg, crazy_arg, **kwargs): ...";
+  assert_valid_model ~model_source:"def anonymous_only(__a1, __a2, __a3): ...";
+  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2): ...";
+  assert_valid_model ~model_source:"def anonymous_with_optional(__a1, __a2, __a3=...): ...";
   assert_invalid_model
     ~model_source:"def sink(parameter: Any): ..."
     ~expect:"Invalid model for `sink`: Unrecognized taint annotation `Any`";
