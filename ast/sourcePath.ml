@@ -8,6 +8,7 @@ open Pyre
 
 type t = {
   relative_path: Path.RelativePath.t;
+  qualifier: Reference.t;
   priority: int;
   is_stub: bool;
   is_external: bool;
@@ -17,36 +18,58 @@ type t = {
 
 let equal = [%compare.equal: t]
 
-let pp formatter { relative_path; priority; is_stub; is_external; is_init } =
+let pp formatter { relative_path; qualifier; priority; is_stub; is_external; is_init } =
   let priority = Int.to_string priority in
   let is_stub = if is_stub then " [STUB]" else "" in
   let is_external = if is_external then " [EXTERNAL]" else "" in
   let is_init = if is_init then " [INIT]" else "" in
   Format.fprintf
     formatter
-    "[%a(%s)%s%s%s]"
+    "[%a(%a:%s)%s%s%s]"
     Path.RelativePath.pp
     relative_path
+    Reference.pp
+    qualifier
     priority
     is_stub
     is_external
     is_init
 
 
-let qualifier { relative_path; _ } =
-  let relative = Path.RelativePath.relative relative_path in
-  (* TODO (T46153421): Purge `File.Handle.create_for_testing` from production code *)
-  let handle = File.Handle.create_for_testing relative in
-  Source.qualifier ~handle
+let qualifier_of_relative relative =
+  let qualifier =
+    let reversed_elements =
+      Filename.parts relative |> (* Strip current directory. *) List.tl_exn |> List.rev
+    in
+    let last_without_suffix =
+      let last = List.hd_exn reversed_elements in
+      match String.rindex last '.' with
+      | Some index -> String.slice last 0 index
+      | _ -> last
+    in
+    let strip = function
+      | "future" :: "builtins" :: tail
+      | "builtins" :: tail ->
+          tail
+      | "__init__" :: tail -> tail
+      | elements -> elements
+    in
+    last_without_suffix :: List.tl_exn reversed_elements
+    |> strip
+    |> List.rev_map ~f:(String.split ~on:'.')
+    |> List.concat
+  in
+  Reference.create_from_list qualifier
 
 
 let create_from_search_path ~is_external ~search_path path =
   SearchPath.search_for_path ~search_path path
   >>= fun SearchPath.{ relative_path; priority } ->
   let path = Path.Relative relative_path in
+  let qualifier = qualifier_of_relative (Path.RelativePath.relative relative_path) in
   let is_stub = Path.is_python_stub path in
   let is_init = Path.is_python_init path in
-  Some { relative_path; priority; is_stub; is_external; is_init }
+  Some { relative_path; qualifier; priority; is_stub; is_external; is_init }
 
 
 let should_type_check

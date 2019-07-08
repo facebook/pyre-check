@@ -58,6 +58,7 @@ let test_creation context =
       ~search_root
       ~relative
       { SourcePath.relative_path = actual_relative_path;
+        qualifier = _;
         priority = actual_priority;
         is_stub = actual_is_stub;
         is_external = actual_is_external;
@@ -83,9 +84,10 @@ let test_creation context =
     Option.iter is_init ~f:(fun expected_is_init ->
         assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
   in
-  let assert_same_module_greater left right =
-    let left_qualifier = SourcePath.qualifier left in
-    let right_qualifier = SourcePath.qualifier right in
+  let assert_same_module_greater
+      ({ SourcePath.qualifier = left_qualifier; _ } as left)
+      ({ SourcePath.qualifier = right_qualifier; _ } as right)
+    =
     assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
     let compare_result = SourcePath.same_module_compare left right in
     let message =
@@ -653,7 +655,7 @@ let test_update context =
     let expected = List.map expected ~f:Reference.create |> List.sort ~compare:Reference.compare in
     let actual =
       ModuleTracker.source_paths tracker
-      |> List.map ~f:SourcePath.qualifier
+      |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
       |> List.sort ~compare:Reference.compare
     in
     assert_equal
@@ -759,7 +761,7 @@ let test_update context =
     let fresh_tracker = ModuleTracker.create configuration in
     let expect_modules =
       ModuleTracker.source_paths fresh_tracker
-      |> List.map ~f:SourcePath.qualifier
+      |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
       |> List.map ~f:Reference.show
     in
     assert_modules ~expected:expect_modules tracker;

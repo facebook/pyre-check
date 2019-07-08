@@ -76,8 +76,7 @@ let create configuration =
   let process_file path =
     match SourcePath.create ~configuration path with
     | None -> ()
-    | Some source_path ->
-        let qualifier = SourcePath.qualifier source_path in
+    | Some ({ SourcePath.qualifier; _ } as source_path) ->
         let update_table = function
           | None -> [source_path]
           | Some source_paths -> insert_source_path ~inserted:source_path source_paths
@@ -127,29 +126,27 @@ let update ~configuration ~paths tracker =
       | None ->
           Log.warning "`%a` not found in search path." Path.pp path;
           None
-      | Some source_path -> (
-          let qualifier = SourcePath.qualifier source_path in
-          match Hashtbl.find tracker qualifier with
-          | None ->
-              (* New file for a new module *)
-              Hashtbl.set tracker ~key:qualifier ~data:[source_path];
+      | Some ({ SourcePath.qualifier; _ } as source_path) -> (
+        match Hashtbl.find tracker qualifier with
+        | None ->
+            (* New file for a new module *)
+            Hashtbl.set tracker ~key:qualifier ~data:[source_path];
+            Some (IncrementalUpdate.New source_path)
+        | Some source_paths ->
+            let new_source_paths = insert_source_path ~inserted:source_path source_paths in
+            let new_source_path = List.hd_exn new_source_paths in
+            Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
+            if SourcePath.equal new_source_path source_path then
+              (* Updating a shadowing file means the module gets changed *)
               Some (IncrementalUpdate.New source_path)
-          | Some source_paths ->
-              let new_source_paths = insert_source_path ~inserted:source_path source_paths in
-              let new_source_path = List.hd_exn new_source_paths in
-              Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
-              if SourcePath.equal new_source_path source_path then
-                (* Updating a shadowing file means the module gets changed *)
-                Some (IncrementalUpdate.New source_path)
-              else (* Updating a shadowed file should not trigger any reanalysis *)
-                None ) )
+            else (* Updating a shadowed file should not trigger any reanalysis *)
+              None ) )
     | FileSystemEvent.Remove path -> (
       match SourcePath.create ~configuration path with
       | None ->
           Log.warning "`%a` not found in search path." Path.pp path;
           None
-      | Some source_path -> (
-          let qualifier = SourcePath.qualifier source_path in
+      | Some ({ SourcePath.qualifier; _ } as source_path) -> (
           Hashtbl.find tracker qualifier
           >>= fun source_paths ->
           match source_paths with
@@ -176,8 +173,7 @@ let update ~configuration ~paths tracker =
     let table = Reference.Table.create () in
     let process_update update =
       match update with
-      | IncrementalUpdate.New source_path ->
-          let qualifier = SourcePath.qualifier source_path in
+      | IncrementalUpdate.New { SourcePath.qualifier; _ } ->
           Hashtbl.set table ~key:qualifier ~data:update
       | IncrementalUpdate.Delete qualifier ->
           let update = function
