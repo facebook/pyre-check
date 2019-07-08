@@ -521,7 +521,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         (* Coverage. *)
         let map =
-          extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:handles)
+          extend_map map ~new_map:(Coverage.SharedMemory.compute_hashes_to_keys ~keys:qualifiers)
         in
         (* Calls *)
         let map =
@@ -696,8 +696,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
               Some (Ast.SharedMemory.Handles.PathValue.description, Int.to_string key, value)
           | Coverage.SharedMemory.Decoded (key, value) ->
-              Some
-                (Coverage.CoverageValue.description, File.Handle.show key, value >>| Coverage.show)
+              Some (Coverage.CoverageValue.description, Reference.show key, value >>| Coverage.show)
           | Analysis.Dependencies.Callgraph.SharedMemory.Decoded (key, value) ->
               Some
                 ( Dependencies.Callgraph.CalleeValue.description,
@@ -1330,7 +1329,8 @@ let rec process
           let response =
             File.handle ~configuration file
             |> fun handle ->
-            match Coverage.get ~handle with
+            let qualifier = Source.qualifier ~handle in
+            match Coverage.get ~qualifier with
             | Some { Coverage.full; partial; untyped; _ } ->
                 let total = Float.of_int (full + partial + untyped) in
                 let covered_percent =

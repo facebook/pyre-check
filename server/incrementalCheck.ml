@@ -176,9 +176,11 @@ let recheck
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  ResolutionSharedMemory.remove
-    (List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle));
-  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulate_handles);
+  let () =
+    let qualifiers = List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle) in
+    ResolutionSharedMemory.remove qualifiers;
+    Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list qualifiers)
+  in
   let new_errors =
     Service.Check.analyze_sources
       ~open_documents

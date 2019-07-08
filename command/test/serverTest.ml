@@ -990,8 +990,8 @@ let test_compute_hashes_to_keys context =
           (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
              (Reference.create "sample.$toplevel"));
         to_binding
-          (Coverage.SharedMemory.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (Coverage.SharedMemory.serialize_key (File.Handle.create_for_testing "sample.py")) ]
+          (Coverage.SharedMemory.hash_of_key (Reference.create "sample"))
+          (Coverage.SharedMemory.serialize_key (Reference.create "sample")) ]
     |> List.sort ~compare
   in
   assert_response
@@ -1148,11 +1148,11 @@ let test_decode_serialized_ocaml_values context =
     ~value:(File.Handle.create_for_testing "five.py")
     ~response:("Path", "5", Some "five.py");
   assert_decode
-    ~key:(Coverage.SharedMemory.serialize_key (File.Handle.create_for_testing "file.py"))
+    ~key:(Coverage.SharedMemory.serialize_key (Reference.create "file"))
     ~value:(Coverage.create ~full:5 ~partial:3 ())
     ~response:
       ( "Coverage",
-        "file.py",
+        "file",
         Some "{ Coverage.full = 5; partial = 3; untyped = 0; ignore = 0; crashes = 0 }" );
   assert_decode
     ~key:(ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"))

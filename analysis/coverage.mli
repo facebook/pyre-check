@@ -42,11 +42,12 @@ module CoverageValue : sig
   val description : string
 end
 
-module SharedMemory : module type of Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
+module SharedMemory :
+    module type of Memory.WithCache (Ast.SharedMemory.ReferenceKey) (CoverageValue)
 
-val add : t -> handle:File.Handle.t -> unit
+val add : t -> qualifier:Reference.t -> unit
 
-val get : handle:File.Handle.t -> t option
+val get : qualifier:Reference.t -> t option
 
 type aggregate = {
   strict_coverage: int;

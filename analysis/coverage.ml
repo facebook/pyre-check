@@ -75,11 +75,11 @@ module CoverageValue = struct
   let description = "Coverage"
 end
 
-module SharedMemory = Memory.WithCache (Ast.SharedMemory.HandleKey) (CoverageValue)
+module SharedMemory = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (CoverageValue)
 
-let add coverage ~handle = SharedMemory.add handle coverage
+let add coverage ~qualifier = SharedMemory.add qualifier coverage
 
-let get ~handle = SharedMemory.get handle
+let get ~qualifier = SharedMemory.get qualifier
 
 type aggregate = {
   strict_coverage: int;

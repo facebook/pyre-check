@@ -4654,7 +4654,8 @@ let run_on_defines ~configuration ~environment ~source defines =
 let run
     ~configuration
     ~environment
-    ~source:({ Source.handle; metadata = { Source.Metadata.number_of_lines; _ }; _ } as source)
+    ~source:( { Source.handle; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ } as
+            source )
   =
   let timer = Timer.start () in
   Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
@@ -4669,7 +4670,7 @@ let run
     List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate_over_source ~source
   in
   Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
-  Coverage.add coverage ~handle;
+  Coverage.add coverage ~qualifier;
   Statistics.performance
     ~flush:false
     ~randomly_log_every:100

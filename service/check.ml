@@ -176,7 +176,8 @@ let check
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
     let aggregate sofar handle =
-      match Coverage.get ~handle with
+      let qualifier = Source.qualifier ~handle in
+      match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
       | _ -> sofar
     in

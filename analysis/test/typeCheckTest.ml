@@ -1421,13 +1421,13 @@ let test_coverage _ =
     let coverage =
       let environment = Test.environment () in
       let handle = "coverage_test.py" in
+      let qualifier = Reference.create "coverage_test" in
       TypeCheck.run
         ~configuration:Test.mock_configuration
         ~environment
-        ~source:(parse ~handle source)
+        ~source:(parse ~handle ~qualifier source)
       |> ignore;
-      Coverage.get ~handle:(File.Handle.create_for_testing handle)
-      |> fun coverage -> Option.value_exn coverage
+      Coverage.get ~qualifier |> fun coverage -> Option.value_exn coverage
     in
     assert_equal ~printer:Coverage.show expected coverage
   in
