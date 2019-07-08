@@ -322,6 +322,9 @@ class ConfigurationTest(unittest.TestCase):
         json_load.side_effect = [{"use_buck_builder": True}, {}]
         configuration = Configuration()
         self.assertTrue(configuration.use_buck_builder)
+        json_load.side_effect = [{"use_buck_builder": False}, {}]
+        configuration = Configuration()
+        self.assertFalse(configuration.use_buck_builder)
         json_load.side_effect = [{}, {}]
         configuration = Configuration()
         self.assertFalse(configuration.use_buck_builder)

@@ -136,7 +136,7 @@ class Configuration:
         self._typeshed = None  # type: Optional[str]
         self.strict = False  # type: bool
 
-        self.use_buck_builder = False  # type: bool
+        self._use_buck_builder = None  # type: Optional[bool]
 
         # Handle search path from multiple sources
         self._search_path = []
@@ -306,6 +306,10 @@ class Configuration:
         return self._typeshed
 
     @property
+    def use_buck_builder(self) -> bool:
+        return self._use_buck_builder or False
+
+    @property
     def search_path(self) -> List[str]:
         if not self._search_path:
             return []
@@ -459,8 +463,8 @@ class Configuration:
                 if configuration.consume("saved_state"):
                     self.file_hash = configuration.file_hash
 
-                if configuration.consume("use_buck_builder", default=False):
-                    self.use_buck_builder = True
+                if self._use_buck_builder is None:
+                    self._use_buck_builder = configuration.consume("use_buck_builder")
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
