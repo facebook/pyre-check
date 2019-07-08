@@ -513,10 +513,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         (* Resolution shared memory. *)
         let map =
-          let keys = ResolutionSharedMemory.get_keys ~handles in
+          let keys = ResolutionSharedMemory.get_keys ~qualifiers in
           map
           |> extend_map ~new_map:(ResolutionSharedMemory.compute_hashes_to_keys ~keys)
-          |> extend_map ~new_map:(ResolutionSharedMemory.Keys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map
+               ~new_map:(ResolutionSharedMemory.Keys.compute_hashes_to_keys ~keys:qualifiers)
         in
         (* Coverage. *)
         let map =

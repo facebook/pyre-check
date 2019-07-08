@@ -4476,7 +4476,7 @@ let name = "TypeCheck"
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~environment
-    ~source:({ Source.handle; _ } as source)
+    ~source:({ Source.handle; qualifier; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -4561,7 +4561,7 @@ let check_define
     (* Write fixpoint type resolutions to shared memory *)
     let dump_resolutions { State.resolution_fixpoint; _ } =
       if configuration.store_type_check_resolution then
-        ResolutionSharedMemory.add ~handle name resolution_fixpoint
+        ResolutionSharedMemory.add ~qualifier name resolution_fixpoint
     in
     exit >>| dump_resolutions |> ignore;
 

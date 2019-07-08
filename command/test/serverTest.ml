@@ -908,9 +908,9 @@ let test_compute_hashes_to_keys context =
       ~key:16
       ~data:(TypeOrder.Target.Set.of_list [{ TypeOrder.Target.target = 15; parameters = [] }]);
     ResolutionSharedMemory.Keys.remove_batch
-      (File.Handle.create_for_testing "sample.py" |> ResolutionSharedMemory.Keys.KeySet.singleton);
+      (Reference.create "sample" |> ResolutionSharedMemory.Keys.KeySet.singleton);
     ResolutionSharedMemory.add
-      ~handle:(File.Handle.create_for_testing "sample.py")
+      ~qualifier:(Reference.create "sample")
       (Reference.create "name")
       Int.Map.Tree.empty
   in
@@ -982,8 +982,8 @@ let test_compute_hashes_to_keys context =
           (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
           (ResolutionSharedMemory.serialize_key (Reference.create "name"));
         to_binding
-          (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (ResolutionSharedMemory.Keys.hash_of_key (Reference.create "sample"))
+          (ResolutionSharedMemory.Keys.serialize_key (Reference.create "sample"));
         to_binding
           (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key
              (Reference.create "sample.$toplevel"))

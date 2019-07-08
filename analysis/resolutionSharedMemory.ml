@@ -59,21 +59,21 @@ end
 include SharedMemory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
 (** A map of function definitions (indexed by Reference.t key) to to annotations for each statement *)
 
-module Keys = SharedMemory.NoCache (Ast.SharedMemory.HandleKey) (AnnotationsKeyValue)
+module Keys = SharedMemory.NoCache (Ast.SharedMemory.ReferenceKey) (AnnotationsKeyValue)
 
-let remove handles =
+let remove qualifiers =
   let accesses =
-    List.filter_map ~f:Keys.get handles |> List.concat |> List.filter ~f:mem |> KeySet.of_list
+    List.filter_map ~f:Keys.get qualifiers |> List.concat |> List.filter ~f:mem |> KeySet.of_list
   in
   remove_batch accesses;
-  Keys.remove_batch (Keys.KeySet.of_list handles)
+  Keys.remove_batch (Keys.KeySet.of_list qualifiers)
 
 
-let add ~handle name value =
-  ( match Keys.get handle with
-  | None -> Keys.add handle [name]
-  | Some names -> Keys.add handle (name :: names) );
+let add ~qualifier name value =
+  ( match Keys.get qualifier with
+  | None -> Keys.add qualifier [name]
+  | Some names -> Keys.add qualifier (name :: names) );
   add name value
 
 
-let get_keys ~handles = List.filter_map handles ~f:Keys.get |> List.concat
+let get_keys ~qualifiers = List.filter_map qualifiers ~f:Keys.get |> List.concat

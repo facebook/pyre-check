@@ -176,7 +176,8 @@ let recheck
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  ResolutionSharedMemory.remove repopulate_handles;
+  ResolutionSharedMemory.remove
+    (List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle));
   Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulate_handles);
   let new_errors =
     Service.Check.analyze_sources

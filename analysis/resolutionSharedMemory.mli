@@ -34,12 +34,12 @@ module AnnotationsKeyValue : sig
   val description : string
 end
 
-module Keys : module type of Memory.NoCache (Ast.SharedMemory.HandleKey) (AnnotationsKeyValue)
+module Keys : module type of Memory.NoCache (Ast.SharedMemory.ReferenceKey) (AnnotationsKeyValue)
 
-val add : handle:File.Handle.t -> Reference.t -> annotations -> unit
+val add : qualifier:Reference.t -> Reference.t -> annotations -> unit
 
-val remove : File.Handle.t list -> unit
+val remove : Reference.t list -> unit
 
 val get : Reference.t -> annotations option
 
-val get_keys : handles:File.Handle.t list -> Reference.t list
+val get_keys : qualifiers:Reference.t list -> Reference.t list

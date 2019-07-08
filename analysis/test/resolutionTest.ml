@@ -348,16 +348,16 @@ let test_function_definitions _ =
 let test_resolution_shared_memory _ =
   ResolutionSharedMemory.Keys.LocalChanges.push_stack ();
   ResolutionSharedMemory.add
-    ~handle:(File.Handle.create_for_testing "a.py")
+    ~qualifier:(Reference.create "a")
     (Reference.create "name")
     Int.Map.Tree.empty;
   ResolutionSharedMemory.add
-    ~handle:(File.Handle.create_for_testing "a.py")
+    ~qualifier:(Reference.create "a")
     (Reference.create "other")
     Int.Map.Tree.empty;
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (ResolutionSharedMemory.get_keys ~handles:[File.Handle.create_for_testing "a.py"])
+    (ResolutionSharedMemory.get_keys ~qualifiers:[Reference.create "a"])
     [Reference.create "other"; Reference.create "name"];
   ResolutionSharedMemory.Keys.LocalChanges.revert_all ();
   ResolutionSharedMemory.Keys.LocalChanges.pop_stack ()
