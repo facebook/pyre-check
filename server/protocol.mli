@@ -20,7 +20,7 @@ end
 module DefinitionRequest : sig
   type t = {
     id: LanguageServer.Types.RequestId.t;
-    file: File.t;
+    path: Path.t;
     position: Location.position
   }
   [@@deriving eq, show]
@@ -45,10 +45,10 @@ module TypeQuery : sig
     | Attributes of Reference.t
     | Callees of Reference.t
     | ComputeHashesToKeys
-    | CoverageInFile of File.t
+    | CoverageInFile of Path.t
     | DecodeOcamlValues of serialized_ocaml_value list
-    | DependentDefines of File.t list
-    | DumpDependencies of File.t
+    | DependentDefines of Path.t list
+    | DumpDependencies of Path.t
     | DumpMemoryToSqlite of Path.t
     | IsCompatibleWith of Expression.t * Expression.t
     | Join of Expression.t * Expression.t
@@ -61,8 +61,8 @@ module TypeQuery : sig
     | Signature of Reference.t
     | Superclasses of Expression.t
     | Type of Expression.t
-    | TypeAtPosition of { file: File.t; position: Location.position }
-    | TypesInFile of File.t
+    | TypeAtPosition of { path: Path.t; position: Location.position }
+    | TypesInFile of Path.t
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
 

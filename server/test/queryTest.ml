@@ -66,20 +66,20 @@ let test_parse_query context =
   assert_parses
     "type_at_position('a.py', 1, 2)"
     (TypeAtPosition
-       { file = File.create (Path.create_relative ~root:(mock_path "") ~relative:"a.py");
+       { path = Path.create_relative ~root:(mock_path "") ~relative:"a.py";
          position = { Ast.Location.line = 1; column = 2 }
        });
   assert_fails_to_parse "type_at_position(a.py:1:2)";
   assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
   assert_parses
     "types_in_file('a.py')"
-    (TypesInFile (File.create (Path.create_relative ~root:(mock_path "") ~relative:"a.py")));
+    (TypesInFile (Path.create_relative ~root:(mock_path "") ~relative:"a.py"));
   assert_fails_to_parse "types_in_file(a.py:1:2)";
   assert_fails_to_parse "types_in_file(a.py)";
   assert_fails_to_parse "types_in_file('a.py', 1, 2)";
   assert_parses
     "coverage_in_file('a.py')"
-    (CoverageInFile (File.create (Path.create_relative ~root:(mock_path "") ~relative:"a.py")));
+    (CoverageInFile (Path.create_relative ~root:(mock_path "") ~relative:"a.py"));
   assert_fails_to_parse "coverage_in_file(a.py:1:2)";
   assert_fails_to_parse "coverage_in_file(a.py)";
   assert_fails_to_parse "coverage_in_file('a.py', 1, 2)";
@@ -94,18 +94,17 @@ let test_parse_query context =
   assert_parses "dependent_defines()" (DependentDefines []);
   assert_parses
     "dependent_defines('basic.py')"
-    (DependentDefines [File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic.py")]);
+    (DependentDefines [Path.create_relative ~root:(mock_path "") ~relative:"basic.py"]);
   assert_parses
     "dependent_defines('basic1.py', 'basic2.py')"
     (DependentDefines
-       [ File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic1.py");
-         File.create (Path.create_relative ~root:(mock_path "") ~relative:"basic2.py") ]);
+       [ Path.create_relative ~root:(mock_path "") ~relative:"basic1.py";
+         Path.create_relative ~root:(mock_path "") ~relative:"basic2.py" ]);
   assert_fails_to_parse "dependent_defines(unquoted.py)";
   assert_fails_to_parse "dependent_defines('quoted,py', unquoted.py)";
   assert_parses
     "dump_dependencies('quoted.py')"
-    (DumpDependencies
-       (File.create (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py")));
+    (DumpDependencies (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py"));
   assert_fails_to_parse "dump_dependencies(unquoted)";
   assert_parses
     "dump_memory_to_sqlite()"

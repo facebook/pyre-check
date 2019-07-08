@@ -1449,20 +1449,21 @@ let test_query_dependencies context =
       Protocol.TypeQueryResponse
         (Protocol.TypeQuery.Response (Protocol.TypeQuery.References references))
     in
+    let create_path relative = Path.create_relative ~root:local_root ~relative in
     assert_response
       ~request:
         (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [file ~local_root "a.py"]))
+           (Protocol.TypeQuery.DependentDefines [create_path "a.py"]))
       (reference_response []);
     assert_response
       ~request:
         (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [file ~local_root "b.py"]))
+           (Protocol.TypeQuery.DependentDefines [create_path "b.py"]))
       (reference_response [Reference.create "a.$toplevel"]);
     assert_response
       ~request:
         (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [file ~local_root "c.py"]))
+           (Protocol.TypeQuery.DependentDefines [create_path "c.py"]))
       (reference_response [Reference.create "a.$toplevel"; Reference.create "b.$toplevel"])
   in
   let finally () =

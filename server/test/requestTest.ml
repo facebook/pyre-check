@@ -176,8 +176,9 @@ let test_process_type_query_request _ =
           return a
       |}
   in
+  let written_file = write_file coverage_check_file in
   assert_response
-    (Protocol.TypeQuery.CoverageInFile (write_file coverage_check_file))
+    (Protocol.TypeQuery.CoverageInFile (File.path written_file))
     {| {"response":{"types":[]}}|};
   assert_response
     (Protocol.TypeQuery.Join (parse_single_expression "int", parse_single_expression "float"))
@@ -424,21 +425,19 @@ let test_process_get_definition_request context =
       let configuration, state = initialize sources in
       let position = { Location.line; column } in
       let request =
-        let file =
+        let path =
           match filename with
           | Some valid_filename ->
               Path.create_relative
                 ~relative:valid_filename
                 ~root:(Path.current_working_directory ())
-              |> File.create
           | _ ->
               (* Create a bogus filename entry. *)
               Path.create_relative
                 ~relative:"bogusfile.py"
                 ~root:(Path.create_absolute ~follow_symbolic_links:false "/bogus/dir")
-              |> File.create
         in
-        { Protocol.DefinitionRequest.id = int_request_id 0; file; position }
+        { Protocol.DefinitionRequest.id = int_request_id 0; path; position }
       in
       let actual_response =
         let actual_response =

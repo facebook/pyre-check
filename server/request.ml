@@ -57,9 +57,8 @@ let parse_lsp ~configuration ~request =
             _
           } ->
           uri_to_path ~uri
-          >>| File.create
-          >>| fun file ->
-          GetDefinitionRequest { DefinitionRequest.id; file; position = to_pyre_position position }
+          >>| fun path ->
+          GetDefinitionRequest { DefinitionRequest.id; path; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.dump "%s" yojson_error;
@@ -180,9 +179,8 @@ let parse_lsp ~configuration ~request =
             _
           } ->
           uri_to_path ~uri
-          >>| File.create
-          >>| fun file ->
-          HoverRequest { DefinitionRequest.id; file; position = to_pyre_position position }
+          >>| fun path ->
+          HoverRequest { DefinitionRequest.id; path; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
@@ -545,10 +543,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> List.sort ~compare:(fun (left, _) (right, _) -> String.compare left right)
         |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key })
         |> fun response -> TypeQuery.Response (TypeQuery.FoundKeyMapping response)
-    | TypeQuery.CoverageInFile file ->
+    | TypeQuery.CoverageInFile path ->
         let default =
-          TypeQuery.Error
-            (Format.asprintf "Not able to get lookups in `%a`" Path.pp (File.path file))
+          TypeQuery.Error (Format.asprintf "Not able to get lookups in `%a`" Path.pp path)
         in
         let map_to_coverage (location, annotation) =
           let coverage =
@@ -561,7 +558,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           { location; TypeQuery.coverage }
         in
-        LookupCache.find_all_annotations ~state ~configuration ~path:(File.path file)
+        LookupCache.find_all_annotations ~state ~configuration ~path
         >>| List.map ~f:map_to_coverage
         >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
         |> Option.value ~default
@@ -817,9 +814,11 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
-    | TypeQuery.DependentDefines files -> (
+    | TypeQuery.DependentDefines paths -> (
       try
-        let handles = List.map files ~f:(File.handle ~configuration) in
+        let handles =
+          List.map paths ~f:(fun path -> File.create path |> File.handle ~configuration)
+        in
         let modules = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
         let get_dependencies =
           let (module Handler : Environment.Handler) = environment in
@@ -838,11 +837,13 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         TypeQuery.Response (TypeQuery.References dependencies)
       with
       | File.NonexistentHandle message -> TypeQuery.Error message )
-    | TypeQuery.DumpDependencies file ->
+    | TypeQuery.DumpDependencies path ->
         let () =
           try
             let qualifier =
-              File.handle ~configuration file |> fun handle -> Source.qualifier ~handle
+              File.create path
+              |> File.handle ~configuration
+              |> fun handle -> Source.qualifier ~handle
             in
             Path.create_relative
               ~root:(Configuration.Analysis.pyre_root configuration)
@@ -1019,26 +1020,25 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
               |> String.concat ~sep:", "
             in
             TypeQuery.Error (Format.sprintf "Expression had errors: %s" descriptions) )
-    | TypeQuery.TypeAtPosition { file; position } ->
+    | TypeQuery.TypeAtPosition { path; position } ->
         let default =
           TypeQuery.Error
             (Format.asprintf
                "Not able to get lookup at %a:%a"
                Path.pp
-               (File.path file)
+               path
                Location.pp_position
                position)
         in
-        LookupCache.find_annotation ~state ~configuration ~path:(File.path file) ~position
+        LookupCache.find_annotation ~state ~configuration ~path ~position
         >>| (fun (location, annotation) ->
               TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
         |> Option.value ~default
-    | TypeQuery.TypesInFile file ->
+    | TypeQuery.TypesInFile path ->
         let default =
-          TypeQuery.Error
-            (Format.asprintf "Not able to get lookups in `%a`" Path.pp (File.path file))
+          TypeQuery.Error (Format.asprintf "Not able to get lookups in `%a`" Path.pp path)
         in
-        LookupCache.find_all_annotations ~state ~configuration ~path:(File.path file)
+        LookupCache.find_all_annotations ~state ~configuration ~path
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
         |> Option.value ~default
@@ -1113,11 +1113,11 @@ let process_display_type_errors_request ~state ~configuration ~files =
 let process_get_definition_request
     ~state
     ~configuration
-    ~request:{ DefinitionRequest.id; file; position }
+    ~request:{ DefinitionRequest.id; path; position }
   =
   let response =
     let open LanguageServer.Protocol in
-    let definition = LookupCache.find_definition ~state ~configuration (File.path file) position in
+    let definition = LookupCache.find_definition ~state ~configuration path position in
     TextDocumentDefinitionResponse.create ~configuration ~id ~location:definition
     |> TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
@@ -1186,11 +1186,11 @@ let rec process
             |> fun response -> Some (LanguageServerProtocolResponse response)
           in
           { state; response }
-      | HoverRequest { DefinitionRequest.id; file; position } ->
+      | HoverRequest { DefinitionRequest.id; path; position } ->
           let response =
             let open LanguageServer.Protocol in
             let result =
-              LookupCache.find_annotation ~state ~configuration ~path:(File.path file) ~position
+              LookupCache.find_annotation ~state ~configuration ~path ~position
               >>| fun (location, annotation) ->
               { HoverResponse.location; contents = Type.show_for_hover annotation }
             in

@@ -55,16 +55,15 @@ let help () =
            to model path in configuration if no parameter is passed in."
   in
   let path = Path.current_working_directory () in
-  let file = File.create path in
   let empty = Name (Name.Identifier "") |> Node.create_with_default_location in
   List.filter_map
     ~f:help
     [ Attributes (Reference.create "");
       Callees (Reference.create "");
       ComputeHashesToKeys;
-      CoverageInFile file;
+      CoverageInFile path;
       DecodeOcamlValues [];
-      DumpDependencies file;
+      DumpDependencies path;
       DumpMemoryToSqlite path;
       IsCompatibleWith (empty, empty);
       Join (empty, empty);
@@ -77,8 +76,8 @@ let help () =
       Signature (Reference.create "");
       Superclasses empty;
       Type (Node.create_with_default_location Expression.True);
-      TypeAtPosition { file; position = Location.any_position };
-      TypesInFile file;
+      TypeAtPosition { path; position = Location.any_position };
+      TypesInFile path;
       ValidateTaintModels None ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
@@ -119,8 +118,8 @@ let parse_query
       | "callees", [name] -> Request.TypeQueryRequest (Callees (reference name))
       | "compute_hashes_to_keys", [] -> Request.TypeQueryRequest ComputeHashesToKeys
       | "coverage_in_file", [path] ->
-          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
-          Request.TypeQueryRequest (CoverageInFile file)
+          let path = Path.create_relative ~root ~relative:(string path) in
+          Request.TypeQueryRequest (CoverageInFile path)
       | "decode_ocaml_values", values ->
           let parse_values_to_decode = function
             | { Call.Argument.value = { Node.value = Tuple [serialized_key; serialized_value]; _ };
@@ -170,14 +169,12 @@ let parse_query
           | None -> raise (InvalidQuery (Format.sprintf "Malformatted file at `%s`" (string path)))
           )
       | "dependent_defines", paths ->
-          let create_file path =
-            Path.create_relative ~root ~relative:(string path) |> File.create
-          in
-          let files = List.map paths ~f:create_file in
-          Request.TypeQueryRequest (DependentDefines files)
+          let create_path path = Path.create_relative ~root ~relative:(string path) in
+          let paths = List.map paths ~f:create_path in
+          Request.TypeQueryRequest (DependentDefines paths)
       | "dump_dependencies", [path] ->
-          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
-          Request.TypeQueryRequest (DumpDependencies file)
+          let path = Path.create_relative ~root ~relative:(string path) in
+          Request.TypeQueryRequest (DumpDependencies path)
       | "dump_memory_to_sqlite", arguments ->
           let path =
             match arguments with
@@ -214,12 +211,12 @@ let parse_query
           [ path;
             { Call.Argument.value = { Node.value = Integer line; _ }; _ };
             { Call.Argument.value = { Node.value = Integer column; _ }; _ } ] ) ->
-          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
+          let path = Path.create_relative ~root ~relative:(string path) in
           let position = { Location.line; column } in
-          Request.TypeQueryRequest (TypeAtPosition { file; position })
+          Request.TypeQueryRequest (TypeAtPosition { path; position })
       | "types_in_file", [path] ->
-          let file = Path.create_relative ~root ~relative:(string path) |> File.create in
-          Request.TypeQueryRequest (TypesInFile file)
+          let path = Path.create_relative ~root ~relative:(string path) in
+          Request.TypeQueryRequest (TypesInFile path)
       | "type_check", arguments ->
           let files =
             arguments
