@@ -48,17 +48,6 @@ let test_compute_hashes_to_keys _ =
       SymlinksToPaths.hash_of_key "second", SymlinksToPaths.serialize_key "second" ]
     (SymlinksToPaths.compute_hashes_to_keys ~keys:["first"; "second"]);
   assert_mapping_equal
-    [ ( Sources.hash_of_handle (File.Handle.create_for_testing "first.py"),
-        Sources.serialize_handle (File.Handle.create_for_testing "first.py") );
-      Sources.hash_of_qualifier !&"first", Sources.serialize_qualifier !&"first";
-      ( Sources.hash_of_handle (File.Handle.create_for_testing "second/__init__.py"),
-        Sources.serialize_handle (File.Handle.create_for_testing "second/__init__.py") );
-      Sources.hash_of_qualifier !&"second", Sources.serialize_qualifier !&"second" ]
-    (Sources.compute_hashes_to_keys
-       ~keys:
-         [ File.Handle.create_for_testing "first.py";
-           File.Handle.create_for_testing "second/__init__.py" ]);
-  assert_mapping_equal
     [ ( HandleKeys.HandleKeys.hash_of_key Memory.SingletonKey.key,
         HandleKeys.HandleKeys.serialize_key Memory.SingletonKey.key ) ]
     (HandleKeys.compute_hashes_to_keys ());

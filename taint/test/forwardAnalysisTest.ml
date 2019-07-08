@@ -19,14 +19,15 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
     let path = Test.mock_path (qualifier ^ ".py") in
     let file = File.create ~content:(Test.trim_extra_indentation source) path in
     let handle = File.handle file ~configuration in
-    Ast.SharedMemory.Sources.remove ~handles:[handle];
+    let qualifier = Ast.Source.qualifier ~handle in
+    Ast.SharedMemory.Sources.remove [qualifier];
     Service.Parser.parse_sources
       ~configuration
       ~scheduler:(Scheduler.mock ())
       ~preprocessing_state:None
       ~files:[file]
     |> ignore;
-    match Ast.SharedMemory.Sources.get handle with
+    match Ast.SharedMemory.Sources.get qualifier with
     | Some source -> source
     | None -> failwith "Unable to parse source."
   in

@@ -45,7 +45,7 @@ let find_module_reference ~cursor_position:{ Location.line; column } source =
 
 
 let get_exported_imports ~module_reference =
-  SharedMemory.Sources.get_for_qualifier module_reference
+  SharedMemory.Sources.get module_reference
   >>| Source.statements
   >>| List.concat_map ~f:(function
           | { Node.value = Statement.Import { imports; _ }; _ } ->

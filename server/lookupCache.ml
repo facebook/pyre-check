@@ -16,8 +16,7 @@ let get_by_qualifier ~state:{ lookups; environment; _ } qualifier =
   | Some _ -> cache_read
   | None ->
       let lookup =
-        Ast.SharedMemory.Sources.get_for_qualifier qualifier
-        >>| Lookup.create_of_source environment
+        Ast.SharedMemory.Sources.get qualifier >>| Lookup.create_of_source environment
       in
       lookup >>| (fun lookup -> String.Table.set lookups ~key ~data:lookup) |> ignore;
       lookup

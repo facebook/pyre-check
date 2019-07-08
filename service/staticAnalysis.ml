@@ -10,7 +10,7 @@ open Interprocedural
 open Statement
 open Pyre
 
-let record_and_merge_call_graph ~environment ~call_graph ~path:_ ~source =
+let record_and_merge_call_graph ~environment ~call_graph ~qualifier:_ ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
@@ -66,7 +66,7 @@ let analyze
     ~configuration:( { Configuration.StaticAnalysis.configuration; dump_call_graph; _ } as
                    analysis_configuration )
     ~environment
-    ~handles:paths
+    ~qualifiers
     ()
   =
   let resolution = TypeCheck.resolution environment () in
@@ -74,9 +74,9 @@ let analyze
   let timer = Timer.start () in
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
-    let build_overrides overrides path =
+    let build_overrides overrides qualifier =
       try
-        match Ast.SharedMemory.Sources.get path with
+        match Ast.SharedMemory.Sources.get qualifier with
         | None -> overrides
         | Some source ->
             let new_overrides = DependencyGraph.create_overrides ~environment ~source in
@@ -86,8 +86,8 @@ let analyze
       | TypeOrder.Untracked untracked_type ->
           Log.info
             "Error building overrides in path %a for untracked type %a"
-            File.Handle.pp
-            path
+            Reference.pp
+            qualifier
             Type.pp
             untracked_type;
           overrides
@@ -96,27 +96,27 @@ let analyze
       scheduler
       ~configuration
       ~initial:DependencyGraph.empty_overrides
-      ~map:(fun _ paths ->
-        List.fold paths ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+      ~map:(fun _ qualifiers ->
+        List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
       ~reduce:(Map.merge_skewed ~combine)
-      ~inputs:paths
+      ~inputs:qualifiers
       ()
   in
   Statistics.performance ~name:"Overrides recorded" ~timer ();
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let callgraph =
-    let build_call_graph call_graph path =
+    let build_call_graph call_graph qualifier =
       try
-        Ast.SharedMemory.Sources.get path
-        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~path ~source)
+        Ast.SharedMemory.Sources.get qualifier
+        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~qualifier ~source)
         |> Option.value ~default:call_graph
       with
       | TypeOrder.Untracked untracked_type ->
           Log.info
             "Error building call graph in path %a for untracked type %a"
-            File.Handle.pp
-            path
+            Reference.pp
+            qualifier
             Type.pp
             untracked_type;
           call_graph
@@ -125,9 +125,10 @@ let analyze
       scheduler
       ~configuration
       ~initial:Callable.RealMap.empty
-      ~map:(fun _ paths -> List.fold paths ~init:Callable.RealMap.empty ~f:build_call_graph)
+      ~map:(fun _ qualifiers ->
+        List.fold qualifiers ~init:Callable.RealMap.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      ~inputs:paths
+      ~inputs:qualifiers
       ()
   in
   Statistics.performance ~name:"Call graph built" ~timer ();
@@ -141,13 +142,13 @@ let analyze
       else
         callable :: callables, stubs
     in
-    let make_callables result path =
-      Ast.SharedMemory.Sources.get path
+    let make_callables result qualifier =
+      Ast.SharedMemory.Sources.get qualifier
       >>| (fun source ->
             callables ~resolution ~source |> List.fold ~f:classify_source ~init:result)
       |> Option.value ~default:result
     in
-    List.fold paths ~f:make_callables ~init:([], [])
+    List.fold qualifiers ~f:make_callables ~init:([], [])
   in
   (* TODO(T41380664): generalize this to handle more than taint analysis. The
      analysis_configuration here should be picked from the command line somehow and it would

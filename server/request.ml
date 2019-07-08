@@ -470,11 +470,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                ~new_map:
                  (Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys
                     ~keys:(List.map handles ~f:File.Handle.show))
-          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:handles)
-          |> extend_map
-               ~new_map:
-                 (Ast.SharedMemory.Modules.compute_hashes_to_keys
-                    ~keys:(List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles))
+          |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(Ast.SharedMemory.Modules.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map
                ~new_map:
                  (Ast.SharedMemory.Handles.compute_hashes_to_keys
@@ -527,7 +524,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         let map =
           let keys =
             let open Statement.Define in
-            List.filter_map handles ~f:Ast.SharedMemory.Sources.get
+            List.filter_map qualifiers ~f:Ast.SharedMemory.Sources.get
             |> List.concat_map
                  ~f:
                    (Preprocessing.defines
@@ -676,13 +673,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | Ast.SharedMemory.Sources.Sources.Decoded (key, value) ->
               Some
                 ( Ast.SharedMemory.Sources.SourceValue.description,
-                  File.Handle.show key,
-                  value >>| Source.show )
-          | Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (key, value) ->
-              Some
-                ( Ast.SharedMemory.Sources.HandleValue.description,
                   Reference.show key,
-                  value >>| File.Handle.show )
+                  value >>| Source.show )
           | Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (key, value) ->
               Some
                 ( Ast.SharedMemory.HandleKeys.HandleKeysValue.description,
@@ -770,9 +762,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | ( Ast.SharedMemory.Sources.Sources.Decoded (_, first),
                         Ast.SharedMemory.Sources.Sources.Decoded (_, second) ) ->
                         Option.equal Source.equal first second
-                    | ( Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (_, first),
-                        Ast.SharedMemory.Sources.QualifiersToHandles.Decoded (_, second) ) ->
-                        Option.equal File.Handle.equal first second
                     | ( Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, first),
                         Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, second) ) ->
                         Option.equal File.Handle.Set.Tree.equal first second
@@ -832,7 +821,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             define_to_name (Source.top_level_define source)
           in
           Reference.Set.to_list dependency_set
-          |> List.filter_map ~f:Ast.SharedMemory.Sources.get_for_qualifier
+          |> List.filter_map ~f:Ast.SharedMemory.Sources.get
           |> List.map ~f:source_to_define_name
         in
         TypeQuery.Response (TypeQuery.References dependencies)

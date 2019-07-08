@@ -17,7 +17,7 @@ type expect_fixpoint = {
 let assert_fixpoint ?models source ~expect:{ iterations = expect_iterations; expect } =
   let scheduler = Scheduler.mock () in
   let { all_callables; callgraph; environment; overrides } =
-    initialize ?models ~qualifier:"qualifier" source
+    initialize ?models ~handle:"qualifier.py" source
   in
   let dependencies =
     DependencyGraph.from_callgraph callgraph

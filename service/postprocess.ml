@@ -27,8 +27,9 @@ let register_ignores ~configuration scheduler handles =
   (* Register new values *)
   let register_ignores_for_handle handle =
     let key = File.Handle.show handle in
+    let qualifier = Source.qualifier ~handle in
     (* Register new ignores. *)
-    match Ast.SharedMemory.Sources.get handle with
+    match Ast.SharedMemory.Sources.get qualifier with
     | Some source ->
         let ignore_lines = Source.ignore_lines source in
         let ignore_map =
@@ -45,7 +46,8 @@ let register_ignores ~configuration scheduler handles =
     | _ -> ()
   in
   let register_local_mode handle =
-    match Ast.SharedMemory.Sources.get handle with
+    let qualifier = Source.qualifier ~handle in
+    match Ast.SharedMemory.Sources.get qualifier with
     | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
         ErrorModes.add handle local_mode
     | _ -> ()

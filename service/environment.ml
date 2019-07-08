@@ -79,7 +79,8 @@ let build ((module Handler : Environment.Handler) as handler) ~configuration ~sc
      sequentially until we find a way to build the environment in parallel. *)
   let get_sources =
     List.fold ~init:[] ~f:(fun handles handle ->
-        match Ast.SharedMemory.Sources.get handle with
+        let qualifier = Source.qualifier ~handle in
+        match Ast.SharedMemory.Sources.get qualifier with
         | Some handle -> handle :: handles
         | None -> handles)
   in

@@ -92,8 +92,8 @@ let coverage ~number_of_files ~sources =
   let strict_coverage, declare_coverage =
     List.fold
       ~init:(0, 0)
-      ~f:(fun (prev_strict, prev_declare) handle ->
-        match Ast.SharedMemory.Sources.get handle with
+      ~f:(fun (prev_strict, prev_declare) qualifier ->
+        match Ast.SharedMemory.Sources.get qualifier with
         | Some { Source.metadata = { Source.Metadata.local_mode; _ }; _ } ->
             ( (prev_strict + if Source.equal_mode local_mode Source.Strict then 1 else 0),
               prev_declare + if Source.equal_mode local_mode Source.Declare then 1 else 0 )

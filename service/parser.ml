@@ -73,7 +73,7 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
         add_module_from_source preprocessed;
         let handle = File.handle ~configuration file in
         Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
-        Plugin.apply_to_ast preprocessed |> Ast.SharedMemory.Sources.add handle;
+        Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed);
         handle
       in
       if force then

@@ -35,30 +35,20 @@ end
 module Sources : sig
   module SourceValue : Value.Type with type t = Source.t
 
-  module Sources : module type of Memory.NoCache (HandleKey) (SourceValue)
+  module Sources : module type of Memory.NoCache (ReferenceKey) (SourceValue)
 
-  module HandleValue : Value.Type with type t = File.Handle.t
+  val get : Reference.t -> Source.t option
 
-  module QualifiersToHandles : module type of Memory.NoCache (ReferenceKey) (HandleValue)
+  val add : Source.t -> unit
 
-  val get : File.Handle.t -> Source.t option
-
-  val get_for_qualifier : Reference.t -> Source.t option
-
-  val add : File.Handle.t -> Source.t -> unit
-
-  val remove : handles:File.Handle.t list -> unit
+  val remove : Reference.t list -> unit
 
   (* Exposed for testing. *)
-  val hash_of_handle : File.Handle.t -> string
-
-  val serialize_handle : File.Handle.t -> string
-
   val hash_of_qualifier : Reference.t -> string
 
   val serialize_qualifier : Reference.t -> string
 
-  val compute_hashes_to_keys : keys:File.Handle.t list -> string String.Map.t
+  val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
 end
 
 module HandleKeys : sig

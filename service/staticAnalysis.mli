@@ -11,7 +11,7 @@ open Interprocedural
 val record_and_merge_call_graph
   :  environment:(module Environment.Handler) ->
   call_graph:DependencyGraph.callgraph ->
-  path:File.Handle.t ->
+  qualifier:Reference.t ->
   source:Source.t ->
   DependencyGraph.callgraph
 
@@ -26,6 +26,6 @@ val analyze
   :  scheduler:Scheduler.t ->
   configuration:Configuration.StaticAnalysis.t ->
   environment:(module Environment.Handler) ->
-  handles:File.Handle.t list ->
+  qualifiers:Reference.t list ->
   unit ->
   Interprocedural.Error.t list

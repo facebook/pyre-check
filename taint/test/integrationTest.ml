@@ -86,7 +86,7 @@ let test_integration _ =
         check_expectation ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
-        initialize ~qualifier:handle ?models:model_source source
+        initialize ~handle ?models:model_source source
       in
       let dependencies =
         DependencyGraph.from_callgraph callgraph

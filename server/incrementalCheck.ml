@@ -89,9 +89,13 @@ let recheck
       List.filter_map recheck ~f:find_target
     in
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
-    Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
-    List.map (handles @ removed_handles) ~f:(fun handle -> Source.qualifier ~handle)
-    |> Handler.purge ~debug;
+    let () =
+      let qualifiers =
+        List.map (handles @ removed_handles) ~f:(fun handle -> Source.qualifier ~handle)
+      in
+      Ast.SharedMemory.Sources.remove qualifiers;
+      Handler.purge ~debug qualifiers
+    in
     List.iter handles ~f:(fun handle -> Source.qualifier ~handle |> LookupCache.evict ~state);
     Statistics.performance
       ~name:"purged old environment"
@@ -165,7 +169,10 @@ let recheck
     Sexp.pp
     [%message (repopulate_handles : File.Handle.t list)];
   Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
-  List.filter_map ~f:Ast.SharedMemory.Sources.get repopulate_handles
+  let repopulated_qualifiers =
+    List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle)
+  in
+  List.filter_map ~f:Ast.SharedMemory.Sources.get repopulated_qualifiers
   |> Service.Environment.populate ~configuration ~scheduler environment;
   Statistics.event
     ~section:`Memory
@@ -176,11 +183,8 @@ let recheck
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  let () =
-    let qualifiers = List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle) in
-    ResolutionSharedMemory.remove qualifiers;
-    Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list qualifiers)
-  in
+  ResolutionSharedMemory.remove repopulated_qualifiers;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulated_qualifiers);
   let new_errors =
     Service.Check.analyze_sources
       ~open_documents

@@ -99,7 +99,7 @@ let run_analysis
         ~configuration:
           { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
         ~environment
-        ~handles
+        ~qualifiers:(List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle))
         ()
     in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in

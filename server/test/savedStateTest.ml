@@ -80,7 +80,9 @@ let test_compute_locally_changed_files context =
       ( match old_content with
       | Some content ->
           let handle = File.Handle.create_for_testing relative in
-          Test.parse ~handle:relative content |> Ast.SharedMemory.Sources.add handle;
+          let qualifier = Ast.Source.qualifier ~handle in
+          (* NOTE: If multiple files for the same module gets added, the first write wins *)
+          Test.parse ~handle:relative ~qualifier content |> Ast.SharedMemory.Sources.add;
           Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton handle)
       | None -> () );
 
@@ -100,7 +102,8 @@ let test_compute_locally_changed_files context =
     (* Ensure sources are cleaned up afterwards. *)
     List.map files ~f:(fun { relative; _ } -> File.Handle.create_for_testing relative)
     |> fun handles ->
-    Ast.SharedMemory.Sources.remove ~handles;
+    List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle)
+    |> Ast.SharedMemory.Sources.remove;
     assert_equal
       ~printer:(List.to_string ~f:ident)
       (List.sort ~compare:String.compare expected)
@@ -124,28 +127,28 @@ let test_compute_locally_changed_files context =
      algorithm). *)
   assert_changed_files
     ~files:
-      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
-        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
+      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
     ~expected:["a.py"];
   assert_changed_files
     ~files:
-      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" };
-        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" } ]
+      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
     ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "a.py"; old_content = Some "a = 1"; new_content = None };
-        { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" } ]
+      [ { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" };
+        { relative = "a.py"; old_content = Some "a = 1"; new_content = None } ]
     ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "a.py"; old_content = None; new_content = Some "a = 1" };
-        { relative = "a.pyi"; old_content = Some "a: int"; new_content = None } ]
+      [ { relative = "a.pyi"; old_content = Some "a: int"; new_content = None };
+        { relative = "a.py"; old_content = None; new_content = Some "a = 1" } ]
     ~expected:["a.py"; "a.pyi"];
   assert_changed_files
     ~files:
-      [ { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" };
-        { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" } ]
+      [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
+        { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
     ~expected:["b.py"]
 
 

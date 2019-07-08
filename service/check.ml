@@ -85,7 +85,8 @@ let analyze_sources
         Module.Cache.clear ();
         Resolution.Cache.clear ();
         let analyze_source { errors; number_files } handle =
-          match SharedMemory.Sources.get handle with
+          let qualifier = Source.qualifier ~handle in
+          match SharedMemory.Sources.get qualifier with
           | Some source ->
               let configuration =
                 match File.Handle.to_path ~configuration handle with
@@ -172,6 +173,7 @@ let check
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
     let number_of_files = List.length sources in
+    let sources = List.map sources ~f:(fun handle -> Source.qualifier ~handle) in
     Coverage.coverage ~sources ~number_of_files
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =

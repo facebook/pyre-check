@@ -200,7 +200,7 @@ let test_populate context =
     (module Handler)
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    [Option.value_exn (Ast.SharedMemory.Sources.get (File.Handle.create_for_testing "a.py"))];
+    [Option.value_exn (Ast.SharedMemory.Sources.get (Reference.create "a"))];
   assert_successors "a.C" ["a.D"; "object"]
 
 

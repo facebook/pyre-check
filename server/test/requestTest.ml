@@ -83,18 +83,17 @@ let initialize ?configuration sources =
     let scheduler = Scheduler.mock () in
     (* Clear and re-populate ASTs in shared memory. *)
     let handles = List.map files ~f:(File.handle ~configuration) in
-    SharedMemory.Sources.remove ~handles;
-    SharedMemory.Modules.remove
-      ~qualifiers:(List.map handles ~f:(fun handle -> Source.qualifier ~handle));
+    let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+    SharedMemory.Sources.remove qualifiers;
+    SharedMemory.Modules.remove ~qualifiers;
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;
-    let add_module handle =
-      match SharedMemory.Sources.get handle with
-      | Some ({ Ast.Source.qualifier; _ } as source) ->
-          SharedMemory.Modules.add ~qualifier ~ast_module:(Module.create source)
+    let add_module qualifier =
+      match SharedMemory.Sources.get qualifier with
+      | Some source -> SharedMemory.Modules.add ~qualifier ~ast_module:(Module.create source)
       | None -> ()
     in
-    List.iter handles ~f:add_module;
+    List.iter qualifiers ~f:add_module;
 
     (* Initialize dependency map. *)
     let source (path, content) =

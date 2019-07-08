@@ -92,45 +92,20 @@ module Sources = struct
     let description = "AST"
   end
 
-  module Sources = SharedMemory.NoCache (HandleKey) (SourceValue)
+  module Sources = SharedMemory.NoCache (ReferenceKey) (SourceValue)
 
-  module HandleValue = struct
-    type t = File.Handle.t
+  let get = Sources.get
 
-    let prefix = Prefix.make ()
+  let add ({ Source.qualifier; _ } as source) = Sources.add qualifier source
 
-    let description = "File handle"
-  end
+  let remove qualifiers = Sources.KeySet.of_list qualifiers |> Sources.remove_batch
 
-  module QualifiersToHandles = SharedMemory.NoCache (ReferenceKey) (HandleValue)
+  let hash_of_qualifier = Sources.hash_of_key
 
-  let get handle = Sources.get handle
-
-  let get_for_qualifier qualifier = QualifiersToHandles.get qualifier >>= Sources.get
-
-  let add handle ({ Source.qualifier; _ } as source) =
-    Sources.add handle source;
-    QualifiersToHandles.add qualifier handle
-
-
-  let remove ~handles =
-    List.filter ~f:Sources.mem handles |> Sources.KeySet.of_list |> Sources.remove_batch
-
-
-  let hash_of_handle = Sources.hash_of_key
-
-  let serialize_handle = Sources.serialize_key
-
-  let hash_of_qualifier = QualifiersToHandles.hash_of_key
-
-  let serialize_qualifier = QualifiersToHandles.serialize_key
+  let serialize_qualifier = Sources.serialize_key
 
   let compute_hashes_to_keys ~keys =
-    let add map handle =
-      let map = Map.set map ~key:(hash_of_handle handle) ~data:(serialize_handle handle) in
-      (* This is an approximation that assumes Source.qualifier = Source.qualifier handle for all
-         cases. *)
-      let qualifier = Source.qualifier ~handle in
+    let add map qualifier =
       Map.set map ~key:(hash_of_qualifier qualifier) ~data:(serialize_qualifier qualifier)
     in
     List.fold keys ~init:String.Map.empty ~f:add

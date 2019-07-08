@@ -78,13 +78,13 @@ let test_get_completion_items _ =
   let assert_completion_items ~cursor_position ~source ~expected =
     let configuration, state = RequestTest.initialize [] in
     let sources = Test.typeshed_stubs ~include_helper_builtins:false () in
-    let sources = List.map sources ~f:(fun source -> source.handle, source) in
-    List.iter sources ~f:(fun (handle, source) -> SharedMemory.Sources.add handle source);
+    List.iter sources ~f:SharedMemory.Sources.add;
     let path = mock_path "test.py" in
     let state = { state with open_documents = PyrePath.Map.singleton path source } in
     let actual = AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position in
     assert_equal ~printer:Types.CompletionItems.show expected actual;
-    SharedMemory.Sources.remove ~handles:(List.map sources ~f:fst)
+    List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
+    |> SharedMemory.Sources.remove
   in
   let create_completion_item ~cursor_position:{ Location.line; column } ~label ~detail ~new_text =
     let position = Types.Position.from_pyre_position ~line ~column in

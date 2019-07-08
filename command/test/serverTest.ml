@@ -34,7 +34,7 @@ let test_language_server_protocol_json_format context =
   in
   let handle = File.Handle.create_for_testing filename in
   let qualifier = Source.qualifier ~handle in
-  Ast.SharedMemory.Sources.add handle (Source.create ~handle []);
+  Ast.SharedMemory.Sources.add (Source.create ~handle ~qualifier []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       ~handle:filename
@@ -263,11 +263,9 @@ let assert_response ~local_root ?state ?(handle = "test.py") ~source ~request ex
   let qualifier = Ast.Source.qualifier ~handle:file_handle in
   Ast.SharedMemory.HandleKeys.clear ();
   Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton file_handle);
-  Ast.SharedMemory.Sources.remove ~handles:[file_handle];
-  Ast.SharedMemory.Sources.QualifiersToHandles.remove_batch
-    (ResolutionSharedMemory.KeySet.singleton qualifier);
+  Ast.SharedMemory.Sources.remove [qualifier];
   let parsed = parse ~handle ~qualifier source |> Preprocessing.preprocess in
-  Ast.SharedMemory.Sources.add file_handle parsed;
+  Ast.SharedMemory.Sources.add parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter (make_errors ~local_root ~handle source) ~f:(fun error ->
@@ -950,13 +948,8 @@ let test_compute_hashes_to_keys context =
           (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
           (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
         to_binding
-          (Ast.SharedMemory.Sources.Sources.hash_of_key
-             (File.Handle.create_for_testing "sample.py"))
-          (Ast.SharedMemory.Sources.Sources.serialize_key
-             (File.Handle.create_for_testing "sample.py"));
-        to_binding
-          (Ast.SharedMemory.Sources.QualifiersToHandles.hash_of_key (Reference.create "sample"))
-          (Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key (Reference.create "sample"));
+          (Ast.SharedMemory.Sources.Sources.hash_of_key (Reference.create "sample"))
+          (Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "sample"));
         to_binding
           (Ast.SharedMemory.Modules.hash_of_key !&"sample")
           (Ast.SharedMemory.Modules.serialize_key !&"sample");
@@ -1135,14 +1128,9 @@ let test_decode_serialized_ocaml_values context =
     ~value:(Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
     ~response:("SymlinkSource", "symbolic_link.py", Some "actual_filename.py");
   assert_decode
-    ~key:
-      (Ast.SharedMemory.Sources.Sources.serialize_key (File.Handle.create_for_testing "handle.py"))
+    ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "handle"))
     ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])
-    ~response:("AST", "handle.py", Some "x = 1.__add__(2)\n");
-  assert_decode
-    ~key:(Ast.SharedMemory.Sources.QualifiersToHandles.serialize_key !&"handle")
-    ~value:(File.Handle.create_for_testing "handle.py")
-    ~response:("File handle", "handle", Some "handle.py");
+    ~response:("AST", "handle", Some "x = 1.__add__(2)\n");
   assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key 5)
     ~value:(File.Handle.create_for_testing "five.py")
@@ -1412,18 +1400,12 @@ let test_query_dependencies context =
   Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
   Out_channel.write_all (Path.absolute local_root ^/ "c.py") ~data:c_source;
   let assert_query_dependencies () =
-    let handles =
-      [ File.Handle.create_for_testing "a.py";
-        File.Handle.create_for_testing "b.py";
-        File.Handle.create_for_testing "c.py" ]
-    in
     let sources =
       [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
         parse ~handle:"b.py" ~qualifier:!&"b" b_source;
         parse ~handle:"c.py" ~qualifier:!&"c" c_source ]
     in
-    List.zip_exn handles sources
-    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
+    List.iter sources ~f:Ast.SharedMemory.Sources.add;
     let environment = environment ~local_root in
     let configuration = configuration ~local_root in
     let environment_handler = Environment.handler environment in
@@ -1468,7 +1450,7 @@ let test_query_dependencies context =
   in
   let finally () =
     Ast.SharedMemory.Sources.remove
-      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"]
+      [Reference.create "a"; Reference.create "b"; Reference.create "c"]
   in
   Exn.protect ~f:assert_query_dependencies ~finally
 
@@ -1490,13 +1472,11 @@ let test_incremental_dependencies context =
   Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
   Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
   let assert_dependencies_analyzed () =
-    let handles = [File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"] in
     let sources =
       [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
         parse ~handle:"b.py" ~qualifier:!&"b" b_source ]
     in
-    List.zip_exn handles sources
-    |> List.iter ~f:(fun (handle, source) -> Ast.SharedMemory.Sources.add handle source);
+    List.iter sources ~f:Ast.SharedMemory.Sources.add;
     let environment = environment ~local_root in
     let configuration = configuration ~local_root in
     let environment_handler = Environment.handler environment in
@@ -1525,10 +1505,7 @@ let test_incremental_dependencies context =
     in
     assert_equal ~printer (Some (Protocol.TypeCheckResponse [])) response
   in
-  let finally () =
-    Ast.SharedMemory.Sources.remove
-      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.py"]
-  in
+  let finally () = Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "b"] in
   Exn.protect ~f:assert_dependencies_analyzed ~finally
 
 
@@ -1578,7 +1555,7 @@ let test_incremental_lookups context =
       ~request
   in
   let annotations =
-    handle
+    Source.qualifier ~handle
     |> Ast.SharedMemory.Sources.get
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment

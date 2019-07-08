@@ -382,7 +382,9 @@ let test_module_exports _ =
         from exporting_wildcard_default import *
       |} ]
     |> parse_list
-    |> List.map ~f:(fun handle -> Option.value_exn (Ast.SharedMemory.Sources.get handle))
+    |> List.map ~f:(fun handle ->
+           let qualifier = Source.qualifier ~handle in
+           Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
     |> fun sources -> assert_resolved sources expression expected
   in
   assert_exports_resolved "implementing.constant" Type.integer;

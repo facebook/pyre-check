@@ -37,10 +37,13 @@ let test_parse_stubs_modules_list _ =
       ~files
   in
   assert_equal (List.length files) (List.length handles);
-  let get_handle_at position = File.handle ~configuration (List.nth_exn files position) in
+  let get_qualifier_at position =
+    File.handle ~configuration (List.nth_exn files position)
+    |> fun handle -> Ast.Source.qualifier ~handle
+  in
   let assert_stub_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_qualifier_at handle) with
       | Some
           { Source.statements =
               [ { Node.value =
@@ -57,7 +60,7 @@ let test_parse_stubs_modules_list _ =
   in
   let assert_module_matches_name ~handle define =
     let name =
-      match Ast.SharedMemory.Sources.get (get_handle_at handle) with
+      match Ast.SharedMemory.Sources.get (get_qualifier_at handle) with
       | Some
           { Source.statements =
               [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }];
@@ -217,7 +220,7 @@ let test_parse_source _ =
   let file =
     File.create
       ~content:"def foo()->int:\n    return 1\n"
-      (Path.create_relative ~root ~relative:"a.py")
+      (Path.create_relative ~root ~relative:"x.py")
   in
   let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources
@@ -228,17 +231,18 @@ let test_parse_source _ =
       ~files:[file]
   in
   let handle = File.handle ~configuration file in
+  let qualifier = Source.qualifier ~handle in
   assert_equal handles [handle];
-  let source = Ast.SharedMemory.Sources.get handle in
+  let source = Ast.SharedMemory.Sources.get qualifier in
   assert_equal (Option.is_some source) true;
   let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
-  assert_equal handle (File.Handle.create_for_testing "a.py");
+  assert_equal handle (File.Handle.create_for_testing "x.py");
   assert_equal number_of_lines 3;
   match statements with
   | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
-      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "a.foo")
+      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
   | _ -> assert_unreached ()
 
 
@@ -299,8 +303,7 @@ let test_parse_sources context =
     in
     write_file local_root "a.py";
     write_file stub_root "stub.pyi";
-    Ast.SharedMemory.Sources.remove
-      ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "stub.pyi"];
+    Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Service.ModuleTracker.create configuration in
     Service.ModuleTracker.paths module_tracker
     |> Service.Parser.parse_all ~scheduler ~configuration
@@ -315,7 +318,7 @@ let test_parse_sources context =
       List.equal ~equal:File.Handle.equal left_handles right_handles)
     source_handles
     [File.Handle.create_for_testing "stub.pyi"; File.Handle.create_for_testing "a.py"];
-  match Ast.SharedMemory.Sources.get (File.Handle.create_for_testing "c.py") with
+  match Ast.SharedMemory.Sources.get (Reference.create "c") with
   | Some { Source.hash; _ } ->
       assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))
   | None -> assert_unreached ()
@@ -326,9 +329,7 @@ let test_register_modules context =
   let configuration = Configuration.Analysis.create ~local_root () in
   let assert_module_exports raw_source expected_exports =
     let get_qualifier file =
-      File.handle ~configuration file
-      |> Ast.SharedMemory.Sources.get
-      >>| fun { Source.qualifier; _ } -> qualifier
+      File.handle ~configuration file |> fun handle -> Ast.Source.qualifier ~handle
     in
     let file =
       File.create
@@ -346,8 +347,9 @@ let test_register_modules context =
     List.iter files ~f:File.write;
 
     (* Build environment. *)
-    Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
-    Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files);
+    let qualifiers = List.map ~f:get_qualifier files in
+    Ast.SharedMemory.Modules.remove ~qualifiers;
+    Ast.SharedMemory.Sources.remove qualifiers;
     let { Service.Parser.parsed = sources; _ } =
       Service.Parser.parse_sources
         ~configuration
@@ -356,7 +358,7 @@ let test_register_modules context =
         ~files
     in
     (* Check specific file. *)
-    let qualifier = Option.value_exn (get_qualifier file) in
+    let qualifier = get_qualifier file in
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
     Test.populate_shared_memory ~configuration ~sources;
@@ -370,7 +372,7 @@ let test_register_modules context =
         (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
     in
     assert_exports ~qualifier;
-    assert_exports ~qualifier:(Option.value_exn (get_qualifier import_non_toplevel))
+    assert_exports ~qualifier:(get_qualifier import_non_toplevel)
   in
   assert_module_exports {|
       def foo() -> int:
@@ -416,7 +418,8 @@ let test_parse_repository context =
     let local_root = Path.create_absolute (bracket_tmpdir context) in
     let configuration = Configuration.Analysis.create ~local_root () in
     let prepare_file (relative, content) =
-      Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create_for_testing relative];
+      let qualifier = SourcePath.qualifier_of_relative relative in
+      Ast.SharedMemory.Sources.remove [qualifier];
       File.write (File.create ~content (Path.create_relative ~root:local_root ~relative))
     in
     List.iter repository ~f:prepare_file;
@@ -432,7 +435,8 @@ let test_parse_repository context =
         |> List.sort ~compare:File.Handle.compare
       in
       List.map handles ~f:(fun handle ->
-          handle, Option.value_exn (Ast.SharedMemory.Sources.get handle))
+          let qualifier = Source.qualifier ~handle in
+          handle, Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
     in
     let equal (expected_handle, expected_source) (handle, { Ast.Source.statements; _ }) =
       File.Handle.equal expected_handle handle

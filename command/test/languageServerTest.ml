@@ -676,12 +676,13 @@ let test_language_server_definition_response context =
     ~location:None
     ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `List []]);
   let add_paths handles =
-    Ast.SharedMemory.Sources.remove ~handles;
-    let add_source handle =
-      let source = Ast.Source.create ~handle [] in
-      Ast.SharedMemory.Sources.add handle source
+    let qualifiers = List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle) in
+    Ast.SharedMemory.Sources.remove qualifiers;
+    let add_source (qualifier, handle) =
+      let source = Ast.Source.create ~handle ~qualifier [] in
+      Ast.SharedMemory.Sources.add source
     in
-    List.iter handles ~f:add_source
+    List.iter (List.zip_exn qualifiers handles) ~f:add_source
   in
   let touch path = File.create ~content:"" path |> File.write in
   let file = Path.create_relative ~root:local_root ~relative:"a.py" in

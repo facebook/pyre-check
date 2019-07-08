@@ -353,21 +353,19 @@ type test_environment = {
   environment: (module Environment.Handler)
 }
 
-let initialize ?(qualifier = "test.py") ?models source_content =
+let initialize ?(handle = "test.py") ?models source_content =
   let source_content = Test.trim_extra_indentation source_content in
-  let handle = File.Handle.create_for_testing qualifier in
-  let source =
-    Test.parse ~qualifier:(Source.qualifier ~handle) ~handle:qualifier source_content
-    |> Preprocessing.preprocess
-  in
+  let file_handle = File.Handle.create_for_testing handle in
+  let qualifier = Source.qualifier ~handle:file_handle in
+  let source = Test.parse ~qualifier ~handle source_content |> Preprocessing.preprocess in
   let path =
-    let path = Test.mock_path qualifier in
+    let path = Test.mock_path handle in
     File.create ~content:source_content path |> File.write;
     path
   in
   let configuration = Configuration.Analysis.create ~strict:true () in
   (* Parse sources. *)
-  Ast.SharedMemory.Sources.remove ~handles:[handle];
+  Ast.SharedMemory.Sources.remove [qualifier];
   Service.Parser.parse_sources
     ~configuration
     ~scheduler:(Scheduler.mock ())
@@ -376,9 +374,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
   |> ignore;
   let environment =
     let models =
-      models
-      >>| (fun model -> [Test.parse ~qualifier:(Reference.create qualifier) model])
-      |> Option.value ~default:[]
+      models >>| (fun model -> [Test.parse ~qualifier model]) |> Option.value ~default:[]
     in
     Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
   in
@@ -413,7 +409,7 @@ let initialize ?(qualifier = "test.py") ?models source_content =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
       ~call_graph:DependencyGraph.empty_callgraph
-      ~path:handle
+      ~qualifier
       ~source
   in
   let callables, stubs =

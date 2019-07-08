@@ -43,7 +43,8 @@ let compute_locally_changed_files
       try
         let file = File.create path in
         let handle = File.handle ~configuration file in
-        let old_hash = Ast.SharedMemory.Sources.get handle >>| Ast.Source.hash in
+        let qualifier = Ast.Source.qualifier ~handle in
+        let old_hash = Ast.SharedMemory.Sources.get qualifier >>| Ast.Source.hash in
         let current_hash = File.hash file in
         if Option.equal Int.equal old_hash current_hash then
           None

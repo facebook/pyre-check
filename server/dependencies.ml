@@ -20,32 +20,30 @@ let compute_dependencies
     | File.NonexistentHandle _ -> None
   in
   let handles = List.filter_map files ~f:handle in
+  let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
   let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
-      let table = File.Handle.Table.create () in
-      let add_signature_hash file =
-        try
-          let handle = File.handle file ~configuration in
-          let signature_hash =
-            Ast.SharedMemory.Sources.get handle >>| Source.signature_hash |> Option.value ~default
-          in
-          Hashtbl.set table ~key:handle ~data:signature_hash
-        with
-        | File.NonexistentHandle _ ->
-            Log.log ~section:`Server "Unable to get handle for %a" File.pp file
+      let table = Reference.Table.create () in
+      let add_signature_hash qualifier =
+        let signature_hash =
+          Ast.SharedMemory.Sources.get qualifier >>| Source.signature_hash |> Option.value ~default
+        in
+        Hashtbl.set table ~key:qualifier ~data:signature_hash
       in
-      List.iter files ~f:add_signature_hash;
+      List.iter qualifiers ~f:add_signature_hash;
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
     (* Update the tracked handles, if necessary. *)
     let newly_introduced_handles =
-      List.filter handles ~f:(fun handle -> Option.is_none (Ast.SharedMemory.Sources.get handle))
+      List.filter handles ~f:(fun handle ->
+          let qualifier = Source.qualifier ~handle in
+          Option.is_none (Ast.SharedMemory.Sources.get qualifier))
     in
     if not (List.is_empty newly_introduced_handles) then
       Ast.SharedMemory.HandleKeys.add
         ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
-    Ast.SharedMemory.Sources.remove ~handles;
+    Ast.SharedMemory.Sources.remove qualifiers;
     let targets =
       let find_target file = Path.readlink (File.path file) in
       List.filter_map files ~f:find_target
@@ -71,10 +69,7 @@ let compute_dependencies
       |> Option.value ~default:false
     in
     let dependents =
-      let modules =
-        List.filter handles ~f:signature_hash_changed
-        |> List.map ~f:(fun handle -> Source.qualifier ~handle)
-      in
+      let modules = List.filter qualifiers ~f:signature_hash_changed in
       let get_dependencies =
         if incremental_transitive_dependencies then
           Dependencies.transitive_of_list
@@ -82,8 +77,7 @@ let compute_dependencies
           Dependencies.of_list
       in
       get_dependencies ~get_dependencies:Handler.dependencies ~modules
-      |> File.Handle.Set.filter_map ~f:SharedMemory.Sources.QualifiersToHandles.get
-      |> Fn.flip Set.diff (File.Handle.Set.of_list handles)
+      |> Fn.flip Set.diff (Reference.Set.of_list qualifiers)
     in
     Statistics.performance
       ~name:"Computed dependencies"
@@ -91,18 +85,18 @@ let compute_dependencies
       ~randomly_log_every:100
       ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
       ~integers:
-        [ "number of dependencies", File.Handle.Set.length dependents;
+        [ "number of dependencies", Reference.Set.length dependents;
           "number of files", List.length handles ]
       ();
     dependents
   in
   Log.log
     ~section:`Server
-    "Inferred affected files: %a"
+    "Inferred affected modules: %a"
     Sexp.pp
-    [%message (dependents : File.Handle.Set.t)];
-  let to_file handle =
-    Ast.SharedMemory.Sources.get handle
+    [%message (dependents : Reference.Set.t)];
+  let to_file qualifier =
+    Ast.SharedMemory.Sources.get qualifier
     >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
     >>| File.create
   in

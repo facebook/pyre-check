@@ -1495,12 +1495,11 @@ let test_expand_wildcard_imports _ =
     in
     let clear_memory files =
       let get_qualifier file =
-        File.handle ~configuration file
-        |> Ast.SharedMemory.Sources.get
-        >>| fun { Source.qualifier; _ } -> qualifier
+        File.handle ~configuration file |> fun handle -> Source.qualifier ~handle
       in
-      Ast.SharedMemory.Modules.remove ~qualifiers:(List.filter_map ~f:get_qualifier files);
-      Ast.SharedMemory.Sources.remove ~handles:(List.map ~f:(File.handle ~configuration) files)
+      let qualifiers = List.map files ~f:get_qualifier in
+      Ast.SharedMemory.Modules.remove ~qualifiers;
+      Ast.SharedMemory.Sources.remove qualifiers
     in
     let files = List.map environment_sources ~f:create_file in
     let file_to_check = create_file ("test.py", check_source) in
@@ -1515,6 +1514,7 @@ let test_expand_wildcard_imports _ =
     in
     let file_to_check_handle =
       List.find_exn parsed ~f:(fun handle -> File.Handle.show handle = "test.py")
+      |> fun handle -> Source.qualifier ~handle
     in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
