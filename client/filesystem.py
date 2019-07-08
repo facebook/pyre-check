@@ -80,6 +80,15 @@ def make_pyre_directory() -> str:
     return pyre_directory
 
 
+class UpdatedPaths:
+    def __init__(self, updated: List[str], invalidated: List[str]) -> None:
+        self.updated = updated
+        self.invalidated = invalidated
+
+    def is_empty(self) -> bool:
+        return (not self.updated) and (not self.invalidated)
+
+
 class AnalysisDirectory:
     def __init__(
         self,
@@ -100,7 +109,7 @@ class AnalysisDirectory:
     def prepare(self) -> None:
         pass
 
-    def process_updated_files(self, paths: List[str]) -> List[str]:
+    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
             Process a list of paths which were added/removed/updated, making any
             necessary changes to the directory:
@@ -113,7 +122,9 @@ class AnalysisDirectory:
             Return a list of files (corresponding to the given paths) that Pyre
             should be tracking.
         """
-        return [path for path in paths if self._is_tracked(path)]
+        tracked_paths = [path for path in paths if self._is_tracked(path)]
+        deleted_paths = [path for path in paths if not os.path.isfile(path)]
+        return UpdatedPaths(updated=tracked_paths, invalidated=deleted_paths)
 
     def cleanup(self) -> None:
         pass
@@ -218,7 +229,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             _compute_symbolic_link_mapping(self.get_root(), self._extensions)
         )
 
-    def process_updated_files(self, paths: List[str]) -> List[str]:
+    def process_updated_files(self, paths: List[str]) -> UpdatedPaths:
         """
             Return the paths in the analysis directory (symbolic links)
             corresponding to the given paths.
@@ -278,7 +289,7 @@ class SharedAnalysisDirectory(AnalysisDirectory):
             elif self._is_tracked(path):
                 tracked_files.append(path)
 
-        return tracked_files
+        return UpdatedPaths(updated=tracked_files, invalidated=deleted_paths)
 
     def cleanup(self) -> None:
         try:

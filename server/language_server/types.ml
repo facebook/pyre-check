@@ -314,7 +314,11 @@ module HandshakeClientParameters = struct
 end
 
 module UpdateFilesParameters = struct
-  type t = { files: string list } [@@deriving yojson]
+  type t = {
+    files: string list;
+    invalidated: (string list[@default []])
+  }
+  [@@deriving yojson]
 end
 
 module DisplayTypeErrorsParameters = struct

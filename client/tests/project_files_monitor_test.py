@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from .. import language_server_protocol, project_files_monitor
+from ..filesystem import UpdatedPaths
 from ..language_server_protocol import (
     LanguageServerProtocolMessage,
     read_message,
@@ -136,9 +137,10 @@ class MonitorTest(unittest.TestCase):
             configuration.version_hash = "123"
             analysis_directory = MagicMock()
             analysis_directory.get_root.return_value = root
-            analysis_directory.process_updated_files.side_effect = lambda files: [
-                file.replace("ROOT", "ANALYSIS") for file in files
-            ]
+            analysis_directory.process_updated_files.side_effect = lambda files: UpdatedPaths(
+                updated=[file.replace("ROOT", "ANALYSIS") for file in files],
+                invalidated=[],
+            )
 
             # only create the monitor once the socket is open
             with socket_created_lock:

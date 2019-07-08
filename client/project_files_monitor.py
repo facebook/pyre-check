@@ -145,13 +145,17 @@ class Monitor(WatchmanSubscriber):
                 absolute_paths
             )
 
-            if not updated_paths:
+            if updated_paths.is_empty():
                 LOG.info("Skipping update: Pyre doesn't track any of these files.")
                 return
 
-            LOG.info("Notifying server of update to files %s.", updated_paths)
+            LOG.info("Notifying server of update to files %s.", updated_paths.updated)
             message = language_server_protocol.LanguageServerProtocolMessage(
-                method="updateFiles", parameters={"files": updated_paths}
+                method="updateFiles",
+                parameters={
+                    "files": updated_paths.updated,
+                    "invalidated": updated_paths.invalidated,
+                },
             )
             if not language_server_protocol.write_message(
                 self._socket_connection.output, message

@@ -231,8 +231,11 @@ let parse_lsp ~configuration ~request =
           None )
     | "updateFiles" -> (
       match UpdateFiles.of_yojson request with
-      | Ok { UpdateFiles.parameters = Some { files; _ }; _ } ->
+      | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
           let files = List.map files ~f:string_path_to_file in
+          if not (List.is_empty targets) then (
+            Log.info "Invalidate %d symlinks" (List.length targets);
+            Ast.SharedMemory.SymlinksToPaths.remove ~targets );
           Some (TypeCheckRequest files)
       | Ok _ -> None
       | Error yojson_error ->

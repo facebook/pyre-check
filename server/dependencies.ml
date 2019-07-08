@@ -44,11 +44,6 @@ let compute_dependencies
       Ast.SharedMemory.HandleKeys.add
         ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
     Ast.SharedMemory.Sources.remove qualifiers;
-    let targets =
-      let find_target file = Path.readlink (File.path file) in
-      List.filter_map files ~f:find_target
-    in
-    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in

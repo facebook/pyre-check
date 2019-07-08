@@ -84,11 +84,6 @@ let recheck
     (* Watchman only notifies Pyre that a file has been updated, we have to detect removals
        manually and update our handle set. *)
     Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
-    let targets =
-      let find_target file = Path.readlink (File.path file) in
-      List.filter_map recheck ~f:find_target
-    in
-    Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     let () =
       let qualifiers =
         List.map (handles @ removed_handles) ~f:(fun handle -> Source.qualifier ~handle)

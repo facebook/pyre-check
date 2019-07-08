@@ -723,7 +723,7 @@ class FilesystemTest(unittest.TestCase):
         updated_files = analysis_directory.process_updated_files(
             [*tracked_files, *untracked_files]
         )
-        self.assertListEqual(sorted(updated_files), sorted(tracked_files))
+        self.assertListEqual(sorted(updated_files.updated), sorted(tracked_files))
 
         # SharedAnalysisDirectory
         compute_symbolic_links.return_value = {
@@ -767,7 +767,10 @@ class FilesystemTest(unittest.TestCase):
             updated_files = analysis_directory.process_updated_files(
                 [*tracked_files, *untracked_files]
             )
-        self.assertListEqual(sorted(updated_files), sorted(shared_tracked_files))
+        self.assertListEqual(
+            sorted(updated_files.updated), sorted(shared_tracked_files)
+        )
+        self.assertListEqual(updated_files.invalidated, ["/ROOT/deleted_file.py"])
         delete_symbolic_link.assert_called_once_with("/ANALYSIS/deleted_file.py")
         add_symbolic_link.assert_called_once_with(
             "/ANALYSIS/new_file.py", "/ROOT/new_file.py"

@@ -844,7 +844,8 @@ let test_request_parser context =
   let update_message =
     { UpdateFiles.jsonrpc = "2.0";
       method_ = "updateFiles";
-      parameters = Some { UpdateFilesParameters.files = [absolute; symlink_source; stub] }
+      parameters =
+        Some { UpdateFilesParameters.files = [absolute; symlink_source; stub]; invalidated = [] }
     }
     |> UpdateFiles.to_yojson
   in
