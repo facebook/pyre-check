@@ -1147,7 +1147,9 @@ let test_register_dependencies _ =
          from . import ignored # no dependency created here
       |}
   in
-  Environment.register_dependencies (module Handler) (parse ~handle:"test.py" source);
+  Environment.register_dependencies
+    (module Handler)
+    (parse ~handle:"test.py" ~qualifier:(Reference.create "test") source);
   let dependencies qualifier =
     Environment.dependencies (module Handler) !&qualifier
     >>| String.Set.Tree.map ~f:Reference.show
@@ -1170,9 +1172,12 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Test.populate ~configuration handler [parse ~handle:"test.py" source];
+  Test.populate
+    ~configuration
+    handler
+    [parse ~handle:"test.py" ~qualifier:(Reference.create "test") source];
   assert_is_some (Handler.class_definition "baz.baz");
-  assert_is_some (Handler.aliases "_T");
+  assert_is_some (Handler.aliases "test._T");
   let dependencies handle =
     let handle = File.Handle.create_for_testing handle in
     Handler.dependencies (Source.qualifier ~handle)
@@ -1186,7 +1191,7 @@ let test_purge _ =
   assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.class_metadata "P");
   assert_is_none (Handler.class_metadata "baz.baz");
-  assert_is_none (Handler.aliases "_T");
+  assert_is_none (Handler.aliases "test._T");
   assert_equal (dependencies "a.py") (Some [])
 
 

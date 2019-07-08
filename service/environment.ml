@@ -325,20 +325,18 @@ module SharedHandler : Analysis.Environment.Handler = struct
       { Resolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
-  let register_dependency ~handle ~dependency =
+  let register_dependency ~qualifier ~dependency =
     Log.log
       ~section:`Dependencies
       "Adding dependency from %a to %a"
       Reference.pp
       dependency
-      File.Handle.pp
-      handle;
-    let qualifier = Source.qualifier ~handle in
+      Reference.pp
+      qualifier;
     DependencyHandler.add_dependent ~qualifier dependency
 
 
-  let register_global ~handle ~reference ~global =
-    let qualifier = Source.qualifier ~handle in
+  let register_global ~qualifier ~reference ~global =
     DependencyHandler.add_global_key ~qualifier reference;
     Globals.add reference global
 
@@ -355,8 +353,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     ClassDefinitions.add name definition
 
 
-  let register_alias ~handle ~key ~data =
-    let qualifier = Source.qualifier ~handle in
+  let register_alias ~qualifier ~key ~data =
     DependencyHandler.add_alias_key ~qualifier key;
     Aliases.add key data
 

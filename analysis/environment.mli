@@ -22,10 +22,10 @@ type t = {
     the underlying data structure, so that we can use e.g., in-process hash tables, shared memory,
     or network streams to provide lookups. *)
 module type Handler = sig
-  val register_dependency : handle:File.Handle.t -> dependency:Reference.t -> unit
+  val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
 
   val register_global
-    :  handle:File.Handle.t ->
+    :  qualifier:Reference.t ->
     reference:Reference.t ->
     global:Resolution.global ->
     unit
@@ -39,7 +39,7 @@ module type Handler = sig
 
   val register_class_metadata : Identifier.t -> unit
 
-  val register_alias : handle:File.Handle.t -> key:Identifier.t -> data:Type.alias -> unit
+  val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
   val purge : ?debug:bool -> Reference.t list -> unit
 

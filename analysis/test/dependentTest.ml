@@ -10,12 +10,6 @@ open Test
 
 let configuration = Configuration.Analysis.create ()
 
-let populate source =
-  let environment = Environment.Builder.create () in
-  Test.populate ~configuration (Environment.handler environment) [parse source];
-  environment |> Environment.handler
-
-
 let test_index _ =
   let environment = Environment.Builder.create () in
   let source =
@@ -25,7 +19,10 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Test.populate ~configuration (Environment.handler environment) [parse ~handle:"test.py" source];
+  Test.populate
+    ~configuration
+    (Environment.handler environment)
+    [parse ~handle:"test.py" ~qualifier:(Reference.create "test") source];
   let { Dependencies.class_keys; function_keys; alias_keys; _ } =
     environment.Environment.dependencies.Dependencies.index
   in
@@ -35,7 +32,7 @@ let test_index _ =
   in
   assert_table_contains_key class_keys "baz.baz";
   assert_table_contains_key function_keys !&"foo";
-  assert_table_contains_key alias_keys "_T"
+  assert_table_contains_key alias_keys "test._T"
 
 
 let add_dependent table handle dependent =

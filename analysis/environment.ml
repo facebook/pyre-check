@@ -22,10 +22,10 @@ type t = {
 }
 
 module type Handler = sig
-  val register_dependency : handle:File.Handle.t -> dependency:Reference.t -> unit
+  val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
 
   val register_global
-    :  handle:File.Handle.t ->
+    :  qualifier:Reference.t ->
     reference:Reference.t ->
     global:Resolution.global ->
     unit
@@ -39,7 +39,7 @@ module type Handler = sig
 
   val register_class_metadata : Identifier.t -> unit
 
-  val register_alias : handle:File.Handle.t -> key:Identifier.t -> data:Type.alias -> unit
+  val register_alias : qualifier:Reference.t -> key:Identifier.t -> data:Type.alias -> unit
 
   val purge : ?debug:bool -> Reference.t list -> unit
 
@@ -76,7 +76,7 @@ end
 
 module UnresolvedAlias = struct
   type t = {
-    handle: File.Handle.t;
+    qualifier: Reference.t;
     target: Reference.t;
     value: Expression.expression_t
   }
@@ -85,14 +85,14 @@ end
 
 module ResolvedAlias = struct
   type t = {
-    handle: File.Handle.t;
+    qualifier: Reference.t;
     name: Type.Primitive.t;
     annotation: Type.alias
   }
   [@@deriving sexp, compare, hash]
 
-  let register (module Handler : Handler) { handle; name; annotation } =
-    Handler.register_alias ~handle ~key:name ~data:annotation
+  let register (module Handler : Handler) { qualifier; name; annotation } =
+    Handler.register_alias ~qualifier ~key:name ~data:annotation
 end
 
 let connect_definition
@@ -183,20 +183,18 @@ let handler
 
     module DependencyHandler = DependencyHandler
 
-    let register_dependency ~handle ~dependency =
+    let register_dependency ~qualifier ~dependency =
       Log.log
         ~section:`Dependencies
         "Adding dependency from %a to %a"
         Reference.pp
         dependency
-        File.Handle.pp
-        handle;
-      let qualifier = Source.qualifier ~handle in
+        Reference.pp
+        qualifier;
       DependencyHandler.add_dependent ~qualifier dependency
 
 
-    let register_global ~handle ~reference ~global =
-      let qualifier = Source.qualifier ~handle in
+    let register_global ~qualifier ~reference ~global =
       DependencyHandler.add_global_key ~qualifier reference;
       Hashtbl.set ~key:reference ~data:global globals
 
@@ -215,8 +213,7 @@ let handler
       Hashtbl.set class_definitions ~key:name ~data:definition
 
 
-    let register_alias ~handle ~key ~data =
-      let qualifier = Source.qualifier ~handle in
+    let register_alias ~qualifier ~key ~data =
       DependencyHandler.add_alias_key ~qualifier key;
       Hashtbl.set ~key ~data aliases
 
@@ -394,7 +391,7 @@ let register_class_definitions (module Handler : Handler) source =
   Visit.visit Type.Primitive.Set.empty source
 
 
-let collect_aliases (module Handler : Handler) { Source.handle; statements; qualifier; _ } =
+let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _ } =
   let rec visit_statement ~qualifier ?(in_class_body = false) aliases { Node.value; _ } =
     match value with
     | Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
@@ -472,7 +469,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                 _
               } ) ->
             if not (Type.is_top target_annotation) then
-              { UnresolvedAlias.handle; target; value } :: aliases
+              { UnresolvedAlias.qualifier; target; value } :: aliases
             else
               aliases
         | ( _,
@@ -487,7 +484,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                   _
                 } as value ) ) ->
             if not (Type.is_top target_annotation) then
-              { UnresolvedAlias.handle; target; value } :: aliases
+              { UnresolvedAlias.qualifier; target; value } :: aliases
             else
               aliases
         | Call _, None
@@ -496,7 +493,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
             match Type.Variable.parse_declaration value with
             | Some variable ->
                 Handler.register_alias
-                  ~handle
+                  ~qualifier
                   ~key:(Reference.show target)
                   ~data:(Type.VariableAlias variable);
                 aliases
@@ -508,7 +505,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                     || Type.is_top value_annotation
                     || Type.equal value_annotation target_annotation )
                 then
-                  { UnresolvedAlias.handle; target; value } :: aliases
+                  { UnresolvedAlias.qualifier; target; value } :: aliases
                 else
                   aliases )
         | _ -> aliases )
@@ -546,7 +543,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
                 (* builtins has a bare qualifier. Don't export bare aliases from typing. *)
                 []
             | _ ->
-                [ { UnresolvedAlias.handle;
+                [ { UnresolvedAlias.qualifier;
                     target = qualified_name;
                     value = Reference.expression ~location:Location.Reference.any original_name
                   } ]
@@ -557,7 +554,7 @@ let collect_aliases (module Handler : Handler) { Source.handle; statements; qual
   List.fold ~init:[] ~f:(visit_statement ~qualifier) statements
 
 
-let resolve_alias (module Handler : Handler) { UnresolvedAlias.handle; target; value } =
+let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target; value } =
   let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
@@ -609,7 +606,7 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.handle; target; v
   let _, annotation = TrackedTransform.visit () value_annotation in
   if Hash_set.is_empty dependencies then
     Result.Ok
-      { ResolvedAlias.handle;
+      { ResolvedAlias.qualifier;
         name = target_primitive_name;
         annotation = Type.TypeAlias annotation
       }
@@ -694,7 +691,7 @@ let register_undecorated_functions (module Handler : Handler) resolution source 
 let register_values
     (module Handler : Handler)
     resolution
-    ({ Source.handle; statements; qualifier; _ } as source)
+    ({ Source.statements; qualifier; _ } as source)
   =
   let qualified_reference reference =
     let reference =
@@ -747,7 +744,7 @@ let register_values
       | _ -> callables
   end)
   in
-  let register_callables handle ~key ~data =
+  let register_callables ~key ~data =
     assert (not (List.is_empty data));
     let location = List.hd_exn data |> Node.location in
     data
@@ -756,10 +753,10 @@ let register_values
     >>| (fun callable -> Type.Callable callable)
     >>| Annotation.create_immutable ~global:true
     >>| Node.create ~location
-    >>| (fun global -> Handler.register_global ~handle ~reference:key ~global)
+    >>| (fun global -> Handler.register_global ~qualifier ~reference:key ~global)
     |> ignore
   in
-  CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:(register_callables handle);
+  CollectCallables.visit Reference.Map.empty source |> Map.iteri ~f:register_callables;
 
   (* Register meta annotations for classes. *)
   let module Visit = Visit.MakeStatementVisitor (struct
@@ -767,7 +764,7 @@ let register_values
 
     let visit_children _ = true
 
-    let statement { Source.handle; _ } _ = function
+    let statement { Source.qualifier; _ } _ = function
       | { Node.location; value = Class { Class.name; _ } } ->
           (* Register meta annotation. *)
           let primitive = Type.Primitive (Reference.show name) in
@@ -778,7 +775,7 @@ let register_values
               (Type.meta primitive)
             |> Node.create ~location
           in
-          Handler.register_global ~handle ~reference:(qualified_reference name) ~global
+          Handler.register_global ~qualifier ~reference:(qualified_reference name) ~global
       | _ -> ()
   end)
   in
@@ -813,7 +810,7 @@ let register_values
             if Reference.length (Reference.drop_prefix ~prefix:qualifier reference) = 1 then
               let register_global global =
                 Node.create ~location global
-                |> fun global -> Handler.register_global ~handle ~reference ~global
+                |> fun global -> Handler.register_global ~qualifier ~reference ~global
               in
               let exists = Option.is_some (Handler.globals reference) in
               if explicit then
@@ -872,7 +869,7 @@ let register_dependencies (module Handler : Handler) source =
 
     let visit_children _ = true
 
-    let statement { Source.handle; _ } _ = function
+    let statement { Source.qualifier; _ } _ = function
       | { Node.value = Import { Import.from; imports }; _ } ->
           let imports =
             let imports =
@@ -889,7 +886,9 @@ let register_dependencies (module Handler : Handler) source =
             in
             List.map imports ~f:qualify_builtins
           in
-          List.iter ~f:(fun dependency -> Handler.register_dependency ~handle ~dependency) imports
+          List.iter
+            ~f:(fun dependency -> Handler.register_dependency ~qualifier ~dependency)
+            imports
       | _ -> ()
   end)
   in
@@ -897,7 +896,7 @@ let register_dependencies (module Handler : Handler) source =
 
 
 let propagate_nested_classes (module Handler : Handler) resolution source =
-  let propagate ~handle ({ Statement.Class.name; _ } as definition) successors =
+  let propagate ~qualifier ({ Statement.Class.name; _ } as definition) successors =
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function
         | { Node.value = Class { name = nested_name; _ }; _ } ->
@@ -913,7 +912,7 @@ let propagate_nested_classes (module Handler : Handler) resolution source =
       else
         let primitive name = Type.Primitive (Reference.show name) in
         Handler.register_alias
-          ~handle
+          ~qualifier
           ~key:(Reference.show alias)
           ~data:(Type.TypeAlias (primitive full_name));
         alias :: added_sofar
@@ -932,11 +931,11 @@ let propagate_nested_classes (module Handler : Handler) resolution source =
 
     let visit_children _ = true
 
-    let statement { Source.handle; _ } _ = function
+    let statement { Source.qualifier; _ } _ = function
       | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
           Handler.class_metadata (Reference.show name)
           |> Option.iter ~f:(fun { Resolution.successors; _ } ->
-                 propagate ~handle definition successors)
+                 propagate ~qualifier definition successors)
       | _ -> ()
   end)
   in

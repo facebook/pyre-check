@@ -495,7 +495,7 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
+let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as source) =
   Log.debug "Checking %s..." (File.Handle.show handle);
   let resolution = TypeCheck.resolution environment () in
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -622,7 +622,7 @@ let run ~configuration ~environment ~source:({ Source.handle; _ } as source) =
                 Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
                 |> Node.create ~location
               in
-              Handler.register_global ~handle ~reference ~global;
+              Handler.register_global ~qualifier ~reference ~global;
               true, error :: globals_added_sofar
         in
         (* TODO(T31680236): use inferred annotations in global fixpoint. *)
