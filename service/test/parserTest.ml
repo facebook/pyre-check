@@ -277,7 +277,7 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Service.ModuleTracker.create configuration in
-    Service.ModuleTracker.source_file_paths module_tracker
+    Service.ModuleTracker.paths module_tracker
     |> Service.Parser.parse_all ~scheduler ~configuration
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
@@ -302,7 +302,7 @@ let test_parse_sources context =
     Ast.SharedMemory.Sources.remove
       ~handles:[File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "stub.pyi"];
     let module_tracker = Service.ModuleTracker.create configuration in
-    Service.ModuleTracker.source_file_paths module_tracker
+    Service.ModuleTracker.paths module_tracker
     |> Service.Parser.parse_all ~scheduler ~configuration
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
@@ -425,9 +425,8 @@ let test_parse_repository context =
         let scheduler = Scheduler.mock () in
         let module_tracker = Service.ModuleTracker.create configuration in
         let tracked_paths =
-          Service.ModuleTracker.source_files module_tracker
-          |> List.map ~f:(fun { Service.ModuleTracker.SourceFile.relative_path; _ } ->
-                 Path.Relative relative_path)
+          Service.ModuleTracker.source_paths module_tracker
+          |> List.map ~f:(fun { Ast.SourcePath.relative_path; _ } -> Path.Relative relative_path)
         in
         Service.Parser.parse_all ~scheduler ~configuration tracked_paths
         |> List.sort ~compare:File.Handle.compare

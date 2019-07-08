@@ -5,29 +5,9 @@
 
 open Pyre
 
-module SourceFile : sig
-  type t = private {
-    relative_path: Path.RelativePath.t;
-    priority: int;
-    is_stub: bool;
-    is_external: bool;
-    is_init: bool
-  }
-  [@@deriving sexp, compare, eq]
-
-  val pp : Format.formatter -> t -> unit
-
-  val create : configuration:Configuration.Analysis.t -> Path.t -> t option
-
-  val qualifier : t -> Ast.Reference.t
-
-  (* Expose for testing *)
-  val same_module_compare : t -> t -> int
-end
-
 module IncrementalUpdate : sig
   type t =
-    | New of SourceFile.t
+    | New of Ast.SourcePath.t
     | Delete of Ast.Reference.t
   [@@deriving sexp, compare, eq]
 end
@@ -36,11 +16,11 @@ type t
 
 val create : Configuration.Analysis.t -> t
 
-val lookup : t -> Ast.Reference.t -> SourceFile.t option
+val lookup : t -> Ast.Reference.t -> Ast.SourcePath.t option
 
-val source_files : t -> SourceFile.t list
+val source_paths : t -> Ast.SourcePath.t list
 
-val source_file_paths : t -> Path.t list
+val paths : t -> Path.t list
 
 val update
   :  configuration:Configuration.Analysis.t ->

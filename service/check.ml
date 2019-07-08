@@ -157,7 +157,7 @@ let check
   in
   (* Find sources to parse *)
   let module_tracker = ModuleTracker.create configuration in
-  let tracked_paths = ModuleTracker.source_file_paths module_tracker in
+  let tracked_paths = ModuleTracker.paths module_tracker in
   (* Parse sources. *)
   let sources = Parser.parse_all ~scheduler ~configuration tracked_paths in
   Postprocess.register_ignores ~configuration scheduler sources;

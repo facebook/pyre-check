@@ -8,17 +8,16 @@ open Ast
 open Pyre
 open OUnit2
 module ModuleTracker = Service.ModuleTracker
-module SourceFile = ModuleTracker.SourceFile
 
 let touch path = File.create path ~content:"" |> File.write
 
-let create_source_file ~configuration root relative =
+let create_source_path ~configuration root relative =
   let path = Path.create_relative ~root ~relative in
-  SourceFile.create ~configuration path
+  SourcePath.create ~configuration path
 
 
-let create_source_file_exn ~configuration root relative =
-  match create_source_file ~configuration root relative with
+let create_source_path_exn ~configuration root relative =
+  match create_source_path ~configuration root relative with
   | None ->
       let message =
         Format.asprintf "Failed to create source file %s under %a" relative Path.pp root
@@ -29,7 +28,7 @@ let create_source_file_exn ~configuration root relative =
 
 let lookup_exn tracker reference =
   match ModuleTracker.lookup tracker reference with
-  | Some source_file -> source_file
+  | Some source_path -> source_path
   | None ->
       let message =
         Format.asprintf "Cannot find module %a in the module tracker" Reference.pp reference
@@ -39,7 +38,7 @@ let lookup_exn tracker reference =
 
 let test_creation context =
   let assert_create_fail ~configuration root relative =
-    match create_source_file ~configuration root relative with
+    match create_source_path ~configuration root relative with
     | None -> ()
     | Some _ ->
         let message =
@@ -51,14 +50,14 @@ let test_creation context =
         in
         assert_failure message
   in
-  let assert_source_file
+  let assert_source_path
       ?priority
       ?is_stub
       ?is_external
       ?is_init
       ~search_root
       ~relative
-      { SourceFile.relative_path = actual_relative_path;
+      { SourcePath.relative_path = actual_relative_path;
         priority = actual_priority;
         is_stub = actual_is_stub;
         is_external = actual_is_external;
@@ -85,17 +84,17 @@ let test_creation context =
         assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
   in
   let assert_same_module_greater left right =
-    let left_qualifier = SourceFile.qualifier left in
-    let right_qualifier = SourceFile.qualifier right in
+    let left_qualifier = SourcePath.qualifier left in
+    let right_qualifier = SourcePath.qualifier right in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
-    let compare_result = SourceFile.same_module_compare left right in
+    let compare_result = SourcePath.same_module_compare left right in
     let message =
       Format.asprintf
         "\'%a\' is supposed to be greater than \'%a\'"
         Sexp.pp_hum
-        (SourceFile.sexp_of_t left)
+        (SourcePath.sexp_of_t left)
         Sexp.pp_hum
-        (SourceFile.sexp_of_t right)
+        (SourcePath.sexp_of_t right)
     in
     assert_bool message (compare_result > 0)
   in
@@ -138,11 +137,11 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let create_exn = create_source_file_exn ~configuration in
+    let create_exn = create_source_path_exn ~configuration in
     let assert_create_fail = assert_create_fail ~configuration in
     (* Creation test *)
     let local_a = create_exn local_root "a.py" in
-    assert_source_file
+    assert_source_path
       local_a
       ~search_root:local_root
       ~relative:"a.py"
@@ -150,7 +149,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let local_b = create_exn local_root "b.py" in
-    assert_source_file
+    assert_source_path
       local_b
       ~search_root:local_root
       ~relative:"b.py"
@@ -158,7 +157,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let local_c = create_exn local_root "c.py" in
-    assert_source_file
+    assert_source_path
       local_c
       ~search_root:local_root
       ~relative:"c.py"
@@ -166,7 +165,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let local_cstub = create_exn local_root "c.pyi" in
-    assert_source_file
+    assert_source_path
       local_cstub
       ~search_root:local_root
       ~relative:"c.pyi"
@@ -174,7 +173,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let local_d = create_exn local_root "d.py" in
-    assert_source_file
+    assert_source_path
       local_d
       ~search_root:local_root
       ~relative:"d.py"
@@ -182,7 +181,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let local_dinit = create_exn local_root "d/__init__.py" in
-    assert_source_file
+    assert_source_path
       local_dinit
       ~search_root:local_root
       ~relative:"d/__init__.py"
@@ -190,7 +189,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:true;
     let local_e = create_exn local_root "e.py" in
-    assert_source_file
+    assert_source_path
       local_e
       ~search_root:local_root
       ~relative:"e.py"
@@ -198,7 +197,7 @@ let test_creation context =
       ~is_external:false
       ~is_init:false;
     let external_a = create_exn external_root "a.py" in
-    assert_source_file
+    assert_source_path
       external_a
       ~search_root:external_root
       ~relative:"a.py"
@@ -206,7 +205,7 @@ let test_creation context =
       ~is_external:true
       ~is_init:false;
     let external_bstub = create_exn external_root "b.pyi" in
-    assert_source_file
+    assert_source_path
       external_bstub
       ~search_root:external_root
       ~relative:"b.pyi"
@@ -214,7 +213,7 @@ let test_creation context =
       ~is_external:true
       ~is_init:false;
     let external_binit = create_exn external_root "b/__init__.py" in
-    assert_source_file
+    assert_source_path
       external_binit
       ~search_root:external_root
       ~relative:"b/__init__.py"
@@ -222,7 +221,7 @@ let test_creation context =
       ~is_external:true
       ~is_init:true;
     let external_c = create_exn external_root "c.py" in
-    assert_source_file
+    assert_source_path
       external_c
       ~search_root:external_root
       ~relative:"c.py"
@@ -230,7 +229,7 @@ let test_creation context =
       ~is_external:true
       ~is_init:false;
     let external_cstub = create_exn external_root "c.pyi" in
-    assert_source_file
+    assert_source_path
       external_cstub
       ~search_root:external_root
       ~relative:"c.pyi"
@@ -255,35 +254,35 @@ let test_creation context =
 
     (* ModuleTracker initialization test *)
     let tracker = ModuleTracker.create configuration in
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root
       ~relative:"a.py"
       ~is_stub:false
       ~is_external:true
       ~is_init:false;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "b"))
       ~search_root:external_root
       ~relative:"b.pyi"
       ~is_stub:true
       ~is_external:true
       ~is_init:false;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "c"))
       ~search_root:external_root
       ~relative:"c.pyi"
       ~is_stub:true
       ~is_external:true
       ~is_init:false;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:local_root
       ~relative:"d/__init__.py"
       ~is_stub:false
       ~is_external:false
       ~is_init:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "e"))
       ~search_root:local_root
       ~relative:"e.py"
@@ -308,17 +307,17 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let create_exn = create_source_file_exn ~configuration in
+    let create_exn = create_source_path_exn ~configuration in
     (* Creation test *)
     List.iter local_paths ~f:(fun path ->
-        assert_source_file
+        assert_source_path
           (create_exn local_root path)
           ~search_root:local_root
           ~relative:path
           ~is_external:false
           ~is_init:false);
     List.iter external_paths0 ~f:(fun path ->
-        assert_source_file
+        assert_source_path
           (create_exn external_root0 path)
           ~search_root:external_root0
           ~relative:path
@@ -326,7 +325,7 @@ let test_creation context =
           ~is_external:true
           ~is_init:false);
     List.iter external_paths1 ~f:(fun path ->
-        assert_source_file
+        assert_source_path
           (create_exn external_root1 path)
           ~search_root:external_root1
           ~relative:path
@@ -336,44 +335,44 @@ let test_creation context =
 
     (* ModuleTracker initialization test *)
     let tracker = ModuleTracker.create configuration in
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root0
       ~relative:"a.py"
       ~priority:0
       ~is_stub:false
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "b"))
       ~search_root:local_root
       ~relative:"b.pyi"
       ~is_stub:true
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "c"))
       ~search_root:external_root0
       ~relative:"c.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:external_root1
       ~relative:"d.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "e"))
       ~search_root:external_root0
       ~relative:"e.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "f"))
       ~search_root:external_root0
       ~relative:"f.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (lookup_exn tracker (Reference.create "g"))
       ~search_root:external_root0
       ~relative:"g.pyi"
@@ -409,23 +408,23 @@ let test_creation context =
         ~ignore_all_errors:[durp]
         ()
     in
-    let create_exn = create_source_file_exn ~configuration in
-    assert_source_file
+    let create_exn = create_source_path_exn ~configuration in
+    assert_source_path
       (create_exn local_root "a.py")
       ~search_root:local_root
       ~relative:"a.py"
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (create_exn search_root "b.py")
       ~search_root
       ~relative:"b.py"
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (create_exn search_root "derp/c.py")
       ~search_root
       ~relative:"derp/c.py"
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (create_exn search_root "durp/d.py")
       ~search_root
       ~relative:"durp/d.py"
@@ -457,35 +456,35 @@ let test_creation context =
           ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
-      let create_exn = create_source_file_exn ~configuration in
-      assert_source_file
+      let create_exn = create_source_path_exn ~configuration in
+      assert_source_path
         (create_exn local_root "a.py")
         ~search_root:local_root
         ~relative:"a.py"
         ~is_external:false;
-      assert_source_file
+      assert_source_path
         (create_exn external_root0 "a.py")
         ~search_root:external_root0
         ~relative:"a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn local_root "external0/a.py")
         ~search_root:external_root0
         ~relative:"a.py"
         ~is_external:true;
 
       (* Resolves to external1.a since external_root0 has higher precedence *)
-      assert_source_file
+      assert_source_path
         (create_exn external_root1 "a.py")
         ~search_root:external_root0
         ~relative:"external1/a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn external_root0 "external1/a.py")
         ~search_root:external_root0
         ~relative:"external1/a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn local_root "external0/external1/a.py")
         ~search_root:external_root0
         ~relative:"external1/a.py"
@@ -500,33 +499,33 @@ let test_creation context =
           ~ignore_all_errors:[external_root0; external_root1]
           ()
       in
-      let create_exn = create_source_file_exn ~configuration in
-      assert_source_file
+      let create_exn = create_source_path_exn ~configuration in
+      assert_source_path
         (create_exn local_root "a.py")
         ~search_root:local_root
         ~relative:"a.py"
         ~is_external:false;
-      assert_source_file
+      assert_source_path
         (create_exn external_root0 "a.py")
         ~search_root:external_root0
         ~relative:"a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn local_root "external0/a.py")
         ~search_root:external_root0
         ~relative:"a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn external_root1 "a.py")
         ~search_root:external_root1
         ~relative:"a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn external_root0 "external1/a.py")
         ~search_root:external_root1
         ~relative:"a.py"
         ~is_external:true;
-      assert_source_file
+      assert_source_path
         (create_exn local_root "external0/external1/a.py")
         ~search_root:external_root1
         ~relative:"a.py"
@@ -559,44 +558,44 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let create_exn = create_source_file_exn ~configuration in
-    assert_source_file
+    let create_exn = create_source_path_exn ~configuration in
+    assert_source_path
       (create_exn local_root "a.py")
       ~search_root:local_root
       ~is_stub:false
       ~relative:"a.py"
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (create_exn stubs_root "a.pyi")
       ~search_root:stubs_root
       ~relative:"a.pyi"
       ~is_stub:true
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (create_exn venv_root "a.pyi")
       ~search_root:venv_root
       ~relative:"a.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (create_exn venv_root "b.pyi")
       ~search_root:venv_root
       ~relative:"b.pyi"
       ~is_stub:true
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (create_exn local_root "b.pyi")
       ~search_root:local_root
       ~relative:"b.pyi"
       ~is_stub:true
       ~is_external:false;
-    assert_source_file
+    assert_source_path
       (create_exn venv_root "c.py")
       ~search_root:venv_root
       ~relative:"c.py"
       ~is_stub:false
       ~is_external:true;
-    assert_source_file
+    assert_source_path
       (create_exn local_root "c.pyi")
       ~search_root:local_root
       ~relative:"c.pyi"
@@ -653,8 +652,8 @@ let test_update context =
   let assert_modules ~expected tracker =
     let expected = List.map expected ~f:Reference.create |> List.sort ~compare:Reference.compare in
     let actual =
-      ModuleTracker.source_files tracker
-      |> List.map ~f:SourceFile.qualifier
+      ModuleTracker.source_paths tracker
+      |> List.map ~f:SourcePath.qualifier
       |> List.sort ~compare:Reference.compare
     in
     assert_equal
@@ -666,8 +665,8 @@ let test_update context =
   let assert_module_paths ~expected tracker =
     let expected = List.sort ~compare:Path.compare expected in
     let actual =
-      ModuleTracker.source_files tracker
-      |> List.map ~f:(fun { SourceFile.relative_path; _ } -> Path.Relative relative_path)
+      ModuleTracker.source_paths tracker
+      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
       |> List.sort ~compare:Path.compare
     in
     assert_equal
@@ -727,8 +726,8 @@ let test_update context =
     in
     let create_incremental_update_exn = function
       | ModuleTrackerEvent.New { root; relative } ->
-          let source_file = create_source_file_exn ~configuration (root_path root) relative in
-          ModuleTracker.IncrementalUpdate.New source_file
+          let source_path = create_source_path_exn ~configuration (root_path root) relative in
+          ModuleTracker.IncrementalUpdate.New source_path
       | ModuleTrackerEvent.Delete name ->
           ModuleTracker.IncrementalUpdate.Delete (Reference.create name)
     in
@@ -759,14 +758,14 @@ let test_update context =
        scratch. *)
     let fresh_tracker = ModuleTracker.create configuration in
     let expect_modules =
-      ModuleTracker.source_files fresh_tracker
-      |> List.map ~f:SourceFile.qualifier
+      ModuleTracker.source_paths fresh_tracker
+      |> List.map ~f:SourcePath.qualifier
       |> List.map ~f:Reference.show
     in
     assert_modules ~expected:expect_modules tracker;
     let expect_paths =
-      ModuleTracker.source_files fresh_tracker
-      |> List.map ~f:(fun { SourceFile.relative_path; _ } -> Path.Relative relative_path)
+      ModuleTracker.source_paths fresh_tracker
+      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
     in
     assert_module_paths ~expected:expect_paths tracker
   in
