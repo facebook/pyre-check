@@ -147,7 +147,11 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
   let class_attributes_list =
     file_option
     >>= (fun file ->
-          LookupCache.find_annotation ~state ~configuration ~file ~position:item_position)
+          LookupCache.find_annotation
+            ~state
+            ~configuration
+            ~path:(File.path file)
+            ~position:item_position)
     >>| (fun (_, class_type) ->
           class_type
           |> Annotated.Class.resolve_class ~resolution

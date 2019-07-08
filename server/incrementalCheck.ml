@@ -91,7 +91,7 @@ let recheck
     Ast.SharedMemory.SymlinksToPaths.remove ~targets;
     Ast.SharedMemory.Sources.remove ~handles:(handles @ removed_handles);
     Handler.purge ~debug (handles @ removed_handles);
-    List.iter recheck ~f:(LookupCache.evict ~state ~configuration);
+    List.iter handles ~f:(fun handle -> Source.qualifier ~handle |> LookupCache.evict ~state);
     Statistics.performance
       ~name:"purged old environment"
       ~timer

@@ -33,9 +33,12 @@ let test_language_server_protocol_json_format context =
     "filename.py"
   in
   let handle = File.Handle.create_for_testing filename in
+  let qualifier = Source.qualifier ~handle in
   Ast.SharedMemory.Sources.add handle (Source.create ~handle []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
+      ~handle:filename
+      ~qualifier
       {|
         class unittest.mock.Base: ...
         class unittest.mock.NonCallableMock: ...
@@ -205,7 +208,9 @@ let test_json_socket context =
   | None -> assert true
 
 
-let configuration ~local_root = Configuration.Analysis.create ~local_root ~infer:true ()
+let configuration ~local_root =
+  Configuration.Analysis.create ~local_root ~infer:true ~filter_directories:[local_root] ()
+
 
 let environment ~local_root =
   let environment = Environment.Builder.create () in
@@ -215,9 +220,12 @@ let environment ~local_root =
   environment
 
 
-let make_errors ~local_root ?(handle = "test.py") ?(qualifier = Reference.empty) source =
+let make_errors ~local_root ?(handle = "test.py") source =
   let configuration = CommandTest.mock_analysis_configuration () in
-  let source = parse ~handle ~qualifier source |> Preprocessing.preprocess in
+  let source =
+    let qualifier = Source.qualifier ~handle:(File.Handle.create_for_testing handle) in
+    parse ~handle ~qualifier source |> Preprocessing.preprocess
+  in
   let environment = Environment.handler (environment ~local_root) in
   add_defaults_to_environment ~configuration environment;
   Test.populate ~configuration environment [source];
@@ -250,21 +258,16 @@ let mock_server_state ~local_root ?(initial_environment = environment ~local_roo
   }
 
 
-let assert_response
-    ~local_root
-    ?state
-    ?(handle = "test.py")
-    ?qualifier
-    ~source
-    ~request
-    expected_response
-  =
+let assert_response ~local_root ?state ?(handle = "test.py") ~source ~request expected_response =
+  let file_handle = File.Handle.create_for_testing handle in
+  let qualifier = Ast.Source.qualifier ~handle:file_handle in
   Ast.SharedMemory.HandleKeys.clear ();
-  Ast.SharedMemory.HandleKeys.add
-    ~handles:(File.Handle.Set.Tree.singleton (File.Handle.create_for_testing handle));
-  Ast.SharedMemory.Sources.remove ~handles:[File.Handle.create_for_testing handle];
-  let parsed = parse ~handle ?qualifier source |> Preprocessing.preprocess in
-  Ast.SharedMemory.Sources.add (File.Handle.create_for_testing handle) parsed;
+  Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton file_handle);
+  Ast.SharedMemory.Sources.remove ~handles:[file_handle];
+  Ast.SharedMemory.Sources.QualifiersToHandles.remove_batch
+    (ResolutionSharedMemory.KeySet.singleton qualifier);
+  let parsed = parse ~handle ~qualifier source |> Preprocessing.preprocess in
+  Ast.SharedMemory.Sources.add file_handle parsed;
   let errors =
     let errors = File.Handle.Table.create () in
     List.iter (make_errors ~local_root ~handle source) ~f:(fun error ->
@@ -360,11 +363,10 @@ let test_protocol_type_check context =
 
 let test_query context =
   let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let assert_type_query_response ?handle ?qualifier ~source ~query response =
+  let assert_type_query_response ?handle ~source ~query response =
     let query = Query.parse_query ~configuration:(configuration ~local_root) query in
     assert_response
       ?handle
-      ?qualifier
       ~local_root
       ~source
       ~request:query
@@ -398,7 +400,7 @@ let test_query context =
     ~source:{|
         A = int
       |}
-    ~query:"less_or_equal(int, A)"
+    ~query:"less_or_equal(int, test.A)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean true));
   assert_type_query_response
     ~source:""
@@ -406,20 +408,20 @@ let test_query context =
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
   assert_type_query_response
     ~source:"class C(int): ..."
-    ~query:"less_or_equal(list[C], list[int])"
+    ~query:"less_or_equal(list[test.C], list[int])"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Boolean false));
   assert_type_query_response
     ~source:"class C(int): ..."
-    ~query:"join(list[C], list[int])"
+    ~query:"join(list[test.C], list[int])"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.Type (parse_annotation "typing.List[typing.Any]")));
   assert_type_query_response
     ~source:"class C(int): ..."
-    ~query:"meet(list[C], list[int])"
+    ~query:"meet(list[test.C], list[int])"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type (Type.list Type.Bottom)));
   assert_type_query_response
     ~source:"class C(int): ..."
-    ~query:"superclasses(C)"
+    ~query:"superclasses(test.C)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.Superclasses
           [Type.integer; Type.float; Type.complex; Type.object_primitive]));
@@ -439,7 +441,7 @@ let test_query context =
     ~source:{|
         A = int
       |}
-    ~query:"is_compatible_with(int, A)"
+    ~query:"is_compatible_with(int, test.A)"
     ~actual:Type.integer
     ~expected:Type.integer
     true;
@@ -449,7 +451,7 @@ let test_query context =
     (Protocol.TypeQuery.Error "Type `Unknown` was not found in the type order.");
   assert_compatibility_response
     ~source:"class unknown: ..."
-    ~query:"is_compatible_with(int, unknown)"
+    ~query:"is_compatible_with(int, $unknown)"
     ~actual:Type.integer
     ~expected:Type.Top
     true;
@@ -479,7 +481,7 @@ let test_query context =
     false;
   assert_compatibility_response
     ~source:"A = int"
-    ~query:"is_compatible_with(A, typing.Coroutine[typing.Any, typing.Any, A])"
+    ~query:"is_compatible_with(test.A, typing.Coroutine[typing.Any, typing.Any, test.A])"
     ~actual:Type.integer
     ~expected:Type.integer
     true;
@@ -488,9 +490,9 @@ let test_query context =
          class A: ...
          class B(A): ...
       |}
-    ~query:"is_compatible_with(B, typing.Coroutine[typing.Any, typing.Any, A])"
-    ~actual:(Type.Primitive "B")
-    ~expected:(Type.Primitive "A")
+    ~query:"is_compatible_with(test.B, typing.Coroutine[typing.Any, typing.Any, test.A])"
+    ~actual:(Type.Primitive "test.B")
+    ~expected:(Type.Primitive "test.A")
     true;
   assert_compatibility_response
     ~source:{|
@@ -498,10 +500,10 @@ let test_query context =
          class B(A): ...
       |}
     ~query:
-      ( "is_compatible_with(typing.Type[B],"
-      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[A]])" )
-    ~actual:(Type.meta (Type.Primitive "B"))
-    ~expected:(Type.meta (Type.Primitive "A"))
+      ( "is_compatible_with(typing.Type[test.B],"
+      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])" )
+    ~actual:(Type.meta (Type.Primitive "test.B"))
+    ~expected:(Type.meta (Type.Primitive "test.A"))
     true;
   assert_type_query_response
     ~source:""
@@ -513,7 +515,7 @@ let test_query context =
     (Protocol.TypeQuery.Error "Type `Unknown[int]` was not found in the type order.");
   assert_type_query_response
     ~source:"A = int"
-    ~query:"normalize_type(A)"
+    ~query:"normalize_type(test.A)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:
@@ -522,7 +524,7 @@ let test_query context =
         def C.foo(self) -> int: ...
         def C.bar(self) -> str: ...
     |}
-    ~query:"methods(C)"
+    ~query:"methods(test.C)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundMethods
           [ { Protocol.TypeQuery.name = "foo";
@@ -720,7 +722,6 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           ( [ 2, 32, 2, 36, Type.none;
               2, 23, 2, 26, Type.meta Type.integer;
-              (* TODO:(T46070919): Missing Type[List[int]] *)
               2, 8, 2, 9, Type.list Type.integer;
               2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
           |> create_types_at_locations )));
@@ -735,7 +736,7 @@ let test_query context =
        (Protocol.TypeQuery.TypesAtLocations
           [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
             { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-              annotation = parse_annotation "typing.Type[Foo]"
+              annotation = parse_annotation "typing.Type[test.Foo]"
             };
             { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
               annotation = Type.literal_integer 1
@@ -748,13 +749,13 @@ let test_query context =
         y = ""
         def foo() -> int: ...
     |}
-    ~query:"attributes(C)"
+    ~query:"attributes(test.C)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundAttributes
           [ { Protocol.TypeQuery.name = "foo";
               annotation =
                 Type.Callable
-                  { Type.Callable.kind = Type.Callable.Named !&"C.foo";
+                  { Type.Callable.kind = Type.Callable.Named !&"test.C.foo";
                     implementation =
                       { Type.Callable.annotation = Type.integer;
                         parameters = Type.Callable.Defined [];
@@ -772,7 +773,7 @@ let test_query context =
       def foo(x: int) -> int:
         pass
     |}
-    ~query:"signature(foo)"
+    ~query:"signature(test.foo)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundSignature
           [ { Protocol.TypeQuery.return_type = Some Type.integer;
@@ -786,7 +787,7 @@ let test_query context =
       def foo(x) -> int:
         pass
     |}
-    ~query:"signature(foo)"
+    ~query:"signature(test.foo)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundSignature
           [ { Protocol.TypeQuery.return_type = Some Type.integer;
@@ -798,7 +799,7 @@ let test_query context =
       def foo(x: int):
         pass
     |}
-    ~query:"signature(foo)"
+    ~query:"signature(test.foo)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundSignature
           [ { Protocol.TypeQuery.return_type = None;
@@ -813,7 +814,7 @@ let test_query context =
       def foo(x: alias):
         pass
     |}
-    ~query:"signature(foo)"
+    ~query:"signature(test.foo)"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.FoundSignature
           [ { Protocol.TypeQuery.return_type = None;
@@ -826,8 +827,8 @@ let test_query context =
     ~source:{|
       x = 1
     |}
-    ~query:"signature(x)"
-    (Protocol.TypeQuery.Error "x is not a callable");
+    ~query:"signature(test.x)"
+    (Protocol.TypeQuery.Error "test.x is not a callable");
   assert_type_query_response
     ~source:""
     ~query:"signature(unknown)"
@@ -836,13 +837,13 @@ let test_query context =
     ~source:{|
       foo: str = "bar"
     |}
-    ~query:"type(foo)"
+    ~query:"type(test.foo)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
   assert_type_query_response
     ~source:{|
       foo = 7
     |}
-    ~query:"type(foo)"
+    ~query:"type(test.foo)"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.integer));
   assert_type_query_response
     ~source:{|
@@ -855,7 +856,7 @@ let test_query context =
         return a
       bar: str = "baz"
     |}
-    ~query:"type(foo(bar))"
+    ~query:"type(test.foo(test.bar))"
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Type Type.string));
   assert_type_query_response
     ~source:{|
@@ -863,10 +864,10 @@ let test_query context =
         return a
       bar: int = 7
     |}
-    ~query:"type(foo(bar))"
+    ~query:"type(test.foo(test.bar))"
     (Protocol.TypeQuery.Error
        ( "Expression had errors: Incompatible parameter type [6]: "
-       ^ "Expected `str` for 1st anonymous parameter to call `foo` but got `int`." ));
+       ^ "Expected `str` for 1st anonymous parameter to call `test.foo` but got `int`." ));
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
     ~source:""
@@ -877,7 +878,6 @@ let test_query context =
   |> File.create ~content:"pass"
   |> File.write;
   assert_type_query_response
-    ~qualifier:!&"a"
     ~handle:"a.py"
     ~source:"pass"
     ~query:"path_of_module(a)"
@@ -976,8 +976,8 @@ let test_compute_hashes_to_keys context =
           (DependentKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
           (DependentKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (ResolutionSharedMemory.hash_of_key (Reference.create "$toplevel"))
-          (ResolutionSharedMemory.serialize_key (Reference.create "$toplevel"));
+          (ResolutionSharedMemory.hash_of_key (Reference.create "sample.$toplevel"))
+          (ResolutionSharedMemory.serialize_key (Reference.create "sample.$toplevel"));
         to_binding
           (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
           (ResolutionSharedMemory.serialize_key (Reference.create "name"));
@@ -985,9 +985,10 @@ let test_compute_hashes_to_keys context =
           (ResolutionSharedMemory.Keys.hash_of_key (File.Handle.create_for_testing "sample.py"))
           (ResolutionSharedMemory.Keys.serialize_key (File.Handle.create_for_testing "sample.py"));
         to_binding
-          (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key (Reference.create "$toplevel"))
+          (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key
+             (Reference.create "sample.$toplevel"))
           (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
-             (Reference.create "$toplevel"));
+             (Reference.create "sample.$toplevel"));
         to_binding
           (Coverage.SharedMemory.hash_of_key (File.Handle.create_for_testing "sample.py"))
           (Coverage.SharedMemory.serialize_key (File.Handle.create_for_testing "sample.py")) ]
@@ -1310,13 +1311,7 @@ let test_incremental_typecheck context =
     (File.Handle.Set.Tree.singleton (File.Handle.create_for_testing handle));
   let files = [file ~local_root ~content:source path] in
   let request_with_content = Protocol.Request.TypeCheckRequest files in
-  let errors =
-    make_errors
-      ~local_root
-      ~handle
-      ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle))
-      source
-  in
+  let errors = make_errors ~local_root ~handle source in
   assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
 
   (* Assert that only files getting used to update the environment get parsed. *)
@@ -1340,13 +1335,7 @@ let test_incremental_typecheck context =
   assert_response
     ~request:(Request.TypeCheckRequest [file ~local_root ~content:source stub_path])
     (* We also error on stub files. *)
-    (Protocol.TypeCheckResponse
-       (make_errors
-          ~local_root
-          ~handle:(relativize stub_path)
-          ~qualifier:
-            (Source.qualifier ~handle:(File.Handle.create_for_testing (relativize stub_path)))
-          source));
+    (Protocol.TypeCheckResponse (make_errors ~local_root ~handle:(relativize stub_path) source));
   let file = file ~local_root ~content:"def foo() -> int: return 1" path in
   assert_response ~request:(Request.TypeCheckRequest [file]) (Protocol.TypeCheckResponse [])
 
@@ -1379,8 +1368,7 @@ let test_did_save_with_content context =
         def foo()->None:
           return 1
     |} |> trim_extra_indentation in
-  let qualifier = String.chop_suffix_exn ~suffix:".py" filename |> Reference.create in
-  let errors = make_errors ~local_root:root ~handle:filename ~qualifier source in
+  let errors = make_errors ~local_root:root ~handle:filename source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
     |> Or_error.ok_exn

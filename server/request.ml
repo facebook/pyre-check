@@ -394,7 +394,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   let process_request () =
     let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
     let resolution = TypeCheck.resolution environment () in
-    let parse_and_validate expression =
+    let parse_and_validate ?(unknown_is_top = false) expression =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
         Resolution.parse_annotation
@@ -402,6 +402,16 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           ~allow_invalid_type_parameters:true
           resolution
           expression
+      in
+      let annotation =
+        if unknown_is_top then
+          let constraints = function
+            | Type.Primitive "unknown" -> Some Type.Top
+            | _ -> None
+          in
+          Type.instantiate annotation ~constraints
+        else
+          annotation
       in
       if TypeOrder.is_instantiated order annotation then
         let mismatches, _ = Resolution.check_invalid_type_parameters resolution annotation in
@@ -551,7 +561,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           { location; TypeQuery.coverage }
         in
-        LookupCache.find_all_annotations ~state ~configuration ~file
+        LookupCache.find_all_annotations ~state ~configuration ~path:(File.path file)
         >>| List.map ~f:map_to_coverage
         >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
         |> Option.value ~default
@@ -862,19 +872,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           path;
         TypeQuery.Response (TypeQuery.Path (Path.create_absolute path))
     | TypeQuery.IsCompatibleWith (left, right) ->
-        let left = parse_and_validate left in
-        let right = parse_and_validate right in
+        (* We need a special version of parse_and_validate to handle the "unknown" type that
+           Monkeycheck may send us *)
+        let left = parse_and_validate ~unknown_is_top:true left in
+        let right = parse_and_validate ~unknown_is_top:true right in
         let right =
           match Type.coroutine_value right with
           | Type.Top -> right
           | unwrapped -> unwrapped
-        in
-        let right =
-          let constraints = function
-            | Type.Primitive "unknown" -> Some Type.Top
-            | _ -> None
-          in
-          Type.instantiate right ~constraints
         in
         Resolution.is_compatible_with resolution ~left ~right
         |> fun result ->
@@ -1024,7 +1029,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                Location.pp_position
                position)
         in
-        LookupCache.find_annotation ~state ~configuration ~file ~position
+        LookupCache.find_annotation ~state ~configuration ~path:(File.path file) ~position
         >>| (fun (location, annotation) ->
               TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
         |> Option.value ~default
@@ -1033,7 +1038,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           TypeQuery.Error
             (Format.asprintf "Not able to get lookups in `%a`" Path.pp (File.path file))
         in
-        LookupCache.find_all_annotations ~state ~configuration ~file
+        LookupCache.find_all_annotations ~state ~configuration ~path:(File.path file)
         >>| List.map ~f:(fun (location, annotation) -> { TypeQuery.location; annotation })
         >>| (fun list -> TypeQuery.Response (TypeQuery.TypesAtLocations list))
         |> Option.value ~default
@@ -1112,7 +1117,7 @@ let process_get_definition_request
   =
   let response =
     let open LanguageServer.Protocol in
-    let definition = LookupCache.find_definition ~state ~configuration file position in
+    let definition = LookupCache.find_definition ~state ~configuration (File.path file) position in
     TextDocumentDefinitionResponse.create ~configuration ~id ~location:definition
     |> TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
@@ -1185,7 +1190,7 @@ let rec process
           let response =
             let open LanguageServer.Protocol in
             let result =
-              LookupCache.find_annotation ~state ~configuration ~file ~position
+              LookupCache.find_annotation ~state ~configuration ~path:(File.path file) ~position
               >>| fun (location, annotation) ->
               { HoverResponse.location; contents = Type.show_for_hover annotation }
             in
@@ -1270,7 +1275,7 @@ let rec process
           { state; response }
       | OpenDocument file ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
-          LookupCache.evict ~state ~configuration file;
+          LookupCache.evict_path ~state ~configuration (File.path file);
 
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
@@ -1290,8 +1295,9 @@ let rec process
             ~files:[file]
       | CloseDocument file ->
           let { State.open_documents; _ } = state in
-          let open_documents = Path.Map.remove open_documents (File.path file) in
-          LookupCache.evict ~state ~configuration file;
+          let path = File.path file in
+          let open_documents = Path.Map.remove open_documents path in
+          LookupCache.evict_path ~state ~configuration path;
           { state = { state with open_documents }; response = None }
       | DocumentChange file ->
           (* On change, update open document's content but do not trigger recheck. *)
@@ -1306,7 +1312,7 @@ let rec process
       | SaveDocument file ->
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
-          LookupCache.evict ~state ~configuration file;
+          LookupCache.evict_path ~state ~configuration (File.path file);
           let check_on_save =
             Mutex.critical_section connections.lock ~f:(fun () ->
                 let { file_notifiers; _ } = !(connections.connections) in

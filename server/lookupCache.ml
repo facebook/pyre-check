@@ -9,34 +9,31 @@ open Analysis
 open State
 open Pyre
 
-let handle ~configuration file =
-  try File.handle ~configuration file |> Option.some with
-  | File.NonexistentHandle error ->
-      Log.info "%s" error;
-      None
-
-
-let get_by_handle ~state:{ lookups; environment; _ } ~handle =
-  let cache_read = String.Table.find lookups (File.Handle.show handle) in
+let get_by_qualifier ~state:{ lookups; environment; _ } qualifier =
+  let key = Reference.show qualifier in
+  let cache_read = String.Table.find lookups key in
   match cache_read with
   | Some _ -> cache_read
   | None ->
-      let lookup = Ast.SharedMemory.Sources.get handle >>| Lookup.create_of_source environment in
-      lookup
-      >>| (fun lookup -> String.Table.set lookups ~key:(File.Handle.show handle) ~data:lookup)
-      |> ignore;
+      let lookup =
+        Ast.SharedMemory.Sources.get_for_qualifier qualifier
+        >>| Lookup.create_of_source environment
+      in
+      lookup >>| (fun lookup -> String.Table.set lookups ~key ~data:lookup) |> ignore;
       lookup
 
 
-let evict ~state:{ lookups; _ } ~configuration file =
-  handle ~configuration file >>| File.Handle.show >>| String.Table.remove lookups |> ignore
+let evict ~state:{ lookups; _ } reference = String.Table.remove lookups (Reference.show reference)
+
+let evict_path ~state ~configuration path =
+  match SourcePath.create ~configuration path with
+  | None -> ()
+  | Some { SourcePath.qualifier; _ } -> evict ~state qualifier
 
 
 let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) () =
   let normals =
-    let base_normals =
-      ["handle", File.Handle.show handle; "position", Location.show_position position]
-    in
+    let base_normals = ["handle", handle; "position", Location.show_position position] in
     base_normals @ normals
   in
   Statistics.performance
@@ -49,49 +46,49 @@ let log_lookup ~handle ~position ~timer ~name ?(integers = []) ?(normals = []) (
     ()
 
 
-let find_annotation ~state ~configuration ~file ~position =
-  let find_annotation_by_handle handle =
-    let timer = Timer.start () in
-    let annotation = get_by_handle ~state ~handle >>= Lookup.get_annotation ~position in
-    let normals =
-      annotation
-      >>| fun (location, annotation) ->
-      [ "resolved location", Location.Instantiated.show location;
-        "resolved annotation", Type.show annotation ]
-    in
-    log_lookup ~handle ~position ~timer ~name:"find annotation" ?normals ();
+let find_annotation ~state ~configuration ~path ~position =
+  SourcePath.create ~configuration path
+  >>= fun { SourcePath.qualifier; relative_path; _ } ->
+  let timer = Timer.start () in
+  let annotation = get_by_qualifier ~state qualifier >>= Lookup.get_annotation ~position in
+  let normals =
     annotation
+    >>| fun (location, annotation) ->
+    [ "resolved location", Location.Instantiated.show location;
+      "resolved annotation", Type.show annotation ]
   in
-  handle ~configuration file >>= find_annotation_by_handle
+  let handle = Path.RelativePath.relative relative_path in
+  log_lookup ~handle ~position ~timer ~name:"find annotation" ?normals ();
+  annotation
 
 
-let find_all_annotations ~state ~configuration ~file =
-  let find_annotation_by_handle handle =
-    let timer = Timer.start () in
-    let annotations =
-      get_by_handle ~state ~handle >>| Lookup.get_all_annotations |> Option.value ~default:[]
-    in
-    let integers = ["annotation list size", List.length annotations] in
-    log_lookup
-      ~handle
-      ~position:Location.any_position
-      ~timer
-      ~name:"find all annotations"
-      ~integers
-      ();
-    annotations
+let find_all_annotations ~state ~configuration ~path =
+  SourcePath.create ~configuration path
+  >>= fun { SourcePath.qualifier; relative_path; _ } ->
+  let timer = Timer.start () in
+  let annotations =
+    get_by_qualifier ~state qualifier >>| Lookup.get_all_annotations |> Option.value ~default:[]
   in
-  handle ~configuration file >>| find_annotation_by_handle
+  let integers = ["annotation list size", List.length annotations] in
+  let handle = Path.RelativePath.relative relative_path in
+  log_lookup
+    ~handle
+    ~position:Location.any_position
+    ~timer
+    ~name:"find all annotations"
+    ~integers
+    ();
+  Some annotations
 
 
-let find_definition ~state ~configuration file position =
-  let find_definition_by_handle handle =
-    let timer = Timer.start () in
-    let definition = get_by_handle ~state ~handle >>= Lookup.get_definition ~position in
-    let normals =
-      definition >>| fun location -> ["resolved location", Location.Instantiated.show location]
-    in
-    log_lookup ~handle ~position ~timer ~name:"find definition" ?normals ();
-    definition
+let find_definition ~state ~configuration path position =
+  SourcePath.create ~configuration path
+  >>= fun { SourcePath.qualifier; relative_path; _ } ->
+  let timer = Timer.start () in
+  let definition = get_by_qualifier ~state qualifier >>= Lookup.get_definition ~position in
+  let normals =
+    definition >>| fun location -> ["resolved location", Location.Instantiated.show location]
   in
-  handle ~configuration file >>= find_definition_by_handle
+  let handle = Path.RelativePath.relative relative_path in
+  log_lookup ~handle ~position ~timer ~name:"find definition" ?normals ();
+  definition
