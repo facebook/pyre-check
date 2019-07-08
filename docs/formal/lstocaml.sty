@@ -1,0 +1,60 @@
+%%
+% Copyright (c) 2018-present, Facebook, Inc.
+%
+% This source code is licensed under the MIT license found in the
+% LICENSE file in the root directory of this source tree.
+%%
+
+\usepackage{xcolor}
+\definecolor{butter}{HTML}{C4A000}
+\definecolor{orange}{HTML}{CE5C00}
+\definecolor{chocolate}{HTML}{8F5902}
+\definecolor{chameleon}{HTML}{4E9A06}
+\definecolor{skyblue}{HTML}{204A87}
+\definecolor{plum}{HTML}{5C3566}
+\definecolor{scarletred}{HTML}{A40000}
+\definecolor{lightalu}{HTML}{BABDB6}
+\definecolor{darkalu}{HTML}{2E3436}
+
+\newcommand{\kwstyle}{}
+
+\usepackage{listings}
+
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  aboveskip=10pt,
+  belowskip=5pt,
+  xleftmargin=10pt,
+  commentstyle=\color{orange},
+  keywordstyle=\kwstyle,
+  language=Caml,
+  stringstyle=\color{plum},
+  tabsize=2,
+  numberstyle=\tiny\color{gray},
+  escapeinside={(*@}{*)},
+  numbers=left,
+  numbersep=2pt,
+  keywordstyle=[1]\kwstyle\color{chameleon},
+  keywordstyle=[2]\kwstyle\color{scarletred},
+  keywordstyle=[3]\kwstyle\color{skyblue},
+  keywordstyle=[4]\kwstyle\color{butter},
+  keywordstyle=[5]\kwstyle\color{skyblue},
+  keywordstyle=[6]\kwstyle\color{skyblue},
+  keywordstyle=[7]\kwstyle\color{chameleon},
+  keywordstyle=[8]\kwstyle\color{butter},
+  keywordstyle=[9]\kwstyle\color{butter},
+  keywords=[1]{let,val,method,in,and,rec,private,virtual,constraint},
+  keywords=[2]{type,open,class,module,exception,external},
+  keywords=[3]{fun,function,functor,match,try,with},
+  keywords=[4]{as,when,of},
+  keywords=[5]{if,then,else},
+  keywords=[6]{begin,end,object,struct,sig,for,while,do,done,to,downto},
+  keywords=[7]{true,false},
+  keywords=[8]{include,inherit,initializer},
+  keywords=[9]{new,ref,mutable,lazy,assert,raise},
+}
+
+\lstset{literate=
+  {`}{{{\lq}}}1
+}
