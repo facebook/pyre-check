@@ -896,12 +896,8 @@ let register_dependencies (module Handler : Handler) source =
   Visit.visit () source
 
 
-let propagate_nested_classes (module Handler : Handler) resolution annotation =
-  let propagate { Node.location; value = { Statement.Class.name; _ } as definition } successors =
-    let handle =
-      Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-      |> fun { Location.path; _ } -> File.Handle.create_for_testing path
-    in
+let propagate_nested_classes (module Handler : Handler) resolution source =
+  let propagate ~handle ({ Statement.Class.name; _ } as definition) successors =
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function
         | { Node.value = Class { name = nested_name; _ }; _ } ->
@@ -929,14 +925,22 @@ let propagate_nested_classes (module Handler : Handler) resolution annotation =
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
+    |> ignore
   in
-  annotation
-  |> (fun name ->
-       Handler.class_definition name
-       >>= fun definition ->
-       Handler.class_metadata name
-       >>| fun { Resolution.successors; _ } -> propagate definition successors)
-  |> ignore
+  let module Visit = Visit.MakeStatementVisitor (struct
+    type t = unit
+
+    let visit_children _ = true
+
+    let statement { Source.handle; _ } _ = function
+      | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
+          Handler.class_metadata (Reference.show name)
+          |> Option.iter ~f:(fun { Resolution.successors; _ } ->
+                 propagate ~handle definition successors)
+      | _ -> ()
+  end)
+  in
+  Visit.visit () source
 
 
 let built_in_annotations =

@@ -100,7 +100,7 @@ val connect_type_order : (module Handler) -> Resolution.t -> Source.t -> unit
 
 val register_dependencies : (module Handler) -> Source.t -> unit
 
-val propagate_nested_classes : (module Handler) -> Resolution.t -> Type.Primitive.t -> unit
+val propagate_nested_classes : (module Handler) -> Resolution.t -> Source.t -> unit
 
 val built_in_annotations : Type.Primitive.Set.t
 

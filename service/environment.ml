@@ -44,7 +44,7 @@ let populate
     TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
     TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
     List.iter all_annotations ~f:Handler.register_class_metadata;
-    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) all_annotations
+    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources
   in
   Handler.transaction ~f:populate ();
   let register_undecorated_functions sources =
