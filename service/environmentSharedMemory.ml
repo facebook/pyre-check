@@ -197,13 +197,13 @@ module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentV
 module UndecoratedFunctions =
   Memory.WithCache (Ast.SharedMemory.ReferenceKey) (UndecoratedFunctionValue)
 
-module FunctionKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (FunctionKeyValue)
+module FunctionKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (FunctionKeyValue)
 (** Keys *)
 
-module ClassKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (ClassKeyValue)
-module GlobalKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (GlobalKeyValue)
-module AliasKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (AliasKeyValue)
-module DependentKeys = Memory.WithCache (Ast.SharedMemory.HandleKey) (DependentKeyValue)
+module ClassKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (ClassKeyValue)
+module GlobalKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalKeyValue)
+module AliasKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (AliasKeyValue)
+module DependentKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentKeyValue)
 
 module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
 (** Type order maps *)

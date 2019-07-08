@@ -30,7 +30,7 @@ let test_index _ =
     environment.Environment.dependencies.Dependencies.index
   in
   let assert_table_contains_key table key =
-    let keyset = Hashtbl.find_exn table (File.Handle.create_for_testing "test.py") in
+    let keyset = Hashtbl.find_exn table (Reference.create "test") in
     assert_true (Hash_set.mem keyset key)
   in
   assert_table_contains_key class_keys "baz.baz";
@@ -157,15 +157,13 @@ let test_normalize _ =
       Environment.Builder.create () |> Environment.handler
     in
     let add_dependent (left, right) =
-      Handler.DependencyHandler.add_dependent
-        ~handle:(File.Handle.create_for_testing (left ^ ".py"))
-        !&right
+      Handler.DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right
     in
     List.iter edges ~f:add_dependent;
     let all_modules =
       edges
       |> List.concat_map ~f:(fun (left, right) -> [left; right])
-      |> List.map ~f:(fun name -> File.Handle.create_for_testing (name ^ ".py"))
+      |> List.map ~f:(fun name -> Reference.create name)
     in
     Handler.DependencyHandler.normalize all_modules;
     let assert_dependents_equal (node, expected) =

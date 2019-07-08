@@ -961,20 +961,20 @@ let test_compute_hashes_to_keys context =
           (Ast.SharedMemory.Modules.hash_of_key !&"sample")
           (Ast.SharedMemory.Modules.serialize_key !&"sample");
         to_binding
-          (FunctionKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (FunctionKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (FunctionKeys.hash_of_key (Reference.create "sample"))
+          (FunctionKeys.serialize_key (Reference.create "sample"));
         to_binding
-          (ClassKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (ClassKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (ClassKeys.hash_of_key (Reference.create "sample"))
+          (ClassKeys.serialize_key (Reference.create "sample"));
         to_binding
-          (GlobalKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (GlobalKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (GlobalKeys.hash_of_key (Reference.create "sample"))
+          (GlobalKeys.serialize_key (Reference.create "sample"));
         to_binding
-          (AliasKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (AliasKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (AliasKeys.hash_of_key (Reference.create "sample"))
+          (AliasKeys.serialize_key (Reference.create "sample"));
         to_binding
-          (DependentKeys.hash_of_key (File.Handle.create_for_testing "sample.py"))
-          (DependentKeys.serialize_key (File.Handle.create_for_testing "sample.py"));
+          (DependentKeys.hash_of_key (Reference.create "sample"))
+          (DependentKeys.serialize_key (Reference.create "sample"));
         to_binding
           (ResolutionSharedMemory.hash_of_key (Reference.create "sample.$toplevel"))
           (ResolutionSharedMemory.serialize_key (Reference.create "sample.$toplevel"));

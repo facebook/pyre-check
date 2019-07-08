@@ -55,7 +55,7 @@ let assert_errors ?(show_error_traces = false) input_source expected_errors =
     Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
     |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
   in
-  Handler.purge handles;
+  List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle) |> Handler.purge;
   let description_list_to_string descriptions =
     Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
   in

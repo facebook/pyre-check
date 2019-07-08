@@ -14,10 +14,10 @@ module Handler = Service.Environment.SharedHandler
 module DependencyHandler = Handler.DependencyHandler
 
 let assert_keys ~add ~get keys expected =
-  let handle = File.Handle.create_for_testing "dummy.py" in
-  DependencyHandler.clear_keys_batch [handle];
-  List.iter keys ~f:(add ~handle);
-  assert_equal expected (get ~handle)
+  let qualifier = Reference.create "dummy" in
+  DependencyHandler.clear_keys_batch [qualifier];
+  List.iter keys ~f:(add ~qualifier);
+  assert_equal expected (get ~qualifier)
 
 
 let test_dependency_keys _ =
@@ -87,50 +87,50 @@ let test_global_keys _ =
 
 
 let test_normalize_dependencies _ =
-  let handle = File.Handle.create_for_testing "dummy.py" in
-  DependencyHandler.clear_keys_batch [handle];
-  DependencyHandler.add_function_key ~handle !&"f";
+  let qualifier = Reference.create "dummy" in
+  DependencyHandler.clear_keys_batch [qualifier];
+  DependencyHandler.add_function_key ~qualifier !&"f";
 
   (* Only keep one copy. *)
-  DependencyHandler.add_function_key ~handle !&"f";
-  DependencyHandler.add_function_key ~handle !&"h";
-  DependencyHandler.add_function_key ~handle !&"g";
-  DependencyHandler.normalize [handle];
+  DependencyHandler.add_function_key ~qualifier !&"f";
+  DependencyHandler.add_function_key ~qualifier !&"h";
+  DependencyHandler.add_function_key ~qualifier !&"g";
+  DependencyHandler.normalize [qualifier];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_function_keys ~handle)
+    (DependencyHandler.get_function_keys ~qualifier)
     [!&"f"; !&"g"; !&"h"];
-  DependencyHandler.add_global_key ~handle !&"b";
-  DependencyHandler.add_global_key ~handle !&"c";
-  DependencyHandler.add_global_key ~handle !&"a";
-  DependencyHandler.normalize [handle];
+  DependencyHandler.add_global_key ~qualifier !&"b";
+  DependencyHandler.add_global_key ~qualifier !&"c";
+  DependencyHandler.add_global_key ~qualifier !&"a";
+  DependencyHandler.normalize [qualifier];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_global_keys ~handle)
+    (DependencyHandler.get_global_keys ~qualifier)
     [!&"a"; !&"b"; !&"c"];
-  DependencyHandler.add_dependent_key ~handle !&"first.module";
-  DependencyHandler.add_dependent_key ~handle !&"second.module";
-  DependencyHandler.add_dependent_key ~handle !&"aardvark";
-  DependencyHandler.normalize [handle];
+  DependencyHandler.add_dependent_key ~qualifier !&"first.module";
+  DependencyHandler.add_dependent_key ~qualifier !&"second.module";
+  DependencyHandler.add_dependent_key ~qualifier !&"aardvark";
+  DependencyHandler.normalize [qualifier];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (DependencyHandler.get_dependent_keys ~handle)
+    (DependencyHandler.get_dependent_keys ~qualifier)
     [!&"aardvark"; !&"first.module"; !&"second.module"];
-  DependencyHandler.add_class_key ~handle "T1";
-  DependencyHandler.add_class_key ~handle "T3";
-  DependencyHandler.add_class_key ~handle "T2";
-  DependencyHandler.normalize [handle];
+  DependencyHandler.add_class_key ~qualifier "T1";
+  DependencyHandler.add_class_key ~qualifier "T3";
+  DependencyHandler.add_class_key ~qualifier "T2";
+  DependencyHandler.normalize [qualifier];
   assert_equal
     ~printer:(String.concat ~sep:", ")
-    (DependencyHandler.get_class_keys ~handle)
+    (DependencyHandler.get_class_keys ~qualifier)
     ["T1"; "T2"; "T3"];
-  DependencyHandler.add_alias_key ~handle "C_Alias";
-  DependencyHandler.add_alias_key ~handle "A_Alias";
-  DependencyHandler.add_alias_key ~handle "B_Alias";
-  DependencyHandler.normalize [handle];
+  DependencyHandler.add_alias_key ~qualifier "C_Alias";
+  DependencyHandler.add_alias_key ~qualifier "A_Alias";
+  DependencyHandler.add_alias_key ~qualifier "B_Alias";
+  DependencyHandler.normalize [qualifier];
   assert_equal
     ~printer:(List.to_string ~f:ident)
-    (DependencyHandler.get_alias_keys ~handle)
+    (DependencyHandler.get_alias_keys ~qualifier)
     ["A_Alias"; "B_Alias"; "C_Alias"]
 
 
@@ -177,7 +177,7 @@ let test_populate context =
     ~sources:[File.Handle.create_for_testing "a.py"];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (GlobalKeys.find_unsafe (File.Handle.create_for_testing "a.py"))
+    (GlobalKeys.find_unsafe (Reference.create "a"))
     (List.map ~f:Reference.create ["a.T"; "a.C"; "a.D"; "a.foo"; "a.bar"]);
   assert_equal
     (UndecoratedFunctions.get (Reference.create "a.foo"))
@@ -228,7 +228,7 @@ let test_purge context =
     ~scheduler:(Scheduler.mock ())
     ~sources:[File.Handle.create_for_testing "a.py"];
   assert_is_some (Handler.class_metadata "a.D");
-  Handler.purge [File.Handle.create_for_testing "a.py"];
+  Handler.purge [Reference.create "a"];
   assert_is_none (Handler.class_metadata "a.D")
 
 

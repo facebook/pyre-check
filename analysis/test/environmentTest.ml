@@ -1182,7 +1182,7 @@ let test_purge _ =
   assert_equal (dependencies "a.py") (Some ["test"]);
   assert_is_some (Handler.class_metadata "P");
   assert_is_some (Handler.class_metadata "baz.baz");
-  Handler.purge [File.Handle.create_for_testing "test.py"];
+  Handler.purge [Reference.create "test"];
   assert_is_none (Handler.class_definition "baz.baz");
   assert_is_none (Handler.class_metadata "P");
   assert_is_none (Handler.class_metadata "baz.baz");

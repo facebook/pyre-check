@@ -41,7 +41,7 @@ module type Handler = sig
 
   val register_alias : handle:File.Handle.t -> key:Identifier.t -> data:Type.alias -> unit
 
-  val purge : ?debug:bool -> File.Handle.t list -> unit
+  val purge : ?debug:bool -> Reference.t list -> unit
 
   val class_definition : Identifier.t -> Class.t Node.t option
 

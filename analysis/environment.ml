@@ -41,7 +41,7 @@ module type Handler = sig
 
   val register_alias : handle:File.Handle.t -> key:Identifier.t -> data:Type.alias -> unit
 
-  val purge : ?debug:bool -> File.Handle.t list -> unit
+  val purge : ?debug:bool -> Reference.t list -> unit
 
   val class_definition : Identifier.t -> Class.t Node.t option
 
@@ -191,11 +191,13 @@ let handler
         dependency
         File.Handle.pp
         handle;
-      DependencyHandler.add_dependent ~handle dependency
+      let qualifier = Source.qualifier ~handle in
+      DependencyHandler.add_dependent ~qualifier dependency
 
 
     let register_global ~handle ~reference ~global =
-      DependencyHandler.add_global_key ~handle reference;
+      let qualifier = Source.qualifier ~handle in
+      DependencyHandler.add_global_key ~qualifier reference;
       Hashtbl.set ~key:reference ~data:global globals
 
 
@@ -214,11 +216,12 @@ let handler
 
 
     let register_alias ~handle ~key ~data =
-      DependencyHandler.add_alias_key ~handle key;
+      let qualifier = Source.qualifier ~handle in
+      DependencyHandler.add_alias_key ~qualifier key;
       Hashtbl.set ~key ~data aliases
 
 
-    let purge ?(debug = false) handles =
+    let purge ?(debug = false) qualifiers =
       let purge_table_given_keys table keys =
         List.iter ~f:(fun key -> Hashtbl.remove table key) keys
       in
@@ -227,10 +230,12 @@ let handler
        *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
        * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
       let purge_dependents keys =
-        let qualifiers =
-          List.map handles ~f:(fun handle -> Source.qualifier ~handle) |> Reference.Set.of_list
+        let remove_paths entry =
+          entry
+          >>| fun entry ->
+          let qualifiers = Reference.Set.of_list qualifiers in
+          Set.diff entry qualifiers
         in
-        let remove_paths entry = entry >>| fun entry -> Set.diff entry qualifiers in
         List.iter
           ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
           keys
@@ -255,21 +260,26 @@ let handler
         do_purge (Reference.prefix qualifier)
       in
       let class_keys =
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+        List.concat_map
+          ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier)
+          qualifiers
       in
       purge_table_given_keys class_definitions class_keys;
       purge_table_given_keys class_metadata class_keys;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
       |> purge_table_given_keys aliases;
       let global_keys =
-        List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
+        List.concat_map
+          ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier)
+          qualifiers
       in
       purge_table_given_keys globals global_keys;
       purge_table_given_keys undecorated_functions global_keys;
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
+      List.concat_map
+        ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
+        qualifiers
       |> purge_dependents;
-      DependencyHandler.clear_keys_batch handles;
-      let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+      DependencyHandler.clear_keys_batch qualifiers;
       List.iter ~f:purge_submodules qualifiers;
       List.iter ~f:(Hashtbl.remove modules) qualifiers;
       SharedMem.collect `aggressive;
@@ -372,7 +382,8 @@ let register_class_definitions (module Handler : Handler) source =
       | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
           let name = Reference.show name in
           let primitive = name in
-          Handler.DependencyHandler.add_class_key ~handle name;
+          let qualifier = Source.qualifier ~handle in
+          Handler.DependencyHandler.add_class_key ~qualifier name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
           if not (TypeOrder.contains order primitive) then
             TypeOrder.insert order primitive;
@@ -707,7 +718,8 @@ let register_values
 
     let statement { Source.handle; _ } callables statement =
       let collect_callable ~name callables callable =
-        Handler.DependencyHandler.add_function_key ~handle name;
+        let qualifier = Source.qualifier ~handle in
+        Handler.DependencyHandler.add_function_key ~qualifier name;
 
         (* Register callable global. *)
         let change callable = function

@@ -39,7 +39,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
     Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
-  Handler.purge handles;
+  List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle) |> Handler.purge;
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal ~equal:String.equal)

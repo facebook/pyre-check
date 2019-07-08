@@ -9,11 +9,11 @@ open Pyre
 module SharedMemory = Memory
 
 type index = {
-  function_keys: Reference.t Hash_set.t File.Handle.Table.t;
-  class_keys: Identifier.t Hash_set.t File.Handle.Table.t;
-  alias_keys: Identifier.t Hash_set.t File.Handle.Table.t;
-  global_keys: Reference.t Hash_set.t File.Handle.Table.t;
-  dependent_keys: Reference.t Hash_set.t File.Handle.Table.t
+  function_keys: Reference.t Hash_set.t Reference.Table.t;
+  class_keys: Identifier.t Hash_set.t Reference.Table.t;
+  alias_keys: Identifier.t Hash_set.t Reference.Table.t;
+  global_keys: Reference.t Hash_set.t Reference.Table.t;
+  dependent_keys: Reference.t Hash_set.t Reference.Table.t
 }
 
 type t = {
@@ -22,73 +22,73 @@ type t = {
 }
 
 module type Handler = sig
-  val add_function_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_function_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_class_key : handle:File.Handle.t -> Identifier.t -> unit
+  val add_class_key : qualifier:Reference.t -> Identifier.t -> unit
 
-  val add_alias_key : handle:File.Handle.t -> Identifier.t -> unit
+  val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
 
-  val add_global_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_global_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_dependent_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_dependent_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_dependent : handle:File.Handle.t -> Reference.t -> unit
+  val add_dependent : qualifier:Reference.t -> Reference.t -> unit
 
   val dependents : Reference.t -> Reference.Set.Tree.t option
 
-  val get_function_keys : handle:File.Handle.t -> Reference.t list
+  val get_function_keys : qualifier:Reference.t -> Reference.t list
 
-  val get_class_keys : handle:File.Handle.t -> Identifier.t list
+  val get_class_keys : qualifier:Reference.t -> Identifier.t list
 
-  val get_alias_keys : handle:File.Handle.t -> Identifier.t list
+  val get_alias_keys : qualifier:Reference.t -> Identifier.t list
 
-  val get_global_keys : handle:File.Handle.t -> Reference.t list
+  val get_global_keys : qualifier:Reference.t -> Reference.t list
 
-  val get_dependent_keys : handle:File.Handle.t -> Reference.t list
+  val get_dependent_keys : qualifier:Reference.t -> Reference.t list
 
-  val clear_keys_batch : File.Handle.t list -> unit
+  val clear_keys_batch : Reference.t list -> unit
 
-  val normalize : File.Handle.t list -> unit
+  val normalize : Reference.t list -> unit
 end
 
 let handler
     { index = { function_keys; class_keys; alias_keys; global_keys; dependent_keys }; dependents }
   =
   ( module struct
-    let add_function_key ~handle name =
-      match Hashtbl.find function_keys handle with
-      | None -> Hashtbl.set function_keys ~key:handle ~data:(Reference.Hash_set.of_list [name])
+    let add_function_key ~qualifier name =
+      match Hashtbl.find function_keys qualifier with
+      | None -> Hashtbl.set function_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [name])
       | Some hash_set -> Hash_set.add hash_set name
 
 
-    let add_class_key ~handle class_type =
-      match Hashtbl.find class_keys handle with
-      | None -> Hashtbl.set class_keys ~key:handle ~data:(Identifier.Hash_set.of_list [class_type])
+    let add_class_key ~qualifier class_type =
+      match Hashtbl.find class_keys qualifier with
+      | None ->
+          Hashtbl.set class_keys ~key:qualifier ~data:(Identifier.Hash_set.of_list [class_type])
       | Some hash_set -> Hash_set.add hash_set class_type
 
 
-    let add_alias_key ~handle alias =
-      match Hashtbl.find alias_keys handle with
-      | None -> Hashtbl.set alias_keys ~key:handle ~data:(Identifier.Hash_set.of_list [alias])
+    let add_alias_key ~qualifier alias =
+      match Hashtbl.find alias_keys qualifier with
+      | None -> Hashtbl.set alias_keys ~key:qualifier ~data:(Identifier.Hash_set.of_list [alias])
       | Some hash_set -> Hash_set.add hash_set alias
 
 
-    let add_global_key ~handle global =
-      match Hashtbl.find global_keys handle with
-      | None -> Hashtbl.set global_keys ~key:handle ~data:(Reference.Hash_set.of_list [global])
+    let add_global_key ~qualifier global =
+      match Hashtbl.find global_keys qualifier with
+      | None -> Hashtbl.set global_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [global])
       | Some hash_set -> Hash_set.add hash_set global
 
 
-    let add_dependent_key ~handle dependent =
-      match Hashtbl.find dependent_keys handle with
+    let add_dependent_key ~qualifier dependent =
+      match Hashtbl.find dependent_keys qualifier with
       | None ->
-          Hashtbl.set dependent_keys ~key:handle ~data:(Reference.Hash_set.of_list [dependent])
+          Hashtbl.set dependent_keys ~key:qualifier ~data:(Reference.Hash_set.of_list [dependent])
       | Some hash_set -> Hash_set.add hash_set dependent
 
 
-    let add_dependent ~handle dependent =
-      add_dependent_key ~handle dependent;
-      let qualifier = Source.qualifier ~handle in
+    let add_dependent ~qualifier dependent =
+      add_dependent_key ~qualifier dependent;
       let update entry =
         match entry with
         | None -> Reference.Set.singleton qualifier
@@ -101,35 +101,35 @@ let handler
 
     let dependents reference = Hashtbl.find dependents reference >>| Set.to_tree
 
-    let get_function_keys ~handle =
-      Hashtbl.find function_keys handle >>| Hash_set.to_list |> Option.value ~default:[]
+    let get_function_keys ~qualifier =
+      Hashtbl.find function_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
-    let get_class_keys ~handle =
-      Hashtbl.find class_keys handle >>| Hash_set.to_list |> Option.value ~default:[]
+    let get_class_keys ~qualifier =
+      Hashtbl.find class_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
-    let get_alias_keys ~handle =
-      Hashtbl.find alias_keys handle >>| Hash_set.to_list |> Option.value ~default:[]
+    let get_alias_keys ~qualifier =
+      Hashtbl.find alias_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
-    let get_global_keys ~handle =
-      Hashtbl.find global_keys handle >>| Hash_set.to_list |> Option.value ~default:[]
+    let get_global_keys ~qualifier =
+      Hashtbl.find global_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
-    let get_dependent_keys ~handle =
-      Hashtbl.find dependent_keys handle >>| Hash_set.to_list |> Option.value ~default:[]
+    let get_dependent_keys ~qualifier =
+      Hashtbl.find dependent_keys qualifier >>| Hash_set.to_list |> Option.value ~default:[]
 
 
-    let clear_keys_batch handles =
-      List.iter ~f:(Hashtbl.remove function_keys) handles;
-      List.iter ~f:(Hashtbl.remove class_keys) handles;
-      List.iter ~f:(Hashtbl.remove alias_keys) handles;
-      List.iter ~f:(Hashtbl.remove global_keys) handles;
-      List.iter ~f:(Hashtbl.remove dependent_keys) handles
+    let clear_keys_batch qualifiers =
+      List.iter ~f:(Hashtbl.remove function_keys) qualifiers;
+      List.iter ~f:(Hashtbl.remove class_keys) qualifiers;
+      List.iter ~f:(Hashtbl.remove alias_keys) qualifiers;
+      List.iter ~f:(Hashtbl.remove global_keys) qualifiers;
+      List.iter ~f:(Hashtbl.remove dependent_keys) qualifiers
 
 
-    let normalize handles =
+    let normalize qualifiers =
       let normalize qualifier =
         match Hashtbl.find dependents_table qualifier with
         | Some unnormalized ->
@@ -139,7 +139,7 @@ let handler
             |> fun normalized -> Hashtbl.set dependents_table ~key:qualifier ~data:normalized
         | None -> ()
       in
-      List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
+      List.concat_map qualifiers ~f:(fun qualifier -> get_dependent_keys ~qualifier)
       |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize
   end : Handler )
@@ -147,11 +147,11 @@ let handler
 
 let create () =
   let index =
-    { function_keys = File.Handle.Table.create ();
-      class_keys = File.Handle.Table.create ();
-      alias_keys = File.Handle.Table.create ();
-      global_keys = File.Handle.Table.create ();
-      dependent_keys = File.Handle.Table.create ()
+    { function_keys = Reference.Table.create ();
+      class_keys = Reference.Table.create ();
+      alias_keys = Reference.Table.create ();
+      global_keys = Reference.Table.create ();
+      dependent_keys = Reference.Table.create ()
     }
   in
   { index; dependents = Reference.Table.create () }

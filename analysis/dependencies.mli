@@ -8,11 +8,11 @@ open Ast
 module SharedMemory = Memory
 
 type index = {
-  function_keys: Reference.t Hash_set.t File.Handle.Table.t;
-  class_keys: Identifier.t Hash_set.t File.Handle.Table.t;
-  alias_keys: Identifier.t Hash_set.t File.Handle.Table.t;
-  global_keys: Reference.t Hash_set.t File.Handle.Table.t;
-  dependent_keys: Reference.t Hash_set.t File.Handle.Table.t
+  function_keys: Reference.t Hash_set.t Reference.Table.t;
+  class_keys: Identifier.t Hash_set.t Reference.Table.t;
+  alias_keys: Identifier.t Hash_set.t Reference.Table.t;
+  global_keys: Reference.t Hash_set.t Reference.Table.t;
+  dependent_keys: Reference.t Hash_set.t Reference.Table.t
 }
 
 type t = {
@@ -21,33 +21,33 @@ type t = {
 }
 
 module type Handler = sig
-  val add_function_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_function_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_class_key : handle:File.Handle.t -> Identifier.t -> unit
+  val add_class_key : qualifier:Reference.t -> Identifier.t -> unit
 
-  val add_alias_key : handle:File.Handle.t -> Identifier.t -> unit
+  val add_alias_key : qualifier:Reference.t -> Identifier.t -> unit
 
-  val add_global_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_global_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_dependent_key : handle:File.Handle.t -> Reference.t -> unit
+  val add_dependent_key : qualifier:Reference.t -> Reference.t -> unit
 
-  val add_dependent : handle:File.Handle.t -> Reference.t -> unit
+  val add_dependent : qualifier:Reference.t -> Reference.t -> unit
 
   val dependents : Reference.t -> Reference.Set.Tree.t option
 
-  val get_function_keys : handle:File.Handle.t -> Reference.t list
+  val get_function_keys : qualifier:Reference.t -> Reference.t list
 
-  val get_class_keys : handle:File.Handle.t -> Identifier.t list
+  val get_class_keys : qualifier:Reference.t -> Identifier.t list
 
-  val get_alias_keys : handle:File.Handle.t -> Identifier.t list
+  val get_alias_keys : qualifier:Reference.t -> Identifier.t list
 
-  val get_global_keys : handle:File.Handle.t -> Reference.t list
+  val get_global_keys : qualifier:Reference.t -> Reference.t list
 
-  val get_dependent_keys : handle:File.Handle.t -> Reference.t list
+  val get_dependent_keys : qualifier:Reference.t -> Reference.t list
 
-  val clear_keys_batch : File.Handle.t list -> unit
+  val clear_keys_batch : Reference.t list -> unit
 
-  val normalize : File.Handle.t list -> unit
+  val normalize : Reference.t list -> unit
 end
 
 val create : unit -> t

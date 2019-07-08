@@ -153,91 +153,90 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
 
   module DependencyHandler : Dependencies.Handler = struct
-    let add_new_key ~get ~add ~handle ~key =
-      let existing = get handle in
+    let add_new_key ~get ~add ~qualifier ~key =
+      let existing = get qualifier in
       match existing with
-      | None -> add handle [key]
-      | Some keys -> add handle (key :: keys)
+      | None -> add qualifier [key]
+      | Some keys -> add qualifier (key :: keys)
 
 
-    let add_function_key ~handle reference =
-      add_new_key ~handle ~key:reference ~get:FunctionKeys.get ~add:FunctionKeys.add
+    let add_function_key ~qualifier reference =
+      add_new_key ~qualifier ~key:reference ~get:FunctionKeys.get ~add:FunctionKeys.add
 
 
-    let add_class_key ~handle class_type =
-      add_new_key ~handle ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
+    let add_class_key ~qualifier class_type =
+      add_new_key ~qualifier ~key:class_type ~get:ClassKeys.get ~add:ClassKeys.add
 
 
-    let add_alias_key ~handle alias =
-      add_new_key ~handle ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
+    let add_alias_key ~qualifier alias =
+      add_new_key ~qualifier ~key:alias ~get:AliasKeys.get ~add:AliasKeys.add
 
 
-    let add_global_key ~handle global =
-      add_new_key ~handle ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
+    let add_global_key ~qualifier global =
+      add_new_key ~qualifier ~key:global ~get:GlobalKeys.get ~add:GlobalKeys.add
 
 
-    let add_dependent_key ~handle dependent =
-      add_new_key ~handle ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
+    let add_dependent_key ~qualifier dependent =
+      add_new_key ~qualifier ~key:dependent ~get:DependentKeys.get ~add:DependentKeys.add
 
 
-    let add_dependent ~handle dependent =
-      add_dependent_key ~handle dependent;
-      let qualifier = Source.qualifier ~handle in
+    let add_dependent ~qualifier dependent =
+      add_dependent_key ~qualifier dependent;
       match Dependents.get dependent with
       | None -> Dependents.add dependent (Reference.Set.Tree.singleton qualifier)
       | Some dependencies ->
           Dependents.add dependent (Reference.Set.Tree.add dependencies qualifier)
 
 
-    let get_function_keys ~handle = FunctionKeys.get handle |> Option.value ~default:[]
+    let get_function_keys ~qualifier = FunctionKeys.get qualifier |> Option.value ~default:[]
 
-    let get_class_keys ~handle = ClassKeys.get handle |> Option.value ~default:[]
+    let get_class_keys ~qualifier = ClassKeys.get qualifier |> Option.value ~default:[]
 
-    let get_alias_keys ~handle = AliasKeys.get handle |> Option.value ~default:[]
+    let get_alias_keys ~qualifier = AliasKeys.get qualifier |> Option.value ~default:[]
 
-    let get_global_keys ~handle = GlobalKeys.get handle |> Option.value ~default:[]
+    let get_global_keys ~qualifier = GlobalKeys.get qualifier |> Option.value ~default:[]
 
-    let get_dependent_keys ~handle = DependentKeys.get handle |> Option.value ~default:[]
+    let get_dependent_keys ~qualifier = DependentKeys.get qualifier |> Option.value ~default:[]
 
-    let clear_keys_batch handles =
-      FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list handles);
-      ClassKeys.remove_batch (ClassKeys.KeySet.of_list handles);
-      AliasKeys.remove_batch (AliasKeys.KeySet.of_list handles);
-      GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list handles);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
+    let clear_keys_batch qualifiers =
+      FunctionKeys.remove_batch (FunctionKeys.KeySet.of_list qualifiers);
+      ClassKeys.remove_batch (ClassKeys.KeySet.of_list qualifiers);
+      AliasKeys.remove_batch (AliasKeys.KeySet.of_list qualifiers);
+      GlobalKeys.remove_batch (GlobalKeys.KeySet.of_list qualifiers);
+      DependentKeys.remove_batch (DependentKeys.KeySet.of_list qualifiers)
 
 
     let dependents = Dependents.get
 
-    let normalize handles =
-      let normalize_keys handle =
-        ( match FunctionKeys.get handle with
+    let normalize qualifiers =
+      let normalize_keys qualifier =
+        ( match FunctionKeys.get qualifier with
         | Some keys ->
-            FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton handle);
-            FunctionKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
+            FunctionKeys.remove_batch (FunctionKeys.KeySet.singleton qualifier);
+            FunctionKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
         | None -> () );
-        ( match ClassKeys.get handle with
+        ( match ClassKeys.get qualifier with
         | Some keys ->
-            ClassKeys.remove_batch (ClassKeys.KeySet.singleton handle);
-            ClassKeys.add handle (List.dedup_and_sort ~compare:Identifier.compare keys)
+            ClassKeys.remove_batch (ClassKeys.KeySet.singleton qualifier);
+            ClassKeys.add qualifier (List.dedup_and_sort ~compare:Identifier.compare keys)
         | None -> () );
-        ( match AliasKeys.get handle with
+        ( match AliasKeys.get qualifier with
         | Some keys ->
-            AliasKeys.remove_batch (AliasKeys.KeySet.singleton handle);
-            AliasKeys.add handle (List.dedup_and_sort ~compare:Identifier.compare keys)
+            AliasKeys.remove_batch (AliasKeys.KeySet.singleton qualifier);
+            AliasKeys.add qualifier (List.dedup_and_sort ~compare:Identifier.compare keys)
         | None -> () );
-        ( match GlobalKeys.get handle with
+        ( match GlobalKeys.get qualifier with
         | Some keys ->
-            GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton handle);
-            GlobalKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
+            GlobalKeys.remove_batch (GlobalKeys.KeySet.singleton qualifier);
+            GlobalKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
         | None -> () );
-        match DependentKeys.get handle with
+        match DependentKeys.get qualifier with
         | Some keys ->
-            DependentKeys.remove_batch (DependentKeys.KeySet.singleton handle);
-            DependentKeys.add handle (List.dedup_and_sort ~compare:Reference.compare keys)
+            DependentKeys.remove_batch (DependentKeys.KeySet.singleton qualifier);
+            DependentKeys.add qualifier (List.dedup_and_sort ~compare:Reference.compare keys)
         | None -> ()
       in
-      List.iter handles ~f:normalize_keys;
+      List.iter qualifiers ~f:normalize_keys;
       let normalize_dependents name =
         match Dependents.get name with
         | Some unnormalized ->
@@ -248,7 +247,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
             |> Dependents.add name
         | None -> ()
       in
-      List.concat_map handles ~f:(fun handle -> get_dependent_keys ~handle)
+      List.concat_map qualifiers ~f:(fun qualifier -> get_dependent_keys ~qualifier)
       |> List.dedup_and_sort ~compare:Reference.compare
       |> List.iter ~f:normalize_dependents
   end
@@ -334,11 +333,13 @@ module SharedHandler : Analysis.Environment.Handler = struct
       dependency
       File.Handle.pp
       handle;
-    DependencyHandler.add_dependent ~handle dependency
+    let qualifier = Source.qualifier ~handle in
+    DependencyHandler.add_dependent ~qualifier dependency
 
 
   let register_global ~handle ~reference ~global =
-    DependencyHandler.add_global_key ~handle reference;
+    let qualifier = Source.qualifier ~handle in
+    DependencyHandler.add_global_key ~qualifier reference;
     Globals.add reference global
 
 
@@ -355,55 +356,52 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
 
   let register_alias ~handle ~key ~data =
-    DependencyHandler.add_alias_key ~handle key;
+    let qualifier = Source.qualifier ~handle in
+    DependencyHandler.add_alias_key ~qualifier key;
     Aliases.add key data
 
 
-  let purge ?(debug = false) handles =
+  let purge ?(debug = false) (qualifiers : Reference.t list) =
     let purge_dependents keys =
-      let qualifiers =
-        handles
-        |> List.map ~f:(fun handle -> Source.qualifier ~handle)
-        |> Reference.Set.Tree.of_list
-      in
       let new_dependents = Reference.Table.create () in
       let recompute_dependents key dependents =
+        let qualifiers = Reference.Set.Tree.of_list qualifiers in
         Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
       in
       List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
       Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
       Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
-      DependentKeys.remove_batch (DependentKeys.KeySet.of_list handles)
+      DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
     in
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_function_keys ~handle) handles
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_function_keys ~qualifier) qualifiers
     |> fun keys ->
     (* We add a global name for each function definition as well. *)
     Globals.remove_batch (Globals.KeySet.of_list keys);
 
     (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
     |> TypeOrder.disconnect_successors (module TypeOrderHandler);
     let class_keys =
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_class_keys ~handle) handles
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
       |> ClassDefinitions.KeySet.of_list
     in
     ClassDefinitions.remove_batch class_keys;
     ClassMetadata.remove_batch class_keys;
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_alias_keys ~handle) handles
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
     |> fun keys ->
     Aliases.remove_batch (Aliases.KeySet.of_list keys);
     let global_keys =
-      List.concat_map ~f:(fun handle -> DependencyHandler.get_global_keys ~handle) handles
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier) qualifiers
       |> Globals.KeySet.of_list
     in
     Globals.remove_batch global_keys;
     UndecoratedFunctions.remove_batch global_keys;
-    List.concat_map ~f:(fun handle -> DependencyHandler.get_dependent_keys ~handle) handles
+    List.concat_map
+      ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
+      qualifiers
     |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
-    DependencyHandler.clear_keys_batch handles;
-    List.map ~f:(fun handle -> Ast.Source.qualifier ~handle) handles
-    |> fun qualifiers ->
+    DependencyHandler.clear_keys_batch qualifiers;
     Ast.SharedMemory.Modules.remove ~qualifiers;
     if debug then (* If in debug mode, make sure the TypeOrder is still consistent. *)
       TypeOrder.check_integrity (module TypeOrderHandler)
@@ -490,4 +488,6 @@ let normalize_shared_memory () =
       List.sort ~compare:Int.compare keys |> OrderKeys.add SharedMemory.SingletonKey.key );
   Ast.SharedMemory.HandleKeys.normalize ();
   let handles = Ast.SharedMemory.HandleKeys.get () in
-  File.Handle.Set.Tree.to_list handles |> SharedHandler.DependencyHandler.normalize
+  File.Handle.Set.Tree.to_list handles
+  |> List.map ~f:(fun handle -> Source.qualifier ~handle)
+  |> SharedHandler.DependencyHandler.normalize

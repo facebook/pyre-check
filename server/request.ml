@@ -461,6 +461,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | None -> map
         in
         let handles = Ast.SharedMemory.HandleKeys.get () |> File.Handle.Set.Tree.to_list in
+        let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
         (* AST shared memory. *)
         let map =
           map
@@ -482,32 +483,32 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         (* Handle-based keys. *)
         let map =
           map
-          |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:handles)
-          |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:handles)
-          |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:handles)
-          |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:handles)
-          |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
         in
         (* Class definitions. *)
         let map =
-          let keys = List.filter_map handles ~f:ClassKeys.get |> List.concat in
+          let keys = List.filter_map qualifiers ~f:ClassKeys.get |> List.concat in
           extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
           |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
         in
         (* Aliases. *)
         let map =
-          let keys = List.filter_map handles ~f:AliasKeys.get |> List.concat in
+          let keys = List.filter_map qualifiers ~f:AliasKeys.get |> List.concat in
           extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
         in
         (* Globals and undecorated functions. *)
         let map =
-          let keys = List.filter_map handles ~f:GlobalKeys.get |> List.concat in
+          let keys = List.filter_map qualifiers ~f:GlobalKeys.get |> List.concat in
           extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
           |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
         in
         (* Dependents. *)
         let map =
-          let keys = List.filter_map handles ~f:DependentKeys.get |> List.concat in
+          let keys = List.filter_map qualifiers ~f:DependentKeys.get |> List.concat in
           extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
         in
         (* Resolution shared memory. *)
@@ -632,23 +633,23 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           | FunctionKeys.Decoded (key, value) ->
               Some
                 ( FunctionKeyValue.description,
-                  File.Handle.show key,
+                  Reference.show key,
                   value >>| List.to_string ~f:Reference.show )
           | ClassKeys.Decoded (key, value) ->
               Some
-                (ClassKeyValue.description, File.Handle.show key, value >>| List.to_string ~f:Fn.id)
+                (ClassKeyValue.description, Reference.show key, value >>| List.to_string ~f:Fn.id)
           | GlobalKeys.Decoded (key, value) ->
               Some
                 ( GlobalKeyValue.description,
-                  File.Handle.show key,
+                  Reference.show key,
                   value >>| List.to_string ~f:Reference.show )
           | AliasKeys.Decoded (key, value) ->
               Some
-                (AliasKeyValue.description, File.Handle.show key, value >>| List.to_string ~f:ident)
+                (AliasKeyValue.description, Reference.show key, value >>| List.to_string ~f:ident)
           | DependentKeys.Decoded (key, value) ->
               Some
                 ( DependentKeyValue.description,
-                  File.Handle.show key,
+                  Reference.show key,
                   value >>| List.to_string ~f:Reference.show )
           | OrderIndices.Decoded (key, value) ->
               Some (OrderIndexValue.description, key, value >>| Int.to_string)
