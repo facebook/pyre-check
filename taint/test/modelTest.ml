@@ -162,6 +162,26 @@ let test_class_models _ =
         class AnnotatedSource(TaintSource[UserControlled]):
           def AnnotatedSource.method(parameter): ...
       |}
+    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"];
+
+  (* Class sinks and sources do not currently respect any annotations for individual methods. *)
+  assert_model
+    ~model_source:
+      {|
+        class AnnotatedSink(TaintSink[TestSink]):
+          def AnnotatedSink.method(parameter: TaintSink[Test]) -> TaintSource[UserControlled]: ...
+      |}
+    ~expect:
+      [ outcome
+          ~kind:`Method
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          "AnnotatedSink.method" ];
+  assert_model
+    ~model_source:
+      {|
+        class AnnotatedSource(TaintSource[UserControlled]):
+          def AnnotatedSource.method(parameter: TaintSink[TestSink]) -> TaintSource[Test]: ...
+      |}
     ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"]
 
 
