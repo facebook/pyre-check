@@ -759,6 +759,32 @@ let test_for_locations _ =
            }) ]
 
 
+let test_generator_locations _ =
+  assert_source_locations
+    "(a in b for a in [] if b)"
+    [ +Expression
+         (node
+            ~start:(1, 1)
+            ~stop:(1, 24)
+            (Generator
+               { Comprehension.element =
+                   node
+                     ~start:(1, 1)
+                     ~stop:(1, 7)
+                     (ComparisonOperator
+                        { ComparisonOperator.left = !"a";
+                          operator = ComparisonOperator.In;
+                          right = !"b"
+                        });
+                 generators =
+                   [ { Comprehension.target = !"a";
+                       iterator = +List [];
+                       conditions = [!"b"];
+                       async = false
+                     } ]
+               })) ]
+
+
 let test_global_locations _ =
   assert_source_locations "global a" [node ~start:(1, 0) ~stop:(1, 8) (Global ["a"])];
   assert_source_locations "global a, b" [node ~start:(1, 0) ~stop:(1, 11) (Global ["a"; "b"])]
@@ -1633,6 +1659,7 @@ let () =
          "delete_locations" >:: test_delete_locations;
          "dictionary_locations" >:: test_dictionary_locations;
          "for_locations" >:: test_for_locations;
+         "generator_locations" >:: test_generator_locations;
          "global_locations" >:: test_global_locations;
          "if_locations" >:: test_if_locations;
          "import_locations" >:: test_import_locations;

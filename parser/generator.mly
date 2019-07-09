@@ -1709,8 +1709,14 @@ set_or_dictionary:
 
 generator:
   | element = test; generators = comprehension+ {
+      let stop =
+        let { Comprehension.iterator; conditions; _ } = List.last_exn generators in
+        match List.rev conditions with
+        | [] -> Node.stop iterator
+        | condition :: _ -> Node.stop condition
+      in
       {
-        Node.location = element.Node.location;
+        Node.location = { element.Node.location with Location.stop };
         value = Generator { Comprehension.element; generators };
       }
     }
