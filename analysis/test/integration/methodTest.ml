@@ -170,7 +170,7 @@ let test_check_method_parameters _ =
 
       reveal_type(StringEnumTwo["key"])
     |}
-    [ "Invalid method signature [36]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
+    [ "Invalid method signature [47]: `typing.Type[Variable[_T]]` cannot be the type of `self`.";
       "Revealed type [-1]: Revealed type for `StringEnum.__getitem__(\"key\")` is `StringEnum`.";
       "Revealed type [-1]: Revealed type for `StringEnumTwo.__getitem__(\"key\")` is \
        `StringEnumTwo`." ];
@@ -190,7 +190,7 @@ let test_check_method_parameters _ =
         def bar(x: int) -> None:
           return
     |}
-    ["Invalid method signature [36]: Non-static method must specify `self` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `self` parameter."];
   assert_type_errors
     {|
       class Foo:
@@ -205,7 +205,7 @@ let test_check_method_parameters _ =
         def bar(x: int) -> None:
           return
     |}
-    ["Invalid method signature [36]: Non-static method must specify `cls` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."];
   assert_type_errors
     {|
       class Foo:
@@ -220,7 +220,7 @@ let test_check_method_parameters _ =
         def bar() -> None:
           return
     |}
-    ["Invalid method signature [36]: Non-static method must specify `self` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `self` parameter."];
   assert_type_errors
     {|
       class Foo:
@@ -228,7 +228,7 @@ let test_check_method_parameters _ =
         def bar() -> None:
           return
     |}
-    ["Invalid method signature [36]: Non-static method must specify `cls` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."];
   assert_type_errors
     {|
       class Foo:
@@ -1015,7 +1015,7 @@ let test_check_self _ =
           def two(self: Other) -> None:
               pass
     |}
-    ["Invalid method signature [36]: `Other` cannot be the type of `self`."];
+    ["Invalid method signature [47]: `Other` cannot be the type of `self`."];
   assert_type_errors
     {|
       T = typing.TypeVar('T')

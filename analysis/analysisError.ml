@@ -246,8 +246,6 @@ let code = function
   | InvalidTypeVariable _ -> 34
   | IllegalAnnotationTarget _ -> 35
   | MutuallyRecursiveTypeVariables _ -> 36
-  | InvalidTypeVariance _ -> 35
-  | InvalidMethodSignature _ -> 36
   | IncompleteType _ -> 37
   | AbstractClass _ -> 38
   | InvalidInheritance _ -> 39
@@ -257,6 +255,8 @@ let code = function
   | IncompatibleOverload _ -> 43
   | InvalidClass _ -> 44
   | InvalidClassInstantiation _ -> 45
+  | InvalidTypeVariance _ -> 46
+  | InvalidMethodSignature _ -> 47
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
   | Deobfuscation _ -> 102

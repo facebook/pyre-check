@@ -1055,7 +1055,7 @@ let test_check_invalid_type_variables _ =
         def foo(self, x: T) -> T:
           return x
     |}
-    [ "Invalid type variance [35]: The type variable `Variable[T](covariant)` is covariant "
+    [ "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
       ^ "and cannot be a parameter type." ];
   assert_type_errors
     {|
@@ -1080,7 +1080,7 @@ let test_check_invalid_type_variables _ =
         def foo(self, x: T) -> T:
           return x
     |}
-    [ "Invalid type variance [35]: The type variable `Variable[T](contravariant)` is "
+    [ "Invalid type variance [46]: The type variable `Variable[T](contravariant)` is "
       ^ "contravariant and cannot be a return type." ];
   assert_type_errors
     {|
@@ -1096,7 +1096,7 @@ let test_check_invalid_type_variables _ =
       def foo(x: T) -> T:
         return x
     |}
-    [ "Invalid type variance [35]: The type variable `Variable[T](covariant)` is covariant "
+    [ "Invalid type variance [46]: The type variable `Variable[T](covariant)` is covariant "
       ^ "and cannot be a parameter type." ]
 
 
