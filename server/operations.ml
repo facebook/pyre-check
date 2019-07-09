@@ -84,9 +84,10 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   Log.log ~section:`Server "Server initialized";
   Memory.SharedMemory.init_done ();
   let errors =
-    let table = File.Handle.Table.create () in
+    let table = Ast.Reference.Table.create () in
     let add_error error =
-      Hashtbl.add_multi table ~key:(File.Handle.create_for_testing (Error.path error)) ~data:error
+      let key = Error.path error |> Ast.SourcePath.qualifier_of_relative in
+      Hashtbl.add_multi table ~key ~data:error
     in
     List.iter errors ~f:add_error;
     table

@@ -1094,7 +1094,9 @@ let process_display_type_errors_request ~state ~configuration ~files =
     | _ ->
         let errors file =
           try
-            File.handle ~configuration file |> Hashtbl.find errors |> Option.value ~default:[]
+            let handle = File.handle ~configuration file in
+            let qualifier = Source.qualifier ~handle in
+            Hashtbl.find errors qualifier |> Option.value ~default:[]
           with
           | File.NonexistentHandle _ -> []
         in
@@ -1211,7 +1213,9 @@ let rec process
             let open LanguageServer.Protocol in
             let errors file =
               try
-                File.handle ~configuration file |> Hashtbl.find errors |> Option.value ~default:[]
+                let handle = File.handle ~configuration file in
+                let qualifier = Source.qualifier ~handle in
+                Hashtbl.find errors qualifier |> Option.value ~default:[]
               with
               | File.NonexistentHandle _ -> []
             in

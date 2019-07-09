@@ -163,7 +163,7 @@ module ConfigurationValue = struct
 end
 
 module ErrorsValue = struct
-  type t = (File.Handle.t * Analysis.Error.t list) list
+  type t = (Ast.Reference.t * Analysis.Error.t list) list
 
   let prefix = Prefix.make ()
 

@@ -125,7 +125,7 @@ let recheck
             if Hash_set.mem stub_qualifiers qualifier then
               false
             else
-              Handler.module_definition qualifier
+              Ast.SharedMemory.Modules.get ~qualifier
               >>= Module.handle
               >>| (fun existing_handle -> File.Handle.equal handle existing_handle)
               |> Option.value ~default:true
@@ -190,11 +190,14 @@ let recheck
       ()
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) (removed_handles @ repopulate_handles);
+  List.iter
+    ~f:(fun handle -> Hashtbl.remove errors (Source.qualifier ~handle))
+    (removed_handles @ repopulate_handles);
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
-      Hashtbl.add_multi errors ~key:(File.Handle.create_for_testing (Error.path error)) ~data:error);
+      let key = Error.path error |> Ast.SourcePath.qualifier_of_relative in
+      Hashtbl.add_multi errors ~key ~data:error);
 
   Statistics.performance
     ~name:"incremental check"

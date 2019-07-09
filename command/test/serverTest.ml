@@ -267,12 +267,9 @@ let assert_response ~local_root ?state ?(handle = "test.py") ~source ~request ex
   let parsed = parse ~handle ~qualifier source |> Preprocessing.preprocess in
   Ast.SharedMemory.Sources.add parsed;
   let errors =
-    let errors = File.Handle.Table.create () in
+    let errors = Reference.Table.create () in
     List.iter (make_errors ~local_root ~handle source) ~f:(fun error ->
-        Hashtbl.add_multi
-          errors
-          ~key:(File.Handle.create_for_testing (Error.path error))
-          ~data:error);
+        Hashtbl.add_multi errors ~key:qualifier ~data:error);
     errors
   in
   let initial_environment =
@@ -1330,7 +1327,7 @@ let test_incremental_typecheck context =
 
 let test_protocol_language_server_protocol context =
   let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let server_state = mock_server_state ~local_root (File.Handle.Table.create ()) in
+  let server_state = mock_server_state ~local_root (Reference.Table.create ()) in
   let { Request.response; _ } =
     Request.process
       ~state:server_state
@@ -1412,7 +1409,7 @@ let test_query_dependencies context =
     add_defaults_to_environment ~configuration environment_handler;
     Test.populate ~configuration environment_handler sources;
     let initial_state =
-      mock_server_state ~local_root ~initial_environment:environment (File.Handle.Table.create ())
+      mock_server_state ~local_root ~initial_environment:environment (Reference.Table.create ())
     in
     let assert_response ~request expected =
       let { Request.response; _ } =
@@ -1483,7 +1480,7 @@ let test_incremental_dependencies context =
     add_defaults_to_environment ~configuration environment_handler;
     Test.populate ~configuration environment_handler sources;
     let initial_state =
-      mock_server_state ~local_root ~initial_environment:environment (File.Handle.Table.create ())
+      mock_server_state ~local_root ~initial_environment:environment (Reference.Table.create ())
     in
     let process request =
       Request.process
@@ -1546,7 +1543,7 @@ let test_incremental_lookups context =
   add_defaults_to_environment ~configuration environment_handler;
   Test.populate ~configuration environment_handler [parse source];
   let request = Protocol.Request.TypeCheckRequest [file ~local_root ~content:source path] in
-  let errors = File.Handle.Table.create () in
+  let errors = Reference.Table.create () in
   let initial_state = mock_server_state ~local_root ~initial_environment:environment errors in
   let { Request.state; _ } =
     Request.process
@@ -1610,7 +1607,7 @@ let test_incremental_repopulate context =
     ~files:[file]
   |> ignore;
   Test.populate ~configuration environment_handler [parse source];
-  let errors = File.Handle.Table.create () in
+  let errors = Reference.Table.create () in
   let initial_state = mock_server_state ~local_root ~initial_environment:environment errors in
   let get_annotation access_name =
     match Resolution.function_definitions resolution !&access_name with
@@ -1692,7 +1689,7 @@ let test_incremental_attribute_caching context =
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   add_defaults_to_environment ~configuration environment;
   let ({ State.connections; _ } as old_state) =
-    mock_server_state ~local_root (File.Handle.Table.create ())
+    mock_server_state ~local_root (Reference.Table.create ())
   in
   let source_path = Path.create_relative ~root:local_root ~relative:"a.py" in
   let write_to_file ~content =

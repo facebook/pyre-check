@@ -22,7 +22,7 @@ type connections = {
 type t = {
   module_tracker: Service.ModuleTracker.t;
   environment: (module Analysis.Environment.Handler);
-  errors: Error.t list File.Handle.Table.t;
+  errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
   scheduler: Scheduler.t;
   last_integrity_check: float;

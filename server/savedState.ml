@@ -165,7 +165,7 @@ let load
     | None -> compute_locally_changed_files ~scheduler ~configuration
   in
   let errors =
-    EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> File.Handle.Table.of_alist_exn
+    EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> Ast.Reference.Table.of_alist_exn
   in
   let state =
     { State.module_tracker;

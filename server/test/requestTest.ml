@@ -17,7 +17,7 @@ let string_request_id id = LanguageServer.Types.RequestId.String id
 let mock_server_state
     ?(persistent_clients = [])
     ?(sources = [])
-    ?(errors = File.Handle.Table.create ())
+    ?(errors = Reference.Table.create ())
     ()
   =
   let configuration = Test.mock_configuration in
@@ -217,11 +217,12 @@ let test_process_display_type_errors_request _ =
               in
               List.map errors ~f:error
             in
-            File.Handle.create_for_testing path, errors
+            let handle = File.Handle.create_for_testing path in
+            Source.qualifier ~handle, errors
           in
           List.map errors ~f:entry
         in
-        mock_server_state ~errors:(serialized_errors errors |> File.Handle.Table.of_alist_exn) ()
+        mock_server_state ~errors:(serialized_errors errors |> Reference.Table.of_alist_exn) ()
       in
       let configuration =
         Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
