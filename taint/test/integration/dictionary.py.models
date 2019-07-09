@@ -2,6 +2,60 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.dictionary_assign_to_index",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 32,
+              "start": 26,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dictionary_assignment_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 20,
+              "start": 26,
+              "end": 28
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "a" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.dictionary_entry_sink",
     "sources": [],
     "sinks": [
@@ -21,6 +75,64 @@
         ]
       }
     ],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dictionary_nested_assignment_1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 38,
+              "start": 31,
+              "end": 33
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "a" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dictionary_nested_assignment_2",
+    "sources": [
+      {
+        "port": "result[b]",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 44,
+              "start": 31,
+              "end": 33
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "a" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
     "tito": []
   }
 }

@@ -1,5 +1,11 @@
 @generated
 Call dependencies
+dictionary.dictionary_assign_to_index (fun) -> [__test_source (fun) dict::__setitem__ (method)]
+dictionary.dictionary_assignment_source (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 dictionary.dictionary_entry_sink (fun) -> [__test_sink (fun)]
+dictionary.dictionary_nested_assignment_1 (fun) -> [__test_source (fun) dict::__getitem__ (method)]
+dictionary.dictionary_nested_assignment_2 (fun) -> [__test_source (fun) dict::__getitem__ (method)]
+dictionary.dictionary_nested_non_source_assignment (fun) -> [__test_source (fun) dict::__getitem__ (method)]
+dictionary.dictionary_non_source (fun) -> [__test_source (fun) dict::__getitem__ (method) dict::__setitem__ (method)]
 dictionary.dictionary_source (fun) -> [__test_source (fun)]
 dictionary.dictionary_tito (fun) -> []

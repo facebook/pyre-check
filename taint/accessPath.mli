@@ -31,6 +31,8 @@ type t = {
 
 val create : Root.t -> AbstractTreeDomain.Label.path -> t
 
+val extend : t -> path:AbstractTreeDomain.Label.path -> t
+
 val of_expression : resolution:Resolution.t -> Expression.t -> t option
 
 val get_index : Expression.t -> AbstractTreeDomain.Label.t

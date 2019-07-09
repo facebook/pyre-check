@@ -177,6 +177,8 @@ type t = {
 
 let create root path = { root; path }
 
+let extend { root; path = original_path } ~path = { root; path = original_path @ path }
+
 let get_index { Node.value = expression; _ } =
   match expression with
   | String literal -> AbstractTreeDomain.Label.Field literal.value

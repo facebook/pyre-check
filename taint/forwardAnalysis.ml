@@ -464,10 +464,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call
           { callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
-            arguments = [_; { Call.Argument.value; _ }]
+            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }]
           } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
-          taint, analyze_assignment ~resolution base taint taint state
+          let state =
+            analyze_assignment
+              ~resolution
+              ~fields:[AccessPath.get_index index]
+              base
+              taint
+              taint
+              state
+          in
+          ForwardState.Tree.empty, state
       | Call { callee; arguments } -> analyze_call ~resolution ~state callee arguments
       | Complex _ -> ForwardState.Tree.empty, state
       | Dictionary dictionary ->
@@ -539,6 +548,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     and analyze_assignment
         ~resolution
+        ?(fields = [])
         ({ Node.location; value } as target)
         taint
         surrounding_taint
@@ -561,9 +571,19 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Call
           { callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-            _
+            arguments = [{ Call.Argument.value = argument_value; _ }]
           } ->
-          analyze_assignment ~resolution base taint surrounding_taint state
+          let index = AccessPath.get_index argument_value in
+          analyze_assignment
+            ~resolution
+              (* Fields should only get propagated for getitem/setitem chains. These fields are not
+               * reversed, as `a[0][1]` is parsed as `(a[0])[1]`, and `[1]` will appear as the
+               * first attribute. *)
+            ~fields:(index :: fields)
+            base
+            taint
+            surrounding_taint
+            state
       | _ ->
           (* Check flows to tainted globals/attributes. *)
           let source_tree = taint in
@@ -582,7 +602,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;
 
           (* Propagate taint. *)
-          let access_path = AccessPath.of_expression ~resolution target in
+          let access_path =
+            AccessPath.of_expression ~resolution target >>| AccessPath.extend ~path:fields
+          in
           store_taint_option access_path taint state
 
 
