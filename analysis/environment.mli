@@ -11,7 +11,7 @@ type t = {
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   implicit_submodules: int Reference.Table.t;
-  order: TypeOrder.t;
+  order: ClassHierarchy.t;
   aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
@@ -73,7 +73,7 @@ module type Handler = sig
 
   module DependencyHandler : Dependencies.Handler
 
-  module TypeOrderHandler : TypeOrder.Handler
+  module TypeOrderHandler : ClassHierarchy.Handler
 end
 
 val handler : t -> (module Handler)

@@ -1058,7 +1058,7 @@ module State (Context : Context) = struct
                       let parent_name = Reference.show parent in
                       let parent_type = Type.Primitive parent_name in
                       let variables =
-                        TypeOrder.variables (Resolution.order resolution) parent_name
+                        ClassHierarchy.variables (Resolution.order resolution) parent_name
                       in
                       match variables with
                       | None
@@ -1427,7 +1427,7 @@ module State (Context : Context) = struct
                         | Type.Callable
                             { Type.Callable.implementation = original_implementation; _ } ->
                             original_implementation
-                        | annotation -> raise (TypeOrder.Untracked annotation)
+                        | annotation -> raise (ClassHierarchy.Untracked annotation)
                       in
                       let errors =
                         let expected = Type.Callable.Overload.return_annotation implementation in
@@ -1514,7 +1514,7 @@ module State (Context : Context) = struct
                                 else
                                   errors
                               with
-                              | TypeOrder.Untracked _ ->
+                              | ClassHierarchy.Untracked _ ->
                                   (* TODO(T27409168): Error here. *)
                                   errors )
                           | None ->
@@ -1601,7 +1601,7 @@ module State (Context : Context) = struct
                   | _ -> errors)
             |> Option.value ~default:errors
         with
-        | TypeOrder.Untracked _ -> errors
+        | ClassHierarchy.Untracked _ -> errors
       in
       { state with errors }
     in
@@ -4364,7 +4364,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
   end)
   in
   let aliases = Handler.aliases in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   let state_without_resolution =
     let empty_resolution =
       Resolution.create
@@ -4582,7 +4582,7 @@ let check_define
     else
       check ~define:define_node ~initial
   with
-  | TypeOrder.Untracked annotation ->
+  | ClassHierarchy.Untracked annotation ->
       Statistics.event
         ~name:"undefined type"
         ~integers:[]

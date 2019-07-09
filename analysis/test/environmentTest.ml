@@ -47,7 +47,7 @@ let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifie
 let order_and_environment source =
   let environment = populate source in
   let module Handler = (val environment) in
-  ( { TypeOrder.handler = (module Handler.TypeOrderHandler : TypeOrder.Handler);
+  ( { TypeOrder.handler = (module Handler.TypeOrderHandler : ClassHierarchy.Handler);
       constructor = (fun _ ~protocol_assumptions:_ -> None);
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -94,8 +94,8 @@ let test_register_class_definitions _ =
   assert_equal (parse_annotation (module Handler) !"D") (Type.Primitive "D");
   assert_equal (parse_annotation (module Handler) !"B") (Type.Primitive "B");
   assert_equal (parse_annotation (module Handler) !"A") (Type.Primitive "A");
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  assert_equal (TypeOrder.successors order "C") [];
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  assert_equal (ClassHierarchy.successors order "C") [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
@@ -148,9 +148,9 @@ let test_register_class_metadata _ =
   in
   let resolution = TypeCheck.resolution (module Handler) () in
   Environment.connect_type_order (module Handler) resolution source;
-  TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-  TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
-  TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
+  ClassHierarchy.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+  ClassHierarchy.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
+  ClassHierarchy.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
   Handler.register_class_metadata "A";
   Handler.register_class_metadata "B";
   Handler.register_class_metadata "C";
@@ -436,9 +436,9 @@ let test_register_implicit_submodules _ =
 let test_connect_definition _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
   let resolution = TypeCheck.resolution (module Handler) () in
-  let (module TypeOrderHandler : TypeOrder.Handler) = (module Handler.TypeOrderHandler) in
-  TypeOrder.insert (module TypeOrderHandler) "C";
-  TypeOrder.insert (module TypeOrderHandler) "D";
+  let (module TypeOrderHandler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
+  ClassHierarchy.insert (module TypeOrderHandler) "C";
+  ClassHierarchy.insert (module TypeOrderHandler) "D";
   let assert_edge ~predecessor ~successor =
     let predecessor_index =
       TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) predecessor
@@ -446,13 +446,13 @@ let test_connect_definition _ =
     let successor_index = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) successor in
     assert_true
       (List.mem
-         ~equal:TypeOrder.Target.equal
+         ~equal:ClassHierarchy.Target.equal
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) predecessor_index)
-         { TypeOrder.Target.target = successor_index; parameters = [] });
+         { ClassHierarchy.Target.target = successor_index; parameters = [] });
     assert_true
-      (TypeOrder.Target.Set.mem
+      (ClassHierarchy.Target.Set.mem
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) successor_index)
-         { TypeOrder.Target.target = predecessor_index; parameters = [] })
+         { ClassHierarchy.Target.target = predecessor_index; parameters = [] })
   in
   let class_definition =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
@@ -570,7 +570,7 @@ let test_connect_type_order _ =
          return D()
     |}
   in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   let all_annotations =
     Environment.register_class_definitions (module Handler) source |> Set.to_list
   in
@@ -580,12 +580,12 @@ let test_connect_type_order _ =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
       successors
-      (TypeOrder.successors order annotation)
+      (ClassHierarchy.successors order annotation)
   in
   (* Classes get connected to object via `connect_annotations_to_top`. *)
   assert_successors "C" [];
   assert_successors "D" ["C"];
-  TypeOrder.connect_annotations_to_object order all_annotations;
+  ClassHierarchy.connect_annotations_to_object order all_annotations;
   assert_successors "C" ["object"];
   assert_successors "D" ["C"; "object"];
   assert_successors "CallMe" ["typing.Callable"; "object"]
@@ -634,12 +634,14 @@ let test_populate _ =
     in
     let targets = Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.edges ()) (index base) in
     let to_target annotation =
-      { TypeOrder.Target.target = index annotation; parameters = superclass_parameters annotation }
+      { ClassHierarchy.Target.target = index annotation;
+        parameters = superclass_parameters annotation
+      }
     in
     let show_targets = function
       | None -> ""
       | Some targets ->
-          let show_target { TypeOrder.Target.target; parameters } =
+          let show_target { ClassHierarchy.Target.target; parameters } =
             let index = Int.to_string target in
             let target =
               Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.annotations ()) target
@@ -651,7 +653,7 @@ let test_populate _ =
     in
     assert_equal
       ~printer:show_targets
-      ~cmp:(Option.equal (List.equal ~equal:TypeOrder.Target.equal))
+      ~cmp:(Option.equal (List.equal ~equal:ClassHierarchy.Target.equal))
       (Some (List.map superclasses ~f:to_target))
       targets
   in
@@ -796,7 +798,7 @@ let test_populate _ =
         def foo(cls):
           class cls(cls): pass
       |} |> ignore with
-  | TypeOrder.Cyclic -> assert_unreached () );
+  | ClassHierarchy.Cyclic -> assert_unreached () );
 
   (* Check meta variables are registered. *)
   let assert_global =
@@ -1002,7 +1004,7 @@ let test_join_type_order _ =
   assert_equal
     (TypeOrder.join order (Type.Union [Type.integer; Type.string]) Type.integer)
     (Type.Union [Type.integer; Type.string]);
-  assert_raises (TypeOrder.Untracked (Type.Primitive "durp")) (fun _ ->
+  assert_raises (ClassHierarchy.Untracked (Type.Primitive "durp")) (fun _ ->
       TypeOrder.join order bar (Type.Primitive "durp"));
 
   (* Special cases. *)
@@ -1057,9 +1059,9 @@ let test_supertypes_type_order _ =
       class bar(foo): pass
     |} in
   let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
-  assert_equal ["object"] (TypeOrder.successors order "foo");
-  assert_equal ["foo"; "object"] (TypeOrder.successors order "bar")
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  assert_equal ["object"] (ClassHierarchy.successors order "foo");
+  assert_equal ["foo"; "object"] (ClassHierarchy.successors order "bar")
 
 
 let test_class_definition _ =

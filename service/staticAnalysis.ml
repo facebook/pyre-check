@@ -83,7 +83,7 @@ let analyze
             record_overrides new_overrides;
             Map.merge_skewed overrides new_overrides ~combine
       with
-      | TypeOrder.Untracked untracked_type ->
+      | ClassHierarchy.Untracked untracked_type ->
           Log.info
             "Error building overrides in path %a for untracked type %a"
             Reference.pp
@@ -112,7 +112,7 @@ let analyze
         >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~qualifier ~source)
         |> Option.value ~default:call_graph
       with
-      | TypeOrder.Untracked untracked_type ->
+      | ClassHierarchy.Untracked untracked_type ->
           Log.info
             "Error building call graph in path %a for untracked type %a"
             Reference.pp

@@ -14,7 +14,7 @@ type t = {
   class_metadata: Resolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   implicit_submodules: int Reference.Table.t;
-  order: TypeOrder.t;
+  order: ClassHierarchy.t;
   aliases: Type.alias Identifier.Table.t;
   globals: Resolution.global Reference.Table.t;
   dependencies: Dependencies.t;
@@ -71,7 +71,7 @@ module type Handler = sig
 
   module DependencyHandler : Dependencies.Handler
 
-  module TypeOrderHandler : TypeOrder.Handler
+  module TypeOrderHandler : ClassHierarchy.Handler
 end
 
 module UnresolvedAlias = struct
@@ -99,7 +99,7 @@ let connect_definition
     ~resolution
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
-  let (module Handler : TypeOrder.Handler) = Resolution.order resolution in
+  let (module Handler : ClassHierarchy.Handler) = Resolution.order resolution in
   let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
@@ -113,7 +113,7 @@ let connect_definition
       String.equal predecessor successor
     in
     if annotations_tracked && not primitive_cycle then
-      TypeOrder.connect (module Handler) ~predecessor ~successor ~parameters
+      ClassHierarchy.connect (module Handler) ~predecessor ~successor ~parameters
   in
   let primitive = Reference.show name in
   ( match Annotated.Class.inferred_callable_type annotated ~resolution with
@@ -146,7 +146,7 @@ let connect_definition
               ~section:`Environment
               ~normals:["unresolved name", Expression.show value]
               ()
-        | Type.Primitive primitive when not (TypeOrder.contains (module Handler) primitive) ->
+        | Type.Primitive primitive when not (ClassHierarchy.contains (module Handler) primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
         | Type.Primitive supertype -> (
           match parameters with
@@ -179,7 +179,7 @@ let handler
   =
   let (module DependencyHandler : Dependencies.Handler) = Dependencies.handler dependencies in
   ( module struct
-    module TypeOrderHandler = (val TypeOrder.handler order : TypeOrder.Handler)
+    module TypeOrderHandler = (val ClassHierarchy.handler order : ClassHierarchy.Handler)
 
     module DependencyHandler = DependencyHandler
 
@@ -281,7 +281,7 @@ let handler
       List.iter ~f:(Hashtbl.remove modules) qualifiers;
       SharedMem.collect `aggressive;
       if debug then
-        TypeOrder.check_integrity (TypeOrder.handler order)
+        ClassHierarchy.check_integrity (ClassHierarchy.handler order)
 
 
     let class_definition annotation = Hashtbl.find class_definitions annotation
@@ -317,7 +317,7 @@ let handler
     let aliases = Hashtbl.find aliases
 
     let register_class_metadata class_name =
-      let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+      let successors = ClassHierarchy.successors (module TypeOrderHandler) class_name in
       let in_test =
         let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
         List.filter_map successors ~f:(Hashtbl.find class_definitions)
@@ -369,7 +369,7 @@ let register_implicit_submodules (module Handler : Handler) qualifier =
 
 
 let register_class_definitions (module Handler : Handler) source =
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = Type.Primitive.Set.t
 
@@ -382,8 +382,8 @@ let register_class_definitions (module Handler : Handler) source =
           let qualifier = Source.qualifier ~handle in
           Handler.DependencyHandler.add_class_key ~qualifier name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
-          if not (TypeOrder.contains order primitive) then
-            TypeOrder.insert order primitive;
+          if not (ClassHierarchy.contains order primitive) then
+            ClassHierarchy.insert order primitive;
           Set.add new_annotations primitive
       | _ -> new_annotations
   end)
@@ -533,7 +533,10 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
           let original_name = Reference.combine from name in
           (* A module might import T and define a T that shadows it. In this case, we do not want
              to create the alias. *)
-          if TypeOrder.contains (module Handler.TypeOrderHandler) (Reference.show qualified_name)
+          if
+            ClassHierarchy.contains
+              (module Handler.TypeOrderHandler)
+              (Reference.show qualified_name)
           then
             []
           else
@@ -555,7 +558,7 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
 
 
 let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target; value } =
-  let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
   let target_primitive_name = Reference.show target in
   let value_annotation =
     match Type.create ~aliases:Handler.aliases value with
@@ -592,7 +595,8 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
             if Module.from_empty_stub ~reference ~module_definition then
               (), Type.Any
             else if
-              TypeOrder.contains order primitive || Handler.is_module (Reference.create primitive)
+              ClassHierarchy.contains order primitive
+              || Handler.is_module (Reference.create primitive)
             then
               (), annotation
             else
@@ -952,7 +956,7 @@ module Builder = struct
     let class_metadata = Identifier.Table.create () in
     let modules = Reference.Table.create () in
     let implicit_submodules = Reference.Table.create () in
-    let order = TypeOrder.Builder.default () in
+    let order = ClassHierarchy.Builder.default () in
     let aliases = Identifier.Table.create () in
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
@@ -1054,7 +1058,7 @@ module Builder = struct
        https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
     Hashtbl.set aliases ~key:"PathLike" ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));
     Hashtbl.set aliases ~key:"TSelf" ~data:(Type.TypeAlias (Type.variable "_PathLike"));
-    TypeOrder.insert (TypeOrder.handler order) "typing_extensions.Literal";
+    ClassHierarchy.insert (ClassHierarchy.handler order) "typing_extensions.Literal";
     { class_definitions;
       class_metadata;
       modules;
@@ -1083,7 +1087,7 @@ module Builder = struct
       class_metadata = Hashtbl.copy class_metadata;
       modules = Hashtbl.copy modules;
       implicit_submodules = Hashtbl.copy implicit_submodules;
-      order = TypeOrder.Builder.copy order;
+      order = ClassHierarchy.Builder.copy order;
       aliases = Hashtbl.copy aliases;
       globals = Hashtbl.copy globals;
       dependencies = Dependencies.copy dependencies;
@@ -1112,7 +1116,7 @@ module Builder = struct
     Format.fprintf
       format
       "Environment:\nOrder:\n%a\nAliases:\n%s\nGlobals:\n%s"
-      TypeOrder.pp
+      ClassHierarchy.pp
       order
       aliases
       globals

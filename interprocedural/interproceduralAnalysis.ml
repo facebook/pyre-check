@@ -280,7 +280,7 @@ let analyze_define
       let models, results = List.fold ~f:accumulate analyses ~init in
       models, results
     with
-    | Analysis.TypeOrder.Untracked annotation ->
+    | Analysis.ClassHierarchy.Untracked annotation ->
         Log.log
           ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%a`"

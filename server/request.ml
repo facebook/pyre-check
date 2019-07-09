@@ -393,7 +393,7 @@ let process_client_shutdown_request ~state ~id =
 let process_type_query_request ~state:({ State.environment; _ } as state) ~configuration ~request =
   let (module Handler : Environment.Handler) = environment in
   let process_request () =
-    let order = (module Handler.TypeOrderHandler : TypeOrder.Handler) in
+    let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
     let resolution = TypeCheck.resolution environment () in
     let parse_and_validate ?(unknown_is_top = false) expression =
       let annotation =
@@ -414,14 +414,14 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         else
           annotation
       in
-      if TypeOrder.is_instantiated order annotation then
+      if ClassHierarchy.is_instantiated order annotation then
         let mismatches, _ = Resolution.check_invalid_type_parameters resolution annotation in
         if List.is_empty mismatches then
           annotation
         else
           raise (IncorrectParameters annotation)
       else
-        raise (TypeOrder.Untracked annotation)
+        raise (ClassHierarchy.Untracked annotation)
     in
     match request with
     | TypeQuery.Attributes annotation ->
@@ -584,7 +584,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
             | None -> Format.sprintf "Undecodable(%d)" index
             | Some annotation -> annotation
           in
-          let decode_target { TypeOrder.Target.target; parameters } =
+          let decode_target { ClassHierarchy.Target.target; parameters } =
             Format.sprintf
               "%s[%s]"
               (decode target)
@@ -663,7 +663,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 ( BackedgeValue.description,
                   decode key,
                   value
-                  >>| Analysis.TypeOrder.Target.Set.Tree.to_list
+                  >>| Analysis.ClassHierarchy.Target.Set.Tree.to_list
                   >>| List.to_string ~f:decode_target )
           | OrderKeys.Decoded (key, value) ->
               Some
@@ -754,9 +754,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
                         Option.equal String.equal first second
                     | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:TypeOrder.Target.equal) first second
+                        Option.equal (List.equal ~equal:ClassHierarchy.Target.equal) first second
                     | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
-                        Option.equal TypeOrder.Target.Set.Tree.equal first second
+                        Option.equal ClassHierarchy.Target.Set.Tree.equal first second
                     | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
                         Option.equal (List.equal ~equal:Int.equal) first second
                     | ( Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, first),
@@ -1067,7 +1067,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   in
   let response =
     try process_request () with
-    | TypeOrder.Untracked untracked ->
+    | ClassHierarchy.Untracked untracked ->
         let untracked_response =
           Format.asprintf "Type `%a` was not found in the type order." Type.pp untracked
         in
@@ -1352,7 +1352,7 @@ let rec process
         log_request_error
           ~error:(Format.sprintf "Unix error %s: %s(%s)" (Unix.error_message kind) name parameters);
         { state; response = None }
-    | Analysis.TypeOrder.Untracked annotation ->
+    | Analysis.ClassHierarchy.Untracked annotation ->
         log_request_error ~error:(Format.sprintf "Untracked %s" (Type.show annotation));
         { state; response = None }
     | uncaught_exception ->

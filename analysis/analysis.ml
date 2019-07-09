@@ -16,6 +16,7 @@ module Annotation = Annotation
 module BaseError = BaseError
 module Cfg = Cfg
 module Check = Check
+module ClassHierarchy = ClassHierarchy
 module Coverage = Coverage
 module DeobfuscationCheck = DeobfuscationCheck
 module Dependencies = Dependencies

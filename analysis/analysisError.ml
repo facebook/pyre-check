@@ -2405,7 +2405,7 @@ let filter ~configuration ~resolution errors =
                       ~left:annotation
                       ~right:(Type.Primitive "unittest.mock.NonCallableMock") )
             with
-            | TypeOrder.Untracked _ -> false
+            | ClassHierarchy.Untracked _ -> false
           in
           Type.exists actual ~predicate:is_subclass_of_mock
       | UnexpectedKeyword { callee = Some callee; _ } ->
@@ -2557,7 +2557,7 @@ let suppress ~mode ~resolution error =
           true
       | _ -> suppress_in_default ~resolution error
     with
-    | TypeOrder.Untracked annotation ->
+    | ClassHierarchy.Untracked annotation ->
         Log.warning "`%s` not found in the type order." (Type.show annotation);
         false
 

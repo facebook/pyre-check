@@ -42,7 +42,7 @@ end
 type t = {
   annotations: Annotation.t Reference.Map.t;
   type_variables: Type.Variable.Set.t;
-  order: (module TypeOrder.Handler);
+  order: (module ClassHierarchy.Handler);
   resolve: resolution:t -> Expression.t -> Annotation.t;
   aliases: Type.Primitive.t -> Type.alias option;
   global: Reference.t -> global option;
@@ -303,9 +303,9 @@ let meet resolution = full_order resolution |> TypeOrder.meet
 
 let widen resolution = full_order resolution |> TypeOrder.widen
 
-let is_instantiated { order; _ } = TypeOrder.is_instantiated order
+let is_instantiated { order; _ } = ClassHierarchy.is_instantiated order
 
-let is_tracked { order; _ } = TypeOrder.contains order
+let is_tracked { order; _ } = ClassHierarchy.contains order
 
 let contains_untracked resolution annotation =
   List.exists
@@ -490,7 +490,7 @@ let is_invariance_mismatch resolution ~left ~right =
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
-        TypeOrder.variables (order resolution) left_name
+        ClassHierarchy.variables (order resolution) left_name
         >>= fun variables ->
         List.map3 variables left_parameters right_parameters ~f:(fun variable left right ->
             variable, left, right)

@@ -890,11 +890,12 @@ let test_compute_hashes_to_keys context =
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.edges ())
       ~key:15
-      ~data:[{ TypeOrder.Target.target = 16; parameters = [] }];
+      ~data:[{ ClassHierarchy.Target.target = 16; parameters = [] }];
     Handler.TypeOrderHandler.set
       (Handler.TypeOrderHandler.backedges ())
       ~key:16
-      ~data:(TypeOrder.Target.Set.of_list [{ TypeOrder.Target.target = 15; parameters = [] }]);
+      ~data:
+        (ClassHierarchy.Target.Set.of_list [{ ClassHierarchy.Target.target = 15; parameters = [] }]);
     ResolutionSharedMemory.Keys.remove_batch
       (Reference.create "sample" |> ResolutionSharedMemory.Keys.KeySet.singleton);
     ResolutionSharedMemory.add
@@ -1002,14 +1003,14 @@ let test_decode_serialized_ocaml_values context =
             [ TypeQuery.SerializedValue
                 { serialized_key = OrderEdges.serialize_key 16;
                   serialized_value =
-                    [{ TypeOrder.Target.target = 15; parameters = [Type.integer] }]
+                    [{ ClassHierarchy.Target.target = 15; parameters = [Type.integer] }]
                     |> (fun value -> Marshal.to_string value [Marshal.Closures])
                     |> Base64.encode_exn
                 };
               TypeQuery.SerializedValue
                 { serialized_key = OrderBackedges.serialize_key 15;
                   serialized_value =
-                    [{ TypeOrder.Target.target = 16; parameters = [Type.string] }]
+                    [{ ClassHierarchy.Target.target = 16; parameters = [Type.string] }]
                     |> (fun value -> Marshal.to_string value [Marshal.Closures])
                     |> Base64.encode_exn
                 };

@@ -131,7 +131,7 @@ module OrderAnnotationValue = struct
 end
 
 module EdgeValue = struct
-  type t = Analysis.TypeOrder.Target.t list
+  type t = Analysis.ClassHierarchy.Target.t list
 
   let prefix = Prefix.make ()
 
@@ -139,7 +139,7 @@ module EdgeValue = struct
 end
 
 module BackedgeValue = struct
-  type t = Analysis.TypeOrder.Target.Set.Tree.t
+  type t = Analysis.ClassHierarchy.Target.Set.Tree.t
 
   let prefix = Prefix.make ()
 

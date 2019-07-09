@@ -8,4 +8,4 @@ open Analysis
 
 val compute_hashes_to_keys : indices:int list -> annotations:string list -> string String.Map.t
 
-module Handler : TypeOrder.Handler
+module Handler : ClassHierarchy.Handler

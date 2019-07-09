@@ -570,7 +570,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
       let coverage = exit >>| State.coverage |> Option.value ~default:(Coverage.create ()) in
       { SingleSourceResult.errors; coverage }
     with
-    | TypeOrder.Untracked annotation ->
+    | ClassHierarchy.Untracked annotation ->
         Statistics.event
           ~name:"undefined type"
           ~integers:[]

@@ -40,10 +40,10 @@ module Handler = struct
 
 
   let backedges () =
-    { get = (fun key -> OrderBackedges.get key >>| TypeOrder.Target.Set.of_tree);
+    { get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
       set =
         (fun key value ->
-          let value = TypeOrder.Target.Set.to_tree value in
+          let value = ClassHierarchy.Target.Set.to_tree value in
           OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
           OrderBackedges.add key value)
     }
@@ -98,10 +98,10 @@ module Handler = struct
       in
       List.filter_map ~f:serialize_annotation keys |> String.concat
     in
-    let module EdgeSerializer (ListOrSet : TypeOrder.Target.ListOrSet) = struct
+    let module EdgeSerializer (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
       let serialize edges =
         let edges_of_key key =
-          let show_successor { TypeOrder.Target.target = successor; _ } =
+          let show_successor { ClassHierarchy.Target.target = successor; _ } =
             Option.value_exn (find (annotations ()) successor)
           in
           find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
@@ -109,8 +109,8 @@ module Handler = struct
         List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
     end
     in
-    let module ForwardEdgeSerializer = EdgeSerializer (TypeOrder.Target.List) in
-    let module BackwardEdgeSerializer = EdgeSerializer (TypeOrder.Target.Set) in
+    let module ForwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.List) in
+    let module BackwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.Set) in
     Format.asprintf
       "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
       serialized_keys

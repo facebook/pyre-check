@@ -36,13 +36,13 @@ let populate
 
     (* Build type order. *)
     List.iter ~f:(Environment.connect_type_order (module Handler) resolution) sources;
-    TypeOrder.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
+    ClassHierarchy.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
     if debug then
       (* Validate integrity of the type order built so far before moving forward. Further
          transformations might be incorrect or not terminate otherwise. *)
-      TypeOrder.check_integrity (module Handler.TypeOrderHandler);
-    TypeOrder.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
-    TypeOrder.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
+      ClassHierarchy.check_integrity (module Handler.TypeOrderHandler);
+    ClassHierarchy.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
+    ClassHierarchy.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
     List.iter all_annotations ~f:Handler.register_class_metadata;
     List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources
   in
@@ -96,7 +96,7 @@ let build ((module Handler : Environment.Handler) as handler) ~configuration ~sc
     in
     let (module Handler : Environment.Handler) = handler in
     Log.info "Emitting type order dotty file to %s" (Path.absolute type_order_file);
-    File.create ~content:(TypeOrder.to_dot (module Handler.TypeOrderHandler)) type_order_file
+    File.create ~content:(ClassHierarchy.to_dot (module Handler.TypeOrderHandler)) type_order_file
     |> File.write )
 
 
@@ -304,7 +304,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
   let register_class_metadata class_name =
     let open Statement in
-    let successors = TypeOrder.successors (module TypeOrderHandler) class_name in
+    let successors = ClassHierarchy.successors (module TypeOrderHandler) class_name in
     let is_final =
       ClassDefinitions.get class_name
       >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
@@ -378,7 +378,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
     (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
     List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
-    |> TypeOrder.disconnect_successors (module TypeOrderHandler);
+    |> ClassHierarchy.disconnect_successors (module TypeOrderHandler);
     let class_keys =
       List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
       |> ClassDefinitions.KeySet.of_list
@@ -401,8 +401,8 @@ module SharedHandler : Analysis.Environment.Handler = struct
     |> purge_dependents;
     DependencyHandler.clear_keys_batch qualifiers;
     Ast.SharedMemory.Modules.remove ~qualifiers;
-    if debug then (* If in debug mode, make sure the TypeOrder is still consistent. *)
-      TypeOrder.check_integrity (module TypeOrderHandler)
+    if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
+      ClassHierarchy.check_integrity (module TypeOrderHandler)
 
 
   let local_mode handle = ErrorModes.get handle
@@ -437,11 +437,11 @@ let populate_shared_memory
        wasted. *)
     let timer = Timer.start () in
     let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
-    let add_type_order { TypeOrder.edges; backedges; indices; annotations } =
+    let add_type_order { ClassHierarchy.edges; backedges; indices; annotations } =
       add_table OrderEdges.write_through edges;
       add_table
         OrderBackedges.write_through
-        (Hashtbl.map ~f:TypeOrder.Target.Set.to_tree backedges);
+        (Hashtbl.map ~f:ClassHierarchy.Target.Set.to_tree backedges);
       add_table OrderIndices.write_through indices;
       add_table OrderAnnotations.write_through annotations;
       OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations)
@@ -468,7 +468,7 @@ let populate_shared_memory
   add_to_shared_memory environment;
   build (module SharedHandler) ~configuration ~scheduler ~sources;
   if debug then
-    TypeOrder.check_integrity (module SharedHandler.TypeOrderHandler);
+    ClassHierarchy.check_integrity (module SharedHandler.TypeOrderHandler);
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

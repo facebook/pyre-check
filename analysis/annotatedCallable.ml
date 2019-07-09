@@ -146,7 +146,7 @@ let create ~resolution ~parent ~name overloads =
                 |> List.hd
                 |> Option.value ~default:TypeConstraints.Solution.empty
               with
-              | TypeOrder.Untracked _ -> TypeConstraints.Solution.empty
+              | ClassHierarchy.Untracked _ -> TypeConstraints.Solution.empty
             in
             let instantiated =
               TypeConstraints.Solution.instantiate solution (Type.Callable callable)
@@ -187,7 +187,7 @@ let apply_decorators
       | "contextlib.contextmanager" ->
           let joined =
             try Resolution.join resolution annotation (Type.iterator Type.Bottom) with
-            | TypeOrder.Untracked _ ->
+            | ClassHierarchy.Untracked _ ->
                 (* Apply_decorators gets called when building the environment, which is unsound and
                    can raise. *)
                 Type.Any
@@ -214,7 +214,7 @@ let apply_decorators
       | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
           let joined =
             try Resolution.join resolution annotation (Type.async_iterator Type.Bottom) with
-            | TypeOrder.Untracked _ ->
+            | ClassHierarchy.Untracked _ ->
                 (* Apply_decorators gets called when building the environment, which is unsound and
                    can raise. *)
                 Type.Any

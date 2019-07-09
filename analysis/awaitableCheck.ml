@@ -308,7 +308,7 @@ module State (Context : Context) = struct
         let annotation = Resolution.resolve resolution expression in
         Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
       with
-      | TypeOrder.Untracked _ -> false
+      | ClassHierarchy.Untracked _ -> false
     in
     let forward_return ~state:{ unawaited; locals } ~expression =
       match Node.value expression with

@@ -48,7 +48,7 @@ module ExpressionVisitor = struct
         else
           Some original
       with
-      | TypeOrder.Untracked _ -> None
+      | ClassHierarchy.Untracked _ -> None
     in
     let resolve_definition ~expression =
       let find_definition reference =

@@ -135,8 +135,8 @@ let test_normalize_dependencies _ =
 
 
 let test_normalize _ =
-  TypeOrder.insert (module Handler.TypeOrderHandler) "int";
-  TypeOrder.insert (module Handler.TypeOrderHandler) "str";
+  ClassHierarchy.insert (module Handler.TypeOrderHandler) "int";
+  ClassHierarchy.insert (module Handler.TypeOrderHandler) "str";
   let indices =
     let index_of annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
