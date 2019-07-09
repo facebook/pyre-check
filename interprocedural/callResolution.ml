@@ -34,8 +34,8 @@ let is_local identifier = String.is_prefix ~prefix:"$" identifier
  * Instead, we have the following cases:
  * a) receiver type matches target_name's declaring type -> override target_name
  * b) no target_name override entries are subclasses of A -> real target_name
- * c) some override entries are subclasses of A -> include Base.method, and override all those where
- *    the override name is
+ * c) some override entries are subclasses of A -> search upwards for actual implementation,
+ *    and override all those where the override name is
  *  1) the override target if it exists in the override shared mem
  *  2) the real target otherwise
  *)
@@ -77,7 +77,17 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
             let create_override_target class_name =
               Reference.create ~prefix:class_name (Reference.last target_name) |> get_actual_target
             in
-            get_actual_target target_name :: List.map subtypes ~f:create_override_target )
+            let actual_target =
+              let actual_implementation =
+                declaring_type
+                >>= fun class_type ->
+                Callable.get_method_implementation ~resolution ~class_type ~method_name:target_name
+              in
+              match actual_implementation with
+              | Some implementation -> implementation
+              | None -> get_actual_target target_name
+            in
+            actual_target :: List.map subtypes ~f:create_override_target )
 
 
 let resolve_target ~resolution ?receiver_type callee =

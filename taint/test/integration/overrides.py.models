@@ -247,7 +247,7 @@
                 "start": 17,
                 "end": 19
               },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "resolves_to": [ "overrides.B.methodB" ],
               "port": "result",
               "length": 1
             },

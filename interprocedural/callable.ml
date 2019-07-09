@@ -155,6 +155,29 @@ let get_definition ~resolution = function
       >>= Class.find_define ~method_name
 
 
+let get_method_implementation ~resolution ~class_type ~method_name =
+  let callable_implementation =
+    let last = Reference.last method_name in
+    Resolution.class_definition resolution class_type
+    >>| Annotated.Class.create
+    >>| fun definition ->
+    Annotated.Class.attribute
+      ~transitive:true
+      definition
+      ~resolution
+      ~name:last
+      ~instantiated:class_type
+  in
+  match callable_implementation with
+  | Some callable when Annotated.Attribute.defined callable -> (
+      Annotated.Attribute.annotation callable
+      |> Annotation.annotation
+      |> function
+      | Type.Callable { Type.Callable.kind = Named name; _ } -> Some (create_method name)
+      | _ -> None )
+  | _ -> None
+
+
 let get_override_reference = function
   | `OverrideTarget { class_name; method_name } ->
       Reference.combine (Reference.create class_name) (Reference.create method_name)
