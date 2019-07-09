@@ -88,8 +88,7 @@ module ExpressionVisitor = struct
       resolve ~expression >>| store_annotation location |> ignore;
       resolve_definition ~expression >>| store_definition location |> ignore;
       match value with
-      | Call { callee; arguments } ->
-          annotate_expression callee;
+      | Call { arguments; _ } ->
           let annotate_argument_name { Call.Argument.name; value = { Node.location; _ } as value } =
             match name, resolve ~expression:value with
             | Some { Node.location = { Location.start; _ }; _ }, Some annotation ->

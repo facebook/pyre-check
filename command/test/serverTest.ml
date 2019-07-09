@@ -636,14 +636,7 @@ let test_query context =
           ( [ 3, 12, 3, 13, Type.literal_integer 1;
               3, 15, 3, 16, Type.literal_integer 2;
               3, 11, 3, 17, Type.list Type.integer;
-              ( 3,
-                6,
-                3,
-                7,
-                (* TODO(T46070919): The type here should be int, not the iter callable *)
-                parse_callable
-                  ~name:(Reference.create "list.__iter__")
-                  "typing.Callable[[], typing.Iterator[int]]" );
+              3, 6, 3, 7, Type.integer;
               4, 3, 4, 4, Type.literal_integer 1;
               4, 7, 4, 8, Type.literal_integer 1 ]
           |> create_types_at_locations )));
