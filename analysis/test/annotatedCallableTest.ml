@@ -63,21 +63,7 @@ let test_apply_decorators _ =
   in
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
-    let resolution =
-      populate
-        {|
-        _T = typing.TypeVar("T")
-        _T2 = typing.TypeVar("T2")
-        _T3 = typing.TypeVar("T3")
-        class typing.Iterator(typing.Generic[_T]):
-          pass
-        class typing.Generator(typing.Iterator[_T], typing.Generic[_T, _T2, _T3]):
-          pass
-        class contextlib.GeneratorContextManager(contextlib.ContextManager[_T], typing.Generic[_T]):
-          pass
-      |}
-      |> fun environment -> TypeCheck.resolution environment ()
-    in
+    let resolution = populate "" |> fun environment -> TypeCheck.resolution environment () in
     let applied_return_annotation =
       Callable.apply_decorators ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
@@ -107,14 +93,14 @@ let test_apply_decorators _ =
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
-    (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" [Type.string]);
   assert_apply_contextlib_decorators
     (create_define
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
-    (Type.parametric "contextlib.GeneratorContextManager" [Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" [Type.string]);
 
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =

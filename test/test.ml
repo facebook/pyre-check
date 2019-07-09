@@ -523,13 +523,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           attribute: Any = ...
 
         class IsAwaitable(typing.Awaitable[int]): pass
-        class contextlib.ContextManager(Generic[_T_co]):
-          def __enter__(self) -> _T_co:
-            pass
-        class contextlib.GeneratorContextManager(
-            contextlib.ContextManager[_T],
-            Generic[_T]):
-          pass
 
         def identity(x: _T) -> _T: ...
         _VR = TypeVar("_VR", str, int)
@@ -1151,11 +1144,18 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       ~handle:"contextlib.pyi"
       (* TODO (T41494196): Change the parameter and return type to AnyCallable *)
       {|
-        from typing import Any
-        def contextmanager(func: Any) -> Any:
-            ...
-        def asynccontextmanager(func: Any) -> Any:
-            ...
+        from typing import Any, AsyncContextManager, AsyncIterator, Callable, Generic, Iterator, TypeVar
+        _T_co = TypeVar('_T_co', covariant=True)
+        _T = TypeVar('_T')
+        class ContextManager(Generic[_T_co]):
+          def __enter__(self) -> _T_co:
+            pass
+        class _GeneratorContextManager(
+            contextlib.ContextManager[_T],
+            Generic[_T]):
+          pass
+        def contextmanager(func: Callable[..., Iterator[_T]]) -> Callable[..., _GeneratorContextManager[_T]]: ...
+        def asynccontextmanager(func: Callable[..., AsyncIterator[_T]]) -> Callable[..., AsyncContextManager[_T]]: ...
       |}
     |> Preprocessing.preprocess;
     parse

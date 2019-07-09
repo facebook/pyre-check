@@ -66,7 +66,7 @@ let test_check_contextmanager _ =
         reveal_type(f)
     |}
     [ "Revealed type [-1]: Revealed type for `f` is `typing.Callable(f)[[Variable(typing.Any), \
-       Keywords(typing.Any)], contextlib.GeneratorContextManager[int]]`." ];
+       Keywords(typing.Any)], contextlib._GeneratorContextManager[int]]`." ];
   assert_type_errors
     {|
       class C:

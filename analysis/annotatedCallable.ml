@@ -184,21 +184,6 @@ let apply_decorators
     =
     let resolve_decorators name =
       match name with
-      | "contextlib.contextmanager" ->
-          let joined =
-            try Resolution.join resolution annotation (Type.iterator Type.Bottom) with
-            | ClassHierarchy.Untracked _ ->
-                (* Apply_decorators gets called when building the environment, which is unsound and
-                   can raise. *)
-                Type.Any
-          in
-          if Type.is_iterator joined then
-            { overload with
-              Type.Callable.annotation =
-                Type.parametric "contextlib.GeneratorContextManager" [Type.single_parameter joined]
-            }
-          else
-            overload
       | "click.command"
       | "click.group"
       | "click.pass_context"
