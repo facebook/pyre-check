@@ -149,7 +149,7 @@ let test_class_models _ =
     ~model_source:
       {|
         class AnnotatedSink(TaintSink[TestSink]):
-          def AnnotatedSink.method(parameter: int) -> None: ...
+          def AnnotatedSink.method(parameter): ...
       |}
     ~expect:
       [ outcome
@@ -160,7 +160,7 @@ let test_class_models _ =
     ~model_source:
       {|
         class AnnotatedSource(TaintSource[UserControlled]):
-          def AnnotatedSource.method(parameter: int) -> None: ...
+          def AnnotatedSource.method(parameter): ...
       |}
     ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"]
 
