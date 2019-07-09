@@ -108,7 +108,10 @@ let start
     ?old_state
     ~connections
     ~configuration:( { Configuration.Server.configuration =
-                         { Configuration.Analysis.expected_version; _ } as configuration;
+                         { Configuration.Analysis.expected_version;
+                           store_type_check_resolution;
+                           _
+                         } as configuration;
                        saved_state_action;
                        _
                      } as server_configuration )
@@ -118,7 +121,8 @@ let start
     let matches_configuration_version = Some (Version.version ()) = expected_version in
     match saved_state_action, matches_configuration_version with
     | Some (Load (LoadFromProject _)), true
-    | Some (Load (LoadFromFiles _)), _ -> (
+    | Some (Load (LoadFromFiles _)), _
+      when not store_type_check_resolution -> (
       try
         let timer = Timer.start () in
         let state = SavedState.load ~server_configuration ~connections in
