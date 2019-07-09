@@ -91,6 +91,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       { taint = BackwardState.assign ~weak:true ~root ~path taint state_taint }
 
 
+    let analyze_definition ~define:_ state = state
+
     let rec analyze_argument ~resolution taint { Call.Argument.value = argument; _ } state =
       analyze_expression ~resolution ~taint ~state ~expression:argument
 
@@ -310,6 +312,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:left
       | Call
           { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ };
+            arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }]
+          } ->
+          (* Handle base[index] = value. *)
+          let taint =
+            compute_assignment_taint ~resolution base state
+            |> fst
+            |> BackwardState.Tree.read [AccessPath.get_index index]
+          in
+          analyze_expression ~resolution ~taint ~state ~expression:value
+      | Call
+          { callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
             arguments = [{ Call.Argument.value = argument_value; _ }]
           } ->
@@ -379,10 +393,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       | Yield None -> state
 
 
-    let analyze_definition ~define:_ state = state
-
     (* Returns the taint, and whether to collapse one level (due to star expression) *)
-    let rec compute_assignment_taint ~resolution target state =
+    and compute_assignment_taint ~resolution target state =
       match target.Node.value with
       | Starred (Once target | Twice target) ->
           (* This is approximate. Unless we can get the tuple type on the right to tell how many
@@ -404,6 +416,17 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint =
             List.foldi targets ~f:compute_tuple_target_taint ~init:BackwardState.Tree.empty
+          in
+          taint, false
+      | Call
+          { callee =
+              { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+            arguments = [{ Call.Argument.value = index; _ }]
+          } ->
+          let taint =
+            compute_assignment_taint ~resolution base state
+            |> fst
+            |> BackwardState.Tree.read [AccessPath.get_index index]
           in
           taint, false
       | _ ->

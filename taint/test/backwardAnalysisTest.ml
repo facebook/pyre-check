@@ -621,6 +621,36 @@ let test_list _ =
       def list_pattern_star_index(arg):
           [_, _, *result] = [ 1, arg, "foo" ]
           return result
+
+      def list_same_index_assignment(arg):
+        l = []
+        l[0] = arg
+        return l[0]
+
+      def list_different_index_assignment(arg):
+        l = []
+        l[0] = arg
+        return l[1]
+
+      def list_index_assignment_return_list(arg):
+        l = []
+        l[0] = arg
+        return l
+
+      def list_nested_assignment_1(arg):
+        l = []
+        l[0][1] = arg
+        return l[0][1]
+
+      def list_nested_assignment_2(arg):
+        l = []
+        l[0][1] = arg
+        return l[0]
+
+      def list_nested_assignment_non_tito(arg):
+        l = []
+        l[0][1] = arg
+        return l[1]
     |}
     [ outcome
         ~kind:`Function
@@ -631,7 +661,16 @@ let test_list _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_unknown_index";
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_same_index";
       outcome ~kind:`Function "qualifier.list_pattern_different_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_star_index" ]
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_star_index";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_same_index_assignment";
+      outcome ~kind:`Function "qualifier.list_different_index_assignment";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:["arg"]
+        "qualifier.list_index_assignment_return_list";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_1";
+      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_2";
+      outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito" ]
 
 
 let test_tuple _ =
