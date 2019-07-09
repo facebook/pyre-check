@@ -121,7 +121,8 @@ module Visit = struct
 
   let visit state source =
     let state = ref state in
-    let visit_statement_override ~state ~visitor statement =
+    let visit_statement_override ~state statement =
+      (* Special-casing for statements that require lookup using the postcondition. *)
       let precondition_visit = visit_expression ~state ~visitor:ExpressionVisitor.expression in
       let postcondition_visit =
         visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition
@@ -131,26 +132,18 @@ module Visit = struct
           postcondition_visit target;
           Option.iter ~f:precondition_visit annotation;
           precondition_visit value
-      | Define { Define.body; _ } when not (List.is_empty body) ->
-          (* No type info available for nested defines; they are analyzed on their own. *)
-          ()
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; _ } ->
-          let visit_parameter
-              { Node.value = { Parameter.annotation; value; name }; location }
-              ~visit_expression
-            =
-            Name (Name.Identifier name) |> Node.create ~location |> visit_expression;
-            Option.iter ~f:visit_expression value;
-            Option.iter ~f:visit_expression annotation
+          let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
+            Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
+            Option.iter ~f:postcondition_visit value;
+            Option.iter ~f:postcondition_visit annotation
           in
-          List.iter parameters ~f:(visit_parameter ~visit_expression:postcondition_visit);
+          List.iter parameters ~f:visit_parameter;
           List.iter decorators ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
-      | _ -> visit_statement ~state ~visitor statement
+      | _ -> visit_statement ~state ~visitor:ExpressionVisitor.statement statement
     in
-    List.iter
-      ~f:(visit_statement_override ~state ~visitor:ExpressionVisitor.statement)
-      source.Source.statements;
+    List.iter ~f:(visit_statement_override ~state) source.Source.statements;
     !state
 end
 
@@ -158,13 +151,13 @@ let create_of_source environment source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let walk_define
-      ({ Node.value = { Define.signature = { name = caller; _ }; _ } as define; _ } as define_node)
+      ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let cfg = Cfg.create define in
-    let annotation_lookup =
-      ResolutionSharedMemory.get caller >>| Int.Map.of_tree |> Option.value ~default:Int.Map.empty
-    in
     let walk_statement node_id statement_index statement =
+      let annotation_lookup =
+        ResolutionSharedMemory.get name >>| Int.Map.of_tree |> Option.value ~default:Int.Map.empty
+      in
       let pre_annotations, post_annotations =
         Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
         >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
@@ -173,6 +166,14 @@ let create_of_source environment source =
       in
       let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
       let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
+      let statement =
+        match Node.value statement with
+        | Class class_statement ->
+            { statement with Node.value = Class { class_statement with Class.body = [] } }
+        | Define define_statement ->
+            { statement with Node.value = Define { define_statement with Define.body = [] } }
+        | _ -> statement
+      in
       Visit.visit
         { ExpressionVisitor.pre_resolution;
           post_resolution;
@@ -192,7 +193,6 @@ let create_of_source environment source =
     let define_signature = { define_node with value = Define { define with Define.body = [] } } in
     walk_statement Cfg.entry_index 0 define_signature
   in
-  (* TODO(T31738631): remove include_toplevels *)
   Preprocessing.defines ~include_nested:true ~include_toplevels:true source
   |> List.iter ~f:walk_define;
   { annotations_lookup; definitions_lookup }
