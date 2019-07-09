@@ -214,6 +214,3 @@ module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValu
 module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
 module StoredConfiguration = Memory.NoCache (StringKey) (ConfigurationValue)
 module ServerErrors = Memory.NoCache (StringKey) (ErrorsValue)
-
-let heap_size () =
-  Memory.SharedMemory.heap_size () |> Float.of_int |> (fun size -> size /. 1.0e6) |> Int.of_float

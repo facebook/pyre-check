@@ -1340,7 +1340,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-          
+
           | Primitive _
           | Parametric _ ->
               state_with_errors

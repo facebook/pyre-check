@@ -172,7 +172,7 @@ let recheck
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
-    ~integers:["size", Service.EnvironmentSharedMemory.heap_size ()]
+    ~integers:["size", Ast.SharedMemory.heap_size ()]
     ();
   Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
 

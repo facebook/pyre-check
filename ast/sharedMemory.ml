@@ -218,3 +218,6 @@ module Modules = struct
     Modules.LocalChanges.commit_all ();
     Modules.LocalChanges.pop_stack ()
 end
+
+let heap_size () =
+  Memory.SharedMemory.heap_size () |> Float.of_int |> (fun size -> size /. 1.0e6) |> Int.of_float

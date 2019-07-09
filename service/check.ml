@@ -120,6 +120,11 @@ let analyze_sources
           ()
       in
       Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
+      Statistics.event
+        ~section:`Memory
+        ~name:"shared memory size post-typecheck"
+        ~integers:["size", SharedMemory.heap_size ()]
+        ();
       errors
     in
     let errors = List.map (Analysis.Check.checks ~configuration) ~f:run |> List.concat in

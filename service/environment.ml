@@ -472,7 +472,7 @@ let populate_shared_memory
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
-    ~integers:["size", EnvironmentSharedMemory.heap_size ()]
+    ~integers:["size", Ast.SharedMemory.heap_size ()]
     ()
 
 

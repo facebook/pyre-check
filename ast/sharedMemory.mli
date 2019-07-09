@@ -115,3 +115,5 @@ module Handles : sig
 
   val compute_hashes_to_keys : keys:string list -> string String.Map.t
 end
+
+val heap_size : unit -> int
