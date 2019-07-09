@@ -9,10 +9,13 @@ open Taint
 open TestHelper
 module Callable = Interprocedural.Callable
 
-let assert_model ~model_source ~expect =
-  let resolution =
-    Test.resolution ~sources:(Test.typeshed_stubs () @ [Test.parse model_source]) ()
+let assert_model ?source ~model_source ~expect () =
+  let source =
+    match source with
+    | None -> model_source
+    | Some source -> source
   in
+  let resolution = Test.resolution ~sources:(Test.typeshed_stubs () @ [Test.parse source]) () in
   let configuration =
     TaintConfiguration.
       { sources = ["TestTest"]; sinks = ["TestSink"]; features = ["special"]; rules = [] }
@@ -32,17 +35,21 @@ let assert_model ~model_source ~expect =
 let test_source_models _ =
   assert_model
     ~model_source:"def taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "taint"];
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "taint"]
+    ();
   assert_model
     ~model_source:"os.environ: TaintSource[TestTest] = ..."
-    ~expect:[outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "os.environ"];
+    ~expect:[outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "os.environ"]
+    ();
   assert_model
     ~model_source:"django.http.Request.GET: TaintSource[TestTest] = ..."
     ~expect:
-      [outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "django.http.Request.GET"];
+      [outcome ~kind:`Object ~returns:[Sources.NamedSource "TestTest"] "django.http.Request.GET"]
+    ();
   assert_model
     ~model_source:"def taint() -> TaintSource[Test, UserControlled]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test; Sources.UserControlled] "taint"];
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.Test; Sources.UserControlled] "taint"]
+    ();
   assert_model
     ~model_source:"os.environ: TaintSink[Test] = ..."
     ~expect:
@@ -50,6 +57,7 @@ let test_source_models _ =
           ~kind:`Object
           ~sink_parameters:[{ name = "$global"; sinks = [Sinks.Test] }]
           "os.environ" ]
+    ()
 
 
 let test_sink_models _ =
@@ -62,14 +70,16 @@ let test_sink_models _ =
       [ outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
-          "sink" ];
+          "sink" ]
+    ();
   assert_model
     ~model_source:"def sink(parameter0, parameter1: TaintSink[Test]): ..."
     ~expect:
       [ outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.Test] }]
-          "sink" ];
+          "sink" ]
+    ();
   assert_model
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:
@@ -78,7 +88,8 @@ let test_sink_models _ =
           ~sink_parameters:
             [ { name = "parameter0"; sinks = [Sinks.Test] };
               { name = "parameter1"; sinks = [Sinks.Test] } ]
-          "sink" ];
+          "sink" ]
+    ();
   assert_model
     ~model_source:"def sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test]): ..."
     ~expect:
@@ -87,7 +98,8 @@ let test_sink_models _ =
           ~sink_parameters:
             [ { name = "parameter0"; sinks = [Sinks.Test] };
               { name = "parameter1"; sinks = [Sinks.Test] } ]
-          "sink" ];
+          "sink" ]
+    ();
   assert_model
     ~model_source:"def both(parameter0: TaintSink[Demo]) -> TaintSource[Demo]: ..."
     ~expect:
@@ -95,11 +107,13 @@ let test_sink_models _ =
           ~kind:`Function
           ~returns:[Sources.Demo]
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.Demo] }]
-          "both" ];
+          "both" ]
+    ();
   assert_model
     ~model_source:"def xss(parameter: TaintSink[XSS]): ..."
     ~expect:
-      [outcome ~kind:`Function ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }] "xss"];
+      [outcome ~kind:`Function ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }] "xss"]
+    ();
   assert_model
     ~model_source:"def multiple(parameter: TaintSink[XSS, Demo]): ..."
     ~expect:
@@ -107,18 +121,18 @@ let test_sink_models _ =
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Demo; Sinks.XSS] }]
           "multiple" ]
+    ()
 
 
 let test_class_models _ =
   assert_model
-    ~model_source:
+    ~source:
       {|
-        class Sink(TaintSink[TestSink]):
-          # Note: the methods are specified here to have them added to the test environment.
-          # These need not be specified in actual sink class models.
+        class Sink:
           def Sink.method(parameter): ...
           def Sink.method_with_multiple_parameters(first, second): ...
       |}
+    ~model_source:"class Sink(TaintSink[TestSink]): ..."
     ~expect:
       [ outcome
           ~kind:`Method
@@ -129,88 +143,81 @@ let test_class_models _ =
           ~sink_parameters:
             [ { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "TestSink"] } ]
-          "Sink.method_with_multiple_parameters" ];
+          "Sink.method_with_multiple_parameters" ]
+    ();
   assert_model
-    ~model_source:
+    ~source:
       {|
-        class Source(TaintSource[UserControlled]):
+        class Source:
           def Source.method(parameter): ...
           def Source.method_with_multiple_parameters(first, second): ...
-          # TODO(T46075946): Support attributes.
           Source.attribute = ...
+      |}
+    ~model_source:{|
+        class Source(TaintSource[UserControlled]): ...
       |}
     ~expect:
       [ outcome ~kind:`Method ~returns:[Sources.UserControlled] "Source.method";
         outcome
           ~kind:`Method
           ~returns:[Sources.UserControlled]
-          "Source.method_with_multiple_parameters" ];
+          "Source.method_with_multiple_parameters" ]
+    ();
   assert_model
-    ~model_source:
+    ~source:
       {|
-        class AnnotatedSink(TaintSink[TestSink]):
-          def AnnotatedSink.method(parameter): ...
+        class AnnotatedSink:
+          def AnnotatedSink.method(parameter: int) -> None: ...
       |}
+    ~model_source:"class AnnotatedSink(TaintSink[TestSink]): ..."
     ~expect:
       [ outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
-          "AnnotatedSink.method" ];
+          "AnnotatedSink.method" ]
+    ();
   assert_model
-    ~model_source:
+    ~source:
       {|
-        class AnnotatedSource(TaintSource[UserControlled]):
-          def AnnotatedSource.method(parameter): ...
+         class AnnotatedSource:
+          def AnnotatedSource.method(parameter: int) -> None: ...
       |}
-    ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"];
-
-  (* Class sinks and sources do not currently respect any annotations for individual methods. *)
-  assert_model
-    ~model_source:
-      {|
-        class AnnotatedSink(TaintSink[TestSink]):
-          def AnnotatedSink.method(parameter: TaintSink[Test]) -> TaintSource[UserControlled]: ...
-      |}
-    ~expect:
-      [ outcome
-          ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
-          "AnnotatedSink.method" ];
-  assert_model
-    ~model_source:
-      {|
-        class AnnotatedSource(TaintSource[UserControlled]):
-          def AnnotatedSource.method(parameter: TaintSink[TestSink]) -> TaintSource[Test]: ...
-      |}
+    ~model_source:"class AnnotatedSource(TaintSource[UserControlled]): ..."
     ~expect:[outcome ~kind:`Method ~returns:[Sources.UserControlled] "AnnotatedSource.method"]
+    ()
 
 
 let test_taint_in_taint_out_models _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
+    ()
 
 
 let test_taint_in_taint_out_models_alternate _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut[LocalReturn]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
+    ()
 
 
 let test_taint_in_taint_out_update_models _ =
   assert_model
     ~model_source:"def update(self, arg1: TaintInTaintOut[Updates[self]]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["arg1 updates parameter 0"] "update"];
+    ~expect:[outcome ~kind:`Function ~tito_parameters:["arg1 updates parameter 0"] "update"]
+    ();
   assert_model
     ~model_source:"def update(self, arg1, arg2: TaintInTaintOut[Updates[self, arg1]]): ..."
     ~expect:
       [ outcome
           ~kind:`Function
           ~tito_parameters:["arg2 updates parameter 0"; "arg2 updates parameter 1"]
-          "update" ];
+          "update" ]
+    ();
   assert_model
     ~model_source:"def update(self: TaintInTaintOut[LocalReturn, Updates[arg1]], arg1): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["self"; "self updates parameter 1"] "update"]
+    ()
 
 
 let test_union_models _ =
@@ -222,12 +229,14 @@ let test_union_models _ =
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.XSS] }]
           ~tito_parameters:["parameter"]
           "both" ]
+    ()
 
 
 let test_source_breadcrumbs _ =
   assert_model
     ~model_source:"def source() -> TaintSource[Test, Via[special]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Test] "source"]
+    ()
 
 
 let test_sink_breadcrumbs _ =
@@ -238,12 +247,14 @@ let test_sink_breadcrumbs _ =
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.Test] }]
           "sink" ]
+    ()
 
 
 let test_tito_breadcrumbs _ =
   assert_model
     ~model_source:"def tito(parameter: TaintInTaintOut[Via[special]]): ..."
     ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "tito"]
+    ()
 
 
 let test_invalid_models _ =
@@ -270,7 +281,12 @@ let test_invalid_models _ =
     in
     let error_message =
       try
-        Model.parse ~resolution ~configuration ~source:model_source Callable.Map.empty |> ignore;
+        Model.parse
+          ~resolution
+          ~configuration
+          ~source:(Test.trim_extra_indentation model_source)
+          Callable.Map.empty
+        |> ignore;
         "no failure"
       with
       | Failure message
@@ -377,7 +393,14 @@ let test_invalid_models _ =
   assert_invalid_model
     ~model_source:"def sink(parameter: TaintSink[Updates[self]]): ..."
     ~expect:"Invalid model for `sink`: No such parameter `self`";
-  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]"
+  assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]";
+  assert_invalid_model
+    ~model_source:
+      {|
+      class ClassSinkWithMethod(TaintSink[TestSink]):
+          def method(self): ...
+      |}
+    ~expect:"Class models must have a body of `...`."
 
 
 let () =

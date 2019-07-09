@@ -429,7 +429,14 @@ let create ~resolution ?(verify = true) ~configuration source =
             | None -> Callable.create_function name
           in
           [signature, call_target]
-      | { Node.value = Class { Class.name; bases; _ }; _ } ->
+      | { Node.value = Class { Class.name; bases; body; _ }; _ } ->
+          begin
+            match body with
+            | [{ Node.value = Statement.Expression { Node.value = Ast.Expression.Ellipsis; _ }; _ }]
+              ->
+                ()
+            | _ -> raise_invalid_model "Class models must have a body of `...`."
+          end;
           let sink_annotation =
             let class_sink_base { Call.Argument.value; _ } =
               if Expression.show value |> String.is_prefix ~prefix:"TaintSink[" then
