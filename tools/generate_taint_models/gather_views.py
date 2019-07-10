@@ -24,6 +24,7 @@ def get_all_views(
     def visit_all_patterns(url_patterns: Iterable[Any]) -> None:
         for pattern in url_patterns:
             if isinstance(pattern, url_resolver_type):
+                # pyre-fixme[18]: Global name `visit_all_patterns` is undefined.
                 visit_all_patterns(pattern.url_patterns)
             elif isinstance(pattern, url_pattern_type):
                 functions_to_model.append(pattern.callback)

@@ -14,6 +14,7 @@ class Rage(Command):
 
     def __init__(self, arguments, configuration, analysis_directory) -> None:
         super(Rage, self).__init__(arguments, configuration, analysis_directory)
+        # pyre-fixme[16]: `Namespace` has no attribute `command`.
         self._arguments.command = self.NAME
         self._configuration = configuration
 

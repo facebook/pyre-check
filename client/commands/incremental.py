@@ -31,8 +31,12 @@ class Incremental(Reporting):
         if self._state() == State.DEAD:
             LOG.warning("Starting server at `%s`.", self._analysis_directory.get_root())
             arguments = self._arguments
+            # pyre-fixme[16]: `Namespace` has no attribute `terminal`.
             arguments.terminal = False
+            # pyre-fixme[16]: `Namespace` has no attribute
+            #  `store_type_check_resolution`.
             arguments.store_type_check_resolution = False
+            # pyre-fixme[16]: `Namespace` has no attribute `no_watchman`.
             arguments.no_watchman = False
             exit_code = (
                 Start(arguments, self._configuration, self._analysis_directory)

@@ -84,6 +84,7 @@ def typeshed_search_path(typeshed_root: str) -> List[str]:
     return search_path
 
 
+# pyre-fixme[44]: `Command` non-abstract class with abstract methods
 class Command:
     _buffer = []  # type: List[str]
     _call_client_terminated = False  # type: bool

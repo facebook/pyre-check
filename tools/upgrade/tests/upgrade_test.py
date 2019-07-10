@@ -326,7 +326,9 @@ class FixmeAllTest(unittest.TestCase):
     @patch.object(pathlib.Path, "write_text")
     def test_preserve_ast(self, path_write, path_read) -> None:
         mock_arguments = argparse.Namespace()
+        # pyre-fixme[16]: `Namespace` has no attribute `max_line_length`.
         mock_arguments.max_line_length = 88
+        # pyre-fixme[16]: `Namespace` has no attribute `truncate`.
         mock_arguments.truncate = True
         error_map = {7: [{"code": "6", "description": "Foo"}]}
         path_read.return_value = """

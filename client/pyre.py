@@ -451,8 +451,11 @@ def main() -> int:
 
     if not hasattr(arguments, "command"):
         if shutil.which("watchman"):
+            # pyre-fixme[16]: `Namespace` has no attribute `command`.
             arguments.command = commands.Incremental
+            # pyre-fixme[16]: `Namespace` has no attribute `nonblocking`.
             arguments.nonblocking = False
+            # pyre-fixme[16]: `Namespace` has no attribute `transitive`.
             arguments.transitive = False
         else:
             watchman_link = "https://facebook.github.io/watchman/docs/install.html"
@@ -471,8 +474,10 @@ def main() -> int:
     exit_code = ExitCode.FAILURE
     start = time.time()
     try:
+        # pyre-fixme[16]: `Namespace` has no attribute `capable_terminal`.
         arguments.capable_terminal = is_capable_terminal()
         if arguments.debug or not arguments.capable_terminal:
+            # pyre-fixme[16]: `Namespace` has no attribute `noninteractive`.
             arguments.noninteractive = True
 
         switch_root(arguments)

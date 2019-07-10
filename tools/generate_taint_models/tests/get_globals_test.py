@@ -66,6 +66,7 @@ class GetGlobalsTest(unittest.TestCase):
 
     @patch("builtins.open")
     def test_globals(self, open: unittest.mock._patch) -> None:
+        # pyre-fixme[16]: `_patch` has no attribute `side_effect`.
         open.side_effect = _open_implementation(
             {
                 "/root/module.py": textwrap.dedent(

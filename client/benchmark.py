@@ -91,6 +91,7 @@ if __name__ == "__main__":
         help="Maximum number of concurrent processes to measure.",
     )
     arguments = parser.parse_args()
+    # pyre-fixme[16]: `Namespace` has no attribute `noninteractive`.
     arguments.noninteractive = True
     log.initialize(arguments)
 

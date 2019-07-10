@@ -174,6 +174,7 @@ def initialize(arguments: argparse.Namespace) -> None:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
         stream_handler.setLevel(logging.DEBUG)
+        # pyre-fixme[16]: `Namespace` has no attribute `timed_stream_handler`.
         arguments.timed_stream_handler = None
     else:
         stream_handler = TimedStreamHandler()

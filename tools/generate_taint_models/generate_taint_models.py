@@ -123,9 +123,11 @@ if __name__ == "__main__":
     arguments: argparse.Namespace = parser.parse_args()
 
     if not arguments.mode:
+        # pyre-fixme[16]: `Namespace` has no attribute `mode`.
         arguments.mode = ["get_exit_nodes", "get_REST_api_sources"]
 
     if not arguments.whitelisted_class:
+        # pyre-fixme[16]: `Namespace` has no attribute `whitelisted_class`.
         arguments.whitelisted_class = ["HttpRequest"]
 
     logging.basicConfig(
@@ -135,6 +137,7 @@ if __name__ == "__main__":
     )
 
     os.chdir(os.path.dirname(arguments.urls_path))
+    # pyre-fixme[16]: `Namespace` has no attribute `urls_path`.
     arguments.urls_path = os.path.basename(arguments.urls_path)
 
     models: Set[str] = set()
