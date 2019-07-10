@@ -1,5 +1,6 @@
 # @nolint
 
+from typing import Optional
 from django.http import HttpRequest, HttpResponse
 
 
@@ -16,3 +17,7 @@ def test_get(request: HttpRequest):
 
 def test_getlist(request: HttpRequest):
     eval(request.GET.getlist("bad"))
+
+
+def test_optional(request: Optional[HttpRequest]):
+    eval(request.GET["bad"])

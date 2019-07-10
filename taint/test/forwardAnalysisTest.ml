@@ -247,7 +247,20 @@ let test_class_model _ =
         return c.property
     |}
     [ outcome ~kind:`Method ~returns:[] "qualifier.Class.property";
-      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.uses_property" ]
+      outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.uses_property" ];
+
+  (* Optionals. *)
+  assert_taint
+    ~models:{|
+      qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
+    |}
+    {|
+      class Data:
+        ATTRIBUTE = 1
+      def optional(data: typing.Optional[Data]):
+        return data.ATTRIBUTE
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.optional"]
 
 
 let test_apply_method_model_at_call_site _ =
@@ -564,7 +577,17 @@ let test_lambda _ =
       def source_in_lambda():
           return lambda x : x + __test_source()
     |}
-    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_lambda"]
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_lambda"];
+  assert_taint
+    {|
+      def optional_lambda():
+        if 1 > 2:
+          f = None
+        else:
+          f = lambda x: x + __test_source()
+        return f
+    |}
+    [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.optional_lambda"]
 
 
 let test_set _ =

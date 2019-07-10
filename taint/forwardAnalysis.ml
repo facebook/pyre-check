@@ -406,7 +406,11 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =
-      let annotation = Resolution.resolve resolution base in
+      let annotation =
+        match Resolution.resolve resolution base with
+        | Type.Optional annotation -> annotation
+        | annotation -> annotation
+      in
       let attribute_taint =
         let annotations =
           let successors =

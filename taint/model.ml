@@ -610,7 +610,12 @@ let get_global_model ~resolution ~expression =
     match Node.value expression, AccessPath.get_global ~resolution expression with
     | _, Some global -> Some global
     | Name (Name.Attribute { base; attribute; _ }), _ ->
-        Resolution.resolve resolution base
+        let annotation =
+          match Resolution.resolve resolution base with
+          | Type.Optional annotation -> annotation
+          | annotation -> annotation
+        in
+        annotation
         |> Type.class_name
         |> (fun class_name -> Reference.create ~prefix:class_name attribute)
         |> Option.some

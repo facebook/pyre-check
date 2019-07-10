@@ -1229,6 +1229,15 @@ let test_assignment _ =
     [ outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
+        "qualifier.assigns_to_sink" ];
+  assert_taint
+    {|
+      def assigns_to_sink(optional_sink: typing.Optional[ClassWithSinkAttribute], assigned_to_sink):
+        optional_sink.attribute = assigned_to_sink
+    |}
+    [ outcome
+        ~kind:`Function
+        ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
         "qualifier.assigns_to_sink" ]
 
 

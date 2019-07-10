@@ -148,6 +148,7 @@ let resolve_target ~resolution ?receiver_type callee =
         [ ( Callable.create_method reference,
             Some { Type.Callable.implicit_annotation = callable_type; name = "self" } ) ]
     | Type.Union annotations, _, _ -> List.concat_map ~f:resolve_type annotations
+    | Type.Optional annotation, _, _ -> resolve_type annotation
     | _ -> []
   in
   resolve_type callable_type
