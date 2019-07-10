@@ -832,6 +832,7 @@ module Builder = struct
       singleton "unittest.mock.NonCallableMock";
       singleton "typing.ClassVar";
       singleton "typing.Final";
+      singleton "typing_extensions.Final";
       ["dict"; "typing.Dict"; object_primitive];
       singleton "None";
       (* Numerical hierarchy. *)

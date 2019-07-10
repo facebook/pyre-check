@@ -339,6 +339,7 @@ let check_invalid_type_parameters resolution annotation =
           | "typing.Iterator"
           | "Optional"
           | "typing.Final"
+          | "typing_extensions.Final"
           | "typing.Optional" ->
               [Type.Variable (Type.Variable.Unary.create "T")]
           | _ -> generics resolution (Type.Primitive name) |> Option.value ~default:[]

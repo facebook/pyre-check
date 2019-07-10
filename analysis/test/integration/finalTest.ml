@@ -115,7 +115,29 @@ let test_final_attributes _ =
           def foo(self, x:Final[int]) -> None:
               pass
     |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+  assert_type_errors
+    {|
+      from typing_extensions import Final
+      class C:
+          def __init__(self) -> None:
+              self.x: Final[int] = 1
+
+          def foo(self) -> None:
+              self.x = 100
+    |}
+    [ "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
+      "Undefined error [1]: Problem with analysis." ];
+  assert_type_errors
+    {|
+      from typing import Final
+      class C:
+          def __init__(self) -> None:
+              self.x: Final[int] = 1
+
+      C.x = 100
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `C.x`."]
 
 
 let () =

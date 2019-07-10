@@ -462,7 +462,7 @@ let is_ellipsis = function
 
 
 let is_final = function
-  | Parametric { name = "typing.Final"; _ } -> true
+  | Parametric { name = "typing.Final" | "typing_extensions.Final"; _ } -> true
   | _ -> false
 
 
@@ -2024,13 +2024,7 @@ let contains_literal annotation =
   exists annotation ~predicate
 
 
-let contains_final annotation =
-  let predicate = function
-    | Parametric { name = "typing.Final"; _ } -> true
-    | _ -> false
-  in
-  exists annotation ~predicate
-
+let contains_final annotation = exists annotation ~predicate:is_final
 
 let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make (struct
@@ -2292,7 +2286,8 @@ let class_variable_value = function
 
 
 let final_value = function
-  | Parametric { name = "typing.Final"; parameters = [parameter] } -> Some parameter
+  | Parametric { name = "typing.Final" | "typing_extensions.Final"; parameters = [parameter] } ->
+      Some parameter
   | _ -> None
 
 
