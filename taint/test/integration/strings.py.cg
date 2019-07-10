@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+strings.bad_1 (fun) -> [__test_sink (fun) __test_source (fun) strings.concatenate_lhs (fun)]
+strings.bad_2 (fun) -> [__test_sink (fun) __test_source (fun) strings.concatenate_rhs (fun)]
+strings.concatenate_lhs (fun) -> [str::__add__ (method)]
+strings.concatenate_rhs (fun) -> [str::__add__ (method)]

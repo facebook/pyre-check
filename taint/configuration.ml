@@ -91,7 +91,14 @@ let register configuration = SharedConfig.add key configuration
 let default =
   { sources = [];
     sinks = [];
-    features = ["copy"; "default"; "object"; "special_source"; "special_sink"];
+    features =
+      [ "copy";
+        "default";
+        "object";
+        "special_source";
+        "special_sink";
+        "string_concat_lhs";
+        "string_concat_rhs" ];
     rules =
       [ { sources = [Sources.UserControlled];
           sinks = [Sinks.RemoteCodeExecution];

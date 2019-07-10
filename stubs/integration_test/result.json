@@ -39,18 +39,6 @@
     "code": 5001,
     "column": 9,
     "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "define": "integration_test.containers.list_append",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "inference": null,
-    "line": 16,
-    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "name": "Possible shell injection",
-    "path": "integration_test/containers.py"
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "define": "integration_test.request_sources.test_get",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
@@ -63,6 +51,30 @@
     "code": 5001,
     "column": 9,
     "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "define": "integration_test.containers.list_append",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "inference": null,
+    "line": 16,
+    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "name": "Possible shell injection",
+    "path": "integration_test/containers.py"
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "define": "integration_test.string_concatenation.bad_1",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "inference": null,
+    "line": 16,
+    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "name": "Possible shell injection",
+    "path": "integration_test/string_concatenation.py"
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "define": "integration_test.request_sources.test_getlist",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "inference": null,
@@ -70,6 +82,18 @@
     "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
     "name": "Possible shell injection",
     "path": "integration_test/request_sources.py"
+  },
+  {
+    "code": 5001,
+    "column": 9,
+    "concise_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "define": "integration_test.string_concatenation.bad_2",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "inference": null,
+    "line": 21,
+    "long_description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "name": "Possible shell injection",
+    "path": "integration_test/string_concatenation.py"
   },
   {
     "code": 5001,

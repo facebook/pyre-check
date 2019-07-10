@@ -1,0 +1,145 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "strings.bad_1",
+    "callable_line": 10,
+    "code": 5002,
+    "line": 12,
+    "start": 16,
+    "end": 17,
+    "filename": "strings.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 11,
+              "start": 37,
+              "end": 39
+            },
+            "tito": [ { "line": 11, "start": 24, "end": 39 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "tito" },
+              { "via": "string_concat_lhs" },
+              { "via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 12,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "strings.bad_2",
+    "callable_line": 15,
+    "code": 5002,
+    "line": 17,
+    "start": 16,
+    "end": 17,
+    "filename": "strings.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 16,
+              "start": 37,
+              "end": 39
+            },
+            "tito": [ { "line": 16, "start": 24, "end": 39 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "tito" },
+              { "via": "string_concat_rhs" },
+              { "via": "special_source" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "strings.py",
+              "line": 17,
+              "start": 16,
+              "end": 17
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_sink" } ],
+            "features": [ { "via": "special_sink" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.concatenate_lhs",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(source)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 3, "start": 17, "end": 24 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "via": "string_concat_lhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "strings.concatenate_rhs",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(source)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 7, "start": 17, "end": 23 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" }, { "via": "string_concat_rhs" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
