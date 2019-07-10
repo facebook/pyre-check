@@ -440,7 +440,7 @@ let run_start_command
     profiling_output
     project_root
     search_path
-    taint_models_directory
+    taint_models_directories
     excludes
     extensions
     local_root
@@ -480,7 +480,7 @@ let run_start_command
       ~number_of_workers
       ~project_root:(Path.create_absolute project_root)
       ~search_path:(List.map search_path ~f:SearchPath.create)
-      ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
+      ~taint_models_directories:(List.map taint_models_directories ~f:Path.create_absolute)
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)

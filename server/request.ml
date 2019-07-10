@@ -1037,14 +1037,12 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         |> Option.value ~default
     | TypeQuery.ValidateTaintModels path -> (
       try
-        let directory =
+        let directories =
           match path with
-          | Some path -> path
-          | None ->
-              configuration.Configuration.Analysis.taint_models_directory
-              |> fun value -> Option.value_exn value
+          | Some path -> [path]
+          | None -> configuration.Configuration.Analysis.taint_models_directories
         in
-        let configuration = Taint.TaintConfiguration.create ~directory in
+        let configuration = Taint.TaintConfiguration.create ~directories in
         let create_models sources =
           let create_model source =
             Taint.Model.parse
@@ -1056,12 +1054,17 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           List.iter sources ~f:create_model
         in
-        Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root:directory ()
+        directories
+        |> List.concat_map ~f:(fun root ->
+               Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
         |> List.map ~f:File.create
         |> List.filter_map ~f:File.content
         |> create_models;
         TypeQuery.Response
-          (TypeQuery.Success (Format.asprintf "Models in `%a` are valid." Path.pp directory))
+          (TypeQuery.Success
+             (Format.asprintf
+                "Models in `%s` are valid."
+                (directories |> List.map ~f:Path.show |> String.concat ~sep:", ")))
       with
       | error -> TypeQuery.Error (Exn.to_string error) )
   in

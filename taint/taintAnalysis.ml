@@ -22,20 +22,28 @@ include TaintResult.Register (struct
             models)
     in
     let taint = Yojson.Safe.Util.member "taint" configuration in
-    let model_directory =
-      Yojson.Safe.Util.member "model_directory" taint |> Yojson.Safe.Util.to_string
+    let model_directories =
+      Yojson.Safe.Util.member "model_directories" taint
+      |> Yojson.Safe.Util.to_list
+      |> List.map ~f:Yojson.Safe.Util.to_string
     in
-    match model_directory with
-    | "" -> Callable.Map.empty
-    | directory -> (
+    match model_directories with
+    | [] -> Callable.Map.empty
+    | _ -> (
       try
-        let directory = Path.create_absolute directory in
-        if not (Path.is_directory directory) then
-          raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-        let configuration = Configuration.create ~directory in
+        let directories = List.map model_directories ~f:Path.create_absolute in
+        List.iter directories ~f:(fun directory ->
+            if not (Path.is_directory directory) then
+              raise
+                (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory)));
+        let configuration = Configuration.create ~directories in
         Configuration.register configuration;
-        Log.info "Finding taint models in %a" Path.pp directory;
-        Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root:directory ()
+        Log.info
+          "Finding taint models in `%s`."
+          (directories |> List.map ~f:Path.show |> String.concat ~sep:", ");
+        directories
+        |> List.concat_map ~f:(fun root ->
+               Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
         |> List.map ~f:File.create
         |> List.filter_map ~f:File.content
         |> create_models ~configuration

@@ -68,8 +68,8 @@ let base_command_line_arguments =
          (optional_with_default [] (Arg_type.comma_separated string))
          ~doc:"DIRECTORY1,... Directories containing external modules to include."
     +> flag
-         "-taint-models-directory"
-         (optional string)
+         "-taint-models"
+         (listed string)
          ~doc:"DIRECTORY containing models for the taint analysis."
     +> flag
          "-exclude"

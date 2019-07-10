@@ -29,7 +29,7 @@ let run_analysis
     profiling_output
     project_root
     search_path
-    taint_models_directory
+    taint_models_directories
     excludes
     extensions
     local_root
@@ -68,7 +68,7 @@ let run_analysis
       ?ignore_all_errors
       ~number_of_workers
       ~search_path:(List.map search_path ~f:SearchPath.create)
-      ?taint_models_directory:(taint_models_directory >>| Path.create_absolute)
+      ~taint_models_directories:(List.map taint_models_directories ~f:Path.create_absolute)
       ~excludes
       ~extensions
       ~local_root:(Path.create_absolute local_root)

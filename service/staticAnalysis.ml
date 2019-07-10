@@ -155,12 +155,12 @@ let analyze
      indicate which analysis to run (taint vs others), and also contain particular analysis options
      passed the the analysis initialization code. *)
   let configuration_json =
-    let taint_models_directory =
-      configuration.Configuration.Analysis.taint_models_directory
-      >>| Path.absolute
-      |> Option.value ~default:""
+    let taint_models_directories =
+      configuration.Configuration.Analysis.taint_models_directories
+      |> List.map ~f:Path.absolute
+      |> List.map ~f:(fun directory -> `String directory)
     in
-    `Assoc ["taint", `Assoc ["model_directory", `String taint_models_directory]]
+    `Assoc ["taint", `Assoc ["model_directories", `List taint_models_directories]]
   in
   let analyses = [Taint.Analysis.abstract_kind] in
   (* Initialize and add initial models of analyses to shared mem. *)

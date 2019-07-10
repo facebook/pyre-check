@@ -150,10 +150,22 @@ let get () =
   | Some configuration -> configuration
 
 
-let create ~directory =
-  if not (Path.is_directory directory) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
-  let configuration_path = Path.append directory ~element:"taint.config" in
-  if not (Path.file_exists configuration_path) then
-    raise (Invalid_argument (Format.asprintf "`%a` is not a file" Path.pp configuration_path));
-  configuration_path |> File.create |> File.content |> Option.value ~default:"" |> parse
+let create ~directories =
+  let create_rule directory =
+    if not (Path.is_directory directory) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory));
+    let configuration_path = Path.append directory ~element:"taint.config" in
+    if not (Path.file_exists configuration_path) then
+      raise (Invalid_argument (Format.asprintf "`%a` is not a file" Path.pp configuration_path));
+    configuration_path |> File.create |> File.content |> Option.value ~default:"" |> parse
+  in
+  let merge_rules left right =
+    { sources = left.sources @ right.sources;
+      sinks = left.sinks @ right.sinks;
+      features = left.features @ right.features;
+      rules = left.rules @ right.rules
+    }
+  in
+  directories
+  |> List.map ~f:create_rule
+  |> List.fold_left ~f:merge_rules ~init:{ sources = []; sinks = []; features = []; rules = [] }

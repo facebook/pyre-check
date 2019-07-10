@@ -28,4 +28,4 @@ val register : t -> unit
 
 val default : t
 
-val create : directory:Path.t -> t
+val create : directories:Path.t list -> t

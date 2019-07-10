@@ -23,7 +23,7 @@ module Analysis = struct
     debug: bool;
     project_root: Path.t;
     search_path: SearchPath.t list;
-    taint_models_directory: Path.t option;
+    taint_models_directories: Path.t list;
     verbose: bool;
     expected_version: string option;
     strict: bool;
@@ -65,7 +65,7 @@ module Analysis = struct
       ?(sections = [])
       ?(project_root = Path.create_absolute "/")
       ?(search_path = [])
-      ?taint_models_directory
+      ?(taint_models_directories = [])
       ?(verbose = false)
       ?expected_version
       ?(strict = false)
@@ -97,7 +97,7 @@ module Analysis = struct
       debug;
       project_root;
       search_path;
-      taint_models_directory;
+      taint_models_directories;
       verbose;
       expected_version;
       strict;
