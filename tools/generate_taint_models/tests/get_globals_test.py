@@ -10,6 +10,7 @@ from typing import IO, Any, Callable, Dict
 from unittest.mock import call, mock_open, patch
 
 from ..get_globals import GlobalModelGenerator, __name__ as get_globals_name
+from ..model_generator import Configuration
 
 
 def _open_implementation(path_to_content: Dict[str, str]) -> Callable[[str, str], Any]:
@@ -36,10 +37,12 @@ class GetGlobalsTest(unittest.TestCase):
         absolute_path: unittest.mock._patch,
         exists: unittest.mock._patch,
     ) -> None:
+        Configuration.root = "/root"
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
         ) as globals, patch("glob.glob", return_value=["/root/a.py", "/root/b.py"]):
-            GlobalModelGenerator("/root", None).compute_models([])
+
+            GlobalModelGenerator().compute_models([])
             globals.assert_has_calls(
                 [call("/root", "/root/a.pyi"), call("/root", "/root/b.py")],
                 any_order=True,
@@ -48,12 +51,13 @@ class GetGlobalsTest(unittest.TestCase):
             "/root/**/*.py": ["/root/a.py", "/root/b.py"],
             "/stub_root/**/*.pyi": ["/stub_root/a.pyi", "/stub_root/b.pyi"],
         }
+        Configuration.stub_root = "/stub_root"
         with patch(
             f"{get_globals_name}.GlobalModelGenerator._globals"
         ) as globals, patch(
             "glob.glob", side_effect=lambda root, recursive: directory_mapping[root]
         ):
-            GlobalModelGenerator("/root", "/stub_root").compute_models([])
+            GlobalModelGenerator().compute_models([])
             globals.assert_has_calls(
                 [
                     call("/root", "/root/a.pyi"),
@@ -84,7 +88,7 @@ class GetGlobalsTest(unittest.TestCase):
                 )
             }
         )
-        generator = GlobalModelGenerator(".root", None)
+        generator = GlobalModelGenerator()
         self.assertSetEqual(
             set(generator._globals("/root", "/root/module.py")),
             {

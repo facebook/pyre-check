@@ -11,14 +11,12 @@ import types
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_name, extract_view_name
-from .model_generator import ModelGenerator
+from .model_generator import Configuration, Registry
 from .taint_annotator import Model
+from .view_generator import ViewGenerator
 
 
-class ExitNodeGenerator(ModelGenerator):
-    def __init__(self, whitelisted_views: Iterable[str]) -> None:
-        self.whitelisted_views = whitelisted_views
-
+class ExitNodeGenerator(ViewGenerator):
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., object]]
     ) -> Iterable[str]:
@@ -26,7 +24,7 @@ class ExitNodeGenerator(ModelGenerator):
 
         for view_function in functions_to_model:
             view_name = extract_view_name(view_function)
-            if view_name in self.whitelisted_views:
+            if view_name in Configuration.whitelisted_views:
                 continue
             model = Model(returns="TaintSink[ReturnedToUser]")
             callable = model.generate(view_function)
@@ -34,3 +32,6 @@ class ExitNodeGenerator(ModelGenerator):
                 exit_nodes.add(callable)
 
         return sorted(exit_nodes)
+
+
+Registry.register("get_exit_nodes", ExitNodeGenerator)

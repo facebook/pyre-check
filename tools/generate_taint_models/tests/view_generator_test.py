@@ -7,13 +7,14 @@
 
 
 import unittest
+from typing import Callable, Iterable
 from unittest.mock import patch
 
-from ..gather_views import __name__ as gather_views_name, get_all_views
+from .. import model_generator, view_generator
 
 
-class GatherViewsTest(unittest.TestCase):
-    def test_gather_views(self) -> None:
+class ViewGeneratorTest(unittest.TestCase):
+    def test_view_generator(self) -> None:
         class Url:
             def __init__(self, value: int) -> None:
                 self.value = value
@@ -33,9 +34,16 @@ class GatherViewsTest(unittest.TestCase):
         class Urls:
             urlpatterns = [SecondUrls(), Url(7)]
 
-        with patch(f"{gather_views_name}.import_module", return_value=Urls):
-            views = get_all_views(
-                module_name="urls", url_pattern_type=Url, url_resolver_type=Resolver
-            )
+        class TestGenerator(view_generator.ViewGenerator):
+            def compute_models(
+                self, functions_to_model: Iterable[Callable[..., object]]
+            ) -> Iterable[str]:
+                return []
+
+        with patch(f"{view_generator.__name__}.import_module", return_value=Urls):
+            model_generator.Configuration.urls_module = "urls"
+            model_generator.Configuration.url_pattern_type = Url
+            model_generator.Configuration.url_resolver_type = Resolver
+            views = TestGenerator().gather_functions_to_model()
             values = [view() for view in views]
             self.assertEqual(values, [1, 2, 3, 4, 5, 6, 7])

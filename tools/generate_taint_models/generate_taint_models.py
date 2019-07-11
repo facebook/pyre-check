@@ -17,11 +17,7 @@ from typing import Callable, Dict, Mapping, Optional, Set, Union
 import _ast
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
-from .gather_views import get_all_views
-from .get_exit_nodes import ExitNodeGenerator
-from .get_globals import GlobalModelGenerator
-from .get_REST_api_sources import RESTApiSourceGenerator
-from .model_generator import load_module, qualifier
+from .model_generator import Configuration, Registry
 from .taint_annotator import Model, annotate_function
 
 
@@ -48,60 +44,12 @@ _WHITELISTED_DJANGO_VIEWS = [
 ]
 
 
-def _get_exit_nodes(arguments: argparse.Namespace) -> Set[str]:
-    if not arguments.urls_path:
-        LOG.warn("Ran in get_exit_nodes mode, but didn't supply urls_path")
-        return set()
+def main() -> None:
+    # pyre-ignore: Typeshed is for django 2.x
+    Configuration.url_pattern_type = RegexURLPattern
+    # pyre-ignore: Typeshed is for django 2.x
+    Configuration.url_resolver_type = RegexURLResolver
 
-    urls = urls_module(arguments.urls_path)
-    if urls is None:
-        LOG.warn("Need to supply a `.py` file for the urls_path.")
-        return set()
-
-    views = get_all_views(
-        module_name=urls,
-        # pyre-ignore[16]: Django 1.9
-        url_pattern_type=RegexURLPattern,
-        # pyre-ignore[16]: Django 1.9
-        url_resolver_type=RegexURLResolver,
-    )
-    models = ExitNodeGenerator(
-        whitelisted_views=_WHITELISTED_DJANGO_VIEWS
-    ).compute_models(views)
-    return set(models)
-
-
-def _get_REST_api_sources(arguments: argparse.Namespace) -> Set[str]:
-    if not arguments.urls_path:
-        LOG.warn("Ran in get_REST_api_sources mode, but didn't supply urls_path")
-        return set()
-
-    urls = urls_module(arguments.urls_path)
-    if urls is None:
-        LOG.warn("Need to supply a `.py` file for the urls_path.")
-        return set()
-
-    whitelist = arguments.whitelisted_class
-    views = get_all_views(
-        module_name=urls,
-        # pyre-ignore[16]: Django 1.9
-        url_pattern_type=RegexURLPattern,
-        # pyre-ignore[16]: Django 1.9
-        url_resolver_type=RegexURLResolver,
-    )
-    models = RESTApiSourceGenerator(
-        whitelisted_classes=whitelist, whitelisted_views=_WHITELISTED_DJANGO_VIEWS
-    ).compute_models(views)
-
-    return set(models)
-
-
-MODES: Mapping[str, Callable[[argparse.Namespace], Set[str]]] = {
-    "get_exit_nodes": _get_exit_nodes,
-    "get_REST_api_sources": _get_REST_api_sources,
-}
-
-if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument(
@@ -119,12 +67,8 @@ if __name__ == "__main__":
         "--stub-root", type=_file_exists, help="Root of the stubs directory"
     )
 
-    parser.add_argument("--mode", action="append", choices=MODES.keys())
+    parser.add_argument("--mode", action="append", choices=Registry.generators.keys())
     arguments: argparse.Namespace = parser.parse_args()
-
-    if not arguments.mode:
-        # pyre-fixme[16]: `Namespace` has no attribute `mode`.
-        arguments.mode = ["get_exit_nodes", "get_REST_api_sources"]
 
     if not arguments.whitelisted_class:
         # pyre-fixme[16]: `Namespace` has no attribute `whitelisted_class`.
@@ -136,12 +80,18 @@ if __name__ == "__main__":
         level=logging.DEBUG if arguments.verbose else logging.INFO,
     )
 
-    os.chdir(os.path.dirname(arguments.urls_path))
-    # pyre-fixme[16]: `Namespace` has no attribute `urls_path`.
-    arguments.urls_path = os.path.basename(arguments.urls_path)
+    Configuration.root = os.path.dirname(os.path.abspath(arguments.urls_path))
+    Configuration.urls_module = os.path.basename(arguments.urls_path)
+    Configuration.whitelisted_classes = arguments.whitelisted_class
+    Configuration.whitelisted_views = _WHITELISTED_DJANGO_VIEWS
+    stub_root = arguments.stub_root
+    if stub_root:
+        Configuration.stub_root = os.path.abspath(stub_root)
 
-    models: Set[str] = set()
-    for mode in arguments.mode:
-        models = models.union(MODES[mode](arguments))
-
+    modes = arguments.mode or Registry.default_generators
+    models = Registry.generate_models(modes)
     print("\n".join(sorted(models)))
+
+
+if __name__ == "__main__":
+    main()

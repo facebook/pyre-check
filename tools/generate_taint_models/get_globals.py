@@ -7,22 +7,36 @@
 
 
 import ast
+import functools
 import glob
+import logging
 import os
 from typing import Callable, Iterable, Optional, Set
 
-from .model_generator import ModelGenerator, load_module, qualifier
+from .model_generator import Configuration, ModelGenerator, Registry, qualifier
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=1024)
+def _load_module(module_path: str) -> Optional[ast.Module]:
+    try:
+        with open(module_path, "r") as file:
+            parsed = ast.parse(file.read())
+            if not isinstance(parsed, ast.Module):
+                return None
+            return parsed
+    except (FileNotFoundError, SyntaxError) as error:
+        LOG.warning(f"Could not load `{module_path}`: {str(error)}")
+    return None
 
 
 class GlobalModelGenerator(ModelGenerator):
-    def __init__(self, root: str, stub_root: Optional[str]) -> None:
-        self.root = root
-        self.stub_root = stub_root
-
     def _globals(self, root: str, path: str) -> Iterable[str]:
         globals: Set[str] = set()
 
-        module = load_module(path)
+        module = _load_module(path)
 
         if not module:
             return globals
@@ -78,19 +92,24 @@ class GlobalModelGenerator(ModelGenerator):
             if target != "__all__"
         }
 
+    def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+        return []
+
     def compute_models(
         self, functions_to_model: Iterable[Callable[..., None]]
     ) -> Iterable[str]:
         sinks: Set[str] = set()
 
-        paths = [path for path in glob.glob(self.root + "/**/*.py", recursive=True)]
+        paths = [
+            path for path in glob.glob(Configuration.root + "/**/*.py", recursive=True)
+        ]
         for path in paths:
             # Stubs take precedence if both module.py and module.pyi exist.
             stub_path = f"{path}i"
             if os.path.exists(stub_path):
                 path = stub_path
-            sinks = sinks.union(self._globals(self.root, path))
-        stub_root = self.stub_root
+            sinks = sinks.union(self._globals(Configuration.root, path))
+        stub_root = Configuration.stub_root
         if stub_root:
             stub_root = os.path.abspath(stub_root)
             paths = [
@@ -99,3 +118,6 @@ class GlobalModelGenerator(ModelGenerator):
             for path in paths:
                 sinks = sinks.union(self._globals(stub_root, path))
         return sinks
+
+
+Registry.register("get_globals", GlobalModelGenerator, include_by_default=False)

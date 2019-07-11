@@ -14,7 +14,7 @@ class GetRequestSpecificDataTest(unittest.TestCase):
     def test_compute_models(self):
         source = "TaintSource[RequestSpecificData]"
         self.assertEqual(
-            list(RequestSpecificDataGenerator([], []).compute_models(all_functions)),
+            list(RequestSpecificDataGenerator().compute_models(all_functions)),
             [
                 f"def {qualifier}.TestClass.methodA(self: {source}, x: {source}): ...",
                 f"def {qualifier}.TestClass.methodB(self: {source}, *args: {source})"
