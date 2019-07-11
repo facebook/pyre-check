@@ -14,9 +14,10 @@ include TaintResult.Register (struct
   let init ~configuration ~environment ~functions:_ =
     (* Parse models *)
     let create_models ~configuration sources =
-      List.fold sources ~init:Callable.Map.empty ~f:(fun models source ->
+      List.fold sources ~init:Callable.Map.empty ~f:(fun models (path, source) ->
           Model.parse
             ~resolution:(Analysis.TypeCheck.resolution environment ())
+            ~path
             ~source
             ~configuration
             models)
@@ -38,6 +39,11 @@ include TaintResult.Register (struct
                 (Invalid_argument (Format.asprintf "`%a` is not a directory" Path.pp directory)));
         let configuration = Configuration.create ~directories in
         Configuration.register configuration;
+        let path_and_content file =
+          match File.content file with
+          | Some content -> Some (File.path file, content)
+          | None -> None
+        in
         Log.info
           "Finding taint models in `%s`."
           (directories |> List.map ~f:Path.show |> String.concat ~sep:", ");
@@ -45,7 +51,7 @@ include TaintResult.Register (struct
         |> List.concat_map ~f:(fun root ->
                Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
         |> List.map ~f:File.create
-        |> List.filter_map ~f:File.content
+        |> List.filter_map ~f:path_and_content
         |> create_models ~configuration
       with
       | exn ->

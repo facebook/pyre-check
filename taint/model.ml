@@ -414,7 +414,7 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
   errors
 
 
-let create ~resolution ?(verify = true) ~configuration source =
+let create ~resolution ?(verify = true) ?path ~configuration source =
   let signatures =
     let filter_define_signature = function
       | { Node.value = Define { signature = { name; _ } as signature; _ }; _ } ->
@@ -585,7 +585,12 @@ let create ~resolution ?(verify = true) ~configuration source =
     with
     | Failure message
     | InvalidModel message ->
-        Format.asprintf "Invalid model for `%a`: %s" Reference.pp name message
+        let model_origin =
+          match path with
+          | None -> ""
+          | Some path -> Format.sprintf " defined in `%s`" (Path.absolute path)
+        in
+        Format.asprintf "Invalid model for `%a`%s: %s" Reference.pp name model_origin message
         |> raise_invalid_model
   in
   List.map signatures ~f:create_model
@@ -624,8 +629,8 @@ let get_global_model ~resolution ~expression =
   call_target >>| Callable.create_object >>| fun call_target -> get_callsite_model ~call_target
 
 
-let parse ~resolution ~source ~configuration models =
-  create ~resolution ~configuration source
+let parse ~resolution ?path ~source ~configuration models =
+  create ~resolution ?path ~configuration source
   |> List.map ~f:(fun model -> model.call_target, model.model)
   |> Callable.Map.of_alist_reduce ~f:(join ~iteration:0)
   |> Callable.Map.merge models ~f:(fun ~key:_ ->

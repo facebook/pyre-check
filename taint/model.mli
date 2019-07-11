@@ -22,6 +22,7 @@ val get_global_model : resolution:Resolution.t -> expression:Expression.t -> t o
 
 val parse
   :  resolution:Resolution.t ->
+  ?path:PyrePath.t ->
   source:string ->
   configuration:Configuration.t ->
   TaintResult.call_model Callable.Map.t ->

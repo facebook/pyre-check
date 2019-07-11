@@ -1044,9 +1044,10 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         let configuration = Taint.TaintConfiguration.create ~directories in
         let create_models sources =
-          let create_model source =
+          let create_model (path, source) =
             Taint.Model.parse
               ~resolution:(TypeCheck.resolution environment ())
+              ~path
               ~source
               ~configuration
               Interprocedural.Callable.Map.empty
@@ -1054,11 +1055,16 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
           in
           List.iter sources ~f:create_model
         in
+        let path_and_content file =
+          match File.content file with
+          | Some content -> Some (File.path file, content)
+          | None -> None
+        in
         directories
         |> List.concat_map ~f:(fun root ->
                Path.list ~file_filter:(String.is_suffix ~suffix:".pysa") ~root ())
         |> List.map ~f:File.create
-        |> List.filter_map ~f:File.content
+        |> List.filter_map ~f:path_and_content
         |> create_models;
         TypeQuery.Response
           (TypeQuery.Success
