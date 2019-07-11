@@ -146,23 +146,14 @@ let parse_lsp ~configuration ~request =
       match CompletionRequest.of_yojson request with
       | Ok
           { CompletionRequest.parameters =
-              Some
-                { textDocument = { TextDocumentIdentifier.uri; _ };
-                  position;
-                  context = Some { triggerKind; triggerCharacter = Some "." };
-                  _
-                };
+              Some { textDocument = { TextDocumentIdentifier.uri; _ }; position; _ };
             id;
             _
           } ->
-          let open CompletionParameters in
-          if triggerKindNumber TriggerCharacter <> triggerKind then
-            None
-          else
-            uri_to_path ~uri
-            >>| fun path ->
-            CompletionRequest
-              { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
+          uri_to_path ~uri
+          >>| fun path ->
+          CompletionRequest
+            { Protocol.CompletionRequest.id; path; position = to_pyre_position position }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
