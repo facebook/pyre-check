@@ -2564,7 +2564,7 @@ let test_solve_less_or_equal _ =
   assert_solve
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    [["T_Unconstrained", "D"]];
+    [];
   assert_solve
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"

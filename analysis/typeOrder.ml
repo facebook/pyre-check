@@ -476,13 +476,6 @@ module OrderImplementation = struct
         | left, Optional right
         | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
             solve_less_or_equal order ~constraints ~left ~right
-        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Bounded (Concrete rights)) ->
-            let lefts = List.init (List.length rights) ~f:(fun _ -> left) in
-            solve_less_or_equal
-              order
-              ~constraints
-              ~left:(Type.Tuple (Bounded (Concrete lefts)))
-              ~right
         | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Unbounded right) ->
             let left = Type.union lefts in
             solve_less_or_equal order ~constraints ~left ~right
