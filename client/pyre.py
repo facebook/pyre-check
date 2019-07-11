@@ -299,7 +299,8 @@ def main() -> int:
     analyze.set_defaults(command=commands.Analyze)
     analyze.add_argument(
         "--taint-models-path",
-        default=None,
+        action="append",
+        default=[],
         type=readable_directory,
         help="Location of taint models",
     )

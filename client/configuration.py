@@ -127,7 +127,7 @@ class Configuration:
         self.ignore_all_errors = []
         self.number_of_workers = None
         self.local_configuration = None  # type: Optional[str]
-        self.taint_models_path = None
+        self.taint_models_path = []  # type: List[str]
         self.file_hash = None  # type: Optional[str]
         self.extensions = []  # type: List[str]
 
@@ -440,14 +440,23 @@ class Configuration:
                     typeshed = os.path.expanduser(typeshed)
                 self._typeshed = typeshed
 
-                taint_models_path = configuration.consume(
-                    "taint_models_path", current=self.taint_models_path
+                taint_models_path = configuration.consume("taint_models_path")
+                assert (
+                    taint_models_path is None
+                    or isinstance(taint_models_path, str)
+                    or isinstance(taint_models_path, list)
                 )
-                assert taint_models_path is None or isinstance(taint_models_path, str)
-                if taint_models_path is not None:
-                    configuration_directory = os.path.dirname(os.path.realpath(path))
-                    self.taint_models_path = os.path.join(
-                        configuration_directory, taint_models_path
+                configuration_directory = os.path.dirname(os.path.realpath(path))
+                if isinstance(taint_models_path, str):
+                    self.taint_models_path.append(
+                        os.path.join(configuration_directory, taint_models_path)
+                    )
+                elif isinstance(taint_models_path, list):
+                    self.taint_models_path.extend(
+                        [
+                            os.path.join(configuration_directory, path)
+                            for path in taint_models_path
+                        ]
                     )
 
                 excludes = configuration.consume("exclude", default=[])

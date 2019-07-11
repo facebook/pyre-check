@@ -57,7 +57,7 @@ def mock_arguments(
     arguments.source_directories = source_directories
     arguments.hide_parse_errors = False
     arguments.strict = False
-    arguments.taint_models_path = None
+    arguments.taint_models_path = []
     arguments.targets = targets
     arguments.terminal = terminal
     arguments.verbose = False
@@ -74,7 +74,7 @@ def mock_configuration(version_hash=None, file_hash=None) -> MagicMock:
     configuration.logger = None
     configuration.number_of_workers = 5
     configuration.search_path = ["path1", "path2"]
-    configuration.taint_models_path = None
+    configuration.taint_models_path = []
     configuration.typeshed = "stub"
     configuration.version_hash = version_hash
     configuration.file_hash = file_hash

@@ -26,14 +26,15 @@ class Analyze(Check):
         super(Analyze, self).__init__(arguments, configuration, analysis_directory)
         self._taint_models_path = (
             arguments.taint_models_path or configuration.taint_models_path
-        )  # type: Optional[str]
+        )  # type: List[str]
         self._save_results_to = arguments.save_results_to  # type: Optional[str]
         self._dump_call_graph = arguments.dump_call_graph  # type: bool
 
     def _flags(self) -> List[str]:
         flags = super()._flags()
         if self._taint_models_path:
-            flags.extend(["-taint-models", self._taint_models_path])
+            for path in self._taint_models_path:
+                flags.extend(["-taint-models", path])
         if self._save_results_to:
             flags.extend(["-save-results-to", self._save_results_to])
         if self._dump_call_graph:

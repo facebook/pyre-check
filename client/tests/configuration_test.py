@@ -102,7 +102,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
-        self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, False)
 
@@ -120,7 +120,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, [SearchPathElement("additional/")])
         self.assertEqual(configuration.number_of_workers, 20)
-        self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.taint_models_path, [])
         self.assertEqual(configuration.file_hash, None)
         self.assertEqual(configuration.strict, True)
 
@@ -143,7 +143,7 @@ class ConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(configuration.number_of_workers, 20)
         self.assertEqual(configuration.file_hash, None)
-        self.assertEqual(configuration.taint_models_path, None)
+        self.assertEqual(configuration.taint_models_path, [])
 
         json_load.side_effect = [
             {
@@ -169,7 +169,24 @@ class ConfigurationTest(unittest.TestCase):
         configuration = Configuration()
         self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
         self.assertEqual(configuration.search_path, ["simple_string/"])
-        self.assertEqual(configuration.taint_models_path, ".pyre/taint_models")
+        self.assertEqual(configuration.taint_models_path, [".pyre/taint_models"])
+
+        json_load.side_effect = [
+            {
+                "search_path": "simple_string/",
+                "version": "VERSION",
+                "typeshed": "TYPE/%V/SHED/",
+                "taint_models_path": [".pyre/taint_models_1", ".pyre/taint_models_2"],
+            },
+            {},
+        ]
+        configuration = Configuration()
+        self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+        self.assertEqual(configuration.search_path, ["simple_string/"])
+        self.assertEqual(
+            configuration.taint_models_path,
+            [".pyre/taint_models_1", ".pyre/taint_models_2"],
+        )
 
         def directory_side_effect(path: str) -> str:
             if path.endswith(".pyre_configuration"):
@@ -193,7 +210,7 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
-                configuration.taint_models_path, "/root/.pyre/taint_models"
+                configuration.taint_models_path, ["/root/.pyre/taint_models"]
             )
             json_load.side_effect = [
                 {"taint_models_path": ".pyre/taint_models"},
@@ -209,7 +226,25 @@ class ConfigurationTest(unittest.TestCase):
             self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
             self.assertEqual(configuration.search_path, ["simple_string/"])
             self.assertEqual(
-                configuration.taint_models_path, "/root/local/.pyre/taint_models"
+                configuration.taint_models_path, ["/root/local/.pyre/taint_models"]
+            )
+            json_load.side_effect = [
+                {"taint_models_path": ".pyre/taint_models"},
+                {
+                    "search_path": "simple_string/",
+                    "version": "VERSION",
+                    "taint_models_path": "global/taint_models",
+                    "typeshed": "TYPE/%V/SHED/",
+                },
+            ]
+            configuration = Configuration(
+                local_configuration="/root/local/.pyre_configuration.local"
+            )
+            self.assertEqual(configuration.typeshed, "TYPE/VERSION/SHED/")
+            self.assertEqual(configuration.search_path, ["simple_string/"])
+            self.assertEqual(
+                configuration.taint_models_path,
+                ["/root/local/.pyre/taint_models", "/root/global/taint_models"],
             )
 
         json_load.side_effect = [

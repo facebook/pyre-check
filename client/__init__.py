@@ -95,9 +95,9 @@ def translate_arguments(commands, arguments):
 
     if arguments.command in [commands.Analyze]:
         if arguments.taint_models_path:
-            arguments.taint_models_path = translate_path(
-                root, arguments.taint_models_path
-            )
+            arguments.taint_models_path = [
+                translate_path(root, path) for path in arguments.taint_models_path
+            ]
 
     if arguments.logger:
         arguments.logger = translate_path(root, arguments.logger)

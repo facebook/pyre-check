@@ -22,10 +22,10 @@ class AnalyzeTest(unittest.TestCase):
     def test_analyze(self, directories_to_analyze, realpath, check_output) -> None:
         realpath.side_effect = lambda x: x
         arguments = mock_arguments()
-        arguments.taint_models_path = None
+        arguments.taint_models_path = []
 
         configuration = mock_configuration()
-        configuration.taint_models_path = None
+        configuration.taint_models_path = []
 
         result = MagicMock()
         result.output = ""
@@ -54,7 +54,7 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = "taint_models"
+            configuration.taint_models_path = ["taint_models"]
             command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
@@ -78,8 +78,34 @@ class AnalyzeTest(unittest.TestCase):
         with patch.object(
             commands.Command, "_call_client", return_value=result
         ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = "taint_models"
-            arguments.taint_models_path = "overriding_models"
+            configuration.taint_models_path = ["taint_models_1", "taint_models_2"]
+            command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
+            self.assertEqual(
+                command._flags(),
+                [
+                    "-logging-sections",
+                    "parser",
+                    "-project-root",
+                    ".",
+                    "-workers",
+                    "5",
+                    "-search-path",
+                    "path1,path2,path3",
+                    "-taint-models",
+                    "taint_models_1",
+                    "-taint-models",
+                    "taint_models_2",
+                    "-dump-call-graph",
+                ],
+            )
+            command.run()
+            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+
+        with patch.object(
+            commands.Command, "_call_client", return_value=result
+        ) as call_client, patch("json.loads", return_value=[]):
+            configuration.taint_models_path = {"taint_models"}
+            arguments.taint_models_path = {"overriding_models"}
             command = commands.Analyze(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
                 command._flags(),
