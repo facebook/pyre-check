@@ -73,7 +73,7 @@ let test_parse_query context =
   assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
   assert_parses
     "types_in_file('a.py')"
-    (TypesInFile (Path.create_relative ~root:(mock_path "") ~relative:"a.py"));
+    (TypesInFile [Path.create_relative ~root:(mock_path "") ~relative:"a.py"]);
   assert_fails_to_parse "types_in_file(a.py:1:2)";
   assert_fails_to_parse "types_in_file(a.py)";
   assert_fails_to_parse "types_in_file('a.py', 1, 2)";

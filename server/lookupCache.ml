@@ -9,6 +9,11 @@ open Analysis
 open State
 open Pyre
 
+type types_by_path = {
+  path: PyrePath.t;
+  types_by_location: (Location.Instantiated.t * Type.t) list
+}
+
 let get_by_qualifier ~state:{ lookups; environment; _ } qualifier =
   let key = Reference.show qualifier in
   let cache_read = String.Table.find lookups key in
@@ -78,6 +83,15 @@ let find_all_annotations ~state ~configuration ~path =
     ~integers
     ();
   Some annotations
+
+
+let find_all_annotations_batch ~state ~configuration ~paths =
+  let get_result (results, errors) path =
+    find_all_annotations ~state ~configuration ~path
+    >>| (fun result -> { path; types_by_location = result } :: results, errors)
+    |> Option.value ~default:(results, path :: errors)
+  in
+  List.fold ~f:get_result ~init:([], []) paths
 
 
 let find_definition ~state ~configuration path position =

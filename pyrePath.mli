@@ -20,7 +20,7 @@ end
 type t =
   | Absolute of AbsolutePath.t
   | Relative of RelativePath.t
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, eq, show, sexp, hash, to_yojson]
 
 val absolute : t -> path
 

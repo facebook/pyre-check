@@ -5,6 +5,11 @@
 
 open Ast
 
+type types_by_path = {
+  path: PyrePath.t;
+  types_by_location: (Location.Instantiated.t * Type.t) list
+}
+
 val evict : state:State.t -> Reference.t -> unit
 
 val evict_path : state:State.t -> configuration:Configuration.Analysis.t -> PyrePath.t -> unit
@@ -21,6 +26,12 @@ val find_all_annotations
   configuration:Configuration.Analysis.t ->
   path:PyrePath.t ->
   (Location.Instantiated.t * Type.t) list option
+
+val find_all_annotations_batch
+  :  state:State.t ->
+  configuration:Configuration.Analysis.t ->
+  paths:PyrePath.t list ->
+  types_by_path list * PyrePath.t list
 
 val find_definition
   :  state:State.t ->

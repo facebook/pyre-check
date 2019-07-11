@@ -566,16 +566,19 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 3, 6, 3, 8, Type.literal_integer 42;
-              2, 24, 2, 27, Type.meta Type.string;
-              2, 21, 2, 22, Type.string;
-              2, 40, 2, 44, Type.none;
-              2, 17, 2, 19, Type.literal_integer 10;
-              3, 2, 3, 3, Type.literal_integer 42;
-              2, 30, 2, 35, Type.literal_string "bar";
-              2, 11, 2, 14, Type.meta Type.integer;
-              2, 8, 2, 9, Type.integer ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 3, 6, 3, 8, Type.literal_integer 42;
+                  2, 24, 2, 27, Type.meta Type.string;
+                  2, 21, 2, 22, Type.string;
+                  2, 40, 2, 44, Type.none;
+                  2, 17, 2, 19, Type.literal_integer 10;
+                  3, 2, 3, 3, Type.literal_integer 42;
+                  2, 30, 2, 35, Type.literal_string "bar";
+                  2, 11, 2, 14, Type.meta Type.integer;
+                  2, 8, 2, 9, Type.integer ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:
       {|
@@ -587,17 +590,20 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 2, 19, 2, 22, Type.meta Type.string;
-              5, 8, 5, 9, Type.integer;
-              2, 27, 2, 30, Type.meta Type.string;
-              4, 1, 4, 2, Type.string;
-              4, 5, 4, 6, Type.literal_integer 5;
-              3, 1, 3, 2, Type.integer;
-              2, 11, 2, 14, Type.meta Type.integer;
-              3, 5, 3, 6, Type.literal_integer 4;
-              2, 8, 2, 9, Type.integer;
-              2, 16, 2, 17, Type.string ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 2, 19, 2, 22, Type.meta Type.string;
+                  5, 8, 5, 9, Type.integer;
+                  2, 27, 2, 30, Type.meta Type.string;
+                  4, 1, 4, 2, Type.string;
+                  4, 5, 4, 6, Type.literal_integer 5;
+                  3, 1, 3, 2, Type.integer;
+                  2, 11, 2, 14, Type.meta Type.integer;
+                  3, 5, 3, 6, Type.literal_integer 4;
+                  2, 8, 2, 9, Type.integer;
+                  2, 16, 2, 17, Type.string ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
         x = 4
@@ -606,11 +612,14 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 2, 4, 2, 5, Type.literal_integer 4;
-              2, 0, 2, 1, Type.integer;
-              3, 0, 3, 1, Type.integer;
-              3, 4, 3, 5, Type.literal_integer 3 ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 2, 4, 2, 5, Type.literal_integer 4;
+                  2, 0, 2, 1, Type.integer;
+                  3, 0, 3, 1, Type.integer;
+                  3, 4, 3, 5, Type.literal_integer 3 ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
       def foo():
@@ -620,10 +629,13 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 3, 5, 3, 9, Type.Literal (Boolean true);
-              4, 3, 4, 4, Type.literal_integer 1;
-              4, 7, 4, 8, Type.literal_integer 1 ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 3, 5, 3, 9, Type.Literal (Boolean true);
+                  4, 3, 4, 4, Type.literal_integer 1;
+                  4, 7, 4, 8, Type.literal_integer 1 ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
        def foo():
@@ -633,13 +645,16 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 3, 12, 3, 13, Type.literal_integer 1;
-              3, 15, 3, 16, Type.literal_integer 2;
-              3, 11, 3, 17, Type.list Type.integer;
-              3, 6, 3, 7, Type.integer;
-              4, 3, 4, 4, Type.literal_integer 1;
-              4, 7, 4, 8, Type.literal_integer 1 ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 3, 12, 3, 13, Type.literal_integer 1;
+                  3, 15, 3, 16, Type.literal_integer 2;
+                  3, 11, 3, 17, Type.list Type.integer;
+                  3, 6, 3, 7, Type.integer;
+                  4, 3, 4, 4, Type.literal_integer 1;
+                  4, 7, 4, 8, Type.literal_integer 1 ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
         try:
@@ -650,12 +665,15 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
-              5, 2, 5, 3, Type.literal_integer 2;
-              3, 2, 3, 3, Type.literal_integer 1;
-              3, 6, 3, 7, Type.literal_integer 1;
-              5, 6, 5, 7, Type.literal_integer 2 ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
+                  5, 2, 5, 3, Type.literal_integer 2;
+                  3, 2, 3, 3, Type.literal_integer 1;
+                  3, 6, 3, 7, Type.literal_integer 1;
+                  5, 6, 5, 7, Type.literal_integer 2 ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
        with open() as x:
@@ -664,8 +682,11 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [3, 1, 3, 2, Type.literal_integer 2; 3, 5, 3, 6, Type.literal_integer 2]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [3, 1, 3, 2, Type.literal_integer 2; 3, 5, 3, 6, Type.literal_integer 2]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:{|
       while x is True:
@@ -674,11 +695,14 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 2, 11, 2, 15, Type.Literal (Boolean true);
-              3, 2, 3, 3, Type.literal_integer 1;
-              3, 6, 3, 7, Type.literal_integer 1;
-              2, 6, 2, 15, Type.bool ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 2, 11, 2, 15, Type.Literal (Boolean true);
+                  3, 2, 3, 3, Type.literal_integer 1;
+                  3, 6, 3, 7, Type.literal_integer 1;
+                  2, 6, 2, 15, Type.bool ]
+                |> create_types_at_locations
+            } ]));
   assert_type_query_response
     ~source:
       {|
@@ -690,15 +714,18 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 2, 19, 2, 22, parse_annotation "typing.Type[str]";
-              5, 9, 5, 10, Type.integer;
-              3, 21, 3, 24, parse_annotation "typing.Type[str]";
-              3, 13, 3, 16, parse_annotation "typing.Type[int]";
-              4, 11, 4, 12, Type.integer;
-              2, 11, 2, 14, parse_annotation "typing.Type[int]";
-              2, 8, 2, 9, Type.integer;
-              3, 10, 3, 11, Type.integer ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 2, 19, 2, 22, parse_annotation "typing.Type[str]";
+                  5, 9, 5, 10, Type.integer;
+                  3, 21, 3, 24, parse_annotation "typing.Type[str]";
+                  3, 13, 3, 16, parse_annotation "typing.Type[int]";
+                  4, 11, 4, 12, Type.integer;
+                  2, 11, 2, 14, parse_annotation "typing.Type[int]";
+                  2, 8, 2, 9, Type.integer;
+                  3, 10, 3, 11, Type.integer ]
+                |> create_types_at_locations
+            } ]));
 
   assert_type_query_response
     ~source:{|
@@ -708,11 +735,14 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          ( [ 2, 32, 2, 36, Type.none;
-              2, 23, 2, 26, Type.meta Type.integer;
-              2, 8, 2, 9, Type.list Type.integer;
-              2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
-          |> create_types_at_locations )));
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ 2, 32, 2, 36, Type.none;
+                  2, 23, 2, 26, Type.meta Type.integer;
+                  2, 8, 2, 9, Type.list Type.integer;
+                  2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
+                |> create_types_at_locations
+            } ]));
 
   assert_type_query_response
     ~source:{|
@@ -722,12 +752,16 @@ let test_query context =
     ~query:"types_in_file('test.py')"
     (Protocol.TypeQuery.Response
        (Protocol.TypeQuery.TypesAtLocations
-          [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity ensues. *)
-            { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-              annotation = parse_annotation "typing.Type[test.Foo]"
-            };
-            { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
-              annotation = Type.literal_integer 1
+          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+              types =
+                [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity
+                     ensues. *)
+                  { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+                    annotation = parse_annotation "typing.Type[test.Foo]"
+                  };
+                  { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+                    annotation = Type.literal_integer 1
+                  } ]
             } ]));
 
   assert_type_query_response
