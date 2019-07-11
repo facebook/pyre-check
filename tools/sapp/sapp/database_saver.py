@@ -42,6 +42,7 @@ class DatabaseSaver(PipelineStep[TraceGraph, RunSummary]):
 
     @log_time
     def run(self, input: TraceGraph, summary: Summary) -> Tuple[RunSummary, Summary]:
+        # pyre-fixme[16]: `DatabaseSaver` has no attribute `graph`.
         self.graph = input
         self.summary = summary
 

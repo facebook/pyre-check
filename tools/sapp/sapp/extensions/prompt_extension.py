@@ -47,4 +47,5 @@ class CustomPrompt(Prompts, Magics):
 
 
 def load_ipython_extension(ipython: InteractiveShell) -> None:
+    # pyre-fixme[16]: `InteractiveShell` has no attribute `prompts`.
     ipython.prompts = CustomPrompt(ipython)
