@@ -535,15 +535,20 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
     (* Make sure we know about what we model. *)
     try
       let call_target = (call_target :> Callable.t) in
-      let annotation = Resolution.resolve_reference resolution name in
+      let annotation =
+        name
+        |> Reference.expression ~location:Location.Reference.any
+        |> Resolution.resolve_to_annotation resolution
+      in
       let () =
-        if Type.is_top annotation && not (Resolution.is_global resolution ~reference:name) then
+        if Type.is_top (Annotation.annotation annotation) && not (Annotation.is_global annotation)
+        then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
       let normalized_model_parameters = AccessPath.Root.normalize_parameters parameters in
       (* Check model matches callables primary signature. *)
       let () =
-        match verify, annotation with
+        match verify, Annotation.annotation annotation with
         | ( true,
             ( Type.Callable
                 { Type.Callable.implementation =

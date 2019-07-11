@@ -616,6 +616,14 @@ let create_attribute
     else
       annotation
   in
+  (* We need to distinguish between unannotated attributes and non-existent ones - ensure that the
+     annotation is viewed as mutable to distinguish from user-defined globals. *)
+  let annotation =
+    if not defined then
+      { annotation with Annotation.mutability = Annotation.Mutable }
+    else
+      annotation
+  in
   let value = Option.value value ~default:(Node.create Ellipsis ~location) in
   let property =
     match property, setter with

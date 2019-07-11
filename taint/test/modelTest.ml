@@ -273,8 +273,10 @@ let test_invalid_models _ =
               def function_with_kwargs(normal_arg, **kwargs) -> None: pass
               def anonymous_only(__arg1, __arg2, __arg3) -> None: pass
               def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
+              class C:
+                unannotated_class_variable = source()
             |}
-          ]
+            |> Preprocessing.preprocess ]
         ()
     in
     let configuration =
@@ -424,6 +426,15 @@ let test_invalid_models _ =
     ~expect:"Invalid model for `sink`: No such parameter `self`"
     ();
   assert_valid_model ~model_source:"unannotated_global: TaintSink[Test]";
+  assert_invalid_model
+    ~model_source:"missing_global: TaintSink[Test]"
+    ~expect:"Invalid model for `missing_global`: Modeled entity is not part of the environment!"
+    ();
+  assert_valid_model ~model_source:"C.unannotated_class_variable: TaintSink[Test]";
+  assert_invalid_model
+    ~model_source:"C.missing: TaintSink[Test]"
+    ~expect:"Invalid model for `C.missing`: Modeled entity is not part of the environment!"
+    ();
   assert_invalid_model
     ~model_source:
       {|
