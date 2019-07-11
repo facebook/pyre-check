@@ -67,6 +67,9 @@ def main() -> None:
         "--stub-root", type=_file_exists, help="Root of the stubs directory"
     )
 
+    parser.add_argument(
+        "--output-directory", type=_file_exists, help="Directory to write models to"
+    )
     parser.add_argument("--mode", action="append", choices=Registry.generators.keys())
     arguments: argparse.Namespace = parser.parse_args()
 
@@ -90,7 +93,17 @@ def main() -> None:
 
     modes = arguments.mode or Registry.default_generators
     models = Registry.generate_models(modes)
-    print("\n".join(sorted(models)))
+    output_directory = arguments.output_directory
+    if output_directory is not None:
+        for name in models:
+            with open(f"{output_directory}/generated_{name}.pysa", "w") as output_file:
+                output_file.write("\n".join(sorted(models[name])))
+                output_file.write("\n")
+    else:
+        all_models = set()
+        for name in models:
+            all_models = all_models.union(models[name])
+        print("\n".join(sorted(all_models)))
 
 
 if __name__ == "__main__":

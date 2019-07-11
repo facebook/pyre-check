@@ -75,10 +75,10 @@ class Registry:
             cls.default_generators.append(name)
 
     @classmethod
-    def generate_models(cls, generator_names: Iterable[str]) -> Set[str]:
-        models = set()
+    def generate_models(cls, generator_names: Iterable[str]) -> Dict[str, Set[str]]:
+        models = {}
         for name in generator_names:
             LOG.info("Computing models for `%s`", name)
             generator = cls.generators[name]()
-            models = models.union(generator.generate_models())
+            models[name] = generator.generate_models()
         return models
