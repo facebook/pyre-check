@@ -47,9 +47,10 @@ let help () =
     | Type _ -> Some "type(expression): Evaluates the type of `expression`."
     | TypeAtPosition _ ->
         Some "type_at_position('path', line, column): Returns the type for the given cursor."
-    | TypesInFile _ ->
+    | TypesInFiles _ ->
         Some
-          "types_in_file('path1', 'path2', ...): Returns the list of all types for a given path."
+          "types(path='path') or types('path1', 'path2', ...): Returns a map from each given path \
+           to a list of all types for that path."
     | ValidateTaintModels _ ->
         Some
           "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
@@ -78,7 +79,7 @@ let help () =
       Superclasses empty;
       Type (Node.create_with_default_location Expression.True);
       TypeAtPosition { path; position = Location.any_position };
-      TypesInFile [path];
+      TypesInFiles [path];
       ValidateTaintModels None ]
   |> List.sort ~compare:String.compare
   |> String.concat ~sep:"\n  "
@@ -215,11 +216,11 @@ let parse_query
           let path = Path.create_relative ~root ~relative:(string path) in
           let position = { Location.line; column } in
           Request.TypeQueryRequest (TypeAtPosition { path; position })
-      | "types_in_file", paths ->
+      | "types", paths ->
           let paths =
             List.map ~f:(fun path -> Path.create_relative ~root ~relative:(string path)) paths
           in
-          Request.TypeQueryRequest (TypesInFile paths)
+          Request.TypeQueryRequest (TypesInFiles paths)
       | "type_check", arguments ->
           let files =
             arguments

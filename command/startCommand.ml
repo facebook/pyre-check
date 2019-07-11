@@ -565,7 +565,6 @@ let command =
       +> flag
            "-store-type-check-resolution"
            no_arg
-           ~doc:
-             "Store extra information, needed for `types_at_position` and `types_in_file` queries."
+           ~doc:"Store extra information, needed for `types_at_position` and `types` queries."
       ++ Specification.base_command_line_arguments)
     run_start_command

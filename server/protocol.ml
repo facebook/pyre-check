@@ -62,7 +62,7 @@ module TypeQuery = struct
     | Superclasses of Expression.t
     | Type of Expression.t
     | TypeAtPosition of { path: Path.t; position: Location.position }
-    | TypesInFile of Path.t list
+    | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
 
@@ -103,7 +103,7 @@ module TypeQuery = struct
   }
   [@@deriving eq, show, to_yojson]
 
-  type type_at_file = {
+  type types_at_file = {
     path: PyrePath.t;
     types: type_at_location list
   }
@@ -170,7 +170,7 @@ module TypeQuery = struct
     | Superclasses of Type.t list
     | Type of Type.t
     | TypeAtLocation of type_at_location
-    | TypesAtLocations of type_at_file list
+    | TypesByFile of types_at_file list
   [@@deriving eq, show]
 
   let base_response_to_yojson = function
@@ -239,8 +239,8 @@ module TypeQuery = struct
     | Superclasses classes -> `Assoc ["superclasses", `List (List.map classes ~f:Type.to_yojson)]
     | Type annotation -> `Assoc ["type", Type.to_yojson annotation]
     | TypeAtLocation annotation -> type_at_location_to_yojson annotation
-    | TypesAtLocations paths_to_annotations ->
-        `List (List.map paths_to_annotations ~f:type_at_file_to_yojson)
+    | TypesByFile paths_to_annotations ->
+        `List (List.map paths_to_annotations ~f:types_at_file_to_yojson)
 
 
   type response =

@@ -247,7 +247,7 @@ class C:
 ```
 
 ```
-$ pyre query "types_in_file('a.py')"
+$ pyre query "types(path='a.py')"
 {
     "response": {
         "types": [

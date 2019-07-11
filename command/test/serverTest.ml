@@ -563,9 +563,9 @@ let test_query context =
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 3, 6, 3, 8, Type.literal_integer 42;
@@ -587,9 +587,9 @@ let test_query context =
         y = 5
         return x
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 2, 19, 2, 22, Type.meta Type.string;
@@ -609,9 +609,9 @@ let test_query context =
         x = 4
         y = 3
      |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 2, 4, 2, 5, Type.literal_integer 4;
@@ -626,9 +626,9 @@ let test_query context =
         if True:
          x = 1
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 3, 5, 3, 9, Type.Literal (Boolean true);
@@ -642,9 +642,9 @@ let test_query context =
          for x in [1, 2]:
           y = 1
      |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 3, 12, 3, 13, Type.literal_integer 1;
@@ -662,9 +662,9 @@ let test_query context =
         except Exception:
           y = 2
       |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
@@ -679,9 +679,9 @@ let test_query context =
        with open() as x:
         y = 2
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [3, 1, 3, 2, Type.literal_integer 2; 3, 5, 3, 6, Type.literal_integer 2]
@@ -692,9 +692,9 @@ let test_query context =
       while x is True:
         y = 1
    |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 2, 11, 2, 15, Type.Literal (Boolean true);
@@ -711,9 +711,9 @@ let test_query context =
            return y
          return x
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 2, 19, 2, 22, parse_annotation "typing.Type[str]";
@@ -732,9 +732,9 @@ let test_query context =
        def foo(x: typing.List[int]) -> None:
         pass
     |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types(path='test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ 2, 32, 2, 36, Type.none;
@@ -749,9 +749,9 @@ let test_query context =
        class Foo:
          x = 1
      |}
-    ~query:"types_in_file('test.py')"
+    ~query:"types('test.py')"
     (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesAtLocations
+       (Protocol.TypeQuery.TypesByFile
           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
               types =
                 [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity

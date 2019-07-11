@@ -336,7 +336,7 @@ def main() -> int:
     start.add_argument(
         "--store-type-check-resolution",
         action="store_true",
-        help="Store extra information for `types_in_file` queries.",
+        help="Store extra information for `types` queries.",
     )
     start.add_argument(
         "--no-watchman",
@@ -365,7 +365,7 @@ def main() -> int:
     restart.add_argument(
         "--store-type-check-resolution",
         action="store_true",
-        help="Store extra information for types_in_file queries.",
+        help="Store extra information for `types` queries.",
     )
     restart.add_argument(
         "--no-watchman",

@@ -62,7 +62,7 @@ module TypeQuery : sig
     | Superclasses of Expression.t
     | Type of Expression.t
     | TypeAtPosition of { path: Path.t; position: Location.position }
-    | TypesInFile of Path.t list
+    | TypesInFiles of Path.t list
     | ValidateTaintModels of Path.t option
   [@@deriving eq, show]
 
@@ -103,7 +103,7 @@ module TypeQuery : sig
   }
   [@@deriving eq, show, to_yojson]
 
-  type type_at_file = {
+  type types_at_file = {
     path: PyrePath.t;
     types: type_at_location list
   }
@@ -168,7 +168,7 @@ module TypeQuery : sig
     | Superclasses of Type.t list
     | Type of Type.t
     | TypeAtLocation of type_at_location
-    | TypesAtLocations of type_at_file list
+    | TypesByFile of types_at_file list
   [@@deriving eq, show, to_yojson]
 
   type response =

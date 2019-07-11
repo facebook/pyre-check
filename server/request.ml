@@ -1018,7 +1018,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         >>| (fun (location, annotation) ->
               TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
         |> Option.value ~default
-    | TypeQuery.TypesInFile paths -> (
+    | TypeQuery.TypesInFiles paths -> (
       match LookupCache.find_all_annotations_batch ~state ~configuration ~paths with
       | results, [] ->
           List.map
@@ -1027,7 +1027,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 types = List.map ~f:TypeQuery.create_type_at_location types_by_location
               })
             results
-          |> fun types_by_file -> TypeQuery.Response (TypeQuery.TypesAtLocations types_by_file)
+          |> fun types_by_file -> TypeQuery.Response (TypeQuery.TypesByFile types_by_file)
       | _, error_paths ->
           let paths =
             List.fold
