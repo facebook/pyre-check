@@ -231,7 +231,7 @@ end
 module type OrderType = sig
   type t
 
-  val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
+  val always_less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
   val meet : t -> Type.t -> Type.t -> Type.t
 
@@ -336,7 +336,7 @@ module OrderedConstraints (Order : OrderType) = struct
       =
       let lowest_non_bottom_member interval ~order =
         let non_empty { upper_bound; lower_bound } ~order =
-          Order.less_or_equal order ~left:lower_bound ~right:upper_bound
+          Order.always_less_or_equal order ~left:lower_bound ~right:upper_bound
         in
         Option.some_if (non_empty interval ~order) (lower_bound interval)
         >>| function
@@ -360,8 +360,8 @@ module OrderedConstraints (Order : OrderType) = struct
             | _ -> explicits
           in
           let contains { upper_bound; lower_bound } candidate ~order =
-            Order.less_or_equal order ~left:candidate ~right:upper_bound
-            && Order.less_or_equal order ~left:lower_bound ~right:candidate
+            Order.always_less_or_equal order ~left:candidate ~right:upper_bound
+            && Order.always_less_or_equal order ~left:lower_bound ~right:candidate
           in
           (* When doing multiple solves, all of these options ought to be considered, *)
           (* and solved in a fixpoint *)
@@ -496,7 +496,8 @@ module OrderedConstraints (Order : OrderType) = struct
             false
         | Concrete upper_bounds, Concrete lower_bounds ->
             List.zip upper_bounds lower_bounds
-            >>| List.for_all ~f:(fun (left, right) -> Order.less_or_equal order ~left ~right)
+            >>| List.for_all ~f:(fun (left, right) ->
+                    Order.always_less_or_equal order ~left ~right)
             |> Option.value ~default:false
 
 

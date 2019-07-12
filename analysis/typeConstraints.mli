@@ -50,7 +50,7 @@ end
 module type OrderType = sig
   type t
 
-  val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
+  val always_less_or_equal : t -> left:Type.t -> right:Type.t -> bool
 
   val meet : t -> Type.t -> Type.t -> Type.t
 

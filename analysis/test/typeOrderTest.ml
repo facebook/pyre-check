@@ -37,7 +37,7 @@ let less_or_equal
     ?(is_protocol = fun _ ~protocol_assumptions:_ -> false)
     handler
   =
-  less_or_equal
+  always_less_or_equal
     { handler;
       constructor;
       attributes;
@@ -636,9 +636,12 @@ let test_less_or_equal _ =
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Generic";
     let typed_dictionary = "TypedDictionary" in
+    let non_total_typed_dictionary = "NonTotalTypedDictionary" in
     let typing_mapping = "typing.Mapping" in
     insert order typed_dictionary;
+    insert order non_total_typed_dictionary;
     insert order typing_mapping;
+    connect order ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
     connect
       order
       ~predecessor:typed_dictionary
@@ -977,7 +980,7 @@ let test_less_or_equal _ =
        order
        ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
        ~right:"typing.Callable[[Named(arg, int)], str]");
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:"typing.Callable[[Named(arg, T_Unconstrained)], T_Unconstrained]"
@@ -987,7 +990,7 @@ let test_less_or_equal _ =
        order
        ~right:"typing.Callable[[Named(arg, int)], str]"
        ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]");
-  assert_true
+  assert_false
     (less_or_equal
        order
        ~left:"typing.Callable[[Named(arg, T_int_bool)], T_int_bool]"
@@ -1053,6 +1056,7 @@ let test_less_or_equal _ =
        order
        ~left:"mypy_extensions.TypedDict[('Alpha', True, ('bar', int), ('foo', int))]"
        ~right:"typing.Mapping[str, typing.Any]");
+
   assert_true
     (less_or_equal
        order
@@ -1393,8 +1397,10 @@ let test_is_compatible_with _ =
 
 let test_less_or_equal_variance _ =
   let assert_strict_less ~order ~right ~left =
-    assert_true (less_or_equal order ~left ~right);
-    assert_false (less_or_equal order ~left:right ~right:left)
+    assert_equal
+      ~printer:(fun pair -> Format.sprintf "%B, %B" (fst pair) (snd pair))
+      (true, false)
+      (less_or_equal order ~left ~right, less_or_equal order ~left:right ~right:left)
   in
   (* Invariant. *)
   assert_false

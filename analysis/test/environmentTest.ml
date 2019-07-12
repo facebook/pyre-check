@@ -866,10 +866,10 @@ let test_less_or_equal_type_order _ =
   assert_equal super (Type.Primitive "module.super");
   let sub = parse_annotation environment (parse_single_expression "module.sub") in
   assert_equal sub (Type.Primitive "module.sub");
-  assert_true (TypeOrder.less_or_equal order ~left:sub ~right:Type.Top);
-  assert_true (TypeOrder.less_or_equal order ~left:super ~right:Type.Top);
-  assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
-  assert_false (TypeOrder.less_or_equal order ~left:super ~right:sub);
+  assert_true (TypeOrder.always_less_or_equal order ~left:sub ~right:Type.Top);
+  assert_true (TypeOrder.always_less_or_equal order ~left:super ~right:Type.Top);
+  assert_true (TypeOrder.always_less_or_equal order ~left:sub ~right:super);
+  assert_false (TypeOrder.always_less_or_equal order ~left:super ~right:sub);
   let order, environment =
     order_and_environment
       {|
@@ -883,8 +883,8 @@ let test_less_or_equal_type_order _ =
   let sub = parse_annotation environment (parse_single_expression "module.sub") in
   let super = parse_annotation environment (parse_single_expression "module.super") in
   let top = parse_annotation environment (parse_single_expression "module.top") in
-  assert_true (TypeOrder.less_or_equal order ~left:sub ~right:super);
-  assert_true (TypeOrder.less_or_equal order ~left:super ~right:top);
+  assert_true (TypeOrder.always_less_or_equal order ~left:sub ~right:super);
+  assert_true (TypeOrder.always_less_or_equal order ~left:super ~right:top);
 
   (* Optionals. *)
   let order, _ =
@@ -896,29 +896,29 @@ let test_less_or_equal_type_order _ =
     |}
   in
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Optional (Type.Primitive "A"))
        ~right:(Type.Optional (Type.Primitive "A")));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Primitive "A")
        ~right:(Type.Optional (Type.Primitive "A")));
   assert_false
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Optional (Type.Primitive "A"))
        ~right:(Type.Primitive "A"));
 
   (* We're currently not sound with inheritance and optionals. *)
   assert_false
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Optional (Type.Primitive "A"))
        ~right:(Type.Primitive "C"));
   assert_false
-    (TypeOrder.less_or_equal order ~left:(Type.Primitive "A") ~right:(Type.Primitive "C"));
+    (TypeOrder.always_less_or_equal order ~left:(Type.Primitive "A") ~right:(Type.Primitive "C"));
 
   (* Unions. *)
   let order, _ =
@@ -931,58 +931,58 @@ let test_less_or_equal_type_order _ =
     |}
   in
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"])
        ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "B"])
        ~right:(Type.Union [Type.Primitive "A"]));
   assert_false
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"])
        ~right:(Type.Union [Type.Primitive "B"]));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Primitive "A")
        ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Primitive "B")
        ~right:(Type.Union [Type.Primitive "A"]));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Primitive "A")
        ~right:(Type.Union [Type.Primitive "A"; Type.Primitive "B"]));
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:Type.Any);
   assert_true
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:(Type.Union [Type.Top; Type.Any; Type.Optional Type.float]));
   assert_false
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:Type.float);
   assert_false
-    (TypeOrder.less_or_equal
+    (TypeOrder.always_less_or_equal
        order
        ~left:(Type.Union [Type.Primitive "A"; Type.Primitive "B"; Type.integer])
        ~right:(Type.Union [Type.float; Type.Primitive "B"; Type.integer]));
 
   (* Special cases. *)
-  assert_true (TypeOrder.less_or_equal order ~left:Type.integer ~right:Type.float)
+  assert_true (TypeOrder.always_less_or_equal order ~left:Type.integer ~right:Type.float)
 
 
 let test_join_type_order _ =

@@ -29,7 +29,7 @@ val solve_less_or_equal
   right:Type.t ->
   TypeConstraints.t list
 
-val less_or_equal : order -> left:Type.t -> right:Type.t -> bool
+val always_less_or_equal : order -> left:Type.t -> right:Type.t -> bool
 
 val is_compatible_with : order -> left:Type.t -> right:Type.t -> bool
 

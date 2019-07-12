@@ -22,7 +22,7 @@ let grandparent = Type.Primitive "Grandparent"
 module DiamondOrder = struct
   type t = unit
 
-  let less_or_equal _ ~left ~right =
+  let always_less_or_equal _ ~left ~right =
     match left, right with
     | _, _ when Type.equal left right -> true
     | _, Type.Top -> true
@@ -37,16 +37,16 @@ module DiamondOrder = struct
 
   let meet _ left right =
     match left, right with
-    | left, right when less_or_equal () ~left ~right -> left
-    | right, left when less_or_equal () ~left ~right -> left
+    | left, right when always_less_or_equal () ~left ~right -> left
+    | right, left when always_less_or_equal () ~left ~right -> left
     | Type.Primitive "left_parent", Type.Primitive "right_parent" -> Type.Primitive "Child"
     | _ -> Type.Bottom
 
 
   let join _ left right =
     match left, right with
-    | left, right when less_or_equal () ~left ~right -> right
-    | right, left when less_or_equal () ~left ~right -> right
+    | left, right when always_less_or_equal () ~left ~right -> right
+    | right, left when always_less_or_equal () ~left ~right -> right
     | Type.Primitive "left_parent", Type.Primitive "right_parent" -> Type.Primitive "Grandparent"
     | _ -> Type.Top
 end

@@ -293,7 +293,7 @@ let partial_solve_constraints resolution =
   TypeOrder.OrderedConstraints.extract_partial_solution ~order:(full_order resolution)
 
 
-let less_or_equal resolution = full_order resolution |> TypeOrder.less_or_equal
+let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or_equal
 
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 

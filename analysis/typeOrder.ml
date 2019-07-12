@@ -64,7 +64,7 @@ module type FullOrderTypeWithoutT = sig
     right:Type.t ->
     TypeConstraints.t list
 
-  val less_or_equal : order -> left:Type.t -> right:Type.t -> bool
+  val always_less_or_equal : order -> left:Type.t -> right:Type.t -> bool
 
   val meet : order -> Type.t -> Type.t -> Type.t
 
@@ -238,7 +238,7 @@ module OrderImplementation = struct
                 (* SOLVE *)
                 let is_compatible =
                   Type.equal variable_annotation keywords_annotation
-                  && less_or_equal order ~left:named_annotation ~right:keywords_annotation
+                  && always_less_or_equal order ~left:named_annotation ~right:keywords_annotation
                 in
                 if is_compatible then
                   solve_parameters ~left_parameters ~right_parameters constraints
@@ -596,6 +596,16 @@ module OrderImplementation = struct
           solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
 
 
+    and always_less_or_equal order ~left ~right =
+      solve_less_or_equal
+        order
+        ~constraints:TypeConstraints.empty
+        ~left:(Type.Variable.mark_all_variables_as_bound left)
+        ~right:(Type.Variable.mark_all_variables_as_bound right)
+      |> List.is_empty
+      |> not
+
+
     and solve_ordered_types_less_or_equal order ~left ~right ~constraints =
       let solve_against_map ~is_lower_bound ~bound ~map =
         let variable = Type.OrderedTypes.Map.variable map in
@@ -732,203 +742,6 @@ module OrderImplementation = struct
             []
 
 
-    and less_or_equal
-        ( { handler = (module Handler : ClassHierarchy.Handler) as handler;
-            constructor;
-            any_is_bottom;
-            is_protocol;
-            protocol_assumptions;
-            _
-          } as order )
-        ~left
-        ~right
-      =
-      let nominally_less_or_equal ~left ~right =
-        Type.equal left right
-        ||
-        match left, right with
-        | _, Type.Any -> true
-        | other, Type.Top ->
-            not
-              (Type.exists other ~predicate:(fun annotation ->
-                   Type.equal annotation Type.undeclared))
-        | Type.Top, _ -> false
-        | Type.Any, _ -> any_is_bottom
-        | Type.Bottom, _ -> true
-        | _, Type.Bottom -> false
-        | _, Type.Primitive "object" -> true
-        | _, Type.Variable _ -> false
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
-            false
-        | Type.Annotated left, _ -> less_or_equal order ~left ~right
-        | _, Type.Annotated right -> less_or_equal order ~left ~right
-        | Type.Parametric _, Type.Parametric { name = right_name; parameters = right_parameters }
-          ->
-            let handle_left_parameters left_parameters =
-              let compare_parameters ~left ~right variables =
-                let compare_parameter left right variable =
-                  match left, right, variable with
-                  | Type.Bottom, _, _ ->
-                      (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
-                         variance. *)
-                      true
-                  | _, Type.Top, _ ->
-                      (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-                      true
-                  | Type.Top, _, _ -> false
-                  | _, _, Type.Variable { variance = Covariant; _ } ->
-                      less_or_equal order ~left ~right
-                  | _, _, Type.Variable { variance = Contravariant; _ } ->
-                      less_or_equal order ~left:right ~right:left
-                  | _, _, Type.Variable { variance = Invariant; _ } ->
-                      less_or_equal order ~left ~right
-                      && less_or_equal order ~left:right ~right:left
-                  | _ ->
-                      Log.warning
-                        "Cannot compare %a and %a, not a variable: %a"
-                        Type.pp
-                        left
-                        Type.pp
-                        right
-                        Type.pp
-                        variable;
-                      false
-                in
-                List.length variables = List.length left
-                && List.length variables = List.length right
-                && List.map3_exn ~f:compare_parameter left right variables |> List.for_all ~f:Fn.id
-              in
-              ClassHierarchy.variables handler right_name
-              >>| compare_parameters ~left:left_parameters ~right:right_parameters
-            in
-            ClassHierarchy.instantiate_successors_parameters
-              handler
-              ~source:left
-              ~target:right_name
-            >>= handle_left_parameters
-            |> Option.value ~default:false
-        (* \forall i \in Union[...]. A_i <= B -> Union[...] <= B. *)
-        | Type.Union left, right ->
-            List.fold
-              ~init:true
-              ~f:(fun current left -> current && less_or_equal order ~left ~right)
-              left
-        (* We have to consider both the variables' constraint and its full value against the union. *)
-        | Type.Variable variable, Type.Union union ->
-            List.exists ~f:(fun right -> less_or_equal order ~left ~right) union
-            || less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
-        (* \exists i \in Union[...]. A <= B_i -> A <= Union[...] *)
-        | left, Type.Union right ->
-            List.exists ~f:(fun right -> less_or_equal order ~left ~right) right
-        (* We have to consider both the variables' constraint and its full value against the
-           optional. *)
-        | Type.Variable variable, Type.Optional optional ->
-            less_or_equal order ~left ~right:optional
-            || less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
-        (* A <= B -> A <= Optional[B].*)
-        | Type.Optional left, Type.Optional right -> less_or_equal order ~left ~right
-        | _, Type.Optional parameter -> less_or_equal order ~left ~right:parameter
-        | Type.Optional _, _ -> false
-        | Type.Variable variable, right ->
-            less_or_equal order ~left:(Type.Variable.Unary.upper_bound variable) ~right
-        (* Tuple variables are covariant. *)
-        | Type.Tuple _, Type.Tuple (Type.Bounded Any)
-        | Type.Tuple (Type.Bounded Any), Type.Tuple _ ->
-            true
-        | Type.Tuple (Type.Bounded (Concrete left)), Type.Tuple (Type.Bounded (Concrete right))
-          when List.length left = List.length right ->
-            List.for_all2_exn left right ~f:(fun left right -> less_or_equal order ~left ~right)
-        | Type.Tuple (Type.Bounded (Variable _)), _ ->
-            less_or_equal order ~left:(Type.Tuple (Type.Unbounded Type.object_primitive)) ~right
-        | _, Type.Tuple (Type.Bounded (Variable _)) -> false
-        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
-            less_or_equal order ~left ~right
-        | Type.Tuple (Type.Bounded (Concrete [])), Type.Tuple (Type.Unbounded _) -> true
-        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right) ->
-            let left = List.fold tail ~init:left ~f:(join order) in
-            less_or_equal order ~left ~right
-        | Type.Tuple tuple, Type.Parametric _ ->
-            (* Join parameters to handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
-            let parameter =
-              match tuple with
-              | Type.Unbounded parameter -> parameter
-              | Type.Bounded bound -> Type.OrderedTypes.union_upper_bound bound
-            in
-            let parametric = Type.parametric "tuple" [parameter] in
-            less_or_equal order ~left:parametric ~right
-        | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
-            less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-        | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
-            let parameter = List.fold ~f:(join order) ~init:left tail in
-            less_or_equal order ~left:(Type.parametric "tuple" [parameter]) ~right
-        | Type.Primitive name, Type.Tuple _ -> Type.Primitive.equal name "tuple"
-        | Type.Tuple _, _
-        | _, Type.Tuple _ ->
-            false
-        | ( Type.Callable { Callable.kind = Callable.Named left; _ },
-            Type.Callable { Callable.kind = Callable.Named right; _ } )
-          when Reference.equal left right ->
-            true
-        | Type.Callable callable, Type.Callable { Callable.implementation; overloads; _ } ->
-            let validate_overload called_as =
-              simulate_signature_select
-                order
-                ~callable
-                ~called_as
-                ~constraints:TypeConstraints.empty
-              |> List.exists ~f:(fun (left, _) ->
-                     less_or_equal order ~left ~right:called_as.annotation)
-            in
-            List.for_all (implementation :: overloads) ~f:validate_overload
-        | _, Type.Callable _ when Type.is_meta left ->
-            Type.single_parameter left
-            |> constructor ~protocol_assumptions
-            >>| (fun left -> less_or_equal order ~left ~right)
-            |> Option.value ~default:false
-        (* A[...] <= B iff A <= B. *)
-        | Type.Parametric _, Type.Primitive _ ->
-            let parametric_primitive, _ = Type.split left in
-            less_or_equal order ~left:parametric_primitive ~right
-        | Type.Primitive name, Type.Parametric _ ->
-            let left = Type.Parametric { name; parameters = [] } in
-            less_or_equal order ~left ~right
-        | left, Type.Callable _ -> (
-            let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
-            match joined with
-            | Type.Parametric { name; parameters = [left] }
-              when Identifier.equal name "typing.Callable" ->
-                less_or_equal order ~left ~right
-            | _ -> false )
-        | Type.Callable _, _ -> false
-        | Type.TypedDictionary left, Type.TypedDictionary right ->
-            let field_not_found field =
-              not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
-            in
-            left.total = right.total && not (List.exists right.fields ~f:field_not_found)
-        | Type.TypedDictionary _, _ ->
-            less_or_equal order ~left:(Type.Primitive "TypedDictionary") ~right
-        | _, Type.TypedDictionary _ ->
-            less_or_equal order ~left ~right:(Type.Primitive "TypedDictionary")
-        | _, Type.Literal _ -> false
-        | Type.Literal _, _ -> less_or_equal order ~left:(Type.weaken_literals left) ~right
-        | Type.Primitive left, Type.Primitive right ->
-            ClassHierarchy.is_transitive_successor handler ~source:left ~target:right
-      in
-      let is_nominally_less_or_equal = nominally_less_or_equal ~left ~right in
-      match right with
-      | Type.Primitive name
-        when (not is_nominally_less_or_equal) && is_protocol right ~protocol_assumptions ->
-          instantiate_protocol_parameters order ~candidate:left ~protocol:name = Some []
-      | Type.Parametric { name; _ }
-        when (not is_nominally_less_or_equal) && is_protocol right ~protocol_assumptions ->
-          instantiate_protocol_parameters order ~candidate:left ~protocol:name
-          >>| Type.parametric name
-          >>| (fun left -> nominally_less_or_equal ~left ~right)
-          |> Option.value ~default:false
-      | _ -> is_nominally_less_or_equal
-
-
     and join_implementations ~parameter_join ~return_join order left right =
       let open Callable in
       let parameters =
@@ -1033,7 +846,7 @@ module OrderImplementation = struct
         | Type.Union left, Type.Union right -> Type.union (left @ right)
         | (Type.Union elements as union), other
         | other, (Type.Union elements as union) -> (
-            if less_or_equal order ~left:other ~right:union then
+            if always_less_or_equal order ~left:other ~right:union then
               union
             else
               match other with
@@ -1049,22 +862,22 @@ module OrderImplementation = struct
             Type.Parametric { name = right_primitive; _ } )
         | Type.Parametric { name = left_primitive; _ }, Type.Primitive right_primitive
         | Type.Primitive left_primitive, Type.Parametric { name = right_primitive; _ } ->
-            if less_or_equal order ~left ~right then
+            if always_less_or_equal order ~left ~right then
               right
-            else if less_or_equal order ~left:right ~right:left then
+            else if always_less_or_equal order ~left:right ~right:left then
               left
             else
               let target =
                 try
                   if
-                    less_or_equal
+                    always_less_or_equal
                       ~left:(Primitive left_primitive)
                       ~right:(Primitive right_primitive)
                       order
                   then
                     Some right_primitive
                   else if
-                    less_or_equal
+                    always_less_or_equal
                       ~left:(Primitive right_primitive)
                       ~right:(Primitive left_primitive)
                       order
@@ -1100,8 +913,8 @@ module OrderImplementation = struct
                           meet order left right
                       | _, _, Type.Variable { variance = Invariant; _ } ->
                           if
-                            less_or_equal order ~left ~right
-                            && less_or_equal order ~left:right ~right:left
+                            always_less_or_equal order ~left ~right
+                            && always_less_or_equal order ~left:right ~right:left
                           then
                             left
                           else
@@ -1166,7 +979,7 @@ module OrderImplementation = struct
         | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
         | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
           when List.for_all ~f:(fun element -> Type.equal element left) tail
-               && less_or_equal order ~left ~right ->
+               && always_less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded right)
         | Type.Tuple (Type.Unbounded parameter), (Type.Parametric _ as annotation)
         | Type.Tuple (Type.Unbounded parameter), (Type.Primitive _ as annotation)
@@ -1193,9 +1006,9 @@ module OrderImplementation = struct
               Type.Parametric { name = "typing.Mapping"; parameters = [Type.string; Type.Any] }
             else
               let join_fields =
-                if less_or_equal order ~left ~right then
+                if always_less_or_equal order ~left ~right then
                   right_fields
-                else if less_or_equal order ~left:right ~right:left then
+                else if always_less_or_equal order ~left:right ~right:left then
                   left_fields
                 else
                   let found_match field =
@@ -1248,11 +1061,12 @@ module OrderImplementation = struct
         | (Type.Literal _ as literal), other
         | other, (Type.Literal _ as literal) ->
             join order other (Type.weaken_literals literal)
-        | _ when is_protocol right ~protocol_assumptions && less_or_equal order ~left ~right ->
+        | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right
+          ->
             right
         | _
           when is_protocol left ~protocol_assumptions
-               && less_or_equal order ~left:right ~right:left ->
+               && always_less_or_equal order ~left:right ~right:left ->
             left
         | Primitive left, Primitive right -> (
           match List.hd (ClassHierarchy.least_upper_bound handler left right) with
@@ -1297,7 +1111,7 @@ module OrderImplementation = struct
         | _, Type.Annotated right -> Type.annotated (meet order left right)
         | (Type.Variable _ as variable), other
         | other, (Type.Variable _ as variable) ->
-            if less_or_equal order ~left:variable ~right:other then
+            if always_less_or_equal order ~left:variable ~right:other then
               variable
             else
               Type.Bottom
@@ -1308,15 +1122,15 @@ module OrderImplementation = struct
             Type.union union
         | (Type.Union elements as union), other
         | other, (Type.Union elements as union) ->
-            if less_or_equal order ~left:other ~right:union then
+            if always_less_or_equal order ~left:other ~right:union then
               other
             else
               List.map elements ~f:(meet order other) |> List.fold ~f:(meet order) ~init:Type.Top
         | ( Type.Parametric { name = left_primitive; _ },
             Type.Parametric { name = right_primitive; _ } ) -> (
-            if less_or_equal order ~left ~right then
+            if always_less_or_equal order ~left ~right then
               left
-            else if less_or_equal order ~left:right ~right:left then
+            else if always_less_or_equal order ~left:right ~right:left then
               right
             else
               let target = meet order (Primitive left_primitive) (Primitive right_primitive) in
@@ -1364,8 +1178,8 @@ module OrderImplementation = struct
                           join order left right
                       | _, _, Type.Variable { variance = Invariant; _ } ->
                           if
-                            less_or_equal order ~left ~right
-                            && less_or_equal order ~left:right ~right:left
+                            always_less_or_equal order ~left ~right
+                            && always_less_or_equal order ~left:right ~right:left
                           then
                             left
                           else
@@ -1397,7 +1211,7 @@ module OrderImplementation = struct
         (* A <= B -> glb(A, Optional[B]) = A. *)
         | other, Type.Optional parameter
         | Type.Optional parameter, other ->
-            if less_or_equal order ~left:other ~right:parameter then
+            if always_less_or_equal order ~left:other ~right:parameter then
               other
             else
               Type.Bottom
@@ -1413,11 +1227,11 @@ module OrderImplementation = struct
         | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Tuple (Type.Unbounded right)
         | Type.Tuple (Type.Unbounded right), Type.Tuple (Type.Bounded (Concrete (left :: tail)))
           when List.for_all ~f:(fun element -> Type.equal element left) tail
-               && less_or_equal order ~left ~right ->
+               && always_less_or_equal order ~left ~right ->
             Type.Tuple (Type.Unbounded left) (* My brain hurts... *)
         | (Type.Tuple _ as tuple), (Type.Parametric _ as parametric)
         | (Type.Parametric _ as parametric), (Type.Tuple _ as tuple) ->
-            if less_or_equal order ~left:tuple ~right:parametric then
+            if always_less_or_equal order ~left:tuple ~right:parametric then
               tuple
             else
               Type.Bottom
@@ -1426,9 +1240,9 @@ module OrderImplementation = struct
             Type.Bottom
         | Type.Parametric _, Type.Primitive _
         | Type.Primitive _, Type.Parametric _ ->
-            if less_or_equal order ~left ~right then
+            if always_less_or_equal order ~left ~right then
               left
-            else if less_or_equal order ~left:right ~right:left then
+            else if always_less_or_equal order ~left:right ~right:left then
               right
             else
               Type.Bottom
@@ -1461,9 +1275,9 @@ module OrderImplementation = struct
               Type.Bottom
             else
               let meet_fields =
-                if less_or_equal order ~left ~right then
+                if always_less_or_equal order ~left ~right then
                   left_fields
-                else if less_or_equal order ~left:right ~right:left then
+                else if always_less_or_equal order ~left:right ~right:left then
                   right_fields
                 else
                   List.dedup_and_sort
@@ -1477,13 +1291,14 @@ module OrderImplementation = struct
         | Type.Literal _, _
         | _, Type.Literal _ ->
             Type.Bottom
-        | Type.Primitive _, _ when less_or_equal order ~left ~right -> left
-        | _, Type.Primitive _ when less_or_equal order ~left:right ~right:left -> right
-        | _ when is_protocol right ~protocol_assumptions && less_or_equal order ~left ~right ->
+        | Type.Primitive _, _ when always_less_or_equal order ~left ~right -> left
+        | _, Type.Primitive _ when always_less_or_equal order ~left:right ~right:left -> right
+        | _ when is_protocol right ~protocol_assumptions && always_less_or_equal order ~left ~right
+          ->
             left
         | _
           when is_protocol left ~protocol_assumptions
-               && less_or_equal order ~left:right ~right:left ->
+               && always_less_or_equal order ~left:right ~right:left ->
             right
         | Type.Primitive left, Type.Primitive right -> (
           match List.hd (ClassHierarchy.greatest_lower_bound handler left right) with
@@ -1674,7 +1489,7 @@ module IncludableImplementation : FullOrderTypeWithoutT = Implementation
 include IncludableImplementation
 
 let rec is_consistent_with order left right =
-  less_or_equal { order with any_is_bottom = true } ~left ~right
+  always_less_or_equal { order with any_is_bottom = true } ~left ~right
 
 
 let rec is_compatible_with order ~left ~right =
