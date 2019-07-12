@@ -19,20 +19,20 @@ class Model(NamedTuple):
 
     def generate(
         self,
-        view_function: Callable[..., object],
+        modeled_object: Callable[..., object],
         whitelisted_parameters: Optional[Iterable[str]] = None,
     ) -> Optional[str]:
-        view_name = extract_view_name(view_function)
+        view_name = extract_view_name(modeled_object)
         # Don't attempt to generate models for local functions that our static analysis
         # can't handle.
         if view_name is None:
             return None
         parameters = []
-        if isinstance(view_function, types.FunctionType):
-            view_parameters = inspect.signature(view_function).parameters
-        elif isinstance(view_function, types.MethodType):
+        if isinstance(modeled_object, types.FunctionType):
+            view_parameters = inspect.signature(modeled_object).parameters
+        elif isinstance(modeled_object, types.MethodType):
             # pyre-fixme
-            view_parameters = inspect.signature(view_function.__func__).parameters
+            view_parameters = inspect.signature(modeled_object.__func__).parameters
         else:
             return
         for parameter_name in view_parameters:
@@ -70,6 +70,13 @@ class Model(NamedTuple):
         else:
             returns = ""
         return f"def {view_name}({parameters}){returns}: ..."
+
+
+class AssignmentModel(NamedTuple):
+    annotation: str
+
+    def generate(self, target: str):
+        return f"{target}: {self.annotation} = ..."
 
 
 def annotate_function(

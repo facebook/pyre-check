@@ -106,3 +106,11 @@ class TaintAnnotatorTest(unittest.TestCase):
                 pass
 
         self.assertEqual(taint_annotator.Model().generate(CallMe), None)
+
+    def test_assignment_model(self) -> None:
+        self.assertEqual(
+            taint_annotator.AssignmentModel(annotation="TaintSink[Test]").generate(
+                "name"
+            ),
+            "name: TaintSink[Test] = ...",
+        )

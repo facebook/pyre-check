@@ -14,6 +14,7 @@ import os
 from typing import Callable, Iterable, Optional, Set
 
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
+from .taint_annotator import AssignmentModel
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -103,11 +104,18 @@ class GlobalModelGenerator(ModelGenerator):
         for statement in module.body:
             visit_statement(statement)
 
-        return {
-            f"{qualifier(root, path)}.{target}: TaintSink[Global] = ..."
-            for target in globals
-            if target != "__all__"
-        }
+        module_qualifier = qualifier(root, path)
+
+        models = set()
+        for target in globals:
+            if target == "__all__":
+                continue
+            generated = AssignmentModel(annotation="TaintSink[Global]").generate(
+                f"{module_qualifier}.{target}"
+            )
+            if generated is not None:
+                models.add(generated)
+        return models
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         return []
