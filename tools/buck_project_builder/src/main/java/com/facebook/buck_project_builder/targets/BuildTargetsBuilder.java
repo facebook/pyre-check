@@ -124,15 +124,32 @@ public final class BuildTargetsBuilder {
       return;
     }
     LOGGER.info("Building " + this.swigLibraryBuildCommands.size() + " swig libraries...");
+    String builderExecutable;
+    try {
+      builderExecutable =
+          GeneratedBuildRuleRunner.getBuiltTargetExecutable(
+              "//third-party-buck/platform007/tools/swig:bin/swig", this.buckRoot);
+    } catch (IOException exception) {
+      logCodeGenerationIOException(exception);
+      return;
+    }
+    if (builderExecutable == null) {
+      LOGGER.severe("Unable to build any swig libraries because its builder is not found.");
+      return;
+    }
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
-    for (String command : this.swigLibraryBuildCommands) {
-      try {
-        GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
-      } catch (IOException exception) {
-        logCodeGenerationIOException(exception);
-      }
-    }
+    this.swigLibraryBuildCommands
+        .parallelStream()
+        .forEach(
+            command -> {
+              try {
+                GeneratedBuildRuleRunner.runBuilderCommand(
+                    builderExecutable + command, this.buckRoot);
+              } catch (IOException exception) {
+                logCodeGenerationIOException(exception);
+              }
+            });
     long time = System.currentTimeMillis() - start;
     LOGGER.info("Built swig libraries in " + time + "ms.");
   }

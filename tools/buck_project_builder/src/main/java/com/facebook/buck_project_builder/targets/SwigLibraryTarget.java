@@ -48,8 +48,7 @@ public final class SwigLibraryTarget implements BuildTarget {
     String builderCommand =
         this.command
             .replaceFirst(
-                "mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)",
-                "buck run //third-party-buck/platform007/tools/swig:bin/swig --")
+                "mkdir .+\\$\\(exe //third-party-buck/platform007/tools/swig:bin/swig\\)", "")
             .replaceFirst(
                 " -I- -I.+$",
                 String.format(

@@ -1,6 +1,9 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.CommandLine;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
@@ -42,6 +45,20 @@ final class GeneratedBuildRuleRunner {
       }
     } catch (InterruptedException interruptedException) {
       throw new IOException(interruptedException.getMessage());
+    }
+  }
+
+  static @Nullable String getBuiltTargetExecutable(String builderTarget, String buckRoot)
+      throws IOException {
+    try (InputStream inputStream =
+        CommandLine.getCommandLineOutput(
+            new File(buckRoot), "buck", "build", "--show-json-output", builderTarget)) {
+      JsonElement builtOutputElement =
+          new JsonParser()
+              .parse(new InputStreamReader(inputStream))
+              .getAsJsonObject()
+              .get(builderTarget);
+      return builtOutputElement == null ? null : builtOutputElement.getAsString();
     }
   }
 }
