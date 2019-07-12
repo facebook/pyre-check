@@ -5,8 +5,8 @@ from importlib import import_module
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_name, extract_view_name
+from .model import Model
 from .model_generator import Configuration, ModelGenerator, Registry
-from .taint_annotator import Model
 
 
 class GraphQLSourceGenerator(ModelGenerator):

@@ -11,8 +11,8 @@ import types
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_annotation, extract_name, extract_view_name
+from .model import Model
 from .model_generator import Configuration, Registry
-from .taint_annotator import Model
 from .view_generator import ViewGenerator
 
 

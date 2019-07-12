@@ -13,8 +13,8 @@ import logging
 import os
 from typing import Callable, Iterable, Optional, Set
 
+from .model import AssignmentModel
 from .model_generator import Configuration, ModelGenerator, Registry, qualifier
-from .taint_annotator import AssignmentModel
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
