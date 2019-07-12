@@ -18,7 +18,6 @@ import _ast
 from django.core.urlresolvers import RegexURLPattern, RegexURLResolver
 
 from .model_generator import Configuration, Registry
-from .taint_annotator import Model, annotate_function
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
