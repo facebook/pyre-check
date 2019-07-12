@@ -11,7 +11,7 @@ import types
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_annotation, extract_name, extract_view_name
-from .model import Model
+from .model import CallableModel
 from .model_generator import Configuration, Registry
 from .view_generator import ViewGenerator
 
@@ -26,7 +26,7 @@ class RESTApiSourceGenerator(ViewGenerator):
             view_name = extract_view_name(view_function)
             if view_name in Configuration.whitelisted_views:
                 continue
-            model = Model(
+            model = CallableModel(
                 arg="TaintSource[UserControlled]",
                 vararg="TaintSource[UserControlled]",
                 kwarg="TaintSource[UserControlled]",

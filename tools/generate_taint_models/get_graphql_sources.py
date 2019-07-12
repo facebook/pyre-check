@@ -5,7 +5,7 @@ from importlib import import_module
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_name, extract_view_name
-from .model import Model
+from .model import CallableModel
 from .model_generator import Configuration, ModelGenerator, Registry
 
 
@@ -40,7 +40,7 @@ class GraphQLSourceGenerator(ModelGenerator):
         graphql_models = set()
 
         for view_function in functions_to_model:
-            model = Model(
+            model = CallableModel(
                 vararg="TaintSource[UserControlled]",
                 kwarg="TaintSource[UserControlled]",
             )

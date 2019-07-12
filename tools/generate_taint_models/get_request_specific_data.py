@@ -8,7 +8,7 @@
 from typing import Callable, Iterable
 
 from .inspect_parser import extract_view_name
-from .model import Model
+from .model import CallableModel
 from .model_generator import Configuration, Registry
 from .view_generator import ViewGenerator
 
@@ -24,7 +24,7 @@ class RequestSpecificDataGenerator(ViewGenerator):
             if view_name in Configuration.whitelisted_views:
                 continue
             taint_kind = "TaintSource[RequestSpecificData]"
-            model = Model(arg=taint_kind, vararg=taint_kind, kwarg=taint_kind)
+            model = CallableModel(arg=taint_kind, vararg=taint_kind, kwarg=taint_kind)
             callable = model.generate(view_function, Configuration.whitelisted_classes)
             if callable is not None:
                 view_models.add(callable)

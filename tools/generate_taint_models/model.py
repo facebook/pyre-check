@@ -11,7 +11,7 @@ from .inspect_parser import extract_annotation, extract_name, extract_view_name
 FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 
 
-class Model(NamedTuple):
+class CallableModel(NamedTuple):
     arg: Optional[str] = None
     vararg: Optional[str] = None
     kwarg: Optional[str] = None
