@@ -113,7 +113,7 @@ class GetGlobalsTest(unittest.TestCase):
             {
                 "class.Class.F: TaintSink[Global] = ...",
                 "class.Class.G: TaintSink[Global] = ...",
-            }
+            },
         )
         open.side_effect = _open_implementation(
             {
@@ -188,4 +188,28 @@ class GetGlobalsTest(unittest.TestCase):
         self.assertSetEqual(
             set(generator._globals("/root", "/root/annotated_assignments.py")),
             {"annotated_assignments.x: TaintSink[Global] = ..."},
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/blacklisted_module.py": textwrap.dedent(
+                    """
+                    A, B = 1
+                    class Class:
+                      C: typing.ClassVar[int] = ...
+                      D: int = ...
+                    """
+                )
+            }
+        )
+        Configuration.blacklisted_globals = {
+            "blacklisted_module.A",
+            "blacklisted_module.Class.C",
+        }
+        generator = GlobalModelGenerator()
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/blacklisted_module.py")),
+            {
+                "blacklisted_module.B: TaintSink[Global] = ...",
+                "blacklisted_module.Class.D: TaintSink[Global] = ...",
+            },
         )

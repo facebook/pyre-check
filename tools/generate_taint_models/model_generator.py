@@ -59,6 +59,7 @@ class Configuration:
     root: ClassVar[str] = ""
     stub_root: ClassVar[Optional[str]] = ""
     graphql_module: ClassVar[str] = ""
+    blacklisted_globals: ClassVar[Set[str]] = set()
 
 
 class Registry:

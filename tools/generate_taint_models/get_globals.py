@@ -110,8 +110,11 @@ class GlobalModelGenerator(ModelGenerator):
         for target in globals:
             if target == "__all__":
                 continue
+            qualified_target = f"{module_qualifier}.{target}"
+            if qualified_target in Configuration.blacklisted_globals:
+                continue
             generated = AssignmentModel(annotation="TaintSink[Global]").generate(
-                f"{module_qualifier}.{target}"
+                qualified_target
             )
             if generated is not None:
                 models.add(generated)
