@@ -44,7 +44,17 @@ let test_enumeration_methods _ =
         all_cases = [kind for kind in C]
         reveal_type(all_cases)
     |}
-    ["Revealed type [-1]: Revealed type for `all_cases` is `typing.List[C]`."]
+    ["Revealed type [-1]: Revealed type for `all_cases` is `typing.List[C]`."];
+  assert_type_errors
+    {|
+      class Foo(enum.IntEnum):
+        A: int = 1
+      def f() -> None:
+        b = 2 in Foo
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `bool`."];
+  ()
 
 
 let test_check_enumeration_attributes _ =

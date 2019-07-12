@@ -1340,7 +1340,7 @@ module State (Context : Context) = struct
               state
           | Top
           (* There's some other problem we already errored on *)
-
+          
           | Primitive _
           | Parametric _ ->
               state_with_errors
@@ -2451,19 +2451,20 @@ module State (Context : Context) = struct
           { state = { state with errors }; resolved; resolved_annotation = None; base = None }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.In }
     | ComparisonOperator { ComparisonOperator.left; right; operator = ComparisonOperator.NotIn } ->
-        let { state; resolved = iterator; _ } = forward_expression ~state ~expression:right in
         let modified_call =
-          let rec has_method name annotation =
-            match annotation with
-            | Type.Union annotations -> List.for_all annotations ~f:(has_method name)
-            | _ ->
-                Resolution.class_definition resolution annotation
-                >>| Annotated.Class.create
-                >>| Annotated.Class.has_method ~transitive:true ~resolution ~name
-                |> Option.value ~default:false
+          let has_method name =
+            let access =
+              { Node.location;
+                value = Name (Name.Attribute { base = right; attribute = name; special = true })
+              }
+            in
+            forward_expression ~state ~expression:access
+            |> (fun { resolved; _ } -> resolved)
+            |> Type.is_top
+            |> not
           in
           let { Node.location; _ } = left in
-          if has_method "__contains__" iterator then
+          if has_method "__contains__" then
             { Node.location;
               value =
                 Call
@@ -2477,7 +2478,7 @@ module State (Context : Context) = struct
                     arguments = [{ Call.Argument.name = None; value = left }]
                   }
             }
-          else if has_method "__iter__" iterator then
+          else if has_method "__iter__" then
             let iter =
               { Node.location;
                 value =

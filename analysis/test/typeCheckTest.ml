@@ -659,6 +659,27 @@ let test_forward_expression _ =
     ~postcondition:["container", Type.iterator Type.integer]
     "1 not in container"
     Type.bool;
+  assert_forward
+    ~environment:
+      {|
+      class MetaFoo(type):
+        def MetaFoo.__contains__(self, x:int) -> bool: ...
+      class Foo(metaclass=MetaFoo):
+        def Foo.foo(self) -> int:
+          return 9
+    |}
+    ~precondition:["Container", Type.meta (Type.Primitive "Foo")]
+    ~postcondition:["Container", Type.meta (Type.Primitive "Foo")]
+    "1 in Container"
+    Type.bool;
+  let dictionary_set_union =
+    Type.Union [Type.dictionary ~key:Type.integer ~value:Type.string; Type.set Type.integer]
+  in
+  assert_forward
+    ~precondition:["Container", dictionary_set_union]
+    ~postcondition:["Container", dictionary_set_union]
+    "1 in Container"
+    Type.bool;
   assert_forward ~errors:(`Undefined 1) "undefined < 1" Type.Top;
   assert_forward ~errors:(`Undefined 2) "undefined == undefined" Type.Top;
 
