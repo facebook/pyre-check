@@ -365,141 +365,235 @@ module OrderImplementation = struct
         ~left
         ~right
       =
-      if
-        Type.Variable.all_variables_are_resolved left
-        && Type.Variable.all_variables_are_resolved right
-      then
-        if less_or_equal order ~left ~right then [constraints] else []
-      else
-        match left, right with
-        | _, _ when Type.equal left right -> [constraints]
-        | _, Type.Primitive "object"
-        | _, Type.Any
-        | _, Type.Top ->
-            [constraints]
-        | Type.ParameterVariadicComponent _, _
-        | _, Type.ParameterVariadicComponent _ ->
+      match left, right with
+      | _, _ when Type.equal left right -> [constraints]
+      | _, Type.Primitive "object"
+      | _, Type.Any ->
+          [constraints]
+      | other, Type.Top ->
+          if Type.exists other ~predicate:(fun annotation -> Type.equal annotation Type.undeclared)
+          then
             []
-        | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
-        | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
-        | Type.Any, _ when any_is_bottom -> [constraints]
-        | Type.Variable left_variable, Type.Variable right_variable
-          when Type.Variable.Unary.is_free left_variable
-               && Type.Variable.Unary.is_free right_variable ->
-            (* Either works because constraining V1 to be less or equal to V2 implies that V2 is
-               greater than or equal to V1. Therefore either constraint is sufficient, and we
-               should consider both. This approach simplifies things downstream for the constraint
-               solver *)
-            let right_greater_than_left, left_less_than_right =
-              ( OrderedConstraints.add_lower_bound
-                  constraints
-                  ~order
-                  ~pair:(Type.Variable.UnaryPair (right_variable, left))
-                |> Option.to_list,
-                OrderedConstraints.add_upper_bound
-                  constraints
-                  ~order
-                  ~pair:(Type.Variable.UnaryPair (left_variable, right))
-                |> Option.to_list )
+          else
+            [constraints]
+      | Type.ParameterVariadicComponent _, _
+      | _, Type.ParameterVariadicComponent _ ->
+          []
+      | Type.Annotated left, _ -> solve_less_or_equal order ~constraints ~left ~right
+      | _, Type.Annotated right -> solve_less_or_equal order ~constraints ~left ~right
+      | Type.Any, _ when any_is_bottom -> [constraints]
+      | Type.Variable left_variable, Type.Variable right_variable
+        when Type.Variable.Unary.is_free left_variable
+             && Type.Variable.Unary.is_free right_variable ->
+          (* Either works because constraining V1 to be less or equal to V2 implies that V2 is
+             greater than or equal to V1. Therefore either constraint is sufficient, and we should
+             consider both. This approach simplifies things downstream for the constraint solver *)
+          let right_greater_than_left, left_less_than_right =
+            ( OrderedConstraints.add_lower_bound
+                constraints
+                ~order
+                ~pair:(Type.Variable.UnaryPair (right_variable, left))
+              |> Option.to_list,
+              OrderedConstraints.add_upper_bound
+                constraints
+                ~order
+                ~pair:(Type.Variable.UnaryPair (left_variable, right))
+              |> Option.to_list )
+          in
+          right_greater_than_left @ left_less_than_right
+      | Type.Variable variable, bound when Type.Variable.Unary.is_free variable ->
+          let pair = Type.Variable.UnaryPair (variable, bound) in
+          OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
+      | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
+          let pair = Type.Variable.UnaryPair (variable, bound) in
+          OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
+      | Type.Any, _
+      | _, Type.Bottom
+      | Type.Top, _ ->
+          []
+      | Type.Bottom, _ -> [constraints]
+      | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
+          if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then
+            [constraints]
+          else
+            []
+      | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions
+        ->
+          instantiate_protocol_parameters order ~protocol:name ~candidate:left
+          >>| Type.parametric name
+          >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
+          |> Option.value ~default:[]
+      | Type.Union lefts, right ->
+          solve_ordered_types_less_or_equal
+            order
+            ~left:(Concrete lefts)
+            ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
+            ~constraints
+      (* We have to consider both the variables' constraint and its full value against the union. *)
+      | Type.Variable bound_variable, Type.Union union ->
+          solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.Variable.Unary.upper_bound bound_variable)
+            ~right
+          @ List.concat_map
+              ~f:(fun right -> solve_less_or_equal order ~constraints ~left ~right)
+              union
+      | _, Type.Union rights ->
+          if
+            Type.Variable.all_variables_are_resolved left
+            && Type.Variable.all_variables_are_resolved right
+          then
+            (* This is a pure performance optimization, but is practically mandatory because there
+               are some humongous unions out there *)
+            let simple_solve right =
+              solve_less_or_equal order ~constraints ~left ~right |> List.is_empty |> not
             in
-            right_greater_than_left @ left_less_than_right
-        | Type.Variable variable, bound when Type.Variable.Unary.is_free variable ->
-            let pair = Type.Variable.UnaryPair (variable, bound) in
-            OrderedConstraints.add_upper_bound constraints ~order ~pair |> Option.to_list
-        | bound, Type.Variable variable when Type.Variable.Unary.is_free variable ->
-            let pair = Type.Variable.UnaryPair (variable, bound) in
-            OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
-        | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
-            if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then
+            if List.exists rights ~f:simple_solve then
               [constraints]
             else
               []
-        | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions
-          ->
-            instantiate_protocol_parameters order ~protocol:name ~candidate:left
-            >>| Type.parametric name
-            >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
-            |> Option.value ~default:[]
-        | Type.Union lefts, right ->
-            solve_ordered_types_less_or_equal
-              order
-              ~left:(Concrete lefts)
-              ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
-              ~constraints
-        | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
-            let solve_parameters left_parameters =
-              let solve_parameter_pair constraints (variable, (left, right)) =
-                match variable with
-                | Type.Variable { variance = Covariant; _ } ->
-                    constraints
-                    |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal order ~constraints ~left ~right)
-                | Type.Variable { variance = Contravariant; _ } ->
-                    constraints
-                    |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal order ~constraints ~left:right ~right:left)
-                | Type.Variable { variance = Invariant; _ } ->
-                    constraints
-                    |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal order ~constraints ~left ~right)
-                    |> List.concat_map ~f:(fun constraints ->
-                           solve_less_or_equal order ~constraints ~left:right ~right:left)
-                | _ -> []
-              in
-              let zip_on_parameters variables =
-                List.zip left_parameters right_parameters >>= List.zip variables
-              in
-              ClassHierarchy.variables handler right_name
-              >>= zip_on_parameters
-              >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
-            in
-            let parameters =
-              let parameters =
-                ClassHierarchy.instantiate_successors_parameters
-                  handler
-                  ~source:left
-                  ~target:right_name
-              in
-              match parameters with
-              | None when is_protocol right ~protocol_assumptions ->
-                  instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
-              | _ -> parameters
-            in
-            parameters >>= solve_parameters |> Option.value ~default:[]
-        | Type.Parametric _, Type.Primitive _ ->
-            let left = Type.Variable.mark_all_variables_as_bound left in
-            if less_or_equal order ~left ~right then
-              [constraints]
-            else
-              []
-        | Optional left, Optional right
-        | left, Optional right
-        | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
-            solve_less_or_equal order ~constraints ~left ~right
-        | Type.Tuple (Type.Bounded (Concrete lefts)), Type.Tuple (Type.Unbounded right) ->
-            let left = Type.union lefts in
-            solve_less_or_equal order ~constraints ~left ~right
-        | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right) ->
-            solve_ordered_types_less_or_equal order ~left ~right ~constraints
-        | _, Type.Union rights ->
+          else
             List.concat_map rights ~f:(fun right ->
                 solve_less_or_equal order ~constraints ~left ~right)
-        | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
-            let fold_overload sofar called_as =
-              let call_as_overload constraints =
-                simulate_signature_select order ~callable ~called_as ~constraints
-                |> List.concat_map ~f:(fun (left, constraints) ->
-                       solve_less_or_equal order ~constraints ~left ~right:called_as.annotation)
-              in
-              List.concat_map sofar ~f:call_as_overload
+      | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
+          let solve_parameters left_parameters =
+            let solve_parameter_pair constraints (variable, (left, right)) =
+              match left, right, variable with
+              (* TODO kill these special cases *)
+              | Type.Bottom, _, _ ->
+                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
+                  constraints
+              | _, Type.Top, _ ->
+                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
+                  constraints
+              | Type.Top, _, _ -> []
+              | _, _, Type.Variable { variance = Covariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+              | _, _, Type.Variable { variance = Contravariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | _, _, Type.Variable { variance = Invariant; _ } ->
+                  constraints
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left ~right)
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_less_or_equal order ~constraints ~left:right ~right:left)
+              | _ -> []
             in
-            List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
-        | _, Type.Callable _ when Type.is_meta left ->
-            Type.single_parameter left
-            |> constructor ~protocol_assumptions
-            >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
-            |> Option.value ~default:[]
-        | _ -> []
+            let zip_on_parameters variables =
+              List.zip left_parameters right_parameters >>= List.zip variables
+            in
+            ClassHierarchy.variables handler right_name
+            >>= zip_on_parameters
+            >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
+          in
+          let parameters =
+            let parameters =
+              ClassHierarchy.instantiate_successors_parameters
+                handler
+                ~source:left
+                ~target:right_name
+            in
+            match parameters with
+            | None when is_protocol right ~protocol_assumptions ->
+                instantiate_protocol_parameters order ~protocol:right_name ~candidate:left
+            | _ -> parameters
+          in
+          parameters >>= solve_parameters |> Option.value ~default:[]
+      | Type.Primitive source, Type.Primitive target
+      | Type.Parametric { name = source; _ }, Type.Primitive target ->
+          if ClassHierarchy.is_transitive_successor handler ~source ~target then
+            [constraints]
+          else if
+            is_protocol right ~protocol_assumptions
+            && instantiate_protocol_parameters order ~candidate:left ~protocol:target = Some []
+          then
+            [constraints]
+          else
+            []
+      (* We have to consider both the variables' constraint and its full value against the
+         optional. *)
+      | Type.Variable variable, Type.Optional optional ->
+          solve_less_or_equal order ~constraints ~left ~right:optional
+          @ solve_less_or_equal
+              order
+              ~constraints
+              ~left:(Type.Variable.Unary.upper_bound variable)
+              ~right
+      (* A <= B -> A <= Optional[B].*)
+      | Optional left, Optional right
+      | left, Optional right
+      | Type.Tuple (Type.Unbounded left), Type.Tuple (Type.Unbounded right) ->
+          solve_less_or_equal order ~constraints ~left ~right
+      | Optional _, _ -> []
+      | Type.Tuple (Type.Bounded lefts), Type.Tuple (Type.Unbounded right) ->
+          let left = Type.OrderedTypes.union_upper_bound lefts in
+          solve_less_or_equal order ~constraints ~left ~right
+      | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right) ->
+          solve_ordered_types_less_or_equal order ~left ~right ~constraints
+      | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
+          solve_less_or_equal order ~constraints ~left:(Type.parametric "tuple" [parameter]) ~right
+      | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
+          let parameter = List.fold ~f:(join order) ~init:left tail in
+          solve_less_or_equal order ~constraints ~left:(Type.parametric "tuple" [parameter]) ~right
+      | Type.Primitive name, Type.Tuple _ ->
+          if Type.Primitive.equal name "tuple" then [constraints] else []
+      | Type.Tuple _, _
+      | _, Type.Tuple _ ->
+          []
+      | Type.Variable bound_variable, _ ->
+          solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.Variable.Unary.upper_bound bound_variable)
+            ~right
+      | _, Type.Variable _bound_variable -> []
+      | ( Type.Callable { Callable.kind = Callable.Named left; _ },
+          Type.Callable { Callable.kind = Callable.Named right; _ } )
+        when Reference.equal left right ->
+          [constraints]
+      | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
+          let fold_overload sofar called_as =
+            let call_as_overload constraints =
+              simulate_signature_select order ~callable ~called_as ~constraints
+              |> List.concat_map ~f:(fun (left, constraints) ->
+                     solve_less_or_equal order ~constraints ~left ~right:called_as.annotation)
+            in
+            List.concat_map sofar ~f:call_as_overload
+          in
+          List.fold (implementation :: overloads) ~f:fold_overload ~init:[constraints]
+      | _, Type.Callable _ when Type.is_meta left ->
+          Type.single_parameter left
+          |> constructor ~protocol_assumptions
+          >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
+          |> Option.value ~default:[]
+      | left, Type.Callable _ -> (
+          let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
+          match joined with
+          | Type.Parametric { name; parameters = [left] }
+            when Identifier.equal name "typing.Callable" ->
+              solve_less_or_equal order ~constraints ~left ~right
+          | _ -> [] )
+      | Type.Callable _, _ -> []
+      | Type.TypedDictionary left, Type.TypedDictionary right ->
+          let field_not_found field =
+            not (List.exists left.fields ~f:(Type.equal_typed_dictionary_field field))
+          in
+          if left.total = right.total && not (List.exists right.fields ~f:field_not_found) then
+            [constraints]
+          else
+            []
+      | Type.TypedDictionary _, _ ->
+          solve_less_or_equal order ~constraints ~left:(Type.Primitive "TypedDictionary") ~right
+      | _, Type.TypedDictionary _ ->
+          solve_less_or_equal order ~constraints ~left ~right:(Type.Primitive "TypedDictionary")
+      | _, Type.Literal _ -> []
+      | Type.Literal _, _ ->
+          solve_less_or_equal order ~constraints ~left:(Type.weaken_literals left) ~right
 
 
     and solve_ordered_types_less_or_equal order ~left ~right ~constraints =

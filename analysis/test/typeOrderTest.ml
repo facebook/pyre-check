@@ -3197,7 +3197,6 @@ let test_instantiate_protocol_parameters _ =
     ~protocol:"P"
     (Some ["int"]);
 
-  (* Ideally this would work, but avoiding for now *)
   assert_instantiate_protocol_parameters
     ~context:{|
       T1 = typing.TypeVar("T1")
@@ -3207,7 +3206,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[int]"]]
     ~candidate:"A"
     ~protocol:"P"
-    None;
+    (Some ["int"]);
 
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters

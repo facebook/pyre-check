@@ -883,6 +883,8 @@ let test_constraints _ =
         pass
     |}
     [];
+
+  (* Consequence of the special case we need to remove *)
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.Bottom])
@@ -891,7 +893,7 @@ let test_constraints _ =
       class Foo(typing.Generic[_T]):
         pass
     |}
-    [Type.Variable.Unary.create "_T", Type.Bottom];
+    [];
   assert_constraints
     ~target:"Foo"
     ~instantiated:(Type.parametric "Foo" [Type.integer; Type.float])
