@@ -353,25 +353,13 @@ type test_environment = {
   environment: (module Environment.Handler)
 }
 
-let initialize ?(handle = "test.py") ?models source_content =
-  let source_content = Test.trim_extra_indentation source_content in
-  let file_handle = File.Handle.create_for_testing handle in
-  let qualifier = Source.qualifier ~handle:file_handle in
-  let source = Test.parse ~qualifier ~handle source_content |> Preprocessing.preprocess in
-  let path =
-    let path = Test.mock_path handle in
-    File.create ~content:source_content path |> File.write;
-    path
+let initialize ?(handle = "test.py") ?models ~context source_content =
+  let qualifier = Ast.SourcePath.qualifier_of_relative handle in
+  let configuration, source =
+    let project = Test.ScratchProject.setup ~context [handle, source_content] in
+    let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
+    Test.ScratchProject.configuration_of project, source
   in
-  let configuration = Configuration.Analysis.create ~strict:true () in
-  (* Parse sources. *)
-  Ast.SharedMemory.Sources.remove [qualifier];
-  Service.Parser.parse_sources
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~preprocessing_state:None
-    ~files:[File.create ~content:source_content path]
-  |> ignore;
   let environment =
     let models =
       models >>| (fun model -> [Test.parse ~qualifier model]) |> Option.value ~default:[]

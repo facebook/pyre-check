@@ -11,25 +11,12 @@ open Taint
 open Interprocedural
 open TestHelper
 
-let assert_taint ?(qualifier = "qualifier") source expected =
-  let configuration =
-    Configuration.Analysis.create ~project_root:(Path.current_working_directory ()) ()
-  in
-  let source =
-    let path = Test.mock_path (qualifier ^ ".py") in
-    let file = File.create ~content:(Test.trim_extra_indentation source) path in
-    let handle = File.handle file ~configuration in
-    let qualifier = Ast.Source.qualifier ~handle in
-    Ast.SharedMemory.Sources.remove [qualifier];
-    Service.Parser.parse_sources
-      ~configuration
-      ~scheduler:(Scheduler.mock ())
-      ~preprocessing_state:None
-      ~files:[file]
-    |> ignore;
-    match Ast.SharedMemory.Sources.get qualifier with
-    | Some source -> source
-    | None -> failwith "Unable to parse source."
+let assert_taint ~context source expected =
+  let handle = "qualifier.py" in
+  let configuration, source =
+    let project = Test.ScratchProject.setup ~context [handle, source] in
+    let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
+    Test.ScratchProject.configuration_of project, source
   in
   let environment = Test.environment ~configuration () in
   Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment [source];
@@ -51,8 +38,9 @@ let assert_taint ?(qualifier = "qualifier") source expected =
   List.iter ~f:check_expectation expected
 
 
-let test_plus_taint_in_taint_out _ =
+let test_plus_taint_in_taint_out context =
   assert_taint
+    ~context
     {|
     def test_plus_taint_in_taint_out(tainted_parameter1, parameter2):
       tainted_value = tainted_parameter1 + 5
@@ -64,8 +52,9 @@ let test_plus_taint_in_taint_out _ =
         "qualifier.test_plus_taint_in_taint_out" ]
 
 
-let test_concatenate_taint_in_taint_out _ =
+let test_concatenate_taint_in_taint_out context =
   assert_taint
+    ~context
     {|
       def test_concatenate_taint_in_taint_out(parameter0, tainted_parameter1):
         unused_parameter = parameter0
@@ -78,8 +67,9 @@ let test_concatenate_taint_in_taint_out _ =
         "qualifier.test_concatenate_taint_in_taint_out" ]
 
 
-let test_call_taint_in_taint_out _ =
+let test_call_taint_in_taint_out context =
   assert_taint
+    ~context
     {|
       def test_base_tito(parameter0, tainted_parameter1):
         return tainted_parameter1
@@ -92,8 +82,9 @@ let test_call_taint_in_taint_out _ =
     ]
 
 
-let test_sink _ =
+let test_sink context =
   assert_taint
+    ~context
     {|
       def test_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
@@ -106,8 +97,9 @@ let test_sink _ =
         "qualifier.test_sink" ]
 
 
-let test_rce_sink _ =
+let test_rce_sink context =
   assert_taint
+    ~context
     {|
       def test_rce_sink(parameter0, tainted_parameter1):
         unused_parameter = parameter0
@@ -120,8 +112,9 @@ let test_rce_sink _ =
         "qualifier.test_rce_sink" ]
 
 
-let test_rce_and_test_sink _ =
+let test_rce_and_test_sink context =
   assert_taint
+    ~context
     {|
       def test_rce_and_test_sink(test_only, rce_only, both):
         __test_sink(test_only)
@@ -140,8 +133,9 @@ let test_rce_and_test_sink _ =
         "qualifier.test_rce_and_test_sink" ]
 
 
-let test_tito_sink _ =
+let test_tito_sink context =
   assert_taint
+    ~context
     {|
       def test_base_tito(parameter0, tainted_parameter1):
         return tainted_parameter1
@@ -159,8 +153,9 @@ let test_tito_sink _ =
         "qualifier.test_tito_sink" ]
 
 
-let test_apply_method_model_at_call_site _ =
+let test_apply_method_model_at_call_site context =
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, tainted_parameter):
@@ -180,6 +175,7 @@ let test_apply_method_model_at_call_site _ =
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
         "qualifier.taint_across_methods" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, tainted_parameter):
@@ -196,6 +192,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~sink_parameters:[] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, tainted_parameter):
@@ -214,6 +211,7 @@ let test_apply_method_model_at_call_site _ =
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
         "qualifier.taint_across_methods" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, tainted_parameter):
@@ -229,6 +227,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~sink_parameters:[] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, tainted_parameter):
@@ -252,6 +251,7 @@ let test_apply_method_model_at_call_site _ =
         ~sink_parameters:[{ name = "tainted_parameter"; sinks = [Sinks.Test] }]
         "qualifier.taint_across_union_receiver_types" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux(self, not_tainted_parameter):
@@ -288,6 +288,7 @@ let test_apply_method_model_at_call_site _ =
 
   (* Propagation through properties. *)
   assert_taint
+    ~context
     {|
       class Class:
         self.tainted = ...
@@ -307,8 +308,9 @@ let test_apply_method_model_at_call_site _ =
         "qualifier.property_into_sink" ]
 
 
-let test_tito_via_receiver _ =
+let test_tito_via_receiver context =
   assert_taint
+    ~context
     {|
       class TitoClass:
         f = {}
@@ -324,9 +326,10 @@ let test_tito_via_receiver _ =
       outcome ~kind:`Function ~tito_parameters:["parameter"] "qualifier.tito_via_receiver" ]
 
 
-let test_sequential_call_path _ =
+let test_sequential_call_path context =
   (* Testing the setup to get this out of the way. *)
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -339,6 +342,7 @@ let test_sequential_call_path _ =
         ~tito_parameters:["self"]
         "qualifier.Foo.sink" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -354,6 +358,7 @@ let test_sequential_call_path _ =
         ~sink_parameters:[{ name = "first"; sinks = [Sinks.Test] }]
         "qualifier.sequential_with_single_sink" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -371,6 +376,7 @@ let test_sequential_call_path _ =
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
         "qualifier.sequential_with_two_sinks" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -389,6 +395,7 @@ let test_sequential_call_path _ =
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
         "qualifier.sequential_with_redefine" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -407,6 +414,7 @@ let test_sequential_call_path _ =
           [{ name = "first"; sinks = [Sinks.Test] }; { name = "second"; sinks = [Sinks.Test] }]
         "qualifier.sequential_with_distinct_sinks" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument) -> Foo:
@@ -425,8 +433,9 @@ let test_sequential_call_path _ =
         "qualifier.sequential_with_self_propagation" ]
 
 
-let test_chained_call_path _ =
+let test_chained_call_path context =
   assert_taint
+    ~context
     {|
       class Foo:
         def sink(self, argument1) -> Foo:
@@ -444,6 +453,7 @@ let test_chained_call_path _ =
             { name = "parameter2"; sinks = [Sinks.Test] } ]
         "qualifier.chained" ];
   assert_taint
+    ~context
     {|
       class Foo:
         def tito(self, argument1) -> Foo:
@@ -465,8 +475,9 @@ let test_chained_call_path _ =
         "qualifier.chained_with_tito" ]
 
 
-let test_dictionary _ =
+let test_dictionary context =
   assert_taint
+    ~context
     {|
       def dictionary_sink(arg):
         {
@@ -533,8 +544,9 @@ let test_dictionary _ =
         "qualifier.dictionary_unknown_write_index" ]
 
 
-let test_comprehensions _ =
+let test_comprehensions context =
   assert_taint
+    ~context
     {|
       def sink_in_iterator(arg):
           [ x for x in __test_sink(arg) ]
@@ -592,8 +604,9 @@ let test_comprehensions _ =
       outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_generator" ]
 
 
-let test_list _ =
+let test_list context =
   assert_taint
+    ~context
     {|
       def sink_in_list(arg):
           return [ 1, __test_sink(arg), "foo" ]
@@ -673,8 +686,9 @@ let test_list _ =
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito" ]
 
 
-let test_tuple _ =
+let test_tuple context =
   assert_taint
+    ~context
     {|
       def sink_in_tuple(arg):
           return ( 1, __test_sink(arg), "foo" )
@@ -710,8 +724,9 @@ let test_tuple _ =
       outcome ~kind:`Function "qualifier.tuple_pattern_different_index" ]
 
 
-let test_lambda _ =
+let test_lambda context =
   assert_taint
+    ~context
     {|
       def sink_in_lambda(arg):
           f = lambda x : x + __test_sink(arg)
@@ -727,8 +742,9 @@ let test_lambda _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.lambda_tito" ]
 
 
-let test_set _ =
+let test_set context =
   assert_taint
+    ~context
     {|
       def sink_in_set(arg):
           return { 1, __test_sink(arg), "foo" }
@@ -749,8 +765,9 @@ let test_set _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_unknown_index" ]
 
 
-let test_starred _ =
+let test_starred context =
   assert_taint
+    ~context
     {|
       def sink_in_starred(arg):
           __tito( *[ 1, __test_sink(arg), "foo" ] )
@@ -784,8 +801,9 @@ let test_starred _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred_starred" ]
 
 
-let test_ternary _ =
+let test_ternary context =
   assert_taint
+    ~context
     {|
       def sink_in_then(arg, cond):
           x = __test_sink(arg) if cond else None
@@ -830,8 +848,9 @@ let test_ternary _ =
       outcome ~kind:`Function ~tito_parameters:["arg1"; "arg2"] "qualifier.tito_in_both" ]
 
 
-let test_unary _ =
+let test_unary context =
   assert_taint
+    ~context
     {|
       def sink_in_unary(arg):
           x = not __test_sink(arg)
@@ -846,8 +865,9 @@ let test_unary _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_unary" ]
 
 
-let test_yield _ =
+let test_yield context =
   assert_taint
+    ~context
     {|
       def sink_in_yield(arg):
           yield __test_sink(arg)
@@ -873,8 +893,9 @@ let test_yield _ =
       outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield_from" ]
 
 
-let test_named_arguments _ =
+let test_named_arguments context =
   assert_taint
+    ~context
     {|
       def with_kw(a, b, **kw):
           return kw
@@ -898,8 +919,9 @@ let test_named_arguments _ =
       outcome ~kind:`Function ~tito_parameters:["dict"] "qualifier.kw_tito_with_dict" ]
 
 
-let test_actual_parameter_matching _ =
+let test_actual_parameter_matching context =
   assert_taint
+    ~context
     {|
       def before_star(a, b, *rest, c, d, **kw):
           return b
@@ -1100,8 +1122,9 @@ let test_actual_parameter_matching _ =
         "qualifier.pass_list_at_star" ]
 
 
-let test_constructor_argument_tito _ =
+let test_constructor_argument_tito context =
   assert_taint
+    ~context
     {|
       class Data:
         def __init__(self, tito, no_tito):
@@ -1190,8 +1213,9 @@ let test_constructor_argument_tito _ =
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none" ]
 
 
-let test_decorator _ =
+let test_decorator context =
   assert_taint
+    ~context
     {|
       @$strip_first_parameter
       def decorated(self, into_sink):
@@ -1210,8 +1234,9 @@ let test_decorator _ =
         "qualifier.using_decorated" ]
 
 
-let test_assignment _ =
+let test_assignment context =
   assert_taint
+    ~context
     {|
       def assigns_to_sink(assigned_to_sink):
         taint.__global_sink = assigned_to_sink
@@ -1221,6 +1246,7 @@ let test_assignment _ =
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
         "qualifier.assigns_to_sink" ];
   assert_taint
+    ~context
     {|
       def assigns_to_sink(assigned_to_sink):
         sink = ClassWithSinkAttribute()
@@ -1231,6 +1257,7 @@ let test_assignment _ =
         ~sink_parameters:[{ name = "assigned_to_sink"; sinks = [Sinks.Test] }]
         "qualifier.assigns_to_sink" ];
   assert_taint
+    ~context
     {|
       def assigns_to_sink(optional_sink: typing.Optional[ClassWithSinkAttribute], assigned_to_sink):
         optional_sink.attribute = assigned_to_sink
@@ -1241,8 +1268,9 @@ let test_assignment _ =
         "qualifier.assigns_to_sink" ]
 
 
-let test_access_paths _ =
+let test_access_paths context =
   assert_taint
+    ~context
     {|
       def access_downward_closed(arg):
         o = { 'a': arg }
@@ -1260,6 +1288,7 @@ let test_access_paths _ =
         "qualifier.access_downward_closed";
       outcome ~kind:`Function ~sink_parameters:[] "qualifier.access_non_taint" ];
   assert_taint
+    ~context
     {|
       def access_through_expression(arg):
         __test_sink(" ".join(arg))

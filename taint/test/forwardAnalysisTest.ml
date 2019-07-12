@@ -11,25 +11,12 @@ open Taint
 open Interprocedural
 open TestHelper
 
-let assert_taint ?(qualifier = "qualifier") ?models source expect =
-  let configuration =
-    Configuration.Analysis.create ~project_root:(Path.current_working_directory ()) ()
-  in
-  let source =
-    let path = Test.mock_path (qualifier ^ ".py") in
-    let file = File.create ~content:(Test.trim_extra_indentation source) path in
-    let handle = File.handle file ~configuration in
-    let qualifier = Ast.Source.qualifier ~handle in
-    Ast.SharedMemory.Sources.remove [qualifier];
-    Service.Parser.parse_sources
-      ~configuration
-      ~scheduler:(Scheduler.mock ())
-      ~preprocessing_state:None
-      ~files:[file]
-    |> ignore;
-    match Ast.SharedMemory.Sources.get qualifier with
-    | Some source -> source
-    | None -> failwith "Unable to parse source."
+let assert_taint ?models ~context source expect =
+  let handle = "qualifier.py" in
+  let configuration, source =
+    let project = Test.ScratchProject.setup ~context [handle, source] in
+    let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
+    Test.ScratchProject.configuration_of project, source
   in
   let environment =
     let models = models >>| (fun model -> [Test.parse model]) |> Option.value ~default:[] in
@@ -68,10 +55,10 @@ let assert_taint ?(qualifier = "qualifier") ?models source expect =
   List.iter ~f:check_expectation expect
 
 
-let test_no_model _ =
+let test_no_model context =
   let assert_no_model _ =
     assert_taint
-      ?qualifier:None
+      ~context
       {|
       def copy_source():
         pass
@@ -83,14 +70,16 @@ let test_no_model _ =
     assert_no_model
 
 
-let test_simple_source _ =
+let test_simple_source context =
   assert_taint
+    ~context
     {|
       def simple_source():
         return __test_source()
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"];
   assert_taint
+    ~context
     ~models:{|
       def custom_source() -> TaintSource[Test]: ...
     |}
@@ -101,8 +90,9 @@ let test_simple_source _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"]
 
 
-let test_global_taint _ =
+let test_global_taint context =
   assert_taint
+    ~context
     ~models:{|
        django.http.Request.GET: TaintSource[UserControlled] = ...
     |}
@@ -115,8 +105,9 @@ let test_global_taint _ =
     [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.inferred_source"]
 
 
-let test_hardcoded_source _ =
+let test_hardcoded_source context =
   assert_taint
+    ~context
     ~models:
       {|
       django.http.Request.GET: TaintSource[UserControlled] = ...
@@ -136,6 +127,7 @@ let test_hardcoded_source _ =
       outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get";
       outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.post" ];
   assert_taint
+    ~context
     ~models:
       {|
       django.http.Request.GET: TaintSource[UserControlled] = ...
@@ -147,6 +139,7 @@ let test_hardcoded_source _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_field"];
   assert_taint
+    ~context
     ~models:{|
       os.environ: TaintSource[UserControlled] = ...
     |}
@@ -156,6 +149,7 @@ let test_hardcoded_source _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_environment_variable"];
   assert_taint
+    ~context
     ~models:
       {|
       os.environ: TaintSource[UserControlled] = ...
@@ -170,6 +164,7 @@ let test_hardcoded_source _ =
         ~returns:[Sources.UserControlled]
         "qualifier.get_environment_variable_with_getitem" ];
   assert_taint
+    ~context
     {|
       class Request(django.http.Request): ...
 
@@ -179,8 +174,9 @@ let test_hardcoded_source _ =
     [outcome ~kind:`Function ~returns:[Sources.UserControlled] "qualifier.get_field"]
 
 
-let test_local_copy _ =
+let test_local_copy context =
   assert_taint
+    ~context
     {|
       def copy_source():
         var = __test_source()
@@ -189,8 +185,9 @@ let test_local_copy _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.copy_source"]
 
 
-let test_access_paths _ =
+let test_access_paths context =
   assert_taint
+    ~context
     {|
       def access_downward_closed():
         o = { 'a': __test_source() }
@@ -205,6 +202,7 @@ let test_access_paths _ =
     [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.access_downward_closed";
       outcome ~kind:`Function ~returns:[] "qualifier.access_non_taint" ];
   assert_taint
+    ~context
     {|
       def access_through_expression():
         return " ".join(__test_source())
@@ -212,8 +210,9 @@ let test_access_paths _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.access_through_expression"]
 
 
-let test_class_model _ =
+let test_class_model context =
   assert_taint
+    ~context
     {|
       class Foo:
         def bar():
@@ -221,6 +220,7 @@ let test_class_model _ =
     |}
     [outcome ~kind:`Method ~returns:[Sources.Test] "qualifier.Foo.bar"];
   assert_taint
+    ~context
     ~models:{|
       qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
     |}
@@ -235,6 +235,7 @@ let test_class_model _ =
     [ outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_instance_attribute";
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.as_class_attribute" ];
   assert_taint
+    ~context
     {|
       class Class:
         self.tainted = ...
@@ -251,6 +252,7 @@ let test_class_model _ =
 
   (* Optionals. *)
   assert_taint
+    ~context
     ~models:{|
       qualifier.Data.ATTRIBUTE: TaintSource[Test] = ...
     |}
@@ -263,8 +265,9 @@ let test_class_model _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.optional"]
 
 
-let test_apply_method_model_at_call_site _ =
+let test_apply_method_model_at_call_site context =
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -280,6 +283,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -295,6 +299,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -309,6 +314,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -323,6 +329,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[] "qualifier.taint_across_methods"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -342,6 +349,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_with_union_type"];
   assert_taint
+    ~context
     {|
       class Foo:
         def qux():
@@ -367,6 +375,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_with_union_type"];
   assert_taint
+    ~context
     {|
       class Indirect:
         def direct(self) -> Direct: ...
@@ -381,6 +390,7 @@ let test_apply_method_model_at_call_site _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_indirect_concatenated_call"];
   assert_taint
+    ~context
     {|
       class Indirect:
         def direct(self) -> Direct: ...
@@ -395,8 +405,9 @@ let test_apply_method_model_at_call_site _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.taint_indirect_concatenated_call"]
 
 
-let test_taint_in_taint_out_application _ =
+let test_taint_in_taint_out_application context =
   assert_taint
+    ~context
     {|
       def simple_source():
         return __test_source()
@@ -408,6 +419,7 @@ let test_taint_in_taint_out_application _ =
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.simple_source"];
   assert_taint
+    ~context
     {|
       def simple_source():
         return __test_source()
@@ -423,8 +435,9 @@ let test_taint_in_taint_out_application _ =
     [outcome ~kind:`Function ~returns:[] "qualifier.no_tito_taint"]
 
 
-let test_dictionary _ =
+let test_dictionary context =
   assert_taint
+    ~context
     {|
       def dictionary_source():
         return {
@@ -462,8 +475,9 @@ let test_dictionary _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.dictionary_unknown_write_index" ]
 
 
-let test_comprehensions _ =
+let test_comprehensions context =
   assert_taint
+    ~context
     {|
       def source_in_iterator():
           return [ x for x in __test_source() ]
@@ -491,8 +505,9 @@ let test_comprehensions _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_generator_expression" ]
 
 
-let test_list _ =
+let test_list context =
   assert_taint
+    ~context
     {|
       def source_in_list():
           return [ 1, __test_source(), "foo" ]
@@ -531,8 +546,9 @@ let test_list _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.list_pattern_star_index" ]
 
 
-let test_tuple _ =
+let test_tuple context =
   assert_taint
+    ~context
     {|
       def source_in_tuple():
           return ( 1, __test_source(), "foo" )
@@ -571,14 +587,16 @@ let test_tuple _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tuple_pattern_star_index" ]
 
 
-let test_lambda _ =
+let test_lambda context =
   assert_taint
+    ~context
     {|
       def source_in_lambda():
           return lambda x : x + __test_source()
     |}
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_lambda"];
   assert_taint
+    ~context
     {|
       def optional_lambda():
         if 1 > 2:
@@ -590,8 +608,9 @@ let test_lambda _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.optional_lambda"]
 
 
-let test_set _ =
+let test_set context =
   assert_taint
+    ~context
     {|
       def source_in_set():
           return { 1, __test_source(), "foo" }
@@ -609,8 +628,9 @@ let test_set _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.set_unknown_index" ]
 
 
-let test_starred _ =
+let test_starred context =
   assert_taint
+    ~context
     {|
       def source_in_starred():
           list = [ 1, __test_source(), "foo" ]
@@ -628,8 +648,9 @@ let test_starred _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_starred_starred" ]
 
 
-let test_string _ =
+let test_string context =
   assert_taint
+    ~context
     {|
       def normal_string() -> str:
         return ""
@@ -646,8 +667,9 @@ let test_string _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.tainted_format_string" ]
 
 
-let test_ternary _ =
+let test_ternary context =
   assert_taint
+    ~context
     {|
       def source_in_then(cond):
           return __test_source() if cond else None
@@ -671,8 +693,9 @@ let test_ternary _ =
       outcome ~kind:`Function ~returns:[] "qualifier.source_in_cond" ]
 
 
-let test_unary _ =
+let test_unary context =
   assert_taint
+    ~context
     {|
       def source_in_unary():
           return not __test_source()
@@ -680,8 +703,9 @@ let test_unary _ =
     [outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_unary"]
 
 
-let test_yield _ =
+let test_yield context =
   assert_taint
+    ~context
     {|
       def source_in_yield():
           yield __test_source()
@@ -693,8 +717,9 @@ let test_yield _ =
       outcome ~kind:`Function ~returns:[Sources.Test] "qualifier.source_in_yield_from" ]
 
 
-let test_construction _ =
+let test_construction context =
   assert_taint
+    ~context
     ~models:{|
       def qualifier.Data.__init__(self, capture: TaintInTaintOut): ...
     |}
@@ -717,8 +742,9 @@ let test_construction _ =
       outcome ~kind:`Function ~returns:[] "qualifier.test_no_capture" ]
 
 
-let test_composed_models _ =
+let test_composed_models context =
   assert_taint
+    ~context
     ~models:
       {|
       def composed_model(x: TaintSink[Test], y, z) -> TaintSource[UserControlled]: ...
@@ -735,8 +761,9 @@ let test_composed_models _ =
         "composed_model" ]
 
 
-let test_tito_side_effects _ =
+let test_tito_side_effects context =
   assert_taint
+    ~context
     ~models:
       {|
       def change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...

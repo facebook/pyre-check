@@ -9,7 +9,7 @@ open Pyre
 open Interprocedural
 open TestHelper
 
-let test_integration _ =
+let test_integration context =
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
   let test_paths =
     (* Shameful things happen here... *)
@@ -86,7 +86,7 @@ let test_integration _ =
         check_expectation ~suffix:".overrides" actual
       in
       let { callgraph; all_callables; environment; overrides } =
-        initialize ~handle ?models:model_source source
+        initialize ~handle ?models:model_source ~context source
       in
       let dependencies =
         DependencyGraph.from_callgraph callgraph
