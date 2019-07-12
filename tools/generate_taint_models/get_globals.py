@@ -44,9 +44,15 @@ class GlobalModelGenerator(ModelGenerator):
         class NameVisitor(ast.NodeVisitor):
             def __init__(self, globals: Set[str]) -> None:
                 self.globals = globals
+                self.parent: Optional[str] = None
 
             def visit_Name(self, name: ast.Name) -> None:
-                self.globals.add(name.id)
+                parent = self.parent
+                if parent is not None:
+                    name_to_register = f"{parent}.{name.id}"
+                else:
+                    name_to_register = name.id
+                self.globals.add(name_to_register)
 
             # Ensure that we stop recursing when we're in a complex assign, such as
             # a.b = ... or a[b] = ... .
@@ -58,7 +64,7 @@ class GlobalModelGenerator(ModelGenerator):
 
         visitor = NameVisitor(globals)
 
-        def visit_assignment(target: ast.expr, value: Optional[ast.expr]) -> None:
+        def visit_assignment(target: ast.expr, value: ast.expr) -> None:
             if value is not None:
                 # namedtuples get preprocessed out by Pyre, and shouldn't be added
                 # as globals.
@@ -76,15 +82,26 @@ class GlobalModelGenerator(ModelGenerator):
                     return
             visitor.visit(target)
 
-        for statement in module.body:
+        def visit_statement(statement: ast.stmt) -> None:
             if isinstance(statement, ast.Assign):
                 # Omit pure aliases of the form `x = alias`.
                 for target in statement.targets:
                     visit_assignment(target, statement.value)
             elif isinstance(statement, ast.AugAssign):
                 visitor.visit(statement.target)
-            elif isinstance(statement, ast.AnnAssign):
+            # Don't attempt to register statements of the form `x: int`.
+            elif isinstance(statement, ast.AnnAssign) and statement.value is not None:
                 visit_assignment(statement.target, statement.value)
+            # Ensure that we don't visit nested classes for now.
+            elif isinstance(statement, ast.ClassDef) and visitor.parent is None:
+                visitor.parent = statement.name
+                for toplevel_statement in statement.body:
+                    # pyre-ignore: T46622677
+                    visit_statement(toplevel_statement)
+                visitor.parent = None
+
+        for statement in module.body:
+            visit_statement(statement)
 
         return {
             f"{qualifier(root, path)}.{target}: TaintSink[Global] = ..."

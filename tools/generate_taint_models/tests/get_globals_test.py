@@ -80,10 +80,8 @@ class GetGlobalsTest(unittest.TestCase):
                       B = 2
                     if "version" is None:
                       C = 2
-                    __all__ = {}
                     D, E = 1, 2
-                    class Class:
-                      F: typing.ClassVar[int] = ...
+                    __all__ = {}
                     """
                 )
             }
@@ -96,6 +94,26 @@ class GetGlobalsTest(unittest.TestCase):
                 "module.D: TaintSink[Global] = ...",
                 "module.E: TaintSink[Global] = ...",
             },
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/class.py": textwrap.dedent(
+                    """
+                    class Class:
+                      F: typing.ClassVar[int] = ...
+                      G: int = ...
+                      class Nested:
+                        H: typing.ClassVar[int] = ...
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/class.py")),
+            {
+                "class.Class.F: TaintSink[Global] = ...",
+                "class.Class.G: TaintSink[Global] = ...",
+            }
         )
         open.side_effect = _open_implementation(
             {
@@ -161,7 +179,7 @@ class GetGlobalsTest(unittest.TestCase):
                 "/root/annotated_assignments.py": textwrap.dedent(
                     """
                     x: int = 1
-                    y: str
+                    y: str  # this is ignored, as it might not exist in the runtime
                     z: Any = alias_that_we_skip
                     """
                 )
@@ -169,8 +187,5 @@ class GetGlobalsTest(unittest.TestCase):
         )
         self.assertSetEqual(
             set(generator._globals("/root", "/root/annotated_assignments.py")),
-            {
-                "annotated_assignments.x: TaintSink[Global] = ...",
-                "annotated_assignments.y: TaintSink[Global] = ...",
-            },
+            {"annotated_assignments.x: TaintSink[Global] = ..."},
         )
