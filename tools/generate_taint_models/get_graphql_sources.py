@@ -41,12 +41,12 @@ class GraphQLSourceGenerator(ModelGenerator):
 
         for view_function in functions_to_model:
             model = CallableModel(
+                callable=view_function,
                 vararg="TaintSource[UserControlled]",
                 kwarg="TaintSource[UserControlled]",
-            )
-            callable = model.generate(view_function)
-            if callable is not None:
-                graphql_models.add(callable)
+            ).generate()
+            if model is not None:
+                graphql_models.add(model)
 
         return sorted(graphql_models)
 

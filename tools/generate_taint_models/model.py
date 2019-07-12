@@ -12,16 +12,15 @@ FunctionDefinition = Union[_ast.FunctionDef, _ast.AsyncFunctionDef]
 
 
 class CallableModel(NamedTuple):
+    callable: Callable[..., object]
     arg: Optional[str] = None
     vararg: Optional[str] = None
     kwarg: Optional[str] = None
     returns: Optional[str] = None
+    whitelisted_parameters: Optional[Iterable[str]] = None
 
-    def generate(
-        self,
-        modeled_object: Callable[..., object],
-        whitelisted_parameters: Optional[Iterable[str]] = None,
-    ) -> Optional[str]:
+    def generate(self) -> Optional[str]:
+        modeled_object = self.callable
         view_name = extract_view_name(modeled_object)
         # Don't attempt to generate models for local functions that our static analysis
         # can't handle.
@@ -38,10 +37,8 @@ class CallableModel(NamedTuple):
         for parameter_name in view_parameters:
             parameter = view_parameters[parameter_name]
             annotation = ""
-            if (
-                whitelisted_parameters is None
-                or extract_annotation(parameter) not in whitelisted_parameters
-            ):
+            whitelist = self.whitelisted_parameters
+            if whitelist is None or extract_annotation(parameter) not in whitelist:
                 if parameter.kind == inspect.Parameter.VAR_KEYWORD:
                     keywords = self.kwarg
                     if keywords is not None:
@@ -74,6 +71,7 @@ class CallableModel(NamedTuple):
 
 class AssignmentModel(NamedTuple):
     annotation: str
+    target: str
 
-    def generate(self, target: str):
-        return f"{target}: {self.annotation} = ..."
+    def generate(self):
+        return f"{self.target}: {self.annotation} = ..."

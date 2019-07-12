@@ -26,10 +26,11 @@ class ExitNodeGenerator(ViewGenerator):
             view_name = extract_view_name(view_function)
             if view_name in Configuration.whitelisted_views:
                 continue
-            model = CallableModel(returns="TaintSink[ReturnedToUser]")
-            callable = model.generate(view_function)
-            if callable is not None:
-                exit_nodes.add(callable)
+            model = CallableModel(
+                returns="TaintSink[ReturnedToUser]", callable=view_function
+            ).generate()
+            if model is not None:
+                exit_nodes.add(model)
 
         return sorted(exit_nodes)
 

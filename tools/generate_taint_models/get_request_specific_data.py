@@ -24,10 +24,15 @@ class RequestSpecificDataGenerator(ViewGenerator):
             if view_name in Configuration.whitelisted_views:
                 continue
             taint_kind = "TaintSource[RequestSpecificData]"
-            model = CallableModel(arg=taint_kind, vararg=taint_kind, kwarg=taint_kind)
-            callable = model.generate(view_function, Configuration.whitelisted_classes)
-            if callable is not None:
-                view_models.add(callable)
+            model = CallableModel(
+                arg=taint_kind,
+                vararg=taint_kind,
+                kwarg=taint_kind,
+                callable=view_function,
+                whitelisted_parameters=Configuration.whitelisted_classes,
+            ).generate()
+            if model is not None:
+                view_models.add(model)
 
         return sorted(view_models)
 

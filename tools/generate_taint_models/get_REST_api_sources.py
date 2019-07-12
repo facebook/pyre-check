@@ -27,13 +27,14 @@ class RESTApiSourceGenerator(ViewGenerator):
             if view_name in Configuration.whitelisted_views:
                 continue
             model = CallableModel(
+                callable=view_function,
                 arg="TaintSource[UserControlled]",
                 vararg="TaintSource[UserControlled]",
                 kwarg="TaintSource[UserControlled]",
-            )
-            callable = model.generate(view_function, Configuration.whitelisted_classes)
-            if callable is not None:
-                entry_points.add(callable)
+                whitelisted_parameters=Configuration.whitelisted_classes,
+            ).generate()
+            if model is not None:
+                entry_points.add(model)
 
         return sorted(entry_points)
 
