@@ -19,6 +19,16 @@ let display_log { RageResponse.RageResult.title; data } =
   Out_channel.printf "\nDisplaying logs for %s:\n%s" name data
 
 
+let get_pyre_locks () =
+  try
+    let channel = Unix.open_process_in "lslocks" in
+    let data = In_channel.input_all channel in
+    In_channel.close channel;
+    [{ RageResponse.RageResult.title = Some "Pyre lock information"; data }]
+  with
+  | Unix.Unix_error _ -> []
+
+
 let run_rage local_root () =
   Out_channel.printf
     "Actual binary version: %s\nBinary build info: %s\n"
@@ -27,7 +37,10 @@ let run_rage local_root () =
   let configuration =
     Configuration.Analysis.create ~local_root:(Path.create_absolute local_root) ()
   in
-  let logs = get_watchman_watched_directories () :: Service.Rage.get_logs configuration in
+  let logs =
+    (get_watchman_watched_directories () :: get_pyre_locks ())
+    @ Service.Rage.get_logs configuration
+  in
   List.iter ~f:display_log logs
 
 
