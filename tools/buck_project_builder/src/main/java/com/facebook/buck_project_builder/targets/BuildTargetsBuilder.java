@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public final class BuildTargetsBuilder {
@@ -43,7 +44,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonSources() {
-    LOGGER.info("Building python sources...");
+    LOGGER.info("Building " + this.sources.size() + " python sources...");
     long start = System.currentTimeMillis();
     this.sources
         .entrySet()
@@ -54,7 +55,7 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonWheels() {
-    LOGGER.info("Building python wheels...");
+    LOGGER.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
@@ -85,23 +86,33 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildThriftLibraries() {
+    this.thriftLibraryBuildCommands.removeIf(
+        command ->
+            command.contains("py:")
+                && thriftLibraryBuildCommands.contains(command.replace("py:", "mstch_pyi:")));
     if (this.thriftLibraryBuildCommands.isEmpty()) {
       return;
     }
-    LOGGER.info("Building thrift libraries...");
+    int totalNumberOfThriftLibraries = this.thriftLibraryBuildCommands.size();
+    LOGGER.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
+    AtomicInteger numberOfBuiltThriftLibraries = new AtomicInteger(0);
     long start = System.currentTimeMillis();
     thriftLibraryBuildCommands
         .parallelStream()
         .forEach(
             command -> {
-              if (command.contains("py:")
-                  && thriftLibraryBuildCommands.contains(command.replace("py:", "mstch_pyi:"))) {
-                return;
-              }
               try {
                 GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
               } catch (IOException exception) {
                 logCodeGenerationIOException(exception);
+              }
+              int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
+              if (builtThriftLibrariesSoFar % 100 == 0) {
+                // Log progress for every 100 built thrift library.
+                LOGGER.info(
+                    String.format(
+                        "Built %d/%d thrift libraries.",
+                        builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
               }
             });
     long time = System.currentTimeMillis() - start;
@@ -112,7 +123,7 @@ public final class BuildTargetsBuilder {
     if (this.swigLibraryBuildCommands.isEmpty()) {
       return;
     }
-    LOGGER.info("Building swig libraries...");
+    LOGGER.info("Building " + this.swigLibraryBuildCommands.size() + " swig libraries...");
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
     for (String command : this.swigLibraryBuildCommands) {
