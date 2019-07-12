@@ -86,7 +86,18 @@ let test_check_enumeration_attributes _ =
       def bar() -> str:
         return Color.RED
     |}
-    ["Incompatible return type [7]: Expected `str` but got `Color`."]
+    ["Incompatible return type [7]: Expected `str` but got `Color`."];
+  assert_type_errors
+    {|
+      class Color(enum.Enum):
+        RED = "red"
+        BLUE = "blue"
+
+      def foo() -> None:
+        x = Color.PURPLE
+    |}
+    ["Undefined attribute [16]: `Color` has no attribute `PURPLE`."];
+  ()
 
 
 let () =

@@ -452,6 +452,7 @@ let create_attribute
       && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
       && (not inherited)
       && primitive
+      && defined
     then
       Some class_annotation, None, true (* Enums override values. *)
     else
