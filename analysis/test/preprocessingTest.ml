@@ -1483,45 +1483,18 @@ let test_expand_type_checking_imports _ =
     |}
 
 
-let test_expand_wildcard_imports _ =
-  let configuration =
-    Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ()
-  in
-  let assert_expanded environment_sources check_source expected =
-    let create_file (name, source) =
-      File.create
-        ~content:(trim_extra_indentation source)
-        (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
-    in
-    let clear_memory files =
-      let get_qualifier file =
-        File.handle ~configuration file |> fun handle -> Source.qualifier ~handle
-      in
-      let qualifiers = List.map files ~f:get_qualifier in
-      Ast.SharedMemory.Modules.remove ~qualifiers;
-      Ast.SharedMemory.Sources.remove qualifiers
-    in
-    let files = List.map environment_sources ~f:create_file in
-    let file_to_check = create_file ("test.py", check_source) in
-    clear_memory (file_to_check :: files);
-    let { Service.Parser.parsed; _ } =
-      Service.Parser.parse_sources
-        ~configuration:
-          (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
-        ~scheduler:(Scheduler.mock ())
-        ~preprocessing_state:None
-        ~files:(file_to_check :: files)
-    in
-    let file_to_check_handle =
-      List.find_exn parsed ~f:(fun handle -> File.Handle.show handle = "test.py")
-      |> fun handle -> Source.qualifier ~handle
+let test_expand_wildcard_imports context =
+  let assert_expanded external_sources check_source expected =
+    let _ =
+      ScratchProject.setup ~context ~external_sources ["test.py", check_source]
+      |> ScratchProject.parse_sources
     in
     assert_equal
       ~cmp:(List.equal ~equal:Statement.equal)
       ~printer:(fun statement_list ->
         List.map statement_list ~f:Statement.show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
-      (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get file_to_check_handle)))
+      (Source.statements (Option.value_exn (Ast.SharedMemory.Sources.get !&"test")))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

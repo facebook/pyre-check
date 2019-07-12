@@ -276,34 +276,13 @@ let test_resolve_mutable_literals _ =
     ~against:"typing.Set[Q]"
 
 
-let test_function_definitions _ =
+let test_function_definitions context =
   let assert_functions sources function_name expected =
-    let sources =
-      let source (path, content) = path, trim_extra_indentation content in
-      List.map sources ~f:source
-    in
-    let files =
-      let file (path, content) = File.create ~content (mock_path path) in
-      List.map sources ~f:file
-    in
-    let { Service.Parser.syntax_error; system_error; _ } =
-      Service.Parser.parse_sources
-        ~configuration:mock_configuration
-        ~scheduler:(Scheduler.mock ())
-        ~preprocessing_state:None
-        ~files
-    in
-    assert_true (List.is_empty syntax_error);
-    assert_true (List.is_empty system_error);
+    let project = ScratchProject.setup ~context sources in
+    let sources = ScratchProject.parse_sources project in
     let resolution =
-      let sources =
-        let source (path, content) =
-          parse ~qualifier:!&(String.chop_suffix_exn path ~suffix:".py") ~handle:path content
-          |> Preprocessing.qualify
-        in
-        List.map sources ~f:source
-      in
-      resolution ~sources ()
+      let configuration = ScratchProject.configuration_of project in
+      resolution ~sources ~configuration ()
     in
     let functions =
       Resolution.function_definitions resolution !&function_name

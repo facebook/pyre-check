@@ -7,7 +7,6 @@ open Core
 open Ast
 open Analysis
 open Service.EnvironmentSharedMemory
-open Pyre
 open Test
 open OUnit2
 module Handler = Service.Environment.SharedHandler
@@ -150,27 +149,23 @@ let test_normalize _ =
 
 
 let test_populate context =
-  let directory = bracket_tmpdir context in
   let configuration =
-    { mock_configuration with Configuration.Analysis.local_root = Path.create_absolute directory }
-  in
-  Service.Parser.parse_sources
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~preprocessing_state:None
-    ~files:
-      [ File.create
-          ~content:
-            ( {|
+    let project =
+      ScratchProject.setup
+        ~context
+        [ ( "a.py",
+            {|
             class D: pass
             class C(D): pass
             T = typing.TypeVar("T")
             def foo(x: T) -> T: pass
             def bar(): pass
           |}
-            |> Test.trim_extra_indentation )
-          (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py") ]
-  |> ignore;
+          ) ]
+    in
+    let _ = ScratchProject.parse_sources project in
+    ScratchProject.configuration_of project
+  in
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
@@ -205,31 +200,25 @@ let test_populate context =
 
 
 let test_purge context =
-  let directory = bracket_tmpdir context in
   let configuration =
-    { mock_configuration with Configuration.Analysis.local_root = Path.create_absolute directory }
-  in
-  Service.Parser.parse_sources
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~preprocessing_state:None
-    ~files:
-      [ File.create
-          ~content:
-            ( {|
+    let project =
+      ScratchProject.setup
+        ~context
+        ["x.py", {|
             class D: pass
             class C(D): pass
-          |}
-            |> Test.trim_extra_indentation )
-          (Pyre.Path.create_relative ~root:(Path.create_absolute directory) ~relative:"a.py") ]
-  |> ignore;
+          |}]
+    in
+    let _ = ScratchProject.parse_sources project in
+    ScratchProject.configuration_of project
+  in
   Service.Environment.populate_shared_memory
     ~configuration
     ~scheduler:(Scheduler.mock ())
-    ~sources:[File.Handle.create_for_testing "a.py"];
-  assert_is_some (Handler.class_metadata "a.D");
-  Handler.purge [Reference.create "a"];
-  assert_is_none (Handler.class_metadata "a.D")
+    ~sources:[File.Handle.create_for_testing "x.py"];
+  assert_is_some (Handler.class_metadata "x.D");
+  Handler.purge [Reference.create "x"];
+  assert_is_none (Handler.class_metadata "x.D")
 
 
 let () =

@@ -10,40 +10,25 @@ open Ast
 open Pyre
 open Path.AppendOperator
 
-let test_parse_stubs_modules_list _ =
-  let root = Path.current_working_directory () in
-  let configuration = Configuration.Analysis.create ~local_root:root () in
-  let files =
-    let create_stub_with_relative relative =
-      File.create ~content:"def f()->int: ...\n" (Path.create_relative ~root ~relative)
-    in
-    let create_module_with_relative relative =
-      File.create ~content:"def f()->int:\n    return 1\n" (Path.create_relative ~root ~relative)
-    in
-    [ create_stub_with_relative "a.pyi";
-      create_stub_with_relative "dir/b.pyi";
-      create_stub_with_relative "2/c.pyi";
-      create_stub_with_relative "2and3/d.pyi";
-      create_module_with_relative "moda.py";
-      create_module_with_relative "dir/modb.py";
-      create_module_with_relative "2/modc.py";
-      create_module_with_relative "2and3/modd.py" ]
+let test_parse_stubs_modules_list context =
+  let _ =
+    let stub_content = "def f()->int: ...\n" in
+    let source_content = "def f()->int:\n    return 1\n" in
+    ScratchProject.setup
+      ~context
+      [ "a.pyi", stub_content;
+        "dir/b.pyi", stub_content;
+        "2/c.pyi", stub_content;
+        "2and3/d.pyi", stub_content;
+        "moda.py", source_content;
+        "dir/modb.py", source_content;
+        "2/modc.py", source_content;
+        "2and3/modd.py", source_content ]
+    |> ScratchProject.parse_sources
   in
-  let { Service.Parser.parsed = handles; _ } =
-    Service.Parser.parse_sources
-      ~configuration:(Configuration.Analysis.create ())
-      ~scheduler:(Scheduler.mock ())
-      ~preprocessing_state:None
-      ~files
-  in
-  assert_equal (List.length files) (List.length handles);
-  let get_qualifier_at position =
-    File.handle ~configuration (List.nth_exn files position)
-    |> fun handle -> Ast.Source.qualifier ~handle
-  in
-  let assert_stub_matches_name ~handle define =
+  let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match Ast.SharedMemory.Sources.get (get_qualifier_at handle) with
+      match Ast.SharedMemory.Sources.get qualifier with
       | Some
           { Source.statements =
               [ { Node.value =
@@ -52,33 +37,20 @@ let test_parse_stubs_modules_list _ =
                 } ];
             _
           }
-        when Statement.Define.is_stub define ->
+        when Statement.Define.is_stub define = is_stub ->
           name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
   in
-  let assert_module_matches_name ~handle define =
-    let name =
-      match Ast.SharedMemory.Sources.get (get_qualifier_at handle) with
-      | Some
-          { Source.statements =
-              [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }];
-            _
-          } ->
-          name
-      | _ -> failwith "Could not get source."
-    in
-    assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
-  in
-  assert_stub_matches_name ~handle:0 "a.f";
-  assert_stub_matches_name ~handle:1 "dir.b.f";
-  assert_stub_matches_name ~handle:2 "2.c.f";
-  assert_stub_matches_name ~handle:3 "2and3.d.f";
-  assert_module_matches_name ~handle:4 "moda.f";
-  assert_module_matches_name ~handle:5 "dir.modb.f";
-  assert_module_matches_name ~handle:6 "2.modc.f";
-  assert_module_matches_name ~handle:7 "2and3.modd.f"
+  assert_function_matches_name ~qualifier:!&"a" ~is_stub:true "a.f";
+  assert_function_matches_name ~qualifier:!&"dir.b" ~is_stub:true "dir.b.f";
+  assert_function_matches_name ~qualifier:!&"2.c" ~is_stub:true "2.c.f";
+  assert_function_matches_name ~qualifier:!&"2and3.d" ~is_stub:true "2and3.d.f";
+  assert_function_matches_name ~qualifier:!&"moda" "moda.f";
+  assert_function_matches_name ~qualifier:!&"dir.modb" "dir.modb.f";
+  assert_function_matches_name ~qualifier:!&"2.modc" "2.modc.f";
+  assert_function_matches_name ~qualifier:!&"2and3.modd" "2and3.modd.f"
 
 
 let test_find_stubs_and_sources context =
@@ -214,32 +186,20 @@ let test_external_sources context =
     handles
 
 
-let test_parse_source _ =
-  let root = Path.current_working_directory () in
-  let configuration = Configuration.Analysis.create ~local_root:root () in
-  let file =
-    File.create
-      ~content:"def foo()->int:\n    return 1\n"
-      (Path.create_relative ~root ~relative:"x.py")
+let test_parse_source context =
+  let sources =
+    ScratchProject.setup ~context ["x.py", "def foo()->int:\n    return 1\n"]
+    |> ScratchProject.parse_sources
   in
-  let { Service.Parser.parsed = handles; _ } =
-    Service.Parser.parse_sources
-      ~configuration:
-        (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~preprocessing_state:None
-      ~files:[file]
-  in
-  let handle = File.handle ~configuration file in
-  let qualifier = Source.qualifier ~handle in
-  assert_equal handles [handle];
-  let source = Ast.SharedMemory.Sources.get qualifier in
+  let handles = List.map sources ~f:(fun { Source.handle; _ } -> handle) in
+  assert_equal handles [File.Handle.create_for_testing "x.py"];
+  let source = Ast.SharedMemory.Sources.get !&"x" in
   assert_equal (Option.is_some source) true;
   let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
   assert_equal handle (File.Handle.create_for_testing "x.py");
-  assert_equal number_of_lines 3;
+  assert_equal number_of_lines 2;
   match statements with
   | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
       assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
@@ -278,6 +238,7 @@ let test_parse_sources context =
       Configuration.Analysis.create
         ~local_root
         ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
+        ~filter_directories:[local_root]
         ()
     in
     let module_tracker = Service.ModuleTracker.create configuration in
@@ -295,7 +256,11 @@ let test_parse_sources context =
   let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
     let configuration =
-      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root stub_root] ()
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root stub_root]
+        ~filter_directories:[local_root]
+        ()
     in
     let write_file root relative =
       File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
@@ -325,44 +290,20 @@ let test_parse_sources context =
 
 
 let test_register_modules context =
-  let local_root = Path.create_absolute (bracket_tmpdir context) in
-  let configuration = Configuration.Analysis.create ~local_root () in
   let assert_module_exports raw_source expected_exports =
-    let get_qualifier file =
-      File.handle ~configuration file |> fun handle -> Ast.Source.qualifier ~handle
+    let configuration, sources =
+      let project =
+        ScratchProject.setup
+          ~context
+          ["testing.py", raw_source; "canary.py", "from .testing import *"]
+      in
+      let _ = ScratchProject.parse_sources project in
+      ScratchProject.configuration_of project, ScratchProject.handles_of project
     in
-    let file =
-      File.create
-        ~content:(trim_extra_indentation raw_source)
-        (Path.create_relative ~root:local_root ~relative:"a.py")
-    in
-    (* Use a "canary" to inspect the exports of a.py between its module parsing stage and source
-       parsing stage. *)
-    let import_non_toplevel =
-      File.create
-        ~content:"from .a import *"
-        (Path.create_relative ~root:local_root ~relative:"canary.py")
-    in
-    let files = [file; import_non_toplevel] in
-    List.iter files ~f:File.write;
-
-    (* Build environment. *)
-    let qualifiers = List.map ~f:get_qualifier files in
-    Ast.SharedMemory.Modules.remove ~qualifiers;
-    Ast.SharedMemory.Sources.remove qualifiers;
-    let { Service.Parser.parsed = sources; _ } =
-      Service.Parser.parse_sources
-        ~configuration
-        ~scheduler:(Scheduler.mock ())
-        ~preprocessing_state:None
-        ~files
-    in
-    (* Check specific file. *)
-    let qualifier = get_qualifier file in
     (* The modules get removed after preprocessing. *)
-    assert_is_none (Ast.SharedMemory.Modules.get ~qualifier);
+    assert_is_none (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
     Test.populate_shared_memory ~configuration ~sources;
-    assert_is_some (Ast.SharedMemory.Modules.get ~qualifier);
+    assert_is_some (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
     let assert_exports ~qualifier =
       assert_equal
         ~cmp:(List.equal ~equal:Reference.equal)
@@ -371,8 +312,8 @@ let test_register_modules context =
         (List.map ~f:Reference.create expected_exports)
         (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
     in
-    assert_exports ~qualifier;
-    assert_exports ~qualifier:(get_qualifier import_non_toplevel)
+    assert_exports ~qualifier:!&"testing";
+    assert_exports ~qualifier:!&"canary"
   in
   assert_module_exports {|
       def foo() -> int:
@@ -415,28 +356,12 @@ let test_register_modules context =
 
 let test_parse_repository context =
   let assert_repository_parses_to repository ~expected =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let configuration = Configuration.Analysis.create ~local_root () in
-    let prepare_file (relative, content) =
-      let qualifier = SourcePath.qualifier_of_relative relative in
-      Ast.SharedMemory.Sources.remove [qualifier];
-      File.write (File.create ~content (Path.create_relative ~root:local_root ~relative))
-    in
-    List.iter repository ~f:prepare_file;
     let actual =
-      let handles =
-        let scheduler = Scheduler.mock () in
-        let module_tracker = Service.ModuleTracker.create configuration in
-        let tracked_paths =
-          Service.ModuleTracker.source_paths module_tracker
-          |> List.map ~f:(fun { Ast.SourcePath.relative_path; _ } -> Path.Relative relative_path)
-        in
-        Service.Parser.parse_all ~scheduler ~configuration tracked_paths
-        |> List.sort ~compare:File.Handle.compare
-      in
-      List.map handles ~f:(fun handle ->
-          let qualifier = Source.qualifier ~handle in
-          handle, Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+      ScratchProject.setup ~context repository
+      |> ScratchProject.parse_sources
+      |> List.map ~f:(fun ({ Source.handle; _ } as source) -> handle, source)
+      |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
+             File.Handle.compare left_handle right_handle)
     in
     let equal (expected_handle, expected_source) (handle, { Ast.Source.statements; _ }) =
       File.Handle.equal expected_handle handle

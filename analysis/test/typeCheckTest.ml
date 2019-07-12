@@ -351,40 +351,39 @@ let assert_resolved sources expression expected =
   assert_equal ~printer:Type.show ~cmp:Type.equal expected resolved
 
 
-let test_module_exports _ =
+let test_module_exports context =
   let assert_exports_resolved expression expected =
-    [ ( "implementing.py",
-        {|
+    ScratchProject.setup
+      ~context
+      [ ( "implementing.py",
+          {|
         def implementing.function() -> int: ...
         constant: int = 1
       |} );
-      ( "exporting.py",
-        {|
+        ( "exporting.py",
+          {|
         from implementing import function, constant
         from implementing import function as aliased
         from indirect import cyclic
       |}
-      );
-      "indirect.py", {|
+        );
+        "indirect.py", {|
         from exporting import constant, cyclic
       |};
-      "wildcard.py", {|
+        "wildcard.py", {|
         from exporting import *
       |};
-      ( "exporting_wildcard_default.py",
-        {|
+        ( "exporting_wildcard_default.py",
+          {|
         from implementing import function, constant
         from implementing import function as aliased
         __all__ = ["constant"]
       |}
-      );
-      "wildcard_default.py", {|
+        );
+        "wildcard_default.py", {|
         from exporting_wildcard_default import *
       |} ]
-    |> parse_list
-    |> List.map ~f:(fun handle ->
-           let qualifier = Source.qualifier ~handle in
-           Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+    |> ScratchProject.parse_sources
     |> fun sources -> assert_resolved sources expression expected
   in
   assert_exports_resolved "implementing.constant" Type.integer;

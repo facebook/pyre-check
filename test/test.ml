@@ -173,23 +173,6 @@ let parse
   | _ -> source
 
 
-let parse_list named_sources =
-  let create_file (name, source) =
-    File.create
-      ~content:(trim_extra_indentation source)
-      (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:name)
-  in
-  let { Service.Parser.parsed; _ } =
-    Service.Parser.parse_sources
-      ~configuration:
-        (Configuration.Analysis.create ~local_root:(Path.current_working_directory ()) ())
-      ~scheduler:(Scheduler.mock ())
-      ~preprocessing_state:None
-      ~files:(List.map ~f:create_file named_sources)
-  in
-  parsed
-
-
 let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = false) source =
   let source =
     if preprocess then
@@ -1343,3 +1326,83 @@ let assert_errors
 let create_type_alias_table type_aliases =
   let aliases primitive = type_aliases primitive >>| fun alias -> Type.TypeAlias alias in
   aliases
+
+
+module ScratchProject = struct
+  type t = {
+    configuration: Configuration.Analysis.t;
+    module_tracker: Service.ModuleTracker.t
+  }
+
+  let clean_ast_shared_memory module_tracker =
+    let qualifiers =
+      Service.ModuleTracker.source_paths module_tracker
+      |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+    in
+    Ast.SharedMemory.Sources.remove qualifiers;
+    Ast.SharedMemory.Modules.remove ~qualifiers;
+    Ast.SharedMemory.HandleKeys.clear ()
+
+
+  let setup ~context ?(external_sources = []) sources =
+    let add_source ~root (relative, content) =
+      let content = trim_extra_indentation content in
+      let file = File.create ~content (Path.create_relative ~root ~relative) in
+      File.write file
+    in
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root external_root]
+        ~filter_directories:[local_root]
+        ~ignore_all_errors:[external_root]
+        ()
+    in
+    List.iter sources ~f:(add_source ~root:local_root);
+    List.iter external_sources ~f:(add_source ~root:external_root);
+    let module_tracker = Service.ModuleTracker.create configuration in
+    let () =
+      (* Clean shared memory up before the test *)
+      clean_ast_shared_memory module_tracker;
+      let set_up_shared_memory _ = () in
+      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker in
+      (* Clean shared memory up after the test *)
+      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+    in
+    { configuration; module_tracker }
+
+
+  let configuration_of { configuration; _ } = configuration
+
+  let source_paths_of { module_tracker; _ } = Service.ModuleTracker.source_paths module_tracker
+
+  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
+
+  let qualifiers_of { module_tracker; _ } =
+    Service.ModuleTracker.source_paths module_tracker
+    |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+
+
+  let handles_of { module_tracker; _ } =
+    Service.ModuleTracker.source_paths module_tracker
+    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
+           Path.RelativePath.relative relative_path |> File.Handle.create_for_testing)
+
+
+  let parse_sources ({ configuration; module_tracker } as project) =
+    let files = Service.ModuleTracker.paths module_tracker |> List.map ~f:File.create in
+    let { Service.Parser.syntax_error; system_error; _ } =
+      Service.Parser.parse_sources
+        ~configuration
+        ~scheduler:(Scheduler.mock ())
+        ~preprocessing_state:None
+        ~files
+    in
+    (* Normally we shouldn't have any parse errors in tests *)
+    assert_true (List.is_empty syntax_error);
+    assert_true (List.is_empty system_error);
+    qualifiers_of project
+    |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
+end

@@ -5,29 +5,20 @@
 
 open Core
 open OUnit2
-open Pyre
 open Analysis
 
-let test_coverage _ =
+let test_coverage context =
   let coverage =
-    let { Service.Parser.parsed; _ } =
-      Service.Parser.parse_sources
-        ~configuration:(Configuration.Analysis.create ())
-        ~scheduler:(Scheduler.mock ())
-        ~preprocessing_state:None
-        ~files:
-          [ File.create
-              ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
-              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"a.py");
-            File.create
-              ~content:"#pyre-strict\ndef foo()->int:\n    return 1\n"
-              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"b.py");
-            File.create
-              ~content:"#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n"
-              (Path.create_relative ~root:(Path.current_working_directory ()) ~relative:"c.py") ]
+    let qualifiers =
+      Test.ScratchProject.setup
+        ~context
+        [ "a.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
+          "b.py", "#pyre-strict\ndef foo()->int:\n    return 1\n";
+          "c.py", "#pyre-ignore-all-errors\ndef foo()->int:\n    return 1\n" ]
+      |> Test.ScratchProject.parse_sources
+      |> List.map ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
     in
-    let sources = List.map parsed ~f:(fun handle -> Ast.Source.qualifier ~handle) in
-    Coverage.coverage ~number_of_files:3 ~sources
+    Coverage.coverage ~number_of_files:3 ~sources:qualifiers
   in
   assert_equal
     coverage

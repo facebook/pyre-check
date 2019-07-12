@@ -19,14 +19,13 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       ()
   in
   let scheduler = Scheduler.mock () in
-  let add_file file =
-    let content = Option.value_exn (File.content file) in
-    let path = Path.absolute (File.path file) in
-    ( try Unix.mkdir (Filename.dirname path) with
-    | Unix.Unix_error _ -> () );
-    Out_channel.write_all path ~data:content
+  List.iter ~f:File.write files;
+  let module_tracker = Service.ModuleTracker.create configuration in
+  let files =
+    Service.ModuleTracker.source_paths module_tracker
+    |> List.map ~f:(fun { Ast.SourcePath.relative_path; _ } ->
+           Path.Relative relative_path |> File.create)
   in
-  List.iter ~f:add_file files;
   let { Service.Parser.parsed = handles; _ } =
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
   in
@@ -63,10 +62,9 @@ let type_check_sources_list_test context =
       |}
       |> trim_extra_indentation
     in
-    let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute root) "test" ".py" in
     [ File.create
         ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-        (Path.create_relative ~root ~relative:path) ]
+        (Path.create_relative ~root ~relative:"test.py") ]
   in
   let check _ =
     let root = Path.current_working_directory () in
@@ -113,6 +111,7 @@ let test_filter_directories context =
    *  /root/check <- pyre is meant to analyze here
    *  /root/check/search <- this is added to the search path, handles are relative to here instead
    *                       of check. The practical case here is resource_cache/typeshed. *)
+  let root = Path.create_absolute (bracket_tmpdir context) in
   assert_errors
     ~root
     ~search_path:[SearchPath.Root (Path.create_relative ~root ~relative:"check/search")]
@@ -122,6 +121,7 @@ let test_filter_directories context =
       [ File.create ~content (Path.create_relative ~root ~relative:"check/file.py");
         File.create ~content (Path.create_relative ~root ~relative:"check/search/file.py") ]
     ["Incompatible return type [7]: Expected `C` but got `D`."];
+  let root = Path.create_absolute (bracket_tmpdir context) in
   assert_errors
     ~root
     ~filter_directories:[Path.create_relative ~root ~relative:"check"]
