@@ -104,7 +104,7 @@ class Start(Reporting):
             except OSError as exception:
                 if exception.errno == errno.EAGAIN:
                     blocking = True
-                    LOG.info("Waiting on the pyre client lock, pid %d.", os.getpid())
+                    LOG.info("Waiting on the pyre client lock.")
                 else:
                     raise exception
 
