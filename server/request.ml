@@ -1244,7 +1244,7 @@ let rec process
                                command =
                                  Some
                                    { title = "Fix it";
-                                     command = "add_annotation";
+                                     command = "add_pyre_annotation";
                                      arguments =
                                        [ { range = AnnotationEdit.range edit;
                                            newText = AnnotationEdit.new_text edit;

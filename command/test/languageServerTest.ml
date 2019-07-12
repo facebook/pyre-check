@@ -455,7 +455,7 @@ let test_initialize_response _ =
               "triggerCharacters": ["."]
             },
             "definitionProvider": true,
-            "executeCommandProvider": { "commands": [ "add_annotation" ] },
+            "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {
@@ -484,7 +484,7 @@ let test_initialize_response _ =
               "triggerCharacters": ["."]
             },
             "definitionProvider": true,
-            "executeCommandProvider": { "commands": [ "add_annotation" ] },
+            "executeCommandProvider": { "commands": [ "add_pyre_annotation" ] },
             "hoverProvider": true,
             "rageProvider": true,
             "textDocumentSync": {

@@ -181,7 +181,7 @@ module InitializeResponse = struct
                     rename_provider = None;
                     document_link_provider = None;
                     execute_command_provider =
-                      Some ExecuteCommandOptions.{ commands = ["add_annotation"] };
+                      Some ExecuteCommandOptions.{ commands = ["add_pyre_annotation"] };
                     experimental = None;
                     rage_provider = Some true
                   }
