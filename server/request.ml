@@ -465,7 +465,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                  (Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys
                     ~keys:(List.map handles ~f:File.Handle.show))
           |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(Ast.SharedMemory.Modules.compute_hashes_to_keys ~keys:qualifiers)
+          |> extend_map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map
                ~new_map:
                  (Ast.SharedMemory.Handles.compute_hashes_to_keys
@@ -674,9 +674,9 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 ( Ast.SharedMemory.HandleKeys.HandleKeysValue.description,
                   Int.to_string key,
                   value >>| File.Handle.Set.Tree.sexp_of_t >>| Sexp.to_string )
-          | Ast.SharedMemory.Modules.Modules.Decoded (key, value) ->
+          | Modules.Decoded (key, value) ->
               Some
-                ( Ast.SharedMemory.Modules.ModuleValue.description,
+                ( ModuleValue.description,
                   Reference.show key,
                   value >>| Module.sexp_of_t >>| Sexp.to_string )
           | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
@@ -759,8 +759,7 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | ( Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, first),
                         Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, second) ) ->
                         Option.equal File.Handle.Set.Tree.equal first second
-                    | ( Ast.SharedMemory.Modules.Modules.Decoded (_, first),
-                        Ast.SharedMemory.Modules.Modules.Decoded (_, second) ) ->
+                    | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
                         Option.equal Module.equal first second
                     | ( Ast.SharedMemory.Handles.Paths.Decoded (_, first),
                         Ast.SharedMemory.Handles.Paths.Decoded (_, second) ) ->

@@ -939,9 +939,7 @@ let test_compute_hashes_to_keys context =
         to_binding
           (Ast.SharedMemory.Sources.Sources.hash_of_key (Reference.create "sample"))
           (Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "sample"));
-        to_binding
-          (Ast.SharedMemory.Modules.hash_of_key !&"sample")
-          (Ast.SharedMemory.Modules.serialize_key !&"sample");
+        to_binding (Modules.hash_of_key !&"sample") (Modules.serialize_key !&"sample");
         to_binding
           (FunctionKeys.hash_of_key (Reference.create "sample"))
           (FunctionKeys.serialize_key (Reference.create "sample"));

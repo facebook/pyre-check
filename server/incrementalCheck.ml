@@ -30,7 +30,7 @@ let recheck
           updated, removed
       | handle when not (Path.file_exists (File.path file)) -> updated, handle :: removed
       | handle -> (
-        match Ast.SharedMemory.Modules.get ~qualifier:(Source.qualifier ~handle) with
+        match Service.EnvironmentSharedMemory.Modules.get (Source.qualifier ~handle) with
         | Some existing ->
             let existing_handle = Module.handle existing |> Option.value ~default:handle in
             if File.Handle.equal existing_handle handle then
@@ -125,7 +125,7 @@ let recheck
             if Hash_set.mem stub_qualifiers qualifier then
               false
             else
-              Ast.SharedMemory.Modules.get ~qualifier
+              Service.EnvironmentSharedMemory.Modules.get qualifier
               >>= Module.handle
               >>| (fun existing_handle -> File.Handle.equal handle existing_handle)
               |> Option.value ~default:true

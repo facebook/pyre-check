@@ -211,12 +211,6 @@ module Modules = struct
   let serialize_key = Modules.serialize_key
 
   let compute_hashes_to_keys = Modules.compute_hashes_to_keys
-
-  let begin_transaction () = Modules.LocalChanges.push_stack ()
-
-  let end_transaction () =
-    Modules.LocalChanges.commit_all ();
-    Modules.LocalChanges.pop_stack ()
 end
 
 let heap_size () =

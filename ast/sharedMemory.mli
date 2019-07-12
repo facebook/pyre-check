@@ -91,12 +91,6 @@ module Modules : sig
   val serialize_key : Reference.t -> string
 
   val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
-
-  (* Instead of writing values to shared memory, changes to shared memory are cached locally in a
-     begin_transaction/end_transaction block. *)
-  val begin_transaction : unit -> unit
-
-  val end_transaction : unit -> unit
 end
 
 module Handles : sig

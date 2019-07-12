@@ -102,7 +102,7 @@ let build ((module Handler : Environment.Handler) as handler) ~configuration ~sc
 
 module SharedHandler : Analysis.Environment.Handler = struct
   let transaction ~f () =
-    Ast.SharedMemory.Modules.begin_transaction ();
+    Modules.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
     ClassKeys.LocalChanges.push_stack ();
     AliasKeys.LocalChanges.push_stack ();
@@ -119,7 +119,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     OrderKeys.LocalChanges.push_stack ();
     OrderIndices.LocalChanges.push_stack ();
     let result = f () in
-    Ast.SharedMemory.Modules.end_transaction ();
+    Modules.LocalChanges.commit_all ();
     FunctionKeys.LocalChanges.commit_all ();
     ClassKeys.LocalChanges.commit_all ();
     AliasKeys.LocalChanges.commit_all ();
@@ -135,6 +135,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     OrderAnnotations.LocalChanges.commit_all ();
     OrderKeys.LocalChanges.commit_all ();
     OrderIndices.LocalChanges.commit_all ();
+    Modules.LocalChanges.pop_stack ();
     FunctionKeys.LocalChanges.pop_stack ();
     ClassKeys.LocalChanges.pop_stack ();
     AliasKeys.LocalChanges.pop_stack ();
@@ -258,11 +259,11 @@ module SharedHandler : Analysis.Environment.Handler = struct
   let class_metadata = ClassMetadata.get
 
   let register_module ({ Source.qualifier; _ } as source) =
-    Ast.SharedMemory.Modules.add ~qualifier ~ast_module:(Module.create source)
+    Modules.add qualifier (Module.create source)
 
 
   let register_implicit_submodule qualifier =
-    match Ast.SharedMemory.Modules.get ~qualifier with
+    match Modules.get qualifier with
     | Some _ -> ()
     | None -> (
       match ImplicitSubmodules.get qualifier with
@@ -277,12 +278,10 @@ module SharedHandler : Analysis.Environment.Handler = struct
     UndecoratedFunctions.add reference annotation
 
 
-  let is_module qualifier =
-    Ast.SharedMemory.Modules.exists ~qualifier || ImplicitSubmodules.mem qualifier
-
+  let is_module qualifier = Modules.mem qualifier || ImplicitSubmodules.mem qualifier
 
   let module_definition qualifier =
-    match Ast.SharedMemory.Modules.get ~qualifier with
+    match Modules.get qualifier with
     | Some _ as result -> result
     | None -> (
       match ImplicitSubmodules.get qualifier with
@@ -400,7 +399,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     |> List.dedup_and_sort ~compare:Reference.compare
     |> purge_dependents;
     DependencyHandler.clear_keys_batch qualifiers;
-    Ast.SharedMemory.Modules.remove ~qualifiers;
+    Modules.remove_batch (Modules.KeySet.of_list qualifiers);
     if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
       ClassHierarchy.check_integrity (module TypeOrderHandler)
 
@@ -458,9 +457,7 @@ let populate_shared_memory
     add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
     add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
     add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
-    add_table
-      (fun qualifier ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module)
-      modules;
+    add_table (fun qualifier ast_module -> Modules.add qualifier ast_module) modules;
     add_table ImplicitSubmodules.add implicit_submodules;
     Statistics.performance ~name:"added environment to shared memory" ~timer ()
   in

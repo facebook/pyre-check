@@ -303,14 +303,16 @@ let test_register_modules context =
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
     Test.populate_shared_memory ~configuration ~sources;
-    assert_is_some (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
     let assert_exports ~qualifier =
+      let module_definition =
+        Option.value_exn (Service.EnvironmentSharedMemory.Modules.get qualifier)
+      in
       assert_equal
         ~cmp:(List.equal ~equal:Reference.equal)
         ~printer:(fun expression_list ->
           List.map ~f:Reference.show expression_list |> String.concat ~sep:", ")
         (List.map ~f:Reference.create expected_exports)
-        (Option.value_exn (Ast.SharedMemory.Modules.get_exports ~qualifier))
+        (Module.wildcard_exports module_definition)
     in
     assert_exports ~qualifier:!&"testing";
     assert_exports ~qualifier:!&"canary"

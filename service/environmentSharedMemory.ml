@@ -178,6 +178,14 @@ module IntValue = struct
   let description = "Refcount of implicit submodules"
 end
 
+module ModuleValue = struct
+  type t = Module.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Module"
+end
+
 module UndecoratedFunctionValue = struct
   type t = Type.t Type.Callable.overload
 
@@ -189,6 +197,7 @@ end
 module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 (** Shared memory maps *)
 
+module Modules = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (ModuleValue)
 module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
 module ImplicitSubmodules = Memory.NoCache (Ast.SharedMemory.ReferenceKey) (IntValue)
 module Aliases = Memory.NoCache (StringKey) (AliasValue)
