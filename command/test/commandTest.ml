@@ -50,6 +50,7 @@ let environment () =
           def __init__(self) -> None: pass
           def __new__(self) -> typing.Any: pass
           def __sizeof__(self) -> int: pass
+        class str(object): pass
       |}
       |> Preprocessing.qualify ];
   environment
@@ -128,3 +129,77 @@ let stop_server
   Commands.Stop.stop ~local_root:(Path.absolute local_root) |> ignore;
   with_timeout ~seconds:3 poll_for_deletion socket_path;
   clean_environment ()
+
+
+module ScratchServer = struct
+  type t = {
+    configuration: Configuration.Analysis.t;
+    server_configuration: Configuration.Server.t;
+    state: Server.State.t
+  }
+
+  let local_root_of { configuration = { Configuration.Analysis.local_root; _ }; _ } = local_root
+
+  let start ~context sources =
+    let configuration, module_tracker, sources =
+      let ({ ScratchProject.module_tracker; configuration } as project) =
+        ScratchProject.setup ~context sources
+      in
+      let sources = ScratchProject.parse_sources project in
+      configuration, module_tracker, sources
+    in
+    let external_sources = typeshed_stubs ~include_helper_builtins:false () in
+    let environment =
+      let environment =
+        let environment = Analysis.Environment.Builder.create () in
+        Test.populate
+          ~configuration
+          (Analysis.Environment.handler environment)
+          (sources @ external_sources);
+        environment
+      in
+      Analysis.Environment.handler environment
+    in
+    add_defaults_to_environment ~configuration environment;
+    let errors =
+      let table = Ast.Reference.Table.create () in
+      List.iter sources ~f:(fun ({ Ast.Source.qualifier; _ } as source) ->
+          let errors = Analysis.TypeCheck.run ~configuration ~environment ~source in
+          Hashtbl.set table ~key:qualifier ~data:errors);
+      table
+    in
+    let server_configuration =
+      Server.Operations.create_configuration
+        ~log_path:(Path.create_absolute "/dev/null")
+        configuration
+    in
+    let () =
+      let handles = List.map sources ~f:(fun { Ast.Source.handle; _ } -> handle) in
+      Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.of_list handles |> Set.to_tree);
+      let set_up_shared_memory _ = () in
+      let tear_down_shared_memory () _ = Ast.SharedMemory.HandleKeys.clear () in
+      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+    in
+    let state =
+      { Server.State.module_tracker;
+        environment;
+        errors;
+        last_request_time = Unix.time ();
+        last_integrity_check = Unix.time ();
+        lookups = String.Table.create ();
+        connections =
+          { lock = Mutex.create ();
+            connections =
+              ref
+                { Server.State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+                  json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
+                  persistent_clients = Network.Socket.Map.empty;
+                  file_notifiers = []
+                }
+          };
+        scheduler = Scheduler.mock ();
+        open_documents = Path.Map.empty
+      }
+    in
+    { configuration; server_configuration; state }
+end

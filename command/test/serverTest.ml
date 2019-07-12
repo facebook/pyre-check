@@ -9,9 +9,9 @@ open Analysis
 open Ast
 open Expression
 open Pyre
-open PyreParser
 open Server
 open Test
+open CommandTest
 
 exception Timeout
 
@@ -208,87 +208,7 @@ let test_json_socket context =
   | None -> assert true
 
 
-let configuration ~local_root =
-  Configuration.Analysis.create ~local_root ~infer:true ~filter_directories:[local_root] ()
-
-
-let environment ~local_root =
-  let environment = Environment.Builder.create () in
-  let configuration = configuration ~local_root in
-  let sources = typeshed_stubs ~include_helper_builtins:false () in
-  Test.populate ~configuration (Environment.handler environment) sources;
-  environment
-
-
-let make_errors ~local_root ?(handle = "test.py") source =
-  let configuration = CommandTest.mock_analysis_configuration () in
-  let source =
-    let qualifier = Source.qualifier ~handle:(File.Handle.create_for_testing handle) in
-    parse ~handle ~qualifier source |> Preprocessing.preprocess
-  in
-  let environment = Environment.handler (environment ~local_root) in
-  add_defaults_to_environment ~configuration environment;
-  Test.populate ~configuration environment [source];
-  TypeCheck.run ~configuration ~environment ~source
-
-
-let mock_server_state ~local_root ?(initial_environment = environment ~local_root) errors =
-  let configuration = configuration ~local_root in
-  let module_tracker = Service.ModuleTracker.create configuration in
-  let environment = Environment.handler initial_environment in
-  add_defaults_to_environment ~configuration environment;
-  { State.module_tracker;
-    environment;
-    errors;
-    last_request_time = Unix.time ();
-    last_integrity_check = Unix.time ();
-    lookups = String.Table.create ();
-    connections =
-      { lock = Mutex.create ();
-        connections =
-          ref
-            { State.socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-              json_socket = Unix.openfile ~mode:[Unix.O_RDONLY] "/dev/null";
-              persistent_clients = Network.Socket.Map.empty;
-              file_notifiers = []
-            }
-      };
-    scheduler = Scheduler.mock ();
-    open_documents = Path.Map.empty
-  }
-
-
-let assert_response ~local_root ?state ?(handle = "test.py") ~source ~request expected_response =
-  let file_handle = File.Handle.create_for_testing handle in
-  let qualifier = Ast.Source.qualifier ~handle:file_handle in
-  Ast.SharedMemory.HandleKeys.clear ();
-  Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton file_handle);
-  Ast.SharedMemory.Sources.remove [qualifier];
-  let parsed = parse ~handle ~qualifier source |> Preprocessing.preprocess in
-  Ast.SharedMemory.Sources.add parsed;
-  let errors =
-    let errors = Reference.Table.create () in
-    List.iter (make_errors ~local_root ~handle source) ~f:(fun error ->
-        Hashtbl.add_multi errors ~key:qualifier ~data:error);
-    errors
-  in
-  let initial_environment =
-    let environment = environment ~local_root in
-    let configuration = configuration ~local_root in
-    Test.populate ~configuration (Environment.handler environment) [parsed];
-    environment
-  in
-  let mock_server_state =
-    match state with
-    | Some state -> state
-    | None -> mock_server_state ~initial_environment ~local_root errors
-  in
-  let { Request.response; _ } =
-    Request.process
-      ~state:mock_server_state
-      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-      ~request
-  in
+let assert_response_equal expected_response response =
   let printer = function
     | None -> "None"
     | Some response -> Protocol.show_response response
@@ -305,12 +225,29 @@ let assert_response ~local_root ?state ?(handle = "test.py") ~source ~request ex
     response
 
 
+let assert_response ~context ~sources ~request expected_response =
+  let { ScratchServer.server_configuration; state; _ } = ScratchServer.start ~context sources in
+  let { Request.response; _ } =
+    Request.process ~state ~configuration:server_configuration ~request
+  in
+  assert_response_equal expected_response response
+
+
+let assert_query_response ~context ~sources ~query expected_response =
+  let { ScratchServer.configuration; server_configuration; state; _ } =
+    ScratchServer.start ~context sources
+  in
+  let request = Query.parse_query ~configuration query in
+  let { Request.response; _ } =
+    Request.process ~state ~configuration:server_configuration ~request
+  in
+  assert_response_equal expected_response response
+
+
 let test_shutdown context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let source = "x = 1" in
   assert_response
-    ~local_root
-    ~source
+    ~context
+    ~sources:["test_shutdown.py", "x = 1"]
     ~request:(Protocol.Request.ClientShutdownRequest (int_request_id 1))
     (Some
        (Protocol.LanguageServerProtocolResponse
@@ -320,11 +257,9 @@ let test_shutdown context =
 
 
 let test_language_scheduler_shutdown context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let source = "x = 1" in
   assert_response
-    ~local_root
-    ~source
+    ~context
+    ~sources:["test_language_scheduler_shutdown.py", "x=1"]
     ~request:
       (Protocol.Request.LanguageServerProtocolRequest
          {|
@@ -343,28 +278,28 @@ let test_language_scheduler_shutdown context =
 
 
 let test_protocol_type_check context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
+  let handle = "test_protocol_type_check.py" in
   let source = {|
         def foo() -> None:
           return 1
     |} in
-  let errors = make_errors ~local_root source in
+  let errors =
+    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
+  in
   assert_response
-    ~local_root
-    ~source
+    ~context
+    ~sources:[handle, source]
     ~request:(Protocol.Request.DisplayTypeErrors [])
     (Some (Protocol.TypeCheckResponse errors))
 
 
 let test_query context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
   let assert_type_query_response ?handle ~source ~query response =
-    let query = Query.parse_query ~configuration:(configuration ~local_root) query in
-    assert_response
-      ?handle
-      ~local_root
-      ~source
-      ~request:query
+    let handle = Option.value handle ~default:"test.py" in
+    assert_query_response
+      ~context
+      ~sources:[handle, source]
+      ~query
       (Some (Protocol.TypeQueryResponse response))
   in
   let parse_annotation serialized =
@@ -543,11 +478,6 @@ let test_query context =
             annotation = Type.literal_integer 2
           }));
   assert_type_query_response
-    ~source:"a = 2"
-    ~query:"type_at_position('test.py', 1, 3)"
-    (Protocol.TypeQuery.Error
-       ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
-  assert_type_query_response
     ~source:{|
       a: int = 1
       a = 2
@@ -558,28 +488,56 @@ let test_query context =
           { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
             annotation = Type.integer
           }));
-  assert_type_query_response
+  let assert_type_query_response_with_local_root ~source ~query build_expected_response =
+    let { ScratchServer.configuration; server_configuration; state; _ } =
+      ScratchServer.start ~context ["test.py", source]
+    in
+    let request = Query.parse_query ~configuration query in
+    let { Request.response; _ } =
+      Request.process ~state ~configuration:server_configuration ~request
+    in
+    let expected_response =
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      build_expected_response local_root
+    in
+    assert_response_equal (Some (Protocol.TypeQueryResponse expected_response)) response
+  in
+  assert_type_query_response_with_local_root
+    ~source:"a = 2"
+    ~query:"path_of_module(test)"
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.FoundPath
+           (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)));
+  assert_type_query_response_with_local_root
+    ~source:"a = 2"
+    ~query:"type_at_position('test.py', 1, 3)"
+    (fun local_root ->
+      Protocol.TypeQuery.Error
+        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
+  assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 3, 6, 3, 8, Type.literal_integer 42;
-                  2, 24, 2, 27, Type.meta Type.string;
-                  2, 21, 2, 22, Type.string;
-                  2, 40, 2, 44, Type.none;
-                  2, 17, 2, 19, Type.literal_integer 10;
-                  3, 2, 3, 3, Type.literal_integer 42;
-                  2, 30, 2, 35, Type.literal_string "bar";
-                  2, 11, 2, 14, Type.meta Type.integer;
-                  2, 8, 2, 9, Type.integer ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 3, 6, 3, 8, Type.literal_integer 42;
+                   2, 24, 2, 27, Type.meta Type.string;
+                   2, 21, 2, 22, Type.string;
+                   2, 40, 2, 44, Type.none;
+                   2, 17, 2, 19, Type.literal_integer 10;
+                   3, 2, 3, 3, Type.literal_integer 42;
+                   2, 30, 2, 35, Type.literal_string "bar";
+                   2, 11, 2, 14, Type.meta Type.integer;
+                   2, 8, 2, 9, Type.integer ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:
       {|
        def foo(x: int, y: str) -> str:
@@ -588,74 +546,78 @@ let test_query context =
         return x
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 2, 19, 2, 22, Type.meta Type.string;
-                  5, 8, 5, 9, Type.integer;
-                  2, 27, 2, 30, Type.meta Type.string;
-                  4, 1, 4, 2, Type.string;
-                  4, 5, 4, 6, Type.literal_integer 5;
-                  3, 1, 3, 2, Type.integer;
-                  2, 11, 2, 14, Type.meta Type.integer;
-                  3, 5, 3, 6, Type.literal_integer 4;
-                  2, 8, 2, 9, Type.integer;
-                  2, 16, 2, 17, Type.string ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 2, 19, 2, 22, Type.meta Type.string;
+                   5, 8, 5, 9, Type.integer;
+                   2, 27, 2, 30, Type.meta Type.string;
+                   4, 1, 4, 2, Type.string;
+                   4, 5, 4, 6, Type.literal_integer 5;
+                   3, 1, 3, 2, Type.integer;
+                   2, 11, 2, 14, Type.meta Type.integer;
+                   3, 5, 3, 6, Type.literal_integer 4;
+                   2, 8, 2, 9, Type.integer;
+                   2, 16, 2, 17, Type.string ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
         x = 4
         y = 3
      |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 2, 4, 2, 5, Type.literal_integer 4;
-                  2, 0, 2, 1, Type.integer;
-                  3, 0, 3, 1, Type.integer;
-                  3, 4, 3, 5, Type.literal_integer 3 ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 2, 4, 2, 5, Type.literal_integer 4;
+                   2, 0, 2, 1, Type.integer;
+                   3, 0, 3, 1, Type.integer;
+                   3, 4, 3, 5, Type.literal_integer 3 ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
       def foo():
         if True:
          x = 1
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 3, 5, 3, 9, Type.Literal (Boolean true);
-                  4, 3, 4, 4, Type.literal_integer 1;
-                  4, 7, 4, 8, Type.literal_integer 1 ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 3, 5, 3, 9, Type.Literal (Boolean true);
+                   4, 3, 4, 4, Type.literal_integer 1;
+                   4, 7, 4, 8, Type.literal_integer 1 ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
        def foo():
          for x in [1, 2]:
           y = 1
      |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 3, 12, 3, 13, Type.literal_integer 1;
-                  3, 15, 3, 16, Type.literal_integer 2;
-                  3, 11, 3, 17, Type.list Type.integer;
-                  3, 6, 3, 7, Type.integer;
-                  4, 3, 4, 4, Type.literal_integer 1;
-                  4, 7, 4, 8, Type.literal_integer 1 ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 3, 12, 3, 13, Type.literal_integer 1;
+                   3, 15, 3, 16, Type.literal_integer 2;
+                   3, 11, 3, 17, Type.list Type.integer;
+                   3, 6, 3, 7, Type.integer;
+                   4, 3, 4, 4, Type.literal_integer 1;
+                   4, 7, 4, 8, Type.literal_integer 1 ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
         try:
           x = 1
@@ -663,47 +625,50 @@ let test_query context =
           y = 2
       |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
-                  5, 2, 5, 3, Type.literal_integer 2;
-                  3, 2, 3, 3, Type.literal_integer 1;
-                  3, 6, 3, 7, Type.literal_integer 1;
-                  5, 6, 5, 7, Type.literal_integer 2 ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
+                   5, 2, 5, 3, Type.literal_integer 2;
+                   3, 2, 3, 3, Type.literal_integer 1;
+                   3, 6, 3, 7, Type.literal_integer 1;
+                   5, 6, 5, 7, Type.literal_integer 2 ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
        with open() as x:
         y = 2
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [3, 1, 3, 2, Type.literal_integer 2; 3, 5, 3, 6, Type.literal_integer 2]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [3, 1, 3, 2, Type.literal_integer 2; 3, 5, 3, 6, Type.literal_integer 2]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:{|
       while x is True:
         y = 1
    |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 2, 11, 2, 15, Type.Literal (Boolean true);
-                  3, 2, 3, 3, Type.literal_integer 1;
-                  3, 6, 3, 7, Type.literal_integer 1;
-                  2, 6, 2, 15, Type.bool ]
-                |> create_types_at_locations
-            } ]));
-  assert_type_query_response
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 2, 11, 2, 15, Type.Literal (Boolean true);
+                   3, 2, 3, 3, Type.literal_integer 1;
+                   3, 6, 3, 7, Type.literal_integer 1;
+                   2, 6, 2, 15, Type.bool ]
+                 |> create_types_at_locations
+             } ]));
+  assert_type_query_response_with_local_root
     ~source:
       {|
        def foo(x: int) -> str:
@@ -712,57 +677,60 @@ let test_query context =
          return x
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 2, 19, 2, 22, parse_annotation "typing.Type[str]";
-                  5, 9, 5, 10, Type.integer;
-                  3, 21, 3, 24, parse_annotation "typing.Type[str]";
-                  3, 13, 3, 16, parse_annotation "typing.Type[int]";
-                  4, 11, 4, 12, Type.integer;
-                  2, 11, 2, 14, parse_annotation "typing.Type[int]";
-                  2, 8, 2, 9, Type.integer;
-                  3, 10, 3, 11, Type.integer ]
-                |> create_types_at_locations
-            } ]));
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 2, 19, 2, 22, parse_annotation "typing.Type[str]";
+                   5, 9, 5, 10, Type.integer;
+                   3, 21, 3, 24, parse_annotation "typing.Type[str]";
+                   3, 13, 3, 16, parse_annotation "typing.Type[int]";
+                   4, 11, 4, 12, Type.integer;
+                   2, 11, 2, 14, parse_annotation "typing.Type[int]";
+                   2, 8, 2, 9, Type.integer;
+                   3, 10, 3, 11, Type.integer ]
+                 |> create_types_at_locations
+             } ]));
 
-  assert_type_query_response
+  assert_type_query_response_with_local_root
     ~source:{|
        def foo(x: typing.List[int]) -> None:
         pass
     |}
     ~query:"types(path='test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ 2, 32, 2, 36, Type.none;
-                  2, 23, 2, 26, Type.meta Type.integer;
-                  2, 8, 2, 9, Type.list Type.integer;
-                  2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
-                |> create_types_at_locations
-            } ]));
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ 2, 32, 2, 36, Type.none;
+                   2, 23, 2, 26, Type.meta Type.integer;
+                   2, 8, 2, 9, Type.list Type.integer;
+                   2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
+                 |> create_types_at_locations
+             } ]));
 
-  assert_type_query_response
+  assert_type_query_response_with_local_root
     ~source:{|
        class Foo:
          x = 1
      |}
     ~query:"types('test.py')"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.TypesByFile
-          [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
-              types =
-                [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity
-                     ensues. *)
-                  { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-                    annotation = parse_annotation "typing.Type[test.Foo]"
-                  };
-                  { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
-                    annotation = Type.literal_integer 1
-                  } ]
-            } ]));
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.TypesByFile
+           [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               types =
+                 [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity
+                      ensues. *)
+                   { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+                     annotation = parse_annotation "typing.Type[test.Foo]"
+                   };
+                   { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
+                     annotation = Type.literal_integer 1
+                   } ]
+             } ]));
 
   assert_type_query_response
     ~source:{|
@@ -890,27 +858,19 @@ let test_query context =
     (Protocol.TypeQuery.Error
        ( "Expression had errors: Incompatible parameter type [6]: "
        ^ "Expected `str` for 1st anonymous parameter to call `test.foo` but got `int`." ));
+
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
     ~source:""
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
     (Protocol.TypeQuery.Response (Protocol.TypeQuery.Success "Saved state."));
   assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
-  Path.create_relative ~root:local_root ~relative:"a.py"
-  |> File.create ~content:"pass"
-  |> File.write;
-  assert_type_query_response
-    ~handle:"a.py"
-    ~source:"pass"
-    ~query:"path_of_module(a)"
-    (Protocol.TypeQuery.Response
-       (Protocol.TypeQuery.FoundPath
-          (Path.create_relative ~root:local_root ~relative:"a.py" |> Path.absolute)))
+
+  ()
 
 
 let test_compute_hashes_to_keys context =
   let open Protocol in
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
   let (module Handler : Analysis.Environment.Handler) =
     (module Service.Environment.SharedHandler)
   in
@@ -942,10 +902,14 @@ let test_compute_hashes_to_keys context =
     OrderEdges.remove_batch (OrderEdges.KeySet.of_list [15; 16]);
     OrderBackedges.remove_batch (OrderBackedges.KeySet.of_list [15; 16]);
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
-    OrderIndices.remove_batch (OrderIndices.KeySet.of_list ["fifteen"; "sixteen"]);
-    Ast.SharedMemory.HandleKeys.clear ()
+    OrderIndices.remove_batch (OrderIndices.KeySet.of_list ["fifteen"; "sixteen"])
   in
   OUnit2.bracket set_up_shared_memory tear_down_shared_memory context;
+
+  (* Setup the server first so the shared memory can populate *)
+  let { ScratchServer.server_configuration; state; _ } =
+    ScratchServer.start ~context ["sample.py", ""]
+  in
   let expected =
     let open Service.EnvironmentSharedMemory in
     let compare { TypeQuery.hash = left; _ } { TypeQuery.hash = right; _ } =
@@ -1012,25 +976,27 @@ let test_compute_hashes_to_keys context =
           (Coverage.SharedMemory.serialize_key (Reference.create "sample")) ]
     |> List.sort ~compare
   in
-  assert_response
-    ~local_root
-    ~source:""
-    ~handle:"sample.py"
-    ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
+  let { Server.Request.response; _ } =
+    Server.Request.process
+      ~state
+      ~configuration:server_configuration
+      ~request:(Request.TypeQueryRequest TypeQuery.ComputeHashesToKeys)
+  in
+  assert_response_equal
     (Some (Protocol.TypeQueryResponse (TypeQuery.Response (TypeQuery.FoundKeyMapping expected))))
+    response
 
 
 let test_decode_serialized_ocaml_values context =
   let open Service.EnvironmentSharedMemory in
   let open Protocol in
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
   let (module Handler : Analysis.Environment.Handler) =
     (module Service.Environment.SharedHandler)
   in
   (* Note that we're not adding any values to the shared environment here. *)
   assert_response
-    ~local_root
-    ~source:""
+    ~context
+    ~sources:["test_decode.py", ""]
     ~request:
       (Request.TypeQueryRequest
          (TypeQuery.DecodeOcamlValues
@@ -1077,8 +1043,8 @@ let test_decode_serialized_ocaml_values context =
            (TypeQuery.Decoded { TypeQuery.decoded = [base]; undecodable_keys = [] }))
     in
     assert_response
-      ~local_root
-      ~source:""
+      ~context
+      ~sources:["assert_decode1.py", ""]
       ~request:
         (Request.TypeQueryRequest
            (TypeQuery.DecodeOcamlValues
@@ -1087,8 +1053,8 @@ let test_decode_serialized_ocaml_values context =
          (response
             (TypeQuery.DecodedValue { serialized_key = key; kind; actual_key; actual_value })));
     assert_response
-      ~local_root
-      ~source:""
+      ~context
+      ~sources:["assert_decode2.py", ""]
       ~request:
         (Request.TypeQueryRequest
            (TypeQuery.DecodeOcamlValues
@@ -1212,8 +1178,8 @@ let test_decode_serialized_ocaml_values context =
            (TypeQuery.Decoded { TypeQuery.decoded = [response]; undecodable_keys = [] }))
     in
     assert_response
-      ~local_root
-      ~source:""
+      ~context
+      ~sources:["assert_decode_pair.py", ""]
       ~request:
         (Request.TypeQueryRequest
            (TypeQuery.DecodeOcamlValues
@@ -1292,302 +1258,215 @@ let test_connect context =
 
 
 let test_incremental_typecheck context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let path_to_python_file prefix =
-    Filename.open_temp_file ~in_dir:(Path.absolute local_root) prefix ".py" |> fst
-  in
-  let path = path_to_python_file "test" in
-  let stub_path = path_to_python_file "stub" ^ "i" in
-  Out_channel.write_all stub_path ~data:"";
-  let relativize path =
-    Path.create_relative ~root:local_root ~relative:path
-    |> Path.relative
-    |> Option.value ~default:path
-  in
-  let handle = relativize path in
+  let handle = "test_incremental_typecheck.py" in
   let source = {|
         def foo() -> None:
           return 1
-    |} |> trim_extra_indentation in
-  let assert_response ?(handle = handle) ?state ~request response =
-    assert_response ~local_root ~handle ~source ?state ~request (Some response)
+        |} in
+  let stub_handle = "test_incremental_typecheck_stub.pyi" in
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start ~context [handle, source; stub_handle, ""]
+  in
+  let assert_response ~state ~request expected_response =
+    let { Request.response; _ } =
+      Request.process ~state ~configuration:server_configuration ~request
+    in
+    assert_response_equal (Some expected_response) response
+  in
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let path = Path.create_relative ~root:local_root ~relative:handle in
+  let stub_path = Path.create_relative ~root:local_root ~relative:stub_handle in
+  let errors =
+    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
   in
   assert_response
-    ~request:(Protocol.Request.TypeCheckRequest [file ~local_root path])
-    (Protocol.TypeCheckResponse []);
+    ~state
+    ~request:(Protocol.Request.TypeCheckRequest [File.create path])
+    (Protocol.TypeCheckResponse errors);
 
-  (* The handles get updated in shared memory. *)
-  let print_tree tree = File.Handle.Set.Tree.to_list tree |> List.to_string ~f:File.Handle.show in
-  assert_equal
-    ~printer:print_tree
-    (Ast.SharedMemory.HandleKeys.get ())
-    (File.Handle.Set.Tree.singleton (File.Handle.create_for_testing handle));
-  let files = [file ~local_root ~content:source path] in
-  let request_with_content = Protocol.Request.TypeCheckRequest files in
-  let errors = make_errors ~local_root ~handle source in
-  assert_response ~request:request_with_content (Protocol.TypeCheckResponse errors);
-
-  (* Assert that only files getting used to update the environment get parsed. *)
-  let open Protocol in
+  let update_file ~content path =
+    let content = trim_extra_indentation content in
+    let file = File.create ~content path in
+    File.write file;
+    file
+  in
   assert_response
+    ~state
     ~request:
-      (Request.TypeCheckRequest [file ~local_root ~content:"def foo() -> int: return 1" path])
+      (Protocol.Request.TypeCheckRequest [update_file path ~content:"def foo() -> int: return 1"])
     (Protocol.TypeCheckResponse []);
-  let () =
-    let stub_file = file ~local_root ~content:"" stub_path in
-    assert_response
-      ~handle:(relativize stub_path)
-      ~request:(Request.TypeCheckRequest [stub_file])
-      (Protocol.TypeCheckResponse []);
-    assert_equal
-      ~printer:print_tree
-      (Ast.SharedMemory.HandleKeys.get ())
-      (File.Handle.Set.Tree.singleton (File.Handle.create_for_testing (relativize stub_path)))
-  in
-  let source = "def foo() -> int: return \"\"" in
   assert_response
-    ~request:(Request.TypeCheckRequest [file ~local_root ~content:source stub_path])
-    (* We also error on stub files. *)
-    (Protocol.TypeCheckResponse (make_errors ~local_root ~handle:(relativize stub_path) source));
-  let file = file ~local_root ~content:"def foo() -> int: return 1" path in
-  assert_response ~request:(Request.TypeCheckRequest [file]) (Protocol.TypeCheckResponse [])
+    ~state
+    ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:""])
+    (Protocol.TypeCheckResponse []);
+  let source = "def foo() -> int: return \"\"" in
+  let errors =
+    CommandTest.make_errors
+      ~handle:stub_handle
+      ~qualifier:(Ast.SourcePath.qualifier_of_relative stub_handle)
+      source
+  in
+  assert_response
+    ~state
+    ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:source])
+    (Protocol.TypeCheckResponse errors)
 
 
 let test_protocol_language_server_protocol context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let server_state = mock_server_state ~local_root (Reference.Table.create ()) in
+  let { ScratchServer.server_configuration; state; _ } = ScratchServer.start ~context [] in
   let { Request.response; _ } =
     Request.process
-      ~state:server_state
-      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
+      ~state
+      ~configuration:server_configuration
       ~request:(Protocol.Request.LanguageServerProtocolRequest "{\"method\":\"\"}")
   in
   assert_is_none response
 
 
 let test_did_save_with_content context =
-  let root, filename =
-    let root = bracket_tmpdir context |> Path.create_absolute in
-    let filename =
-      Filename.open_temp_file ~in_dir:(Path.absolute root) "" ".py"
-      |> fst
-      |> Path.create_absolute
-      |> (fun path -> Path.get_relative_to_root ~root ~path)
-      |> fun relative -> Option.value_exn relative
-    in
-    root, filename
-  in
+  let handle = "test_did_save_with_content.py" in
   let source = {|
         def foo()->None:
           return 1
     |} |> trim_extra_indentation in
-  let errors = make_errors ~local_root:root ~handle:filename source in
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start ~context [handle, source]
+  in
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let errors =
+    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
+  in
   let request =
-    LanguageServer.Protocol.DidSaveTextDocument.create ~root filename (Some source)
+    LanguageServer.Protocol.DidSaveTextDocument.create ~root:local_root handle (Some source)
     |> Or_error.ok_exn
     |> LanguageServer.Protocol.DidSaveTextDocument.to_yojson
     |> Yojson.Safe.to_string
   in
-  assert_response
-    ~local_root:root
-    ~source
-    ~request:(Protocol.Request.LanguageServerProtocolRequest request)
-    (Some (Protocol.TypeCheckResponse errors))
+  let { Request.response; _ } =
+    Request.process
+      ~state
+      ~configuration:server_configuration
+      ~request:(Protocol.Request.LanguageServerProtocolRequest request)
+  in
+  assert_response_equal (Some (Protocol.TypeCheckResponse errors)) response
 
 
 let test_protocol_persistent context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
   assert_response
-    ~local_root
-    ~source:"a = 1"
+    ~context
+    ~sources:["test_protocol_persistent.py", "a = 1"]
     ~request:(Protocol.Request.ClientConnectionRequest Protocol.Persistent)
     None
 
 
 let test_query_dependencies context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let a_source =
-    {|
-      import b
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start
+      ~context
+      [ "qa.py", {|
+      import qb
       def foo() -> str:
-        return b.do()
-    |}
-    |> trim_extra_indentation
-  in
-  let b_source = {|
-    from c import do
-    |} |> trim_extra_indentation in
-  let c_source = {|
+        return qb.do()
+    |};
+        "qb.py", {|
+    from qc import do
+    |};
+        "qc.py", {|
       def do() -> str:
           pass
-    |} |> trim_extra_indentation in
-  Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
-  Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
-  Out_channel.write_all (Path.absolute local_root ^/ "c.py") ~data:c_source;
-  let assert_query_dependencies () =
-    let sources =
-      [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
-        parse ~handle:"b.py" ~qualifier:!&"b" b_source;
-        parse ~handle:"c.py" ~qualifier:!&"c" c_source ]
-    in
-    List.iter sources ~f:Ast.SharedMemory.Sources.add;
-    let environment = environment ~local_root in
-    let configuration = configuration ~local_root in
-    let environment_handler = Environment.handler environment in
-    add_defaults_to_environment ~configuration environment_handler;
-    Test.populate ~configuration environment_handler sources;
-    let initial_state =
-      mock_server_state ~local_root ~initial_environment:environment (Reference.Table.create ())
-    in
-    let assert_response ~request expected =
-      let { Request.response; _ } =
-        Request.process
-          ~state:initial_state
-          ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-          ~request
-      in
-      let printer = function
-        | None -> "None"
-        | Some response -> Protocol.show_response response
-      in
-      assert_equal ~printer (Some expected) response
-    in
-    let reference_response references =
-      Protocol.TypeQueryResponse
-        (Protocol.TypeQuery.Response (Protocol.TypeQuery.References references))
-    in
-    let create_path relative = Path.create_relative ~root:local_root ~relative in
-    assert_response
-      ~request:
-        (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [create_path "a.py"]))
-      (reference_response []);
-    assert_response
-      ~request:
-        (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [create_path "b.py"]))
-      (reference_response [Reference.create "a.$toplevel"]);
-    assert_response
-      ~request:
-        (Protocol.Request.TypeQueryRequest
-           (Protocol.TypeQuery.DependentDefines [create_path "c.py"]))
-      (reference_response [Reference.create "a.$toplevel"; Reference.create "b.$toplevel"])
+    |} ]
   in
-  let finally () =
-    Ast.SharedMemory.Sources.remove
-      [Reference.create "a"; Reference.create "b"; Reference.create "c"]
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let assert_response ~request expected =
+    let { Request.response; _ } =
+      Request.process ~state ~configuration:server_configuration ~request
+    in
+    assert_response_equal (Some expected) response
   in
-  Exn.protect ~f:assert_query_dependencies ~finally
+  let reference_response references =
+    Protocol.TypeQueryResponse
+      (Protocol.TypeQuery.Response (Protocol.TypeQuery.References references))
+  in
+  let create_path relative = Path.create_relative ~root:local_root ~relative in
+  assert_response
+    ~request:
+      (Protocol.Request.TypeQueryRequest
+         (Protocol.TypeQuery.DependentDefines [create_path "qa.py"]))
+    (reference_response []);
+  assert_response
+    ~request:
+      (Protocol.Request.TypeQueryRequest
+         (Protocol.TypeQuery.DependentDefines [create_path "qb.py"]))
+    (reference_response [Reference.create "qa.$toplevel"]);
+  assert_response
+    ~request:
+      (Protocol.Request.TypeQueryRequest
+         (Protocol.TypeQuery.DependentDefines [create_path "qc.py"]))
+    (reference_response [Reference.create "qa.$toplevel"; Reference.create "qb.$toplevel"])
 
 
 let test_incremental_dependencies context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let a_source =
-    {|
-      import b
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start
+      ~context
+      [ "ia.py", {|
+      import ib
       def foo() -> str:
-        return b.do()
-    |}
-    |> trim_extra_indentation
-  in
-  let b_source = {|
+        return ib.do()
+    |};
+        "ib.py", {|
       def do() -> str:
           pass
-    |} |> trim_extra_indentation in
-  Out_channel.write_all (Path.absolute local_root ^/ "a.py") ~data:a_source;
-  Out_channel.write_all (Path.absolute local_root ^/ "b.py") ~data:b_source;
-  let assert_dependencies_analyzed () =
-    let sources =
-      [ parse ~handle:"a.py" ~qualifier:!&"a" a_source;
-        parse ~handle:"b.py" ~qualifier:!&"b" b_source ]
-    in
-    List.iter sources ~f:Ast.SharedMemory.Sources.add;
-    let environment = environment ~local_root in
-    let configuration = configuration ~local_root in
-    let environment_handler = Environment.handler environment in
-    add_defaults_to_environment ~configuration environment_handler;
-    Test.populate ~configuration environment_handler sources;
-    let initial_state =
-      mock_server_state ~local_root ~initial_environment:environment (Reference.Table.create ())
-    in
-    let process request =
-      Request.process
-        ~state:initial_state
-        ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-        ~request
-    in
-    let { Request.response; _ } =
-      process (Protocol.Request.TypeCheckRequest [file ~local_root "b.py"])
-    in
-    let printer = function
-      | None -> "None"
-      | Some response -> Protocol.show_response response
-    in
-    assert_equal ~printer (Some (Protocol.TypeCheckResponse [])) response;
-    let { Request.response; _ } =
-      process
-        (Protocol.Request.TypeCheckRequest [file ~local_root "a.py"; file ~local_root "b.py"])
-    in
-    assert_equal ~printer (Some (Protocol.TypeCheckResponse [])) response
+    |} ]
   in
-  let finally () = Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "b"] in
-  Exn.protect ~f:assert_dependencies_analyzed ~finally
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let assert_response ~request expected =
+    let { Request.response; _ } =
+      Request.process ~state ~configuration:server_configuration ~request
+    in
+    assert_equal (Some expected) response
+  in
+  let create_path relative = Path.create_relative ~root:local_root ~relative in
+  assert_response
+    ~request:(Protocol.Request.TypeCheckRequest [create_path "ib.py" |> File.create])
+    (TypeCheckResponse []);
+  assert_response
+    ~request:
+      (Protocol.Request.TypeCheckRequest
+         [create_path "ia.py" |> File.create; create_path "ib.py" |> File.create])
+    (TypeCheckResponse [])
 
 
 let test_incremental_lookups context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let path, _ = Filename.open_temp_file ~in_dir:(Path.absolute local_root) "test" ".py" in
-  let handle =
-    Path.create_relative ~root:local_root ~relative:path
-    |> Path.relative
-    |> Option.value ~default:path
-    |> File.Handle.create_for_testing
-  in
-  let parse content =
-    Source.create
-      ~handle
-      ~qualifier:(Source.qualifier ~handle)
-      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
-    |> Analysis.Preprocessing.preprocess
-  in
-  let source =
-    {|
+  let handle = "test_incremental_lookups.py" in
+  let qualifier = Ast.SourcePath.qualifier_of_relative handle in
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start
+      ~context
+      [ ( handle,
+          {|
       def foo(x):
           return 1
       def boo(x):
           foo(x)
           return 2
     |}
-    |> trim_extra_indentation
+        ) ]
   in
-  let configuration = configuration ~local_root in
-  let environment = Environment.Builder.create () in
-  let (module Handler : Environment.Handler) = Environment.handler environment in
-  let environment_handler = Environment.handler environment in
-  Test.populate
-    ~configuration
-    environment_handler
-    (typeshed_stubs ~include_helper_builtins:false ());
-  add_defaults_to_environment ~configuration environment_handler;
-  Test.populate ~configuration environment_handler [parse source];
-  let request = Protocol.Request.TypeCheckRequest [file ~local_root ~content:source path] in
-  let errors = Reference.Table.create () in
-  let initial_state = mock_server_state ~local_root ~initial_environment:environment errors in
-  let { Request.state; _ } =
-    Request.process
-      ~state:initial_state
-      ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-      ~request
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let request =
+    Protocol.Request.TypeCheckRequest
+      [Path.create_relative ~root:local_root ~relative:handle |> File.create]
   in
+  let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
   let annotations =
-    Source.qualifier ~handle
-    |> Ast.SharedMemory.Sources.get
+    Ast.SharedMemory.Sources.get qualifier
     |> (fun value -> Option.value_exn value)
     |> Lookup.create_of_source state.State.environment
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
            Format.asprintf "%a/%a" Location.Instantiated.pp key Type.pp data
-           |> String.chop_prefix_exn ~prefix:(File.Handle.show handle))
+           |> String.chop_prefix_exn ~prefix:handle)
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -1597,85 +1476,65 @@ let test_incremental_lookups context =
       ":4:8-4:9/typing.Any";
       Format.sprintf
         ":5:4-5:7/typing.Callable(%s.foo)[[Named(x, unknown)], unknown]"
-        (Source.qualifier ~handle |> Reference.show);
+        (Reference.show qualifier);
       ":5:8-5:9/typing.Any";
       ":6:11-6:12/typing_extensions.Literal[2]" ]
     annotations
 
 
 let test_incremental_repopulate context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let handle = "test_incremental.py" in
-  let parse content =
-    let handle = File.Handle.create_for_testing handle in
-    Source.create
-      ~handle
-      ~qualifier:(Source.qualifier ~handle)
-      (Parser.parse ~handle (String.split_lines (content ^ "\n")))
-    |> Analysis.Preprocessing.preprocess
-  in
-  let source = {|
+  let handle = "test_incremental_repopulate.py" in
+  let qualifier = Ast.SourcePath.qualifier_of_relative handle in
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start ~context [handle, {|
       def foo(x)->int:
           return 1
-    |} |> trim_extra_indentation in
-  let environment = Environment.Builder.create () in
-  let configuration = configuration ~local_root in
-  let ((module Handler : Environment.Handler) as environment_handler) =
-    Environment.handler environment
+    |}]
   in
-  let resolution = TypeCheck.resolution environment_handler () in
-  let path = Path.create_relative ~root:local_root ~relative:handle in
-  let file = File.create ~content:source path in
-  File.write file;
-  add_defaults_to_environment ~configuration environment_handler;
-  Service.Parser.parse_sources
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~preprocessing_state:None
-    ~files:[file]
-  |> ignore;
-  Test.populate ~configuration environment_handler [parse source];
-  let errors = Reference.Table.create () in
-  let initial_state = mock_server_state ~local_root ~initial_environment:environment errors in
-  let get_annotation access_name =
-    match Resolution.function_definitions resolution !&access_name with
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let get_annotation { State.environment; _ } access_name =
+    let resolution = TypeCheck.resolution environment () in
+    match
+      Resolution.function_definitions resolution (Reference.combine qualifier !&access_name)
+    with
     | Some [{ Node.value = { Statement.Define.signature = { return_annotation; _ }; _ }; _ }] ->
         return_annotation
     | _ -> None
   in
-  ( match get_annotation "test_incremental.foo" with
+  ( match get_annotation state "foo" with
   | Some expression -> assert_equal ~printer:Fn.id (Expression.show expression) "int"
   | None -> assert_unreached () );
   let file =
-    File.create
-      ~content:
-        ({|
+    Path.create_relative ~root:local_root ~relative:handle
+    |> File.create
+         ~content:
+           ( {|
           def foo(x)->str:
             return ""
-        |} |> trim_extra_indentation)
-      path
+        |}
+           |> trim_extra_indentation )
   in
   File.write file;
-  Request.process
-    ~state:initial_state
-    ~configuration:(CommandTest.mock_server_configuration ~local_root ())
-    ~request:(Protocol.Request.TypeCheckRequest [file])
-  |> ignore;
-  match get_annotation "test_incremental.foo" with
+  let { Request.state; _ } =
+    Request.process
+      ~state
+      ~configuration:server_configuration
+      ~request:(Protocol.Request.TypeCheckRequest [file])
+  in
+  match get_annotation state "foo" with
   | Some expression -> assert_equal (Expression.show expression) "str"
   | None -> assert_unreached ()
 
 
 let test_language_scheduler_definition context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let configuration = Configuration.Analysis.create ~local_root () in
-  let filename =
-    let path = Path.create_relative ~root:local_root ~relative:"filename.py" in
-    File.write (File.create ~content:"" path);
-    Path.absolute path
+  let handle = "test_language_scheduler_definition.py" in
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start ~context [handle, ""]
   in
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let path = Path.create_relative ~root:local_root ~relative:handle in
   let request =
-    Format.sprintf
+    Format.asprintf
       {|
       {
         "jsonrpc": "2.0",
@@ -1683,7 +1542,7 @@ let test_language_scheduler_definition context =
         "id": 3,
         "params": {
           "textDocument": {
-            "uri": "file://%s"
+            "uri": "file://%a"
           },
           "position": {
             "line": 5,
@@ -1692,7 +1551,8 @@ let test_language_scheduler_definition context =
         }
       }
       |}
-      filename
+      Path.pp
+      path
   in
   let expected_response =
     LanguageServer.Protocol.TextDocumentDefinitionResponse.create
@@ -1702,34 +1562,17 @@ let test_language_scheduler_definition context =
     |> LanguageServer.Protocol.TextDocumentDefinitionResponse.to_yojson
     |> Yojson.Safe.to_string
   in
-  assert_response
-    ~local_root
-    ~source:"a = 1"
-    ~request:(Protocol.Request.LanguageServerProtocolRequest request)
-    (Some (Protocol.LanguageServerProtocolResponse expected_response))
+  let { Request.response; _ } =
+    Request.process
+      ~state
+      ~configuration:server_configuration
+      ~request:(Protocol.Request.LanguageServerProtocolRequest request)
+  in
+  assert_response_equal response (Some (Protocol.LanguageServerProtocolResponse expected_response))
 
 
 let test_incremental_attribute_caching context =
-  let local_root = bracket_tmpdir context |> Path.create_absolute in
-  let configuration = Configuration.Analysis.create ~local_root ~project_root:local_root () in
-  let server_configuration = Operations.create_configuration configuration in
-  let environment = Analysis.Environment.Builder.create () |> Analysis.Environment.handler in
-  Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
-  add_defaults_to_environment ~configuration environment;
-  let ({ State.connections; _ } as old_state) =
-    mock_server_state ~local_root (Reference.Table.create ())
-  in
-  let source_path = Path.create_relative ~root:local_root ~relative:"a.py" in
-  let write_to_file ~content =
-    Out_channel.write_all (Path.absolute source_path) ~data:(trim_extra_indentation content)
-  in
-  let error_printer errors_by_file =
-    errors_by_file
-    |> List.map ~f:snd
-    |> List.concat
-    |> List.map ~f:(Error.description ~show_error_traces:false)
-    |> String.concat ~sep:"\n"
-  in
+  let handle = "test_incremental_attribute_caching.py" in
   let content_with_annotation =
     {|
       class A:
@@ -1742,20 +1585,6 @@ let test_incremental_attribute_caching context =
           return 1
     |}
   in
-  write_to_file ~content:content_with_annotation;
-  let initial_state =
-    Server.Operations.start ~old_state ~connections ~configuration:server_configuration ()
-  in
-  let request_typecheck state =
-    Request.process
-      ~state
-      ~configuration:server_configuration
-      ~request:(Protocol.Request.TypeCheckRequest [File.create source_path])
-    |> fun { Request.state; _ } -> state
-  in
-  let get_errors { State.errors; _ } = Hashtbl.to_alist errors in
-  let state = request_typecheck { initial_state with State.environment } in
-  assert_equal ~printer:error_printer (get_errors state) [];
   let content_without_annotation =
     {|
       class A:
@@ -1766,19 +1595,37 @@ let test_incremental_attribute_caching context =
           return 1
     |}
   in
-  write_to_file ~content:content_without_annotation;
-  let state = request_typecheck { state with State.environment } in
-  ( match get_errors state with
-  | [(_, [error])] ->
-      assert_equal
-        ~cmp:String.equal
-        ~printer:ident
-        "Undefined attribute [16]: `C` has no attribute `a`."
-        (Error.description ~show_error_traces:false error)
-  | _ -> assert_unreached () );
-  write_to_file ~content:content_with_annotation;
-  let state = request_typecheck { state with State.environment } in
-  assert_equal ~printer:error_printer (get_errors state) []
+  let { ScratchServer.configuration; server_configuration; state } =
+    ScratchServer.start ~context [handle, content_with_annotation]
+  in
+  let assert_errors ~state expected =
+    let get_error_strings { State.errors; _ } =
+      Hashtbl.to_alist errors
+      |> List.map ~f:snd
+      |> List.concat
+      |> List.map ~f:(Error.description ~show_error_traces:false)
+    in
+    let printer = String.concat ~sep:"\n" in
+    assert_equal ~printer expected (get_error_strings state)
+  in
+  assert_errors ~state [];
+
+  let update_and_request_typecheck ~state content =
+    let { Configuration.Analysis.local_root; _ } = configuration in
+    let content = trim_extra_indentation content in
+    let file = Path.create_relative ~root:local_root ~relative:handle |> File.create ~content in
+    File.write file;
+    Request.process
+      ~state
+      ~configuration:server_configuration
+      ~request:(Protocol.Request.TypeCheckRequest [file])
+    |> fun { Request.state; _ } -> state
+  in
+  let state = update_and_request_typecheck ~state content_without_annotation in
+  assert_errors ~state ["Undefined attribute [16]: `C` has no attribute `a`."];
+
+  let state = update_and_request_typecheck ~state content_with_annotation in
+  assert_errors ~state []
 
 
 let () =
