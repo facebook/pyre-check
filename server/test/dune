@@ -13,6 +13,7 @@
  (libraries
   oUnit
   ppx_deriving
+  pyrelib.commandTest
   pyrelib.test
   pyrelib.languageServer
   pyrelib.network

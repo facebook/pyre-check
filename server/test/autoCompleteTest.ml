@@ -8,6 +8,8 @@ open Core
 open OUnit2
 open Server
 open Test
+open Pyre
+open CommandTest
 
 let test_remove_dot _ =
   let assert_remove_dot ~position ~original ~expected =
@@ -73,18 +75,18 @@ let test_find_module_reference _ =
     ~expected:(Reference.create "module_name")
 
 
-let test_get_completion_items _ =
+let test_get_completion_items context =
   let open LanguageServer in
   let assert_completion_items ~cursor_position ~source ~expected =
-    let configuration, state = RequestTest.initialize [] in
-    let sources = Test.typeshed_stubs ~include_helper_builtins:false () in
-    List.iter sources ~f:SharedMemory.Sources.add;
-    let path = mock_path "test.py" in
+    let handle = "test.py" in
+    let { ScratchServer.configuration; state; _ } = ScratchServer.start ~context [handle, ""] in
+    let path =
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      Path.create_relative ~root:local_root ~relative:handle
+    in
     let state = { state with open_documents = PyrePath.Map.singleton path source } in
     let actual = AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position in
-    assert_equal ~printer:Types.CompletionItems.show expected actual;
-    List.map sources ~f:(fun { Ast.Source.qualifier; _ } -> qualifier)
-    |> SharedMemory.Sources.remove
+    assert_equal ~printer:Types.CompletionItems.show expected actual
   in
   let create_completion_item ~cursor_position:{ Location.line; column } ~label ~detail ~new_text =
     let position = Types.Position.from_pyre_position ~line ~column in
@@ -130,6 +132,16 @@ let test_get_completion_items _ =
     ~source
     ~expected:
       [ create_completion_item
+          ~cursor_position
+          ~label:"Type"
+          ~detail:"_SpecialForm"
+          ~new_text:"Type";
+        create_completion_item
+          ~cursor_position
+          ~label:"TypeVar"
+          ~detail:"object"
+          ~new_text:"TypeVar";
+        create_completion_item
           ~cursor_position
           ~label:"ABCMeta"
           ~detail:"Type[ABCMeta]"
