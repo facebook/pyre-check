@@ -197,22 +197,21 @@ end
 module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
 (** Shared memory maps *)
 
-module Modules = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (ModuleValue)
+module Modules = Memory.WithCache (Reference.Key) (ModuleValue)
 module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
-module ImplicitSubmodules = Memory.NoCache (Ast.SharedMemory.ReferenceKey) (IntValue)
+module ImplicitSubmodules = Memory.NoCache (Reference.Key) (IntValue)
 module Aliases = Memory.NoCache (StringKey) (AliasValue)
-module Globals = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalValue)
-module Dependents = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentValue)
-module UndecoratedFunctions =
-  Memory.WithCache (Ast.SharedMemory.ReferenceKey) (UndecoratedFunctionValue)
+module Globals = Memory.WithCache (Reference.Key) (GlobalValue)
+module Dependents = Memory.WithCache (Reference.Key) (DependentValue)
+module UndecoratedFunctions = Memory.WithCache (Reference.Key) (UndecoratedFunctionValue)
 
-module FunctionKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (FunctionKeyValue)
+module FunctionKeys = Memory.WithCache (Reference.Key) (FunctionKeyValue)
 (** Keys *)
 
-module ClassKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (ClassKeyValue)
-module GlobalKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (GlobalKeyValue)
-module AliasKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (AliasKeyValue)
-module DependentKeys = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (DependentKeyValue)
+module ClassKeys = Memory.WithCache (Reference.Key) (ClassKeyValue)
+module GlobalKeys = Memory.WithCache (Reference.Key) (GlobalKeyValue)
+module AliasKeys = Memory.WithCache (Reference.Key) (AliasKeyValue)
+module DependentKeys = Memory.WithCache (Reference.Key) (DependentKeyValue)
 
 module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
 (** Type order maps *)

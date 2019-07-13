@@ -42,8 +42,7 @@ module CoverageValue : sig
   val description : string
 end
 
-module SharedMemory :
-    module type of Memory.WithCache (Ast.SharedMemory.ReferenceKey) (CoverageValue)
+module SharedMemory : module type of Memory.WithCache (Reference.Key) (CoverageValue)
 
 val add : t -> qualifier:Reference.t -> unit
 

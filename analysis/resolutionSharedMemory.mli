@@ -24,7 +24,7 @@ module TypeAnnotationsValue : sig
   val description : string
 end
 
-include module type of Memory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
+include module type of Memory.WithCache (Reference.Key) (TypeAnnotationsValue)
 
 module AnnotationsKeyValue : sig
   type t = Reference.t list
@@ -34,7 +34,7 @@ module AnnotationsKeyValue : sig
   val description : string
 end
 
-module Keys : module type of Memory.NoCache (Ast.SharedMemory.ReferenceKey) (AnnotationsKeyValue)
+module Keys : module type of Memory.NoCache (Reference.Key) (AnnotationsKeyValue)
 
 val add : qualifier:Reference.t -> Reference.t -> annotations -> unit
 

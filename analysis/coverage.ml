@@ -75,7 +75,7 @@ module CoverageValue = struct
   let description = "Coverage"
 end
 
-module SharedMemory = Memory.WithCache (Ast.SharedMemory.ReferenceKey) (CoverageValue)
+module SharedMemory = Memory.WithCache (Reference.Key) (CoverageValue)
 
 let add coverage ~qualifier = SharedMemory.add qualifier coverage
 

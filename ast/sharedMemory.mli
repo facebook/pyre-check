@@ -7,8 +7,6 @@ open Core
 
 module HandleKey : Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
 
-module ReferenceKey : Memory.KeyType with type t = Reference.t and type out = Reference.t
-
 module IntKey : Memory.KeyType with type t = int and type out = int
 
 module SymlinksToPaths : sig
@@ -35,7 +33,7 @@ end
 module Sources : sig
   module SourceValue : Value.Type with type t = Source.t
 
-  module Sources : module type of Memory.NoCache (ReferenceKey) (SourceValue)
+  module Sources : module type of Memory.NoCache (Reference.Key) (SourceValue)
 
   val get : Reference.t -> Source.t option
 
@@ -73,7 +71,7 @@ end
 module Modules : sig
   module ModuleValue : Value.Type with type t = Module.t
 
-  module Modules : module type of Memory.NoCache (ReferenceKey) (ModuleValue)
+  module Modules : module type of Memory.NoCache (Reference.Key) (ModuleValue)
 
   val get : qualifier:Reference.t -> Module.t option
 

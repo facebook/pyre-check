@@ -56,10 +56,10 @@ module AnnotationsKeyValue = struct
   let description = "Node type resolution keys"
 end
 
-include SharedMemory.WithCache (Ast.SharedMemory.ReferenceKey) (TypeAnnotationsValue)
+include SharedMemory.WithCache (Reference.Key) (TypeAnnotationsValue)
 (** A map of function definitions (indexed by Reference.t key) to to annotations for each statement *)
 
-module Keys = SharedMemory.NoCache (Ast.SharedMemory.ReferenceKey) (AnnotationsKeyValue)
+module Keys = SharedMemory.NoCache (Reference.Key) (AnnotationsKeyValue)
 
 let remove qualifiers =
   let accesses =

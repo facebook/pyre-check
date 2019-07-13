@@ -31,18 +31,6 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-module ReferenceKey = struct
-  type t = Reference.t
-
-  let to_string = Reference.show
-
-  let compare = Reference.compare
-
-  type out = t
-
-  let from_string name = Reference.create name
-end
-
 module SymlinksToPaths = struct
   module SymlinkTarget = struct
     type t = string
@@ -92,7 +80,7 @@ module Sources = struct
     let description = "AST"
   end
 
-  module Sources = SharedMemory.NoCache (ReferenceKey) (SourceValue)
+  module Sources = SharedMemory.NoCache (Reference.Key) (SourceValue)
 
   let get = Sources.get
 
@@ -191,7 +179,7 @@ module Modules = struct
     let description = "Module"
   end
 
-  module Modules = SharedMemory.WithCache (ReferenceKey) (ModuleValue)
+  module Modules = SharedMemory.WithCache (Reference.Key) (ModuleValue)
 
   let add ~qualifier ~ast_module = Modules.write_through qualifier ast_module
 
