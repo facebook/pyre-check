@@ -69,6 +69,14 @@ let test_scheduling _ =
       ^ "but is used as type `str`.";
       "Incompatible return type [7]: Expected `str` but got `int`." ];
 
+  assert_type_errors
+    {|
+      def foo() -> None:
+        def bar() -> None:
+          bar()
+    |}
+    [];
+
   (* Functions defined after try/except blocks are typechecked. *)
   assert_type_errors
     {|

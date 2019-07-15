@@ -4259,12 +4259,8 @@ module State (Context : Context) = struct
         state
 
 
-  let forward
-      ?key
-      ({ resolution; resolution_fixpoint; nested_defines; bottom; _ } as state)
-      ~statement:({ Node.location; _ } as statement)
-    =
-    let state =
+  let forward ?key ({ bottom; _ } as state) ~statement:({ Node.location; _ } as statement) =
+    let ({ resolution; resolution_fixpoint; nested_defines; _ } as state) =
       if bottom then
         state
       else
