@@ -21,7 +21,11 @@ type lookup = {
   lookup: Lookup.t option
 }
 
-let get_lookups ~configuration ~state:({ lookups; _ } as state) paths =
+let get_lookups
+    ~configuration:({ Configuration.Analysis.store_type_check_resolution; _ } as configuration)
+    ~state:{ lookups; environment; scheduler; _ }
+    paths
+  =
   let paths, nonexistent_paths =
     let get_source_path path =
       match SourcePath.create ~configuration path with
@@ -45,10 +49,8 @@ let get_lookups ~configuration ~state:({ lookups; _ } as state) paths =
     in
     List.partition_map ~f:retrieve_cached paths
   in
-  let generate_lookups ~state:{ lookups; environment; _ } paths =
-    (* TODO(T47146927): Batch typecheck these paths; register resolution; generate lookups; cache
-       them; clear resolution. *)
-    let generate_single ({ qualifier; _ } as incomplete_lookup) =
+  let generate_lookups paths =
+    let generate_lookup ({ qualifier; _ } as incomplete_lookup) =
       let lookup =
         Ast.SharedMemory.Sources.get qualifier >>| Lookup.create_of_source environment
       in
@@ -57,9 +59,22 @@ let get_lookups ~configuration ~state:({ lookups; _ } as state) paths =
       |> ignore;
       { incomplete_lookup with lookup }
     in
-    List.map ~f:generate_single paths
+    if not store_type_check_resolution then (
+      Service.Check.analyze_sources
+        ~scheduler:(Scheduler.with_parallel scheduler ~is_parallel:(List.length paths > 5))
+        ~configuration:{ configuration with store_type_check_resolution = true }
+        ~environment
+        ~handles:
+          (List.map ~f:(fun { path; _ } -> path |> File.create |> File.handle ~configuration) paths)
+        ()
+      |> ignore;
+      let lookups = List.map ~f:generate_lookup paths in
+      ResolutionSharedMemory.remove (List.map ~f:(fun { qualifier; _ } -> qualifier) paths);
+      lookups )
+    else
+      List.map ~f:generate_lookup paths
   in
-  nonexistent_paths @ cache_hits @ generate_lookups ~state cache_misses
+  nonexistent_paths @ cache_hits @ generate_lookups cache_misses
 
 
 let evict ~state:{ lookups; _ } reference = String.Table.remove lookups (Reference.show reference)
