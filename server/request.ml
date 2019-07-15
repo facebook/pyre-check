@@ -1017,24 +1017,24 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         >>| (fun (location, annotation) ->
               TypeQuery.Response (TypeQuery.TypeAtLocation { TypeQuery.location; annotation }))
         |> Option.value ~default
-    | TypeQuery.TypesInFiles paths -> (
-      match LookupCache.find_all_annotations_batch ~state ~configuration ~paths with
-      | results, [] ->
-          List.map
-            ~f:(fun { LookupCache.path; types_by_location } ->
-              { TypeQuery.path;
-                types = List.map ~f:TypeQuery.create_type_at_location types_by_location
-              })
-            results
-          |> fun types_by_file -> TypeQuery.Response (TypeQuery.TypesByFile types_by_file)
-      | _, error_paths ->
+    | TypeQuery.TypesInFiles paths ->
+        let annotations = LookupCache.find_all_annotations_batch ~state ~configuration ~paths in
+        let create_result = function
+          | { LookupCache.path; types_by_location = Some types } ->
+              `Fst { TypeQuery.path; types = List.map ~f:TypeQuery.create_type_at_location types }
+          | { LookupCache.path; _ } -> `Snd path
+        in
+        let results, errors = List.partition_map ~f:create_result annotations in
+        if List.is_empty errors then
+          TypeQuery.Response (TypeQuery.TypesByFile results)
+        else
           let paths =
             List.fold
               ~init:""
               ~f:(fun sofar path -> Format.asprintf "%s\n\t`%a`" sofar PyrePath.pp path)
-              error_paths
+              errors
           in
-          TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths) )
+          TypeQuery.Error (Format.asprintf "Not able to get lookups in: %s" paths)
     | TypeQuery.ValidateTaintModels path -> (
       try
         let directories =
