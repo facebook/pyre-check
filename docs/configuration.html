@@ -73,26 +73,30 @@ for example:</p>
 <p>You can extend this configuration to configure Pyre for your project's specific
 setup and needs. The following configuration options are supported:</p>
 <p><code>source_directories</code>: List of paths to type check. Defaults to current directory.</p>
-<p><code>ignore_all_errors</code>: A list of paths to omit from type-checking. This may be useful for
-generated files, virtualenv directories, etc.  These should be paths relative to the location of
-the configuration file (or the local configuration if applicable).  These can also include basic
-globs using *. <strong>Note</strong>: files matching these paths will still be parsed, please refer to the
-<code>exclude</code> configuration item for further options.</p>
+<p><code>search_path</code>: List of paths to Python modules to include in the typing
+environment. For example, typeshed third-party modules. Pyre will use those
+paths to build up the typing environment. Note that if the same Python module is
+found both in <code>source_directories</code> and <code>search_path</code>, the <code>search_path</code> version
+takes precendence. If the same Python module is found in two different
+<code>search_path</code>s, the version that belongs to the path that comes earlier takes
+precedence.</p>
+<p><code>exclude</code>: List of regular expressions for files and directories that should be
+completely ignored by Pyre. The regular expression will be matched against the
+<em>full</em> path of files as opposed to their relative path.</p>
+<p><code>ignore_all_errors</code>: A list of paths to omit from type-checking. This may be
+useful for generated files, virtualenv directories, etc.  These should be paths
+relative to the location of the configuration file (or the local configuration
+if applicable).  These can also include basic globs using *. <strong>Note</strong>: files
+matching these paths will still be processed (i.e. type and module names in those files are still visible to Pyre). Please refer to the <code>exclude</code>
+configuration item if you have files that are intended to be hidden from Pyre.</p>
 <p><code>binary</code>: Location of pyre binary. This can be specified to gradually upgrade a Pyre
 binary in a CI setting.</p>
 <p><code>logger</code>: If set, Pyre will invoke the binary passing it statistics in JSON format.
 The statistics contain information about Pyre's performance as well as information about
 the project's type coverage.</p>
-<p><code>search_path</code>: List of paths to stubs and external modules to include in the
-typing environment. For example, typeshed third-party modules. Pyre will use
-those paths to build up the typing environment but will <em>not</em> check files found
-in the search path. Note that if the same file is found both in
-<code>source_directories</code> and <code>search_path</code>, then <code>search_path</code> takes precendence and
-the file will treated as external modules (which, again, will <em>not</em> be analyzed).</p>
 <p><code>typeshed</code>: Path to the <a href="https://github.com/python/typeshed">Typeshed</a> standard library, which
 provides typed stubs for library functions.</p>
 <p><code>workers</code>: Number of workers to spawn for multiprocessing.</p>
-<p><code>exclude</code>: List of regular expressions for files and directories that should not be parsed.</p>
 <p><code>extensions</code>: Consider extensions in this list equivalent to <code>.py</code> for type checking.
 Empty string indicates extensionless files.</p>
 <h1><a class="anchor" aria-hidden="true" id="local-configuration"></a><a href="#local-configuration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Local Configuration</h1>
