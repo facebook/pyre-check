@@ -1787,6 +1787,8 @@ let test_defines _ =
     }
   in
   assert_defines [+Define define] [create_toplevel [+Define define]; define];
+  let if_define = { If.test = +Ellipsis; body = [+Define define]; orelse = [] } in
+  assert_defines [+If if_define] [create_toplevel [+If if_define]];
 
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in

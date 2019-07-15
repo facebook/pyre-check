@@ -1332,7 +1332,8 @@ let defines ?(include_stubs = false) ?(include_nested = false) ?(include_topleve
 
     let visit_children = function
       | { Node.value = Define _; _ } -> include_nested
-      | _ -> true
+      | { Node.value = Class _; _ } -> true
+      | _ -> false
 
 
     let predicate = function
