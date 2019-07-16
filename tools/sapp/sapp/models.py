@@ -738,6 +738,10 @@ class IssueInstance(Base, PrepareMixin, MutableRecordMixin):  # noqa
         doc="Number of issues in this callable for this run",
     )
 
+    min_trace_length_to_entrypoints = Column(
+        Integer, nullable=True, doc="The minimum trace length to entrypoints"
+    )
+
     def get_shared_texts_by_kind(self, kind: SharedTextKind):
         return [text for text in self.shared_texts if text.kind == kind]
 

@@ -107,6 +107,9 @@ class TraceGraph(object):
     def get_text(self, shared_text_id: DBID) -> str:
         return self._shared_texts[shared_text_id.local_id].contents
 
+    def get_shared_text_by_local_id(self, shared_text_id: int) -> SharedText:
+        return self._shared_texts[shared_text_id]
+
     def get_shared_text(
         self, kind: SharedTextKind, content: str
     ) -> Optional[SharedText]:
@@ -199,6 +202,11 @@ class TraceGraph(object):
             id for (id, depth) in self._trace_frame_leaf_assoc[trace_frame.id.local_id]
         }
         return ids
+
+    def get_trace_frame_leaf_ids_with_depths(
+        self, trace_frame: TraceFrame
+    ) -> Set[Tuple[int, int]]:
+        return self._trace_frame_leaf_assoc[trace_frame.id.local_id]
 
     def add_issue_instance_trace_frame_assoc(
         self, instance: IssueInstance, trace_frame: TraceFrame

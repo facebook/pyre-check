@@ -62,12 +62,12 @@ class AddIssueInstanceLeaves(PipelineStep[TraceGraph, TraceGraph]):
             )
 
         # Create new leaves based on these depths
-        entrypoint_leaf = graph.get_shared_text(self.leaf_kind, self.leaf_name)
-        if entrypoint_leaf is None:
-            entrypoint_leaf = SharedText.Record(
+        leaf = graph.get_shared_text(self.leaf_kind, self.leaf_name)
+        if leaf is None:
+            leaf = SharedText.Record(
                 id=DBID(), contents=self.leaf_name, kind=self.leaf_kind
             )
-            graph.add_shared_text(entrypoint_leaf)
+            graph.add_shared_text(leaf)
 
         # Add the assoc to the leaf
         log.info(
@@ -78,6 +78,6 @@ class AddIssueInstanceLeaves(PipelineStep[TraceGraph, TraceGraph]):
         )
         for trace_frame_id, depth in depth_by_frame_id.items():
             trace_frame = graph.get_trace_frame_from_id(trace_frame_id)
-            graph.add_trace_frame_leaf_assoc(trace_frame, entrypoint_leaf, depth)
+            graph.add_trace_frame_leaf_assoc(trace_frame, leaf, depth)
 
         return graph, summary
