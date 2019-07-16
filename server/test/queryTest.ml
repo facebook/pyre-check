@@ -12,7 +12,8 @@ open Pyre
 open Test
 
 let test_parse_query context =
-  let configuration = Configuration.Analysis.create ~local_root:(mock_path "") () in
+  let { ScratchProject.configuration; _ } = ScratchProject.setup ~context [] in
+  let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_parses serialized query =
     assert_equal
       ~cmp:Request.equal
@@ -57,7 +58,7 @@ let test_parse_query context =
   assert_fails_to_parse "normalizeType(int, str)";
   assert_equal
     (Query.parse_query ~configuration "type_check('derp/fiddle.py')")
-    (Request.TypeCheckRequest [Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py"]);
+    (Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:"derp/fiddle.py"]);
   assert_parses "type(C)" (Type !"C");
   assert_parses "type((C,B))" (Type (+Ast.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";
@@ -65,23 +66,23 @@ let test_parse_query context =
   assert_parses
     "type_at_position('a.py', 1, 2)"
     (TypeAtPosition
-       { path = Path.create_relative ~root:(mock_path "") ~relative:"a.py";
+       { path = Path.create_relative ~root:local_root ~relative:"a.py";
          position = { Ast.Location.line = 1; column = 2 }
        });
   assert_fails_to_parse "type_at_position(a.py:1:2)";
   assert_fails_to_parse "type_at_position('a.py', 1, 2, 3)";
   assert_parses
     "types(path='a.py')"
-    (TypesInFiles [Path.create_relative ~root:(mock_path "") ~relative:"a.py"]);
+    (TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
   assert_parses
     "types('a.py')"
-    (TypesInFiles [Path.create_relative ~root:(mock_path "") ~relative:"a.py"]);
+    (TypesInFiles [Path.create_relative ~root:local_root ~relative:"a.py"]);
   assert_fails_to_parse "types(a.py:1:2)";
   assert_fails_to_parse "types(a.py)";
   assert_fails_to_parse "types('a.py', 1, 2)";
   assert_parses
     "coverage_in_file('a.py')"
-    (CoverageInFile (Path.create_relative ~root:(mock_path "") ~relative:"a.py"));
+    (CoverageInFile (Path.create_relative ~root:local_root ~relative:"a.py"));
   assert_fails_to_parse "coverage_in_file(a.py:1:2)";
   assert_fails_to_parse "coverage_in_file(a.py)";
   assert_fails_to_parse "coverage_in_file('a.py', 1, 2)";
@@ -96,21 +97,21 @@ let test_parse_query context =
   assert_parses "dependent_defines()" (DependentDefines []);
   assert_parses
     "dependent_defines('basic.py')"
-    (DependentDefines [Path.create_relative ~root:(mock_path "") ~relative:"basic.py"]);
+    (DependentDefines [Path.create_relative ~root:local_root ~relative:"basic.py"]);
   assert_parses
     "dependent_defines('basic1.py', 'basic2.py')"
     (DependentDefines
-       [ Path.create_relative ~root:(mock_path "") ~relative:"basic1.py";
-         Path.create_relative ~root:(mock_path "") ~relative:"basic2.py" ]);
+       [ Path.create_relative ~root:local_root ~relative:"basic1.py";
+         Path.create_relative ~root:local_root ~relative:"basic2.py" ]);
   assert_fails_to_parse "dependent_defines(unquoted.py)";
   assert_fails_to_parse "dependent_defines('quoted,py', unquoted.py)";
   assert_parses
     "dump_dependencies('quoted.py')"
-    (DumpDependencies (Path.create_relative ~root:(mock_path "") ~relative:"quoted.py"));
+    (DumpDependencies (Path.create_relative ~root:local_root ~relative:"quoted.py"));
   assert_fails_to_parse "dump_dependencies(unquoted)";
   assert_parses
     "dump_memory_to_sqlite()"
-    (DumpMemoryToSqlite (Path.create_relative ~root:(mock_path "") ~relative:".pyre/memory.sqlite"));
+    (DumpMemoryToSqlite (Path.create_relative ~root:local_root ~relative:".pyre/memory.sqlite"));
   let memory_file, _ = bracket_tmpfile context in
   assert_parses
     (Format.sprintf "dump_memory_to_sqlite('%s')" memory_file)
@@ -149,9 +150,13 @@ let test_parse_query context =
              second_serialized_value = "third_value"
            } ]);
   assert_fails_to_parse "decode_ocaml_values('a', 'b')";
-  let file = Test.write_file ("decode.me", "key,value\nsecond_key,second_value,third_value") in
+  let path =
+    let path = Path.create_relative ~root:local_root ~relative:"decode.me" in
+    File.write (File.create path ~content:"key,value\nsecond_key,second_value,third_value");
+    path
+  in
   assert_parses
-    (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute (File.path file)))
+    (Format.sprintf "decode_ocaml_values_from_file('%s')" (Path.absolute path))
     (DecodeOcamlValues
        [ TypeQuery.SerializedValue { serialized_key = "key"; serialized_value = "value" };
          TypeQuery.SerializedPair
@@ -161,8 +166,8 @@ let test_parse_query context =
            } ]);
   assert_parses "validate_taint_models()" (ValidateTaintModels None);
   assert_parses
-    (Format.sprintf "validate_taint_models('%s')" (Path.absolute (File.path file)))
-    (ValidateTaintModels (Some (File.path file)))
+    (Format.sprintf "validate_taint_models('%s')" (Path.absolute path))
+    (ValidateTaintModels (Some path))
 
 
 let test_to_yojson _ =
