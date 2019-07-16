@@ -49,50 +49,42 @@ let compute_dependencies
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
   in
-  let dependents =
-    Log.log
-      ~section:`Server
-      "Handling type check request for files %a"
-      Sexp.pp
-      [%message (handles : File.Handle.t list)];
-    let signature_hash_changed handle =
-      (* If the hash is not found, then the handle was not part of handles, hence its hash cannot
-         have changed. *)
-      Hashtbl.find old_signature_hashes handle
-      >>= (fun old_hash ->
-            Hashtbl.find new_signature_hashes handle >>| fun new_hash -> old_hash <> new_hash)
-      |> Option.value ~default:false
-    in
-    let dependents =
-      let modules = List.filter qualifiers ~f:signature_hash_changed in
-      let get_dependencies =
-        if incremental_transitive_dependencies then
-          Dependencies.transitive_of_list
-        else
-          Dependencies.of_list
-      in
-      get_dependencies ~get_dependencies:Handler.dependencies ~modules
-      |> Fn.flip Set.diff (Reference.Set.of_list qualifiers)
-    in
-    Statistics.performance
-      ~name:"Computed dependencies"
-      ~timer
-      ~randomly_log_every:100
-      ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
-      ~integers:
-        [ "number of dependencies", Reference.Set.length dependents;
-          "number of files", List.length handles ]
-      ();
-    dependents
+  Log.log
+    ~section:`Server
+    "Handling type check request for files %a"
+    Sexp.pp
+    [%message (handles : File.Handle.t list)];
+  let signature_hash_changed handle =
+    (* If the hash is not found, then the handle was not part of handles, hence its hash cannot
+       have changed. *)
+    Hashtbl.find old_signature_hashes handle
+    >>= (fun old_hash ->
+          Hashtbl.find new_signature_hashes handle >>| fun new_hash -> old_hash <> new_hash)
+    |> Option.value ~default:false
   in
+  let dependents =
+    let modules = List.filter qualifiers ~f:signature_hash_changed in
+    let get_dependencies =
+      if incremental_transitive_dependencies then
+        Dependencies.transitive_of_list
+      else
+        Dependencies.of_list
+    in
+    get_dependencies ~get_dependencies:Handler.dependencies ~modules
+    |> Fn.flip Set.diff (Reference.Set.of_list qualifiers)
+  in
+  Statistics.performance
+    ~name:"Computed dependencies"
+    ~timer
+    ~randomly_log_every:100
+    ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
+    ~integers:
+      [ "number of dependencies", Reference.Set.length dependents;
+        "number of files", List.length handles ]
+    ();
   Log.log
     ~section:`Server
     "Inferred affected modules: %a"
     Sexp.pp
     [%message (dependents : Reference.Set.t)];
-  let to_file qualifier =
-    Ast.SharedMemory.Sources.get qualifier
-    >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
-    >>| File.create
-  in
-  File.Set.filter_map dependents ~f:to_file
+  dependents

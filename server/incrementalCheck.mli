@@ -5,6 +5,12 @@
 
 type errors = State.Error.t list [@@deriving show]
 
+val recheck_deprecated
+  :  state:State.t ->
+  configuration:Configuration.Analysis.t ->
+  files:File.t list ->
+  State.t * errors
+
 val recheck
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->

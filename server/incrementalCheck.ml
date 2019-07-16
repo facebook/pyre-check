@@ -5,6 +5,7 @@
 
 open Core
 module ServerDependencies = Dependencies
+module ModuleTracker = Service.ModuleTracker
 open Ast
 open Analysis
 open State
@@ -13,7 +14,7 @@ open Pyre
 
 type errors = State.Error.t list [@@deriving show]
 
-let recheck
+let recheck_deprecated
     ~state:({ State.environment; errors; scheduler; open_documents; _ } as state)
     ~configuration:({ debug; ignore_dependencies; _ } as configuration)
     ~files
@@ -55,10 +56,16 @@ let recheck
     if ignore_dependencies then
       recheck
     else
-      Set.union
-        (File.Set.of_list recheck)
-        (ServerDependencies.compute_dependencies recheck ~state ~configuration)
-      |> Set.to_list
+      let recheck_dependencies =
+        let to_file qualifier =
+          Ast.SharedMemory.Sources.get qualifier
+          >>= (fun { Ast.Source.handle; _ } -> File.Handle.to_path ~configuration handle)
+          >>| File.create
+        in
+        ServerDependencies.compute_dependencies recheck ~state ~configuration
+        |> File.Set.filter_map ~f:to_file
+      in
+      Set.union (File.Set.of_list recheck) recheck_dependencies |> Set.to_list
   in
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment.";
@@ -193,6 +200,133 @@ let recheck
   List.iter
     ~f:(fun handle -> Hashtbl.remove errors (Source.qualifier ~handle))
     (removed_handles @ repopulate_handles);
+
+  (* Associate the new errors with new files *)
+  List.iter new_errors ~f:(fun error ->
+      let key = Error.path error |> Ast.SourcePath.qualifier_of_relative in
+      Hashtbl.add_multi errors ~key ~data:error);
+
+  Statistics.performance
+    ~name:"incremental check"
+    ~timer
+    ~integers:["number of direct files", List.length files; "number of files", List.length recheck]
+    ();
+  state, new_errors
+
+
+let recheck
+    ~state:({ State.module_tracker; environment; errors; scheduler; open_documents; _ } as state)
+    ~configuration:({ debug; ignore_dependencies; _ } as configuration)
+    ~files
+  =
+  let timer = Timer.start () in
+  Annotated.Class.AttributeCache.clear ();
+  Module.Cache.clear ();
+  Resolution.Cache.clear ();
+  let module_updates =
+    let paths = List.map files ~f:File.path in
+    ModuleTracker.update module_tracker ~configuration ~paths
+  in
+  let recheck_source_paths, removed =
+    let categorize = function
+      | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
+      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+    in
+    List.partition_map module_updates ~f:categorize
+  in
+  let recheck_modules =
+    List.map recheck_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  in
+  let recheck_files =
+    List.map recheck_source_paths ~f:(fun { SourcePath.relative_path; _ } ->
+        File.create (Path.Relative relative_path))
+  in
+  if not (List.is_empty removed) then
+    List.map removed ~f:Reference.show
+    |> String.concat ~sep:", "
+    |> Log.info "Removing type information for `%s`";
+  let (module Handler : Environment.Handler) = environment in
+  let scheduler =
+    Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck_source_paths > 5)
+  in
+  (* Also recheck dependencies of the changed files. *)
+  let recheck =
+    if ignore_dependencies then
+      recheck_modules
+    else
+      Set.union
+        (Reference.Set.of_list recheck_modules)
+        (ServerDependencies.compute_dependencies recheck_files ~state ~configuration)
+      |> Set.to_list
+  in
+  (* Repopulate the environment. *)
+  Log.info "Repopulating the environment.";
+  StatusUpdate.warning
+    ~message:"Repopulating the environment"
+    ~short_message:(Some "[Repopulating]")
+    ~state;
+  let repopulate_handles =
+    let timer = Timer.start () in
+    (* Clean up all data related to updated files. *)
+    let qualifiers = List.append removed recheck_modules in
+    Ast.SharedMemory.Sources.remove qualifiers;
+    Handler.purge ~debug qualifiers;
+    List.iter qualifiers ~f:(LookupCache.evict ~state);
+    Statistics.performance
+      ~name:"purged old environment"
+      ~timer
+      ~integers:["number of files", List.length qualifiers]
+      ();
+    Log.info "Parsing %d updated sources..." (List.length recheck);
+    StatusUpdate.warning
+      ~message:(Format.asprintf "Parsing %d updated sources..." (List.length recheck))
+      ~short_message:(Some "[Parsing sources]")
+      ~state;
+    let { Service.Parser.parsed; syntax_error; system_error } =
+      Service.Parser.parse_sources
+        ~configuration
+        ~scheduler
+        ~preprocessing_state:None
+        ~files:recheck_files
+    in
+    let unparsed = List.concat [syntax_error; system_error] in
+    if not (List.is_empty unparsed) then
+      Log.warning
+        "Unable to parse `%s`."
+        (List.map unparsed ~f:File.Handle.show |> String.concat ~sep:", ");
+    parsed
+  in
+  Log.log
+    ~section:`Debug
+    "Repopulating the environment with %a"
+    Sexp.pp
+    [%message (repopulate_handles : File.Handle.t list)];
+  Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
+  let repopulated = List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle) in
+  List.filter_map ~f:Ast.SharedMemory.Sources.get repopulated
+  |> Service.Environment.populate ~configuration ~scheduler environment;
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size"
+    ~integers:["size", Ast.SharedMemory.heap_size ()]
+    ();
+  Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+
+  (* Compute new set of errors. *)
+  (* Clear all type resolution info from shared memory for all affected sources. *)
+  ResolutionSharedMemory.remove repopulated;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulated);
+  let new_errors =
+    Service.Check.analyze_sources
+      ~open_documents
+      ~scheduler
+      ~configuration
+      ~environment
+      ~handles:repopulate_handles
+      ()
+  in
+  (* Kill all previous errors for new files we just checked *)
+  List.iter ~f:(Hashtbl.remove errors) (removed @ repopulated);
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->

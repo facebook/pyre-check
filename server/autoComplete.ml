@@ -57,7 +57,7 @@ let get_exported_imports ~module_reference =
 
 let check ~state ~configuration file =
   let state, _ =
-    IncrementalCheck.recheck
+    IncrementalCheck.recheck_deprecated
       ~state
       ~configuration:{ configuration with ignore_dependencies = true }
       ~files:[file]
