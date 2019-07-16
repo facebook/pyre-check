@@ -114,6 +114,7 @@ val contains : (module Handler) -> Type.Primitive.t -> bool
    `is_instantiated hierarchy typing.List[str]` will evaluate to false. *)
 val is_instantiated : (module Handler) -> Type.t -> bool
 
+(* Exposed for tests only *)
 val method_resolution_order_linearize
   :  (module Handler) ->
   get_successors:(int -> Target.t list option) ->
@@ -151,17 +152,6 @@ val is_transitive_successor
   source:Type.Primitive.t ->
   target:Type.Primitive.t ->
   bool
-
-val get_generic_parameters
-  :  generic_index:int sexp_option ->
-  Target.t sexp_list ->
-  Type.t sexp_list sexp_option
-
-val raise_if_untracked : (module Handler) -> Type.Primitive.t -> unit
-
-val generic_primitive : Type.Primitive.t
-
-val index_of : (module Handler) -> Type.Primitive.t -> int
 
 val instantiate_successors_parameters
   :  (module Handler) ->
