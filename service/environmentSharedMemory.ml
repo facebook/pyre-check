@@ -154,22 +154,6 @@ module OrderKeyValue = struct
   let description = "Order keys"
 end
 
-module ConfigurationValue = struct
-  type t = Configuration.Analysis.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Configuration"
-end
-
-module ErrorsValue = struct
-  type t = (Ast.Reference.t * Analysis.Error.t list) list
-
-  let prefix = Prefix.make ()
-
-  let description = "All errors"
-end
-
 module IntValue = struct
   type t = int
 
@@ -220,5 +204,3 @@ module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnot
 module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
 module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
 module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
-module StoredConfiguration = Memory.NoCache (StringKey) (ConfigurationValue)
-module ServerErrors = Memory.NoCache (StringKey) (ErrorsValue)

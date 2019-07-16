@@ -87,3 +87,19 @@ module SingletonKey : sig
 
   val key : t
 end
+
+module type SerializableValueType = sig
+  type t
+
+  module Serialized : Value.Type
+
+  val serialize : t -> Serialized.t
+
+  val deserialize : Serialized.t -> t
+end
+
+module Serializer (Value : SerializableValueType) : sig
+  val load : unit -> Value.t
+
+  val store : Value.t -> unit
+end

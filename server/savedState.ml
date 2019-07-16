@@ -8,8 +8,10 @@ open Pyre
 open Ast
 open Service
 
-module SymlinkTargetsToSources = struct
-  module SymlinkTargetsToSourcesValue = struct
+module SymlinkTargetsToSources = Memory.Serializer (struct
+  type t = Path.t String.Table.t
+
+  module Serialized = struct
     type t = (string * Path.t) list
 
     let prefix = Prefix.make ()
@@ -17,15 +19,42 @@ module SymlinkTargetsToSources = struct
     let description = "SymlinkTargetsToSources"
   end
 
-  module Table = Memory.NoCache (Memory.SingletonKey) (SymlinkTargetsToSourcesValue)
+  let serialize = Hashtbl.to_alist
 
-  let store symlink_targets_to_sources =
-    let data = Hashtbl.to_alist symlink_targets_to_sources in
-    Table.add Memory.SingletonKey.key data
+  let deserialize data = String.Table.of_alist_exn data
+end)
 
+module StoredConfiguration = Memory.Serializer (struct
+  type t = Configuration.Analysis.t
 
-  let load () = Table.find_unsafe Memory.SingletonKey.key |> String.Table.of_alist_exn
-end
+  module Serialized = struct
+    type t = Configuration.Analysis.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Configuration"
+  end
+
+  let serialize = Fn.id
+
+  let deserialize = Fn.id
+end)
+
+module ServerErrors = Memory.Serializer (struct
+  type t = Analysis.Error.t list Reference.Table.t
+
+  module Serialized = struct
+    type t = (Reference.t * Analysis.Error.t list) list
+
+    let prefix = Prefix.make ()
+
+    let description = "All errors"
+  end
+
+  let serialize = Hashtbl.to_alist
+
+  let deserialize data = Reference.Table.of_alist_exn data
+end)
 
 exception IncompatibleState of string
 
@@ -149,9 +178,7 @@ let load
   let scheduler = Scheduler.create ~configuration () in
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
-  let old_configuration =
-    EnvironmentSharedMemory.StoredConfiguration.find_unsafe "configuration"
-  in
+  let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
   let module_tracker = ModuleTracker.SharedMemory.load () in
@@ -166,9 +193,7 @@ let load
     in
     List.map changed_paths ~f:File.create
   in
-  let errors =
-    EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> Ast.Reference.Table.of_alist_exn
-  in
+  let errors = ServerErrors.load () in
   let state =
     { State.module_tracker;
       environment;
@@ -196,6 +221,6 @@ let save
   Memory.SharedMemory.collect `aggressive;
   ModuleTracker.SharedMemory.store module_tracker;
   SymlinkTargetsToSources.store symlink_targets_to_sources;
-  EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
-  EnvironmentSharedMemory.ServerErrors.add "errors" (Hashtbl.to_alist errors);
+  StoredConfiguration.store configuration;
+  ServerErrors.store errors;
   Memory.save_shared_memory ~path:saved_state_path

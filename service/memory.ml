@@ -225,3 +225,27 @@ module SingletonKey = struct
 
   let key = 0
 end
+
+module type SerializableValueType = sig
+  type t
+
+  module Serialized : Value.Type
+
+  val serialize : t -> Serialized.t
+
+  val deserialize : Serialized.t -> t
+end
+
+module Serializer (Value : SerializableValueType) = struct
+  module Table = NoCache (SingletonKey) (Value.Serialized)
+
+  let store table =
+    let data = Value.serialize table in
+    Table.add SingletonKey.key data
+
+
+  let load () =
+    let table = Table.find_unsafe SingletonKey.key |> Value.deserialize in
+    Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
+    table
+end

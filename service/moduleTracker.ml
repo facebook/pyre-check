@@ -219,21 +219,18 @@ let update ~configuration ~paths tracker =
   |> merge_updates
 
 
-module SharedMemoryValue = struct
-  type t = (Reference.t * SourcePath.t list) list
+module SharedMemory = Memory.Serializer (struct
+  type nonrec t = t
 
-  let prefix = Prefix.make ()
+  module Serialized = struct
+    type t = (Reference.t * SourcePath.t list) list
 
-  let description = "Module tracker"
-end
+    let prefix = Prefix.make ()
 
-module SharedMemory = struct
-  module Table = Memory.WithCache (Memory.SingletonKey) (SharedMemoryValue)
+    let description = "Module tracker"
+  end
 
-  let store tracker =
-    let data = Hashtbl.to_alist tracker in
-    Table.add Memory.SingletonKey.key data
+  let serialize = Hashtbl.to_alist
 
-
-  let load () = Table.find_unsafe Memory.SingletonKey.key |> Reference.Table.of_alist_exn
-end
+  let deserialize data = Reference.Table.of_alist_exn data
+end)
