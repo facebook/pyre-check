@@ -138,7 +138,7 @@ let test_lookup_pick_narrowest _ =
     ~lookup
     [ "2:14-2:18/typing.Type[bool]";
       "2:20-2:26/typing.Optional[bool]";
-      "2:44-2:48/typing.Type[bool]";
+      "2:28-2:49/typing.Type[typing.Optional[bool]]";
       "2:54-2:58/None";
       "2:8-2:12/bool";
       "3:17-3:27/bool";
@@ -166,11 +166,9 @@ let test_lookup_class_attributes _ =
   let assert_annotation = assert_annotation ~lookup ~path:"test.py" in
   assert_annotation_list
     ~lookup
-    ["3:11-3:11/typing.Any"; "3:4-3:5/typing.Type[test.Foo]"; "3:7-3:11/typing.Type[bool]"];
+    ["3:11-3:11/typing.Any"; "3:4-3:5/bool"; "3:7-3:11/typing.Type[bool]"];
   assert_annotation ~position:{ Location.line = 3; column = 3 } ~annotation:None;
-  assert_annotation
-    ~position:{ Location.line = 3; column = 4 }
-    ~annotation:(Some "3:4-3:5/typing.Type[test.Foo]");
+  assert_annotation ~position:{ Location.line = 3; column = 4 } ~annotation:(Some "3:4-3:5/bool");
   assert_annotation ~position:{ Location.line = 3; column = 5 } ~annotation:None
 
 
@@ -202,8 +200,7 @@ let test_lookup_identifier_accesses _ =
   assert_annotation_list
     ~lookup
     [ "3:13-3:15/typing_extensions.Literal[12]";
-      (* `x` at 3:4-3:5 expands to `test.A.x`. This is the annotation for the `test.A` prefix. *)
-      "3:4-3:5/typing.Type[test.A]";
+      "3:4-3:5/int";
       "3:7-3:10/typing.Type[int]";
       "4:17-4:21/test.A";
       "4:23-4:24/int";
@@ -285,7 +282,7 @@ let test_lookup_multiline_accesses _ =
       "2:13-2:17/None";
       "3:7-5:14/bool";
       "9:13-9:15/typing_extensions.Literal[12]";
-      "9:4-9:5/typing.Type[test.A]";
+      "9:4-9:5/int";
       "9:7-9:10/typing.Type[int]" ];
   assert_annotation ~position:{ Location.line = 3; column = 7 } ~annotation:(Some "3:7-5:14/bool");
   assert_annotation ~position:{ Location.line = 3; column = 14 } ~annotation:(Some "3:7-5:14/bool");
@@ -421,7 +418,7 @@ let test_lookup_unbound _ =
   let assert_annotation = assert_annotation ~lookup ~path:"test.py" in
   assert_annotation_list
     ~lookup
-    [ "2:14-2:25/typing.TypeAlias";
+    [ "2:14-2:29/typing.Type[typing.List[Variable[_T]]]";
       "2:34-2:38/None";
       "2:8-2:12/typing.List[Variable[_T]]";
       "3:18-3:20/typing.List[Variable[_T]]";
@@ -429,12 +426,14 @@ let test_lookup_unbound _ =
       "3:6-3:21/typing.List[typing.Any]";
       "4:15-4:16/typing.List[typing.Any]";
       "4:2-4:3/typing.Any";
-      "4:22-4:23/typing.List[typing.Any]";
+      "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], \
+       typing.Any][[Named(s, slice)], typing.List[typing.Any]]]";
       "4:22-4:26/typing.Any";
       "4:24-4:25/typing_extensions.Literal[1]";
       "4:7-4:11/typing.Any";
       "4:7-4:26/typing.Any";
-      "4:7-4:8/typing.List[typing.Any]";
+      "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], \
+       typing.Any][[Named(s, slice)], typing.List[typing.Any]]]";
       "4:9-4:10/typing_extensions.Literal[0]";
       "5:2-5:3/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
       "5:6-5:14/typing.Callable(identity)[[Named(x, Variable[_T])], Variable[_T]]";
@@ -448,10 +447,16 @@ let test_lookup_unbound _ =
     ~annotation:(Some "3:18-3:20/typing.List[Variable[_T]]");
   assert_annotation
     ~position:{ Location.line = 4; column = 7 }
-    ~annotation:(Some "4:7-4:8/typing.List[typing.Any]");
+    ~annotation:
+      (Some
+         "4:7-4:8/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], \
+          typing.Any][[Named(s, slice)], typing.List[typing.Any]]]");
   assert_annotation
     ~position:{ Location.line = 4; column = 22 }
-    ~annotation:(Some "4:22-4:23/typing.List[typing.Any]")
+    ~annotation:
+      (Some
+         "4:22-4:23/typing.Callable(list.__getitem__)[..., unknown][[[Named(i, int)], \
+          typing.Any][[Named(s, slice)], typing.List[typing.Any]]]")
 
 
 let test_lookup_if_statements _ =
@@ -473,8 +478,7 @@ let test_lookup_if_statements _ =
     ~lookup
     [ "2:14-2:18/typing.Type[bool]";
       "2:20-2:24/typing.List[int]";
-      "2:26-2:37/typing.TypeAlias";
-      "2:38-2:41/typing.Type[int]";
+      "2:26-2:42/typing.Type[typing.List[int]]";
       "2:47-2:51/None";
       "2:8-2:12/bool";
       "3:7-3:11/bool";
@@ -532,10 +536,7 @@ let test_lookup_definitions _ =
       "test.py:12:4-12:7 -> test.py:8:0-9:8";
       "test.py:13:12-13:18 -> test.py:2:0-3:13";
       "test.py:13:4-13:11 -> test.py:5:0-6:8";
-      "test.py:2:16-2:19 -> builtins.pyi:76:0-93:34";
-      "test.py:5:14-5:17 -> builtins.pyi:76:0-93:34";
-      "test.py:8:10-8:13 -> builtins.pyi:76:0-93:34";
-      "test.py:8:17-8:20 -> builtins.pyi:98:0-115:42" ];
+      "test.py:2:16-2:19 -> builtins.pyi:76:0-93:34" ];
   assert_definition ~position:{ Location.line = 12; column = 0 } ~definition:None;
   assert_definition
     ~position:{ Location.line = 12; column = 4 }
@@ -585,7 +586,6 @@ let test_lookup_definitions_instances _ =
       "test.py:19:4-19:5 -> test.py:6:0-9:18";
       "test.py:7:11-7:12 -> test.py:2:0-4:12";
       "test.py:7:4-7:5 -> test.py:6:0-9:18";
-      "test.py:7:7-7:8 -> test.py:2:0-4:12";
       "test.py:8:21-8:22 -> test.py:2:0-4:12";
       "test.py:9:15-9:16 -> test.py:2:0-4:12" ];
   assert_definition

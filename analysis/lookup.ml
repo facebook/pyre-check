@@ -71,14 +71,14 @@ module ExpressionVisitor = struct
               >>= find_definition )
       | _ -> None
     in
-    let store_lookup ~table ~location ~data =
-      if
-        (not (Location.equal location Location.Reference.any))
-        && not (Location.equal location Location.Reference.synthetic)
-      then
-        Hashtbl.set table ~key:location ~data
-    in
     let rec annotate_expression ({ Node.location; value } as expression) =
+      let store_lookup ~table ~location ~data =
+        if
+          (not (Location.equal location Location.Reference.any))
+          && not (Location.equal location Location.Reference.synthetic)
+        then
+          Hashtbl.set table ~key:location ~data |> ignore
+      in
       let store_annotation location annotation =
         store_lookup ~table:annotations_lookup ~location ~data:annotation
       in
@@ -97,9 +97,6 @@ module ExpressionVisitor = struct
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments
-      | Name (Name.Attribute { base; _ }) ->
-          annotate_expression base;
-          ()
       | _ -> ()
     in
     annotate_expression expression;
@@ -126,16 +123,27 @@ module Visit = struct
       let postcondition_visit =
         visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition
       in
+      (* Special-casing for annotations that should be parsed rather than resolved as expressions. *)
+      let store_annotation annotation =
+        let { ExpressionVisitor.pre_resolution; annotations_lookup; _ } = !state in
+        let resolved = Resolution.parse_annotation pre_resolution annotation |> Type.meta in
+        let location = Node.location annotation in
+        if
+          (not (Location.equal location Location.Reference.any))
+          && not (Location.equal location Location.Reference.synthetic)
+        then
+          Hashtbl.add annotations_lookup ~key:location ~data:resolved |> ignore
+      in
       match Node.value statement with
       | Assign { Assign.target; annotation; value; _ } ->
           postcondition_visit target;
-          Option.iter ~f:precondition_visit annotation;
+          annotation >>| store_annotation |> ignore;
           precondition_visit value
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; _ } ->
           let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
             Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
             Option.iter ~f:postcondition_visit value;
-            Option.iter ~f:postcondition_visit annotation
+            annotation >>| store_annotation |> ignore
           in
           List.iter parameters ~f:visit_parameter;
           List.iter decorators ~f:postcondition_visit;

@@ -760,9 +760,8 @@ let test_query context =
            [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
                  [ 2, 32, 2, 36, Type.none;
-                   2, 23, 2, 26, Type.meta Type.integer;
-                   2, 8, 2, 9, Type.list Type.integer;
-                   2, 11, 2, 22, Type.Primitive "typing.TypeAlias" ]
+                   2, 11, 2, 27, Type.meta (Type.list Type.integer);
+                   2, 8, 2, 9, Type.list Type.integer ]
                  |> create_types_at_locations
              } ]));
 
@@ -777,10 +776,8 @@ let test_query context =
         (Protocol.TypeQuery.TypesByFile
            [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
-                 [ (* TODO:(T46070919): Interprets this assignment as `FooFoo.x = 1` and insanity
-                      ensues. *)
-                   { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
-                     annotation = parse_annotation "typing.Type[test.Foo]"
+                 [ { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 2 3 3;
+                     annotation = Type.integer
                    };
                    { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 6 3 7;
                      annotation = Type.literal_integer 1
