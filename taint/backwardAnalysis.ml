@@ -119,6 +119,18 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.prepend actual_path
             |> BackwardState.Tree.join taint_tree
           in
+          let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } state =
+            match Model.get_global_sink_model ~resolution ~expression:argument with
+            | Some global_taint ->
+                global_taint
+                |> BackwardState.Tree.apply_call
+                     (Node.location argument)
+                     ~callees:[call_target]
+                     ~port:AccessPath.Root.LocalResult
+            | None ->
+                let access_path = of_expression ~resolution argument in
+                get_taint access_path state
+          in
           let combine_tito location taint_tree { AccessPath.root; actual_path; formal_path } =
             let add_tito_location features =
               Features.Simple.Breadcrumb Features.Breadcrumb.Tito
@@ -164,9 +176,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                   | Sinks.ParameterUpdate n -> (
                     match List.nth arguments n with
                     | None -> BackwardState.Tree.empty
-                    | Some { Call.Argument.value = exp; _ } ->
-                        let access_path = of_expression ~resolution exp in
-                        get_taint access_path state )
+                    | Some argument -> get_argument_taint ~resolution ~argument state )
                   | _ -> failwith "unexpected tito sink"
                 in
                 List.fold
@@ -436,15 +446,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
             in
             let global_taint =
-              Model.get_global_model ~resolution ~expression:target
-              >>| (fun { Model.model =
-                           { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
-                         _
-                       } ->
-                    BackwardState.read
-                      ~root:(Root.PositionalParameter { position = 0; name = "$global" })
-                      ~path:[]
-                      sink_taint)
+              Model.get_global_sink_model ~resolution ~expression:target
               |> Option.value ~default:BackwardState.Tree.empty
             in
             BackwardState.Tree.join local_taint global_taint

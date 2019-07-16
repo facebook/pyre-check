@@ -280,6 +280,30 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Option.value ~default:ForwardState.Tree.empty
           in
           let apply_tito_side_effects tito_effects state =
+            (* We also have to consider the cases when the updated parameter has a global model, in
+               which case we need to capture the flow. *)
+            let apply_argument_effect
+                ~argument:{ Call.Argument.value = argument; _ }
+                ~source_tree
+                state
+              =
+              let location = argument.Node.location in
+              begin
+                match Model.get_global_sink_model ~resolution ~expression:argument with
+                | None -> ()
+                | Some sink_tree ->
+                    let sink_tree =
+                      sink_tree
+                      |> BackwardState.Tree.apply_call
+                           location
+                           ~callees:[call_target]
+                           ~port:AccessPath.Root.LocalResult
+                    in
+                    FunctionContext.check_flow ~location ~source_tree ~sink_tree
+              end;
+              let access_path = AccessPath.of_expression ~resolution argument in
+              store_taint_option ~weak:true access_path source_tree state
+            in
             let for_each_target ~key:target ~data:taint state =
               match target with
               | Sinks.LocalReturn -> state (* This is regular tito which was computed above *)
@@ -287,9 +311,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
                 (* Side effect on argument n *)
                 match List.nth arguments n with
                 | None -> state
-                | Some { Call.Argument.value = exp; _ } ->
-                    let access_path = AccessPath.of_expression ~resolution exp in
-                    store_taint_option ~weak:true access_path taint state )
+                | Some argument -> apply_argument_effect ~argument ~source_tree:taint state )
               | _ -> failwith "unexpected sink in tito"
             in
             Map.Poly.fold tito_effects ~f:for_each_target ~init:state
@@ -592,15 +614,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Check flows to tainted globals/attributes. *)
           let source_tree = taint in
           let sink_tree =
-            Model.get_global_model ~resolution ~expression:target
-            >>| (fun { Model.model =
-                         { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ };
-                       _
-                     } ->
-                  BackwardState.read
-                    ~root:(Root.PositionalParameter { position = 0; name = "$global" })
-                    ~path:[]
-                    sink_taint)
+            Model.get_global_sink_model ~resolution ~expression:target
             |> Option.value ~default:BackwardState.Tree.empty
           in
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;

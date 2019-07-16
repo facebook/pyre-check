@@ -49,3 +49,22 @@ def dictionary_nested_non_source_assignment():
     d = {}
     d["a"]["b"] = __test_source()
     return d["a"]["a"]
+
+
+tainted_dictionary = {}
+
+
+def update_tainted_dictionary():
+    tainted_dictionary.update({"a": __test_source()})
+
+
+def update_dictionary_indirectly(arg):
+    tainted_dictionary.update(arg)
+
+
+def indirect_flow_from_source_to_global_dictionary():
+    update_dictionary_indirectly({"a": __test_source()})
+
+
+def update_parameter(arg):
+    arg.update({"a": __test_source})

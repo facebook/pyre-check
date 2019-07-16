@@ -18,7 +18,10 @@ exception InvalidModel of string
 
 val get_callsite_model : call_target:[< Callable.t ] -> t
 
-val get_global_model : resolution:Resolution.t -> expression:Expression.t -> t option
+val get_global_sink_model
+  :  resolution:Resolution.t ->
+  expression:Expression.t ->
+  Domains.BackwardState.Tree.t option
 
 val parse
   :  resolution:Resolution.t ->

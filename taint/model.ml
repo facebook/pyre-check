@@ -634,6 +634,15 @@ let get_global_model ~resolution ~expression =
   call_target >>| Callable.create_object >>| fun call_target -> get_callsite_model ~call_target
 
 
+let get_global_sink_model ~resolution ~expression =
+  get_global_model ~resolution ~expression
+  >>| fun { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ } ->
+  BackwardState.read
+    ~root:(AccessPath.Root.PositionalParameter { position = 0; name = "$global" })
+    ~path:[]
+    sink_taint
+
+
 let parse ~resolution ?path ~source ~configuration models =
   create ~resolution ?path ~configuration source
   |> List.map ~f:(fun model -> model.call_target, model.model)

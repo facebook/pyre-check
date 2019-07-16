@@ -1,5 +1,103 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.indirect_flow_from_source_to_global_dictionary",
+    "callable_line": 65,
+    "code": 5002,
+    "line": 66,
+    "start": 33,
+    "end": 55,
+    "filename": "dictionary.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 66,
+              "start": 52,
+              "end": 54
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 66,
+                "start": 33,
+                "end": 55
+              },
+              "resolves_to": [ "dictionary.update_dictionary_indirectly" ],
+              "port": "formal(arg)",
+              "length": 1
+            },
+            "tito": [ { "line": 62, "start": 30, "end": 33 } ],
+            "leaves": [ { "kind": "Test", "name": "dict.update" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.update_tainted_dictionary",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 58,
+    "start": 4,
+    "end": 22,
+    "filename": "dictionary.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 58,
+              "start": 49,
+              "end": 51
+            },
+            "tito": [ { "line": 58, "start": 30, "end": 52 } ],
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "tito" }, { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 58,
+              "start": 4,
+              "end": 22
+            },
+            "leaves": [ { "kind": "Test", "name": "dict.update" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_assign_to_index",
@@ -178,5 +276,31 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.update_dictionary_indirectly",
+    "sources": [],
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "root": {
+              "filename": "dictionary.py",
+              "line": 62,
+              "start": 4,
+              "end": 22
+            },
+            "tito": [ { "line": 62, "start": 30, "end": 33 } ],
+            "leaves": [ { "kind": "Test", "name": "dict.update" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ],
+    "tito": []
   }
 }
