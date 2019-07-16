@@ -42,13 +42,13 @@ val process_type_query_request
 val process_display_type_errors_request
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
-  files:File.t list ->
+  PyrePath.t list ->
   response
 
 val process_type_check_request
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
-  files:File.t list ->
+  PyrePath.t list ->
   response
 
 val process_get_definition_request

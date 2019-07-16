@@ -20,6 +20,12 @@ let to_pyre_position { LanguageServer.Types.Position.line; character } =
   { Location.line = line + 1; column = character }
 
 
+let errors_of_path ~configuration ~errors path =
+  SourcePath.create ~configuration path
+  >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
+  |> Option.value ~default:[]
+
+
 let parse_lsp ~configuration ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
@@ -40,9 +46,7 @@ let parse_lsp ~configuration ~request =
         SearchPath.search_for_path ~search_path path
         >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
   in
-  let string_path_to_file string_path =
-    File.create (Path.create_absolute ~follow_symbolic_links:false string_path)
-  in
+  let string_to_path string_path = Path.create_absolute ~follow_symbolic_links:false string_path in
   let process_request request_method =
     match request_method with
     | "textDocument/definition" -> (
@@ -74,10 +78,9 @@ let parse_lsp ~configuration ~request =
             _
           } ->
           uri_to_path ~uri
-          >>| File.create
-          >>| fun file ->
-          Log.log ~section:`Server "Closed file %a" File.pp file;
-          CloseDocument file
+          >>| fun path ->
+          Log.log ~section:`Server "Closed file %a" Path.pp path;
+          CloseDocument path
       | Ok _ ->
           log_method_error request_method;
           None
@@ -92,10 +95,9 @@ let parse_lsp ~configuration ~request =
             _
           } ->
           uri_to_path ~uri
-          >>| File.create
-          >>| fun file ->
-          Log.log ~section:`Server "Opened file %a" File.pp file;
-          OpenDocument file
+          >>| fun path ->
+          Log.log ~section:`Server "Opened file %a" Path.pp path;
+          OpenDocument path
       | Ok _ ->
           log_method_error request_method;
           None
@@ -131,11 +133,11 @@ let parse_lsp ~configuration ~request =
           { DidSaveTextDocument.parameters =
               Some
                 { DidSaveTextDocumentParameters.textDocument = { TextDocumentIdentifier.uri; _ };
-                  text
+                  _
                 };
             _
           } ->
-          uri_to_path ~uri >>| File.create ?content:text >>| fun file -> SaveDocument file
+          uri_to_path ~uri >>| fun path -> SaveDocument path
       | Ok _ ->
           log_method_error request_method;
           None
@@ -188,9 +190,7 @@ let parse_lsp ~configuration ~request =
             id;
             _
           } ->
-          uri_to_path ~uri
-          >>| File.create
-          >>| fun file -> CodeActionRequest { id; uri; diagnostics; file }
+          uri_to_path ~uri >>| fun path -> CodeActionRequest { id; uri; diagnostics; path }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
@@ -203,7 +203,7 @@ let parse_lsp ~configuration ~request =
             id;
             _
           } ->
-          uri_to_path ~uri >>| File.create >>| fun file -> TypeCoverageRequest { file; id }
+          uri_to_path ~uri >>| fun path -> TypeCoverageRequest { path; id }
       | Ok _ -> None
       | Error yojson_error ->
           Log.log ~section:`Server "Error: %s" yojson_error;
@@ -223,7 +223,7 @@ let parse_lsp ~configuration ~request =
     | "updateFiles" -> (
       match UpdateFiles.of_yojson request with
       | Ok { UpdateFiles.parameters = Some { files; invalidated = targets; _ }; _ } ->
-          let files = List.map files ~f:string_path_to_file in
+          let files = List.map files ~f:string_to_path in
           if not (List.is_empty targets) then (
             Log.info "Invalidate %d symlinks" (List.length targets);
             Ast.SharedMemory.SymlinksToPaths.remove ~targets );
@@ -235,7 +235,7 @@ let parse_lsp ~configuration ~request =
     | "displayTypeErrors" -> (
       match LanguageServer.Types.DisplayTypeErrors.of_yojson request with
       | Ok { LanguageServer.Types.DisplayTypeErrors.parameters = Some { files }; _ } ->
-          let files = List.map files ~f:string_path_to_file in
+          let files = List.map files ~f:string_to_path in
           Some (DisplayTypeErrors files)
       | Ok _ -> None
       | Error yojson_error ->
@@ -1090,26 +1090,18 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
   { state; response = Some (TypeQueryResponse response) }
 
 
-let process_type_check_request ~state ~configuration ~files =
+let process_type_check_request ~state ~configuration paths =
+  let files = List.map paths ~f:File.create in
   let state, response = IncrementalCheck.recheck ~state ~configuration ~files in
   { state; response = Some (TypeCheckResponse response) }
 
 
-let process_display_type_errors_request ~state ~configuration ~files =
+let process_display_type_errors_request ~state ~configuration paths =
   let errors =
     let { errors; _ } = state in
-    match files with
+    match paths with
     | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:Error.compare
-    | _ ->
-        let errors file =
-          try
-            let handle = File.handle ~configuration file in
-            let qualifier = Source.qualifier ~handle in
-            Hashtbl.find errors qualifier |> Option.value ~default:[]
-          with
-          | File.NonexistentHandle _ -> []
-        in
-        List.concat_map ~f:errors files
+    | _ -> List.concat_map ~f:(errors_of_path ~configuration ~errors) paths
   in
   { state; response = Some (TypeCheckResponse errors) }
 
@@ -1149,16 +1141,16 @@ let rec process
   let result =
     try
       match request with
-      | TypeCheckRequest files ->
+      | TypeCheckRequest paths ->
           SharedMem.collect `aggressive;
-          process_type_check_request ~state ~configuration ~files
+          process_type_check_request ~state ~configuration paths
       | StopRequest ->
           Mutex.critical_section connections.lock ~f:(fun () ->
               Operations.stop ~reason:"explicit request" ~configuration:server_configuration)
       | TypeQueryRequest request -> process_type_query_request ~state ~configuration ~request
-      | DisplayTypeErrors files ->
+      | DisplayTypeErrors paths ->
           let configuration = { configuration with include_hints = true } in
-          process_display_type_errors_request ~state ~configuration ~files
+          process_display_type_errors_request ~state ~configuration paths
       | LanguageServerProtocolRequest request ->
           parse_lsp ~configuration ~request:(Yojson.Safe.from_string request)
           >>| (fun request -> process ~state ~configuration:server_configuration ~request)
@@ -1205,7 +1197,7 @@ let rec process
             |> Option.some
           in
           { state; response }
-      | CodeActionRequest { id; diagnostics; uri; file } ->
+      | CodeActionRequest { id; diagnostics; uri; path } ->
           let is_range_equal_location
               { LanguageServer.Types.Range.start = range_start; end_ }
               { Location.start = location_start; stop; _ }
@@ -1220,23 +1212,16 @@ let rec process
           in
           let response =
             let open LanguageServer.Protocol in
-            let errors file =
-              try
-                let handle = File.handle ~configuration file in
-                let qualifier = Source.qualifier ~handle in
-                Hashtbl.find errors qualifier |> Option.value ~default:[]
-              with
-              | File.NonexistentHandle _ -> []
-            in
             let code_actions =
               diagnostics
               |> List.filter_map
                    ~f:(fun (LanguageServer.Types.Diagnostic.{ range; _ } as diagnostic) ->
                      let error =
-                       List.find (errors file) ~f:(fun { location; _ } ->
-                           is_range_equal_location range location)
+                       List.find
+                         (errors_of_path ~configuration ~errors path)
+                         ~f:(fun { location; _ } -> is_range_equal_location range location)
                      in
-                     AnnotationEdit.create ~file ~error
+                     AnnotationEdit.create ~file:(File.create path) ~error
                      >>| (fun edit ->
                            Some
                              { LanguageServer.Types.CodeAction.diagnostics = Some [diagnostic];
@@ -1279,9 +1264,9 @@ let rec process
             |> Option.value ~default:None
           in
           { state; response }
-      | OpenDocument file ->
+      | OpenDocument path ->
           (* Make sure cache is fresh. We might not have received a close notification. *)
-          LookupCache.evict_path ~state ~configuration (File.path file);
+          LookupCache.evict_path ~state ~configuration path;
 
           (* Make sure the IDE flushes its state about this file, by sending back all the errors
              for this file. *)
@@ -1289,8 +1274,8 @@ let rec process
           let open_documents =
             Path.Map.set
               open_documents
-              ~key:(File.path file)
-              ~data:(File.content file |> Option.value ~default:"")
+              ~key:path
+              ~data:(File.create path |> File.content |> Option.value ~default:"")
           in
           (* We do not recheck dependencies because nothing changes when we open a document, and we
              do the type checking here just to make type checking resolution appear in shared
@@ -1298,10 +1283,9 @@ let rec process
           process_type_check_request
             ~state:{ state with open_documents }
             ~configuration:{ configuration with ignore_dependencies = true }
-            ~files:[file]
-      | CloseDocument file ->
+            [path]
+      | CloseDocument path ->
           let { State.open_documents; _ } = state in
-          let path = File.path file in
           let open_documents = Path.Map.remove open_documents path in
           LookupCache.evict_path ~state ~configuration path;
           { state = { state with open_documents }; response = None }
@@ -1315,10 +1299,10 @@ let rec process
               ~data:(File.content file |> Option.value ~default:"")
           in
           { state = { state with open_documents }; response = None }
-      | SaveDocument file ->
+      | SaveDocument path ->
           (* On save, evict entries from the lookup cache. The updated source will be picked up at
              the next lookup (if any). *)
-          LookupCache.evict_path ~state ~configuration (File.path file);
+          LookupCache.evict_path ~state ~configuration path;
           let check_on_save =
             Mutex.critical_section connections.lock ~f:(fun () ->
                 let { file_notifiers; _ } = !(connections.connections) in
@@ -1326,15 +1310,14 @@ let rec process
           in
           if check_on_save then
             let configuration = { configuration with include_hints = true } in
-            process_type_check_request ~state ~configuration ~files:[file]
+            process_type_check_request ~state ~configuration [path]
           else (
             Log.log ~section:`Server "Explicitly ignoring didSave request";
             { state; response = None } )
-      | TypeCoverageRequest { file; id } ->
+      | TypeCoverageRequest { path; id } ->
           let response =
-            File.handle ~configuration file
-            |> fun handle ->
-            let qualifier = Source.qualifier ~handle in
+            SourcePath.create ~configuration path
+            >>= fun { SourcePath.qualifier; _ } ->
             match Coverage.get ~qualifier with
             | Some { Coverage.full; partial; untyped; _ } ->
                 let total = Float.of_int (full + partial + untyped) in

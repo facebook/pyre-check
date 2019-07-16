@@ -188,11 +188,10 @@ let test_process_display_type_errors_request context =
         ScratchServer.start ~context sources
       in
       let { Configuration.Analysis.local_root; _ } = configuration in
-      let files =
-        List.map paths ~f:(fun relative ->
-            Path.create_relative ~root:local_root ~relative |> File.create)
+      let paths =
+        List.map paths ~f:(fun relative -> Path.create_relative ~root:local_root ~relative)
       in
-      Request.process_display_type_errors_request ~state ~configuration ~files
+      Request.process_display_type_errors_request ~state ~configuration paths
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."
@@ -241,18 +240,16 @@ let test_process_type_check_request context =
           ~external_sources:sources
           check
       in
-      let files =
+      let paths =
         let { Configuration.Analysis.local_root; _ } = configuration in
         (* Overwrite the files with real contents *)
         List.map check ~f:(fun (relative, content) ->
-            let file =
-              Path.create_relative ~root:local_root ~relative
-              |> File.create ~content:(trim_extra_indentation content)
-            in
+            let path = Path.create_relative ~root:local_root ~relative in
+            let file = File.create path ~content:(trim_extra_indentation content) in
             File.write file;
-            file)
+            path)
       in
-      Request.process_type_check_request ~state ~configuration ~files
+      Request.process_type_check_request ~state ~configuration paths
       |> function
       | { Request.response = Some (Protocol.TypeCheckResponse response); _ } -> response
       | _ -> failwith "Unexpected response."
@@ -349,21 +346,18 @@ let test_process_type_check_request context =
 
   (* Check nonexistent handles. *)
   let { ScratchServer.configuration; state; _ } = ScratchServer.start ~context [] in
-  let files =
+  let paths =
     let root = bracket_tmpdir context |> Path.create_absolute in
-    Path.create_relative ~root ~relative:"nonexistent.py"
-    |> File.create ~content:"def function() -> int: return ''"
-    |> fun file -> [file]
+    [Path.create_relative ~root ~relative:"nonexistent.py"]
   in
-  let { Request.response; _ } = Request.process_type_check_request ~state ~configuration ~files in
+  let { Request.response; _ } = Request.process_type_check_request ~state ~configuration paths in
   assert_equal (Some (Protocol.TypeCheckResponse [])) response;
 
   (* Ensure we don't raise an exception when a untracked files is passed in. *)
   Request.process_type_check_request
     ~state
     ~configuration
-    ~files:
-      [File.create (Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py")]
+    [Path.create_absolute ~follow_symbolic_links:false "/nonexistent_root/a.py"]
   |> ignore
 
 
@@ -613,11 +607,9 @@ let test_open_document_state context =
     =
     ScratchServer.start ~context ["a.py", ""; "b.py", ""]
   in
-  let create_file name =
-    Path.create_relative ~root:local_root ~relative:name |> File.create ~content:""
-  in
+  let create_path name = Path.create_relative ~root:local_root ~relative:name in
   let mock_map ~name ~content =
-    let file = create_file name in
+    let file = create_path name |> File.create ~content:"" in
     Path.Map.singleton (File.path file) content
   in
   let assert_open_documents ~start ~request ~expected =
@@ -629,11 +621,11 @@ let test_open_document_state context =
   in
   assert_open_documents
     ~start:Path.Map.empty
-    ~request:(Protocol.Request.OpenDocument (create_file "a.py"))
+    ~request:(Protocol.Request.OpenDocument (create_path "a.py"))
     ~expected:(mock_map ~name:"a.py" ~content:"");
   assert_open_documents
     ~start:(mock_map ~name:"a.py" ~content:"")
-    ~request:(Protocol.Request.CloseDocument (create_file "a.py"))
+    ~request:(Protocol.Request.CloseDocument (create_path "a.py"))
     ~expected:Path.Map.empty
 
 
@@ -644,15 +636,13 @@ let test_resolution_shared_memory_added_for_open_documents context =
   in
   let configuration = { configuration with store_type_check_resolution = false } in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let test_file_a =
-    Path.create_relative ~root:local_root ~relative:"a.py" |> File.create ~content:test_code
-  in
-  let test_file_b =
-    Path.create_relative ~root:local_root ~relative:"b.py" |> File.create ~content:test_code
-  in
+  let test_path_a = Path.create_relative ~root:local_root ~relative:"a.py" in
+  let test_path_b = Path.create_relative ~root:local_root ~relative:"b.py" in
+  let test_file_a = File.create test_path_a ~content:test_code in
+  let test_file_b = File.create test_path_b ~content:test_code in
   File.write test_file_a;
   File.write test_file_b;
-  let files = [test_file_a; test_file_b] in
+  let paths = [test_path_a; test_path_b] in
   let state =
     { state with open_documents = Path.Map.singleton (File.path test_file_a) test_code }
   in
@@ -662,7 +652,7 @@ let test_resolution_shared_memory_added_for_open_documents context =
   (* Before type checking request, shared memory does not have a.foo and b.foo *)
   assert_false (contains_resolution_shared_memory_reference "a.foo");
   assert_false (contains_resolution_shared_memory_reference "b.foo");
-  let _ = Request.process_type_check_request ~state ~configuration ~files in
+  let _ = Request.process_type_check_request ~state ~configuration paths in
   (* Before type checking request, shared memory only has a.foo because a.py is open. *)
   assert_true (contains_resolution_shared_memory_reference "a.foo");
   assert_false (contains_resolution_shared_memory_reference "b.foo")

@@ -871,39 +871,37 @@ let test_request_parser context =
   in
   assert_parsed_request_equals
     (open_message absolute)
-    (Some (Protocol.Request.OpenDocument (Path.create_absolute absolute |> File.create)));
+    (Some (Protocol.Request.OpenDocument (Path.create_absolute absolute)));
   assert_parsed_request_equals
     (open_message symlink_source)
     (Some
        (Protocol.Request.OpenDocument
-          (Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create)));
+          (Path.create_absolute ~follow_symbolic_links:false symlink_source)));
   assert_parsed_request_equals
     (open_message symlink_target)
     (Some
        (Protocol.Request.OpenDocument
-          (Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create)));
+          (Path.create_absolute ~follow_symbolic_links:false symlink_source)));
   assert_parsed_request_equals
     close_message
-    (Some (Protocol.Request.CloseDocument (Path.create_absolute absolute |> File.create)));
+    (Some (Protocol.Request.CloseDocument (Path.create_absolute absolute)));
   assert_parsed_request_equals
     save_message
-    (Some (Protocol.Request.SaveDocument (Path.create_absolute absolute |> File.create)));
+    (Some (Protocol.Request.SaveDocument (Path.create_absolute absolute)));
   assert_parsed_request_equals
     change_message
     (Some
        (Protocol.Request.DocumentChange
           (Path.create_absolute absolute |> File.create ~content:"changed source")));
-  let absolute_file = Path.create_absolute absolute |> File.create in
-  let linked_file =
-    Path.create_absolute ~follow_symbolic_links:false symlink_source |> File.create
-  in
-  let stub_file = Path.create_absolute stub |> File.create in
+  let absolute_path = Path.create_absolute absolute in
+  let linked_path = Path.create_absolute ~follow_symbolic_links:false symlink_source in
+  let stub_path = Path.create_absolute stub in
   assert_parsed_request_equals
     update_message
-    (Some (Protocol.Request.TypeCheckRequest [absolute_file; linked_file; stub_file]));
+    (Some (Protocol.Request.TypeCheckRequest [absolute_path; linked_path; stub_path]));
   assert_parsed_request_equals
     display_type_errors_message
-    (Some (Protocol.Request.DisplayTypeErrors [absolute_file; linked_file; stub_file]))
+    (Some (Protocol.Request.DisplayTypeErrors [absolute_path; linked_path; stub_path]))
 
 
 let test_publish_diagnostics _ =

@@ -1279,14 +1279,14 @@ let test_incremental_typecheck context =
   in
   assert_response
     ~state
-    ~request:(Protocol.Request.TypeCheckRequest [File.create path])
+    ~request:(Protocol.Request.TypeCheckRequest [path])
     (Protocol.TypeCheckResponse errors);
 
   let update_file ~content path =
     let content = trim_extra_indentation content in
     let file = File.create ~content path in
     File.write file;
-    file
+    path
   in
   assert_response
     ~state
@@ -1426,12 +1426,10 @@ let test_incremental_dependencies context =
   in
   let create_path relative = Path.create_relative ~root:local_root ~relative in
   assert_response
-    ~request:(Protocol.Request.TypeCheckRequest [create_path "ib.py" |> File.create])
+    ~request:(Protocol.Request.TypeCheckRequest [create_path "ib.py"])
     (TypeCheckResponse []);
   assert_response
-    ~request:
-      (Protocol.Request.TypeCheckRequest
-         [create_path "ia.py" |> File.create; create_path "ib.py" |> File.create])
+    ~request:(Protocol.Request.TypeCheckRequest [create_path "ia.py"; create_path "ib.py"])
     (TypeCheckResponse [])
 
 
@@ -1453,8 +1451,7 @@ let test_incremental_lookups context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let request =
-    Protocol.Request.TypeCheckRequest
-      [Path.create_relative ~root:local_root ~relative:handle |> File.create]
+    Protocol.Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:handle]
   in
   let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
   let annotations =
@@ -1502,22 +1499,22 @@ let test_incremental_repopulate context =
   ( match get_annotation state "foo" with
   | Some expression -> assert_equal ~printer:Fn.id (Expression.show expression) "int"
   | None -> assert_unreached () );
+  let path = Path.create_relative ~root:local_root ~relative:handle in
   let file =
-    Path.create_relative ~root:local_root ~relative:handle
-    |> File.create
-         ~content:
-           ( {|
+    File.create
+      path
+      ~content:
+        ({|
           def foo(x)->str:
             return ""
-        |}
-           |> trim_extra_indentation )
+        |} |> trim_extra_indentation)
   in
   File.write file;
   let { Request.state; _ } =
     Request.process
       ~state
       ~configuration:server_configuration
-      ~request:(Protocol.Request.TypeCheckRequest [file])
+      ~request:(Protocol.Request.TypeCheckRequest [path])
   in
   match get_annotation state "foo" with
   | Some expression -> assert_equal (Expression.show expression) "str"
@@ -1611,12 +1608,13 @@ let test_incremental_attribute_caching context =
   let update_and_request_typecheck ~state content =
     let { Configuration.Analysis.local_root; _ } = configuration in
     let content = trim_extra_indentation content in
-    let file = Path.create_relative ~root:local_root ~relative:handle |> File.create ~content in
+    let path = Path.create_relative ~root:local_root ~relative:handle in
+    let file = File.create ~content path in
     File.write file;
     Request.process
       ~state
       ~configuration:server_configuration
-      ~request:(Protocol.Request.TypeCheckRequest [file])
+      ~request:(Protocol.Request.TypeCheckRequest [path])
     |> fun { Request.state; _ } -> state
   in
   let state = update_and_request_typecheck ~state content_without_annotation in

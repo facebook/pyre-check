@@ -57,8 +57,7 @@ let test_parse_query context =
   assert_fails_to_parse "normalizeType(int, str)";
   assert_equal
     (Query.parse_query ~configuration "type_check('derp/fiddle.py')")
-    (Request.TypeCheckRequest
-       [File.create (Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py")]);
+    (Request.TypeCheckRequest [Path.create_relative ~root:(mock_path "") ~relative:"derp/fiddle.py"]);
   assert_parses "type(C)" (Type !"C");
   assert_parses "type((C,B))" (Type (+Ast.Expression.Tuple [!"C"; !"B"]));
   assert_fails_to_parse "type(a.b, c.d)";

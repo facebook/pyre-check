@@ -184,14 +184,14 @@ module Request : sig
     | ClientConnectionRequest of client
     | ClientExitRequest of client
     | ClientShutdownRequest of LanguageServer.Types.RequestId.t
-    | CloseDocument of File.t
+    | CloseDocument of Path.t
     | CodeActionRequest of
         { id: LanguageServer.Types.RequestId.t;
           uri: LanguageServer.Types.DocumentUri.t;
           diagnostics: LanguageServer.Types.Diagnostic.t list;
-          file: File.t
+          path: Path.t
         }
-    | DisplayTypeErrors of File.t list
+    | DisplayTypeErrors of Path.t list
     | ExecuteCommandRequest of
         { id: LanguageServer.Types.RequestId.t;
           arguments: LanguageServer.Types.CommandArguments.t list
@@ -200,13 +200,13 @@ module Request : sig
     | CompletionRequest of CompletionRequest.t
     | HoverRequest of DefinitionRequest.t
     | LanguageServerProtocolRequest of string
-    | OpenDocument of File.t
+    | OpenDocument of Path.t
     | RageRequest of LanguageServer.Types.RequestId.t
     | DocumentChange of File.t
-    | SaveDocument of File.t
+    | SaveDocument of Path.t
     | StopRequest
-    | TypeCheckRequest of File.t list
-    | TypeCoverageRequest of { file: File.t; id: LanguageServer.Types.RequestId.t }
+    | TypeCheckRequest of Path.t list
+    | TypeCoverageRequest of { path: Path.t; id: LanguageServer.Types.RequestId.t }
     | TypeQueryRequest of TypeQuery.request
   [@@deriving eq, show]
 

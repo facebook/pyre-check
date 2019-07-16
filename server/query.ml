@@ -222,13 +222,12 @@ let parse_query
           in
           Request.TypeQueryRequest (TypesInFiles paths)
       | "type_check", arguments ->
-          let files =
+          let paths =
             arguments
             |> List.map ~f:string
             |> List.map ~f:(fun relative -> Path.create_relative ~root ~relative)
-            |> List.map ~f:File.create
           in
-          Request.TypeCheckRequest files
+          Request.TypeCheckRequest paths
       | "validate_taint_models", [] -> Request.TypeQueryRequest (ValidateTaintModels None)
       | "validate_taint_models", [argument] ->
           let path =
