@@ -31,6 +31,14 @@ def _load_module(module_path: str) -> Optional[ast.Module]:
     return None
 
 
+def _get_self_attribute(target: ast.expr) -> Optional[str]:
+    if isinstance(target, ast.Attribute):
+        value = target.value
+        if isinstance(value, ast.Name) and value.id == "self":
+            return target.attr
+    return None
+
+
 class GlobalModelGenerator(ModelGenerator):
     def _globals(self, root: str, path: str) -> Iterable[str]:
         globals: Set[str] = set()
@@ -43,9 +51,13 @@ class GlobalModelGenerator(ModelGenerator):
         class NameVisitor(ast.NodeVisitor):
             def __init__(self, globals: Set[str]) -> None:
                 self.globals = globals
+                self.blacklist: Optional[Set[str]] = None
                 self.parent: Optional[str] = None
 
             def visit_Name(self, name: ast.Name) -> None:
+                blacklist = self.blacklist
+                if blacklist is not None and name.id in blacklist:
+                    return
                 parent = self.parent
                 if parent is not None:
                     name_to_register = f"{parent}.{name.id}"
@@ -106,6 +118,23 @@ class GlobalModelGenerator(ModelGenerator):
                     return False
             return True
 
+        def all_attributes(class_definition: ast.ClassDef) -> Set[str]:
+            attributes = set()
+            for statement in class_definition.body:
+                if not isinstance(statement, ast.FunctionDef):
+                    continue
+                for assignment in statement.body:
+                    if isinstance(assignment, ast.Assign):
+                        for target in assignment.targets:
+                            attribute = _get_self_attribute(target)
+                            if attribute is not None:
+                                attributes.add(attribute)
+                    elif isinstance(assignment, ast.AnnAssign):
+                        attribute = _get_self_attribute(assignment.target)
+                        if attribute is not None:
+                            attributes.add(attribute)
+            return attributes
+
         def visit_statement(statement: ast.stmt) -> None:
             if isinstance(statement, ast.Assign):
                 # Omit pure aliases of the form `x = alias`.
@@ -118,10 +147,13 @@ class GlobalModelGenerator(ModelGenerator):
                 visit_assignment(statement.target, statement.value)
             elif isinstance(statement, ast.ClassDef) and should_visit_class(statement):
                 visitor.parent = statement.name
+                visitor.blacklist = all_attributes(statement)
+
                 for toplevel_statement in statement.body:
                     # pyre-ignore: T46622677
                     visit_statement(toplevel_statement)
                 visitor.parent = None
+                visitor.blacklist = None
 
         for statement in module.body:
             visit_statement(statement)

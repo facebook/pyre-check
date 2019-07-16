@@ -253,3 +253,71 @@ class GetGlobalsTest(unittest.TestCase):
         self.assertSetEqual(
             set(generator._globals("/root", "/root/qualified_dataclass_test.py")), set()
         )
+        open.side_effect = _open_implementation(
+            {
+                "/root/attributes.py": textwrap.dedent(
+                    """
+                    class MyClass:
+                      C: int = ...
+                      D: int = ...
+                      def __init__(self):
+                        self.C = 1
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/attributes.py")),
+            {"attributes.MyClass.D: TaintSink[Global] = ..."},
+        )
+        # We ignore ClassVar for now.
+        open.side_effect = _open_implementation(
+            {
+                "/root/attributes.py": textwrap.dedent(
+                    """
+                    class MyClass:
+                      C: ClassVar[int] = ...
+                      def __init__(self):
+                        self.C = 1
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/attributes.py")), set()
+        )
+        # Any attribute accessed in a method is considered to be an instance variable.
+        open.side_effect = _open_implementation(
+            {
+                "/root/attributes.py": textwrap.dedent(
+                    """
+                    class MyClass:
+                      C: ClassVar[int] = ...
+                      def foo(self):
+                        self.C = 1
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/attributes.py")), set()
+        )
+        # Inherit attributes aren't considered.
+        open.side_effect = _open_implementation(
+            {
+                "/root/attributes.py": textwrap.dedent(
+                    """
+                    class MyClass:
+                      C: int = ...
+                      def __init__(self):
+                        self.C = 1
+                    class SubClass(MyClass):
+                      C: int = ...
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/attributes.py")),
+            {"attributes.SubClass.C: TaintSink[Global] = ..."},
+        )
