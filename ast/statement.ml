@@ -190,6 +190,7 @@ module Attribute = struct
     async: bool;
     defines: statement_t Record.Define.record list option;
     final: bool;
+    implicit: bool;
     frozen: bool;
     name: Identifier.t;
     primitive: bool;
@@ -216,6 +217,7 @@ module Attribute = struct
       ?(final = false)
       ?(static = false)
       ?(frozen = false)
+      ?(implicit = false)
       ~name
       ()
     =
@@ -230,7 +232,8 @@ module Attribute = struct
       toplevel;
       final;
       static;
-      frozen
+      frozen;
+      implicit
     }
     |> Node.create ~location
 
@@ -476,7 +479,15 @@ module Define = struct
               }
               when Identifier.equal self (self_identifier define) ->
                 let attribute =
-                  Attribute.create ~primitive:true ~toplevel ~location ~name ?annotation ~value ()
+                  Attribute.create
+                    ~primitive:true
+                    ~toplevel
+                    ~location
+                    ~name
+                    ?annotation
+                    ~value
+                    ~implicit:true
+                    ()
                 in
                 let update = function
                   | Some attributes -> Some (attribute :: attributes)

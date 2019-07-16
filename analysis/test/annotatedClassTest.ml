@@ -469,6 +469,7 @@ let test_class_attributes _ =
       ?defines
       ?(final = false)
       ?(frozen = false)
+      ?(implicit = false)
       ?(primitive = false)
       ?(property = false)
       ?(setter = false)
@@ -482,6 +483,7 @@ let test_class_attributes _ =
        defines;
        final;
        frozen;
+       implicit;
        name;
        property;
        primitive;

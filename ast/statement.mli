@@ -180,6 +180,7 @@ module Attribute : sig
     async: bool;
     defines: statement_t Record.Define.record list option;
     final: bool;
+    implicit: bool;
     frozen: bool;
     name: Identifier.t;
     primitive: bool;

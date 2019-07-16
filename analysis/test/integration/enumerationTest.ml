@@ -107,6 +107,28 @@ let test_check_enumeration_attributes _ =
         x = Color.PURPLE
     |}
     ["Undefined attribute [16]: `Color` has no attribute `PURPLE`."];
+  assert_type_errors
+    {|
+      from typing import List
+      class A(enum.Enum):
+        ONE = ("un", ["ein"])
+        TWO = ("deux", ["zwei", ""])
+
+        def __init__(self, name: str, example: List[str]) -> None:
+          self.example: List[str] = example
+
+        reveal_type(A.ONE.example)
+      |}
+    ["Revealed type [-1]: Revealed type for `A.ONE.example` is `List[str]`."];
+  assert_type_errors
+    {|
+      class A(enum.Enum):
+          x = ""
+          def __init__(self) -> None:
+              self.x: str = "another string"
+      reveal_type(A.x)
+    |}
+    ["Revealed type [-1]: Revealed type for `A.x` is `A`."];
   ()
 
 

@@ -259,6 +259,7 @@ let test_attributes _ =
       ?defines
       ?(final = false)
       ?(frozen = false)
+      ?(implicit = true)
       ?(location = Location.Reference.any)
       ~name
       ?(primitive = false)
@@ -274,6 +275,7 @@ let test_attributes _ =
       defines;
       final;
       frozen;
+      implicit;
       name;
       primitive;
       property;
@@ -410,6 +412,7 @@ let test_attributes _ =
         ~annotation:(annotation >>| Type.expression)
         ~value
         ~property:true
+        ~implicit:false
         ()
     in
     let define =

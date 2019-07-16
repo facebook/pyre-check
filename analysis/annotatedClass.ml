@@ -408,7 +408,8 @@ let create_attribute
           toplevel;
           final;
           static;
-          frozen
+          frozen;
+          implicit
         }
     }
   =
@@ -453,6 +454,7 @@ let create_attribute
       && (not inherited)
       && primitive
       && defined
+      && not implicit
     then
       Some class_annotation, None, true (* Enums override values. *)
     else
@@ -882,7 +884,8 @@ let attribute
               toplevel = true;
               final = false;
               static = false;
-              frozen = false
+              frozen = false;
+              implicit = false
             }
         }
 
@@ -972,7 +975,8 @@ let rec fallback_attribute
                      toplevel = true;
                      final = false;
                      static = false;
-                     frozen = false
+                     frozen = false;
+                     implicit = false
                    }
                })
       | _ -> None
