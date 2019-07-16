@@ -1,11 +1,8 @@
 open Core
 open OUnit2
-open Pyre
 open Analysis
-open Ast
 open Test
 open ClassHierarchy
-open Annotated
 
 let connect ?(parameters = []) handler ~predecessor ~successor =
   connect ~parameters handler ~predecessor ~successor
@@ -382,7 +379,75 @@ let test_disconnect_successors _ =
   ()
 
 
-let test_instantiate_parameters _ =
+let test_instantiate_successors_parameters _ =
+  let order =
+    let order = Builder.default () |> handler in
+    let variable = Type.variable "_T" in
+    let other_variable = Type.variable "_T2" in
+    let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+    insert order "list";
+    connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
+
+    insert order "typing.Iterator";
+    connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
+    connect
+      order
+      ~predecessor:"typing.Iterator"
+      ~successor:"typing.Generic"
+      ~parameters:[variable_covariant];
+    insert order "typing.Iterable";
+    connect
+      order
+      ~predecessor:"typing.Iterator"
+      ~successor:"typing.Iterable"
+      ~parameters:[variable_covariant];
+    connect
+      order
+      ~predecessor:"typing.Iterable"
+      ~successor:"typing.Generic"
+      ~parameters:[variable_covariant];
+    connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
+    insert order "tuple";
+    connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
+    connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
+    insert order "str";
+    connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:[Type.Primitive "str"];
+    insert order "AnyIterable";
+    connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
+    insert order "dict";
+    connect
+      order
+      ~predecessor:"dict"
+      ~successor:"typing.Generic"
+      ~parameters:[variable; other_variable];
+    connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
+    insert order "PartiallySpecifiedDict";
+    connect
+      order
+      ~predecessor:"PartiallySpecifiedDict"
+      ~successor:"dict"
+      ~parameters:[Primitive "int"];
+    insert order "OverSpecifiedDict";
+    connect
+      order
+      ~predecessor:"OverSpecifiedDict"
+      ~successor:"dict"
+      ~parameters:[Primitive "int"; Primitive "int"; Primitive "str"];
+    insert order "GenericContainer";
+    connect
+      order
+      ~predecessor:"GenericContainer"
+      ~successor:"typing.Generic"
+      ~parameters:[variable; other_variable];
+
+    insert order "NonGenericContainerChild";
+    connect
+      order
+      ~predecessor:"NonGenericContainerChild"
+      ~successor:"GenericContainer"
+      ~parameters:[Primitive "int"; Primitive "str"];
+    order
+  in
   assert_equal
     (instantiate_successors_parameters
        order
@@ -441,9 +506,9 @@ let () =
          "greatest_lower_bound" >:: test_greatest_lower_bound;
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
-         "method_resolution_order_linearize" >:: test_method_resolution_order_linearize;
          "remove_extra_edges" >:: test_remove_extra_edges_to_object;
          "successors" >:: test_successors;
          "to_dot" >:: test_to_dot;
-         "variables" >:: test_variables ]
+         "variables" >:: test_variables;
+         "instantiate_successors_parameters" >:: test_instantiate_successors_parameters ]
   |> Test.run

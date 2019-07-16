@@ -15,6 +15,7 @@
   coverageTest
   abstractDomainTest
   cfgTest
+  classHierarchyTest
   deobfuscationCheckTest
   dependentTest
   environmentTest
