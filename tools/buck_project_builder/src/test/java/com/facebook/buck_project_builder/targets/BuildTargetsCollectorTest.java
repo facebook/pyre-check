@@ -324,6 +324,25 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
 
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py3/compile\"],\n"
+            + "  \"srcs\": [ \"//target/a.py\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(targetJson, null);
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py3/compile\"],\n"
+            + "  \"srcs\": [ \":a.py\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(targetJson, null);
+
     // Swig library parsing should be supported
     targetJson =
         "{\n"
