@@ -402,9 +402,8 @@ def main() -> int:
     """
     query = parsed_commands.add_parser(commands.Query.NAME, epilog=query_message)
     query_argument_message = """
-    The query for the server, in the following format: "type(1+2)".
-
-     `pyre query help` will give a full list of available queries for the Pyre server.
+    `pyre query help` will give a full list of available queries for the running Pyre.
+     Example: `pyre query "superclasses(int)"`.
     """
     query.add_argument("query", help=query_argument_message)
     query.set_defaults(command=commands.Query)
