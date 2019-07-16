@@ -6,7 +6,7 @@
 import os  # noqa
 import textwrap
 import unittest
-from typing import IO, Any, Callable, Dict
+from typing import IO, Any, Callable, Dict, Iterable, Optional, Set
 from unittest.mock import call, mock_open, patch
 
 from ..get_globals import GlobalModelGenerator, __name__ as get_globals_name
@@ -68,256 +68,172 @@ class GetGlobalsTest(unittest.TestCase):
                 any_order=True,
             )
 
+    def assert_module_has_global_models(
+        self, source: str, expected: Iterable[str], blacklist: Optional[Set[str]] = None
+    ) -> None:
+        blacklist = blacklist or set()
+        Configuration.blacklisted_globals = blacklist
+        with patch("builtins.open") as open:
+            open.side_effect = _open_implementation(
+                {"/root/module.py": textwrap.dedent(source)}
+            )
+            generator = GlobalModelGenerator()
+            self.assertSetEqual(
+                set(generator._globals("/root", "/root/module.py")), set(expected)
+            )
+
     @patch("builtins.open")
     def test_globals(self, open: unittest.mock._patch) -> None:
-        # pyre-fixme[16]: `_patch` has no attribute `side_effect`.
-        open.side_effect = _open_implementation(
-            {
-                "/root/module.py": textwrap.dedent(
-                    """
-                    A = 1
-                    def function():
-                      B = 2
-                    if "version" is None:
-                      C = 2
-                    D, E = 1, 2
-                    __all__ = {}
-                    """
-                )
-            }
-        )
-        generator = GlobalModelGenerator()
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/module.py")),
+        self.assert_module_has_global_models(
+            """
+            A = 1
+            def function():
+              B = 2
+            if "version" is None:
+              C = 2
+            D, E = 1, 2
+            __all__ = {}
+            """,
             {
                 "module.A: TaintSink[Global] = ...",
                 "module.D: TaintSink[Global] = ...",
                 "module.E: TaintSink[Global] = ...",
             },
         )
-        open.side_effect = _open_implementation(
+        self.assert_module_has_global_models(
+            """
+            class Class:
+              F: typing.ClassVar[int] = ...
+              G: int = ...
+              class Nested:
+                H: typing.ClassVar[int] = ...
+            """,
             {
-                "/root/class.py": textwrap.dedent(
-                    """
-                    class Class:
-                      F: typing.ClassVar[int] = ...
-                      G: int = ...
-                      class Nested:
-                        H: typing.ClassVar[int] = ...
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/class.py")),
-            {
-                "class.Class.F: TaintSink[Global] = ...",
-                "class.Class.G: TaintSink[Global] = ...",
+                "module.Class.F: TaintSink[Global] = ...",
+                "module.Class.G: TaintSink[Global] = ...",
             },
         )
-        open.side_effect = _open_implementation(
+        self.assert_module_has_global_models(
+            """
+            Z.X = 1
+            A, B.C, D = 1, 2, 3
+            [Y, Q.W] = [1, 2]
+            """,
             {
-                "/root/attributes.py": textwrap.dedent(
-                    """
-                    Z.X = 1
-                    A, B.C, D = 1, 2, 3
-                    [Y, Q.W] = [1, 2]
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/attributes.py")),
-            {
-                "attributes.A: TaintSink[Global] = ...",
-                "attributes.D: TaintSink[Global] = ...",
-                "attributes.Y: TaintSink[Global] = ...",
+                "module.A: TaintSink[Global] = ...",
+                "module.D: TaintSink[Global] = ...",
+                "module.Y: TaintSink[Global] = ...",
             },
         )
-        open.side_effect = _open_implementation(
-            {
-                "/root/namedtuples.py": textwrap.dedent(
-                    """
-                    from collections import namedtuple
-                    x = collections.namedtuple()
-                    y = namedtuple()
-                    """
-                )
-            }
+        self.assert_module_has_global_models(
+            """
+            from collections import namedtuple
+            x = collections.namedtuple()
+            y = namedtuple()
+            """,
+            set(),
         )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/namedtuples.py")), set()
+        self.assert_module_has_global_models(
+            """
+            x = a
+            y = b.c
+            """,
+            set(),
         )
-        open.side_effect = _open_implementation(
-            {
-                "/root/alias_assignments.py": textwrap.dedent(
-                    """
-                    x = a
-                    y = b.c
-                    """
-                )
-            }
+        self.assert_module_has_global_models(
+            """
+            x[1] = 123
+            y.field = 456
+            """,
+            set(),
         )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/alias_assignments.py")), set()
+        self.assert_module_has_global_models(
+            """
+            x: int = 1
+            y: str  # this is ignored, as it might not exist in the runtime
+            z: Any = alias_that_we_skip
+            """,
+            {"module.x: TaintSink[Global] = ..."},
         )
-        open.side_effect = _open_implementation(
-            {
-                "/root/assignment_to_fields.py": textwrap.dedent(
-                    """
-                    x[1] = 123
-                    y.field = 456
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/assignment_to_fields.py")), set()
-        )
-        open.side_effect = _open_implementation(
-            {
-                "/root/annotated_assignments.py": textwrap.dedent(
-                    """
-                    x: int = 1
-                    y: str  # this is ignored, as it might not exist in the runtime
-                    z: Any = alias_that_we_skip
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/annotated_assignments.py")),
-            {"annotated_assignments.x: TaintSink[Global] = ..."},
-        )
-        open.side_effect = _open_implementation(
-            {
-                "/root/blacklisted_module.py": textwrap.dedent(
-                    """
-                    A, B = 1
-                    class Class:
-                      C: typing.ClassVar[int] = ...
-                      D: int = ...
-                    """
-                )
-            }
-        )
-        Configuration.blacklisted_globals = {
-            "blacklisted_module.A",
-            "blacklisted_module.Class.C",
-        }
-        generator = GlobalModelGenerator()
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/blacklisted_module.py")),
-            {
-                "blacklisted_module.B: TaintSink[Global] = ...",
-                "blacklisted_module.Class.D: TaintSink[Global] = ...",
+        self.assert_module_has_global_models(
+            """
+            A, B = 1
+            class Class:
+              C: typing.ClassVar[int] = ...
+              D: int = ...
+            """,
+            expected={
+                "module.B: TaintSink[Global] = ...",
+                "module.Class.D: TaintSink[Global] = ...",
             },
+            blacklist={"module.A", "module.Class.C"},
         )
-        open.side_effect = _open_implementation(
-            {
-                "/root/dataclass_test.py": textwrap.dedent(
-                    """
-                    from dataclasses import dataclass
-                    @dataclass
-                    class Class:
-                      C: int = ...
-                      D: int = ...
-                    @dataclass(frozen=True)
-                    class Frozen:
-                      C: int = ...
-                      D: int = ...
-                    """
-                )
-            }
+        self.assert_module_has_global_models(
+            """
+            from dataclasses import dataclass
+            @dataclass
+            class Class:
+              C: int = ...
+              D: int = ...
+            @dataclass(frozen=True)
+            class Frozen:
+              C: int = ...
+              D: int = ...
+            """,
+            set(),
         )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/dataclass_test.py")), set()
+        self.assert_module_has_global_models(
+            """
+            import dataclasses
+            @dataclasses.dataclass
+            class Class:
+              C: int = ...
+              D: int = ...
+            @dataclasses.dataclass(frozen=True)
+            class Frozen:
+              C: int = ...
+              D: int = ...
+            """,
+            set(),
         )
-        open.side_effect = _open_implementation(
-            {
-                "/root/qualified_dataclass_test.py": textwrap.dedent(
-                    """
-                    import dataclasses
-                    @dataclasses.dataclass
-                    class Class:
-                      C: int = ...
-                      D: int = ...
-                    @dataclasses.dataclass(frozen=True)
-                    class Frozen:
-                      C: int = ...
-                      D: int = ...
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/qualified_dataclass_test.py")), set()
-        )
-        open.side_effect = _open_implementation(
-            {
-                "/root/attributes.py": textwrap.dedent(
-                    """
-                    class MyClass:
-                      C: int = ...
-                      D: int = ...
-                      def __init__(self):
-                        self.C = 1
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/attributes.py")),
-            {"attributes.MyClass.D: TaintSink[Global] = ..."},
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              C: int = ...
+              D: int = ...
+              def __init__(self):
+                self.C = 1
+            """,
+            {"module.MyClass.D: TaintSink[Global] = ..."},
         )
         # We ignore ClassVar for now.
-        open.side_effect = _open_implementation(
-            {
-                "/root/attributes.py": textwrap.dedent(
-                    """
-                    class MyClass:
-                      C: ClassVar[int] = ...
-                      def __init__(self):
-                        self.C = 1
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/attributes.py")), set()
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              C: ClassVar[int] = ...
+              def __init__(self):
+                self.C = 1
+            """,
+            set(),
         )
         # Any attribute accessed in a method is considered to be an instance variable.
-        open.side_effect = _open_implementation(
-            {
-                "/root/attributes.py": textwrap.dedent(
-                    """
-                    class MyClass:
-                      C: ClassVar[int] = ...
-                      def foo(self):
-                        self.C = 1
-                    """
-                )
-            }
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              C: ClassVar[int] = ...
+              def foo(self):
+                self.C = 1
+            """,
+            set(),
         )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/attributes.py")), set()
-        )
-        # Inherit attributes aren't considered.
-        open.side_effect = _open_implementation(
-            {
-                "/root/attributes.py": textwrap.dedent(
-                    """
-                    class MyClass:
-                      C: int = ...
-                      def __init__(self):
-                        self.C = 1
-                    class SubClass(MyClass):
-                      C: int = ...
-                    """
-                )
-            }
-        )
-        self.assertSetEqual(
-            set(generator._globals("/root", "/root/attributes.py")),
-            {"attributes.SubClass.C: TaintSink[Global] = ..."},
+        self.assert_module_has_global_models(
+            """
+            class MyClass:
+              C: int = ...
+              def __init__(self):
+                self.C = 1
+            class SubClass(MyClass):
+              C: int = ...
+            """,
+            {"module.SubClass.C: TaintSink[Global] = ..."},
         )
