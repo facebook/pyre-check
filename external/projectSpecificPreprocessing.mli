@@ -5,6 +5,6 @@
 
 type state
 
-val initial : File.Handle.t list -> state
+val initial : (Ast.Reference.t -> bool) -> state
 
 val preprocess : state:state -> Ast.Source.t -> Ast.Source.t

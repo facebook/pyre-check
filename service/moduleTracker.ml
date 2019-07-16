@@ -94,12 +94,20 @@ let lookup tracker module_name =
   | _ -> None
 
 
+let mem = Hashtbl.mem
+
 let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
 
 let paths tracker =
   source_paths tracker
   |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
 
+
+let qualifiers tracker =
+  source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+
+
+let length = Hashtbl.length
 
 module FileSystemEvent = struct
   type t =

@@ -242,8 +242,7 @@ let test_parse_sources context =
         ()
     in
     let module_tracker = Service.ModuleTracker.create configuration in
-    Service.ModuleTracker.paths module_tracker
-    |> Service.Parser.parse_all ~scheduler ~configuration
+    Service.Parser.parse_all ~scheduler ~configuration module_tracker
     |> List.map ~f:File.Handle.show
     |> List.sort ~compare:String.compare
   in
@@ -270,8 +269,7 @@ let test_parse_sources context =
     write_file stub_root "stub.pyi";
     Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Service.ModuleTracker.create configuration in
-    Service.ModuleTracker.paths module_tracker
-    |> Service.Parser.parse_all ~scheduler ~configuration
+    Service.Parser.parse_all ~scheduler ~configuration module_tracker
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)

@@ -163,9 +163,8 @@ let check
   in
   (* Find sources to parse *)
   let module_tracker = ModuleTracker.create configuration in
-  let tracked_paths = ModuleTracker.paths module_tracker in
   (* Parse sources. *)
-  let sources = Parser.parse_all ~scheduler ~configuration tracked_paths in
+  let sources = Parser.parse_all ~scheduler ~configuration module_tracker in
   Postprocess.register_ignores ~configuration scheduler sources;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~sources;

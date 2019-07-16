@@ -20,14 +20,9 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   in
   let scheduler = Scheduler.mock () in
   List.iter ~f:File.write files;
-  let module_tracker = Service.ModuleTracker.create configuration in
-  let files =
-    Service.ModuleTracker.source_paths module_tracker
-    |> List.map ~f:(fun { Ast.SourcePath.relative_path; _ } ->
-           Path.Relative relative_path |> File.create)
-  in
-  let { Service.Parser.parsed = handles; _ } =
-    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
+  let handles =
+    Service.ModuleTracker.create configuration
+    |> Service.Parser.parse_all ~configuration ~scheduler
   in
   let ((module Handler : Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler : Analysis.Environment.Handler)

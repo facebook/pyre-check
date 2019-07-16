@@ -21,5 +21,5 @@ val parse_sources
 val parse_all
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  Pyre.Path.t list ->
+  ModuleTracker.t ->
   File.Handle.t list

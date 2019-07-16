@@ -18,9 +18,15 @@ val create : Configuration.Analysis.t -> t
 
 val lookup : t -> Ast.Reference.t -> Ast.SourcePath.t option
 
+val mem : t -> Ast.Reference.t -> bool
+
 val source_paths : t -> Ast.SourcePath.t list
 
 val paths : t -> Path.t list
+
+val qualifiers : t -> Ast.Reference.t list
+
+val length : t -> int
 
 val update
   :  configuration:Configuration.Analysis.t ->

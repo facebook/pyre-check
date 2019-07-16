@@ -279,22 +279,15 @@ let find_stubs_and_sources configuration =
   filter_interfering_sources ~configuration stubs sources
 
 
-let parse_all ~scheduler ~configuration paths =
+let parse_all ~scheduler ~configuration module_tracker =
   let timer = Timer.start () in
-  Log.info "Parsing %d stubs and sources..." (List.length paths);
+  Log.info "Parsing %d stubs and sources..." (ModuleTracker.length module_tracker);
   let { parsed; syntax_error; system_error } =
     let preprocessing_state =
-      let to_handle path =
-        try File.create path |> File.handle ~configuration |> Option.some with
-        | File.NonexistentHandle _ -> None
-      in
-      ProjectSpecificPreprocessing.initial (List.filter_map paths ~f:to_handle)
+      ProjectSpecificPreprocessing.initial (ModuleTracker.mem module_tracker)
     in
-    parse_sources
-      ~configuration
-      ~scheduler
-      ~preprocessing_state:(Some preprocessing_state)
-      ~files:(List.map ~f:File.create paths)
+    let files = ModuleTracker.paths module_tracker |> List.map ~f:File.create in
+    parse_sources ~configuration ~scheduler ~preprocessing_state:(Some preprocessing_state) ~files
   in
   log_parse_errors ~syntax_error ~system_error;
   Statistics.performance ~name:"sources parsed" ~timer ();
