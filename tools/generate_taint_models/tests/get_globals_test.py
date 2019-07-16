@@ -213,3 +213,43 @@ class GetGlobalsTest(unittest.TestCase):
                 "blacklisted_module.Class.D: TaintSink[Global] = ...",
             },
         )
+        open.side_effect = _open_implementation(
+            {
+                "/root/dataclass_test.py": textwrap.dedent(
+                    """
+                    from dataclasses import dataclass
+                    @dataclass
+                    class Class:
+                      C: int = ...
+                      D: int = ...
+                    @dataclass(frozen=True)
+                    class Frozen:
+                      C: int = ...
+                      D: int = ...
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/dataclass_test.py")), set()
+        )
+        open.side_effect = _open_implementation(
+            {
+                "/root/qualified_dataclass_test.py": textwrap.dedent(
+                    """
+                    import dataclasses
+                    @dataclasses.dataclass
+                    class Class:
+                      C: int = ...
+                      D: int = ...
+                    @dataclasses.dataclass(frozen=True)
+                    class Frozen:
+                      C: int = ...
+                      D: int = ...
+                    """
+                )
+            }
+        )
+        self.assertSetEqual(
+            set(generator._globals("/root", "/root/qualified_dataclass_test.py")), set()
+        )

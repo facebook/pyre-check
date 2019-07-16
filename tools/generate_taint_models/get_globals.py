@@ -83,6 +83,31 @@ class GlobalModelGenerator(ModelGenerator):
                     return
             visitor.visit(target)
 
+        def should_visit_class(class_definition: ast.ClassDef) -> bool:
+            # Ensure that we don't visit nested classes for now.
+            if visitor.parent is not None:
+                return False
+
+            def is_dataclass_decorator(expression: ast.expr) -> bool:
+                if isinstance(expression, ast.Call):
+                    # pyre-ignore[18]: Not handling nested recursive functions.
+                    return is_dataclass_decorator(expression.func)
+                if isinstance(expression, ast.Name):
+                    return expression.id == "dataclass"
+                if isinstance(expression, ast.Attribute):
+                    base = expression.value
+                    if isinstance(base, ast.Name) and base.id == "dataclasses":
+                        return expression.attr == "dataclass"
+                return False
+
+            for decorator in class_definition.decorator_list:
+                # Skip visiting dataclasses, as they use class variables to generate
+                # instance variables. They can have one of the following forms:
+                # @dataclass(args), @dataclass, or `@dataclasses.dataclass(args)`.
+                if is_dataclass_decorator(decorator):
+                    return False
+            return True
+
         def visit_statement(statement: ast.stmt) -> None:
             if isinstance(statement, ast.Assign):
                 # Omit pure aliases of the form `x = alias`.
@@ -93,8 +118,7 @@ class GlobalModelGenerator(ModelGenerator):
             # Don't attempt to register statements of the form `x: int`.
             elif isinstance(statement, ast.AnnAssign) and statement.value is not None:
                 visit_assignment(statement.target, statement.value)
-            # Ensure that we don't visit nested classes for now.
-            elif isinstance(statement, ast.ClassDef) and visitor.parent is None:
+            elif isinstance(statement, ast.ClassDef) and should_visit_class(statement):
                 visitor.parent = statement.name
                 for toplevel_statement in statement.body:
                     # pyre-ignore: T46622677
