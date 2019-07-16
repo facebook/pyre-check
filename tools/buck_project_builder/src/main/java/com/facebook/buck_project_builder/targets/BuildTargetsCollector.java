@@ -123,7 +123,11 @@ public final class BuildTargetsCollector {
         return PythonTarget.parse(cellPath, targetJsonObject);
       case "genrule":
         // Thrift library targets have genrule rule type.
-        return ThriftLibraryTarget.parse(cellPath, targetJsonObject);
+        BuildTarget parsedTarget = ThriftLibraryTarget.parse(cellPath, targetJsonObject);
+        if (parsedTarget != null) {
+          return parsedTarget;
+        }
+        return Antlr4LibraryTarget.parse(cellPath, targetJsonObject);
       case "cxx_genrule":
         // Swig library targets have cxx_genrule rule type.
         return SwigLibraryTarget.parse(cellPath, targetJsonObject);

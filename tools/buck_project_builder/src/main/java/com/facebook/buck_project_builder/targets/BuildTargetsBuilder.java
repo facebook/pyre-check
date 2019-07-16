@@ -2,6 +2,7 @@ package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FileUtils;
 
@@ -30,6 +31,7 @@ public final class BuildTargetsBuilder {
   private final Set<String> pythonWheelUrls = new HashSet<>();
   private final Set<String> thriftLibraryBuildCommands = new HashSet<>();
   private final Set<String> swigLibraryBuildCommands = new HashSet<>();
+  private final Set<String> antlr4LibraryBuildCommands = new HashSet<>();
 
   private final Set<String> conflictingFiles = new HashSet<>();
   private final Set<String> unsupportedFiles = new HashSet<>();
@@ -154,6 +156,44 @@ public final class BuildTargetsBuilder {
     LOGGER.info("Built swig libraries in " + time + "ms.");
   }
 
+  private void buildAntlr4Libraries() {
+    if (this.antlr4LibraryBuildCommands.isEmpty()) {
+      return;
+    }
+    LOGGER.info("Building " + this.antlr4LibraryBuildCommands.size() + " ANTLR4 libraries...");
+    String wrapperExecutable;
+    String builderExecutable;
+    try {
+      wrapperExecutable =
+          GeneratedBuildRuleRunner.getBuiltTargetExecutable(
+              "//tools/antlr4:antlr4_wrapper", this.buckRoot);
+      builderExecutable =
+          GeneratedBuildRuleRunner.getBuiltTargetExecutable("//tools/antlr4:antlr4", this.buckRoot);
+    } catch (IOException exception) {
+      logCodeGenerationIOException(exception);
+      return;
+    }
+    if (builderExecutable == null || wrapperExecutable == null) {
+      LOGGER.severe("Unable to build any ANTLR4 libraries because its builder is not found.");
+      return;
+    }
+    String builderPrefix =
+        String.format("%s --antlr4_command=\"%s\"", wrapperExecutable, builderExecutable);
+    long start = System.currentTimeMillis();
+    this.antlr4LibraryBuildCommands
+        .parallelStream()
+        .forEach(
+            command -> {
+              try {
+                GeneratedBuildRuleRunner.runBuilderCommand(builderPrefix + command, this.buckRoot);
+              } catch (IOException exception) {
+                logCodeGenerationIOException(exception);
+              }
+            });
+    long time = System.currentTimeMillis() - start;
+    LOGGER.info("Built ANTLR4 libraries in " + time + "ms.");
+  }
+
   private void generateEmptyStubs() {
     LOGGER.info("Generating empty stubs...");
     long start = System.currentTimeMillis();
@@ -193,27 +233,32 @@ public final class BuildTargetsBuilder {
     return outputDirectory;
   }
 
-  /** Exposed for testing. */
+  @VisibleForTesting
   Map<Path, Path> getSources() {
     return sources;
   }
 
-  /** Exposed for testing. */
+  @VisibleForTesting
   Set<String> getThriftLibraryBuildCommands() {
     return thriftLibraryBuildCommands;
   }
 
-  /** Exposed for testing. */
+  @VisibleForTesting
   Set<String> getSwigLibraryBuildCommands() {
     return swigLibraryBuildCommands;
   }
 
-  /** Exposed for testing. */
+  @VisibleForTesting
+  Set<String> getAntlr4LibraryBuildCommands() {
+    return antlr4LibraryBuildCommands;
+  }
+
+  @VisibleForTesting
   Set<String> getUnsupportedGeneratedSources() {
     return unsupportedGeneratedSources;
   }
 
-  /** Exposed for testing. */
+  @VisibleForTesting
   Set<String> getPythonWheelUrls() {
     return pythonWheelUrls;
   }
@@ -244,9 +289,14 @@ public final class BuildTargetsBuilder {
     swigLibraryBuildCommands.add(command);
   }
 
+  void addAntlr4LibraryBuildCommand(String command) {
+    antlr4LibraryBuildCommands.add(command);
+  }
+
   public DebugOutput buildTargets() {
     this.buildThriftLibraries();
     this.buildSwigLibraries();
+    this.buildAntlr4Libraries();
     this.buildPythonSources();
     this.buildPythonWheels();
     this.generateEmptyStubs();
