@@ -152,11 +152,11 @@ let create_of_source environment source =
   let walk_define
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
+    let annotation_lookup =
+      ResolutionSharedMemory.get name >>| Int.Map.of_tree |> Option.value ~default:Int.Map.empty
+    in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
-      let annotation_lookup =
-        ResolutionSharedMemory.get name >>| Int.Map.of_tree |> Option.value ~default:Int.Map.empty
-      in
       let pre_annotations, post_annotations =
         Map.find annotation_lookup ([%hash: int * int] (node_id, statement_index))
         >>| (fun { ResolutionSharedMemory.precondition; postcondition } ->
