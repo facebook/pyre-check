@@ -9,15 +9,18 @@ open Analysis
 open Pyre
 open PostprocessSharedMemory
 
-let register_ignores ~configuration scheduler handles =
+let register_ignores ~configuration scheduler source_paths =
+  let handles =
+    List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
+        Path.RelativePath.relative relative_path)
+  in
   (* Invalidate keys before updating *)
   let remove_ignores handles =
-    let keys = List.map ~f:File.Handle.show handles in
-    List.filter_map ~f:IgnoreKeys.get keys
+    List.filter_map ~f:IgnoreKeys.get handles
     |> List.concat
     |> IgnoreLines.KeySet.of_list
     |> IgnoreLines.remove_batch;
-    keys |> IgnoreKeys.KeySet.of_list |> IgnoreKeys.remove_batch
+    handles |> IgnoreKeys.KeySet.of_list |> IgnoreKeys.remove_batch
   in
   let remove_modes handles = ErrorModes.KeySet.of_list handles |> ErrorModes.remove_batch in
   let timer = Timer.start () in
@@ -25,9 +28,8 @@ let register_ignores ~configuration scheduler handles =
   remove_modes handles;
 
   (* Register new values *)
-  let register_ignores_for_handle handle =
-    let key = File.Handle.show handle in
-    let qualifier = Source.qualifier ~handle in
+  let register_ignore { SourcePath.relative_path; qualifier; _ } =
+    let key = Path.RelativePath.relative relative_path in
     (* Register new ignores. *)
     match Ast.SharedMemory.Sources.get qualifier with
     | Some source ->
@@ -45,22 +47,22 @@ let register_ignores ~configuration scheduler handles =
         IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
     | _ -> ()
   in
-  let register_local_mode handle =
-    let qualifier = Source.qualifier ~handle in
+  let register_local_mode { SourcePath.relative_path; qualifier; _ } =
     match Ast.SharedMemory.Sources.get qualifier with
     | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
+        let handle = Path.RelativePath.relative relative_path in
         ErrorModes.add handle local_mode
     | _ -> ()
   in
-  let register handles =
-    List.iter handles ~f:register_ignores_for_handle;
-    List.iter handles ~f:register_local_mode
+  let register source_paths =
+    List.iter source_paths ~f:register_ignore;
+    List.iter source_paths ~f:register_local_mode
   in
-  Scheduler.iter scheduler ~configuration ~f:register ~inputs:handles;
+  Scheduler.iter scheduler ~configuration ~f:register ~inputs:source_paths;
   Statistics.performance ~name:"registered ignores" ~timer ()
 
 
-let ignore ~configuration scheduler handles errors =
+let ignore ~configuration scheduler source_paths errors =
   let error_lookup =
     let add_to_lookup lookup error =
       Map.add_multi ~key:(Error.key error) ~data:(Error.code error) lookup
@@ -80,13 +82,13 @@ let ignore ~configuration scheduler handles errors =
     List.filter ~f:not_ignored errors
   in
   let unused_ignores =
-    let get_unused_ignores path =
+    let get_unused_ignores { SourcePath.relative_path; _ } =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key >>| (fun ignores -> ignores @ sofar) |> Option.value ~default:sofar
         in
         List.fold
-          (IgnoreKeys.get (File.Handle.show path) |> Option.value ~default:[])
+          (IgnoreKeys.get (Path.RelativePath.relative relative_path) |> Option.value ~default:[])
           ~init:[]
           ~f:key_to_ignores
       in
@@ -118,7 +120,7 @@ let ignore ~configuration scheduler handles errors =
       ~map
       ~reduce:List.append
       ~initial:[]
-      ~inputs:handles
+      ~inputs:source_paths
       ()
   in
   let create_unused_ignore_error errors unused_ignore =

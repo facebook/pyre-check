@@ -11,13 +11,6 @@ type types_by_path = {
   types_by_location: (Location.Instantiated.t * Type.t) list option
 }
 
-type lookup = {
-  path: PyrePath.t;
-  qualifier: Reference.t;
-  handle: string option;
-  lookup: Lookup.t option
-}
-
 val evict : state:State.t -> Reference.t -> unit
 
 val evict_path : state:State.t -> configuration:Configuration.Analysis.t -> PyrePath.t -> unit

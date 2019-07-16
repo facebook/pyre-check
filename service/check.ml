@@ -23,89 +23,47 @@ type analyze_source_results = {
 let analyze_sources
     ?(open_documents = Path.Map.empty)
     ~scheduler
-    ~configuration:( { Configuration.Analysis.filter_directories; ignore_all_errors; _ } as
-                   configuration )
+    ~configuration
     ~environment
-    ~handles
-    ()
+    source_paths
   =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
   Resolution.Cache.clear ();
-  let timer = Timer.start () in
-  let handles =
-    let filter_path_by_directories handle =
-      let directory_contains directory =
-        match Path.follow_symbolic_link handle with
-        | None ->
-            Log.error "Cannot follow symbolic link %a" Path.pp handle;
-            false
-        | Some handle -> Path.directory_contains ~directory handle
-      in
-      let should_keep =
-        filter_directories >>| List.exists ~f:directory_contains |> Option.value ~default:true
-      in
-      if should_keep then (* If ignore_all_errors is None, default to not filtering. *)
-        ignore_all_errors
-        >>| (fun directories -> not (List.exists directories ~f:directory_contains))
-        |> Option.value ~default:true
-      else
-        false
-    in
-    let filter_handle_by_directories handle =
-      let path = File.Handle.to_path ~configuration handle in
-      match path with
-      | Some path ->
-          (* Only analyze handles which live directly under the source root - in case we have a
-             search path under the source root, we don't want to analyze them since they're not
-             part of a user's project. *)
-          filter_path_by_directories path
-      | _ -> false
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~configuration
-      ~map:(fun _ handles -> List.filter handles ~f:filter_handle_by_directories)
-      ~reduce:(fun handles new_handles -> List.rev_append new_handles handles)
-      ~initial:[]
-      ~inputs:handles
-      ()
-    |> List.sort ~compare:File.Handle.compare
+  let checked_source_paths =
+    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
   in
-  Statistics.performance ~name:"filtered directories" ~timer ();
   let errors =
     let timer = Timer.start () in
     let empty_result = { errors = []; number_files = 0 } in
-    Log.info "Checking %d sources..." (List.length handles);
+    let number_of_sources = List.length checked_source_paths in
+    Log.info "Checking %d sources..." number_of_sources;
     let run (module Check : Analysis.Check.Signature) =
       Log.info "Running check `%s`..." Check.name;
       let timer = Timer.start () in
-      let map _ handles =
+      let map _ source_paths =
         Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
         Resolution.Cache.clear ();
-        let analyze_source { errors; number_files } handle =
-          let qualifier = Source.qualifier ~handle in
+        let analyze_source { errors; number_files } { SourcePath.relative_path; qualifier; _ } =
+          let path = Path.Relative relative_path in
           match SharedMemory.Sources.get qualifier with
           | Some source ->
               let configuration =
-                match File.Handle.to_path ~configuration handle with
-                | None -> configuration
-                | Some handle_path ->
-                    if PyrePath.Map.mem open_documents handle_path then
-                      { configuration with store_type_check_resolution = true }
-                    else
-                      configuration
+                if PyrePath.Map.mem open_documents path then
+                  { configuration with Configuration.Analysis.store_type_check_resolution = true }
+                else
+                  configuration
               in
               let new_errors = Check.run ~configuration ~environment ~source in
               { errors = List.append new_errors errors; number_files = number_files + 1 }
           | _ -> { errors; number_files = number_files + 1 }
         in
-        List.fold handles ~init:empty_result ~f:analyze_source
+        List.fold source_paths ~init:empty_result ~f:analyze_source
       in
       let reduce left right =
         let number_files = left.number_files + right.number_files in
-        Log.log ~section:`Progress "Processed %d of %d sources" number_files (List.length handles);
+        Log.log ~section:`Progress "Processed %d of %d sources" number_files number_of_sources;
         { errors = List.append left.errors right.errors; number_files }
       in
       let { errors; _ } =
@@ -116,7 +74,7 @@ let analyze_sources
           ~initial:empty_result
           ~map
           ~reduce
-          ~inputs:handles
+          ~inputs:checked_source_paths
           ()
       in
       Statistics.performance ~name:(Format.asprintf "check_%s" Check.name) ~timer ();
@@ -132,7 +90,7 @@ let analyze_sources
     errors
   in
   let timer = Timer.start () in
-  let errors = Postprocess.ignore ~configuration scheduler handles errors in
+  let errors = Postprocess.ignore ~configuration scheduler source_paths errors in
   Statistics.performance ~name:"postprocessed" ~timer ();
   errors
 
@@ -165,10 +123,11 @@ let check
   let module_tracker = ModuleTracker.create configuration in
   (* Parse sources. *)
   let sources = Parser.parse_all ~scheduler ~configuration module_tracker in
-  Postprocess.register_ignores ~configuration scheduler sources;
+  let source_paths = ModuleTracker.source_paths module_tracker in
+  Postprocess.register_ignores ~configuration scheduler source_paths;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   Environment.populate_shared_memory ~configuration ~scheduler ~sources;
-  let errors = analyze_sources ~scheduler ~configuration ~environment ~handles:sources () in
+  let errors = analyze_sources ~scheduler ~configuration ~environment source_paths in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root

@@ -69,4 +69,4 @@ end
 
 module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)
 module IgnoreKeys = SharedMemory.NoCache (StringKey) (LocationListValue)
-module ErrorModes = SharedMemory.NoCache (HandleKey) (ModeValue)
+module ErrorModes = SharedMemory.NoCache (StringKey) (ModeValue)

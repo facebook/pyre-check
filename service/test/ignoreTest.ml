@@ -11,13 +11,14 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, handles, qualifiers =
+    let configuration, source_paths, handles, qualifiers =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
       let _ = ScratchProject.parse_sources project in
       let configuration = ScratchProject.configuration_of project in
+      let source_paths = ScratchProject.source_paths_of project in
       let handles = ScratchProject.handles_of project in
       let qualifiers = ScratchProject.qualifiers_of project in
-      configuration, handles, qualifiers
+      configuration, source_paths, handles, qualifiers
     in
     Test.populate_shared_memory ~configuration ~sources:handles;
     let ((module Handler : Analysis.Environment.Handler) as environment) =
@@ -26,9 +27,9 @@ let ignore_lines_test context =
     Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
     add_defaults_to_environment ~configuration environment;
     let scheduler = Scheduler.mock () in
-    Service.Postprocess.register_ignores ~configuration scheduler handles;
+    Service.Postprocess.register_ignores ~configuration scheduler source_paths;
     let descriptions =
-      Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
+      Service.Check.analyze_sources ~scheduler ~configuration ~environment source_paths
       |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
     in
     Handler.purge qualifiers;

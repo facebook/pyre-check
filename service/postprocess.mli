@@ -8,12 +8,12 @@ open Analysis
 val register_ignores
   :  configuration:Configuration.Analysis.t ->
   Scheduler.t ->
-  File.Handle.t list ->
+  Ast.SourcePath.t list ->
   unit
 
 val ignore
   :  configuration:Configuration.Analysis.t ->
   Scheduler.t ->
-  File.Handle.t list ->
+  Ast.SourcePath.t list ->
   Error.t list ->
   Error.t list

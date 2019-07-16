@@ -20,17 +20,19 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   in
   let scheduler = Scheduler.mock () in
   List.iter ~f:File.write files;
-  let handles =
-    Service.ModuleTracker.create configuration
-    |> Service.Parser.parse_all ~configuration ~scheduler
-  in
+  let module_tracker = Service.ModuleTracker.create configuration in
+  let handles = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
   let ((module Handler : Analysis.Environment.Handler) as environment) =
     (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
   in
   Test.populate_shared_memory ~configuration ~sources:handles;
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
   let actual_errors =
-    Service.Check.analyze_sources ~scheduler ~configuration ~environment ~handles ()
+    Service.Check.analyze_sources
+      ~scheduler
+      ~configuration
+      ~environment
+      (Service.ModuleTracker.source_paths module_tracker)
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
   List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle) |> Handler.purge;
@@ -67,7 +69,11 @@ let type_check_sources_list_test context =
         def foo() -> str:
           return 1
       |} |> create_files ~root in
-    assert_errors ~root ~files ["Incompatible return type [7]: Expected `str` but got `int`."]
+    assert_errors
+      ~filter_directories:[root]
+      ~root
+      ~files
+      ["Incompatible return type [7]: Expected `str` but got `int`."]
   in
   with_bracket_chdir context (bracket_tmpdir context) check
 
@@ -90,6 +96,8 @@ let test_filter_directories context =
   in
   let files = [File.create ~content check_path; File.create ~content ignore_path] in
   assert_errors
+    ~filter_directories:
+      [Path.create_relative ~root ~relative:"check"; Path.create_relative ~root ~relative:"ignore"]
     ~root
     ~files
     [ "Incompatible return type [7]: Expected `C` but got `D`.";

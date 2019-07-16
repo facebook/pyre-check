@@ -15,7 +15,7 @@ open Pyre
 type errors = State.Error.t list [@@deriving show]
 
 let recheck_deprecated
-    ~state:({ State.environment; errors; scheduler; open_documents; _ } as state)
+    ~state:({ State.module_tracker; environment; errors; scheduler; open_documents; _ } as state)
     ~configuration:({ debug; ignore_dependencies; _ } as configuration)
     ~files
   =
@@ -171,6 +171,9 @@ let recheck_deprecated
   let repopulated_qualifiers =
     List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle)
   in
+  let repopulated_source_paths =
+    List.filter_map repopulated_qualifiers ~f:(Service.ModuleTracker.lookup module_tracker)
+  in
   List.filter_map ~f:Ast.SharedMemory.Sources.get repopulated_qualifiers
   |> Service.Environment.populate ~configuration ~scheduler environment;
   Statistics.event
@@ -178,7 +181,7 @@ let recheck_deprecated
     ~name:"shared memory size"
     ~integers:["size", Ast.SharedMemory.heap_size ()]
     ();
-  Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+  Service.Postprocess.register_ignores ~configuration scheduler repopulated_source_paths;
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
@@ -190,8 +193,7 @@ let recheck_deprecated
       ~scheduler
       ~configuration
       ~environment
-      ~handles:repopulate_handles
-      ()
+      repopulated_source_paths
   in
   (* Kill all previous errors for new files we just checked *)
   List.iter
@@ -262,7 +264,7 @@ let recheck
     ~message:"Repopulating the environment"
     ~short_message:(Some "[Repopulating]")
     ~state;
-  let repopulate_handles =
+  let () =
     let timer = Timer.start () in
     (* Clean up all data related to updated files. *)
     let qualifiers = List.append removed recheck_modules in
@@ -291,39 +293,36 @@ let recheck
       Log.warning
         "Unable to parse `%s`."
         (List.map unparsed ~f:File.Handle.show |> String.concat ~sep:", ");
-    parsed
+    Log.log
+      ~section:`Debug
+      "Repopulating the environment with %a"
+      Sexp.pp
+      [%message (parsed : File.Handle.t list)];
+    Log.info "Updating the type environment for %d files." (List.length parsed)
   in
-  Log.log
-    ~section:`Debug
-    "Repopulating the environment with %a"
-    Sexp.pp
-    [%message (repopulate_handles : File.Handle.t list)];
-  Log.info "Updating the type environment for %d files." (List.length repopulate_handles);
-  let repopulated = List.map repopulate_handles ~f:(fun handle -> Source.qualifier ~handle) in
-  List.filter_map ~f:Ast.SharedMemory.Sources.get repopulated
+  List.filter_map ~f:Ast.SharedMemory.Sources.get recheck_modules
   |> Service.Environment.populate ~configuration ~scheduler environment;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", Ast.SharedMemory.heap_size ()]
     ();
-  Service.Postprocess.register_ignores ~configuration scheduler repopulate_handles;
+  Service.Postprocess.register_ignores ~configuration scheduler recheck_source_paths;
 
   (* Compute new set of errors. *)
   (* Clear all type resolution info from shared memory for all affected sources. *)
-  ResolutionSharedMemory.remove repopulated;
-  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list repopulated);
+  ResolutionSharedMemory.remove recheck_modules;
+  Coverage.SharedMemory.remove_batch (Coverage.SharedMemory.KeySet.of_list recheck_modules);
   let new_errors =
     Service.Check.analyze_sources
       ~open_documents
       ~scheduler
       ~configuration
       ~environment
-      ~handles:repopulate_handles
-      ()
+      recheck_source_paths
   in
   (* Kill all previous errors for new files we just checked *)
-  List.iter ~f:(Hashtbl.remove errors) (removed @ repopulated);
+  List.iter ~f:(Hashtbl.remove errors) (removed @ recheck_modules);
 
   (* Associate the new errors with new files *)
   List.iter new_errors ~f:(fun error ->
