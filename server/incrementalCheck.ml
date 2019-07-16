@@ -88,9 +88,6 @@ let recheck_deprecated
       in
       List.filter_map recheck ~f:keep_file_with_handle |> List.unzip
     in
-    (* Watchman only notifies Pyre that a file has been updated, we have to detect removals
-       manually and update our handle set. *)
-    Ast.SharedMemory.HandleKeys.remove ~handles:removed_handles;
     let () =
       let qualifiers =
         List.map (handles @ removed_handles) ~f:(fun handle -> Source.qualifier ~handle)

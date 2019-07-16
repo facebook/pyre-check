@@ -5,8 +5,6 @@
 
 open Core
 
-module HandleKey : Memory.KeyType with type t = File.Handle.t and type out = File.Handle.t
-
 module IntKey : Memory.KeyType with type t = int and type out = int
 
 module SymlinksToPaths : sig
@@ -47,25 +45,6 @@ module Sources : sig
   val serialize_qualifier : Reference.t -> string
 
   val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
-end
-
-module HandleKeys : sig
-  module HandleKeysValue : Value.Type with type t = File.Handle.Set.Tree.t
-
-  module HandleKeys : module type of Memory.NoCache (Memory.SingletonKey) (HandleKeysValue)
-
-  val get : unit -> File.Handle.Set.Tree.t
-
-  val add : handles:File.Handle.Set.Tree.t -> unit
-
-  val remove : handles:File.Handle.t list -> unit
-
-  (* Can only be called from the master process. *)
-  val clear : unit -> unit
-
-  val normalize : unit -> unit
-
-  val compute_hashes_to_keys : unit -> string String.Map.t
 end
 
 module Modules : sig

@@ -70,12 +70,9 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   in
   SharedMem.collect `aggressive;
   let timer = Timer.start () in
-  let { Check.handles; module_tracker; environment; errors } =
+  let { Check.module_tracker; environment; errors; _ } =
     Check.check ~scheduler:(Some scheduler) ~configuration
   in
-  File.Handle.Set.Tree.of_list handles
-  |> fun handles ->
-  Ast.SharedMemory.HandleKeys.add ~handles;
   Statistics.performance
     ~name:"initialization"
     ~timer

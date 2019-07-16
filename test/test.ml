@@ -1325,8 +1325,7 @@ module ScratchProject = struct
       |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     in
     Ast.SharedMemory.Sources.remove qualifiers;
-    Ast.SharedMemory.Modules.remove ~qualifiers;
-    Ast.SharedMemory.HandleKeys.clear ()
+    Ast.SharedMemory.Modules.remove ~qualifiers
 
 
   let setup ~context ?(external_sources = []) sources =

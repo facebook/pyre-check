@@ -7,18 +7,6 @@ open Core
 open Pyre
 module SharedMemory = Memory
 
-module HandleKey = struct
-  type t = File.Handle.t
-
-  let to_string = File.Handle.show
-
-  let compare = File.Handle.compare
-
-  type out = File.Handle.t
-
-  let from_string = File.Handle.create_for_testing
-end
-
 module IntKey = struct
   type t = int
 
@@ -120,54 +108,6 @@ module Handles = struct
 
   let compute_hashes_to_keys ~keys =
     List.map keys ~f:String.hash |> fun keys -> Paths.compute_hashes_to_keys ~keys
-end
-
-module HandleKeys = struct
-  module HandleKeysValue = struct
-    type t = File.Handle.Set.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "All handles"
-  end
-
-  module HandleKeys = SharedMemory.WithCache (SharedMemory.SingletonKey) (HandleKeysValue)
-
-  let get () =
-    HandleKeys.get SharedMemory.SingletonKey.key
-    |> Option.value ~default:File.Handle.Set.Tree.empty
-
-
-  let clear () =
-    HandleKeys.remove_batch (HandleKeys.KeySet.singleton SharedMemory.SingletonKey.key)
-
-
-  let add ~handles:new_keys =
-    let handles = get () in
-    clear ();
-    let handles = File.Handle.Set.Tree.union handles new_keys in
-    HandleKeys.add SharedMemory.SingletonKey.key handles
-
-
-  let remove ~handles:old_keys =
-    let handles = get () in
-    clear ();
-    let handles = old_keys |> File.Handle.Set.Tree.of_list |> File.Handle.Set.Tree.diff handles in
-    HandleKeys.add SharedMemory.SingletonKey.key handles
-
-
-  let normalize () =
-    let handles = get () in
-    clear ();
-    handles
-    |> File.Handle.Set.Tree.to_list
-    |> List.sort ~compare:File.Handle.compare
-    |> File.Handle.Set.Tree.of_list
-    |> HandleKeys.add SharedMemory.SingletonKey.key
-
-
-  let compute_hashes_to_keys () =
-    HandleKeys.compute_hashes_to_keys ~keys:[SharedMemory.SingletonKey.key]
 end
 
 module Modules = struct

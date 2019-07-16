@@ -179,10 +179,8 @@ module ScratchServer = struct
         configuration
     in
     let () =
-      let handles = List.map sources ~f:(fun { Ast.Source.handle; _ } -> handle) in
-      Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.of_list handles |> Set.to_tree);
       let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ = Ast.SharedMemory.HandleKeys.clear () in
+      let tear_down_shared_memory () _ = () in
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
     let state =

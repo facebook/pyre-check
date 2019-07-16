@@ -381,7 +381,11 @@ let process_client_shutdown_request ~state ~id =
   { state; response = Some (LanguageServerProtocolResponse response) }
 
 
-let process_type_query_request ~state:({ State.environment; _ } as state) ~configuration ~request =
+let process_type_query_request
+    ~state:({ State.module_tracker; environment; _ } as state)
+    ~configuration
+    ~request
+  =
   let (module Handler : Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
@@ -454,22 +458,20 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 ~new_map:(Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
           | None -> map
         in
-        let handles = Ast.SharedMemory.HandleKeys.get () |> File.Handle.Set.Tree.to_list in
-        let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+        let handles =
+          Service.ModuleTracker.source_paths module_tracker
+          |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
+                 Path.RelativePath.relative relative_path)
+        in
+        let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
         (* AST shared memory. *)
         let map =
           map
-          |> extend_map ~new_map:(Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ())
           |> extend_map
-               ~new_map:
-                 (Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys
-                    ~keys:(List.map handles ~f:File.Handle.show))
+               ~new_map:(Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys ~keys:handles)
           |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map
-               ~new_map:
-                 (Ast.SharedMemory.Handles.compute_hashes_to_keys
-                    ~keys:(List.map ~f:File.Handle.show handles))
+          |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:handles)
         in
         (* Handle-based keys. *)
         let map =
@@ -669,11 +671,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                 ( Ast.SharedMemory.Sources.SourceValue.description,
                   Reference.show key,
                   value >>| Source.show )
-          | Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (key, value) ->
-              Some
-                ( Ast.SharedMemory.HandleKeys.HandleKeysValue.description,
-                  Int.to_string key,
-                  value >>| File.Handle.Set.Tree.sexp_of_t >>| Sexp.to_string )
           | Modules.Decoded (key, value) ->
               Some
                 ( ModuleValue.description,
@@ -756,9 +753,6 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
                     | ( Ast.SharedMemory.Sources.Sources.Decoded (_, first),
                         Ast.SharedMemory.Sources.Sources.Decoded (_, second) ) ->
                         Option.equal Source.equal first second
-                    | ( Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, first),
-                        Ast.SharedMemory.HandleKeys.HandleKeys.Decoded (_, second) ) ->
-                        Option.equal File.Handle.Set.Tree.equal first second
                     | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
                         Option.equal Module.equal first second
                     | ( Ast.SharedMemory.Handles.Paths.Decoded (_, first),
@@ -846,7 +840,8 @@ let process_type_query_request ~state:({ State.environment; _ } as state) ~confi
         in
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
-        Service.Environment.normalize_shared_memory ();
+        let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
+        Service.Environment.normalize_shared_memory qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
         Log.info

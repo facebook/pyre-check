@@ -34,15 +34,6 @@ let compute_dependencies
       table
     in
     let old_signature_hashes = signature_hashes ~default:0 in
-    (* Update the tracked handles, if necessary. *)
-    let newly_introduced_handles =
-      List.filter handles ~f:(fun handle ->
-          let qualifier = Source.qualifier ~handle in
-          Option.is_none (Ast.SharedMemory.Sources.get qualifier))
-    in
-    if not (List.is_empty newly_introduced_handles) then
-      Ast.SharedMemory.HandleKeys.add
-        ~handles:(File.Handle.Set.of_list newly_introduced_handles |> Set.to_tree);
     Ast.SharedMemory.Sources.remove qualifiers;
     Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
     |> ignore;

@@ -473,7 +473,7 @@ let populate_shared_memory
     ()
 
 
-let normalize_shared_memory () =
+let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
      inline here. *)
   ( match OrderKeys.get SharedMemory.SingletonKey.key with
@@ -481,8 +481,4 @@ let normalize_shared_memory () =
   | Some keys ->
       OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
       List.sort ~compare:Int.compare keys |> OrderKeys.add SharedMemory.SingletonKey.key );
-  Ast.SharedMemory.HandleKeys.normalize ();
-  let handles = Ast.SharedMemory.HandleKeys.get () in
-  File.Handle.Set.Tree.to_list handles
-  |> List.map ~f:(fun handle -> Source.qualifier ~handle)
-  |> SharedHandler.DependencyHandler.normalize
+  SharedHandler.DependencyHandler.normalize qualifiers

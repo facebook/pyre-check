@@ -31,6 +31,18 @@ module LocationKey = struct
   let from_string = ident
 end
 
+module HandleKey = struct
+  type t = File.Handle.t
+
+  let to_string = File.Handle.show
+
+  let compare = File.Handle.compare
+
+  type out = File.Handle.t
+
+  let from_string = File.Handle.create_for_testing
+end
+
 module IgnoreValue = struct
   type t = Ast.Ignore.t list
 
@@ -57,4 +69,4 @@ end
 
 module IgnoreLines = SharedMemory.NoCache (LocationKey) (IgnoreValue)
 module IgnoreKeys = SharedMemory.NoCache (StringKey) (LocationListValue)
-module ErrorModes = SharedMemory.NoCache (Ast.SharedMemory.HandleKey) (ModeValue)
+module ErrorModes = SharedMemory.NoCache (HandleKey) (ModeValue)

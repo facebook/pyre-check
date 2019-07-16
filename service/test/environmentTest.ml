@@ -142,7 +142,7 @@ let test_normalize _ =
     in
     [index_of "int"; index_of "str"] |> List.sort ~compare:Int.compare
   in
-  Service.Environment.normalize_shared_memory ();
+  Service.Environment.normalize_shared_memory [];
   assert_equal
     (Service.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
     (Some indices)

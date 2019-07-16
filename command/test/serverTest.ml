@@ -916,62 +916,59 @@ let test_compute_hashes_to_keys context =
       String.compare left right
     in
     let to_binding hash key = { TypeQuery.hash; key } in
-    ( Ast.SharedMemory.HandleKeys.compute_hashes_to_keys ()
-    |> String.Map.to_alist
-    |> List.map ~f:(fun (hash, key) -> { TypeQuery.hash; key }) )
-    @ [ to_binding
-          (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
-          (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
-        to_binding (OrderIndices.hash_of_key "sixteen") (OrderIndices.serialize_key "sixteen");
-        to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
-        to_binding (OrderEdges.hash_of_key 16) (OrderEdges.serialize_key 16);
-        to_binding (OrderEdges.hash_of_key 15) (OrderEdges.serialize_key 15);
-        to_binding (OrderIndices.hash_of_key "fifteen") (OrderIndices.serialize_key "fifteen");
-        to_binding (OrderBackedges.hash_of_key 15) (OrderBackedges.serialize_key 15);
-        to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
-        to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
-        to_binding
-          (Ast.SharedMemory.SymlinksToPaths.hash_of_key "sample.py")
-          (Ast.SharedMemory.SymlinksToPaths.serialize_key "sample.py");
-        to_binding
-          (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
-          (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
-        to_binding
-          (Ast.SharedMemory.Sources.Sources.hash_of_key (Reference.create "sample"))
-          (Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "sample"));
-        to_binding (Modules.hash_of_key !&"sample") (Modules.serialize_key !&"sample");
-        to_binding
-          (FunctionKeys.hash_of_key (Reference.create "sample"))
-          (FunctionKeys.serialize_key (Reference.create "sample"));
-        to_binding
-          (ClassKeys.hash_of_key (Reference.create "sample"))
-          (ClassKeys.serialize_key (Reference.create "sample"));
-        to_binding
-          (GlobalKeys.hash_of_key (Reference.create "sample"))
-          (GlobalKeys.serialize_key (Reference.create "sample"));
-        to_binding
-          (AliasKeys.hash_of_key (Reference.create "sample"))
-          (AliasKeys.serialize_key (Reference.create "sample"));
-        to_binding
-          (DependentKeys.hash_of_key (Reference.create "sample"))
-          (DependentKeys.serialize_key (Reference.create "sample"));
-        to_binding
-          (ResolutionSharedMemory.hash_of_key (Reference.create "sample.$toplevel"))
-          (ResolutionSharedMemory.serialize_key (Reference.create "sample.$toplevel"));
-        to_binding
-          (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
-          (ResolutionSharedMemory.serialize_key (Reference.create "name"));
-        to_binding
-          (ResolutionSharedMemory.Keys.hash_of_key (Reference.create "sample"))
-          (ResolutionSharedMemory.Keys.serialize_key (Reference.create "sample"));
-        to_binding
-          (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key
-             (Reference.create "sample.$toplevel"))
-          (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
-             (Reference.create "sample.$toplevel"));
-        to_binding
-          (Coverage.SharedMemory.hash_of_key (Reference.create "sample"))
-          (Coverage.SharedMemory.serialize_key (Reference.create "sample")) ]
+    [ to_binding
+        (OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
+        (OrderKeys.serialize_key SharedMemory.SingletonKey.key);
+      to_binding (OrderIndices.hash_of_key "sixteen") (OrderIndices.serialize_key "sixteen");
+      to_binding (OrderAnnotations.hash_of_key 15) (OrderAnnotations.serialize_key 15);
+      to_binding (OrderEdges.hash_of_key 16) (OrderEdges.serialize_key 16);
+      to_binding (OrderEdges.hash_of_key 15) (OrderEdges.serialize_key 15);
+      to_binding (OrderIndices.hash_of_key "fifteen") (OrderIndices.serialize_key "fifteen");
+      to_binding (OrderBackedges.hash_of_key 15) (OrderBackedges.serialize_key 15);
+      to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
+      to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
+      to_binding
+        (Ast.SharedMemory.SymlinksToPaths.hash_of_key "sample.py")
+        (Ast.SharedMemory.SymlinksToPaths.serialize_key "sample.py");
+      to_binding
+        (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
+        (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
+      to_binding
+        (Ast.SharedMemory.Sources.Sources.hash_of_key (Reference.create "sample"))
+        (Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "sample"));
+      to_binding (Modules.hash_of_key !&"sample") (Modules.serialize_key !&"sample");
+      to_binding
+        (FunctionKeys.hash_of_key (Reference.create "sample"))
+        (FunctionKeys.serialize_key (Reference.create "sample"));
+      to_binding
+        (ClassKeys.hash_of_key (Reference.create "sample"))
+        (ClassKeys.serialize_key (Reference.create "sample"));
+      to_binding
+        (GlobalKeys.hash_of_key (Reference.create "sample"))
+        (GlobalKeys.serialize_key (Reference.create "sample"));
+      to_binding
+        (AliasKeys.hash_of_key (Reference.create "sample"))
+        (AliasKeys.serialize_key (Reference.create "sample"));
+      to_binding
+        (DependentKeys.hash_of_key (Reference.create "sample"))
+        (DependentKeys.serialize_key (Reference.create "sample"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "sample.$toplevel"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "sample.$toplevel"));
+      to_binding
+        (ResolutionSharedMemory.hash_of_key (Reference.create "name"))
+        (ResolutionSharedMemory.serialize_key (Reference.create "name"));
+      to_binding
+        (ResolutionSharedMemory.Keys.hash_of_key (Reference.create "sample"))
+        (ResolutionSharedMemory.Keys.serialize_key (Reference.create "sample"));
+      to_binding
+        (Analysis.Dependencies.Callgraph.SharedMemory.hash_of_key
+           (Reference.create "sample.$toplevel"))
+        (Analysis.Dependencies.Callgraph.SharedMemory.serialize_key
+           (Reference.create "sample.$toplevel"));
+      to_binding
+        (Coverage.SharedMemory.hash_of_key (Reference.create "sample"))
+        (Coverage.SharedMemory.serialize_key (Reference.create "sample")) ]
     |> List.sort ~compare
   in
   let { Server.Request.response; _ } =

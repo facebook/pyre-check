@@ -22,4 +22,4 @@ val populate_shared_memory
   sources:File.Handle.t list ->
   unit
 
-val normalize_shared_memory : unit -> unit
+val normalize_shared_memory : Reference.t list -> unit
