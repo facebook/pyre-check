@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -13,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class BuildTargetsBuilderTest {
 
   @Test
-  public void buildInformationIsCorrectlyAddedTest() {
+  public void pythonTargetsBuildInformationIsCorrectlyAddedTest() throws BuilderException {
     BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
 
     new PythonTarget(
@@ -23,9 +24,6 @@ public class BuildTargetsBuilderTest {
             ImmutableMap.of("source.py", "out.py", "source-conflict.py", "out.py"),
             ImmutableSet.of("generated.py"))
         .addToBuilder(builder);
-    new RemoteFileTarget("REMOTE_URL").addToBuilder(builder);
-    new ThriftLibraryTarget("BASE/PATH", "CMD_THRIFT", ImmutableList.of()).addToBuilder(builder);
-    new SwigLibraryTarget(null, "BASE/PATH", "CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
 
     assertEquals(
         "Python sources are correctly added.",
@@ -37,9 +35,33 @@ public class BuildTargetsBuilderTest {
         ImmutableSet.of("/OUT/DIR/BASE/PATH/generated.py"),
         builder.getUnsupportedGeneratedSources());
     assertEquals(
+        "Conflicting files are detected",
+        new DebugOutput(
+            ImmutableSet.of("BASE/PATH/out.py"), ImmutableSet.of("BASE/PATH/generated.py")),
+        builder.buildTargets());
+  }
+
+  @Test
+  public void remoteTargetBuildInformationIsCorrectlyAddedTest() {
+    BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
+
+    new RemoteFileTarget("REMOTE_URL").addToBuilder(builder);
+
+    assertEquals(
         "Remote wheel urls are correctly added.",
         ImmutableSet.of("REMOTE_URL"),
         builder.getPythonWheelUrls());
+  }
+
+  @Test
+  public void generatedCodeTargetBuildInformationIsCorrectlyAddedTest() {
+    BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
+
+    new ThriftLibraryTarget("BASE/PATH", "CMD_THRIFT", ImmutableList.of()).addToBuilder(builder);
+    new SwigLibraryTarget(null, "BASE/PATH", "CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
+    new Antlr4LibraryTarget(null, "BASE/PATH", "CMD_ANTLR4", ImmutableList.of())
+        .addToBuilder(builder);
+
     assertEquals(
         "Thrift library build commands are correctly added.",
         ImmutableSet.of("CMD_THRIFT"),
@@ -49,9 +71,8 @@ public class BuildTargetsBuilderTest {
         ImmutableSet.of("CMD_SWIG"),
         builder.getSwigLibraryBuildCommands());
     assertEquals(
-        "Conflicting files are detected",
-        new DebugOutput(
-            ImmutableSet.of("BASE/PATH/out.py"), ImmutableSet.of("BASE/PATH/generated.py")),
-        builder.buildTargets());
+        "ANTLR4 library build commands are correctly added.",
+        ImmutableSet.of("CMD_ANTLR4"),
+        builder.getAntlr4LibraryBuildCommands());
   }
 }

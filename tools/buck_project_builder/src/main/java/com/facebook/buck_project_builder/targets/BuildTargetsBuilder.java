@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
 import com.google.common.annotations.VisibleForTesting;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -87,7 +89,31 @@ public final class BuildTargetsBuilder {
     LOGGER.info("Built python wheels in " + time + "ms.");
   }
 
-  private void buildThriftLibraries() {
+  private void runBuildCommands(
+      Collection<String> commands, String buildRuleType, CommandRunner commandRunner)
+      throws BuilderException {
+    int numberOfSuccessfulRuns =
+        commands
+            .parallelStream()
+            .mapToInt(
+                command -> {
+                  boolean buildIsSuccessful = commandRunner.run(command);
+                  if (buildIsSuccessful) {
+                    return 1;
+                  }
+                  LOGGER.severe("Failed to build: " + command);
+                  return 0;
+                })
+            .sum();
+    if (numberOfSuccessfulRuns < commands.size()) {
+      throw new BuilderException(
+          String.format(
+              "Failed to build some %s targets. Read the log above for more information.",
+              buildRuleType));
+    }
+  }
+
+  private void buildThriftLibraries() throws BuilderException {
     this.thriftLibraryBuildCommands.removeIf(
         command ->
             command.contains("py:")
@@ -99,29 +125,32 @@ public final class BuildTargetsBuilder {
     LOGGER.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
     AtomicInteger numberOfBuiltThriftLibraries = new AtomicInteger(0);
     long start = System.currentTimeMillis();
-    thriftLibraryBuildCommands
-        .parallelStream()
-        .forEach(
-            command -> {
-              try {
-                GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
-              } catch (IOException exception) {
-                logCodeGenerationIOException(exception);
-              }
-              int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
-              if (builtThriftLibrariesSoFar % 100 == 0) {
-                // Log progress for every 100 built thrift library.
-                LOGGER.info(
-                    String.format(
-                        "Built %d/%d thrift libraries.",
-                        builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
-              }
-            });
+    runBuildCommands(
+        this.thriftLibraryBuildCommands,
+        "thrift_library",
+        command -> {
+          boolean successfullyBuilt;
+          try {
+            successfullyBuilt = GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
+          } catch (IOException exception) {
+            successfullyBuilt = false;
+            logCodeGenerationIOException(exception);
+          }
+          int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
+          if (builtThriftLibrariesSoFar % 100 == 0) {
+            // Log progress for every 100 built thrift library.
+            LOGGER.info(
+                String.format(
+                    "Built %d/%d thrift libraries.",
+                    builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
+          }
+          return successfullyBuilt;
+        });
     long time = System.currentTimeMillis() - start;
     LOGGER.info("Built thrift libraries in " + time + "ms.");
   }
 
-  private void buildSwigLibraries() {
+  private void buildSwigLibraries() throws BuilderException {
     if (this.swigLibraryBuildCommands.isEmpty()) {
       return;
     }
@@ -141,22 +170,23 @@ public final class BuildTargetsBuilder {
     }
     long start = System.currentTimeMillis();
     // Swig command contains buck run, so it's better not to make it run in parallel.
-    this.swigLibraryBuildCommands
-        .parallelStream()
-        .forEach(
-            command -> {
-              try {
-                GeneratedBuildRuleRunner.runBuilderCommand(
-                    builderExecutable + command, this.buckRoot);
-              } catch (IOException exception) {
-                logCodeGenerationIOException(exception);
-              }
-            });
+    runBuildCommands(
+        this.swigLibraryBuildCommands,
+        "swig_library",
+        command -> {
+          try {
+            return GeneratedBuildRuleRunner.runBuilderCommand(
+                builderExecutable + command, this.buckRoot);
+          } catch (IOException exception) {
+            logCodeGenerationIOException(exception);
+            return false;
+          }
+        });
     long time = System.currentTimeMillis() - start;
     LOGGER.info("Built swig libraries in " + time + "ms.");
   }
 
-  private void buildAntlr4Libraries() {
+  private void buildAntlr4Libraries() throws BuilderException {
     if (this.antlr4LibraryBuildCommands.isEmpty()) {
       return;
     }
@@ -180,16 +210,18 @@ public final class BuildTargetsBuilder {
     String builderPrefix =
         String.format("%s --antlr4_command=\"%s\"", wrapperExecutable, builderExecutable);
     long start = System.currentTimeMillis();
-    this.antlr4LibraryBuildCommands
-        .parallelStream()
-        .forEach(
-            command -> {
-              try {
-                GeneratedBuildRuleRunner.runBuilderCommand(builderPrefix + command, this.buckRoot);
-              } catch (IOException exception) {
-                logCodeGenerationIOException(exception);
-              }
-            });
+    runBuildCommands(
+        this.antlr4LibraryBuildCommands,
+        "antlr4_library",
+        command -> {
+          try {
+            return GeneratedBuildRuleRunner.runBuilderCommand(
+                builderPrefix + command, this.buckRoot);
+          } catch (IOException exception) {
+            logCodeGenerationIOException(exception);
+            return false;
+          }
+        });
     long time = System.currentTimeMillis() - start;
     LOGGER.info("Built ANTLR4 libraries in " + time + "ms.");
   }
@@ -293,7 +325,7 @@ public final class BuildTargetsBuilder {
     antlr4LibraryBuildCommands.add(command);
   }
 
-  public DebugOutput buildTargets() {
+  public DebugOutput buildTargets() throws BuilderException {
     this.buildThriftLibraries();
     this.buildSwigLibraries();
     this.buildAntlr4Libraries();
@@ -301,5 +333,9 @@ public final class BuildTargetsBuilder {
     this.buildPythonWheels();
     this.generateEmptyStubs();
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
+  }
+
+  private interface CommandRunner {
+    boolean run(String command);
   }
 }

@@ -12,9 +12,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 final class GeneratedBuildRuleRunner {
+
+  private static final Logger LOGGER = Logger.getGlobal();
 
   private GeneratedBuildRuleRunner() {}
 
@@ -27,7 +31,7 @@ final class GeneratedBuildRuleRunner {
         .collect(Collectors.joining(" "));
   }
 
-  static void runBuilderCommand(String builderCommand, String buckRoot) throws IOException {
+  static boolean runBuilderCommand(String builderCommand, String buckRoot) throws IOException {
     // Run the command in replaced cmd directly.
     Process process =
         Runtime.getRuntime()
@@ -36,13 +40,17 @@ final class GeneratedBuildRuleRunner {
                 /* environment variables */ null,
                 /* working directory */ new File(buckRoot));
     try {
-      int exitCode = process.waitFor();
-      if (exitCode == 0) {
-        return;
+      boolean hasTimedOut = !process.waitFor(60, TimeUnit.SECONDS);
+      if (hasTimedOut) {
+        return false;
+      }
+      if (process.exitValue() == 0) {
+        return true;
       }
       try (InputStream errorStream = process.getErrorStream()) {
-        new BufferedReader(new InputStreamReader(errorStream)).lines().forEach(System.err::println);
+        new BufferedReader(new InputStreamReader(errorStream)).lines().forEach(LOGGER::warning);
       }
+      return false;
     } catch (InterruptedException interruptedException) {
       throw new IOException(interruptedException.getMessage());
     }
