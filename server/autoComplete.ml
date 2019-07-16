@@ -133,41 +133,44 @@ let get_module_members_list
 
 
 let get_completion_items ~state ~configuration ~path ~cursor_position =
-  let { State.open_documents; environment; _ } = state in
-  let file_option =
-    path
-    |> Path.Map.find open_documents
-    >>| remove_dot ~cursor_position
-    >>| fun content -> File.create ~content path
-  in
-  let state = file_option >>| check ~state ~configuration |> Option.value ~default:state in
-  (* This is the position of the item before DOT *)
-  let item_position = { cursor_position with column = cursor_position.column - 2 } in
-  let resolution = TypeCheck.resolution environment () in
-  let class_attributes_list =
-    file_option
-    >>= (fun file ->
-          LookupCache.find_annotation
-            ~state
-            ~configuration
-            ~path:(File.path file)
-            ~position:item_position)
-    >>| (fun (_, class_type) ->
-          class_type
-          |> Annotated.Class.resolve_class ~resolution
-          |> Option.value ~default:[]
-          |> get_class_attributes_list ~resolution ~cursor_position)
-    |> Option.value ~default:[]
-  in
-  if List.is_empty class_attributes_list then
-    (* Find module members only if class attribute completion fails *)
-    file_option
-    >>= File.content
-    >>= find_module_reference ~cursor_position
-    >>= (fun module_reference ->
-          module_reference
-          |> Resolution.module_definition resolution
-          >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
-    |> Option.value ~default:[]
-  else
-    class_attributes_list
+  let { State.open_documents; module_tracker; environment; _ } = state in
+  match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+  | None -> []
+  | Some _ ->
+      let file_option =
+        path
+        |> Path.Map.find open_documents
+        >>| remove_dot ~cursor_position
+        >>| fun content -> File.create ~content path
+      in
+      let state = file_option >>| check ~state ~configuration |> Option.value ~default:state in
+      (* This is the position of the item before DOT *)
+      let item_position = { cursor_position with column = cursor_position.column - 2 } in
+      let resolution = TypeCheck.resolution environment () in
+      let class_attributes_list =
+        file_option
+        >>= (fun file ->
+              LookupCache.find_annotation
+                ~state
+                ~configuration
+                ~path:(File.path file)
+                ~position:item_position)
+        >>| (fun (_, class_type) ->
+              class_type
+              |> Annotated.Class.resolve_class ~resolution
+              |> Option.value ~default:[]
+              |> get_class_attributes_list ~resolution ~cursor_position)
+        |> Option.value ~default:[]
+      in
+      if List.is_empty class_attributes_list then
+        (* Find module members only if class attribute completion fails *)
+        file_option
+        >>= File.content
+        >>= find_module_reference ~cursor_position
+        >>= (fun module_reference ->
+              module_reference
+              |> Resolution.module_definition resolution
+              >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
+        |> Option.value ~default:[]
+      else
+        class_attributes_list

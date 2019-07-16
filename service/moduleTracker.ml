@@ -94,6 +94,17 @@ let lookup tracker module_name =
   | _ -> None
 
 
+let lookup_path ~configuration tracker path =
+  SourcePath.create ~configuration path
+  >>= fun { SourcePath.relative_path; qualifier; _ } ->
+  lookup tracker qualifier
+  >>= fun ({ SourcePath.relative_path = tracked_relative_path; _ } as source_path) ->
+  if Path.RelativePath.equal relative_path tracked_relative_path then
+    Some source_path
+  else
+    None
+
+
 let mem = Hashtbl.mem
 
 let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd

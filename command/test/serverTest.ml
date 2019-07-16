@@ -278,7 +278,28 @@ let test_language_scheduler_shutdown context =
 
 
 let test_protocol_type_check context =
-  let handle = "test_protocol_type_check.py" in
+  let assert_response ~sources ~request expected =
+    let { ScratchServer.configuration = { Configuration.Analysis.local_root; _ };
+          server_configuration;
+          state;
+          _
+        }
+      =
+      ScratchServer.start ~context sources
+    in
+    let request =
+      let paths =
+        List.map request ~f:(fun relative -> Path.create_relative ~root:local_root ~relative)
+      in
+      Protocol.Request.DisplayTypeErrors paths
+    in
+    let { Request.response; _ } =
+      Request.process ~state ~configuration:server_configuration ~request
+    in
+    let expected_response = Some (Protocol.TypeCheckResponse expected) in
+    assert_response_equal expected_response response
+  in
+  let handle = "test_protocol_type_check.pyi" in
   let source = {|
         def foo() -> None:
           return 1
@@ -286,11 +307,12 @@ let test_protocol_type_check context =
   let errors =
     CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
   in
-  assert_response
-    ~context
-    ~sources:[handle, source]
-    ~request:(Protocol.Request.DisplayTypeErrors [])
-    (Some (Protocol.TypeCheckResponse errors))
+  assert_response ~sources:[handle, source] ~request:[] errors;
+  assert_response ~sources:[handle, source] ~request:[handle] errors;
+  assert_response ~sources:[handle, source] ~request:["wrong_handle.pyi"] [];
+
+  let shadowed_handle = "test_protocol_type_check.py" in
+  assert_response ~sources:[handle, source; shadowed_handle, source] ~request:[shadowed_handle] []
 
 
 let test_query context =
@@ -488,9 +510,14 @@ let test_query context =
           { Protocol.TypeQuery.location = create_location ~path:"test.py" 3 0 3 1;
             annotation = Type.integer
           }));
-  let assert_type_query_response_with_local_root ~source ~query build_expected_response =
+  let assert_type_query_response_with_local_root
+      ?(handle = "test.py")
+      ~source
+      ~query
+      build_expected_response
+    =
     let { ScratchServer.configuration; server_configuration; state; _ } =
-      ScratchServer.start ~context ["test.py", source]
+      ScratchServer.start ~context [handle, source]
     in
     let request = Query.parse_query ~configuration query in
     let { Request.response; _ } =
@@ -503,6 +530,7 @@ let test_query context =
     assert_response_equal (Some (Protocol.TypeQueryResponse expected_response)) response
   in
   assert_type_query_response_with_local_root
+    ~handle:"test.py"
     ~source:"a = 2"
     ~query:"path_of_module(test)"
     (fun local_root ->
@@ -510,11 +538,38 @@ let test_query context =
         (Protocol.TypeQuery.FoundPath
            (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)));
   assert_type_query_response_with_local_root
+    ~handle:"test.pyi"
+    ~source:"a = 2"
+    ~query:"path_of_module(test)"
+    (fun local_root ->
+      Protocol.TypeQuery.Response
+        (Protocol.TypeQuery.FoundPath
+           (Path.create_relative ~root:local_root ~relative:"test.pyi" |> Path.absolute)));
+  assert_type_query_response
+    ~source:"a = 2"
+    ~query:"path_of_module(notexist)"
+    (Protocol.TypeQuery.Error "No path found for module `notexist`");
+  assert_type_query_response_with_local_root
+    ~source:"a = 2"
+    ~query:"type_at_position('notexist.py', 1, 1)"
+    (fun local_root ->
+      Protocol.TypeQuery.Error
+        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "notexist.py:1:1"));
+  assert_type_query_response_with_local_root
     ~source:"a = 2"
     ~query:"type_at_position('test.py', 1, 3)"
     (fun local_root ->
       Protocol.TypeQuery.Error
         ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:3"));
+
+  (* test.py is shadowed by test.pyi *)
+  assert_type_query_response_with_local_root
+    ~handle:"test.pyi"
+    ~source:"a = 2"
+    ~query:"type_at_position('test.py', 1, 4)"
+    (fun local_root ->
+      Protocol.TypeQuery.Error
+        ("Not able to get lookup at " ^ Path.absolute local_root ^/ "test.py:1:4"));
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
@@ -1364,6 +1419,8 @@ let test_query_dependencies context =
         return qb.do()
     |};
         "qb.py", {|
+    |};
+        "qb.pyi", {|
     from qc import do
     |};
         "qc.py", {|
@@ -1391,7 +1448,17 @@ let test_query_dependencies context =
   assert_response
     ~request:
       (Protocol.Request.TypeQueryRequest
+         (Protocol.TypeQuery.DependentDefines [create_path "nonexistent.py"]))
+    (reference_response []);
+  assert_response
+    ~request:
+      (Protocol.Request.TypeQueryRequest
          (Protocol.TypeQuery.DependentDefines [create_path "qb.py"]))
+    (reference_response []);
+  assert_response
+    ~request:
+      (Protocol.Request.TypeQueryRequest
+         (Protocol.TypeQuery.DependentDefines [create_path "qb.pyi"]))
     (reference_response [Reference.create "qa.$toplevel"]);
   assert_response
     ~request:

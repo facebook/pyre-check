@@ -20,8 +20,8 @@ let to_pyre_position { LanguageServer.Types.Position.line; character } =
   { Location.line = line + 1; column = character }
 
 
-let errors_of_path ~configuration ~errors path =
-  SourcePath.create ~configuration path
+let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } path =
+  Service.ModuleTracker.lookup_path ~configuration module_tracker path
   >>= (fun { SourcePath.qualifier; _ } -> Hashtbl.find errors qualifier)
   |> Option.value ~default:[]
 
@@ -791,12 +791,13 @@ let process_type_query_request
             ~f:build_response
         in
         TypeQuery.Response (TypeQuery.Decoded decoded)
-    | TypeQuery.DependentDefines paths -> (
-      try
-        let handles =
-          List.map paths ~f:(fun path -> File.create path |> File.handle ~configuration)
+    | TypeQuery.DependentDefines paths ->
+        let modules =
+          List.filter_map
+            paths
+            ~f:(Service.ModuleTracker.lookup_path ~configuration module_tracker)
+          |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
         in
-        let modules = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
         let get_dependencies =
           let (module Handler : Environment.Handler) = environment in
           Handler.dependencies
@@ -812,24 +813,17 @@ let process_type_query_request
           |> List.map ~f:source_to_define_name
         in
         TypeQuery.Response (TypeQuery.References dependencies)
-      with
-      | File.NonexistentHandle message -> TypeQuery.Error message )
     | TypeQuery.DumpDependencies path ->
         let () =
-          try
-            let qualifier =
-              File.create path
-              |> File.handle ~configuration
-              |> fun handle -> Source.qualifier ~handle
-            in
-            Path.create_relative
-              ~root:(Configuration.Analysis.pyre_root configuration)
-              ~relative:"dependencies.dot"
-            |> File.create
-                 ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~qualifier)
-            |> File.write
-          with
-          | File.NonexistentHandle _ -> ()
+          match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
+          | None -> ()
+          | Some { SourcePath.qualifier; _ } ->
+              Path.create_relative
+                ~root:(Configuration.Analysis.pyre_root configuration)
+                ~relative:"dependencies.dot"
+              |> File.create
+                   ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~qualifier)
+              |> File.write
         in
         TypeQuery.Response (TypeQuery.Success "Dependencies dumped.")
     | TypeQuery.DumpMemoryToSqlite path ->
@@ -911,11 +905,10 @@ let process_type_query_request
         parse_and_validate expression
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.PathOfModule module_name ->
-        Handler.module_definition module_name
-        >>= Module.handle
-        >>= File.Handle.to_path ~configuration
-        >>| Path.absolute
-        >>| (fun path -> TypeQuery.Response (TypeQuery.FoundPath path))
+        Service.ModuleTracker.lookup module_tracker module_name
+        >>= (fun { SourcePath.relative_path; _ } ->
+              let path = Path.Relative relative_path |> Path.absolute in
+              Some (TypeQuery.Response (TypeQuery.FoundPath path)))
         |> Option.value
              ~default:
                (TypeQuery.Error
@@ -1096,7 +1089,7 @@ let process_display_type_errors_request ~state ~configuration paths =
     let { errors; _ } = state in
     match paths with
     | [] -> Hashtbl.data errors |> List.concat |> List.sort ~compare:Error.compare
-    | _ -> List.concat_map ~f:(errors_of_path ~configuration ~errors) paths
+    | _ -> List.concat_map ~f:(errors_of_path ~configuration ~state) paths
   in
   { state; response = Some (TypeCheckResponse errors) }
 
@@ -1119,7 +1112,7 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.environment; connections; errors; _ } as state)
+    ~state:({ State.module_tracker; environment; connections; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
@@ -1213,7 +1206,7 @@ let rec process
                    ~f:(fun (LanguageServer.Types.Diagnostic.{ range; _ } as diagnostic) ->
                      let error =
                        List.find
-                         (errors_of_path ~configuration ~errors path)
+                         (errors_of_path ~configuration ~state path)
                          ~f:(fun { location; _ } -> is_range_equal_location range location)
                      in
                      AnnotationEdit.create ~file:(File.create path) ~error
@@ -1311,7 +1304,7 @@ let rec process
             { state; response = None } )
       | TypeCoverageRequest { path; id } ->
           let response =
-            SourcePath.create ~configuration path
+            Service.ModuleTracker.lookup_path ~configuration module_tracker path
             >>= fun { SourcePath.qualifier; _ } ->
             match Coverage.get ~qualifier with
             | Some { Coverage.full; partial; untyped; _ } ->

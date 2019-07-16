@@ -154,10 +154,45 @@ let test_get_completion_items context =
         create_completion_item ~cursor_position ~label:"ABC" ~detail:"Type[ABC]" ~new_text:"ABC" ]
 
 
+let test_untracked_path context =
+  let tracked_handle = "test.pyi" in
+  let assert_tracked ~relative expected =
+    let source =
+      {|
+      class A:
+        foo: bool
+        def bar() -> int:
+          return 3
+      def main() -> None:
+        a = A()
+        a.
+    |}
+      |> trim_extra_indentation
+    in
+    let { ScratchServer.configuration; state; _ } =
+      ScratchServer.start ~context [tracked_handle, ""]
+    in
+    let cursor_position = { Location.line = 8; column = 4 } in
+    let path =
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      Path.create_relative ~root:local_root ~relative
+    in
+    let state = { state with open_documents = PyrePath.Map.singleton path source } in
+    let completion_items =
+      AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position
+    in
+    let actual = not (List.is_empty completion_items) in
+    assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected actual
+  in
+  assert_tracked ~relative:"test.pyi" true;
+  assert_tracked ~relative:"test.py" false;
+  assert_tracked ~relative:"not_tracked.py" false
+
+
 let () =
   "autoComplete"
   >::: [ "remove_dot" >:: test_remove_dot;
          "find_module_reference" >:: test_find_module_reference;
-         (* "is_exported_import" >:: test_is_exported_import; *)
-         "get_completion_items" >:: test_get_completion_items ]
+         "get_completion_items" >:: test_get_completion_items;
+         "untracked_path" >:: test_untracked_path ]
   |> Test.run

@@ -23,12 +23,12 @@ type lookup = {
 
 let get_lookups
     ~configuration:({ Configuration.Analysis.store_type_check_resolution; _ } as configuration)
-    ~state:{ lookups; environment; scheduler; _ }
+    ~state:{ lookups; module_tracker; environment; scheduler; _ }
     paths
   =
   let paths, nonexistent_paths =
     let get_source_path path =
-      match SourcePath.create ~configuration path with
+      match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
       | Some { SourcePath.qualifier; relative_path; _ } ->
           `Fst
             { path;
@@ -65,7 +65,9 @@ let get_lookups
         ~configuration:{ configuration with store_type_check_resolution = true }
         ~environment
         ~handles:
-          (List.map ~f:(fun { path; _ } -> path |> File.create |> File.handle ~configuration) paths)
+          (List.map
+             ~f:(fun { handle; _ } -> File.Handle.create_for_testing (Option.value_exn handle))
+             paths)
         ()
       |> ignore;
       let lookups = List.map ~f:generate_lookup paths in
@@ -79,8 +81,8 @@ let get_lookups
 
 let evict ~state:{ lookups; _ } reference = String.Table.remove lookups (Reference.show reference)
 
-let evict_path ~state ~configuration path =
-  match SourcePath.create ~configuration path with
+let evict_path ~state:({ State.module_tracker; _ } as state) ~configuration path =
+  match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> ()
   | Some { SourcePath.qualifier; _ } -> evict ~state qualifier
 
