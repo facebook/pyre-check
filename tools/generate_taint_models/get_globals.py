@@ -7,7 +7,6 @@
 
 
 import ast
-import functools
 import glob
 import logging
 import os
@@ -20,7 +19,6 @@ from .model_generator import Configuration, ModelGenerator, Registry, qualifier
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-@functools.lru_cache(maxsize=1024)
 def _load_module(module_path: str) -> Optional[ast.Module]:
     try:
         with open(module_path, "r") as file:
