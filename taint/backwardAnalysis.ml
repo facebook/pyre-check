@@ -280,7 +280,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution arguments state taint targets
       | None, Name (Name.Attribute { base = receiver; attribute; _ }) ->
           let arguments =
-            let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
+            let receiver = { Call.Argument.name = None; value = receiver } in
             receiver :: arguments
           in
           Interprocedural.CallResolution.get_indirect_targets

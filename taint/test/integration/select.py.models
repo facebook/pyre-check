@@ -107,7 +107,7 @@
               "start": 18,
               "end": 25
             },
-            "tito": [ { "line": 33, "start": 26, "end": 48 } ],
+            "tito": [ { "line": 33, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -126,10 +126,10 @@
             "root": {
               "filename": "select.py",
               "line": 33,
-              "start": 26,
-              "end": 48
+              "start": 11,
+              "end": 22
             },
-            "tito": [ { "line": 33, "start": 26, "end": 48 } ],
+            "tito": [ { "line": 33, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -161,7 +161,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 33, "start": 26, "end": 48 } ],
+            "tito": [ { "line": 33, "start": 11, "end": 22 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -193,7 +193,7 @@
               "start": 18,
               "end": 25
             },
-            "tito": [ { "line": 33, "start": 26, "end": 48 } ],
+            "tito": [ { "line": 33, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -212,10 +212,10 @@
             "root": {
               "filename": "select.py",
               "line": 33,
-              "start": 26,
-              "end": 48
+              "start": 11,
+              "end": 22
             },
-            "tito": [ { "line": 33, "start": 26, "end": 48 } ],
+            "tito": [ { "line": 33, "start": 11, "end": 22 } ],
             "leaves": [
               {
                 "kind": "UserControlled",
@@ -344,7 +344,7 @@
               "start": 9,
               "end": 46
             },
-            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "tito": [ { "line": 29, "start": 9, "end": 20 } ],
             "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
             "features": [ { "via": "tito" } ]
           }
@@ -374,10 +374,10 @@
             "root": {
               "filename": "select.py",
               "line": 29,
-              "start": 24,
-              "end": 46
+              "start": 9,
+              "end": 20
             },
-            "tito": [ { "line": 29, "start": 24, "end": 46 } ],
+            "tito": [ { "line": 29, "start": 9, "end": 20 } ],
             "leaves": [
               {
                 "kind": "UserControlled",

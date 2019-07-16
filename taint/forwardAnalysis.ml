@@ -379,7 +379,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           apply_call_targets ~resolution location arguments state targets
       | None, Name (Name.Attribute { base = receiver; attribute = method_name; _ }) ->
           let arguments =
-            let receiver = AccessPath.create_receiver ~call:{ callee; arguments } receiver in
+            let receiver = { Call.Argument.name = None; value = receiver } in
             receiver :: arguments
           in
           let add_index_breadcrumb_if_necessary taint =

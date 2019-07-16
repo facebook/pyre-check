@@ -39,11 +39,6 @@ val get_index : Expression.t -> AbstractTreeDomain.Label.t
 
 val to_json : t -> Yojson.Safe.json
 
-val create_receiver
-  :  call:Expression.t Expression.Call.t ->
-  Expression.t ->
-  Expression.t Call.Argument.t
-
 val get_global : resolution:Resolution.t -> Expression.t -> Reference.t option
 
 val is_global : resolution:Resolution.t -> Expression.t -> bool

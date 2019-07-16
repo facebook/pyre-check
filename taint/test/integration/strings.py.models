@@ -113,7 +113,7 @@
         "taint": [
           {
             "decl": null,
-            "tito": [ { "line": 3, "start": 17, "end": 24 } ],
+            "tito": [ { "line": 3, "start": 11, "end": 17 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "via": "string_concat_lhs" } ]
           }

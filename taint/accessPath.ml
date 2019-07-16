@@ -217,12 +217,6 @@ let is_property ~resolution = function
   | _ -> false
 
 
-let create_receiver ~call receiver =
-  { Call.Argument.name = None;
-    value = { receiver with Node.location = Expression.arguments_location call }
-  }
-
-
 let get_global ~resolution name =
   let global =
     match Node.value name with
