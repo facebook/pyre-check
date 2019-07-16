@@ -98,6 +98,8 @@ let mem = Hashtbl.mem
 
 let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
 
+let all_source_paths tracker = Hashtbl.data tracker |> List.concat
+
 let paths tracker =
   source_paths tracker
   |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)

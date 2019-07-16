@@ -5,6 +5,7 @@
 
 open Core
 open Pyre
+open Ast
 open Service
 
 exception IncompatibleState of string
@@ -31,64 +32,43 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
 
 (* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
    to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
-let compute_locally_changed_files
-    ~scheduler
-    ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
-  =
+let compute_locally_changed_paths ~scheduler ~configuration ~module_tracker:old_module_tracker =
   Log.info "Computing files that changed since the saved state was created.";
   let timer = Timer.start () in
-  let stubs_and_sources = Service.Parser.find_stubs_and_sources configuration in
-  let changed_files changed new_paths =
-    let changed_file path =
-      try
-        let file = File.create path in
-        let handle = File.handle ~configuration file in
-        let qualifier = Ast.Source.qualifier ~handle in
-        let old_hash = Ast.SharedMemory.Sources.get qualifier >>| Ast.Source.hash in
-        let current_hash = File.hash file in
-        if Option.equal Int.equal old_hash current_hash then
-          None
-        else
-          Some file
-      with
-      | File.NonexistentHandle _ -> None
+  let new_module_tracker = ModuleTracker.create configuration in
+  let changed_paths changed new_source_paths =
+    let changed_path { SourcePath.relative_path; qualifier; _ } =
+      let path = Path.Relative relative_path in
+      let old_hash = Ast.SharedMemory.Sources.get qualifier >>| Ast.Source.hash in
+      let current_hash = File.hash (File.create path) in
+      if Option.equal Int.equal old_hash current_hash then
+        None
+      else
+        Some path
     in
-    changed @ List.filter_map new_paths ~f:changed_file
+    changed @ List.filter_map new_source_paths ~f:changed_path
   in
   let changed_paths =
     Scheduler.map_reduce
       scheduler
       ~configuration
       ~initial:[]
-      ~map:changed_files
+      ~map:changed_paths
       ~reduce:( @ )
-      ~inputs:stubs_and_sources
+      ~inputs:(ModuleTracker.source_paths new_module_tracker)
       ()
   in
   let removed_paths =
-    let new_handles =
-      let handle path =
-        try File.create path |> File.handle ~configuration |> Option.some with
-        | File.NonexistentHandle _ -> None
-      in
-      List.filter_map stubs_and_sources ~f:handle |> File.Handle.Set.Tree.of_list
+    let get_tracked_paths module_tracker =
+      ModuleTracker.all_source_paths module_tracker
+      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
     in
-    let old_handles = Ast.SharedMemory.HandleKeys.get () in
-    (* If a handle was present in the saved state creation (i.e. in old_handles) but is missing
-       from new_handles, it was either shadowed by a stub file or removed. In either case, it does
-       not exist in the Pyre server's eyes. *)
-    let removed_handles =
-      File.Handle.Set.Tree.diff old_handles new_handles |> File.Handle.Set.Tree.to_list
+    let old_tracked_paths = get_tracked_paths old_module_tracker in
+    let new_tracked_set =
+      get_tracked_paths new_module_tracker |> List.map ~f:Path.absolute |> String.Hash_set.of_list
     in
-    (* This is a bit of a hack: In general, it doesn't make sense to give a path to a removed
-       handle, as it might've originated anywhere in the search path. However, the server's
-       equipped to handle paths which no longer exist, so by assuming that the removed path lived
-       in the local root, we're able to express the idea that the handle needs to be removed and
-       its dependencies reanalyzed. *)
-    let to_file handle =
-      Path.create_relative ~root:local_root ~relative:(File.Handle.show handle) |> File.create
-    in
-    List.map removed_handles ~f:to_file
+    List.filter old_tracked_paths ~f:(fun path ->
+        not (Hash_set.mem new_tracked_set (Path.absolute path)))
   in
   Statistics.performance ~name:"computed files to reanalyze" ~timer ();
   changed_paths @ removed_paths
@@ -157,12 +137,14 @@ let load
     raise (IncompatibleState "configuration mismatch");
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let changed_files =
-    match changed_paths with
-    | Some changed_paths ->
-        restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
-            Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
-        |> List.map ~f:File.create
-    | None -> compute_locally_changed_files ~scheduler ~configuration
+    let changed_paths =
+      match changed_paths with
+      | Some changed_paths ->
+          restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
+              Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
+      | None -> compute_locally_changed_paths ~scheduler ~configuration ~module_tracker
+    in
+    List.map changed_paths ~f:File.create
   in
   let errors =
     EnvironmentSharedMemory.ServerErrors.find_unsafe "errors" |> Ast.Reference.Table.of_alist_exn

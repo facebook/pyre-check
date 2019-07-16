@@ -22,6 +22,9 @@ val mem : t -> Ast.Reference.t -> bool
 
 val source_paths : t -> Ast.SourcePath.t list
 
+(* This function returns all SourcePaths that are tracked, including the shadowed ones *)
+val all_source_paths : t -> Ast.SourcePath.t list
+
 val paths : t -> Path.t list
 
 val qualifiers : t -> Ast.Reference.t list

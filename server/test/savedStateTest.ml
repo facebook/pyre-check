@@ -6,6 +6,7 @@
 open Core
 open OUnit2
 open Pyre
+open Test
 
 let test_restore_symbolic_links context =
   let project_root = bracket_tmpdir context |> Path.create_absolute in
@@ -72,32 +73,30 @@ type locally_changed_file = {
 
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
-    (* Set up the HandleKeys as the parser would. *)
-    Ast.SharedMemory.HandleKeys.clear ();
-    let root = Path.create_absolute (bracket_tmpdir context) in
-    let add_file { relative; old_content; new_content } =
-      (* Register old content in shared memory. *)
-      ( match old_content with
-      | Some content ->
-          let handle = File.Handle.create_for_testing relative in
-          let qualifier = Ast.Source.qualifier ~handle in
-          (* NOTE: If multiple files for the same module gets added, the first write wins *)
-          Test.parse ~handle:relative ~qualifier content |> Ast.SharedMemory.Sources.add;
-          Ast.SharedMemory.HandleKeys.add ~handles:(File.Handle.Set.Tree.singleton handle)
-      | None -> () );
-
-      (* Write new content to the file system if necessary. *)
-      match new_content with
-      | Some content -> File.write (File.create ~content (Path.create_relative ~root ~relative))
-      | None -> ()
+    let { ScratchProject.configuration; module_tracker } =
+      let sources =
+        List.filter_map files ~f:(fun { relative; old_content; _ } ->
+            old_content >>| fun content -> relative, content)
+      in
+      let project = ScratchProject.setup ~context sources in
+      let _ = ScratchProject.parse_sources project in
+      project
     in
-    List.iter files ~f:add_file;
+    let { Configuration.Analysis.local_root; _ } = configuration in
+    let write_new_file { relative; new_content; _ } =
+      (* Write new content to the file system if necessary. *)
+      let path = Path.create_relative ~root:local_root ~relative in
+      match new_content with
+      | Some content -> File.write (File.create ~content path)
+      | None -> Sys.remove (Path.absolute path)
+    in
+    List.iter files ~f:write_new_file;
     let actual =
-      Server.SavedState.compute_locally_changed_files
+      Server.SavedState.compute_locally_changed_paths
         ~scheduler:(Scheduler.mock ())
-        ~configuration:(Configuration.Analysis.create ~local_root:root ())
-      |> List.map ~f:File.path
-      |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root ~path)
+        ~configuration
+        ~module_tracker
+      |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root:local_root ~path)
     in
     (* Ensure sources are cleaned up afterwards. *)
     List.map files ~f:(fun { relative; _ } -> File.Handle.create_for_testing relative)
@@ -122,19 +121,16 @@ let test_compute_locally_changed_files context =
     ~files:[{ relative = "a.py"; old_content = Some "'I used to exist'"; new_content = None }]
     ~expected:["a.py"];
 
-  (* If a stub shadows a `.py` file that existed in the initial saved state generation, the server
-     will be passed both files (as `a.py` used to exist, but was now removed in the eyes of the
-     algorithm). *)
   assert_changed_files
     ~files:
       [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
         { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
-    ~expected:["a.py"];
+    ~expected:[];
   assert_changed_files
     ~files:
       [ { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 3" };
         { relative = "a.py"; old_content = Some "a = 1"; new_content = Some "new" } ]
-    ~expected:["a.py"; "a.pyi"];
+    ~expected:["a.pyi"];
   assert_changed_files
     ~files:
       [ { relative = "a.pyi"; old_content = None; new_content = Some "a = 2" };
