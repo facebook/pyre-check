@@ -38,9 +38,6 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
   in
   File.handle ~configuration file
   |> fun handle ->
-  Path.readlink (File.path file)
-  >>| (fun target -> Ast.SharedMemory.SymlinksToPaths.add target (File.path file))
-  |> ignore;
   File.lines file >>| parse_lines ~handle |> Option.value ~default:(SystemError handle)
 
 

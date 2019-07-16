@@ -5,6 +5,7 @@
 
 val parse_lsp
   :  configuration:Configuration.Analysis.t ->
+  state:State.t ->
   request:Yojson.Safe.json ->
   Protocol.Request.t option
 

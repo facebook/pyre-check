@@ -8,6 +8,25 @@ open Pyre
 open Ast
 open Service
 
+module SymlinkTargetsToSources = struct
+  module SymlinkTargetsToSourcesValue = struct
+    type t = (string * Path.t) list
+
+    let prefix = Prefix.make ()
+
+    let description = "SymlinkTargetsToSources"
+  end
+
+  module Table = Memory.NoCache (Memory.SingletonKey) (SymlinkTargetsToSourcesValue)
+
+  let store symlink_targets_to_sources =
+    let data = Hashtbl.to_alist symlink_targets_to_sources in
+    Table.add Memory.SingletonKey.key data
+
+
+  let load () = Table.find_unsafe Memory.SingletonKey.key |> String.Table.of_alist_exn
+end
+
 exception IncompatibleState of string
 
 (* Return symlinks for files for a pyre project that are links to a separate project root. *)
@@ -136,12 +155,13 @@ let load
   if not (Configuration.Analysis.equal old_configuration configuration) then
     raise (IncompatibleState "configuration mismatch");
   let module_tracker = ModuleTracker.SharedMemory.load () in
+  let symlink_targets_to_sources = SymlinkTargetsToSources.load () in
   let changed_files =
     let changed_paths =
       match changed_paths with
       | Some changed_paths ->
           restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
-              Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path))
+              Hashtbl.find symlink_targets_to_sources (Path.absolute path))
       | None -> compute_locally_changed_paths ~scheduler ~configuration ~module_tracker
     in
     List.map changed_paths ~f:File.create
@@ -153,6 +173,7 @@ let load
     { State.module_tracker;
       environment;
       errors;
+      symlink_targets_to_sources;
       scheduler;
       last_request_time = Unix.time ();
       last_integrity_check = Unix.time ();
@@ -166,10 +187,15 @@ let load
   state
 
 
-let save ~configuration ~saved_state_path { State.errors; module_tracker; _ } =
+let save
+    ~configuration
+    ~saved_state_path
+    { State.errors; module_tracker; symlink_targets_to_sources; _ }
+  =
   Log.info "Saving server state to %s" saved_state_path;
   Memory.SharedMemory.collect `aggressive;
   ModuleTracker.SharedMemory.store module_tracker;
+  SymlinkTargetsToSources.store symlink_targets_to_sources;
   EnvironmentSharedMemory.StoredConfiguration.add "configuration" configuration;
   EnvironmentSharedMemory.ServerErrors.add "errors" (Hashtbl.to_alist errors);
   Memory.save_shared_memory ~path:saved_state_path

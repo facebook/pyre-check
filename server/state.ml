@@ -24,6 +24,7 @@ type t = {
   environment: (module Analysis.Environment.Handler);
   errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
+  symlink_targets_to_sources: PyrePath.t String.Table.t;
   scheduler: Scheduler.t;
   last_integrity_check: float;
   last_request_time: float;

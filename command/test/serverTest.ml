@@ -980,9 +980,6 @@ let test_compute_hashes_to_keys context =
       to_binding (OrderAnnotations.hash_of_key 16) (OrderAnnotations.serialize_key 16);
       to_binding (OrderBackedges.hash_of_key 16) (OrderBackedges.serialize_key 16);
       to_binding
-        (Ast.SharedMemory.SymlinksToPaths.hash_of_key "sample.py")
-        (Ast.SharedMemory.SymlinksToPaths.serialize_key "sample.py");
-      to_binding
         (Ast.SharedMemory.Handles.hash_of_key (String.hash "sample.py"))
         (Ast.SharedMemory.Handles.serialize_key (String.hash "sample.py"));
       to_binding
@@ -1161,10 +1158,6 @@ let test_decode_serialized_ocaml_values context =
     ~key:(Dependents.serialize_key !&"module")
     ~value:([!&"dependentA"; !&"dependentB"] |> Reference.Set.Tree.of_list)
     ~response:("Dependent", "module", Some "(dependentA dependentB)");
-  assert_decode
-    ~key:(Ast.SharedMemory.SymlinksToPaths.serialize_key "symbolic_link.py")
-    ~value:(Path.create_absolute ~follow_symbolic_links:false "actual_filename.py")
-    ~response:("SymlinkSource", "symbolic_link.py", Some "actual_filename.py");
   assert_decode
     ~key:(Ast.SharedMemory.Sources.Sources.serialize_key (Reference.create "handle"))
     ~value:(Source.create [Test.parse_single_statement "x = 1 + 2"])

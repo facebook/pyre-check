@@ -26,7 +26,7 @@ let errors_of_path ~configuration ~state:{ State.module_tracker; errors; _ } pat
   |> Option.value ~default:[]
 
 
-let parse_lsp ~configuration ~request =
+let parse_lsp ~configuration ~state:{ State.symlink_targets_to_sources; _ } ~request =
   let open LanguageServer.Types in
   let log_method_error method_name =
     Log.error
@@ -41,7 +41,7 @@ let parse_lsp ~configuration ~request =
     match SearchPath.search_for_path ~search_path path with
     | Some SearchPath.{ relative_path; _ } -> Some (Path.Relative relative_path)
     | None ->
-        Ast.SharedMemory.SymlinksToPaths.get (Path.absolute path)
+        Hashtbl.find symlink_targets_to_sources (Path.absolute path)
         >>= fun path ->
         SearchPath.search_for_path ~search_path path
         >>| fun SearchPath.{ relative_path; _ } -> Path.Relative relative_path
@@ -226,7 +226,7 @@ let parse_lsp ~configuration ~request =
           let files = List.map files ~f:string_to_path in
           if not (List.is_empty targets) then (
             Log.info "Invalidate %d symlinks" (List.length targets);
-            Ast.SharedMemory.SymlinksToPaths.remove ~targets );
+            List.iter targets ~f:(Hashtbl.remove symlink_targets_to_sources) );
           Some (TypeCheckRequest files)
       | Ok _ -> None
       | Error yojson_error ->
@@ -467,8 +467,6 @@ let process_type_query_request
         (* AST shared memory. *)
         let map =
           map
-          |> extend_map
-               ~new_map:(Ast.SharedMemory.SymlinksToPaths.compute_hashes_to_keys ~keys:handles)
           |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:handles)
@@ -661,11 +659,6 @@ let process_type_query_request
           | OrderKeys.Decoded (key, value) ->
               Some
                 (OrderKeyValue.description, Int.to_string key, value >>| List.to_string ~f:decode)
-          | Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (key, value) ->
-              Some
-                ( Ast.SharedMemory.SymlinksToPaths.SymlinkSource.description,
-                  key,
-                  value >>| Path.show )
           | Ast.SharedMemory.Sources.Sources.Decoded (key, value) ->
               Some
                 ( Ast.SharedMemory.Sources.SourceValue.description,
@@ -747,9 +740,6 @@ let process_type_query_request
                         Option.equal ClassHierarchy.Target.Set.Tree.equal first second
                     | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
                         Option.equal (List.equal ~equal:Int.equal) first second
-                    | ( Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, first),
-                        Ast.SharedMemory.SymlinksToPaths.SymlinksToPaths.Decoded (_, second) ) ->
-                        Option.equal Path.equal first second
                     | ( Ast.SharedMemory.Sources.Sources.Decoded (_, first),
                         Ast.SharedMemory.Sources.Sources.Decoded (_, second) ) ->
                         Option.equal Source.equal first second
@@ -1140,7 +1130,7 @@ let rec process
           let configuration = { configuration with include_hints = true } in
           process_display_type_errors_request ~state ~configuration paths
       | LanguageServerProtocolRequest request ->
-          parse_lsp ~configuration ~request:(Yojson.Safe.from_string request)
+          parse_lsp ~configuration ~state ~request:(Yojson.Safe.from_string request)
           >>| (fun request -> process ~state ~configuration:server_configuration ~request)
           |> Option.value ~default:{ state; response = None }
       | ClientShutdownRequest id -> process_client_shutdown_request ~state ~id

@@ -187,6 +187,7 @@ module ScratchServer = struct
       { Server.State.module_tracker;
         environment;
         errors;
+        symlink_targets_to_sources = String.Table.create ();
         last_request_time = Unix.time ();
         last_integrity_check = Unix.time ();
         lookups = String.Table.create ();

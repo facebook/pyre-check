@@ -10,44 +10,11 @@ open Types
 open Protocol
 open Pyre
 open Server
-
-type test_files = {
-  root: PyrePath.t;
-  relative: string;
-  absolute: string;
-  symlink_source: string;
-  symlink_target: string
-}
+open CommandTest
 
 let int_request_id id = LanguageServer.Types.RequestId.Int id
 
 let string_request_id id = LanguageServer.Types.RequestId.String id
-
-let files context =
-  let root = bracket_tmpdir context |> Filename.realpath in
-  let root_path = Path.create_absolute root in
-  let relative =
-    Filename.temp_file ~in_dir:root "filename" ".py"
-    |> Path.create_absolute
-    |> (fun path -> Path.get_relative_to_root ~root:root_path ~path)
-    |> fun relative -> Option.value_exn relative
-  in
-  let absolute = Path.create_relative ~root:root_path ~relative |> Path.show in
-  let symlink_target =
-    let symlink_root = bracket_tmpdir context |> Filename.realpath in
-    Filename.temp_file ~in_dir:symlink_root "target" ".py" |> Path.create_absolute |> Path.show
-  in
-  let symlink_source =
-    let source = Filename.temp_file ~in_dir:root "symlink" ".py" in
-    Unix.unlink source;
-    Unix.symlink ~src:symlink_target ~dst:source;
-    source
-  in
-  Ast.SharedMemory.SymlinksToPaths.add
-    symlink_target
-    (Path.create_absolute ~follow_symbolic_links:false symlink_source);
-  { root = root_path; relative; absolute; symlink_source; symlink_target }
-
 
 let test_language_server_protocol_message_format _ =
   let module GenericNotification = NotificationMessage.Make (struct
@@ -624,11 +591,17 @@ let test_show_message_notification _ =
 
 
 let test_did_save_notification context =
-  let { root; relative; absolute; _ } = files context in
-  let linkname = relative ^ "link" in
-  Unix.symlink ~src:absolute ~dst:(Path.absolute root ^/ linkname);
+  let source_name = "test_did_save_notification.py" in
+  let { ScratchServer.configuration = { Configuration.Analysis.local_root; _ }; _ } =
+    ScratchServer.start ~context [source_name, ""]
+  in
+  let source_path = Path.create_relative ~root:local_root ~relative:source_name in
+  let link_name = "test_did_save_notification_link.py" in
+  let link_root = bracket_tmpdir context |> Path.create_absolute in
+  let link_path = Path.create_relative ~root:link_root ~relative:link_name in
+  Unix.symlink ~src:(Path.absolute source_path) ~dst:(Path.absolute link_path);
   let message =
-    DidSaveTextDocument.create ~root relative None
+    DidSaveTextDocument.create ~root:local_root source_name None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -639,12 +612,14 @@ let test_did_save_notification context =
       [ "jsonrpc", `String "2.0";
         "method", `String "textDocument/didSave";
         ( "params",
-          `Assoc ["textDocument", `Assoc ["uri", `String (Format.sprintf "file://%s" absolute)]] )
-      ]
+          `Assoc
+            [ ( "textDocument",
+                `Assoc ["uri", `String (Format.sprintf "file://%s" (Path.absolute source_path))] )
+            ] ) ]
     |> Yojson.Safe.pretty_to_string
   in
   let link_message =
-    DidSaveTextDocument.create ~root linkname None
+    DidSaveTextDocument.create ~root:link_root link_name None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -794,16 +769,38 @@ let test_language_server_hover_response _ =
 
 
 let test_request_parser context =
-  let { root; relative; absolute; symlink_source; symlink_target } = files context in
-  let stub = Filename.temp_file ~in_dir:(Path.absolute root) "stub" ".pyi" in
-  let configuration = Configuration.Analysis.create ~local_root:root () in
-  let open_message absolute =
+  (* Test setup *)
+  let file_handle = "filename.py" in
+  let symlink_handle = "symlink.py" in
+  let stub_handle = "stub.pyi" in
+  let { ScratchServer.configuration;
+        state = { Server.State.symlink_targets_to_sources; _ } as state;
+        _
+      }
+    =
+    ScratchServer.start ~context [file_handle, ""; symlink_handle, ""; stub_handle, ""]
+  in
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let alternative_root = bracket_tmpdir context |> Path.create_absolute in
+  let file_path = Path.create_relative ~root:local_root ~relative:file_handle in
+  let stub_path = Path.create_relative ~root:local_root ~relative:stub_handle in
+  let symlink_source = Path.create_relative ~root:local_root ~relative:symlink_handle in
+  let symlink_target = Path.create_relative ~root:alternative_root ~relative:"target.py" in
+  (* Hackiness alert: Since `ScratchServer.start` does not support creating symlinks under
+     `local_root`, we have to create a placeholder non-symlink earlier upon server start, then
+     remove the file here and replace it with a real symlink. *)
+  File.write (File.create ~content:"" symlink_target);
+  Unix.unlink (Path.absolute symlink_source);
+  Unix.symlink ~src:(Path.absolute symlink_target) ~dst:(Path.absolute symlink_source);
+  Hashtbl.set symlink_targets_to_sources ~key:(Path.absolute symlink_target) ~data:symlink_source;
+
+  let open_message path =
     { DidOpenTextDocument.jsonrpc = "2.0";
       method_ = "textDocument/didOpen";
       parameters =
         Some
           { DidOpenTextDocumentParameters.textDocument =
-              { TextDocumentItem.uri = "file://" ^ absolute;
+              { TextDocumentItem.uri = "file://" ^ Path.absolute path;
                 languageId = "python";
                 version = 2;
                 text = "file content goes here"
@@ -818,13 +815,15 @@ let test_request_parser context =
       parameters =
         Some
           { DidCloseTextDocumentParameters.textDocument =
-              { TextDocumentIdentifier.uri = "file://" ^ absolute; version = None }
+              { TextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path; version = None }
           }
     }
     |> DidCloseTextDocument.to_yojson
   in
   let save_message =
-    DidSaveTextDocument.create ~root relative None
+    let { Configuration.Analysis.local_root; _ } = configuration in
+    let relative = "filename.py" in
+    DidSaveTextDocument.create ~root:local_root relative None
     |> Or_error.ok_exn
     |> DidSaveTextDocument.to_yojson
     |> Yojson.Safe.sort
@@ -835,7 +834,9 @@ let test_request_parser context =
       parameters =
         Some
           { DidChangeTextDocumentParameters.textDocument =
-              { VersionedTextDocumentIdentifier.uri = "file://" ^ absolute; version = 1 };
+              { VersionedTextDocumentIdentifier.uri = "file://" ^ Path.absolute file_path;
+                version = 1
+              };
             contentChanges = [{ text = "changed source"; range = None; rangeLength = None }]
           }
     }
@@ -845,7 +846,11 @@ let test_request_parser context =
     { UpdateFiles.jsonrpc = "2.0";
       method_ = "updateFiles";
       parameters =
-        Some { UpdateFilesParameters.files = [absolute; symlink_source; stub]; invalidated = [] }
+        Some
+          { UpdateFilesParameters.files =
+              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path];
+            invalidated = []
+          }
     }
     |> UpdateFiles.to_yojson
   in
@@ -855,7 +860,7 @@ let test_request_parser context =
       parameters =
         Some
           { LanguageServer.Types.DisplayTypeErrorsParameters.files =
-              [absolute; symlink_source; stub]
+              [Path.absolute file_path; Path.absolute symlink_source; Path.absolute stub_path]
           }
     }
     |> LanguageServer.Types.DisplayTypeErrors.to_yojson
@@ -867,41 +872,28 @@ let test_request_parser context =
         | Some request -> Protocol.Request.show request
         | _ -> "None")
       request
-      (Request.parse_lsp ~configuration ~request:message)
+      (Request.parse_lsp ~configuration ~state ~request:message)
   in
   assert_parsed_request_equals
-    (open_message absolute)
-    (Some (Protocol.Request.OpenDocument (Path.create_absolute absolute)));
+    (open_message file_path)
+    (Some (Protocol.Request.OpenDocument file_path));
   assert_parsed_request_equals
     (open_message symlink_source)
-    (Some
-       (Protocol.Request.OpenDocument
-          (Path.create_absolute ~follow_symbolic_links:false symlink_source)));
+    (Some (Protocol.Request.OpenDocument symlink_source));
   assert_parsed_request_equals
     (open_message symlink_target)
-    (Some
-       (Protocol.Request.OpenDocument
-          (Path.create_absolute ~follow_symbolic_links:false symlink_source)));
-  assert_parsed_request_equals
-    close_message
-    (Some (Protocol.Request.CloseDocument (Path.create_absolute absolute)));
-  assert_parsed_request_equals
-    save_message
-    (Some (Protocol.Request.SaveDocument (Path.create_absolute absolute)));
+    (Some (Protocol.Request.OpenDocument symlink_source));
+  assert_parsed_request_equals close_message (Some (Protocol.Request.CloseDocument file_path));
+  assert_parsed_request_equals save_message (Some (Protocol.Request.SaveDocument file_path));
   assert_parsed_request_equals
     change_message
-    (Some
-       (Protocol.Request.DocumentChange
-          (Path.create_absolute absolute |> File.create ~content:"changed source")));
-  let absolute_path = Path.create_absolute absolute in
-  let linked_path = Path.create_absolute ~follow_symbolic_links:false symlink_source in
-  let stub_path = Path.create_absolute stub in
+    (Some (Protocol.Request.DocumentChange (File.create ~content:"changed source" file_path)));
   assert_parsed_request_equals
     update_message
-    (Some (Protocol.Request.TypeCheckRequest [absolute_path; linked_path; stub_path]));
+    (Some (Protocol.Request.TypeCheckRequest [file_path; symlink_source; stub_path]));
   assert_parsed_request_equals
     display_type_errors_message
-    (Some (Protocol.Request.DisplayTypeErrors [absolute_path; linked_path; stub_path]))
+    (Some (Protocol.Request.DisplayTypeErrors [file_path; symlink_source; stub_path]))
 
 
 let test_publish_diagnostics _ =

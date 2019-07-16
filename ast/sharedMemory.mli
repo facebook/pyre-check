@@ -7,27 +7,6 @@ open Core
 
 module IntKey : Memory.KeyType with type t = int and type out = int
 
-module SymlinksToPaths : sig
-  module SymlinkTarget : Memory.KeyType with type t = string and type out = string
-
-  module SymlinkSource : Value.Type with type t = PyrePath.t
-
-  module SymlinksToPaths : module type of Memory.NoCache (SymlinkTarget) (SymlinkSource)
-
-  val get : string -> PyrePath.t option
-
-  val add : string -> PyrePath.t -> unit
-
-  val remove : targets:string list -> unit
-
-  (* Exposed for testing. *)
-  val hash_of_key : string -> string
-
-  val serialize_key : string -> string
-
-  val compute_hashes_to_keys : keys:string list -> string String.Map.t
-end
-
 module Sources : sig
   module SourceValue : Value.Type with type t = Source.t
 

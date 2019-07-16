@@ -16,10 +16,6 @@ let test_compute_hashes_to_keys _ =
       actual
   in
   assert_mapping_equal
-    [ SymlinksToPaths.hash_of_key "first", SymlinksToPaths.serialize_key "first";
-      SymlinksToPaths.hash_of_key "second", SymlinksToPaths.serialize_key "second" ]
-    (SymlinksToPaths.compute_hashes_to_keys ~keys:["first"; "second"]);
-  assert_mapping_equal
     [ Modules.hash_of_key !&"foo", Modules.serialize_key !&"foo";
       Modules.hash_of_key !&"bar", Modules.serialize_key !&"bar";
       Modules.hash_of_key !&"foo.b", Modules.serialize_key !&"foo.b" ]

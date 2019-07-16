@@ -73,6 +73,17 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   let { Check.module_tracker; environment; errors; _ } =
     Check.check ~scheduler:(Some scheduler) ~configuration
   in
+  let symlink_targets_to_sources =
+    let table = String.Table.create () in
+    let add_source_path { Ast.SourcePath.relative_path; _ } =
+      let symlink_source = Path.Relative relative_path in
+      match Path.readlink symlink_source with
+      | None -> ()
+      | Some symlink_target -> Hashtbl.set table ~key:symlink_target ~data:symlink_source
+    in
+    ModuleTracker.source_paths module_tracker |> List.iter ~f:add_source_path;
+    table
+  in
   Statistics.performance
     ~name:"initialization"
     ~timer
@@ -92,6 +103,7 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   { module_tracker;
     environment;
     errors;
+    symlink_targets_to_sources;
     scheduler;
     last_request_time = Unix.time ();
     last_integrity_check = Unix.time ();

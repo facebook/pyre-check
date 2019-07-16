@@ -19,46 +19,6 @@ module IntKey = struct
   let from_string = Int.of_string
 end
 
-module SymlinksToPaths = struct
-  module SymlinkTarget = struct
-    type t = string
-
-    let to_string = ident
-
-    let compare = String.compare
-
-    type out = string
-
-    let from_string = ident
-  end
-
-  module SymlinkSource = struct
-    type t = PyrePath.t
-
-    let prefix = Prefix.make ()
-
-    let description = "SymlinkSource"
-  end
-
-  module SymlinksToPaths = SharedMemory.NoCache (SymlinkTarget) (SymlinkSource)
-
-  let get target = SymlinksToPaths.get target
-
-  let add target = SymlinksToPaths.add target
-
-  let remove ~targets =
-    List.filter ~f:SymlinksToPaths.mem targets
-    |> SymlinksToPaths.KeySet.of_list
-    |> SymlinksToPaths.remove_batch
-
-
-  let hash_of_key = SymlinksToPaths.hash_of_key
-
-  let serialize_key = SymlinksToPaths.serialize_key
-
-  let compute_hashes_to_keys = SymlinksToPaths.compute_hashes_to_keys
-end
-
 module Sources = struct
   module SourceValue = struct
     type t = Source.t
