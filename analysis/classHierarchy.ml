@@ -67,20 +67,6 @@ module Target = struct
 
   let target { target; _ } = target
 
-  let enqueue worklist actual_parameters targets =
-    let enqueue { target; parameters } =
-      let parameters =
-        (* We currently ignore the actual type variable mapping. *)
-        if List.length parameters = List.length actual_parameters then
-          actual_parameters
-        else
-          []
-      in
-      Queue.enqueue worklist { target; parameters }
-    in
-    List.iter targets ~f:enqueue
-
-
   let target_equal = equal
 
   module List = struct
@@ -525,9 +511,10 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
     | Some { Target.target = current; _ } ->
         if current = index_of handler target then
           true
-        else (
-          Option.iter (Handler.find (Handler.edges ()) current) ~f:(Target.enqueue worklist []);
-          iterate worklist )
+        else
+          let enqueue_all targets = List.iter targets ~f:(Queue.enqueue worklist) in
+          Option.iter (Handler.find (Handler.edges ()) current) ~f:enqueue_all;
+          iterate worklist
     | None -> false
   in
   iterate worklist
