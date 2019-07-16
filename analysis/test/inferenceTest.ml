@@ -478,7 +478,17 @@ let test_infer _ =
         def foo(x = None):
           pass
     |}
-    [{|[{"name":"x","type":null,"value":"None"}]|}; {|[{"name":"x","type":null,"value":"None"}]|}]
+    [{|[{"name":"x","type":null,"value":"None"}]|}; {|[{"name":"x","type":null,"value":"None"}]|}];
+
+  assert_infer
+    ~fields:["inference"]
+    {|
+      class A:
+          @abstractmethod
+          def foo():
+              pass
+    |}
+    [{|{}|}]
 
 
 let test_infer_backward _ =

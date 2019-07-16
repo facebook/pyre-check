@@ -1455,7 +1455,8 @@ let messages ~concise ~signature location kind =
 
 let inference_information
     ~signature:{ Node.value =
-                   { Define.name; parameters; return_annotation; decorators; parent; async; _ };
+                   { Define.name; parameters; return_annotation; decorators; parent; async; _ } as
+                   signature;
                  _
                }
     kind
@@ -1517,6 +1518,7 @@ let inference_information
   in
   let function_name = Reference.show_sanitized name in
   match kind with
+  | MissingReturnAnnotation _ when Define.Signature.is_abstract_method signature -> `Assoc []
   | MissingReturnAnnotation { annotation = Some annotation; _ } ->
       `Assoc
         [ "annotation", `String (print_annotation annotation);
