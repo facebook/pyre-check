@@ -107,7 +107,7 @@ let parse_query
       let reference = function
         | { Call.Argument.value = { Node.value = Name name; _ }; _ }
           when Expression.is_simple_name name ->
-            Reference.from_name_exn name
+            Expression.name_to_reference_exn name
         | _ -> raise (InvalidQuery "expected reference")
       in
       let string_of_expression = function

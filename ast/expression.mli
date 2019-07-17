@@ -232,7 +232,15 @@ val create_name_from_identifiers : Identifier.t Node.t list -> expression_t Name
 
 val create_name : location:Location.t -> string -> expression_t Name.t
 
+val create_name_from_reference : location:Location.t -> Reference.t -> expression_t Name.t
+
+val from_reference : location:Location.t -> Reference.t -> expression_t
+
 val name_to_identifiers : expression_t Name.t -> Identifier.t list option
+
+val name_to_reference : expression_t Name.t -> Reference.t option
+
+val name_to_reference_exn : expression_t Name.t -> Reference.t
 
 val is_simple_name : expression_t Name.t -> bool
 

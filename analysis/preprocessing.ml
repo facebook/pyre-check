@@ -328,7 +328,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
       match value with
       | Assign { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
         when String.equal (Expression.show annotation) "_SpecialForm" ->
-          let name = Reference.from_name_exn name in
+          let name = Expression.name_to_reference_exn name in
           { scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
             skip = Set.add skip location
@@ -380,7 +380,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
         when (not (String.is_prefix simple_name ~prefix:"$"))
              && (not (Set.mem locals name))
              && not (Set.mem immutables name) ->
-          let alias = qualify_local_identifier simple_name ~qualifier |> Reference.from_name_exn in
+          let alias =
+            qualify_local_identifier simple_name ~qualifier |> Expression.name_to_reference_exn
+          in
           ( { scope with
               aliases =
                 Map.set
@@ -490,7 +492,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                     let sanitized = Identifier.sanitized name in
                     let qualified =
                       let qualifier =
-                        Node.create ~location (Name (Reference.name ~location qualifier))
+                        Node.create
+                          ~location
+                          (Name (Expression.create_name_from_reference ~location qualifier))
                       in
                       Name.Attribute { base = qualifier; attribute = sanitized; special = false }
                     in
@@ -499,7 +503,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                         let update = function
                           | Some alias -> alias
                           | None ->
-                              local_alias ~qualifier ~name:(Reference.from_name_exn qualified)
+                              local_alias
+                                ~qualifier
+                                ~name:(Expression.name_to_reference_exn qualified)
                         in
                         Map.update aliases (Reference.create name) ~f:update
                       in
@@ -520,7 +526,8 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                         && not (Set.mem immutables reference)
                       then
                         let alias =
-                          qualify_local_identifier name ~qualifier |> Reference.from_name_exn
+                          qualify_local_identifier name ~qualifier
+                          |> Expression.name_to_reference_exn
                         in
                         { scope with
                           aliases =
@@ -565,7 +572,9 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
                               Name (Name.Attribute { name with base = qualified_base })
                           | _ -> failwith "Impossible."
                         in
-                        combine (Name (Reference.name ~location qualifier)) qualified
+                        combine
+                          (Name (Expression.create_name_from_reference ~location qualifier))
+                          qualified
                       else
                         qualified
                     in
@@ -881,12 +890,12 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           if Reference.show name |> String.is_prefix ~prefix:"$" && suppress_synthetics then
             Name
               (Name.Attribute
-                 { base = Reference.expression ~location qualifier;
+                 { base = Expression.from_reference ~location qualifier;
                    attribute = identifier;
                    special = false
                  })
           else
-            Node.value (Reference.expression ~location name)
+            Node.value (Expression.from_reference ~location name)
       | _ -> Name (Name.Identifier identifier) )
     | Name (Name.Attribute ({ base; _ } as name)) ->
         Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
@@ -1601,7 +1610,7 @@ let expand_typed_dictionary_declarations ({ Source.statements; qualifier; _ } as
                       };
                   _
                 } ->
-                  Reference.drop_prefix ~prefix:class_name (Reference.from_name_exn name)
+                  Reference.drop_prefix ~prefix:class_name (Expression.name_to_reference_exn name)
                   |> Reference.single
                   >>| fun name -> string_literal name, annotation
               | _ -> None

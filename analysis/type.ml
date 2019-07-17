@@ -1976,7 +1976,7 @@ module LiteralAnyVisitor = struct
     let node state = function
       | Visit.Expression { Node.value = Name name; _ } ->
           let is_any =
-            Reference.from_name name
+            Expression.name_to_reference name
             >>| Reference.show
             >>| String.equal "typing.Any"
             |> Option.value ~default:false
@@ -1992,7 +1992,7 @@ module LiteralAnyVisitor = struct
       (* We also want to take into account annotations like `list`, `dict`, etc. *)
       match Node.value expression with
       | Name name when Expression.is_simple_name name ->
-          Reference.from_name_exn name
+          Expression.name_to_reference_exn name
           |> Reference.show
           |> Hashtbl.find primitive_substitution_map
           |> Option.value_map ~default:false ~f:contains_any

@@ -89,7 +89,7 @@ let transform_ast ({ Source.statements; _ } as source) =
       in
       Assign
         { Assign.target =
-            Reference.create ~prefix:parent "_fields" |> Reference.expression ~location;
+            Reference.create ~prefix:parent "_fields" |> Expression.from_reference ~location;
           annotation = Some annotation;
           value;
           parent = Some parent
@@ -99,7 +99,9 @@ let transform_ast ({ Source.statements; _ } as source) =
     let tuple_attributes ~parent ~location attributes =
       let attribute_statements =
         let attribute (name, annotation, value) =
-          let target = Reference.create ~prefix:parent name |> Reference.expression ~location in
+          let target =
+            Reference.create ~prefix:parent name |> Expression.from_reference ~location
+          in
           Assign
             { Assign.target;
               annotation = Some annotation;
@@ -152,7 +154,7 @@ let transform_ast ({ Source.statements; _ } as source) =
     let value =
       match value with
       | Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ } -> (
-          let name = Reference.from_name name >>| Reference.delocalize in
+          let name = Expression.name_to_reference name >>| Reference.delocalize in
           match extract_attributes expression, name with
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)

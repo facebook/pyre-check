@@ -943,7 +943,7 @@ let rec fallback_attribute
           let location = Attribute.location fallback in
           let arguments =
             let self_argument =
-              { Call.Argument.name = None; value = Reference.expression ~location class_name }
+              { Call.Argument.name = None; value = Expression.from_reference ~location class_name }
             in
             let name_argument =
               { Call.Argument.name = None;

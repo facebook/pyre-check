@@ -393,13 +393,13 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
     | Assign { Assign.target = { Node.value = Name target; _ }; annotation; value; _ }
       when Expression.is_simple_name target -> (
         let target =
-          let target = Reference.from_name_exn target |> Reference.sanitize_qualified in
+          let target = Expression.name_to_reference_exn target |> Reference.sanitize_qualified in
           if in_class_body then target else Reference.combine qualifier target
         in
         let target_annotation =
           Type.create
             ~aliases:Handler.aliases
-            (Reference.expression ~location:Location.Reference.any target)
+            (Expression.from_reference ~location:Location.Reference.any target)
         in
         match Node.value value, annotation with
         | ( _,
@@ -544,7 +544,8 @@ let collect_aliases (module Handler : Handler) { Source.statements; qualifier; _
             | _ ->
                 [ { UnresolvedAlias.qualifier;
                     target = qualified_name;
-                    value = Reference.expression ~location:Location.Reference.any original_name
+                    value =
+                      Expression.from_reference ~location:Location.Reference.any original_name
                   } ]
         in
         List.rev_append (List.concat_map ~f:import_to_alias imports) aliases
@@ -584,7 +585,7 @@ let resolve_alias (module Handler : Handler) { UnresolvedAlias.qualifier; target
             let reference =
               match Node.value (Type.expression (Type.Primitive primitive)) with
               | Expression.Name name when Expression.is_simple_name name ->
-                  Reference.from_name_exn name
+                  Expression.name_to_reference_exn name
               | _ -> Reference.create "typing.Any"
             in
             let module_definition = Handler.module_definition in
@@ -826,7 +827,10 @@ let register_values
           in
           match target.Node.value, annotation with
           | Name name, _ when Expression.is_simple_name name ->
-              register ~location:target.Node.location (Reference.from_name_exn name) annotation
+              register
+                ~location:target.Node.location
+                (Expression.name_to_reference_exn name)
+                annotation
           | Tuple elements, Type.Tuple (Type.Bounded (Concrete parameters))
             when List.length elements = List.length parameters ->
               List.map2_exn

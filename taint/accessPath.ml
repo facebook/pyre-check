@@ -216,7 +216,7 @@ let is_property ~resolution = function
       in
       match Type.expression annotation with
       | { Node.value = Name name; _ } when Expression.is_simple_name name ->
-          Reference.create ~prefix:(Reference.from_name_exn name) attribute
+          Reference.create ~prefix:(Expression.name_to_reference_exn name) attribute
           |> Resolution.function_definitions resolution
           >>| (function
                 | [{ Node.value = define; _ }] -> is_property define
@@ -239,8 +239,8 @@ let get_global ~resolution name =
         else
           None
     | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
-        let name = Reference.from_name name in
-        let base_name = Reference.from_name base_name in
+        let name = Expression.name_to_reference name in
+        let base_name = Expression.name_to_reference base_name in
         let is_module name = name >>= Resolution.module_definition resolution |> Option.is_some in
         name >>= Option.some_if (is_module base_name && not (is_module name))
     | _ -> None

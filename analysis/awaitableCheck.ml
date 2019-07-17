@@ -113,7 +113,7 @@ module State (Context : Context) = struct
     if Expression.is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
-        Map.find locals (Reference.from_name_exn name)
+        Map.find locals (Expression.name_to_reference_exn name)
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
@@ -227,9 +227,9 @@ module State (Context : Context) = struct
       | { Node.value = Expression.Name value; _ } when Expression.is_simple_name value ->
           (* Aliasing. *)
           let locals =
-            Map.find locals (Reference.from_name_exn value)
+            Map.find locals (Expression.name_to_reference_exn value)
             >>| (fun locations ->
-                  Map.set locals ~key:(Reference.from_name_exn target) ~data:locations)
+                  Map.set locals ~key:(Expression.name_to_reference_exn target) ~data:locations)
             |> Option.value ~default:locals
           in
           { unawaited; locals }
@@ -241,7 +241,7 @@ module State (Context : Context) = struct
               locals =
                 Map.set
                   locals
-                  ~key:(Reference.from_name_exn target)
+                  ~key:(Expression.name_to_reference_exn target)
                   ~data:(Location.Reference.Set.singleton (Node.location expression))
             }
           else

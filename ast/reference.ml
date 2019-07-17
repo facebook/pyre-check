@@ -6,7 +6,6 @@
 open Core
 open Pyre
 open Sexplib.Conv
-open Expression
 
 type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson]
 
@@ -92,45 +91,6 @@ let combine prefix suffix =
   match prefix with
   | [""] -> suffix
   | _ -> prefix @ suffix
-
-
-let from_name name =
-  let rec get_reversed_identifiers = function
-    | Name.Identifier identifier -> Some [identifier]
-    | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-      match get_reversed_identifiers base with
-      | Some sofar -> Some (attribute :: sofar)
-      | None -> None )
-    | _ -> None
-  in
-  get_reversed_identifiers name >>| List.rev >>| create_from_list
-
-
-let from_name_exn name =
-  match from_name name with
-  | Some name -> name
-  | None ->
-      failwith
-        (Format.sprintf
-           "Cannot convert expression %s with non-identifiers to reference."
-           (Expression.Name.show Expression.pp name))
-
-
-let name ~location reference =
-  let rec create = function
-    | [] -> Name (Name.Identifier "") |> Node.create ~location
-    | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
-    | identifier :: rest ->
-        Name (Name.Attribute { base = create rest; attribute = identifier; special = false })
-        |> Node.create ~location
-  in
-  match create (List.rev reference) with
-  | { Node.value = Name name; _ } -> name
-  | _ -> failwith "Impossible."
-
-
-let expression ~location reference =
-  name ~location reference |> (fun name -> Name name) |> Node.create ~location
 
 
 let delocalize reference =

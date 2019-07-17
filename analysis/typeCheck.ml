@@ -414,7 +414,7 @@ module State (Context : Context) = struct
           in
           match name, value with
           | None, { Node.value = Name name; _ } when Expression.is_simple_name name ->
-              let reference = Reference.from_name_exn name in
+              let reference = Expression.name_to_reference_exn name in
               Resolution.class_metadata resolution (Type.Primitive (Reference.show reference))
               >>| add_error
               |> Option.value ~default:errors
@@ -2671,7 +2671,7 @@ module State (Context : Context) = struct
         { state; resolved = Type.list resolved; resolved_annotation = None; base = None }
     | Name (Name.Identifier identifier) -> forward_reference ~state (Reference.create identifier)
     | Name (Name.Attribute { base; attribute; special } as name) ->
-        let reference = Reference.from_name name in
+        let reference = Expression.name_to_reference name in
         let { state = { errors = base_errors; _ }; resolved = resolved_base; base = super_base; _ }
           =
           forward_expression ~state:{ state with errors = ErrorMap.Map.empty } ~expression:base
@@ -3194,7 +3194,10 @@ module State (Context : Context) = struct
                     let reference =
                       match base with
                       | { Node.value = Name name; _ } when Expression.is_simple_name name ->
-                          Some (Reference.create ~prefix:(Reference.from_name_exn name) attribute)
+                          Some
+                            (Reference.create
+                               ~prefix:(Expression.name_to_reference_exn name)
+                               attribute)
                       | _ ->
                           parent_class
                           >>| Annotated.Class.name
@@ -3515,7 +3518,7 @@ module State (Context : Context) = struct
                 | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ }, None
                   when Expression.is_simple_name base && insufficiently_annotated ->
                     (* Module *)
-                    let reference = Reference.from_name_exn base in
+                    let reference = Expression.name_to_reference_exn base in
                     let definition = Resolution.module_definition resolution reference in
                     if explicit && (not is_type_alias) && not (Option.is_some definition) then
                       Error.create
@@ -3604,7 +3607,7 @@ module State (Context : Context) = struct
               in
               (* Propagate annotations. *)
               let state =
-                match Reference.from_name name with
+                match Expression.name_to_reference name with
                 | Some reference ->
                     let annotation =
                       if explicit && is_valid_annotation then
@@ -3830,7 +3833,7 @@ module State (Context : Context) = struct
                   { Call.Argument.name = None; value = annotation } ]
             }
           when Expression.is_simple_name name ->
-            let reference = Reference.from_name_exn name in
+            let reference = Expression.name_to_reference_exn name in
             let annotation = parse_refinement_annotation annotation in
             let updated_annotation =
               let refinement_unnecessary existing_annotation =
@@ -3960,7 +3963,9 @@ module State (Context : Context) = struct
             match contradiction_error, value with
             | Some error, _ -> emit_raw_error ~state:{ state with bottom = true } error
             | _, { Node.value = Name name; _ } when Expression.is_simple_name name ->
-                { state with resolution = resolve ~reference:(Reference.from_name_exn name) }
+                { state with
+                  resolution = resolve ~reference:(Expression.name_to_reference_exn name)
+                }
             | _ -> state )
         | Call
             { callee = { Node.value = Name (Name.Identifier "all"); _ };
@@ -3968,7 +3973,7 @@ module State (Context : Context) = struct
             }
           when Expression.is_simple_name name ->
             let resolution =
-              let reference = Reference.from_name_exn name in
+              let reference = Expression.name_to_reference_exn name in
               match Resolution.get_local resolution ~reference with
               | Some
                   { Annotation.annotation =
@@ -3989,7 +3994,7 @@ module State (Context : Context) = struct
             in
             { state with resolution }
         | Name name when Expression.is_simple_name name ->
-            let reference = Reference.from_name_exn name in
+            let reference = Expression.name_to_reference_exn name in
             let resolution =
               match Resolution.get_local resolution ~reference, name with
               | Some { Annotation.annotation = Type.Optional parameter; _ }, _ ->
@@ -4066,7 +4071,7 @@ module State (Context : Context) = struct
               right = { Node.value = Name (Name.Identifier "None"); _ }
             }
           when Expression.is_simple_name name -> (
-            let reference = Reference.from_name_exn name in
+            let reference = Expression.name_to_reference_exn name in
             let refined =
               match name with
               | Name.Attribute { base; attribute; _ } ->
@@ -4102,7 +4107,7 @@ module State (Context : Context) = struct
               right
             }
           when Expression.is_simple_name name ->
-            let reference = Reference.from_name_exn name in
+            let reference = Expression.name_to_reference_exn name in
             let { resolved; _ } = forward_expression ~state ~expression:right in
             let iterable = Resolution.join resolution resolved (Type.iterable Type.Bottom) in
             if Type.is_iterable iterable then

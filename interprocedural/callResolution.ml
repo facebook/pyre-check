@@ -98,7 +98,7 @@ let resolve_target ~resolution ?receiver_type callee =
     | Some "type", _ ->
         None
     | Some base, Name name when Expression.is_simple_name name && not (is_local base) ->
-        let reference = Reference.from_name_exn name in
+        let reference = Expression.name_to_reference_exn name in
         let global = reference |> Resolution.global resolution |> Option.is_some in
         let is_class =
           match Node.value callee with
@@ -164,7 +164,7 @@ let get_indirect_targets ~resolution ~receiver ~method_name =
 
 
 let get_global_targets ~resolution ~global =
-  Name (Reference.name ~location:Location.Reference.any global)
+  Name (Expression.create_name_from_reference ~location:Location.Reference.any global)
   |> Node.create_with_default_location
   |> resolve_target ~resolution
 

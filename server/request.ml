@@ -424,7 +424,7 @@ let process_type_query_request
           let annotation = Annotation.annotation annotation in
           { TypeQuery.name; annotation }
         in
-        parse_and_validate (Reference.expression ~location:Location.Reference.any annotation)
+        parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
@@ -877,7 +877,7 @@ let process_type_query_request
           let return_annotation = return_annotation ~resolution annotated_method in
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
-        parse_and_validate (Reference.expression ~location:Location.Reference.any annotation)
+        parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create

@@ -491,7 +491,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSource[" ->
-          let name = Reference.from_name_exn name in
+          let name = Expression.name_to_reference_exn name in
           let signature =
             { Define.name;
               parameters = [];
@@ -510,7 +510,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
         }
         when Expression.is_simple_name name
              && Expression.show annotation |> String.is_prefix ~prefix:"TaintSink[" ->
-          let name = Reference.from_name_exn name in
+          let name = Expression.name_to_reference_exn name in
           let signature =
             { Define.name;
               parameters =
@@ -537,7 +537,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
       let call_target = (call_target :> Callable.t) in
       let annotation =
         name
-        |> Reference.expression ~location:Location.Reference.any
+        |> Expression.from_reference ~location:Location.Reference.any
         |> Resolution.resolve_to_annotation resolution
       in
       let () =

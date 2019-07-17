@@ -115,7 +115,11 @@ module ConstantPropagationState (Context : Context) = struct
                   let get_constant location reference =
                     match Map.find constants reference with
                     | Some (Constant expression) -> { expression with Node.location }, true
-                    | _ -> Node.create ~location (Name (Reference.name ~location reference)), false
+                    | _ ->
+                        ( Node.create
+                            ~location
+                            (Name (Expression.create_name_from_reference ~location reference)),
+                          false )
                   in
                   match value with
                   | Name (Name.Identifier identifier) ->
@@ -126,7 +130,7 @@ module ConstantPropagationState (Context : Context) = struct
                         ( Node.create ~location (Name (Name.Attribute { base; attribute; special })),
                           transformed )
                       else
-                        get_constant location (Reference.from_name_exn name)
+                        get_constant location (Expression.name_to_reference_exn name)
                   | _ -> { Node.value; location }, false
                 in
                 transform expression |> fst
@@ -204,7 +208,7 @@ module ConstantPropagationState (Context : Context) = struct
             in
             is_literal || is_callable || is_global_constant
           in
-          let reference = Reference.from_name_exn name in
+          let reference = Expression.name_to_reference_exn name in
           if propagate then
             Map.set constants ~key:reference ~data:(Constant expression)
           else
@@ -602,9 +606,9 @@ let run ~configuration:_ ~environment ~source:({ Source.qualifier; _ } as source
         let rec dequalify { Node.location; value } =
           match value with
           | Name name when Expression.is_simple_name name ->
-              Reference.from_name_exn name
+              Expression.name_to_reference_exn name
               |> dequalify_reference
-              |> Reference.name ~location
+              |> Expression.create_name_from_reference ~location
               |> fun name -> Name name |> Node.create ~location
           | Name (Name.Attribute ({ base; _ } as name)) ->
               Name (Name.Attribute { name with base = dequalify base }) |> Node.create ~location

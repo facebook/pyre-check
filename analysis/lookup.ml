@@ -62,7 +62,7 @@ module NodeVisitor = struct
           match Node.value expression with
           | Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
           | Name (Name.Attribute { base; attribute; _ } as name) -> (
-              let definition = Reference.from_name name >>= find_definition in
+              let definition = Expression.name_to_reference name >>= find_definition in
               match definition with
               | Some definition -> Some definition
               | None ->

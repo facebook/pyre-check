@@ -423,6 +423,25 @@ let create_name ~location name =
   identifier_names name |> List.map ~f:(Node.create ~location) |> create_name_from_identifiers
 
 
+let create_name_from_reference ~location reference =
+  let rec create = function
+    | [] -> Name (Name.Identifier "") |> Node.create ~location
+    | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
+    | identifier :: rest ->
+        Name (Name.Attribute { base = create rest; attribute = identifier; special = false })
+        |> Node.create ~location
+  in
+  match create (List.rev (Reference.as_list reference)) with
+  | { Node.value = Name name; _ } -> name
+  | _ -> failwith "Impossible."
+
+
+let from_reference ~location reference =
+  create_name_from_reference ~location reference
+  |> (fun name -> Name name)
+  |> Node.create ~location
+
+
 let name_to_identifiers name =
   let rec collect sofar name =
     match sofar, name with
@@ -432,6 +451,28 @@ let name_to_identifiers name =
     | _ -> None
   in
   collect (Some []) (Name name)
+
+
+let name_to_reference name =
+  let rec get_reversed_identifiers = function
+    | Name.Identifier identifier -> Some [identifier]
+    | Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
+      match get_reversed_identifiers base with
+      | Some sofar -> Some (attribute :: sofar)
+      | None -> None )
+    | _ -> None
+  in
+  get_reversed_identifiers name >>| List.rev >>| Reference.create_from_list
+
+
+let name_to_reference_exn name =
+  match name_to_reference name with
+  | Some name -> name
+  | None ->
+      failwith
+        (Format.sprintf
+           "Cannot convert expression %s with non-identifiers to reference."
+           (Name.show pp name))
 
 
 let is_simple_name name = Option.is_some (name_to_identifiers name)

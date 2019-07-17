@@ -87,7 +87,7 @@ let create
             value = { Node.value = Name value; _ };
             _
           } -> (
-        match Reference.from_name value with
+        match Expression.name_to_reference value with
         | Some reference when Reference.is_strict_prefix ~prefix:qualifier reference ->
             Map.set aliases ~key:(Reference.sanitized (Reference.create target)) ~data:reference
         | _ -> aliases )
@@ -149,7 +149,7 @@ let create
           public_values, Some (List.filter_map ~f:to_reference names)
       | Assign { Assign.target = { Node.value = Name target; _ }; _ }
         when Expression.is_simple_name target ->
-          public_values @ filter_private [target |> Reference.from_name_exn], dunder_all
+          public_values @ filter_private [target |> Expression.name_to_reference_exn], dunder_all
       | Class { Record.Class.name; _ } -> public_values @ filter_private [name], dunder_all
       | Define { Define.signature = { name; _ }; _ } ->
           public_values @ filter_private [name], dunder_all

@@ -242,7 +242,9 @@ module Attribute = struct
     let open Expression in
     match Node.value target with
     | Name (Name.Attribute { base; attribute; _ })
-      when Expression.equal base (Reference.expression ~location:Location.Reference.any parent) ->
+      when Expression.equal
+             base
+             (Expression.from_reference ~location:Location.Reference.any parent) ->
         Some attribute
     | _ -> None
 end
@@ -643,7 +645,7 @@ module Define = struct
     =
     let attribute ?(setter = false) annotation =
       parent
-      >>= (fun parent -> Attribute.name ~parent (Reference.expression ~location name))
+      >>= (fun parent -> Attribute.name ~parent (Expression.from_reference ~location name))
       >>| fun name ->
       Attribute.create
         ~location
@@ -900,7 +902,7 @@ module Class = struct
       let callable_attributes map { Node.location; value } =
         match value with
         | Define ({ Define.signature = { name = target; _ }; _ } as define) ->
-            Attribute.name (Reference.expression ~location target) ~parent:name
+            Attribute.name (Expression.from_reference ~location target) ~parent:name
             >>| (fun name ->
                   let attribute =
                     match Identifier.SerializableMap.find_opt name map with
@@ -961,7 +963,8 @@ module Class = struct
                           };
                         arguments =
                           [ { Call.Argument.name = None;
-                              value = Reference.expression ~location:Location.Reference.any name
+                              value =
+                                Expression.from_reference ~location:Location.Reference.any name
                             } ]
                       }
                 }

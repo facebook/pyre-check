@@ -380,7 +380,7 @@ module State (Context : Context) = struct
                 let state = { state with resolution } in
                 match Node.value argument with
                 | Name name when Expression.is_simple_name name ->
-                    let reference = Reference.from_name_exn name in
+                    let reference = Expression.name_to_reference_exn name in
                     let resolved = forward_expression ~state ~expression:argument in
                     resolve_assign parameter_annotation resolved
                     >>| (fun refined ->
@@ -475,7 +475,7 @@ module State (Context : Context) = struct
           in
           Resolution.set_local
             resolution
-            ~reference:(Reference.from_name_exn name)
+            ~reference:(Expression.name_to_reference_exn name)
             ~annotation:(Annotation.create return_annotation)
       | _ -> annotate_call_accesses statement resolution
     in

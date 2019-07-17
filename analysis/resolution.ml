@@ -160,7 +160,7 @@ let resolve_to_annotation ({ resolve; _ } as resolution) expression =
 
 
 let resolve_reference ({ resolve; _ } as resolution) reference =
-  Reference.expression ~location:Location.Reference.any reference
+  Expression.from_reference ~location:Location.Reference.any reference
   |> resolve ~resolution
   |> Annotation.annotation
 
@@ -453,7 +453,7 @@ let parse_annotation
 
 
 let parse_reference ?(allow_untracked = false) resolution reference =
-  Reference.expression ~location:Location.Reference.any reference
+  Expression.from_reference ~location:Location.Reference.any reference
   |> parse_annotation ~allow_untracked ~allow_invalid_type_parameters:true resolution
 
 
