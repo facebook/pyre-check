@@ -1973,20 +1973,19 @@ module LiteralAnyVisitor = struct
   module Visitor = struct
     type t = bool
 
-    let statement state _ = state
-
-    let expression state { Node.value; _ } =
-      match state, value with
-      | true, _ -> true
-      | false, Name name ->
-          Reference.from_name name
-          >>| Reference.show
-          >>| String.equal "typing.Any"
-          |> Option.value ~default:false
-      | _, _ -> false
+    let node state = function
+      | Visit.Expression { Node.value = Name name; _ } ->
+          let is_any =
+            Reference.from_name name
+            >>| Reference.show
+            >>| String.equal "typing.Any"
+            |> Option.value ~default:false
+          in
+          state || is_any
+      | _ -> state
   end
 
-  include Visit.Make (Visitor)
+  include Visit.MakeNodeVisitor (Visitor)
 
   let expression_contains_any expression =
     let state =
@@ -2000,7 +1999,7 @@ module LiteralAnyVisitor = struct
           |> fun state -> ref state
       | _ -> ref false
     in
-    visit_expression ~state ~visitor:Visitor.expression expression;
+    visit_expression ~state expression;
     !state
 end
 

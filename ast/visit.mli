@@ -3,6 +3,33 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Expression
+
+type node =
+  | Expression of Expression.t
+  | Statement of Statement.t
+  | Identifier of Identifier.t Node.t
+  | Parameter of Expression.t Parameter.t
+  | Substring of StringLiteral.Substring.t Node.t
+
+module type NodeVisitor = sig
+  type t
+
+  val node : t -> node -> t
+end
+
+module MakeNodeVisitor (Visitor : NodeVisitor) : sig
+  val visit_expression
+    :  state:Visitor.t ref ->
+    ?visitor_override:(Visitor.t -> node -> Visitor.t) ->
+    Expression.t ->
+    unit
+
+  val visit_statement : state:Visitor.t ref -> Statement.t -> unit
+
+  val visit : Visitor.t -> Source.t -> Visitor.t
+end
+
 module type Visitor = sig
   type t
 
@@ -11,28 +38,16 @@ module type Visitor = sig
   val statement : t -> Statement.t -> t
 end
 
+module Make (Visitor : Visitor) : sig
+  val visit : Visitor.t -> Source.t -> Visitor.t
+end
+
 module type StatementVisitor = sig
   type t
 
   val visit_children : Statement.t -> bool
 
   val statement : Source.t -> t -> Statement.t -> t
-end
-
-module Make (Visitor : Visitor) : sig
-  val visit_expression
-    :  state:Visitor.t ref ->
-    visitor:(Visitor.t -> Expression.t -> Visitor.t) ->
-    Expression.t ->
-    unit
-
-  val visit_statement
-    :  state:Visitor.t ref ->
-    visitor:(Visitor.t -> Statement.t -> Visitor.t) ->
-    Statement.t ->
-    unit
-
-  val visit : Visitor.t -> Source.t -> Visitor.t
 end
 
 module MakeStatementVisitor (Visitor : StatementVisitor) : sig

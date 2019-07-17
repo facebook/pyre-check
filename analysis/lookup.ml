@@ -109,19 +109,30 @@ module ExpressionVisitor = struct
     expression_base ~postcondition:true state expression
 
 
-  let statement state _ = state
+  let wrap operator state = function
+    | Visit.Expression expression -> operator state expression
+    | _ -> state
+
+
+  let node = wrap expression
 end
 
 module Visit = struct
-  include Visit.Make (ExpressionVisitor)
+  include Visit.MakeNodeVisitor (ExpressionVisitor)
 
   let visit state source =
     let state = ref state in
     let visit_statement_override ~state statement =
       (* Special-casing for statements that require lookup using the postcondition. *)
-      let precondition_visit = visit_expression ~state ~visitor:ExpressionVisitor.expression in
+      let precondition_visit =
+        visit_expression
+          ~state
+          ~visitor_override:(ExpressionVisitor.wrap ExpressionVisitor.expression)
+      in
       let postcondition_visit =
-        visit_expression ~state ~visitor:ExpressionVisitor.expression_postcondition
+        visit_expression
+          ~state
+          ~visitor_override:(ExpressionVisitor.wrap ExpressionVisitor.expression_postcondition)
       in
       (* Special-casing for annotations that should be parsed rather than resolved as expressions. *)
       let store_annotation annotation =
@@ -148,7 +159,7 @@ module Visit = struct
           List.iter parameters ~f:visit_parameter;
           List.iter decorators ~f:postcondition_visit;
           Option.iter ~f:postcondition_visit return_annotation
-      | _ -> visit_statement ~state ~visitor:ExpressionVisitor.statement statement
+      | _ -> visit_statement ~state statement
     in
     List.iter ~f:(visit_statement_override ~state) source.Source.statements;
     !state

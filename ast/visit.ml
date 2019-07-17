@@ -4,37 +4,44 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
+open Pyre
 open Expression
 open Statement
 
-module type Visitor = sig
+type node =
+  | Expression of Expression.t
+  | Statement of Statement.t
+  | Identifier of Identifier.t Node.t
+  | Parameter of Expression.t Parameter.t
+  | Substring of StringLiteral.Substring.t Node.t
+
+module type NodeVisitor = sig
   type t
 
-  val expression : t -> Expression.t -> t
-
-  val statement : t -> Statement.t -> t
+  val node : t -> node -> t
 end
 
-module type StatementVisitor = sig
-  type t
+module MakeNodeVisitor (Visitor : NodeVisitor) = struct
+  let visit_node ~state ~visitor node = state := visitor !state node
 
-  val visit_children : Statement.t -> bool
-
-  val statement : Source.t -> t -> Statement.t -> t
-end
-
-module Make (Visitor : Visitor) = struct
   let visit_argument { Expression.Call.Argument.value; _ } ~visit_expression =
     visit_expression value
 
 
-  let visit_parameter { Node.value = { Parameter.value; annotation; _ }; _ } ~visit_expression =
+  let visit_parameter
+      ({ Node.value = { Parameter.value; annotation; _ }; _ } as parameter)
+      ~visitor
+      ~visit_expression
+      ~state
+    =
+    visit_node ~state ~visitor (Parameter parameter);
     Option.iter ~f:visit_expression value;
     Option.iter ~f:visit_expression annotation
 
 
-  let rec visit_expression ~state ~visitor expression =
-    let visit_expression = visit_expression ~state ~visitor in
+  let rec visit_expression ~state ?visitor_override expression =
+    let visitor = Option.value visitor_override ~default:Visitor.node in
+    let visit_expression = visit_expression ~state ?visitor_override in
     let visit_generator { Comprehension.target; iterator; conditions; _ } ~visit_expression =
       visit_expression target;
       visit_expression iterator;
@@ -53,7 +60,10 @@ module Make (Visitor : Visitor) = struct
           visit_expression right
       | Call { Call.callee; arguments } ->
           visit_expression callee;
-          let visit_argument { Call.Argument.value; _ } = visit_expression value in
+          let visit_argument { Call.Argument.value; name } =
+            name >>| (fun name -> visit_node ~state ~visitor (Identifier name)) |> ignore;
+            visit_expression value
+          in
           List.iter arguments ~f:visit_argument
       | Dictionary { Dictionary.entries; keywords } ->
           List.iter entries ~f:(visit_entry ~visit_expression);
@@ -65,7 +75,7 @@ module Make (Visitor : Visitor) = struct
           visit_expression element;
           List.iter generators ~f:(visit_generator ~visit_expression)
       | Lambda { Lambda.parameters; body } ->
-          List.iter parameters ~f:(visit_parameter ~visit_expression);
+          List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
           visit_expression body
       | List elements -> List.iter elements ~f:visit_expression
       | ListComprehension { Comprehension.element; generators } ->
@@ -84,6 +94,10 @@ module Make (Visitor : Visitor) = struct
             visit_expression expression )
       | String { StringLiteral.kind = Format expressions; _ } ->
           List.iter expressions ~f:visit_expression
+      | String { kind = Mixed substrings; _ } ->
+          List.iter
+            ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
+            substrings
       | Ternary { Ternary.target; test; alternative } ->
           visit_expression target;
           visit_expression test;
@@ -101,12 +115,13 @@ module Make (Visitor : Visitor) = struct
           ()
     in
     visit_children (Node.value expression);
-    state := visitor !state expression
+    visit_node ~state ~visitor (Expression expression)
 
 
-  let rec visit_statement ~state ~visitor statement =
-    let visit_expression = visit_expression ~state ~visitor:Visitor.expression in
-    let visit_statement = visit_statement ~state ~visitor in
+  let rec visit_statement ~state statement =
+    let visitor = Visitor.node in
+    let visit_expression = visit_expression ~state in
+    let visit_statement = visit_statement ~state in
     let visit_children value =
       match value with
       | Assign { Assign.target; annotation; value; _ } ->
@@ -121,7 +136,7 @@ module Make (Visitor : Visitor) = struct
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression
       | Define { Define.signature = { parameters; decorators; return_annotation; _ }; body } ->
-          List.iter parameters ~f:(visit_parameter ~visit_expression);
+          List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
           List.iter body ~f:visit_statement;
           List.iter decorators ~f:visit_expression;
           Option.iter ~f:visit_expression return_annotation
@@ -173,13 +188,43 @@ module Make (Visitor : Visitor) = struct
           ()
     in
     visit_children (Node.value statement);
-    state := visitor !state statement
+    visit_node ~state ~visitor (Statement statement)
 
 
   let visit state source =
     let state = ref state in
-    List.iter source.Source.statements ~f:(visit_statement ~state ~visitor:Visitor.statement);
+    List.iter source.Source.statements ~f:(visit_statement ~state);
     !state
+end
+
+module type Visitor = sig
+  type t
+
+  val expression : t -> Expression.t -> t
+
+  val statement : t -> Statement.t -> t
+end
+
+module Make (Visitor : Visitor) = struct
+  let visit =
+    let module NodeVisitor = MakeNodeVisitor (struct
+      type t = Visitor.t
+
+      let node state = function
+        | Expression expression -> Visitor.expression state expression
+        | Statement statement -> Visitor.statement state statement
+        | _ -> state
+    end)
+    in
+    NodeVisitor.visit
+end
+
+module type StatementVisitor = sig
+  type t
+
+  val visit_children : Statement.t -> bool
+
+  val statement : Source.t -> t -> Statement.t -> t
 end
 
 module MakeStatementVisitor (Visitor : StatementVisitor) = struct

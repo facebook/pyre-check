@@ -133,6 +133,62 @@ let test_collect_location _ =
       3, 2, 3, 3 ]
 
 
+let test_node_visitor _ =
+  let module Visitor = struct
+    type t = int String.Table.t
+
+    let node state node =
+      let increment hash_table key =
+        match Hashtbl.find hash_table key with
+        | None -> Hashtbl.set hash_table ~key ~data:1
+        | Some value -> Hashtbl.set hash_table ~key ~data:(value + 1)
+      in
+      match node with
+      | Visit.Expression _ ->
+          increment state "expression";
+          state
+      | Visit.Statement _ ->
+          increment state "statement";
+          state
+      | Visit.Identifier _ ->
+          increment state "identifier";
+          state
+      | Visit.Parameter _ ->
+          increment state "parameter";
+          state
+      | Visit.Substring _ ->
+          increment state "substring";
+          state
+  end
+  in
+  let module Visit = Visit.MakeNodeVisitor (Visitor) in
+  let assert_counts source expected_counts =
+    let table = Visit.visit (String.Table.create ()) source in
+    List.iter
+      ~f:(fun (key, expected_value) ->
+        assert_equal
+          ~printer:(fun value -> Format.sprintf "%s -> %d" key (Option.value value ~default:0))
+          (Some expected_value)
+          (Hashtbl.find table key))
+      expected_counts
+  in
+  let source =
+    parse
+      {|
+        def foo(x: int) -> int:
+          return x
+        foo(x = 1)
+        foo(x = 2)
+      |}
+  in
+  assert_counts source ["expression", 9; "statement", 4; "parameter", 1; "identifier", 2];
+  let source = parse {|
+        f"foo"
+        f'foo' 'bar'
+      |} in
+  assert_counts source ["expression", 2; "statement", 2; "substring", 3]
+
+
 let test_statement_visitor _ =
   let module StatementVisitor = struct
     type t = int String.Table.t
@@ -203,6 +259,7 @@ let () =
   "visit"
   >::: [ "collect" >:: test_collect;
          "collect_location" >:: test_collect_location;
+         "node_visitor" >:: test_node_visitor;
          "statement_visitor" >:: test_statement_visitor;
          "statement_visitor_source" >:: test_statement_visitor_source ]
   |> Test.run
