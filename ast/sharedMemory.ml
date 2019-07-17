@@ -56,18 +56,17 @@ module Handles = struct
     let description = "Path"
   end
 
-  module Paths = SharedMemory.WithCache (IntKey) (PathValue)
+  module Paths = SharedMemory.WithCache (Reference.Key) (PathValue)
 
-  let get ~hash = Paths.get hash
+  let get = Paths.get
 
-  let add_handle_hash ~handle = Paths.write_through (String.hash handle) handle
+  let add qualifier ~handle = Paths.write_through qualifier handle
 
   let hash_of_key = Paths.hash_of_key
 
   let serialize_key = Paths.serialize_key
 
-  let compute_hashes_to_keys ~keys =
-    List.map keys ~f:String.hash |> fun keys -> Paths.compute_hashes_to_keys ~keys
+  let compute_hashes_to_keys = Paths.compute_hashes_to_keys
 end
 
 module Modules = struct

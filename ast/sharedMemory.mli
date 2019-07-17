@@ -52,18 +52,18 @@ end
 module Handles : sig
   module PathValue : Value.Type with type t = string
 
-  module Paths : module type of Memory.WithCache (IntKey) (PathValue)
+  module Paths : module type of Memory.WithCache (Reference.Key) (PathValue)
 
-  val get : hash:int -> string option
+  val get : Reference.t -> string option
 
-  val add_handle_hash : handle:string -> unit
+  val add : Reference.t -> handle:string -> unit
 
   (* Exposed for testing. *)
-  val hash_of_key : int -> string
+  val hash_of_key : Reference.t -> string
 
-  val serialize_key : int -> string
+  val serialize_key : Reference.t -> string
 
-  val compute_hashes_to_keys : keys:string list -> string String.Map.t
+  val compute_hashes_to_keys : keys:Reference.t list -> string String.Map.t
 end
 
 val heap_size : unit -> int

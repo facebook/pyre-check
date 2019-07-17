@@ -37,29 +37,32 @@ let pp formatter { relative_path; qualifier; priority; is_stub; is_external; is_
 
 
 let qualifier_of_relative relative =
-  let qualifier =
-    let reversed_elements =
-      Filename.parts relative |> (* Strip current directory. *) List.tl_exn |> List.rev
-    in
-    let last_without_suffix =
-      let last = List.hd_exn reversed_elements in
-      match String.rindex last '.' with
-      | Some index -> String.slice last 0 index
-      | _ -> last
-    in
-    let strip = function
-      | "future" :: "builtins" :: tail
-      | "builtins" :: tail ->
-          tail
-      | "__init__" :: tail -> tail
-      | elements -> elements
-    in
-    last_without_suffix :: List.tl_exn reversed_elements
-    |> strip
-    |> List.rev_map ~f:(String.split ~on:'.')
-    |> List.concat
-  in
-  Reference.create_from_list qualifier
+  match relative with
+  | "" -> Reference.empty
+  | _ ->
+      let qualifier =
+        let reversed_elements =
+          Filename.parts relative |> (* Strip current directory. *) List.tl_exn |> List.rev
+        in
+        let last_without_suffix =
+          let last = List.hd_exn reversed_elements in
+          match String.rindex last '.' with
+          | Some index -> String.slice last 0 index
+          | _ -> last
+        in
+        let strip = function
+          | "future" :: "builtins" :: tail
+          | "builtins" :: tail ->
+              tail
+          | "__init__" :: tail -> tail
+          | elements -> elements
+        in
+        last_without_suffix :: List.tl_exn reversed_elements
+        |> strip
+        |> List.rev_map ~f:(String.split ~on:'.')
+        |> List.concat
+      in
+      Reference.create_from_list qualifier
 
 
 let create_from_search_path ~is_external ~search_path path =

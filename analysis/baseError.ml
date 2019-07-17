@@ -79,8 +79,7 @@ module Make (Kind : Kind) = struct
 
   let create ~location ~kind ~define =
     let { Node.value = { Define.signature; _ }; location = define_location } = define in
-    { location =
-        Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location;
+    { location = Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location;
       kind;
       signature = { Node.value = signature; location = define_location }
     }

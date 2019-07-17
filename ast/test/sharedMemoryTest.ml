@@ -21,9 +21,9 @@ let test_compute_hashes_to_keys _ =
       Modules.hash_of_key !&"foo.b", Modules.serialize_key !&"foo.b" ]
     (Modules.compute_hashes_to_keys ~keys:[!&"foo"; !&"bar"; !&"foo.b"]);
   assert_mapping_equal
-    [ Handles.hash_of_key (String.hash "a.py"), Handles.serialize_key (String.hash "a.py");
-      Handles.hash_of_key (String.hash "b/c.py"), Handles.serialize_key (String.hash "b/c.py") ]
-    (Handles.compute_hashes_to_keys ~keys:["a.py"; "b/c.py"])
+    [ Handles.hash_of_key !&"a", Handles.serialize_key !&"a";
+      Handles.hash_of_key !&"b.c", Handles.serialize_key !&"b.c" ]
+    (Handles.compute_hashes_to_keys ~keys:[!&"a"; !&"b.c"])
 
 
 let () =

@@ -227,13 +227,13 @@ let test_equality _ =
       (Expression.hash expression_right)
   in
   let location_1 =
-    { Location.path = String.hash "some_path";
+    { Location.path = !&"some_path";
       Location.start = { Location.line = 1; column = 1 };
       Location.stop = { Location.line = 2; column = 5 }
     }
   in
   let location_2 =
-    { Location.path = String.hash "some_other_path";
+    { Location.path = !&"some_other_path";
       Location.start = { Location.line = 12; column = 3 };
       Location.stop = { Location.line = 12; column = 7 }
     }

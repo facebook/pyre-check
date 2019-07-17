@@ -34,7 +34,7 @@ module Metadata : sig
     unit ->
     t
 
-  val parse : string -> string list -> t
+  val parse : qualifier:Reference.t -> string list -> t
 end
 
 type t = {

@@ -61,7 +61,7 @@ module Metadata = struct
 
   let ignore_location_regex = Str.regexp "\\(pyre-\\(ignore\\|fixme\\)\\|type: ignore\\)"
 
-  let parse path lines =
+  let parse ~qualifier lines =
     let is_python_2_shebang line =
       String.is_prefix ~prefix:"#!" line && String.is_substring ~substring:"python2" line
     in
@@ -92,7 +92,7 @@ module Metadata = struct
           let end_column = String.length line in
           let start = { Location.line = line_index; column = start_column } in
           let stop = { Location.line = line_index; column = end_column } in
-          Location.reference { Location.path; start; stop }
+          { Location.path = qualifier; start; stop }
         in
         Ignore.create ~ignored_line:line_index ~codes ~location ~kind
       in
@@ -332,13 +332,12 @@ let top_level_define { qualifier; statements; metadata = { Metadata.version; _ }
   Statement.Define.create_toplevel ~qualifier:(Some qualifier) ~statements
 
 
-let top_level_define_node ({ handle; _ } as source) =
+let top_level_define_node ({ qualifier; _ } as source) =
   let location =
-    { Location.path = File.Handle.show handle;
+    { Location.path = qualifier;
       start = { Location.line = 1; column = 1 };
       stop = { Location.line = 1; column = 1 }
     }
-    |> Location.reference
   in
   Node.create ~location (top_level_define source)
 

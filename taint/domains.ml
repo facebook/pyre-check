@@ -84,14 +84,10 @@ module TraceInfo = struct
   let show = function
     | Declaration -> "declaration"
     | Origin location ->
-        let instantiated =
-          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-        in
+        let instantiated = Location.instantiate ~lookup:SharedMemory.Handles.get location in
         Format.sprintf "@%s" (Location.Instantiated.show instantiated)
     | CallSite { location; callees; _ } ->
-        let instantiated =
-          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-        in
+        let instantiated = Location.instantiate ~lookup:SharedMemory.Handles.get location in
         Format.sprintf
           "via call@%s[%s]"
           (Location.Instantiated.show instantiated)
@@ -115,8 +111,7 @@ module TraceInfo = struct
     | Declaration -> Some ("decl", `Null)
     | Origin location ->
         let location_json =
-          Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-          |> location_to_json
+          Location.instantiate ~lookup:SharedMemory.Handles.get location |> location_to_json
         in
         Some ("root", location_json)
     | CallSite { location; callees; port; path; trace_length } ->
@@ -128,8 +123,7 @@ module TraceInfo = struct
         in
         if not (List.is_empty callee_json) then
           let location_json =
-            Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash) location
-            |> location_to_json
+            Location.instantiate ~lookup:SharedMemory.Handles.get location |> location_to_json
           in
           let port_json = AccessPath.create port path |> AccessPath.to_json in
           let call_json =

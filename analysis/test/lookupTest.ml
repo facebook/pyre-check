@@ -18,8 +18,9 @@ let show_location { Location.path; start; stop } =
 
 let instantiate =
   let lookup_table =
-    Int.Table.of_alist_exn
-      [String.hash "test.py", "test.py"; String.hash "builtins.pyi", "builtins.pyi"]
+    Reference.Table.of_alist_exn
+      [ SourcePath.qualifier_of_relative "test.py", "test.py";
+        SourcePath.qualifier_of_relative "builtins.pyi", "builtins.pyi" ]
   in
   Location.instantiate ~lookup:(Hashtbl.find lookup_table)
 

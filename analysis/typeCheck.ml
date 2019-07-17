@@ -984,9 +984,7 @@ module State (Context : Context) = struct
               state
             else
               let instantiate location =
-                Location.instantiate
-                  ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash)
-                  location
+                Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location
               in
               emit_error
                 ~state
@@ -2954,7 +2952,7 @@ module State (Context : Context) = struct
       Context.define
     in
     let instantiate location =
-      Location.instantiate ~lookup:(fun hash -> Ast.SharedMemory.Handles.get ~hash) location
+      Location.instantiate ~lookup:Ast.SharedMemory.Handles.get location
     in
     (* We weaken type inference of mutable literals for assignments and returns to get around the
        invariance of containers when we can prove that casting to a supertype is safe. *)

@@ -94,22 +94,6 @@ let test_process_type_query_request context =
                         "path": "test.py",
                         "start": {
                             "line": 2,
-                            "column": 19
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 22
-                        }
-                    },
-                    "coverage": [
-                        "Typed"
-                    ]
-                },
-                {
-                    "location": {
-                        "path": "test.py",
-                        "start": {
-                            "line": 2,
                             "column": 11
                         },
                         "stop": {
@@ -147,6 +131,22 @@ let test_process_type_query_request context =
                         "stop": {
                             "line": 3,
                             "column": 10
+                        }
+                    },
+                    "coverage": [
+                        "Typed"
+                    ]
+                },
+                {
+                    "location": {
+                        "path": "test.py",
+                        "start": {
+                            "line": 2,
+                            "column": 19
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 22
                         }
                     },
                     "coverage": [

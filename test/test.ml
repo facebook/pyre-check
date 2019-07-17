@@ -162,7 +162,7 @@ let parse
     ?(coerce_special_methods = false)
     source
   =
-  Ast.SharedMemory.Handles.add_handle_hash ~handle;
+  Ast.SharedMemory.Handles.add (Ast.SourcePath.qualifier_of_relative handle) ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
     |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~coerce_special_methods
@@ -248,7 +248,7 @@ let map_printer ~key_pp ~data_pp map =
 
 let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
-    { Location.path = String.hash "test.py";
+    { Location.path = Reference.create "test";
       start = { Location.line = start_line; Location.column = start_column };
       stop = { Location.line = stop_line; Location.column = stop_column }
     }

@@ -15,7 +15,8 @@ type 'success parse_result =
 
 let parse_source ~configuration ?(show_parser_errors = true) file =
   let parse_lines ~handle lines =
-    let metadata = Source.Metadata.parse (File.Handle.show handle) lines in
+    let qualifier = Source.qualifier ~handle in
+    let metadata = Source.Metadata.parse ~qualifier lines in
     try
       let statements = Parser.parse ~handle lines in
       let hash = [%hash: string list] lines in
@@ -25,7 +26,7 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
            ~hash
            ~metadata
            ~handle
-           ~qualifier:(Source.qualifier ~handle)
+           ~qualifier
            statements)
     with
     | Parser.Error error ->
@@ -69,7 +70,8 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configura
         in
         add_module_from_source preprocessed;
         let handle = File.handle ~configuration file in
-        Ast.SharedMemory.Handles.add_handle_hash ~handle:(File.Handle.show handle);
+        let qualifier = Source.qualifier ~handle in
+        Ast.SharedMemory.Handles.add qualifier ~handle:(File.Handle.show handle);
         Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed);
         handle
       in

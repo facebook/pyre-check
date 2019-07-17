@@ -4,6 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
+module AstReference = Reference
 
 type position = {
   line: int;
@@ -22,7 +23,7 @@ type 'path location = {
 [@@deriving compare, eq, sexp, show, hash, to_yojson]
 
 module Reference : sig
-  type t = int location [@@deriving compare, eq, sexp, show, hash]
+  type t = AstReference.t location [@@deriving compare, eq, sexp, show, hash]
 
   module Map : Map.S with type Key.t = t
 
@@ -31,8 +32,6 @@ module Reference : sig
   include Hashable with type t := t
 
   val create : start:Lexing.position -> stop:Lexing.position -> t
-
-  val create_with_handle : handle:File.Handle.t -> t
 
   val start : t -> position
 
@@ -59,7 +58,7 @@ module Instantiated : sig
   val pp_line : Format.formatter -> t -> unit
 end
 
-val instantiate : Reference.t -> lookup:(int -> string option) -> Instantiated.t
+val instantiate : Reference.t -> lookup:(AstReference.t -> string option) -> Instantiated.t
 
 val reference : Instantiated.t -> Reference.t
 

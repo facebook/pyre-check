@@ -5,6 +5,7 @@
 
 open Core
 open Sexplib.Std
+module AstReference = Reference
 
 type position = {
   line: int;
@@ -34,17 +35,25 @@ let show pp_path { path; start; stop } =
 
 
 module Reference = struct
-  type t = int location [@@deriving compare, eq, sexp, hash, to_yojson]
+  type t = AstReference.t location [@@deriving compare, eq, sexp, hash, to_yojson]
 
   let pp format { path; start; stop } =
-    Format.fprintf format "%d:%d:%d-%d:%d" path start.line start.column stop.line stop.column
+    Format.fprintf
+      format
+      "%a:%d:%d-%d:%d"
+      AstReference.pp
+      path
+      start.line
+      start.column
+      stop.line
+      stop.column
 
 
   let pp_line_and_column format { start; stop; _ } =
     Format.fprintf format "%d:%d-%d:%d" start.line start.column stop.line stop.column
 
 
-  let show = show Int.pp
+  let show = show AstReference.pp
 
   module Map = Map.Make (struct
     type nonrec t = t
@@ -86,21 +95,19 @@ module Reference = struct
         column = position.Lexing.pos_cnum - position.Lexing.pos_bol
       }
     in
-    { path = String.hash start.Lexing.pos_fname; start = create start; stop = create stop }
-
-
-  let create_with_handle ~handle =
-    let position = { line = 0; column = 1 } in
-    { path = String.hash (File.Handle.show handle); start = position; stop = position }
+    { path = SourcePath.qualifier_of_relative start.Lexing.pos_fname;
+      start = create start;
+      stop = create stop
+    }
 
 
   let start { start; _ } = start
 
   let stop { stop; _ } = stop
 
-  let any = { path = -1; start = any_position; stop = any_position }
+  let any = { path = Reference.empty; start = any_position; stop = any_position }
 
-  let synthetic = { path = -1; start = synthetic_position; stop = synthetic_position }
+  let synthetic = { path = Reference.empty; start = synthetic_position; stop = synthetic_position }
 end
 
 module Instantiated = struct
@@ -145,7 +152,7 @@ let instantiate { path; start; stop } ~lookup =
   { path; start; stop }
 
 
-let reference { path; start; stop } = { path = String.hash path; start; stop }
+let reference { path; start; stop } = { path = SourcePath.qualifier_of_relative path; start; stop }
 
 let line { start = { line; _ }; _ } = line
 

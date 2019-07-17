@@ -458,18 +458,13 @@ let process_type_query_request
                 ~new_map:(Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
           | None -> map
         in
-        let handles =
-          Service.ModuleTracker.source_paths module_tracker
-          |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
-                 Path.RelativePath.relative relative_path)
-        in
         let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
         (* AST shared memory. *)
         let map =
           map
           |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:handles)
+          |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:qualifiers)
         in
         (* Handle-based keys. *)
         let map =
@@ -667,7 +662,7 @@ let process_type_query_request
                   Reference.show key,
                   value >>| Module.sexp_of_t >>| Sexp.to_string )
           | Ast.SharedMemory.Handles.Paths.Decoded (key, value) ->
-              Some (Ast.SharedMemory.Handles.PathValue.description, Int.to_string key, value)
+              Some (Ast.SharedMemory.Handles.PathValue.description, Reference.show key, value)
           | Coverage.SharedMemory.Decoded (key, value) ->
               Some (Coverage.CoverageValue.description, Reference.show key, value >>| Coverage.show)
           | Analysis.Dependencies.Callgraph.SharedMemory.Decoded (key, value) ->

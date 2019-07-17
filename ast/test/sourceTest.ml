@@ -11,9 +11,9 @@ open Ignore
 open Test
 
 let test_parse _ =
-  let test_path = "test.py" in
+  let qualifier = !&"test" in
   let assert_mode line expected_mode =
-    let { Source.Metadata.local_mode; _ } = Source.Metadata.parse test_path [line] in
+    let { Source.Metadata.local_mode; _ } = Source.Metadata.parse ~qualifier [line] in
     assert_equal local_mode expected_mode
   in
   assert_mode " # pyre-placeholder-stub" Source.PlaceholderStub;
@@ -26,7 +26,7 @@ let test_parse _ =
   (* Prevent typos from being treated as error suppressors. *)
   assert_mode " # pyre-ignore-all-errors[42, 7,   15" Source.Default;
   let assert_ignore lines expected_ignore_lines =
-    let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse test_path lines in
+    let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse ~qualifier lines in
     assert_equal
       ~printer:(fun ignores -> List.to_string ~f:show ignores)
       expected_ignore_lines
@@ -36,7 +36,7 @@ let test_parse _ =
     let location =
       let start = { Location.line = start_line; column = start_column } in
       let stop = { Location.line = end_line; column = end_column } in
-      { Location.path = String.hash test_path; start; stop }
+      { Location.path = qualifier; start; stop }
     in
     create ~ignored_line ~codes ~kind ~location
   in
@@ -179,8 +179,8 @@ let test_expand_relative_import _ =
 let test_signature_hash _ =
   let assert_hash_equal ?(equal = true) left right =
     let parse source =
-      let { Source.statements; _ } = parse source in
-      let metadata = String.split ~on:'\n' source |> Source.Metadata.parse "test.py" in
+      let { Source.qualifier; statements; _ } = parse source in
+      let metadata = String.split ~on:'\n' source |> Source.Metadata.parse ~qualifier in
       Source.create ~metadata statements
     in
     let equal = if equal then (=) else (<>) in

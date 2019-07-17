@@ -223,11 +223,12 @@ let create define =
           create body_statements jumps split
         in
         Node.connect_option body_node join;
+        let { Ast.Node.location = test_location; _ } = test in
         let orelse_statements =
           let test =
             Expression.negate test
             |> Expression.normalize
-            |> fun test -> { test with location = Location.Reference.synthetic }
+            |> fun test -> { test with location = test_location }
           in
           Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test :: orelse
         in
@@ -237,7 +238,7 @@ let create define =
           let test =
             Expression.negate test
             |> Expression.normalize
-            |> fun test -> { test with location = Location.Reference.synthetic }
+            |> fun test -> { test with location = test_location }
           in
           if Statement.terminates body then
             Statement.assume ~origin:(Assert.If { statement; true_branch = false }) test

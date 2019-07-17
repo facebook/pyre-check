@@ -1636,7 +1636,7 @@ let test_expand_implicit_returns _ =
        def foo() -> int:
          pass
      |}
-    { Location.path = String.hash "test.py";
+    { Location.path = !&"test";
       start = { Location.line = 3; Location.column = 2 };
       stop = { Location.line = 3; Location.column = 6 }
     };
@@ -1652,7 +1652,7 @@ let test_expand_implicit_returns _ =
          elif x:
            return 2
      |}
-    { Location.path = String.hash "test.py";
+    { Location.path = !&"test";
       start = { Location.line = 10; Location.column = 6 };
       stop = { Location.line = 10; Location.column = 14 }
     };
@@ -1667,7 +1667,7 @@ let test_expand_implicit_returns _ =
          else:
            pass
        |}
-    { Location.path = String.hash "test.py";
+    { Location.path = !&"test";
       start = { Location.line = 9; Location.column = 4 };
       stop = { Location.line = 9; Location.column = 8 }
     };
@@ -1686,7 +1686,7 @@ let test_expand_implicit_returns _ =
              if x:
                pass
        |}
-    { Location.path = String.hash "test.py";
+    { Location.path = !&"test";
       start = { Location.line = 13; Location.column = 8 };
       stop = { Location.line = 13; Location.column = 12 }
     };
@@ -1703,7 +1703,7 @@ let test_expand_implicit_returns _ =
            else:
              pass
        |}
-    { Location.path = String.hash "test.py";
+    { Location.path = !&"test";
       start = { Location.line = 11; Location.column = 6 };
       stop = { Location.line = 11; Location.column = 10 }
     }

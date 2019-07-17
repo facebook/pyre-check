@@ -126,8 +126,7 @@ let ignore ~configuration scheduler source_paths errors =
   let create_unused_ignore_error errors unused_ignore =
     let error =
       { Error.location =
-          Location.instantiate (Ignore.location unused_ignore) ~lookup:(fun hash ->
-              Ast.SharedMemory.Handles.get ~hash);
+          Location.instantiate (Ignore.location unused_ignore) ~lookup:Ast.SharedMemory.Handles.get;
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         signature =
           { Node.location = Ignore.location unused_ignore;

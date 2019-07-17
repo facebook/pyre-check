@@ -110,7 +110,7 @@ let test_collect_location _ =
     let actual_locations = Visit.collect_locations source in
     let expected_locations =
       let create_location (start_line, start_column, end_line, end_column) =
-        { Location.path = String.hash "test.py";
+        { Location.path = !&"test";
           start = { Ast.Location.line = start_line; column = start_column };
           stop = { Ast.Location.line = end_line; column = end_column }
         }

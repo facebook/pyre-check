@@ -192,8 +192,7 @@ let to_json callable issue =
         `Assoc ["name", `String "backward"; "roots", sink_traces] ]
   in
   let issue_location =
-    issue.issue_location
-    |> Location.instantiate ~lookup:(fun hash -> SharedMemory.Handles.get ~hash)
+    issue.issue_location |> Location.instantiate ~lookup:SharedMemory.Handles.get
   in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc

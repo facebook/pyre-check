@@ -455,7 +455,7 @@ let test_attributes _ =
           | None -> None
           | Some ((start_line, start_column), (stop_line, stop_column)) ->
               Some
-                { Location.path = String.hash "test.py";
+                { Location.path = !&"test";
                   start = { Location.line = start_line; column = start_column };
                   stop = { Location.line = stop_line; column = stop_column }
                 }
