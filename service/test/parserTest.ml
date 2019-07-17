@@ -8,7 +8,6 @@ open OUnit2
 open Test
 open Ast
 open Pyre
-open Path.AppendOperator
 
 let test_parse_stubs_modules_list context =
   let _ =
@@ -51,139 +50,6 @@ let test_parse_stubs_modules_list context =
   assert_function_matches_name ~qualifier:!&"dir.modb" "dir.modb.f";
   assert_function_matches_name ~qualifier:!&"2.modc" "2.modc.f";
   assert_function_matches_name ~qualifier:!&"2and3.modd" "2and3.modd.f"
-
-
-let test_find_stubs_and_sources context =
-  let assert_sources configuration expected =
-    let handles =
-      Service.Parser.find_stubs_and_sources configuration
-      |> List.map ~f:File.create
-      |> List.map ~f:(File.handle ~configuration)
-      |> List.map ~f:File.Handle.show
-      |> List.sort ~compare:String.compare
-    in
-    assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
-      ~printer:(String.concat ~sep:", ")
-      (List.sort ~compare:String.compare expected)
-      handles
-  in
-  let local_root = Path.create_absolute (bracket_tmpdir context) in
-  let local_subdirectory_root = Path.create_relative ~root:local_root ~relative:"subdirectory" in
-  Sys_utils.mkdir_no_fail (Path.absolute local_subdirectory_root);
-  let module_root = Path.create_absolute (bracket_tmpdir context) in
-  let virtual_root = Path.create_absolute (bracket_tmpdir context) in
-  Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
-  let write_file root relative =
-    File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
-    |> File.write
-  in
-  write_file local_root "a.pyi";
-  write_file local_root "d.py";
-  write_file module_root "a.pyi";
-  write_file module_root "b.pyi";
-  write_file module_root "c.py";
-  write_file local_subdirectory_root "stub.pyi";
-  write_file local_root "ttypes.py";
-  write_file local_root "ttypes.pyi";
-  write_file local_root "dir/legit.pyi";
-  write_file local_root "excluded.pyi";
-  write_file local_root "nested/excluded.pyi";
-  write_file (virtual_root ^| "package") "virtual.py";
-  write_file (virtual_root ^| "package") "virtual.pyi";
-  write_file (virtual_root ^| "external") "other.py";
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.pyi"]
-      ~search_path:
-        [ SearchPath.Root local_subdirectory_root;
-          SearchPath.Root module_root;
-          SearchPath.Subdirectory { root = virtual_root; subdirectory = "package" } ]
-      ()
-  in
-  assert_sources
-    configuration
-    ["a.pyi"; "b.pyi"; "c.py"; "d.py"; "package/virtual.pyi"; "stub.pyi"; "ttypes.pyi"];
-  let configuration = { configuration with Configuration.Analysis.search_path = [] } in
-  assert_sources configuration ["a.pyi"; "d.py"; "subdirectory/stub.pyi"; "ttypes.pyi"]
-
-
-let test_find_sources context =
-  let handles =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
-    let module_root = Path.create_absolute (bracket_tmpdir context) in
-    let virtual_root = Path.create_absolute (bracket_tmpdir context) in
-    Sys_utils.mkdir_no_fail (Path.absolute virtual_root ^ "/package");
-    let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
-      |> File.write
-    in
-    write_file local_root "a.py";
-    write_file local_root "b.py";
-    write_file local_root "b.pyi";
-    write_file module_root "a.pyi";
-    write_file local_root "ttypes.py";
-    write_file local_root "dir/legit.py";
-    write_file local_root "excluded.py";
-    write_file local_root "nested/excluded.py";
-    write_file local_root "c.cconf";
-    write_file local_root "nested/a.cconf";
-    write_file local_root "a.jpg";
-    write_file local_root "nested/a.jpg";
-    write_file local_root "extensionless";
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~excludes:["this/matches/nothing"; ".*/dir"; ".*/excluded.py"]
-        ~extensions:[".cconf"; ""]
-        ~search_path:[SearchPath.Root module_root]
-        ()
-    in
-    Service.Parser.find_stubs_and_sources configuration
-    |> List.map ~f:File.create
-    |> List.map ~f:(File.handle ~configuration)
-    |> List.map ~f:File.Handle.show
-    |> List.sort ~compare:String.compare
-  in
-  assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
-    ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.cconf"; "extensionless"; "nested/a.cconf"; "ttypes.py"]
-    handles
-
-
-let test_external_sources context =
-  let local_root, external_root, handles =
-    let root = Path.create_absolute (bracket_tmpdir context) in
-    let create_path name =
-      let path_name = Path.absolute root ^ name in
-      Sys_utils.mkdir_no_fail path_name;
-      Path.create_absolute path_name
-    in
-    let local_root = create_path "/local" in
-    let external_root = create_path "/external" in
-    let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
-      |> File.write
-    in
-    (* local a.py should be shadowed by external a.py *)
-    write_file local_root "a.py";
-    write_file local_root "b.py";
-    write_file external_root "a.py";
-    let configuration =
-      Configuration.Analysis.create ~local_root ~search_path:[SearchPath.Root external_root] ()
-    in
-    ( local_root,
-      external_root,
-      Service.Parser.find_stubs_and_sources configuration |> List.sort ~compare:Path.compare )
-  in
-  assert_equal
-    ~cmp:(List.equal ~equal:Path.equal)
-    ~printer:(fun paths -> String.concat ~sep:", " (List.map paths ~f:Path.absolute))
-    [ Path.create_relative ~root:external_root ~relative:"a.py";
-      Path.create_relative ~root:local_root ~relative:"b.py" ]
-    handles
 
 
 let test_parse_source context =
@@ -391,9 +257,6 @@ let test_parse_repository context =
 let () =
   "parser"
   >::: [ "parse_stubs_modules_list" >:: test_parse_stubs_modules_list;
-         "find_stubs_and_sources" >:: test_find_stubs_and_sources;
-         "find_sources" >:: test_find_sources;
-         "external_sources" >:: test_external_sources;
          "parse_source" >:: test_parse_source;
          "parse_sources" >:: test_parse_sources;
          "register_modules" >:: test_register_modules;
