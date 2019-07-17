@@ -27,8 +27,19 @@ let test_collect _ =
         let predicate statement = Some statement
       end
       in
-      let module Collector = Visit.Collector (ExpressionPredicate) (StatementPredicate) in
-      Collector.collect (Source.create statements)
+      let module NodePredicate = struct
+        type t = Visit.node
+
+        let predicate node = Some node
+      end
+      in
+      let module Collector =
+        Visit.Collector (ExpressionPredicate) (StatementPredicate) (NodePredicate)
+      in
+      let { Collector.expressions; statements; _ } =
+        Collector.collect (Source.create statements)
+      in
+      expressions, statements
     in
     let equal left right =
       List.equal (fst left) (fst right) ~equal:Expression.equal
@@ -119,18 +130,18 @@ let test_collect_location _ =
       else:
         2
     |}
-    [ (* Integer 2 expression *)
+    [ (* Entire if statement. *)
+      2, 0, 5, 3;
+      (* Integer 2 expression *)
+      5, 2, 5, 3;
+      (* orelse statement *)
       5, 2, 5, 3;
       (* Integer 1 expression *)
       3, 2, 3, 3;
-      (* test expression *)
-      2, 3, 2, 7;
-      (* Entire if statement. *)
-      2, 0, 5, 3;
-      (* orelse statement *)
-      5, 2, 5, 3;
       (* body statement *)
-      3, 2, 3, 3 ]
+      3, 2, 3, 3;
+      (* test expression *)
+      2, 3, 2, 7 ]
 
 
 let test_node_visitor _ =

@@ -288,28 +288,53 @@ module type StatementPredicate = sig
   val predicate : Statement.t -> t option
 end
 
+module type NodePredicate = sig
+  type t
+
+  val predicate : node -> t option
+end
+
 module Collector
     (ExpressionPredicate : ExpressionPredicate)
-    (StatementPredicate : StatementPredicate) =
+    (StatementPredicate : StatementPredicate)
+    (NodePredicate : NodePredicate) =
 struct
+  type collection = {
+    expressions: ExpressionPredicate.t list;
+    statements: StatementPredicate.t list;
+    nodes: NodePredicate.t list
+  }
+
   let collect source =
     let module CollectingVisitor = struct
-      type t = ExpressionPredicate.t list * StatementPredicate.t list
+      type t = collection
 
-      let expression (expressions, statements) expression =
+      let expression ({ expressions; _ } as state) expression =
         match ExpressionPredicate.predicate expression with
-        | Some result -> result :: expressions, statements
-        | None -> expressions, statements
+        | Some result -> { state with expressions = result :: expressions }
+        | None -> state
 
 
-      let statement (expressions, statements) statement =
+      let statement ({ statements; _ } as state) statement =
         match StatementPredicate.predicate statement with
-        | Some result -> expressions, result :: statements
-        | None -> expressions, statements
+        | Some result -> { state with statements = result :: statements }
+        | None -> state
+
+
+      let node ({ nodes; _ } as state) node =
+        let state =
+          match node with
+          | Expression expression_node -> expression state expression_node
+          | Statement statement_node -> statement state statement_node
+          | _ -> state
+        in
+        match NodePredicate.predicate node with
+        | Some result -> { state with nodes = result :: nodes }
+        | None -> state
     end
     in
-    let module CollectingVisit = Make (CollectingVisitor) in
-    CollectingVisit.visit ([], []) source
+    let module CollectingVisit = MakeNodeVisitor (CollectingVisitor) in
+    CollectingVisit.visit { expressions = []; statements = []; nodes = [] } source
 end
 
 module UnitPredicate = struct
@@ -322,8 +347,9 @@ end
 
 module ExpressionCollector (Predicate : ExpressionPredicate) = struct
   let collect source =
-    let module Collector = Collector (Predicate) (UnitPredicate) in
-    Collector.collect source |> fst
+    let module Collector = Collector (Predicate) (UnitPredicate) (UnitPredicate) in
+    let { Collector.expressions; _ } = Collector.collect source in
+    expressions
 end
 
 module StatementCollector (Predicate : StatementPredicate) = struct
@@ -341,39 +367,29 @@ module StatementCollector (Predicate : StatementPredicate) = struct
   let collect source = CollectingVisit.visit [] source
 end
 
+module NodeCollector (Predicate : NodePredicate) = struct
+  let collect source =
+    let module Collector = Collector (UnitPredicate) (UnitPredicate) (Predicate) in
+    let { Collector.nodes; _ } = Collector.collect source in
+    nodes
+end
+
 let collect_locations source =
   let module Collector =
-    Collector
+    Collector (UnitPredicate) (UnitPredicate)
       (struct
-        type t = Location.t list
+        type t = Location.t
 
-        let predicate { Node.location; value } =
-          (* Pick up locations on Identifier nodes. *)
-          match value with
-          | Call { arguments; _ } ->
-              let extract_locations sofar = function
-                | { Call.Argument.name = Some { Node.location; _ }; _ } -> location :: sofar
-                | _ -> sofar
-              in
-              List.fold ~f:extract_locations ~init:[location] arguments |> Option.some
-          | Lambda { parameters; _ } -> Some (List.map ~f:Node.location parameters)
-          | String { kind = Mixed substrings; _ } -> Some (List.map ~f:Node.location substrings)
-          | _ -> Some [location]
-      end)
-      (struct
-        type t = Location.t list
-
-        let visit_children _ = true
-
-        let predicate { Node.location; value } =
-          match value with
-          | Define { signature = { Define.parameters; _ }; _ } ->
-              Some (List.map ~f:Node.location parameters)
-          | _ -> Some [location]
+        let predicate = function
+          | Expression node -> Some (Node.location node)
+          | Statement node -> Some (Node.location node)
+          | Identifier node -> Some (Node.location node)
+          | Parameter node -> Some (Node.location node)
+          | Substring node -> Some (Node.location node)
       end)
   in
-  let expression_locations, statement_locations = Collector.collect source in
-  List.concat expression_locations @ List.concat statement_locations
+  let { Collector.nodes; _ } = Collector.collect source in
+  nodes
 
 
 let collect_calls statement =

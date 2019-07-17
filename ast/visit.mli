@@ -68,10 +68,23 @@ module type StatementPredicate = sig
   val predicate : Statement.t -> t option
 end
 
+module type NodePredicate = sig
+  type t
+
+  val predicate : node -> t option
+end
+
 module Collector
     (ExpressionPredicate : ExpressionPredicate)
-    (StatementPredicate : StatementPredicate) : sig
-  val collect : Source.t -> ExpressionPredicate.t list * StatementPredicate.t list
+    (StatementPredicate : StatementPredicate)
+    (NodePredicate : NodePredicate) : sig
+  type collection = {
+    expressions: ExpressionPredicate.t list;
+    statements: StatementPredicate.t list;
+    nodes: NodePredicate.t list
+  }
+
+  val collect : Source.t -> collection
 end
 
 module ExpressionCollector (Predicate : ExpressionPredicate) : sig
@@ -79,6 +92,10 @@ module ExpressionCollector (Predicate : ExpressionPredicate) : sig
 end
 
 module StatementCollector (Predicate : StatementPredicate) : sig
+  val collect : Source.t -> Predicate.t list
+end
+
+module NodeCollector (Predicate : NodePredicate) : sig
   val collect : Source.t -> Predicate.t list
 end
 
