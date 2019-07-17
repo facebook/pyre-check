@@ -38,9 +38,7 @@
               "start": 4,
               "end": 5
             },
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.MyList.append" }
-            ]
+            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ]
           }
         ]
       }
@@ -91,9 +89,7 @@
               "length": 1
             },
             "tito": [ { "line": 48, "start": 13, "end": 16 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.MyList.append" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -140,9 +136,7 @@
               "start": 16,
               "end": 17
             },
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg1" }
-            ]
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ]
           }
         ]
       }
@@ -188,9 +182,7 @@
               "start": 33,
               "end": 34
             },
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg2" }
-            ]
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ]
           }
         ]
       }
@@ -241,9 +233,7 @@
               "length": 1
             },
             "tito": [ { "line": 23, "start": 19, "end": 22 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg1" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -295,9 +285,7 @@
               "length": 1
             },
             "tito": [ { "line": 32, "start": 16, "end": 19 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg2" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -338,9 +326,7 @@
               "end": 5
             },
             "tito": [ { "line": 48, "start": 13, "end": 16 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.MyList.append" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.l" } ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -366,9 +352,7 @@
               "end": 17
             },
             "tito": [ { "line": 23, "start": 19, "end": 22 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg1" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -394,9 +378,7 @@
               "end": 22
             },
             "tito": [ { "line": 32, "start": 16, "end": 19 } ],
-            "leaves": [
-              { "kind": "Test", "name": "global_flows.update_arg2" }
-            ],
+            "leaves": [ { "kind": "Test", "name": "global_flows.x" } ],
             "features": [ { "via": "tito" } ]
           }
         ]

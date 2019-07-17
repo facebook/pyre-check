@@ -623,7 +623,11 @@ let get_global_model ~resolution ~expression =
         let annotation =
           match Resolution.resolve resolution base with
           | Type.Optional annotation -> annotation
-          | annotation -> annotation
+          | annotation ->
+              if Type.is_meta annotation then
+                Type.single_parameter annotation
+              else
+                annotation
         in
         annotation
         |> Type.class_name
@@ -634,13 +638,26 @@ let get_global_model ~resolution ~expression =
   call_target >>| Callable.create_object >>| fun call_target -> get_callsite_model ~call_target
 
 
-let get_global_sink_model ~resolution ~expression =
-  get_global_model ~resolution ~expression
-  >>| fun { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ } ->
-  BackwardState.read
-    ~root:(AccessPath.Root.PositionalParameter { position = 0; name = "$global" })
-    ~path:[]
-    sink_taint
+let get_global_sink_model ~resolution ~location ~expression =
+  let to_sink { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ } =
+    let name =
+      expression
+      (* To handle the pattern of $local_module$item *)
+      |> Expression.delocalize
+      |> Expression.show
+      (* To handle the qualification of $parameter$x. *)
+      |> Identifier.sanitized
+    in
+    BackwardState.read
+      ~root:(AccessPath.Root.PositionalParameter { position = 0; name = "$global" })
+      ~path:[]
+      sink_taint
+    |> BackwardState.Tree.apply_call
+         location
+         ~callees:[`Function name]
+         ~port:AccessPath.Root.LocalResult
+  in
+  get_global_model ~resolution ~expression >>| to_sink
 
 
 let parse ~resolution ?path ~source ~configuration models =

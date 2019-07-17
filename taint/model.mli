@@ -20,6 +20,7 @@ val get_callsite_model : call_target:[< Callable.t ] -> t
 
 val get_global_sink_model
   :  resolution:Resolution.t ->
+  location:Location.t ->
   expression:Expression.t ->
   Domains.BackwardState.Tree.t option
 

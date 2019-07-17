@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+class_flows.tainted_attribute_flow (fun) -> [__test_source (fun)]
+class_flows.tainted_attribute_for_class (fun) -> [__test_source (fun)]
+class_flows.tainted_attribute_through_inheritance (fun) -> [__test_source (fun)]
+class_flows.untainted_flow (fun) -> [__test_source (fun)]

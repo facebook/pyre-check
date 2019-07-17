@@ -120,13 +120,13 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.join taint_tree
           in
           let get_argument_taint ~resolution ~argument:{ Call.Argument.value = argument; _ } state =
-            match Model.get_global_sink_model ~resolution ~expression:argument with
-            | Some global_taint ->
-                global_taint
-                |> BackwardState.Tree.apply_call
-                     (Node.location argument)
-                     ~callees:[call_target]
-                     ~port:AccessPath.Root.LocalResult
+            match
+              Model.get_global_sink_model
+                ~resolution
+                ~location:(Node.location argument)
+                ~expression:argument
+            with
+            | Some global_taint -> global_taint
             | None ->
                 let access_path = of_expression ~resolution argument in
                 get_taint access_path state
@@ -446,7 +446,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               get_taint access_path state
             in
             let global_taint =
-              Model.get_global_sink_model ~resolution ~expression:target
+              let location = target.Node.location in
+              Model.get_global_sink_model ~resolution ~location ~expression:target
               |> Option.value ~default:BackwardState.Tree.empty
             in
             BackwardState.Tree.join local_taint global_taint

@@ -1,0 +1,91 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_attribute_flow",
+    "callable_line": 12,
+    "code": 5002,
+    "line": 13,
+    "start": 4,
+    "end": 23,
+    "filename": "class_flows.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 13,
+              "start": 39,
+              "end": 41
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 13,
+              "start": 4,
+              "end": 23
+            },
+            "leaves": [ { "kind": "Test", "name": "c.tainted_attribute" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_attribute_for_class",
+    "callable_line": 18,
+    "code": 5002,
+    "line": 19,
+    "start": 4,
+    "end": 23,
+    "filename": "class_flows.py",
+    "message":
+      "Test flow. Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 19,
+              "start": 39,
+              "end": 41
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" } ]
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "root": {
+              "filename": "class_flows.py",
+              "line": 19,
+              "start": 4,
+              "end": 23
+            },
+            "leaves": [ { "kind": "Test", "name": "c.tainted_attribute" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

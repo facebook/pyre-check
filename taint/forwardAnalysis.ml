@@ -289,17 +289,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
               =
               let location = argument.Node.location in
               begin
-                match Model.get_global_sink_model ~resolution ~expression:argument with
+                match Model.get_global_sink_model ~resolution ~location ~expression:argument with
                 | None -> ()
-                | Some sink_tree ->
-                    let sink_tree =
-                      sink_tree
-                      |> BackwardState.Tree.apply_call
-                           location
-                           ~callees:[call_target]
-                           ~port:AccessPath.Root.LocalResult
-                    in
-                    FunctionContext.check_flow ~location ~source_tree ~sink_tree
+                | Some sink_tree -> FunctionContext.check_flow ~location ~source_tree ~sink_tree
               end;
               let access_path = AccessPath.of_expression ~resolution argument in
               store_taint_option ~weak:true access_path source_tree state
@@ -614,7 +606,7 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Check flows to tainted globals/attributes. *)
           let source_tree = taint in
           let sink_tree =
-            Model.get_global_sink_model ~resolution ~expression:target
+            Model.get_global_sink_model ~resolution ~location ~expression:target
             |> Option.value ~default:BackwardState.Tree.empty
           in
           FunctionContext.check_flow ~location ~source_tree ~sink_tree;

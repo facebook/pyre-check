@@ -43,7 +43,9 @@
               "length": 1
             },
             "tito": [ { "line": 62, "start": 30, "end": 33 } ],
-            "leaves": [ { "kind": "Test", "name": "dict.update" } ],
+            "leaves": [
+              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+            ],
             "features": [ { "via": "tito" } ]
           }
         ]
@@ -90,7 +92,9 @@
               "start": 4,
               "end": 22
             },
-            "leaves": [ { "kind": "Test", "name": "dict.update" } ]
+            "leaves": [
+              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+            ]
           }
         ]
       }
@@ -295,7 +299,9 @@
               "end": 22
             },
             "tito": [ { "line": 62, "start": 30, "end": 33 } ],
-            "leaves": [ { "kind": "Test", "name": "dict.update" } ],
+            "leaves": [
+              { "kind": "Test", "name": "dictionary.tainted_dictionary" }
+            ],
             "features": [ { "via": "tito" } ]
           }
         ]
