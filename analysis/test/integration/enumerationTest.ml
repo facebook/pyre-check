@@ -124,7 +124,7 @@ let test_check_enumeration_attributes _ =
     {|
       class A(enum.Enum):
           x = ""
-          def __init__(self) -> None:
+          def __init__(self, _) -> None:
               self.x: str = "another string"
       reveal_type(A.x)
     |}
