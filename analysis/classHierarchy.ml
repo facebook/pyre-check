@@ -356,23 +356,33 @@ let successors ((module Handler : Handler) as order) annotation =
   | [] -> []
 
 
+type variables = Unaries of Type.Variable.Unary.t list
+
 let variables (module Handler : Handler) = function
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)
-      Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
+      Some (Unaries [Type.Variable.Unary.create ~variance:Covariant "_T_meta"])
   | "typing.Callable" ->
       (* This is not the "real" typing.Callable. We are just proxying to the Callable instance in
          the type order here. *)
-      Some [Type.Variable (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
+      Some (Unaries [Type.Variable.Unary.create ~variance:Covariant "_T_meta"])
   | node ->
+      let clean parameters =
+        List.map parameters ~f:(function
+            | Type.Variable variable -> Some variable
+            | _ -> None)
+        |> Option.all
+        >>| fun unaries -> Unaries unaries
+      in
       Handler.find (Handler.indices ()) generic_primitive
       >>= fun generic_index ->
       Handler.find (Handler.indices ()) node
       >>= fun primitive_index ->
       Handler.find (Handler.edges ()) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } -> target = generic_index)
-      >>| fun { Target.parameters; _ } -> parameters
+      >>| (fun { Target.parameters; _ } -> parameters)
+      >>= clean
 
 
 let get_generic_parameters ~generic_index edges =

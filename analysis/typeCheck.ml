@@ -1062,9 +1062,12 @@ module State (Context : Context) = struct
                       in
                       match variables with
                       | None
-                      | Some [] ->
+                      | Some (Unaries []) ->
                           parent_type
-                      | Some variables ->
+                      | Some (Unaries variables) ->
+                          let variables =
+                            List.map variables ~f:(fun variable -> Type.Variable variable)
+                          in
                           Type.Parametric { name = parent_name; parameters = variables }
                       | exception _ -> parent_type
                     in

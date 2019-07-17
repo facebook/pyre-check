@@ -491,18 +491,21 @@ let is_invariance_mismatch resolution ~left ~right =
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
-        ClassHierarchy.variables (order resolution) left_name
-        >>= fun variables ->
-        List.map3 variables left_parameters right_parameters ~f:(fun variable left right ->
-            variable, left, right)
-        |> function
-        | List.Or_unequal_lengths.Ok list -> Some list
-        | _ -> None
+        match ClassHierarchy.variables (order resolution) left_name with
+        | Some (Unaries variables) -> (
+            List.map3
+              variables
+              left_parameters
+              right_parameters
+              ~f:(fun { variance; _ } left right -> variance, left, right)
+            |> function
+            | List.Or_unequal_lengths.Ok list -> Some list
+            | _ -> None )
+        | None -> None
       in
-      let due_to_invariant_variable (variable, left, right) =
-        match variable with
-        | Type.Variable { variance = Type.Variable.Unary.Invariant; _ } ->
-            less_or_equal resolution ~left ~right
+      let due_to_invariant_variable (variance, left, right) =
+        match variance with
+        | Type.Variable.Unary.Invariant -> less_or_equal resolution ~left ~right
         | _ -> false
       in
       zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false

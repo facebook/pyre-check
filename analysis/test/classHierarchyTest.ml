@@ -299,7 +299,7 @@ let test_variables _ =
   in
   let assert_variables ~expected source = assert_equal expected (variables order source) in
   assert_variables ~expected:None "B";
-  assert_variables ~expected:(Some [Type.variable "T"]) "A";
+  assert_variables ~expected:(Some (Unaries [Type.Variable.Unary.create "T"])) "A";
 
   assert_variables ~expected:None "Nonexistent"
 

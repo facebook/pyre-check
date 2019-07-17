@@ -123,7 +123,9 @@ val method_resolution_order_linearize
 
 val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
-val variables : (module Handler) -> Type.Primitive.t -> Type.t list option
+type variables = Unaries of Type.Variable.Unary.t list
+
+val variables : (module Handler) -> Type.Primitive.t -> variables option
 
 val least_upper_bound
   :  (module Handler) ->

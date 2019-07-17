@@ -458,38 +458,44 @@ module OrderImplementation = struct
                 solve_less_or_equal order ~constraints ~left ~right)
       | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
           let solve_parameters left_parameters =
-            let solve_parameter_pair constraints (variable, (left, right)) =
-              match left, right, variable with
-              (* TODO kill these special cases *)
-              | Type.Bottom, _, _ ->
-                  (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its variance. *)
-                  constraints
-              | _, Type.Top, _ ->
-                  (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its variance. *)
-                  constraints
-              | Type.Top, _, _ -> []
-              | _, _, Type.Variable { variance = Covariant; _ } ->
-                  constraints
-                  |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left ~right)
-              | _, _, Type.Variable { variance = Contravariant; _ } ->
-                  constraints
-                  |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left:right ~right:left)
-              | _, _, Type.Variable { variance = Invariant; _ } ->
-                  constraints
-                  |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left ~right)
-                  |> List.concat_map ~f:(fun constraints ->
-                         solve_less_or_equal order ~constraints ~left:right ~right:left)
-              | _ -> []
+            let handle_variables variables =
+              match variables with
+              | ClassHierarchy.Unaries variables ->
+                  let solve_parameter_pair constraints (variable, (left, right)) =
+                    match left, right, variable with
+                    (* TODO kill these special cases *)
+                    | Type.Bottom, _, _ ->
+                        (* T[Bottom] is a subtype of T[_T2], for any _T2 and regardless of its
+                           variance. *)
+                        constraints
+                    | _, Type.Top, _ ->
+                        (* T[_T2] is a subtype of T[Top], for any _T2 and regardless of its
+                           variance. *)
+                        constraints
+                    | Type.Top, _, _ -> []
+                    | _, _, { Type.Variable.Unary.variance = Covariant; _ } ->
+                        constraints
+                        |> List.concat_map ~f:(fun constraints ->
+                               solve_less_or_equal order ~constraints ~left ~right)
+                    | _, _, { variance = Contravariant; _ } ->
+                        constraints
+                        |> List.concat_map ~f:(fun constraints ->
+                               solve_less_or_equal order ~constraints ~left:right ~right:left)
+                    | _, _, { variance = Invariant; _ } ->
+                        constraints
+                        |> List.concat_map ~f:(fun constraints ->
+                               solve_less_or_equal order ~constraints ~left ~right)
+                        |> List.concat_map ~f:(fun constraints ->
+                               solve_less_or_equal order ~constraints ~left:right ~right:left)
+                  in
+                  let zip_on_parameters variables =
+                    List.zip left_parameters right_parameters >>= List.zip variables
+                  in
+                  variables
+                  |> zip_on_parameters
+                  >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
             in
-            let zip_on_parameters variables =
-              List.zip left_parameters right_parameters >>= List.zip variables
-            in
-            ClassHierarchy.variables handler right_name
-            >>= zip_on_parameters
-            >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
+            ClassHierarchy.variables handler right_name >>= handle_variables
           in
           let parameters =
             let parameters =
@@ -900,18 +906,17 @@ module OrderImplementation = struct
                   in
                   let variables = ClassHierarchy.variables handler target in
                   let parameters =
-                    let join_parameters left right variable =
-                      match left, right, variable with
+                    let join_parameters left right { Type.Variable.Unary.variance; _ } =
+                      match left, right, variance with
                       | Type.Bottom, other, _
                       | other, Type.Bottom, _ ->
                           other
                       | Type.Top, _, _
                       | _, Type.Top, _ ->
                           Type.Top
-                      | _, _, Type.Variable { variance = Covariant; _ } -> join order left right
-                      | _, _, Type.Variable { variance = Contravariant; _ } ->
-                          meet order left right
-                      | _, _, Type.Variable { variance = Invariant; _ } ->
+                      | _, _, Covariant -> join order left right
+                      | _, _, Contravariant -> meet order left right
+                      | _, _, Invariant ->
                           if
                             always_less_or_equal order ~left ~right
                             && always_less_or_equal order ~left:right ~right:left
@@ -921,19 +926,9 @@ module OrderImplementation = struct
                             (* We fallback to Type.Any if type equality fails to help display
                                meaningful error messages. *)
                             Type.Any
-                      | _ ->
-                          Log.warning
-                            "Cannot join %a and %a, not a variable: %a"
-                            Type.pp
-                            left
-                            Type.pp
-                            right
-                            Type.pp
-                            variable;
-                          Type.Any
                     in
                     match left_parameters, right_parameters, variables with
-                    | Some left, Some right, Some variables
+                    | Some left, Some right, Some (Unaries variables)
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
                         let join_parameters left right variable =
@@ -1162,8 +1157,8 @@ module OrderImplementation = struct
                   in
                   let variables = ClassHierarchy.variables handler target in
                   let parameters =
-                    let meet_parameters left right variable =
-                      match left, right, variable with
+                    let meet_parameters left right { Type.Variable.Unary.variance; _ } =
+                      match left, right, variance with
                       | Type.Bottom, _, _
                       | _, Type.Bottom, _ ->
                           Type.Bottom
@@ -1173,10 +1168,9 @@ module OrderImplementation = struct
                       | Type.Any, _, _
                       | _, Type.Any, _ ->
                           Type.Bottom
-                      | _, _, Type.Variable { variance = Covariant; _ } -> meet order left right
-                      | _, _, Type.Variable { variance = Contravariant; _ } ->
-                          join order left right
-                      | _, _, Type.Variable { variance = Invariant; _ } ->
+                      | _, _, Covariant -> meet order left right
+                      | _, _, Contravariant -> join order left right
+                      | _, _, Invariant ->
                           if
                             always_less_or_equal order ~left ~right
                             && always_less_or_equal order ~left:right ~right:left
@@ -1186,19 +1180,9 @@ module OrderImplementation = struct
                             (* We fallback to Type.Bottom if type equality fails to help display
                                meaningful error messages. *)
                             Type.Bottom
-                      | _ ->
-                          Log.warning
-                            "Cannot meet %a and %a, not a variable: %a"
-                            Type.pp
-                            left
-                            Type.pp
-                            right
-                            Type.pp
-                            variable;
-                          Type.Bottom
                     in
                     match left_parameters, right_parameters, variables with
-                    | Some left, Some right, Some variables
+                    | Some left, Some right, Some (Unaries variables)
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
                         Some (List.map3_exn ~f:meet_parameters left right variables)
@@ -1336,20 +1320,19 @@ module OrderImplementation = struct
           match assumed_protocol_parameters with
           | Some result -> Some result
           | None -> (
-              let protocol_generics =
-                ClassHierarchy.variables handler protocol
-                >>| List.map ~f:(function
-                        | Type.Variable variable -> Some variable
-                        | _ -> None)
-                >>= Option.all
-                >>| List.map ~f:(fun variable -> Type.Variable variable)
-              in
+              let protocol_generics = ClassHierarchy.variables handler protocol in
               let new_assumptions =
+                let protocol_parameters =
+                  match protocol_generics with
+                  | Some (Unaries variables) ->
+                      List.map variables ~f:(fun variable -> Type.Variable variable)
+                  | None -> []
+                in
                 ProtocolAssumptions.add
                   protocol_assumptions
                   ~candidate
                   ~protocol
-                  ~protocol_parameters:(Option.value protocol_generics ~default:[])
+                  ~protocol_parameters
               in
               let protocol_attributes =
                 let is_not_object_or_generic_method
@@ -1460,10 +1443,13 @@ module OrderImplementation = struct
                       in
                       Type.instantiate ~constraints
                     in
-                    protocol_generics
-                    >>| List.map ~f:(TypeConstraints.Solution.instantiate solution)
-                    >>| List.map ~f:desanitize
-                    |> Option.value ~default:[]
+                    let instantiate_and_desanitize = function
+                      | ClassHierarchy.Unaries variables ->
+                          List.map variables ~f:(fun variable -> Type.Variable variable)
+                          |> List.map ~f:(TypeConstraints.Solution.instantiate solution)
+                          |> List.map ~f:desanitize
+                    in
+                    protocol_generics >>| instantiate_and_desanitize |> Option.value ~default:[]
                   in
                   Identifier.Map.merge
                     (build_attribute_map all_candidate_attributes)
