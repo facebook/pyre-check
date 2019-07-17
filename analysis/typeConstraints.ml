@@ -198,6 +198,24 @@ module Solution = struct
 
   let instantiate_single_variable { unaries; _ } = UnaryVariable.Map.find unaries
 
+  let instantiate_single_list_variadic_variable { list_variadics; _ } =
+    ListVariadic.Map.find list_variadics
+
+
+  let instantiate_ordered_types solution = function
+    | Type.OrderedTypes.Concrete concretes ->
+        List.map concretes ~f:(instantiate solution)
+        |> fun concretes -> Type.OrderedTypes.Concrete concretes
+    | Any -> Any
+    | Map map ->
+        let replacement = instantiate_single_list_variadic_variable solution in
+        Type.OrderedTypes.Map.replace_variable map ~replacement
+        |> Option.value ~default:(Type.OrderedTypes.Map map)
+    | Variable variable ->
+        instantiate_single_list_variadic_variable solution variable
+        |> Option.value ~default:(Type.OrderedTypes.Variable variable)
+
+
   let set ({ unaries; callable_parameters; list_variadics } as solution) = function
     | Type.Variable.UnaryPair (key, data) ->
         { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }

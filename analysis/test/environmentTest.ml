@@ -448,11 +448,11 @@ let test_connect_definition _ =
       (List.mem
          ~equal:ClassHierarchy.Target.equal
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.edges ()) predecessor_index)
-         { ClassHierarchy.Target.target = successor_index; parameters = [] });
+         { ClassHierarchy.Target.target = successor_index; parameters = Concrete [] });
     assert_true
       (ClassHierarchy.Target.Set.mem
          (TypeOrderHandler.find_unsafe (TypeOrderHandler.backedges ()) successor_index)
-         { ClassHierarchy.Target.target = predecessor_index; parameters = [] })
+         { ClassHierarchy.Target.target = predecessor_index; parameters = Concrete [] })
   in
   let class_definition =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
@@ -627,7 +627,12 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"_T") (Type.variable "_T");
   assert_equal (parse_annotation environment !"S") Type.string;
   assert_equal (parse_annotation environment !"S2") Type.string;
-  let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
+  let assert_superclasses
+      ?(superclass_parameters = fun _ -> Type.OrderedTypes.Concrete [])
+      ~environment
+      base
+      ~superclasses
+    =
     let (module Handler : Environment.Handler) = environment in
     let index annotation =
       Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
@@ -646,8 +651,7 @@ let test_populate _ =
             let target =
               Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.annotations ()) target
             in
-            let parameters = List.to_string parameters ~f:Type.show in
-            Format.sprintf "%s: %s%s" index target parameters
+            Format.asprintf "%s: %s%a" index target Type.OrderedTypes.pp_concise parameters
           in
           List.to_string targets ~f:show_target
     in
@@ -827,9 +831,10 @@ let test_populate _ =
   let type_parameters annotation =
     match annotation with
     | "typing.Callable" ->
-        [ parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
-          |> Type.create ~aliases:(fun _ -> None) ]
-    | _ -> []
+        Type.OrderedTypes.Concrete
+          [ parse_single_expression "typing.Callable('CallMe.__call__')[[Named(x, int)], str]"
+            |> Type.create ~aliases:(fun _ -> None) ]
+    | _ -> Type.OrderedTypes.Concrete []
   in
   assert_superclasses
     ~superclass_parameters:type_parameters

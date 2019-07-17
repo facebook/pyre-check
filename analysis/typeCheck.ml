@@ -1069,6 +1069,10 @@ module State (Context : Context) = struct
                             List.map variables ~f:(fun variable -> Type.Variable variable)
                           in
                           Type.Parametric { name = parent_name; parameters = variables }
+                      | Some (ListVariadic _) ->
+                          (* TODO(T47346441): Return a parametric when we can make parametrics with
+                             listvariadics *)
+                          parent_type
                       | exception _ -> parent_type
                     in
                     if Define.is_class_method define || Define.is_class_property define then

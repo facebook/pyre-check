@@ -21,7 +21,7 @@ exception Untracked of Type.t
 module Target = struct
   type t = {
     target: int;
-    parameters: Type.t list
+    parameters: Type.OrderedTypes.t
   }
   [@@deriving compare, eq, sexp, show]
 
@@ -134,10 +134,7 @@ let pp format { edges; backedges; annotations; _ } =
     let annotation index = Hashtbl.find_exn annotations index in
     let targets =
       let target { Target.target; parameters } =
-        Format.sprintf
-          "%s [%s]"
-          (annotation target)
-          (List.map ~f:(Format.asprintf "%a" Type.pp) parameters |> String.concat ~sep:", ")
+        Format.asprintf "%s [%a]" (annotation target) Type.OrderedTypes.pp_concise parameters
       in
       targets |> List.map ~f:target |> String.concat ~sep:", "
     in
@@ -205,7 +202,12 @@ let insert (module Handler : Handler) annotation =
     Handler.set (Handler.backedges ()) ~key:index ~data:Target.Set.empty )
 
 
-let connect ?(parameters = []) ((module Handler : Handler) as order) ~predecessor ~successor =
+let connect
+    ?(parameters = Type.OrderedTypes.Concrete [])
+    ((module Handler : Handler) as order)
+    ~predecessor
+    ~successor
+  =
   if
     (not (Handler.contains (Handler.indices ()) predecessor))
     || not (Handler.contains (Handler.indices ()) successor)
@@ -356,7 +358,22 @@ let successors ((module Handler : Handler) as order) annotation =
   | [] -> []
 
 
-type variables = Unaries of Type.Variable.Unary.t list
+type variables =
+  | Unaries of Type.Variable.Unary.t list
+  | ListVariadic of Type.Variable.Variadic.List.t
+
+let clean = function
+  | Type.OrderedTypes.Concrete parameters ->
+      List.map parameters ~f:(function
+          | Type.Variable variable -> Some variable
+          | _ -> None)
+      |> Option.all
+      >>| fun unaries -> Unaries unaries
+  | Variable variable -> Some (ListVariadic variable)
+  | Map _
+  | Any ->
+      None
+
 
 let variables (module Handler : Handler) = function
   | "type" ->
@@ -368,13 +385,6 @@ let variables (module Handler : Handler) = function
          the type order here. *)
       Some (Unaries [Type.Variable.Unary.create ~variance:Covariant "_T_meta"])
   | node ->
-      let clean parameters =
-        List.map parameters ~f:(function
-            | Type.Variable variable -> Some variable
-            | _ -> None)
-        |> Option.all
-        >>| fun unaries -> Unaries unaries
-      in
       Handler.find (Handler.indices ()) generic_primitive
       >>= fun generic_index ->
       Handler.find (Handler.indices ()) node
@@ -515,7 +525,7 @@ let is_transitive_successor ((module Handler : Handler) as handler) ~source ~tar
   raise_if_untracked handler source;
   raise_if_untracked handler target;
   let worklist = Queue.create () in
-  Queue.enqueue worklist { Target.target = index_of handler source; parameters = [] };
+  Queue.enqueue worklist { Target.target = index_of handler source; parameters = Concrete [] };
   let rec iterate worklist =
     match Queue.dequeue worklist with
     | Some { Target.target = current; _ } ->
@@ -535,20 +545,28 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   let generic_index = Handler.find (Handler.indices ()) generic_primitive in
   match source with
   | Type.Bottom ->
+      let set_to_anys = function
+        | Type.OrderedTypes.Concrete concrete ->
+            List.map concrete ~f:(fun _ -> Type.Any) |> fun anys -> Type.OrderedTypes.Concrete anys
+        | Map _
+        | Variable _
+        | Any ->
+            Type.OrderedTypes.Any
+      in
       index_of handler target
       |> Handler.find (Handler.edges ())
       >>= get_generic_parameters ~generic_index
-      >>| List.map ~f:(fun _ -> Type.Any)
+      >>| set_to_anys
   | _ ->
       let split =
         match Type.split source with
         | Primitive primitive, _ when not (contains handler primitive) -> None
         | Primitive "tuple", parameters ->
             let union = Type.OrderedTypes.union_upper_bound parameters |> Type.weaken_literals in
-            Some ("tuple", [union])
-        | Primitive primitive, Concrete concretes -> Some (primitive, concretes)
-        | _, _ ->
-            (* TODO(T45097646): we don't generally support propagating list variadics yet *)
+            Some ("tuple", Type.OrderedTypes.Concrete [union])
+        | Primitive primitive, parameters -> Some (primitive, parameters)
+        | _ ->
+            (* We can only propagate from those that actually split off a primitive *)
             None
       in
       let handle_split (primitive, parameters) =
@@ -565,25 +583,39 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                    instantiates the supertypes accordingly. *)
                 let get_instantiated_successors ~generic_index ~parameters successors =
                   let variables =
-                    get_generic_parameters successors ~generic_index |> Option.value ~default:[]
+                    get_generic_parameters successors ~generic_index
+                    >>= clean
+                    |> Option.value ~default:(Unaries [])
                   in
-                  let parameters =
-                    if List.length variables = List.length parameters then
-                      parameters
-                    else
-                      (* This is the specified behavior for empty parameters, and other mismatched
-                         lengths should have an error at the declaration site, and this behavior
-                         seems reasonable *)
-                      List.init (List.length variables) ~f:(fun _ -> Type.Any)
+                  let replacement =
+                    match variables with
+                    | Unaries variables -> (
+                        let zipped =
+                          match parameters with
+                          | Type.OrderedTypes.Concrete parameters -> List.zip variables parameters
+                          | Variable _
+                          | Any
+                          | Map _ ->
+                              None
+                        in
+                        match zipped with
+                        | Some pairs ->
+                            List.map pairs ~f:(fun (variable, parameter) ->
+                                Type.Variable.UnaryPair (variable, parameter))
+                        | None ->
+                            (* This is the specified behavior for empty parameters, and other
+                               mismatched lengths should have an error at the declaration site, and
+                               this behavior seems reasonable *)
+                            List.map variables ~f:(fun variable ->
+                                Type.Variable.UnaryPair (variable, Type.Any)) )
+                    | ListVariadic variable ->
+                        [Type.Variable.ListVariadicPair (variable, parameters)]
                   in
-                  let constraints =
-                    List.zip_exn variables parameters
-                    |> Type.Map.of_alist_reduce ~f:(fun first _ -> first)
-                    |> Map.find
-                  in
+                  let replacement = TypeConstraints.Solution.create replacement in
                   let instantiate_parameters { Target.target; parameters } =
                     { Target.target;
-                      parameters = List.map parameters ~f:(Type.instantiate ~constraints)
+                      parameters =
+                        TypeConstraints.Solution.instantiate_ordered_types replacement parameters
                     }
                   in
                   List.map successors ~f:instantiate_parameters
@@ -612,7 +644,7 @@ let instantiate_predecessors_parameters
     ~step
   =
   match Type.split source with
-  | Type.Primitive primitive, Concrete parameters ->
+  | Type.Primitive primitive, parameters ->
       raise_if_untracked handler primitive;
       raise_if_untracked handler target;
       let generic_index = Handler.find (Handler.indices ()) generic_primitive in
@@ -632,7 +664,7 @@ let instantiate_predecessors_parameters
                 let generic_parameters =
                   Handler.find (Handler.edges ()) target
                   >>= get_generic_parameters ~generic_index
-                  |> Option.value ~default:[]
+                  |> Option.value ~default:(Type.OrderedTypes.Concrete [])
                 in
                 (* Mappings from the generic variables, as they appear in the predecessor, to the
                    instantiated parameter in the current annotation. For example, given:
@@ -642,16 +674,12 @@ let instantiate_predecessors_parameters
                    and an instantiated: Base[str, int, float] This mapping would include: { T1 =>
                    str; T2 => float } *)
                 let substitutions = step ~predecessor_variables ~parameters in
-                let propagated =
-                  let replace parameter =
-                    TypeConstraints.Solution.instantiate substitutions parameter
-                    (* Use Bottom if we could not determine the value of the generic because the
-                       predecessor did not propagate it to the base class. *)
-                    (*|> Option.value ~default:Type.Bottom*)
-                  in
-                  List.map generic_parameters ~f:replace
-                in
-                { Target.target; parameters = propagated }
+                { Target.target;
+                  parameters =
+                    TypeConstraints.Solution.instantiate_ordered_types
+                      substitutions
+                      generic_parameters
+                }
               in
               List.map predecessors ~f:instantiate
             in
@@ -668,7 +696,7 @@ let instantiate_predecessors_parameters
       in
       iterate worklist
   | _ ->
-      (* TODO(T45097646): we don't support propagating list variadics yet *)
+      (* We can't propagate from something that does not split off a primitive *)
       None
 
 
@@ -779,8 +807,8 @@ let to_dot (module Handler : Handler) =
     >>| List.sort ~compare
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
             Format.asprintf "  %d -> %d" index successor |> Buffer.add_string buffer;
-            if List.length parameters > 0 then
-              Format.asprintf "[label=\"%s\"]" (List.to_string ~f:Type.show parameters)
+            if not (Type.OrderedTypes.equal parameters (Concrete [])) then
+              Format.asprintf "[label=\"(%a)\"]" Type.OrderedTypes.pp_concise parameters
               |> Buffer.add_string buffer;
             Buffer.add_string buffer "\n")
     |> ignore
@@ -861,7 +889,7 @@ module Builder = struct
     connect
       handler
       ~predecessor:type_builtin
-      ~parameters:[type_variable]
+      ~parameters:(Concrete [type_variable])
       ~successor:generic_primitive;
     let typed_dictionary = "TypedDictionary" in
     let non_total_typed_dictionary = "NonTotalTypedDictionary" in
@@ -873,13 +901,14 @@ module Builder = struct
     connect
       handler
       ~predecessor:typed_dictionary
-      ~parameters:[Type.string; Type.Any]
+      ~parameters:(Concrete [Type.string; Type.Any])
       ~successor:typing_mapping;
     connect
       handler
       ~parameters:
-        [ Type.Variable (Type.Variable.Unary.create "_T");
-          Type.Variable (Type.Variable.Unary.create "_T2") ]
+        (Concrete
+           [ Type.Variable (Type.Variable.Unary.create "_T");
+             Type.Variable (Type.Variable.Unary.create "_T2") ])
       ~predecessor:typing_mapping
       ~successor:generic_primitive;
     order

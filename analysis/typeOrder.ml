@@ -15,13 +15,18 @@ module ProtocolAssumptions : sig
     :  candidate:Type.t ->
     protocol:Identifier.t ->
     t ->
-    Type.t list option
+    Type.OrderedTypes.t option
 
-  val add : candidate:Type.t -> protocol:Identifier.t -> protocol_parameters:Type.t list -> t -> t
+  val add
+    :  candidate:Type.t ->
+    protocol:Identifier.t ->
+    protocol_parameters:Type.OrderedTypes.t ->
+    t ->
+    t
 
   val empty : t
 end = struct
-  type protocol_parameters = Type.t list
+  type protocol_parameters = Type.OrderedTypes.t
 
   type assumption = {
     candidate: Type.t;
@@ -74,7 +79,7 @@ module type FullOrderTypeWithoutT = sig
     :  order ->
     candidate:Type.t ->
     protocol:Ast.Identifier.t ->
-    Type.t list option
+    Type.OrderedTypes.t option
 
   val solve_ordered_types_less_or_equal
     :  order ->
@@ -413,13 +418,20 @@ module OrderImplementation = struct
           []
       | Type.Bottom, _ -> [constraints]
       | Type.Callable _, Type.Primitive protocol when is_protocol right ~protocol_assumptions ->
-          if instantiate_protocol_parameters order ~protocol ~candidate:left = Some [] then
+          if instantiate_protocol_parameters order ~protocol ~candidate:left = Some (Concrete [])
+          then
             [constraints]
           else
             []
       | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions
         ->
+          let assert_concrete = function
+            | Type.OrderedTypes.Concrete concrete -> concrete
+            | _ -> failwith "not implemented"
+          in
           instantiate_protocol_parameters order ~protocol:name ~candidate:left
+          (* TODO(T47346441): remove this when we allow all ordered types in parametrics *)
+          >>| assert_concrete
           >>| Type.parametric name
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
@@ -459,8 +471,8 @@ module OrderImplementation = struct
       | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
           let solve_parameters left_parameters =
             let handle_variables variables =
-              match variables with
-              | ClassHierarchy.Unaries variables ->
+              match variables, left_parameters with
+              | ClassHierarchy.Unaries variables, Type.OrderedTypes.Concrete left_parameters ->
                   let solve_parameter_pair constraints (variable, (left, right)) =
                     match left, right, variable with
                     (* TODO kill these special cases *)
@@ -494,10 +506,31 @@ module OrderImplementation = struct
                   variables
                   |> zip_on_parameters
                   >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
+              | Unaries _, Any
+              | Unaries _, Variable _
+              | Unaries _, Map _ ->
+                  (* These should be impossible, since we shouldn't be propagating a variadic into
+                     something that is defined to be not variadic *)
+                  None
+              | ListVariadic _, left_parameters ->
+                  (* TODO(T47346673): currently all variadics are invariant, revisit this when we
+                     add variance *)
+                  solve_ordered_types_less_or_equal
+                    order
+                    ~constraints
+                    ~left:left_parameters
+                    ~right:(Concrete right_parameters)
+                  |> List.concat_map ~f:(fun constraints ->
+                         solve_ordered_types_less_or_equal
+                           order
+                           ~constraints
+                           ~left:(Concrete right_parameters)
+                           ~right:left_parameters)
+                  |> Option.some
             in
             ClassHierarchy.variables handler right_name >>= handle_variables
           in
-          let parameters =
+          let parameters : Type.OrderedTypes.t option =
             let parameters =
               ClassHierarchy.instantiate_successors_parameters
                 handler
@@ -516,7 +549,8 @@ module OrderImplementation = struct
             [constraints]
           else if
             is_protocol right ~protocol_assumptions
-            && instantiate_protocol_parameters order ~candidate:left ~protocol:target = Some []
+            && instantiate_protocol_parameters order ~candidate:left ~protocol:target
+               = Some (Concrete [])
           then
             [constraints]
           else
@@ -928,7 +962,7 @@ module OrderImplementation = struct
                             Type.Any
                     in
                     match left_parameters, right_parameters, variables with
-                    | Some left, Some right, Some (Unaries variables)
+                    | Some (Concrete left), Some (Concrete right), Some (Unaries variables)
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
                         let join_parameters left right variable =
@@ -1135,8 +1169,8 @@ module OrderImplementation = struct
                     solve_ordered_types_less_or_equal
                       order
                       ~constraints:TypeConstraints.empty
-                      ~left:(Concrete predecessor_variables)
-                      ~right:(Concrete parameters)
+                      ~left:predecessor_variables
+                      ~right:parameters
                     |> List.filter_map ~f:(OrderedConstraints.solve ~order)
                     |> List.hd
                     |> Option.value ~default:TypeConstraints.Solution.empty
@@ -1182,7 +1216,7 @@ module OrderImplementation = struct
                             Type.Bottom
                     in
                     match left_parameters, right_parameters, variables with
-                    | Some left, Some right, Some (Unaries variables)
+                    | Some (Concrete left), Some (Concrete right), Some (Unaries variables)
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
                         Some (List.map3_exn ~f:meet_parameters left right variables)
@@ -1301,6 +1335,7 @@ module OrderImplementation = struct
           } as order )
         ~candidate
         ~protocol
+        : Type.OrderedTypes.t option
       =
       match candidate with
       | Type.Primitive candidate_name
@@ -1308,8 +1343,10 @@ module OrderImplementation = struct
           (* If we are given a "stripped" generic, we decline to do structural analysis, as these
              kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
           None
-      | Type.Primitive candidate_name when Identifier.equal candidate_name protocol -> Some []
-      | Type.Parametric { name; parameters } when Identifier.equal name protocol -> Some parameters
+      | Type.Primitive candidate_name when Identifier.equal candidate_name protocol ->
+          Some (Type.OrderedTypes.Concrete [])
+      | Type.Parametric { name; parameters } when Identifier.equal name protocol ->
+          Some (Concrete parameters)
       | _ -> (
           let assumed_protocol_parameters =
             ProtocolAssumptions.find_assumed_protocol_parameters
@@ -1326,7 +1363,9 @@ module OrderImplementation = struct
                   match protocol_generics with
                   | Some (Unaries variables) ->
                       List.map variables ~f:(fun variable -> Type.Variable variable)
-                  | None -> []
+                      |> fun variables -> Type.OrderedTypes.Concrete variables
+                  | Some (ListVariadic variable) -> Variable variable
+                  | None -> Concrete []
                 in
                 ProtocolAssumptions.add
                   protocol_assumptions
@@ -1343,7 +1382,7 @@ module OrderImplementation = struct
                 attributes ~protocol_assumptions:new_assumptions (Type.Primitive protocol)
                 >>| List.filter ~f:is_not_object_or_generic_method
               in
-              let candidate_attributes, transformations =
+              let candidate_attributes, desanitize_map =
                 match candidate with
                 | Type.Callable _ as callable ->
                     let attributes =
@@ -1366,10 +1405,10 @@ module OrderImplementation = struct
                 | _ ->
                     (* We don't return constraints for the candidate's free variables, so we must
                        underapproximate and determine conformance in the worst case *)
-                    let transformations, sanitized_candidate =
+                    let desanitize_map, sanitized_candidate =
                       let namespace = Type.Variable.Namespace.create_fresh () in
                       let module SanitizeTransform = Type.Transform.Make (struct
-                        type state = (Type.Variable.Unary.t * Type.Variable.Unary.t) list
+                        type state = Type.Variable.pair list
 
                         let visit_children_before _ _ = true
 
@@ -1383,7 +1422,10 @@ module OrderImplementation = struct
                               in
                               { Type.Transform.transformed_annotation =
                                   Type.Variable transformed_variable;
-                                new_state = (variable, transformed_variable) :: sofar
+                                new_state =
+                                  Type.Variable.UnaryPair
+                                    (transformed_variable, Type.Variable variable)
+                                  :: sofar
                               }
                           | transformed_annotation ->
                               { Type.Transform.transformed_annotation; new_state = sofar }
@@ -1392,7 +1434,7 @@ module OrderImplementation = struct
                       SanitizeTransform.visit [] candidate
                     in
                     ( attributes ~protocol_assumptions:new_assumptions sanitized_candidate,
-                      transformations )
+                      desanitize_map )
               in
               match candidate_attributes, protocol_attributes with
               | Some all_candidate_attributes, Some all_protocol_attributes ->
@@ -1430,26 +1472,27 @@ module OrderImplementation = struct
                     | `Missing -> []
                   in
                   let instantiate_protocol_generics solution =
-                    let desanitize_map = List.Assoc.inverse transformations in
                     let desanitize =
-                      let constraints = function
-                        | Type.Variable variable ->
-                            List.Assoc.find
-                              desanitize_map
-                              variable
-                              ~equal:Type.Variable.Unary.equal
-                            >>| fun variable -> Type.Variable variable
-                        | _ -> None
+                      let desanitization_solution =
+                        TypeConstraints.Solution.create desanitize_map
                       in
-                      Type.instantiate ~constraints
+                      TypeConstraints.Solution.instantiate_ordered_types desanitization_solution
                     in
-                    let instantiate_and_desanitize = function
+                    let instantiate = function
                       | ClassHierarchy.Unaries variables ->
                           List.map variables ~f:(fun variable -> Type.Variable variable)
                           |> List.map ~f:(TypeConstraints.Solution.instantiate solution)
-                          |> List.map ~f:desanitize
+                          |> fun instantiated -> Type.OrderedTypes.Concrete instantiated
+                      | ListVariadic variable ->
+                          TypeConstraints.Solution.instantiate_single_list_variadic_variable
+                            solution
+                            variable
+                          |> Option.value ~default:(Type.OrderedTypes.Variable variable)
                     in
-                    protocol_generics >>| instantiate_and_desanitize |> Option.value ~default:[]
+                    protocol_generics
+                    >>| instantiate
+                    >>| desanitize
+                    |> Option.value ~default:(Type.OrderedTypes.Concrete [])
                   in
                   Identifier.Map.merge
                     (build_attribute_map all_candidate_attributes)

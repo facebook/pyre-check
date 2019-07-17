@@ -19,6 +19,13 @@ module Solution : sig
 
   val instantiate_single_variable : t -> Type.Variable.Unary.t -> Type.t option
 
+  val instantiate_single_list_variadic_variable
+    :  t ->
+    Type.Variable.Variadic.List.t ->
+    Type.OrderedTypes.t option
+
+  val instantiate_ordered_types : t -> Type.OrderedTypes.t -> Type.OrderedTypes.t
+
   (* For testing *)
   val create : Type.Variable.pair list -> t
 

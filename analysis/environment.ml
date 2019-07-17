@@ -121,7 +121,7 @@ let connect_definition
       connect
         ~predecessor:primitive
         ~successor:"typing.Callable"
-        ~parameters:[Type.Callable callable]
+        ~parameters:(Concrete [Type.Callable callable])
   | None -> () );
 
   (* Register normal annotations. *)
@@ -148,12 +148,8 @@ let connect_definition
               ()
         | Type.Primitive primitive when not (ClassHierarchy.contains (module Handler) primitive) ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype
-        | Type.Primitive supertype -> (
-          match parameters with
-          | Concrete parameters -> connect ~predecessor:primitive ~successor:supertype ~parameters
-          | _ ->
-              (* TODO(T45097646): support propagating list variadics *)
-              () )
+        | Type.Primitive supertype ->
+            connect ~predecessor:primitive ~successor:supertype ~parameters
         | _ ->
             Log.log ~section:`Environment "Superclass annotation %a is missing" Type.pp supertype )
     | _ -> ()

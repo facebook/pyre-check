@@ -1,12 +1,15 @@
 open Core
+open Pyre
 open OUnit2
 open Analysis
 open Test
 open ClassHierarchy
 
-let connect ?(parameters = []) handler ~predecessor ~successor =
+let connect ?(parameters = Type.OrderedTypes.Concrete []) handler ~predecessor ~successor =
   connect ~parameters handler ~predecessor ~successor
 
+
+let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
 
 (* Butterfly:
  *  0 - 2
@@ -148,8 +151,8 @@ let test_deduplicate _ =
     let order = Builder.create () |> handler in
     insert order "0";
     insert order "1";
-    connect order ~parameters:[Type.Top; Type.Top] ~predecessor:"0" ~successor:"1";
-    connect order ~parameters:[Type.Top] ~predecessor:"0" ~successor:"1";
+    connect order ~parameters:![Type.Top; Type.Top] ~predecessor:"0" ~successor:"1";
+    connect order ~parameters:![Type.Top] ~predecessor:"0" ~successor:"1";
     deduplicate order ~annotations:["0"; "1"];
     order
   in
@@ -165,9 +168,13 @@ let test_deduplicate _ =
   in
   let module ForwardAsserter = TargetAsserter (Target.List) in
   let module BackwardsAsserter = TargetAsserter (Target.Set) in
-  ForwardAsserter.assert_targets (Handler.edges ()) "0" "1" [Type.Top] (fun target -> [target]);
-  BackwardsAsserter.assert_targets (Handler.backedges ()) "1" "0" [Type.Top] (fun target ->
-      Target.Set.of_list [target])
+  ForwardAsserter.assert_targets (Handler.edges ()) "0" "1" ![Type.Top] (fun target -> [target]);
+  BackwardsAsserter.assert_targets
+    (Handler.backedges ())
+    "1"
+    "0"
+    ![Type.Top]
+    (fun target -> Target.Set.of_list [target])
 
 
 let test_remove_extra_edges_to_object _ =
@@ -194,11 +201,11 @@ let test_remove_extra_edges_to_object _ =
   let object_index = Handler.find_unsafe (Handler.indices ()) "object" in
   assert_equal
     (Handler.find_unsafe (Handler.edges ()) zero_index)
-    [{ Target.target = one_index; parameters = [] }];
+    [{ Target.target = one_index; parameters = ![] }];
   assert_equal
     ~cmp:Target.Set.equal
     (Handler.find_unsafe (Handler.backedges ()) object_index)
-    (Target.Set.of_list [{ Target.target = two_index; parameters = [] }])
+    (Target.Set.of_list [{ Target.target = two_index; parameters = ![] }])
 
 
 let test_connect_annotations_to_top _ =
@@ -265,7 +272,7 @@ let test_to_dot _ =
     insert order "2";
     insert order "object";
     connect order ~predecessor:"0" ~successor:"2";
-    connect order ~predecessor:"0" ~successor:"1" ~parameters:[Type.string];
+    connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
     connect_annotations_to_object order ["0"; "1"; "2"; "object"];
     order
   in
@@ -294,7 +301,7 @@ let test_variables _ =
     insert order "typing.Generic";
     insert order "A";
     insert order "B";
-    connect order ~parameters:[Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
+    connect order ~parameters:![Type.variable "T"] ~predecessor:"A" ~successor:"typing.Generic";
     order
   in
   let assert_variables ~expected source = assert_equal expected (variables order source) in
@@ -348,7 +355,7 @@ let test_disconnect_successors _ =
     assert_backedges_equal (Handler.find_unsafe (Handler.backedges ()) (index "2")) [];
     assert_equal
       (Handler.find_unsafe (Handler.edges ()) (index "a"))
-      [{ Target.target = index "1"; parameters = [] }]
+      [{ Target.target = index "1"; parameters = ![] }]
   in
   let () =
     let (module Handler) = order () in
@@ -357,7 +364,7 @@ let test_disconnect_successors _ =
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "a")) [];
     assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
-      [{ Target.target = index "b"; parameters = [] }]
+      [{ Target.target = index "b"; parameters = ![] }]
   in
   let () =
     let (module Handler) = order () in
@@ -366,7 +373,7 @@ let test_disconnect_successors _ =
     assert_equal (Handler.find_unsafe (Handler.edges ()) (index "b")) [];
     assert_backedges_equal
       (Handler.find_unsafe (Handler.backedges ()) (index "1"))
-      [{ Target.target = index "a"; parameters = [] }]
+      [{ Target.target = index "a"; parameters = ![] }]
   in
   let () =
     let (module Handler) = order () in
@@ -379,121 +386,260 @@ let test_disconnect_successors _ =
   ()
 
 
-let test_instantiate_successors_parameters _ =
-  let order =
-    let order = Builder.default () |> handler in
-    let variable = Type.variable "_T" in
-    let other_variable = Type.variable "_T2" in
-    let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
-    insert order "list";
-    connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
+let parametric_order =
+  let order = Builder.default () |> handler in
+  let variable = Type.variable "_T" in
+  let other_variable = Type.variable "_T2" in
+  let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
+  insert order "list";
+  connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:![variable];
 
-    insert order "typing.Iterator";
-    connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
-    connect
-      order
-      ~predecessor:"typing.Iterator"
-      ~successor:"typing.Generic"
-      ~parameters:[variable_covariant];
-    insert order "typing.Iterable";
-    connect
-      order
-      ~predecessor:"typing.Iterator"
-      ~successor:"typing.Iterable"
-      ~parameters:[variable_covariant];
-    connect
-      order
-      ~predecessor:"typing.Iterable"
-      ~successor:"typing.Generic"
-      ~parameters:[variable_covariant];
-    connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
-    insert order "tuple";
-    connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
-    connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
-    insert order "str";
-    connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:[Type.Primitive "str"];
-    insert order "AnyIterable";
-    connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
-    insert order "dict";
-    connect
-      order
-      ~predecessor:"dict"
-      ~successor:"typing.Generic"
-      ~parameters:[variable; other_variable];
-    connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
-    insert order "PartiallySpecifiedDict";
-    connect
-      order
-      ~predecessor:"PartiallySpecifiedDict"
-      ~successor:"dict"
-      ~parameters:[Primitive "int"];
-    insert order "OverSpecifiedDict";
-    connect
-      order
-      ~predecessor:"OverSpecifiedDict"
-      ~successor:"dict"
-      ~parameters:[Primitive "int"; Primitive "int"; Primitive "str"];
-    insert order "GenericContainer";
-    connect
-      order
-      ~predecessor:"GenericContainer"
-      ~successor:"typing.Generic"
-      ~parameters:[variable; other_variable];
-
-    insert order "NonGenericContainerChild";
-    connect
-      order
-      ~predecessor:"NonGenericContainerChild"
-      ~successor:"GenericContainer"
-      ~parameters:[Primitive "int"; Primitive "str"];
+  insert order "typing.Iterator";
+  connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:![variable];
+  connect
     order
-  in
+    ~predecessor:"typing.Iterator"
+    ~successor:"typing.Generic"
+    ~parameters:![variable_covariant];
+  insert order "typing.Iterable";
+  connect
+    order
+    ~predecessor:"typing.Iterator"
+    ~successor:"typing.Iterable"
+    ~parameters:![variable_covariant];
+  connect
+    order
+    ~predecessor:"typing.Iterable"
+    ~successor:"typing.Generic"
+    ~parameters:![variable_covariant];
+  connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:![variable];
+  insert order "tuple";
+  connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:![variable];
+  connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:![variable];
+  insert order "str";
+  connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:![Type.Primitive "str"];
+  insert order "AnyIterable";
+  connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
+  insert order "dict";
+  connect
+    order
+    ~predecessor:"dict"
+    ~successor:"typing.Generic"
+    ~parameters:![variable; other_variable];
+  connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:![variable];
+  insert order "PartiallySpecifiedDict";
+  connect
+    order
+    ~predecessor:"PartiallySpecifiedDict"
+    ~successor:"dict"
+    ~parameters:![Type.Primitive "int"];
+  insert order "OverSpecifiedDict";
+  connect
+    order
+    ~predecessor:"OverSpecifiedDict"
+    ~successor:"dict"
+    ~parameters:![Type.Primitive "int"; Primitive "int"; Primitive "str"];
+  insert order "GenericContainer";
+  connect
+    order
+    ~predecessor:"GenericContainer"
+    ~successor:"typing.Generic"
+    ~parameters:![variable; other_variable];
+
+  insert order "NonGenericContainerChild";
+  connect
+    order
+    ~predecessor:"NonGenericContainerChild"
+    ~successor:"GenericContainer"
+    ~parameters:![Type.Primitive "int"; Primitive "str"];
+  order
+
+
+let variadic_order =
+  let variadic = Type.Variable.Variadic.List.create "Ts" in
+  let order = parametric_order in
+  insert order "UserTuple";
+  connect
+    order
+    ~predecessor:"UserTuple"
+    ~successor:"typing.Generic"
+    ~parameters:(Variable variadic);
+
+  (* Contrived example *)
+  connect
+    order
+    ~predecessor:"UserTuple"
+    ~successor:"list"
+    ~parameters:(Concrete [Type.Tuple (Bounded (Variable variadic))]);
+  insert order "SimpleTupleChild";
+  connect
+    order
+    ~predecessor:"SimpleTupleChild"
+    ~successor:"typing.Generic"
+    ~parameters:(Variable variadic);
+  connect
+    order
+    ~predecessor:"SimpleTupleChild"
+    ~successor:"UserTuple"
+    ~parameters:(Variable variadic);
+  insert order "TupleOfLists";
+  connect
+    order
+    ~predecessor:"TupleOfLists"
+    ~successor:"typing.Generic"
+    ~parameters:(Variable variadic);
+  connect
+    order
+    ~predecessor:"TupleOfLists"
+    ~successor:"UserTuple"
+    ~parameters:(Map (Type.OrderedTypes.Map.create ~mappers:["list"] ~variable:variadic));
+  order
+
+
+let test_instantiate_successors_parameters _ =
   assert_equal
     (instantiate_successors_parameters
-       order
+       parametric_order
        ~source:(Type.list Type.string)
        ~target:"typing.Iterator")
-    (Some [Type.string]);
+    (Some ![Type.string]);
   assert_equal
     (instantiate_successors_parameters
-       order
+       parametric_order
        ~source:(Type.dictionary ~key:Type.integer ~value:Type.string)
        ~target:"typing.Iterator")
-    (Some [Type.integer]);
-  assert_equal
-    (instantiate_successors_parameters order ~source:Type.string ~target:"typing.Iterable")
-    (Some [Type.string]);
+    (Some ![Type.integer]);
   assert_equal
     (instantiate_successors_parameters
-       order
+       parametric_order
+       ~source:Type.string
+       ~target:"typing.Iterable")
+    (Some ![Type.string]);
+  assert_equal
+    (instantiate_successors_parameters
+       parametric_order
        ~source:(Type.tuple [Type.integer; Type.integer])
        ~target:"typing.Iterable")
-    (Some [Type.integer]);
+    (Some ![Type.integer]);
   let ( !! ) name = Type.Primitive name in
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"AnyIterable" ~target:"typing.Iterable")
-    (Some [Type.Any]);
+    (instantiate_successors_parameters
+       parametric_order
+       ~source:!!"AnyIterable"
+       ~target:"typing.Iterable")
+    (Some ![Type.Any]);
 
   (* If you're not completely specified, fill all with anys *)
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"PartiallySpecifiedDict" ~target:"dict")
-    (Some [Type.Any; Type.Any]);
+    (instantiate_successors_parameters
+       parametric_order
+       ~source:!!"PartiallySpecifiedDict"
+       ~target:"dict")
+    (Some ![Type.Any; Type.Any]);
 
   (* If you're over-specified, fill all with anys *)
   assert_equal
-    (instantiate_successors_parameters order ~source:!!"OverSpecifiedDict" ~target:"dict")
-    (Some [Type.Any; Type.Any]);
+    (instantiate_successors_parameters
+       parametric_order
+       ~source:!!"OverSpecifiedDict"
+       ~target:"dict")
+    (Some ![Type.Any; Type.Any]);
 
   (* Don't do a search when starting from bottom *)
   assert_equal
     (instantiate_successors_parameters
-       order
+       parametric_order
        ~source:!!"NonGenericContainerChild"
        ~target:"GenericContainer")
-    (Some [Type.integer; Type.string]);
+    (Some ![Type.integer; Type.string]);
   assert_equal
-    (instantiate_successors_parameters order ~source:Type.Bottom ~target:"GenericContainer")
-    (Some [Type.Any; Type.Any]);
+    (instantiate_successors_parameters
+       parametric_order
+       ~source:Type.Bottom
+       ~target:"GenericContainer")
+    (Some ![Type.Any; Type.Any]);
+
+  let printer optional_ordered_types =
+    optional_ordered_types
+    >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise
+    |> Option.value ~default:"None"
+  in
+  assert_equal
+    (instantiate_successors_parameters variadic_order ~source:Type.Bottom ~target:"UserTuple")
+    (Some Any);
+  assert_equal
+    ~printer
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Type.parametric "SimpleTupleChild" [Type.integer; Type.string; Type.bool])
+       ~target:"UserTuple")
+    (Some ![Type.integer; Type.string; Type.bool]);
+  assert_equal
+    ~printer
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Type.parametric "SimpleTupleChild" [Type.integer; Type.string; Type.bool])
+       ~target:"list")
+    (Some ![Type.tuple [Type.integer; Type.string; Type.bool]]);
+  assert_equal
+    ~printer
+    (instantiate_successors_parameters
+       variadic_order
+       ~source:(Type.parametric "TupleOfLists" [Type.integer; Type.string; Type.bool])
+       ~target:"UserTuple")
+    (Some ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool]);
+  ()
+
+
+let test_instantiate_predecessors_parameters _ =
+  let assert_instantiates_to ~source ~target expected =
+    let handler = variadic_order in
+    let order =
+      { TypeOrder.handler;
+        constructor = (fun _ ~protocol_assumptions:_ -> None);
+        attributes = (fun _ ~protocol_assumptions:_ -> None);
+        is_protocol = (fun _ ~protocol_assumptions:_ -> false);
+        any_is_bottom = false;
+        protocol_assumptions = TypeOrder.ProtocolAssumptions.empty
+      }
+    in
+    let step ~predecessor_variables ~parameters =
+      TypeOrder.solve_ordered_types_less_or_equal
+        order
+        ~constraints:TypeConstraints.empty
+        ~left:predecessor_variables
+        ~right:parameters
+      |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
+      |> List.hd_exn
+    in
+    let printer optional_ordered_types =
+      optional_ordered_types
+      >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise
+      |> Option.value ~default:"None"
+    in
+    assert_equal
+      ~printer
+      expected
+      (ClassHierarchy.instantiate_predecessors_parameters handler ~source ~target ~step)
+  in
+  assert_instantiates_to
+    ~source:(Type.list (Type.tuple [Type.integer; Type.string; Type.bool]))
+    ~target:"UserTuple"
+    (Some (Concrete [Type.integer; Type.string; Type.bool]));
+  assert_instantiates_to
+    ~source:
+      (Type.parametric
+         "UserTuple"
+         [Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
+    ~target:"SimpleTupleChild"
+    (Some (Concrete [Type.list Type.integer; Type.list Type.string; Type.list Type.bool]));
+  assert_instantiates_to
+    ~source:
+      (Type.parametric
+         "UserTuple"
+         [Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
+    ~target:"TupleOfLists"
+    (Some (Concrete [Type.integer; Type.string; Type.bool]));
   ()
 
 
@@ -510,5 +656,6 @@ let () =
          "successors" >:: test_successors;
          "to_dot" >:: test_to_dot;
          "variables" >:: test_variables;
-         "instantiate_successors_parameters" >:: test_instantiate_successors_parameters ]
+         "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
+         "instantiate_predecessors_parameters" >:: test_instantiate_predecessors_parameters ]
   |> Test.run

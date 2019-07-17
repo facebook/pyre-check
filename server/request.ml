@@ -576,10 +576,7 @@ let process_type_query_request
             | Some annotation -> annotation
           in
           let decode_target { ClassHierarchy.Target.target; parameters } =
-            Format.sprintf
-              "%s[%s]"
-              (decode target)
-              (List.map parameters ~f:Type.show |> String.concat ~sep:", ")
+            Format.asprintf "%s[%a]" (decode target) Type.OrderedTypes.pp_concise parameters
           in
           match decoded with
           | ClassDefinitions.Decoded (key, value) ->

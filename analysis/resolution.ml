@@ -501,6 +501,9 @@ let is_invariance_mismatch resolution ~left ~right =
             |> function
             | List.Or_unequal_lengths.Ok list -> Some list
             | _ -> None )
+        | Some (ListVariadic _) ->
+            (* TODO(T47346673): Do this check when list variadics have variance *)
+            None
         | None -> None
       in
       let due_to_invariant_variable (variance, left, right) =

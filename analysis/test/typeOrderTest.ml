@@ -12,6 +12,11 @@ open Test
 open TypeOrder
 open Annotated
 
+let concrete_connect ?parameters =
+  let parameters = parameters >>| fun parameters -> Type.OrderedTypes.Concrete parameters in
+  ClassHierarchy.connect ?parameters
+
+
 let parse_attributes ~parse_annotation ~class_name =
   let parse_attribute (name, annotation) =
     { Attribute.annotation = Annotation.create (parse_annotation annotation);
@@ -145,19 +150,35 @@ let variance_order =
   insert order "Map";
   insert order "Box";
   insert order "Sink";
-  connect order ~predecessor:"LinkedList" ~successor:"typing.Generic" ~parameters:[variable_t];
-  connect
+  concrete_connect
+    order
+    ~predecessor:"LinkedList"
+    ~successor:"typing.Generic"
+    ~parameters:[variable_t];
+  concrete_connect
     order
     ~predecessor:"Map"
     ~successor:"typing.Generic"
     ~parameters:[variable_t; variable_t_2];
-  connect order ~predecessor:"Box" ~successor:"typing.Generic" ~parameters:[variable_t_co];
-  connect order ~predecessor:"Sink" ~successor:"typing.Generic" ~parameters:[variable_t_contra];
+  concrete_connect order ~predecessor:"Box" ~successor:"typing.Generic" ~parameters:[variable_t_co];
+  concrete_connect
+    order
+    ~predecessor:"Sink"
+    ~successor:"typing.Generic"
+    ~parameters:[variable_t_contra];
   insert order "Base";
   insert order "Derived";
-  connect order ~predecessor:"Base" ~successor:"typing.Generic" ~parameters:[variable_t_contra];
-  connect order ~predecessor:"Derived" ~successor:"Base" ~parameters:[variable_t_co];
-  connect order ~predecessor:"Derived" ~successor:"typing.Generic" ~parameters:[variable_t_co];
+  concrete_connect
+    order
+    ~predecessor:"Base"
+    ~successor:"typing.Generic"
+    ~parameters:[variable_t_contra];
+  concrete_connect order ~predecessor:"Derived" ~successor:"Base" ~parameters:[variable_t_co];
+  concrete_connect
+    order
+    ~predecessor:"Derived"
+    ~successor:"typing.Generic"
+    ~parameters:[variable_t_co];
   order
 
 
@@ -203,19 +224,23 @@ let multiplane_variance_order =
   insert order "B";
   insert order "C";
   insert order "D";
-  connect
+  concrete_connect
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:"B" ~successor:"A" ~parameters:[variable_t_contra; variable_t_co];
-  connect
+  concrete_connect
+    order
+    ~predecessor:"B"
+    ~successor:"A"
+    ~parameters:[variable_t_contra; variable_t_co];
+  concrete_connect
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
     ~parameters:[variable_t_contra; variable_t_co];
-  connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
-  connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
+  concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
+  concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
   order
 
 
@@ -260,19 +285,23 @@ let parallel_planes_variance_order =
   insert order "B";
   insert order "C";
   insert order "D";
-  connect
+  concrete_connect
     order
     ~predecessor:"A"
     ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:"B" ~successor:"A" ~parameters:[variable_t_co; variable_t_contra];
-  connect
+  concrete_connect
+    order
+    ~predecessor:"B"
+    ~successor:"A"
+    ~parameters:[variable_t_co; variable_t_contra];
+  concrete_connect
     order
     ~predecessor:"B"
     ~successor:"typing.Generic"
     ~parameters:[variable_t_co; variable_t_contra];
-  connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
-  connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
+  concrete_connect order ~predecessor:"C" ~successor:"B" ~parameters:[Type.integer; Type.integer];
+  concrete_connect order ~predecessor:"D" ~successor:"B" ~parameters:[Type.float; Type.float];
   order
 
 
@@ -283,99 +312,119 @@ let default =
   let other_variable = Type.variable "_T2" in
   let variable_covariant = Type.variable "_T_co" ~variance:Covariant in
   insert order "typing.Sequence";
-  connect order ~predecessor:"typing.Sequence" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect
+    order
+    ~predecessor:"typing.Sequence"
+    ~successor:"typing.Generic"
+    ~parameters:[variable];
   insert order "list";
   insert order "typing.Sized";
   connect order ~predecessor:"list" ~successor:"typing.Sized";
-  connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
 
-  connect order ~predecessor:"list" ~successor:"typing.Sequence" ~parameters:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Sequence" ~parameters:[variable];
   insert order "typing.AbstractSet";
   insert order "set";
   connect order ~predecessor:"set" ~successor:"typing.Sized";
-  connect order ~predecessor:"set" ~successor:"typing.Generic" ~parameters:[variable];
-  connect order ~predecessor:"typing.AbstractSet" ~successor:"typing.Generic" ~parameters:[variable];
-  connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~parameters:[variable];
+  concrete_connect order ~predecessor:"set" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect
+    order
+    ~predecessor:"typing.AbstractSet"
+    ~successor:"typing.Generic"
+    ~parameters:[variable];
+  concrete_connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~parameters:[variable];
   insert order "typing.Iterator";
-  connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
-  connect
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
+  concrete_connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Generic"
     ~parameters:[variable_covariant];
   insert order "typing.Iterable";
-  connect
+  concrete_connect
     order
     ~predecessor:"typing.Iterator"
     ~successor:"typing.Iterable"
     ~parameters:[variable_covariant];
-  connect
+  concrete_connect
     order
     ~predecessor:"typing.Iterable"
     ~successor:"typing.Generic"
     ~parameters:[variable_covariant];
-  connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
   insert order "tuple";
-  connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
-  connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
+  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
   insert order "typing.Generator";
-  connect order ~predecessor:"typing.Generator" ~successor:"typing.Iterator" ~parameters:[variable];
-  connect order ~predecessor:"typing.Generator" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect
+    order
+    ~predecessor:"typing.Generator"
+    ~successor:"typing.Iterator"
+    ~parameters:[variable];
+  concrete_connect
+    order
+    ~predecessor:"typing.Generator"
+    ~successor:"typing.Generic"
+    ~parameters:[variable];
   insert order "str";
-  connect order ~predecessor:"str" ~successor:"typing.Iterable" ~parameters:[Type.Primitive "str"];
+  concrete_connect
+    order
+    ~predecessor:"str"
+    ~successor:"typing.Iterable"
+    ~parameters:[Type.Primitive "str"];
   insert order "AnyIterable";
   connect order ~predecessor:"AnyIterable" ~successor:"typing.Iterable";
   insert order "typing.Mapping";
-  connect
+  concrete_connect
     order
     ~predecessor:"typing.Mapping"
     ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
   insert order "dict";
 
-  connect
+  concrete_connect
     order
     ~predecessor:"dict"
     ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
-  connect
+  concrete_connect
     order
     ~predecessor:"dict"
     ~successor:"typing.Mapping"
     ~parameters:[variable; other_variable];
-  connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
+  concrete_connect order ~predecessor:"dict" ~successor:"typing.Iterator" ~parameters:[variable];
   insert order "collections.OrderedDict";
-  connect
+  concrete_connect
     order
     ~predecessor:"collections.OrderedDict"
     ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
-  connect
+  concrete_connect
     order
     ~predecessor:"collections.OrderedDict"
     ~successor:"dict"
     ~parameters:[variable; other_variable];
   insert order "PartiallySpecifiedDict";
-  connect
+  concrete_connect
     order
     ~predecessor:"PartiallySpecifiedDict"
     ~successor:"dict"
     ~parameters:[Primitive "int"];
   insert order "OverSpecifiedDict";
-  connect
+  concrete_connect
     order
     ~predecessor:"OverSpecifiedDict"
     ~successor:"dict"
     ~parameters:[Primitive "int"; Primitive "int"; Primitive "str"];
   insert order "GenericContainer";
-  connect
+  concrete_connect
     order
     ~predecessor:"GenericContainer"
     ~successor:"typing.Generic"
     ~parameters:[variable; other_variable];
 
   insert order "NonGenericContainerChild";
-  connect
+  concrete_connect
     order
     ~predecessor:"NonGenericContainerChild"
     ~successor:"GenericContainer"
@@ -584,7 +633,7 @@ let test_less_or_equal _ =
     insert order "str";
     insert order "int";
     insert order "float";
-    connect order ~predecessor:"int" ~successor:"float";
+    concrete_connect order ~predecessor:"int" ~successor:"float";
     insert order "tuple";
     insert order "A";
     insert order "B";
@@ -593,26 +642,34 @@ let test_less_or_equal _ =
     insert order "FloatToStrCallable";
     insert order "ParametricCallableToStr";
     insert order "typing.Callable";
-    connect
+    concrete_connect
       order
       ~predecessor:"A"
       ~successor:"typing.Generic"
       ~parameters:[Type.variable "_1"; Type.variable "_2"];
-    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
-    connect order ~predecessor:"C" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
+    concrete_connect
+      order
+      ~predecessor:"B"
+      ~successor:"typing.Generic"
+      ~parameters:[Type.variable "_T"];
+    concrete_connect
+      order
+      ~predecessor:"C"
+      ~successor:"typing.Generic"
+      ~parameters:[Type.variable "_T"];
 
-    connect
+    concrete_connect
       order
       ~predecessor:"A"
       ~successor:"B"
       ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
-    connect
+    concrete_connect
       order
       ~predecessor:"B"
       ~successor:"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
 
-    connect
+    concrete_connect
       order
       ~parameters:[parse_callable "typing.Callable[[float], str]"]
       ~predecessor:"FloatToStrCallable"
@@ -625,12 +682,12 @@ let test_less_or_equal _ =
       let aliases = create_type_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
-    connect
+    concrete_connect
       order
       ~parameters:[callable]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Callable";
-    connect
+    concrete_connect
       order
       ~parameters:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
@@ -641,13 +698,13 @@ let test_less_or_equal _ =
     insert order typed_dictionary;
     insert order non_total_typed_dictionary;
     insert order typing_mapping;
-    connect order ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
-    connect
+    concrete_connect order ~predecessor:non_total_typed_dictionary ~successor:typed_dictionary;
+    concrete_connect
       order
       ~predecessor:typed_dictionary
       ~parameters:[Type.string; Type.Any]
       ~successor:typing_mapping;
-    connect
+    concrete_connect
       order
       ~parameters:[Type.variable "_T"; Type.variable "_T2"]
       ~predecessor:typing_mapping
@@ -1682,27 +1739,35 @@ let test_join _ =
     insert order "ParametricCallableToStr";
     insert order "typing.Callable";
     insert order "typing.Generic";
-    connect order ~predecessor:"int" ~successor:"float";
-    connect order ~predecessor:"float" ~successor:"object";
-    connect
+    concrete_connect order ~predecessor:"int" ~successor:"float";
+    concrete_connect order ~predecessor:"float" ~successor:"object";
+    concrete_connect
       order
       ~predecessor:"A"
       ~successor:"B"
       ~parameters:[Type.tuple [Type.variable "_1"; Type.variable "_2"]];
-    connect
+    concrete_connect
       order
       ~predecessor:"A"
       ~successor:"typing.Generic"
       ~parameters:[Type.variable "_1"; Type.variable "_2"];
-    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
-    connect
+    concrete_connect
+      order
+      ~predecessor:"B"
+      ~successor:"typing.Generic"
+      ~parameters:[Type.variable "_T"];
+    concrete_connect
       order
       ~predecessor:"B"
       ~successor:"C"
       ~parameters:[Type.union [Type.variable "_T"; Type.float]];
-    connect order ~predecessor:"C" ~successor:"typing.Generic" ~parameters:[Type.variable "_T"];
+    concrete_connect
+      order
+      ~predecessor:"C"
+      ~successor:"typing.Generic"
+      ~parameters:[Type.variable "_T"];
 
-    connect
+    concrete_connect
       order
       ~parameters:[parse_callable "typing.Callable[[int], str]"]
       ~predecessor:"CallableClass"
@@ -1715,12 +1780,12 @@ let test_join _ =
       let aliases = create_type_alias_table aliases in
       parse_callable ~aliases "typing.Callable[[_T], str]"
     in
-    connect
+    concrete_connect
       order
       ~parameters:[callable]
       ~predecessor:"ParametricCallableToStr"
       ~successor:"typing.Callable";
-    connect
+    concrete_connect
       order
       ~parameters:[Type.variable "_T"]
       ~predecessor:"ParametricCallableToStr"
@@ -2287,20 +2352,24 @@ let test_meet _ =
     insert order "int";
     let variable = Type.Variable (Type.Variable.Unary.create "T") in
     let variable2 = Type.Variable (Type.Variable.Unary.create "T2") in
-    connect order ~predecessor:"M" ~successor:"typing.Generic" ~parameters:[variable];
-    connect order ~predecessor:"M" ~successor:"A" ~parameters:[variable];
-    connect order ~predecessor:"M" ~successor:"X" ~parameters:[variable];
-    connect order ~predecessor:"M" ~successor:"Y" ~parameters:[variable];
-    connect order ~predecessor:"A" ~successor:"typing.Generic" ~parameters:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"typing.Generic" ~parameters:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"A" ~parameters:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"X" ~parameters:[variable];
+    concrete_connect order ~predecessor:"M" ~successor:"Y" ~parameters:[variable];
+    concrete_connect order ~predecessor:"A" ~successor:"typing.Generic" ~parameters:[variable];
     let connect_x () =
-      connect order ~predecessor:"X" ~successor:"typing.Generic" ~parameters:[variable];
-      connect order ~predecessor:"X" ~successor:"B" ~parameters:[variable; Type.string]
+      concrete_connect order ~predecessor:"X" ~successor:"typing.Generic" ~parameters:[variable];
+      concrete_connect order ~predecessor:"X" ~successor:"B" ~parameters:[variable; Type.string]
     in
     if x_before_y then connect_x ();
-    connect order ~predecessor:"Y" ~successor:"typing.Generic" ~parameters:[variable];
-    connect order ~predecessor:"Y" ~successor:"B" ~parameters:[Type.integer; variable];
+    concrete_connect order ~predecessor:"Y" ~successor:"typing.Generic" ~parameters:[variable];
+    concrete_connect order ~predecessor:"Y" ~successor:"B" ~parameters:[Type.integer; variable];
     if not x_before_y then connect_x ();
-    connect order ~predecessor:"B" ~successor:"typing.Generic" ~parameters:[variable; variable2];
+    concrete_connect
+      order
+      ~predecessor:"B"
+      ~successor:"typing.Generic"
+      ~parameters:[variable; variable2];
     order
   in
   assert_meet
@@ -3071,11 +3140,9 @@ let test_instantiate_protocol_parameters _ =
            ~allow_untracked:true
            ~allow_invalid_type_parameters:true
     in
-    let optional_list_printer optional_list =
-      optional_list
-      >>| List.map ~f:Type.show
-      >>| String.concat ~sep:", "
-      >>| Printf.sprintf "[%s]"
+    let optional_ordered_types_printer optional =
+      optional
+      >>| Format.asprintf "%a" Type.OrderedTypes.pp_concise
       |> Option.value ~default:"None"
     in
     let parse_attributes =
@@ -3097,7 +3164,17 @@ let test_instantiate_protocol_parameters _ =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      { handler = Resolution.order resolution;
+      let handler =
+        let order = Resolution.order resolution in
+        let variadic = Type.Variable.Variadic.List.create "Ts" in
+        ClassHierarchy.connect
+          order
+          ~predecessor:"VariadicProtocol"
+          ~successor:"typing.Generic"
+          ~parameters:(Variable variadic);
+        order
+      in
+      { handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
@@ -3106,8 +3183,8 @@ let test_instantiate_protocol_parameters _ =
       }
     in
     assert_equal
-      ~printer:optional_list_printer
-      (expected >>| List.map ~f:parse_annotation)
+      ~printer:optional_ordered_types_printer
+      expected
       (instantiate_protocol_parameters order ~candidate:(parse_annotation candidate) ~protocol)
   in
   (* Simple attribute protocols *)
@@ -3117,14 +3194,14 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", []]
     ~candidate:"A"
     ~protocol:"P"
-    (Some []);
+    (Some (Concrete []));
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
     ~protocols:["P", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some []);
+    (Some (Concrete []));
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
     ~classes:["A", ["prop", "str"]]
@@ -3141,7 +3218,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["prop", "T1"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some ["int"]);
+    (Some (Concrete [Type.integer]));
 
   (* Simple method protocols *)
   assert_instantiate_protocol_parameters
@@ -3150,7 +3227,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["method", "typing.Callable[[int], str]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some []);
+    (Some (Concrete []));
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
     ~classes:["A", ["othermethod", "typing.Callable[[int], str]"]]
@@ -3175,7 +3252,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["method", "typing.Callable[[int], T1]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some ["str"]);
+    (Some (Concrete [Type.string]));
 
   (* Primitive recursive protocol, primitive recursive candidate *)
   assert_instantiate_protocol_parameters
@@ -3184,7 +3261,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["prop", "P"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some []);
+    (Some (Concrete []));
   assert_instantiate_protocol_parameters
     ~context:"class P(): pass"
     ~classes:["A", ["prop", "int"]]
@@ -3201,7 +3278,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[T1]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some ["int"]);
+    (Some (Concrete [Type.integer]));
 
   assert_instantiate_protocol_parameters
     ~context:{|
@@ -3212,7 +3289,7 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P", ["prop", "T1"; "recursive_prop", "P[int]"]]
     ~candidate:"A"
     ~protocol:"P"
-    (Some ["int"]);
+    (Some (Concrete [Type.integer]));
 
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters
@@ -3224,7 +3301,31 @@ let test_instantiate_protocol_parameters _ =
     ~protocols:["P1", ["prop", "P2"]; "P2", ["prop", "int"]]
     ~candidate:"A"
     ~protocol:"P1"
-    (Some []);
+    (Some (Concrete []));
+  assert_instantiate_protocol_parameters
+    ~context:
+      {|
+      Ts = pyre_extensions.ListVariadic("Ts")
+      # Protocol[Ts] handled on backend
+      class VariadicProtocol(): pass
+    |}
+    ~classes:["A", ["prop", "typing.Tuple[int, str]"]]
+    ~protocols:["VariadicProtocol", ["prop", "typing.Tuple[Ts]"]]
+    ~candidate:"A"
+    ~protocol:"VariadicProtocol"
+    (Some (Concrete [Type.integer; Type.string]));
+  assert_instantiate_protocol_parameters
+    ~context:
+      {|
+      Ts = pyre_extensions.ListVariadic("Ts")
+      # Protocol[Ts] handled on backend
+      class VariadicProtocol(): pass
+    |}
+    ~classes:["A", ["method", "typing.Callable[[int, str], bool]"]]
+    ~protocols:["VariadicProtocol", ["method", "typing.Callable[[Ts], bool]"]]
+    ~candidate:"A"
+    ~protocol:"VariadicProtocol"
+    (Some (Concrete [Type.integer; Type.string]));
   ()
 
 

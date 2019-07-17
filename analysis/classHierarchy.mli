@@ -14,7 +14,7 @@ exception Untracked of Type.t
 module Target : sig
   type t = {
     target: int;
-    parameters: Type.t list
+    parameters: Type.OrderedTypes.t
   }
   [@@deriving compare, eq, sexp, show]
 
@@ -95,7 +95,7 @@ val handler : t -> (module Handler)
 val insert : (module Handler) -> Type.Primitive.t -> unit
 
 val connect
-  :  ?parameters:Type.t list ->
+  :  ?parameters:Type.OrderedTypes.t ->
   (module Handler) ->
   predecessor:Type.Primitive.t ->
   successor:Type.Primitive.t ->
@@ -123,7 +123,9 @@ val method_resolution_order_linearize
 
 val successors : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 
-type variables = Unaries of Type.Variable.Unary.t list
+type variables =
+  | Unaries of Type.Variable.Unary.t list
+  | ListVariadic of Type.Variable.Variadic.List.t
 
 val variables : (module Handler) -> Type.Primitive.t -> variables option
 
@@ -159,16 +161,16 @@ val instantiate_successors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  Type.t List.t Option.t
+  Type.OrderedTypes.t Option.t
 
 val instantiate_predecessors_parameters
   :  (module Handler) ->
   source:Type.t ->
   target:Type.Primitive.t ->
-  step:(predecessor_variables:Type.t sexp_list ->
-       parameters:Type.t sexp_list ->
+  step:(predecessor_variables:Type.OrderedTypes.t ->
+       parameters:Type.OrderedTypes.t ->
        TypeConstraints.Solution.t) ->
-  Type.t List.t Option.t
+  Type.OrderedTypes.t Option.t
 
 module Builder : sig
   val create : unit -> t
