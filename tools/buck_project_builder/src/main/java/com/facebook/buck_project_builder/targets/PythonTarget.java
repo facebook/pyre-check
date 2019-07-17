@@ -118,10 +118,7 @@ public final class PythonTarget implements BuildTarget {
     for (JsonElement platformSourceElement : platformSourcesArray) {
       JsonArray platformSourcePair = platformSourceElement.getAsJsonArray();
       if (platformSourcePair.get(0).getAsString().equals("py3")) {
-        addSources(
-            platformSourcePair.get(1),
-            sourcesBuilder,
-            unsupportedGeneratedSourcesBuilder);
+        addSources(platformSourcePair.get(1), sourcesBuilder, unsupportedGeneratedSourcesBuilder);
       }
     }
   }

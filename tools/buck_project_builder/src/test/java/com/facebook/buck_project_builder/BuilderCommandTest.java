@@ -25,8 +25,9 @@ public class BuilderCommandTest {
         "--buck_root ROOT --output_directory OUT");
 
     // Debug argument parsing.
-    assertParsedTo(new BuilderCommand(true, "ROOT", "OUT", ImmutableList.of()),
-            "--debug --buck_root ROOT --output_directory OUT");
+    assertParsedTo(
+        new BuilderCommand(true, "ROOT", "OUT", ImmutableList.of()),
+        "--debug --buck_root ROOT --output_directory OUT");
   }
 
   @Test(expected = BuilderException.class)
