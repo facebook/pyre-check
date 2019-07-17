@@ -291,33 +291,21 @@ let assert_source_equal_with_locations expected actual =
     let rec print_statement ~prefix statement =
       let indented_prefix = prefix ^ "  " in
       let pp_nested_expressions format statement =
-        let module Collector = Visit.ExpressionCollector (struct
-          type t = Expression.t list
+        let module Collector = Visit.NodeCollector (struct
+          type t = string * Location.t
 
-          let predicate ({ Node.value; _ } as expression) =
-            let open Expression in
-            match value with
-            | Call { arguments; _ } ->
-                (* Pick up Identifiers with locations. *)
-                let extract_identifiers sofar = function
-                  | { Call.Argument.name = Some { Node.value = name; location }; _ } ->
-                      Node.create ~location (Name (Name.Identifier name)) :: sofar
-                  | _ -> sofar
-                in
-                List.fold ~f:extract_identifiers ~init:[expression] arguments |> Option.some
-            | Lambda { parameters; _ } ->
-                (* Print the entire lambda with each parameter location. *)
-                let convert { Node.location; _ } = Node.create ~location value in
-                Some (expression :: List.map ~f:convert parameters)
-            | String { kind = Mixed substrings; _ } ->
-                let convert { Node.location; value = { StringLiteral.Substring.value; _ } } =
-                  { Node.location; value = String { StringLiteral.value; kind = String } }
-                in
-                Some (expression :: List.map ~f:convert substrings)
-            | _ -> Some [expression]
+          let predicate = function
+            | Visit.Expression expression ->
+                Some (Expression.show expression, Node.location expression)
+            | Visit.Statement _ -> None
+            | Visit.Identifier { Node.value; location } -> Some (value, location)
+            | Visit.Parameter parameter ->
+                Some (Parameter.show Expression.pp parameter, Node.location parameter)
+            | Visit.Substring { Node.value; location } ->
+                Some (Expression.StringLiteral.Substring.show value, location)
         end)
         in
-        let print_expression expression =
+        let print_expression (node_string, location) =
           let add_indentation expression_string =
             let indent expression_string =
               String.split ~on:'\n' expression_string |> String.concat ~sep:("\n" ^ indented_prefix)
@@ -327,13 +315,11 @@ let assert_source_equal_with_locations expected actual =
           Format.fprintf
             format
             "%s -> (%a)\n"
-            (Expression.show expression |> add_indentation)
+            (node_string |> add_indentation)
             Location.Reference.pp_line_and_column
-            expression.Node.location
+            location
         in
-        Collector.collect (Source.create [statement])
-        |> List.concat
-        |> List.iter ~f:print_expression
+        Collector.collect (Source.create [statement]) |> List.iter ~f:print_expression
       in
       let pp_nested_statements _ statement =
         let immediate_children =
