@@ -1,0 +1,175 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.tracked_constant_A",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 32,
+              "start": 33,
+              "end": 35
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_A" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.tracked_constant_B",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 37,
+              "start": 33,
+              "end": 35
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_B" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.tracked_index",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 13,
+              "start": 47,
+              "end": 49
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "TRACKED_FIELD" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.untracked_constant",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 42,
+              "start": 41,
+              "end": 43
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.untracked_index_a",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 18,
+              "start": 49,
+              "end": 51
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "constant_fields.untracked_index_b",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "constant_fields.py",
+              "line": 23,
+              "start": 49,
+              "end": 51
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [
+              { "via": "special_source" },
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": []
+  }
+}

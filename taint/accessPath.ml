@@ -183,6 +183,15 @@ let get_index { Node.value = expression; _ } =
   match expression with
   | String literal -> AbstractTreeDomain.Label.Field literal.value
   | Integer i -> AbstractTreeDomain.Label.Field (string_of_int i)
+  | Name name -> (
+      let name = Reference.from_name name >>| Reference.delocalize >>| Reference.last in
+      match name with
+      (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
+      | Some name
+        when String.for_all name ~f:(fun character ->
+                 (not (Char.is_alpha character)) || Char.is_uppercase character) ->
+          AbstractTreeDomain.Label.Field name
+      | _ -> AbstractTreeDomain.Label.Any )
   | _ -> AbstractTreeDomain.Label.Any
 
 
