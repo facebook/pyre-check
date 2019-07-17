@@ -3,6 +3,7 @@ package com.facebook.buck_project_builder.targets;
 import com.facebook.buck_project_builder.BuckCells;
 import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.CommandLine;
+import com.facebook.buck_project_builder.SimpleLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -19,12 +20,9 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public final class BuildTargetsCollector {
-
-  private static final Logger LOGGER = Logger.getGlobal();
 
   /**
    * @return an array that contains all of the buck targets (including the dependencies), given a
@@ -145,12 +143,12 @@ public final class BuildTargetsCollector {
     if (targets.isEmpty()) {
       throw new BuilderException("Targets should not be empty.");
     }
-    LOGGER.info("Querying targets' information...");
+    SimpleLogger.info("Querying targets' information...");
     long start = System.currentTimeMillis();
     try (InputStream commandLineOutput = getBuildTargetJsonStream(targets)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
       long buckQueryTime = System.currentTimeMillis() - start;
-      LOGGER.info("Found targets' information in " + buckQueryTime + "ms.");
+      SimpleLogger.info("Found targets' information in " + buckQueryTime + "ms.");
       if (!parsedJson.isJsonObject()) {
         throw new Error(
             "Unexpected buck query output. It should always be a json object. Bad json: "

@@ -3,6 +3,7 @@ package com.facebook.buck_project_builder.targets;
 import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
+import com.facebook.buck_project_builder.SimpleLogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FileUtils;
@@ -18,11 +19,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 public final class BuildTargetsBuilder {
-
-  private static final Logger LOGGER = Logger.getGlobal();
 
   private final String buckRoot;
   private final String outputDirectory;
@@ -44,22 +42,22 @@ public final class BuildTargetsBuilder {
   }
 
   private static void logCodeGenerationIOException(IOException exception) {
-    LOGGER.warning("IOException during python code generation: " + exception.getMessage());
+    SimpleLogger.error("IOException during python code generation: " + exception.getMessage());
   }
 
   private void buildPythonSources() {
-    LOGGER.info("Building " + this.sources.size() + " python sources...");
+    SimpleLogger.info("Building " + this.sources.size() + " python sources...");
     long start = System.currentTimeMillis();
     this.sources
         .entrySet()
         .parallelStream()
         .forEach(mapping -> FileSystem.addSymbolicLink(mapping.getKey(), mapping.getValue()));
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Built python sources in " + time + "ms.");
+    SimpleLogger.info("Built python sources in " + time + "ms.");
   }
 
   private void buildPythonWheels() {
-    LOGGER.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
+    SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
@@ -76,17 +74,17 @@ public final class BuildTargetsBuilder {
                       FileSystem.unzipRemoteFile(url, outputDirectoryFile);
                   this.conflictingFiles.addAll(conflictingFiles);
                 } catch (IOException secondException) {
-                  LOGGER.warning(
+                  SimpleLogger.error(
                       String.format(
                           "Cannot fetch and unzip remote python dependency at `%s` after 1 retry.",
                           url));
-                  LOGGER.warning("First IO Exception: " + firstException);
-                  LOGGER.warning("Second IO Exception: " + secondException);
+                  SimpleLogger.error("First IO Exception: " + firstException);
+                  SimpleLogger.error("Second IO Exception: " + secondException);
                 }
               }
             });
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Built python wheels in " + time + "ms.");
+    SimpleLogger.info("Built python wheels in " + time + "ms.");
   }
 
   private void runBuildCommands(
@@ -101,7 +99,7 @@ public final class BuildTargetsBuilder {
                   if (buildIsSuccessful) {
                     return 1;
                   }
-                  LOGGER.severe("Failed to build: " + command);
+                  SimpleLogger.error("Failed to build: " + command);
                   return 0;
                 })
             .sum();
@@ -122,7 +120,7 @@ public final class BuildTargetsBuilder {
       return;
     }
     int totalNumberOfThriftLibraries = this.thriftLibraryBuildCommands.size();
-    LOGGER.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
+    SimpleLogger.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
     AtomicInteger numberOfBuiltThriftLibraries = new AtomicInteger(0);
     long start = System.currentTimeMillis();
     runBuildCommands(
@@ -139,7 +137,7 @@ public final class BuildTargetsBuilder {
           int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
           if (builtThriftLibrariesSoFar % 100 == 0) {
             // Log progress for every 100 built thrift library.
-            LOGGER.info(
+            SimpleLogger.info(
                 String.format(
                     "Built %d/%d thrift libraries.",
                     builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
@@ -147,14 +145,14 @@ public final class BuildTargetsBuilder {
           return successfullyBuilt;
         });
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Built thrift libraries in " + time + "ms.");
+    SimpleLogger.info("Built thrift libraries in " + time + "ms.");
   }
 
   private void buildSwigLibraries() throws BuilderException {
     if (this.swigLibraryBuildCommands.isEmpty()) {
       return;
     }
-    LOGGER.info("Building " + this.swigLibraryBuildCommands.size() + " swig libraries...");
+    SimpleLogger.info("Building " + this.swigLibraryBuildCommands.size() + " swig libraries...");
     String builderExecutable;
     try {
       builderExecutable =
@@ -165,7 +163,7 @@ public final class BuildTargetsBuilder {
       return;
     }
     if (builderExecutable == null) {
-      LOGGER.severe("Unable to build any swig libraries because its builder is not found.");
+      SimpleLogger.error("Unable to build any swig libraries because its builder is not found.");
       return;
     }
     long start = System.currentTimeMillis();
@@ -183,14 +181,15 @@ public final class BuildTargetsBuilder {
           }
         });
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Built swig libraries in " + time + "ms.");
+    SimpleLogger.info("Built swig libraries in " + time + "ms.");
   }
 
   private void buildAntlr4Libraries() throws BuilderException {
     if (this.antlr4LibraryBuildCommands.isEmpty()) {
       return;
     }
-    LOGGER.info("Building " + this.antlr4LibraryBuildCommands.size() + " ANTLR4 libraries...");
+    SimpleLogger.info(
+        "Building " + this.antlr4LibraryBuildCommands.size() + " ANTLR4 libraries...");
     String wrapperExecutable;
     String builderExecutable;
     try {
@@ -204,7 +203,7 @@ public final class BuildTargetsBuilder {
       return;
     }
     if (builderExecutable == null || wrapperExecutable == null) {
-      LOGGER.severe("Unable to build any ANTLR4 libraries because its builder is not found.");
+      SimpleLogger.error("Unable to build any ANTLR4 libraries because its builder is not found.");
       return;
     }
     String builderPrefix =
@@ -223,11 +222,11 @@ public final class BuildTargetsBuilder {
           }
         });
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Built ANTLR4 libraries in " + time + "ms.");
+    SimpleLogger.info("Built ANTLR4 libraries in " + time + "ms.");
   }
 
   private void generateEmptyStubs() {
-    LOGGER.info("Generating empty stubs...");
+    SimpleLogger.info("Generating empty stubs...");
     long start = System.currentTimeMillis();
     Path outputPath = Paths.get(outputDirectory);
     this.unsupportedGeneratedSources
@@ -254,7 +253,7 @@ public final class BuildTargetsBuilder {
               }
             });
     long time = System.currentTimeMillis() - start;
-    LOGGER.info("Generate empty stubs in " + time + "ms.");
+    SimpleLogger.info("Generate empty stubs in " + time + "ms.");
   }
 
   public String getBuckRoot() {

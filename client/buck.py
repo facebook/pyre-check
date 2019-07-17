@@ -104,6 +104,11 @@ class FastBuckBuilder(BuckBuilder):
                 LOG.warning(line[9:])
             elif line.startswith("ERROR: "):
                 LOG.error(line[7:])
+            elif line.startswith("[WARNING:"):
+                # Filter away thrift warnings.
+                pass
+            else:
+                LOG.error(line)
 
 
 class SimpleBuckBuilder(BuckBuilder):
