@@ -14,15 +14,16 @@ from .test_functions import __name__ as qualifier, all_functions
 class GetGraphQLSourcesTest(unittest.TestCase):
     def test_compute_models(self):
         source = "TaintSource[UserControlled]"
+        sink = "TaintSink[ReturnedToUser]"
         self.assertEqual(
             list(GraphQLSourceGenerator().compute_models(all_functions)),
             [
-                f"def {qualifier}.TestClass.methodA(self, x): ...",
-                f"def {qualifier}.TestClass.methodB(self, *args: {source}): ...",
-                f"def {qualifier}.testA(): ...",
-                f"def {qualifier}.testB(x): ...",
-                f"def {qualifier}.testC(x): ...",
-                f"def {qualifier}.testD(x, *args: {source}): ...",
-                f"def {qualifier}.testE(x, **kwargs: {source}): ...",
+                f"def {qualifier}.TestClass.methodA(self, x) -> {sink}: ...",
+                f"def {qualifier}.TestClass.methodB(self, *args: {source}) -> {sink}: ...",
+                f"def {qualifier}.testA() -> {sink}: ...",
+                f"def {qualifier}.testB(x) -> {sink}: ...",
+                f"def {qualifier}.testC(x) -> {sink}: ...",
+                f"def {qualifier}.testD(x, *args: {source}) -> {sink}: ...",
+                f"def {qualifier}.testE(x, **kwargs: {source}) -> {sink}: ...",
             ],
         )

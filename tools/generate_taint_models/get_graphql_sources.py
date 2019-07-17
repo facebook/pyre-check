@@ -44,6 +44,7 @@ class GraphQLSourceGenerator(ModelGenerator):
                 callable=view_function,
                 vararg="TaintSource[UserControlled]",
                 kwarg="TaintSource[UserControlled]",
+                returns="TaintSink[ReturnedToUser]",
             ).generate()
             if model is not None:
                 graphql_models.add(model)
