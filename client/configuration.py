@@ -243,7 +243,7 @@ class Configuration:
 
             for element in self.ignore_all_errors:
                 if not os.path.exists(element):
-                    raise InvalidConfiguration(
+                    LOG.warning(
                         "Nonexistent path passed in to `ignore_all_errors` \
                         field: `{}`".format(
                             element

@@ -468,6 +468,38 @@ let test_creation context =
       ~relative:"durp/d.py"
       ~is_external:true
   in
+  let test_directory_filter2 () =
+    (* SETUP: 
+     * - local_root is the local root
+     * - search_root is the root of other search paths
+     * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let nonexist_root = Path.create_absolute ~follow_symbolic_links:false "/whosyourdaddy" in
+    assert (not (Path.file_exists nonexist_root));
+
+    touch local_root "a.py";
+    touch search_root "b.py";
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root search_root]
+        ~filter_directories:[local_root]
+        ~ignore_all_errors:[search_root; nonexist_root]
+        ()
+    in
+    let create_exn = create_source_path_exn ~configuration in
+    assert_source_path
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_source_path
+      (create_exn search_root "b.py")
+      ~search_root
+      ~relative:"b.py"
+      ~is_external:true
+  in
   let test_overlapping () =
     (* SETUP:
      * - external_root0 lives under local_root
@@ -649,6 +681,7 @@ let test_creation context =
   test_basic ();
   test_exclude ();
   test_directory_filter ();
+  test_directory_filter2 ();
   test_priority ();
   test_overlapping ();
   test_overlapping2 ()
