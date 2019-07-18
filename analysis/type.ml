@@ -508,6 +508,7 @@ let is_object = function
 
 let is_optional = function
   | Optional _ -> true
+  | Parametric { name = "typing.Optional" | "Optional"; _ } -> true
   | _ -> false
 
 

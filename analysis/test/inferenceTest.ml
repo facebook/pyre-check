@@ -470,6 +470,18 @@ let test_infer _ =
     |}
     [ {|[{"name":"x","type":null,"value":"None"}]|};
       {|[{"name":"x","type":"typing.Optional[str]","value":"None"}]|} ];
+  assert_infer
+    ~fields:["inference.parameters"]
+    {|
+      from typing import Optional
+      def bar(x: Optional[str]):
+        return x
+
+      def foo(x = None):
+        bar(x)
+    |}
+    [ {|[{"name":"x","type":null,"value":"None"}]|};
+      {|[{"name":"x","type":"Optional[str]","value":"None"}]|} ];
 
   (* Don't infer default of None to be None *)
   assert_infer
