@@ -160,14 +160,18 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
           in
           let cleanup () =
             (* Fake environment cleanup: Remove the dummy file *)
-            Sys.remove (Path.absolute (File.path dummy_file));
+            try
+              Sys.remove (Path.absolute (File.path dummy_file));
 
-            (* Trigger another incremental check to revert server state *)
-            IncrementalCheck.recheck
-              ~state
-              ~configuration:{ configuration with ignore_dependencies = true }
-              ~files:[dummy_file]
-            |> ignore
+              (* Trigger another incremental check to revert server state *)
+              IncrementalCheck.recheck
+                ~state
+                ~configuration:{ configuration with ignore_dependencies = true }
+                ~files:[dummy_file]
+              |> ignore
+            with
+            (* In case the remove operation fails somehow *)
+            | Sys_error _ -> ()
           in
           Exn.protect ~f:run ~finally:cleanup
         in
