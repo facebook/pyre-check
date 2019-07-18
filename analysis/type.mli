@@ -161,7 +161,7 @@ and t =
   | Any
   | Literal of literal
   | Optional of t
-  | Parametric of { name: Identifier.t; parameters: t list }
+  | Parametric of { name: Identifier.t; parameters: t Record.OrderedTypes.record }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
@@ -196,13 +196,13 @@ val show_for_hover : t -> string
 
 val serialize : t -> string
 
-val parametric : string -> t list -> t
+val parametric : string -> t Record.OrderedTypes.record -> t
 
 val annotated : t -> t
 
 val awaitable : t -> t
 
-val coroutine : t list -> t
+val coroutine : t Record.OrderedTypes.record -> t
 
 val bool : t
 
@@ -437,7 +437,7 @@ val awaitable_value : t -> t
 
 val coroutine_value : t -> t
 
-val parameters : t -> t list
+val parameters : t -> t Record.OrderedTypes.record option
 
 val single_parameter : t -> t
 

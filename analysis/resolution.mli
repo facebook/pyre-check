@@ -39,7 +39,7 @@ val create
   class_definition:(Type.Primitive.t -> Class.t Node.t option) ->
   class_metadata:(Type.Primitive.t -> class_metadata option) ->
   constructor:(resolution:t -> Type.Primitive.t -> Type.t option) ->
-  generics:(resolution:t -> Class.t Node.t -> Type.t list) ->
+  generics:(resolution:t -> Class.t Node.t -> Type.OrderedTypes.t) ->
   undecorated_signature:(Reference.t -> Type.t Type.Callable.overload option) ->
   attributes:(resolution:t -> Type.t -> AnnotatedAttribute.t list option) ->
   is_protocol:(Type.t -> bool) ->

@@ -1066,11 +1066,9 @@ module State (Context : Context) = struct
                           let variables =
                             List.map variables ~f:(fun variable -> Type.Variable variable)
                           in
-                          Type.Parametric { name = parent_name; parameters = variables }
-                      | Some (ListVariadic _) ->
-                          (* TODO(T47346441): Return a parametric when we can make parametrics with
-                             listvariadics *)
-                          parent_type
+                          Type.Parametric { name = parent_name; parameters = Concrete variables }
+                      | Some (ListVariadic variable) ->
+                          Type.Parametric { name = parent_name; parameters = Variable variable }
                       | exception _ -> parent_type
                     in
                     if Define.is_class_method define || Define.is_class_property define then
@@ -1339,7 +1337,7 @@ module State (Context : Context) = struct
             | _ -> false
           in
           match parsed with
-          | Type.Parametric { name = "type"; parameters = [Type.Any] } ->
+          | Type.Parametric { name = "type"; parameters = Concrete [Type.Any] } ->
               (* Inheriting from type makes you a metaclass, and we don't want to
                * suggest that instead you need to use typing.Type[Something] *)
               state
@@ -1766,7 +1764,7 @@ module State (Context : Context) = struct
             let { state; resolved = new_resolved; _ } = forward_expression ~state ~expression in
             let parameter =
               match Resolution.join resolution new_resolved (Type.iterable Type.Bottom) with
-              | Type.Parametric { parameters = [parameter]; _ } -> parameter
+              | Type.Parametric { parameters = Concrete [parameter]; _ } -> parameter
               | _ -> Type.Any
             in
             { state;
@@ -3164,7 +3162,7 @@ module State (Context : Context) = struct
             | _ -> (
                 Resolution.join resolution annotation (Type.iterable Type.Bottom)
                 |> function
-                | Type.Parametric { parameters = [parameter]; _ } -> parameter
+                | Type.Parametric { parameters = Concrete [parameter]; _ } -> parameter
                 | _ -> Type.Top )
           in
           let nonuniform_sequence_parameters annotation =
@@ -3319,7 +3317,7 @@ module State (Context : Context) = struct
                 (* Special-casing to avoid throwing errors *)
                 let open Type in
                 match expected with
-                | Parametric { name = "type"; parameters = [parameter] }
+                | Parametric { name = "type"; parameters = Concrete [parameter] }
                   when is_typed_dictionary parameter ->
                     is_unknown resolved
                 | _ -> false
@@ -3975,7 +3973,7 @@ module State (Context : Context) = struct
               match Resolution.get_local resolution ~reference with
               | Some
                   { Annotation.annotation =
-                      Type.Parametric { name; parameters = [Type.Optional parameter] } as
+                      Type.Parametric { name; parameters = Concrete [Type.Optional parameter] } as
                       annotation;
                     _
                   }
@@ -3987,7 +3985,8 @@ module State (Context : Context) = struct
                     resolution
                     ~reference
                     ~annotation:
-                      (Annotation.create (Type.Parametric { name; parameters = [parameter] }))
+                      (Annotation.create
+                         (Type.Parametric { name; parameters = Concrete [parameter] }))
               | _ -> resolution
             in
             { state with resolution }
@@ -4234,7 +4233,7 @@ module State (Context : Context) = struct
         let { state; resolved; _ } = forward_expression ~state ~expression:return in
         let actual =
           match Resolution.join resolution resolved (Type.iterator Type.Bottom) with
-          | Type.Parametric { name = "typing.Iterator"; parameters = [parameter] } ->
+          | Type.Parametric { name = "typing.Iterator"; parameters = Concrete [parameter] } ->
               Type.generator parameter
           | annotation -> Type.generator annotation
         in
@@ -4313,12 +4312,20 @@ module State (Context : Context) = struct
         match Node.value statement with
         | Class ({ Class.name; body; _ } as definition) ->
             let variables =
+              let extract = function
+                | Type.OrderedTypes.Concrete concretes ->
+                    List.filter_map concretes ~f:(function
+                        | Type.Variable variable -> Some (Type.Variable.Unary variable)
+                        | _ -> None)
+                | Variable variable -> [Type.Variable.ListVariadic variable]
+                | Map _
+                | Any ->
+                    (* impossible *) []
+              in
               Node.create ~location definition
               |> Annotated.Class.create
               |> Annotated.Class.generics ~resolution
-              |> List.filter_map ~f:(function
-                     | Type.Variable variable -> Some (Type.Variable.Unary variable)
-                     | _ -> None)
+              |> extract
             in
             schedule
               ~variables
@@ -4384,7 +4391,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
         ~class_definition:(fun _ -> None)
         ~class_metadata:(fun _ -> None)
         ~constructor:(fun ~resolution:_ _ -> None)
-        ~generics:(fun ~resolution:_ _ -> [])
+        ~generics:(fun ~resolution:_ _ -> Concrete [])
         ~undecorated_signature:(fun _ -> None)
         ~attributes:(fun ~resolution:_ _ -> None)
         ~is_protocol:(fun _ -> false)

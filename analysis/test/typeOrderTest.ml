@@ -12,6 +12,8 @@ open Test
 open TypeOrder
 open Annotated
 
+let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
+
 let concrete_connect ?parameters =
   let parameters = parameters >>| fun parameters -> Type.OrderedTypes.Concrete parameters in
   ClassHierarchy.connect ?parameters
@@ -571,7 +573,7 @@ let test_less_or_equal _ =
     (less_or_equal
        default
        ~left:(Type.Tuple (Type.Bounded (Concrete [Type.integer; Type.integer])))
-       ~right:(Type.parametric "tuple" [Type.integer]));
+       ~right:(Type.parametric "tuple" ![Type.integer]));
 
   (* Union types *)
   assert_true
@@ -717,25 +719,25 @@ let test_less_or_equal _ =
   assert_true
     (less_or_equal
        order
-       ~left:(Type.parametric "A" [Type.integer; Type.string])
-       ~right:(Type.parametric "B" [Type.tuple [Type.integer; Type.string]]));
+       ~left:(Type.parametric "A" ![Type.integer; Type.string])
+       ~right:(Type.parametric "B" ![Type.tuple [Type.integer; Type.string]]));
   assert_false
     (less_or_equal
        order
-       ~left:(Type.parametric "A" [Type.integer; Type.string])
+       ~left:(Type.parametric "A" ![Type.integer; Type.string])
        ~right:(Type.tuple [Type.integer; Type.string]));
   assert_true
     (less_or_equal
        order
-       ~left:(Type.parametric "A" [Type.integer; Type.string])
+       ~left:(Type.parametric "A" ![Type.integer; Type.string])
        ~right:
-         (Type.parametric "C" [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
+         (Type.parametric "C" ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
   assert_false
     (less_or_equal
        order
-       ~left:(Type.parametric "A" [Type.string; Type.integer])
+       ~left:(Type.parametric "A" ![Type.string; Type.integer])
        ~right:
-         (Type.parametric "C" [Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
+         (Type.parametric "C" ![Type.union [Type.tuple [Type.integer; Type.string]; Type.float]]));
 
   (* Variables. *)
   assert_true (less_or_equal order ~left:(Type.variable "T") ~right:Type.Any);
@@ -1463,161 +1465,161 @@ let test_less_or_equal_variance _ =
   assert_false
     (less_or_equal
        variance_order
-       ~left:(Type.parametric "LinkedList" [Type.integer])
-       ~right:(Type.parametric "LinkedList" [Type.float]));
+       ~left:(Type.parametric "LinkedList" ![Type.integer])
+       ~right:(Type.parametric "LinkedList" ![Type.float]));
   assert_false
     (less_or_equal
        variance_order
-       ~left:(Type.parametric "LinkedList" [Type.float])
-       ~right:(Type.parametric "LinkedList" [Type.integer]));
+       ~left:(Type.parametric "LinkedList" ![Type.float])
+       ~right:(Type.parametric "LinkedList" ![Type.integer]));
   assert_false
     (less_or_equal
        variance_order
-       ~left:(Type.parametric "LinkedList" [Type.integer])
-       ~right:(Type.parametric "LinkedList" [Type.Any]));
+       ~left:(Type.parametric "LinkedList" ![Type.integer])
+       ~right:(Type.parametric "LinkedList" ![Type.Any]));
   assert_false
     (less_or_equal
        variance_order
-       ~left:(Type.parametric "LinkedList" [Type.Any])
-       ~right:(Type.parametric "LinkedList" [Type.integer]));
+       ~left:(Type.parametric "LinkedList" ![Type.Any])
+       ~right:(Type.parametric "LinkedList" ![Type.integer]));
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "LinkedList" [Type.integer])
-    ~right:(Type.parametric "LinkedList" [Type.Top]);
+    ~left:(Type.parametric "LinkedList" ![Type.integer])
+    ~right:(Type.parametric "LinkedList" ![Type.Top]);
 
   (* Covariant. *)
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "Box" [Type.integer])
-    ~right:(Type.parametric "Box" [Type.float]);
+    ~left:(Type.parametric "Box" ![Type.integer])
+    ~right:(Type.parametric "Box" ![Type.float]);
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "Box" [Type.integer])
-    ~right:(Type.parametric "Box" [Type.Any]);
+    ~left:(Type.parametric "Box" ![Type.integer])
+    ~right:(Type.parametric "Box" ![Type.Any]);
 
   (* Contravariant. *)
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "Sink" [Type.float])
-    ~right:(Type.parametric "Sink" [Type.integer]);
+    ~left:(Type.parametric "Sink" ![Type.float])
+    ~right:(Type.parametric "Sink" ![Type.integer]);
   assert_strict_less
     ~order:variance_order
-    ~left:(Type.parametric "Sink" [Type.Any])
-    ~right:(Type.parametric "Sink" [Type.integer]);
+    ~left:(Type.parametric "Sink" ![Type.Any])
+    ~right:(Type.parametric "Sink" ![Type.integer]);
 
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_tests () =
     (* More complex rules. *)
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Derived" [Type.integer])
-      ~right:(Type.parametric "Derived" [Type.float]);
+      ~left:(Type.parametric "Derived" ![Type.integer])
+      ~right:(Type.parametric "Derived" ![Type.float]);
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Derived" [Type.integer])
-      ~right:(Type.parametric "Base" [Type.integer]);
+      ~left:(Type.parametric "Derived" ![Type.integer])
+      ~right:(Type.parametric "Base" ![Type.integer]);
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Derived" [Type.float])
-      ~right:(Type.parametric "Base" [Type.float]);
+      ~left:(Type.parametric "Derived" ![Type.float])
+      ~right:(Type.parametric "Base" ![Type.float]);
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Base" [Type.float])
-      ~right:(Type.parametric "Base" [Type.integer]);
+      ~left:(Type.parametric "Base" ![Type.float])
+      ~right:(Type.parametric "Base" ![Type.integer]);
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Derived" [Type.integer])
-      ~right:(Type.parametric "Base" [Type.float]);
+      ~left:(Type.parametric "Derived" ![Type.integer])
+      ~right:(Type.parametric "Base" ![Type.float]);
     assert_strict_less
       ~order:variance_order
-      ~left:(Type.parametric "Derived" [Type.float])
-      ~right:(Type.parametric "Base" [Type.integer]);
+      ~left:(Type.parametric "Derived" ![Type.float])
+      ~right:(Type.parametric "Base" ![Type.integer]);
 
     (* Multiplane variance. *)
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "A" [Type.integer; Type.float])
-      ~right:(Type.parametric "A" [Type.float; Type.integer]);
+      ~left:(Type.parametric "A" ![Type.integer; Type.float])
+      ~right:(Type.parametric "A" ![Type.float; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.integer])
-      ~right:(Type.parametric "B" [Type.integer; Type.float]);
+      ~left:(Type.parametric "B" ![Type.float; Type.integer])
+      ~right:(Type.parametric "B" ![Type.integer; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.integer; Type.integer])
-      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+      ~left:(Type.parametric "B" ![Type.integer; Type.integer])
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.integer; Type.integer])
-      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+      ~left:(Type.parametric "B" ![Type.integer; Type.integer])
+      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.integer; Type.integer])
-      ~right:(Type.parametric "A" [Type.float; Type.float]);
+      ~left:(Type.parametric "B" ![Type.integer; Type.integer])
+      ~right:(Type.parametric "A" ![Type.float; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.float])
-      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+      ~left:(Type.parametric "B" ![Type.float; Type.float])
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.float])
-      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+      ~left:(Type.parametric "B" ![Type.float; Type.float])
+      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.float])
-      ~right:(Type.parametric "A" [Type.float; Type.float]);
+      ~left:(Type.parametric "B" ![Type.float; Type.float])
+      ~right:(Type.parametric "A" ![Type.float; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.integer])
-      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+      ~left:(Type.parametric "B" ![Type.float; Type.integer])
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.integer])
-      ~right:(Type.parametric "A" [Type.integer; Type.float]);
+      ~left:(Type.parametric "B" ![Type.float; Type.integer])
+      ~right:(Type.parametric "A" ![Type.integer; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.integer])
-      ~right:(Type.parametric "A" [Type.float; Type.float]);
+      ~left:(Type.parametric "B" ![Type.float; Type.integer])
+      ~right:(Type.parametric "A" ![Type.float; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "B" [Type.float; Type.integer])
-      ~right:(Type.parametric "A" [Type.float; Type.integer]);
+      ~left:(Type.parametric "B" ![Type.float; Type.integer])
+      ~right:(Type.parametric "A" ![Type.float; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "C" [])
-      ~right:(Type.parametric "A" [Type.float; Type.float]);
+      ~left:(Type.parametric "C" ![])
+      ~right:(Type.parametric "A" ![Type.float; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:!!"C"
-      ~right:(Type.parametric "A" [Type.float; Type.float]);
+      ~right:(Type.parametric "A" ![Type.float; Type.float]);
     assert_strict_less
       ~order:multiplane_variance_order
-      ~left:(Type.parametric "D" [])
-      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+      ~left:(Type.parametric "D" ![])
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
     assert_strict_less
       ~order:multiplane_variance_order
       ~left:!!"D"
-      ~right:(Type.parametric "A" [Type.integer; Type.integer]);
+      ~right:(Type.parametric "A" ![Type.integer; Type.integer]);
     assert_false
       (less_or_equal
          parallel_planes_variance_order
-         ~left:(Type.parametric "C" [])
-         ~right:(Type.parametric "A" [Type.float; Type.float]));
+         ~left:(Type.parametric "C" ![])
+         ~right:(Type.parametric "A" ![Type.float; Type.float]));
     assert_false
       (less_or_equal
          parallel_planes_variance_order
          ~left:!!"C"
-         ~right:(Type.parametric "A" [Type.float; Type.float]));
+         ~right:(Type.parametric "A" ![Type.float; Type.float]));
     assert_false
       (less_or_equal
          parallel_planes_variance_order
-         ~left:(Type.parametric "D" [])
-         ~right:(Type.parametric "A" [Type.integer; Type.integer]));
+         ~left:(Type.parametric "D" ![])
+         ~right:(Type.parametric "A" ![Type.integer; Type.integer]));
     assert_false
       (less_or_equal
          parallel_planes_variance_order
          ~left:!!"D"
-         ~right:(Type.parametric "A" [Type.integer; Type.integer]))
+         ~right:(Type.parametric "A" ![Type.integer; Type.integer]))
   in
   ()
 
@@ -1981,75 +1983,75 @@ let test_join _ =
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Top]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.integer])
+       (Type.parametric "LinkedList" ![Type.Top]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Top])
+       (Type.parametric "LinkedList" ![Type.integer]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Bottom])
-       (Type.parametric "LinkedList" [Type.Top]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Bottom])
+       (Type.parametric "LinkedList" ![Type.Top]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.Bottom]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Top])
+       (Type.parametric "LinkedList" ![Type.Bottom]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Any])
-       (Type.parametric "LinkedList" [Type.Top]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Any])
+       (Type.parametric "LinkedList" ![Type.Top]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.Any]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Top])
+       (Type.parametric "LinkedList" ![Type.Any]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.Top]))
-    (Type.parametric "LinkedList" [Type.Top]);
+       (Type.parametric "LinkedList" ![Type.Top])
+       (Type.parametric "LinkedList" ![Type.Top]))
+    (Type.parametric "LinkedList" ![Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "Map" [Type.integer; Type.integer])
-       (Type.parametric "Map" [Type.Top; Type.Top]))
-    (Type.parametric "Map" [Type.Top; Type.Top]);
+       (Type.parametric "Map" ![Type.integer; Type.integer])
+       (Type.parametric "Map" ![Type.Top; Type.Top]))
+    (Type.parametric "Map" ![Type.Top; Type.Top]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "Map" [Type.integer; Type.integer])
-       (Type.parametric "Map" [Type.Top; Type.integer]))
-    (Type.parametric "Map" [Type.Top; Type.integer]);
+       (Type.parametric "Map" ![Type.integer; Type.integer])
+       (Type.parametric "Map" ![Type.Top; Type.integer]))
+    (Type.parametric "Map" ![Type.Top; Type.integer]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "Map" [Type.integer; Type.integer])
-       (Type.parametric "Map" [Type.Top; Type.string]))
-    (Type.parametric "Map" [Type.Top; Type.Any]);
+       (Type.parametric "Map" ![Type.integer; Type.integer])
+       (Type.parametric "Map" ![Type.Top; Type.string]))
+    (Type.parametric "Map" ![Type.Top; Type.Any]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Any]))
-    (Type.parametric "LinkedList" [Type.Any]);
+       (Type.parametric "LinkedList" ![Type.integer])
+       (Type.parametric "LinkedList" ![Type.Any]))
+    (Type.parametric "LinkedList" ![Type.Any]);
   assert_type_equal
     (join
        variance_order
-       (Type.parametric "LinkedList" [Type.Any])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Any]);
+       (Type.parametric "LinkedList" ![Type.Any])
+       (Type.parametric "LinkedList" ![Type.integer]))
+    (Type.parametric "LinkedList" ![Type.Any]);
   let variance_aliases =
     Identifier.Table.of_alist_exn
       [ "_T", Type.variable "_T";
@@ -2276,27 +2278,27 @@ let test_meet _ =
   assert_type_equal
     (meet
        variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Top]))
-    (Type.parametric "LinkedList" [Type.integer]);
+       (Type.parametric "LinkedList" ![Type.integer])
+       (Type.parametric "LinkedList" ![Type.Top]))
+    (Type.parametric "LinkedList" ![Type.integer]);
   assert_type_equal
     (meet
        variance_order
-       (Type.parametric "LinkedList" [Type.Top])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.integer]);
+       (Type.parametric "LinkedList" ![Type.Top])
+       (Type.parametric "LinkedList" ![Type.integer]))
+    (Type.parametric "LinkedList" ![Type.integer]);
   assert_type_equal
     (meet
        variance_order
-       (Type.parametric "LinkedList" [Type.integer])
-       (Type.parametric "LinkedList" [Type.Any]))
-    (Type.parametric "LinkedList" [Type.Bottom]);
+       (Type.parametric "LinkedList" ![Type.integer])
+       (Type.parametric "LinkedList" ![Type.Any]))
+    (Type.parametric "LinkedList" ![Type.Bottom]);
   assert_type_equal
     (meet
        variance_order
-       (Type.parametric "LinkedList" [Type.Any])
-       (Type.parametric "LinkedList" [Type.integer]))
-    (Type.parametric "LinkedList" [Type.Bottom]);
+       (Type.parametric "LinkedList" ![Type.Any])
+       (Type.parametric "LinkedList" ![Type.integer]))
+    (Type.parametric "LinkedList" ![Type.Bottom]);
 
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_tests () =
@@ -3007,22 +3009,22 @@ let test_is_consistent_with _ =
   assert_true
     (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.bool)
-       (Type.parametric "typing.Mapping" [Type.integer; Type.bool]));
+       (Type.parametric "typing.Mapping" ![Type.integer; Type.bool]));
   assert_false
     (is_consistent_with
        (Type.dictionary ~key:Type.Any ~value:Type.bool)
-       (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool]));
+       (Type.parametric "collections.OrderedDict" ![Type.integer; Type.bool]));
   assert_false
     (is_consistent_with
        (Type.dictionary ~key:Type.integer ~value:Type.bool)
-       (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool]));
+       (Type.parametric "collections.OrderedDict" ![Type.Any; Type.bool]));
   assert_true
     (is_consistent_with
-       (Type.parametric "collections.OrderedDict" [Type.integer; Type.bool])
+       (Type.parametric "collections.OrderedDict" ![Type.integer; Type.bool])
        (Type.dictionary ~key:Type.Any ~value:Type.bool));
   assert_true
     (is_consistent_with
-       (Type.parametric "collections.OrderedDict" [Type.Any; Type.bool])
+       (Type.parametric "collections.OrderedDict" ![Type.Any; Type.bool])
        (Type.dictionary ~key:Type.integer ~value:Type.bool));
   assert_true (is_consistent_with (Type.list Type.Any) (Type.iterable Type.string));
   assert_true (is_consistent_with (Type.list Type.integer) (Type.sequence Type.Any));
@@ -3033,12 +3035,12 @@ let test_is_consistent_with _ =
   assert_false (is_consistent_with (Type.iterable Type.integer) (Type.set Type.Any));
   assert_false
     (is_consistent_with
-       (Type.parametric "typing.AbstractSet" [Type.object_primitive])
+       (Type.parametric "typing.AbstractSet" ![Type.object_primitive])
        (Type.set Type.Any));
   assert_true
     (is_consistent_with
        (Type.set Type.Any)
-       (Type.parametric "typing.AbstractSet" [Type.object_primitive]));
+       (Type.parametric "typing.AbstractSet" ![Type.object_primitive]));
   assert_false
     (is_consistent_with
        (Type.tuple [Type.string; Type.string])
@@ -3356,7 +3358,7 @@ let test_mark_escaped_as_escaped _ =
     let parameters =
       Type.Callable.Defined [Named { name = "a"; annotation = variable; default = true }]
     in
-    Type.Callable.create ~annotation:(Type.parametric "G_invariant" [variable]) ~parameters ()
+    Type.Callable.create ~annotation:(Type.parametric "G_invariant" ![variable]) ~parameters ()
   in
   let right =
     let variable = Type.variable "T_Unconstrained" in
@@ -3385,7 +3387,7 @@ let test_mark_escaped_as_escaped _ =
         ~printer:Type.show
         ~cmp:Type.equal
         (Type.Variable.convert_all_escaped_free_variables_to_anys instantiated)
-        (Type.parametric "G_invariant" [Type.Any])
+        (Type.parametric "G_invariant" ![Type.Any])
   | _ -> assert_failure "wrong number of solutions"
 
 

@@ -183,7 +183,7 @@ module Method = struct
       Type.awaitable annotation
     else if Define.is_coroutine define then
       match annotation with
-      | Type.Parametric { name; parameters = [_; _; return_annotation] }
+      | Type.Parametric { name; parameters = Concrete [_; _; return_annotation] }
         when String.equal name "typing.Generator" ->
           Type.awaitable return_annotation
       | _ -> Type.Top
@@ -195,11 +195,22 @@ let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Expression.Call.Argument.value; _ } =
     Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.Variable.all_free_variables
-    |> List.filter_map ~f:(function
-           | Type.Variable.Unary variable -> Some (Type.Variable variable)
-           | _ -> None)
   in
-  List.concat_map ~f:find_type_variables bases |> List.dedup ~compare:Type.compare
+  let handle_deduplicated = function
+    | [Type.Variable.ListVariadic variable] -> Type.OrderedTypes.Variable variable
+    | deduplicated ->
+        let to_unary = function
+          | Type.Variable.Unary variable -> Some (Type.Variable variable)
+          | _ -> None
+        in
+        List.map deduplicated ~f:to_unary
+        |> Option.all
+        |> Option.value ~default:[]
+        |> fun concrete -> Type.OrderedTypes.Concrete concrete
+  in
+  List.concat_map ~f:find_type_variables bases
+  |> List.dedup ~compare:Type.Variable.compare
+  |> handle_deduplicated
 
 
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
@@ -229,7 +240,7 @@ let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
     []
   else
     let variables = find_propagated_type_variables bases ~resolution in
-    if List.is_empty variables then
+    if Type.OrderedTypes.equal variables (Concrete []) then
       []
     else
       [ { Expression.Call.Argument.name = None;
@@ -523,7 +534,7 @@ let create_attribute
         in
         let overloads = List.mapi ~f:overload members @ overloads in
         Some (Type.Callable { callable with overloads })
-    | ( Some (Parametric { name = "type"; parameters = [Type.Primitive name] }),
+    | ( Some (Parametric { name = "type"; parameters = Concrete [Type.Primitive name] }),
         "__getitem__",
         Some (Type.Callable ({ kind = Named callable_name; _ } as callable)) )
       when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
@@ -532,21 +543,32 @@ let create_attribute
             Resolution.class_definition resolution (Type.Primitive name)
             >>| create
             >>| generics ~resolution
-            |> Option.value ~default:[]
+            |> Option.value ~default:(Type.OrderedTypes.Concrete [])
           in
-          let parameters =
-            let create_parameter annotation =
-              Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
-            in
-            match generics with
-            | [] -> []
-            | [generic] -> [create_parameter (Type.meta generic)]
-            | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
-          in
-          { Type.Callable.annotation = Type.meta (Type.Parametric { name; parameters = generics });
-            parameters = Defined parameters;
-            define_location = None
-          }
+          match generics with
+          | Concrete generics ->
+              let parameters =
+                let create_parameter annotation =
+                  Type.Callable.Parameter.Anonymous { index = 0; annotation; default = false }
+                in
+                match generics with
+                | [] -> []
+                | [generic] -> [create_parameter (Type.meta generic)]
+                | generics -> [create_parameter (Type.tuple (List.map ~f:Type.meta generics))]
+              in
+              { Type.Callable.annotation =
+                  Type.meta (Type.Parametric { name; parameters = Concrete generics });
+                parameters = Defined parameters;
+                define_location = None
+              }
+          | _ ->
+              (* TODO(T47347970): make this a *args: Ts -> X[Ts] for that case, and ignore the
+                 others *)
+              { Type.Callable.annotation =
+                  Type.meta (Type.Parametric { name; parameters = generics });
+                parameters = Undefined;
+                define_location = None
+              }
         in
         Some (Type.Callable { callable with implementation; overloads = [] })
     | _ -> annotation
@@ -603,7 +625,13 @@ let create_attribute
                | _ -> None)
         |> Type.Set.of_list
       in
-      let generics = generics parent ~resolution |> Type.Set.of_list in
+      let generics =
+        match generics parent ~resolution with
+        | Concrete generics -> Type.Set.of_list generics
+        | _ ->
+            (* TODO(T44676629): This case should be handled when we re-do this handling *)
+            Type.Set.empty
+      in
       Set.diff variables generics |> Set.to_list
     in
     if property && not (List.is_empty free_variables) then
@@ -998,14 +1026,15 @@ let constructor definition ~instantiated ~resolution =
         (* Tuples are special. *)
         if String.equal name "tuple" then
           match generics with
-          | [tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
+          | Concrete [tuple_variable] -> Type.Tuple (Type.Unbounded tuple_variable)
           | _ -> Type.Tuple (Type.Unbounded Type.Any)
         else
           let backup = Type.Parametric { name; parameters = generics } in
           match instantiated, generics with
-          | _, [] -> instantiated
+          | _, Concrete [] -> instantiated
           | Type.Primitive instantiated_name, _ when String.equal instantiated_name name -> backup
-          | Type.Parametric { parameters; name = instantiated_name }, _
+          | ( Type.Parametric { parameters = Concrete parameters; name = instantiated_name },
+              Concrete generics )
             when String.equal instantiated_name name
                  && List.length parameters <> List.length generics ->
               backup

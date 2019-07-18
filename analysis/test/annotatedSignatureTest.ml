@@ -421,7 +421,7 @@ let test_select _ =
       ( "[[typing.Sequence[_T]], int]",
         Type.literal_integer 1,
         "1",
-        Type.parametric "typing.Sequence" [Type.variable "_T"],
+        Type.parametric "typing.Sequence" (Concrete [Type.variable "_T"]),
         None,
         1 ));
   assert_select "[[_R], _R]" "(1)" (`Found "[[int], int]");

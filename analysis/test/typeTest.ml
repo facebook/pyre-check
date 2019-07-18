@@ -10,6 +10,8 @@ open Analysis
 open Pyre
 open Test
 
+let ( ! ) concretes = Type.OrderedTypes.Concrete concretes
+
 let test_create _ =
   let assert_create ?(aliases = fun _ -> None) source annotation =
     assert_equal
@@ -23,10 +25,10 @@ let test_create _ =
   assert_create "foo.$local_qualifier$bar" (Type.Primitive "foo.bar");
   assert_create "object" (Type.Primitive "object");
   assert_create "$unknown" Type.Top;
-  assert_create "foo[bar]" (Type.parametric "foo" [Type.Primitive "bar"]);
+  assert_create "foo[bar]" (Type.parametric "foo" ![Type.Primitive "bar"]);
   assert_create
     "foo[bar, baz]"
-    (Type.parametric "foo" [Type.Primitive "bar"; Type.Primitive "baz"]);
+    (Type.parametric "foo" ![Type.Primitive "bar"; Type.Primitive "baz"]);
   assert_create "typing.List.__getitem__(int)" (Type.list Type.integer);
   assert_create
     "typing.Dict.__getitem__((int, str))"
@@ -34,14 +36,14 @@ let test_create _ =
 
   (* Type aliases in typeshed. *)
   assert_create "typing.Counter" (Type.Primitive "collections.Counter");
-  assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" [Type.integer]);
+  assert_create "typing.Counter[int]" (Type.parametric "collections.Counter" ![Type.integer]);
   assert_create "typing.ChainMap" (Type.Primitive "collections.ChainMap");
-  assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" [Type.integer]);
+  assert_create "typing.ChainMap[int]" (Type.parametric "collections.ChainMap" ![Type.integer]);
   assert_create "typing.Deque" (Type.Primitive "collections.deque");
-  assert_create "typing.Deque[int]" (Type.parametric "collections.deque" [Type.integer]);
+  assert_create "typing.Deque[int]" (Type.parametric "collections.deque" ![Type.integer]);
   assert_create
     "typing_extensions.Protocol[int]"
-    (Type.parametric "typing.Protocol" [Type.integer]);
+    (Type.parametric "typing.Protocol" ![Type.integer]);
   assert_create "typing_extensions.Protocol" (Type.Primitive "typing.Protocol");
 
   (* Check renaming. *)
@@ -49,7 +51,7 @@ let test_create _ =
   assert_create "typing.List" (Primitive "list");
   assert_create
     "typing.DefaultDict[int, str]"
-    (Type.parametric "collections.defaultdict" [Type.integer; Type.string]);
+    (Type.parametric "collections.defaultdict" ![Type.integer; Type.string]);
   assert_create "typing.Dict[int, str]" (Type.dictionary ~key:Type.integer ~value:Type.string);
   assert_create "typing.Tuple[int, str]" (Type.tuple [Type.integer; Type.string]);
   assert_create "typing.Tuple[int, ...]" (Type.Tuple (Type.Unbounded Type.integer));
@@ -121,7 +123,7 @@ let test_create _ =
         [ "Alias", Type.Primitive "Aliased";
           ( "_Future",
             Type.union
-              [ Type.parametric "Future" [Type.integer; Type.variable "_T"];
+              [ Type.parametric "Future" ![Type.integer; Type.variable "_T"];
                 Type.awaitable (Type.variable "_T") ] ) ]
       |> (fun table -> Identifier.Table.find table primitive)
       >>| fun alias -> Type.TypeAlias alias
@@ -131,19 +133,19 @@ let test_create _ =
   assert_alias "Alias" (Type.Primitive "Aliased");
   assert_alias "Aliased" (Type.Primitive "Aliased");
   assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
-  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" [Type.Primitive "Aliased"]);
-  assert_alias "Alias[int]" (Type.parametric "Aliased" [Type.integer]);
+  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" ![Type.Primitive "Aliased"]);
+  assert_alias "Alias[int]" (Type.parametric "Aliased" ![Type.integer]);
 
   (* TODO(T44787675): Implement actual generic aliases *)
   assert_alias
     "_Future[int]"
-    (Type.union [Type.parametric "Future" [Type.integer]; Type.awaitable Type.integer]);
+    (Type.union [Type.parametric "Future" ![Type.integer]; Type.awaitable Type.integer]);
 
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
   assert_create "'foo.bar'" (Type.Primitive "foo.bar");
-  assert_create "foo['bar']" (Type.parametric "foo" [Type.Primitive "bar"]);
-  assert_create "'Type[str]'" (Type.parametric "Type" [Type.Primitive "str"]);
+  assert_create "foo['bar']" (Type.parametric "foo" ![Type.Primitive "bar"]);
+  assert_create "'Type[str]'" (Type.parametric "Type" ![Type.Primitive "str"]);
   assert_create "'Type[[[]str]'" (Type.Primitive "Type[[[]str]");
 
   (* Recursive aliasing. *)
@@ -189,7 +191,7 @@ let test_create _ =
   let aliases = create_type_alias_table aliases in
   assert_create ~aliases "A" (Type.Primitive "B");
   assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
-  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" [Type.integer]);
+  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" ![Type.integer]);
   assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R.R");
   assert_create
     ~aliases
@@ -394,7 +396,7 @@ let test_expression _ =
   assert_expression (Type.Primitive "foo.bar") "foo.bar";
   assert_expression Type.Top "$unknown";
   assert_expression
-    (Type.Parametric { name = "foo.bar"; parameters = [Type.Primitive "baz"] })
+    (Type.Parametric { name = "foo.bar"; parameters = ![Type.Primitive "baz"] })
     "foo.bar.__getitem__(baz)";
   assert_expression
     (Type.Tuple (Type.Bounded (Type.OrderedTypes.Concrete [Type.integer; Type.string])))
@@ -403,8 +405,25 @@ let test_expression _ =
     (Type.Tuple (Type.Unbounded Type.integer))
     "typing.Tuple.__getitem__((int, ...))";
   assert_expression
-    (Type.Parametric { name = "list"; parameters = [Type.integer] })
+    (Type.Parametric { name = "list"; parameters = ![Type.integer] })
     "typing.List.__getitem__(int)";
+  assert_expression
+    (Type.Parametric
+       { name = "foo.Variadic"; parameters = Variable (Type.Variable.Variadic.List.create "Ts") })
+    "foo.Variadic.__getitem__(Ts)";
+  assert_expression
+    (Type.Parametric { name = "foo.Variadic"; parameters = Any })
+    "foo.Variadic.__getitem__(...)";
+  assert_expression
+    (Type.Parametric
+       { name = "foo.Variadic";
+         parameters =
+           Map
+             (Type.OrderedTypes.Map.create
+                ~mappers:["Foo"]
+                ~variable:(Type.Variable.Variadic.List.create "Ts"))
+       })
+    "foo.Variadic.__getitem__(pyre_extensions.type_variable_operators.Map.__getitem__((Foo, Ts)))";
 
   (* Callables. *)
   let open Type.Callable in
@@ -550,9 +569,11 @@ let test_concise _ =
   assert_concise Type.Any "Any";
   assert_concise (Type.Optional Type.Bottom) "None";
   assert_concise (Type.Optional Type.integer) "Optional[int]";
-  assert_concise (Type.parametric "Optional" [Type.Bottom]) "None";
-  assert_concise (Type.parametric "parametric" [Type.Top; Type.Top]) "parametric[]";
-  assert_concise (Type.parametric "parametric" [Type.Top; Type.float]) "parametric[unknown, float]";
+  assert_concise (Type.parametric "Optional" ![Type.Bottom]) "None";
+  assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
+  assert_concise
+    (Type.parametric "parametric" ![Type.Top; Type.float])
+    "parametric[unknown, float]";
   assert_concise (Type.Primitive "a.b.c") "c";
   assert_concise (Type.tuple [Type.integer; Type.Any]) "Tuple[int, Any]";
   assert_concise (Type.Tuple (Type.Unbounded Type.integer)) "Tuple[int, ...]";
@@ -625,10 +646,10 @@ let test_primitives _ =
     (Type.primitives (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
   assert_equal
     [Type.integer]
-    (Type.primitives (Type.parametric "parametric" [Type.integer; Type.Top]));
+    (Type.primitives (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_equal
     [Type.integer; Type.string]
-    (Type.primitives (Type.parametric "parametric" [Type.integer; Type.string]));
+    (Type.primitives (Type.parametric "parametric" ![Type.integer; Type.string]));
   assert_equal [Type.string] (Type.primitives (Type.tuple [Type.Top; Type.string]));
   assert_equal
     [Type.integer; Type.string]
@@ -669,10 +690,10 @@ let test_elements _ =
     (Type.elements (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
   assert_equal
     ["int"; "parametric"]
-    (Type.elements (Type.parametric "parametric" [Type.integer; Type.Top]));
+    (Type.elements (Type.parametric "parametric" ![Type.integer; Type.Top]));
   assert_equal
     ["int"; "str"; "parametric"]
-    (Type.elements (Type.parametric "parametric" [Type.integer; Type.string]));
+    (Type.elements (Type.parametric "parametric" ![Type.integer; Type.string]));
   assert_equal ["str"; "tuple"] (Type.elements (Type.tuple [Type.Top; Type.string]));
   assert_equal ["int"; "str"; "tuple"] (Type.elements (Type.tuple [Type.integer; Type.string]));
   assert_equal
@@ -710,8 +731,8 @@ let test_exists _ =
     (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.Top]) "T"));
   assert_false
     (top_exists (Type.variable ~constraints:(Type.Variable.Unary.Explicit [Type.integer]) "T"));
-  assert_true (top_exists (Type.parametric "parametric" [Type.integer; Type.Top]));
-  assert_false (top_exists (Type.parametric "parametric" [Type.integer; Type.string]));
+  assert_true (top_exists (Type.parametric "parametric" ![Type.integer; Type.Top]));
+  assert_false (top_exists (Type.parametric "parametric" ![Type.integer; Type.string]));
   assert_true (top_exists (Type.tuple [Type.Top; Type.string]));
   assert_false (top_exists (Type.tuple [Type.integer; Type.string]));
   assert_true (top_exists (Type.union [Type.integer; Type.Top]));
@@ -748,7 +769,7 @@ let test_contains_any _ = assert_true (Type.contains_any Type.Any)
 
 let test_is_concrete _ =
   assert_true (Type.is_concrete Type.none);
-  assert_true (Type.is_concrete (Type.parametric "typing.Optional" [Type.Bottom]));
+  assert_true (Type.is_concrete (Type.parametric "typing.Optional" ![Type.Bottom]));
   assert_true (Type.is_concrete (Type.Callable.create ~annotation:Type.none ()));
   assert_false (Type.is_concrete (Type.Callable.create ~annotation:(Type.list Type.Bottom) ()));
   ()
@@ -763,10 +784,10 @@ let test_is_not_instantiated _ =
 
 
 let test_is_meta _ =
-  assert_true (Type.is_meta (Type.Parametric { name = "type"; parameters = [Type.integer] }));
+  assert_true (Type.is_meta (Type.Parametric { name = "type"; parameters = ![Type.integer] }));
   assert_false (Type.is_meta Type.integer);
   assert_false
-    (Type.is_meta (Type.Parametric { name = "typing.Type"; parameters = [Type.integer] }))
+    (Type.is_meta (Type.Parametric { name = "typing.Type"; parameters = ![Type.integer] }))
 
 
 let test_is_none _ =
@@ -778,7 +799,7 @@ let test_is_none _ =
 
 let test_is_type_alias _ =
   assert_true (Type.is_type_alias (Type.Primitive "typing.TypeAlias"));
-  assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" [Type.Top]))
+  assert_false (Type.is_type_alias (Type.parametric "typing.TypeAlias" ![Type.Top]))
 
 
 let test_is_unknown _ =
@@ -788,10 +809,10 @@ let test_is_unknown _ =
   assert_false (Type.is_unknown (Type.optional Type.integer));
   assert_true
     (Type.is_unknown
-       (Type.Optional (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] })));
+       (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })));
   assert_true
-    (Type.is_unknown (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] }));
-  assert_false (Type.is_unknown (Type.Parametric { name = "foo"; parameters = [Type.integer] }));
+    (Type.is_unknown (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }));
+  assert_false (Type.is_unknown (Type.Parametric { name = "foo"; parameters = ![Type.integer] }));
   assert_false (Type.is_unknown Type.integer);
   assert_true (Type.is_unknown Type.Top);
   assert_true (Type.is_unknown (Type.Union [Type.integer; Type.Top]));
@@ -849,11 +870,11 @@ let test_class_name _ =
 let test_optional_value _ =
   assert_equal
     (Type.optional_value
-       (Type.Optional (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] })))
-    (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] });
+       (Type.Optional (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })))
+    (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] });
   assert_equal
-    (Type.optional_value (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] }))
-    (Type.Parametric { name = "foo"; parameters = [Type.integer; Type.Top] })
+    (Type.optional_value (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] }))
+    (Type.Parametric { name = "foo"; parameters = ![Type.integer; Type.Top] })
 
 
 let test_async_generator_value _ =
@@ -862,11 +883,11 @@ let test_async_generator_value _ =
     (Type.async_generator_value
        (Type.Parametric
           { name = "typing.AsyncGenerator";
-            parameters = [Type.integer; Type.Optional Type.Bottom]
+            parameters = ![Type.integer; Type.Optional Type.Bottom]
           }))
     (Type.Parametric
        { name = "typing.Generator";
-         parameters = [Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom]
+         parameters = ![Type.integer; Type.Optional Type.Bottom; Type.Optional Type.Bottom]
        })
 
 
@@ -891,15 +912,15 @@ let test_dequalify _ =
       expected
   in
   let create name = Type.Primitive name in
-  assert_dequalify (Type.optional Type.string) (Type.parametric "Optional" [Type.string]);
-  assert_dequalify (Type.parametric "list" [Type.string]) (Type.parametric "List" [Type.string]);
+  assert_dequalify (Type.optional Type.string) (Type.parametric "Optional" ![Type.string]);
+  assert_dequalify (Type.parametric "list" ![Type.string]) (Type.parametric "List" ![Type.string]);
   assert_dequalify
     (Type.Union [Type.string; create "A.B.C"])
-    (Type.parametric "typing.Union" [create "C"; Type.string]);
+    (Type.parametric "typing.Union" ![create "C"; Type.string]);
   assert_dequalify (create "d") (create "e");
   assert_dequalify
-    (Type.parametric "A.B.C" [Type.optional Type.integer])
-    (Type.parametric "C" [Type.parametric "Optional" [Type.integer]]);
+    (Type.parametric "A.B.C" ![Type.optional Type.integer])
+    (Type.parametric "C" ![Type.parametric "Optional" ![Type.integer]]);
   let assert_dequalify_variable source expected =
     assert_equal
       ~cmp:Type.Variable.equal
@@ -1290,7 +1311,7 @@ let test_namespace_all_free_variables _ =
     |> Type.Variable.Unary.mark_as_bound
     |> fun variable -> Type.Variable variable
   in
-  let annotation = Type.parametric "p" [free_variable; bound_variable] in
+  let annotation = Type.parametric "p" ![free_variable; bound_variable] in
   let namespace = Type.Variable.Namespace.create_fresh () in
   let namespaced_free =
     Type.Variable.Unary.create "T"
@@ -1299,7 +1320,7 @@ let test_namespace_all_free_variables _ =
   in
   assert_equal
     (Type.Variable.namespace_all_free_variables annotation ~namespace)
-    (Type.parametric "p" [namespaced_free; bound_variable]);
+    (Type.parametric "p" ![namespaced_free; bound_variable]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -1317,7 +1338,7 @@ let test_namespace_all_free_variables _ =
       ~annotation:Type.integer
       ()
   in
-  let annotation = Type.parametric "p" [free_variable_callable; bound_variable_callable] in
+  let annotation = Type.parametric "p" ![free_variable_callable; bound_variable_callable] in
   let namespace = Type.Variable.Namespace.create_fresh () in
   let namespaced_free_callable =
     let parameter_variadic =
@@ -1331,7 +1352,7 @@ let test_namespace_all_free_variables _ =
   in
   assert_equal
     (Type.Variable.namespace_all_free_variables annotation ~namespace)
-    (Type.parametric "p" [namespaced_free_callable; bound_variable_callable]);
+    (Type.parametric "p" ![namespaced_free_callable; bound_variable_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Tuple (Bounded (Variable list_variadic))
@@ -1342,7 +1363,7 @@ let test_namespace_all_free_variables _ =
     in
     Type.Tuple (Bounded (Variable list_variadic))
   in
-  let annotation = Type.parametric "p" [free_variable_tuple; bound_variable_tuple] in
+  let annotation = Type.parametric "p" ![free_variable_tuple; bound_variable_tuple] in
   let namespace = Type.Variable.Namespace.create_fresh () in
   let namespaced_free_tuple =
     let list_variadic =
@@ -1352,7 +1373,7 @@ let test_namespace_all_free_variables _ =
   in
   assert_equal
     (Type.Variable.namespace_all_free_variables annotation ~namespace)
-    (Type.parametric "p" [namespaced_free_tuple; bound_variable_tuple]);
+    (Type.parametric "p" ![namespaced_free_tuple; bound_variable_tuple]);
   let free_variable_star_args_callable =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Callable.create
@@ -1376,7 +1397,7 @@ let test_namespace_all_free_variables _ =
       ()
   in
   let annotation =
-    Type.parametric "p" [free_variable_star_args_callable; bound_variable_star_args_callable]
+    Type.parametric "p" ![free_variable_star_args_callable; bound_variable_star_args_callable]
   in
   let namespace = Type.Variable.Namespace.create_fresh () in
   let namespaced_free_star_args_callable =
@@ -1393,7 +1414,7 @@ let test_namespace_all_free_variables _ =
   in
   assert_equal
     (Type.Variable.namespace_all_free_variables annotation ~namespace)
-    (Type.parametric "p" [namespaced_free_star_args_callable; bound_variable_star_args_callable]);
+    (Type.parametric "p" ![namespaced_free_star_args_callable; bound_variable_star_args_callable]);
   ()
 
 
@@ -1404,7 +1425,7 @@ let test_mark_all_free_variables_as_escaped _ =
     |> Type.Variable.Unary.mark_as_bound
     |> fun variable -> Type.Variable variable
   in
-  let annotation = Type.parametric "p" [free_variable; bound_variable] in
+  let annotation = Type.parametric "p" ![free_variable; bound_variable] in
   Type.Variable.Namespace.reset ();
   let escaped_free =
     let namespace = Type.Variable.Namespace.create_fresh () in
@@ -1416,7 +1437,7 @@ let test_mark_all_free_variables_as_escaped _ =
   Type.Variable.Namespace.reset ();
   assert_equal
     (Type.Variable.mark_all_free_variables_as_escaped annotation)
-    (Type.parametric "p" [escaped_free; bound_variable]);
+    (Type.parametric "p" ![escaped_free; bound_variable]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -1434,7 +1455,7 @@ let test_mark_all_free_variables_as_escaped _ =
       ~annotation:Type.integer
       ()
   in
-  let annotation = Type.parametric "p" [free_variable_callable; bound_variable_callable] in
+  let annotation = Type.parametric "p" ![free_variable_callable; bound_variable_callable] in
   Type.Variable.Namespace.reset ();
   let escaped_free_callable =
     let namespace = Type.Variable.Namespace.create_fresh () in
@@ -1451,7 +1472,7 @@ let test_mark_all_free_variables_as_escaped _ =
   Type.Variable.Namespace.reset ();
   assert_equal
     (Type.Variable.mark_all_free_variables_as_escaped annotation)
-    (Type.parametric "p" [escaped_free_callable; bound_variable_callable]);
+    (Type.parametric "p" ![escaped_free_callable; bound_variable_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Tuple (Bounded (Variable list_variadic))
@@ -1462,7 +1483,7 @@ let test_mark_all_free_variables_as_escaped _ =
     in
     Type.Tuple (Bounded (Variable list_variadic))
   in
-  let annotation = Type.parametric "p" [free_variable_tuple; bound_variable_tuple] in
+  let annotation = Type.parametric "p" ![free_variable_tuple; bound_variable_tuple] in
   Type.Variable.Namespace.reset ();
   let escaped_free_tuple =
     let namespace = Type.Variable.Namespace.create_fresh () in
@@ -1476,7 +1497,7 @@ let test_mark_all_free_variables_as_escaped _ =
   Type.Variable.Namespace.reset ();
   assert_equal
     (Type.Variable.mark_all_free_variables_as_escaped annotation)
-    (Type.parametric "p" [escaped_free_tuple; bound_variable_tuple]);
+    (Type.parametric "p" ![escaped_free_tuple; bound_variable_tuple]);
   let free_variable_star_args_callable =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Callable.create
@@ -1500,7 +1521,7 @@ let test_mark_all_free_variables_as_escaped _ =
       ()
   in
   let annotation =
-    Type.parametric "p" [free_variable_star_args_callable; bound_variable_star_args_callable]
+    Type.parametric "p" ![free_variable_star_args_callable; bound_variable_star_args_callable]
   in
   Type.Variable.Namespace.reset ();
   let escaped_free_star_args_tuple =
@@ -1521,7 +1542,7 @@ let test_mark_all_free_variables_as_escaped _ =
   Type.Variable.Namespace.reset ();
   assert_equal
     (Type.Variable.mark_all_free_variables_as_escaped annotation)
-    (Type.parametric "p" [escaped_free_star_args_tuple; bound_variable_star_args_callable]);
+    (Type.parametric "p" ![escaped_free_star_args_tuple; bound_variable_star_args_callable]);
   ()
 
 
@@ -1600,10 +1621,10 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     |> Type.Variable.Unary.mark_as_escaped
     |> fun variable -> Type.Variable variable
   in
-  let annotation = Type.parametric "p" [free_variable; escaped_free] in
+  let annotation = Type.parametric "p" ![free_variable; escaped_free] in
   assert_equal
     (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
-    (Type.parametric "p" [free_variable; Type.Any]);
+    (Type.parametric "p" ![free_variable; Type.Any]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -1623,13 +1644,13 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       ~annotation:Type.integer
       ()
   in
-  let annotation = Type.parametric "p" [free_variable_callable; escaped_free_callable] in
+  let annotation = Type.parametric "p" ![free_variable_callable; escaped_free_callable] in
   let any_callable =
     Type.Callable.create ~parameters:Type.Callable.Undefined ~annotation:Type.integer ()
   in
   assert_equal
     (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
-    (Type.parametric "p" [free_variable_callable; any_callable]);
+    (Type.parametric "p" ![free_variable_callable; any_callable]);
   let free_variable_tuple =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Tuple (Bounded (Variable list_variadic))
@@ -1643,10 +1664,10 @@ let test_convert_all_escaped_free_variables_to_anys _ =
     in
     Type.Tuple (Bounded (Variable list_variadic))
   in
-  let annotation = Type.parametric "p" [free_variable_tuple; escaped_free_tuple] in
+  let annotation = Type.parametric "p" ![free_variable_tuple; escaped_free_tuple] in
   assert_equal
     (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
-    (Type.parametric "p" [free_variable_tuple; Type.Tuple (Bounded Any)]);
+    (Type.parametric "p" ![free_variable_tuple; Type.Tuple (Bounded Any)]);
   let free_variable_star_args_callable =
     let list_variadic = Type.Variable.Variadic.List.create "Ts" in
     Type.Callable.create
@@ -1682,20 +1703,20 @@ let test_convert_all_escaped_free_variables_to_anys _ =
       ()
   in
   let annotation =
-    Type.parametric "p" [free_variable_star_args_callable; escaped_free_star_args_tuple]
+    Type.parametric "p" ![free_variable_star_args_callable; escaped_free_star_args_tuple]
   in
   assert_equal
     (Type.Variable.convert_all_escaped_free_variables_to_anys annotation)
-    (Type.parametric "p" [free_variable_star_args_callable; star_args_any_callable]);
+    (Type.parametric "p" ![free_variable_star_args_callable; star_args_any_callable]);
   ()
 
 
 let test_replace_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
-  let annotation = Type.parametric "p" [free_variable; Type.integer] in
+  let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.replace_all (fun _ -> Some Type.integer) annotation)
-    (Type.parametric "p" [Type.integer; Type.integer]);
+    (Type.parametric "p" ![Type.integer; Type.integer]);
   let free_variable_callable =
     let parameter_variadic = Type.Variable.Variadic.Parameters.create "T" in
     Type.Callable.create
@@ -1709,15 +1730,17 @@ let test_replace_all _ =
   assert_equal
     (Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
        (fun _ -> Some (Type.Callable.Defined []))
-       (Type.parametric "p" [Type.integer; free_variable_callable]))
-    (Type.parametric "p" [Type.integer; no_parameter_callable]);
+       (Type.parametric "p" ![Type.integer; free_variable_callable]))
+    (Type.parametric "p" ![Type.integer; no_parameter_callable]);
   let list_variadic = Type.Variable.Variadic.List.create "Ts" in
   let free_variable_tuple = Type.Tuple (Bounded (Variable list_variadic)) in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.replace_all
        (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
-       (Type.parametric "p" [Type.integer; free_variable_tuple]))
-    (Type.parametric "p" [Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
+       (Type.parametric "p" ![Type.integer; free_variable_tuple]))
+    (Type.parametric
+       "p"
+       ![Type.integer; Type.Tuple (Bounded (Concrete [Type.integer; Type.string]))]);
   let replaced =
     Type.Callable.Parameter.create
       [ { name = "__x"; annotation = Type.bool; default = false };
@@ -1746,18 +1769,23 @@ let test_replace_all _ =
           (Concrete
              [ Parametric
                  { name = "Foo";
-                   parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.integer] }]
                  };
                Parametric
                  { name = "Foo";
-                   parameters = [Parametric { name = "Bar"; parameters = [Type.string] }]
+                   parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }]
                  } ])));
+  assert_equal
+    (Type.Variable.GlobalTransforms.ListVariadic.replace_all
+       (fun _ -> Some (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
+       (Type.parametric "Baz" (Variable (Type.Variable.Variadic.List.create "Ts"))))
+    (Type.parametric "Baz" ![Type.integer; Type.string]);
   ()
 
 
 let test_collect_all _ =
   let free_variable = Type.Variable (Type.Variable.Unary.create "T") in
-  let annotation = Type.parametric "p" [free_variable; Type.integer] in
+  let annotation = Type.parametric "p" ![free_variable; Type.integer] in
   assert_equal
     (Type.Variable.GlobalTransforms.Unary.collect_all annotation)
     [Type.Variable.Unary.create "T"];
@@ -1770,13 +1798,13 @@ let test_collect_all _ =
   in
   assert_equal
     (Type.Variable.GlobalTransforms.ParameterVariadic.collect_all
-       (Type.parametric "p" [Type.integer; free_variable_callable]))
+       (Type.parametric "p" ![Type.integer; free_variable_callable]))
     [Type.Variable.Variadic.Parameters.create "T"];
   let list_variadic = Type.Variable.Variadic.List.create "Ts" in
   let free_variable_tuple = Type.Tuple (Bounded (Variable list_variadic)) in
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all
-       (Type.parametric "p" [Type.integer; free_variable_tuple]))
+       (Type.parametric "p" ![Type.integer; free_variable_tuple]))
     [Type.Variable.Variadic.List.create "Ts"];
   assert_equal
     (Type.Variable.GlobalTransforms.ListVariadic.collect_all
@@ -1793,6 +1821,12 @@ let test_collect_all _ =
        (Tuple
           (Bounded
              (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable:list_variadic)))))
+    [Type.Variable.Variadic.List.create "Ts"];
+  assert_equal
+    (Type.Variable.GlobalTransforms.ListVariadic.collect_all
+       (Type.parametric
+          "Huh"
+          (Map (Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable:list_variadic))))
     [Type.Variable.Variadic.List.create "Ts"];
   ()
 
@@ -1835,7 +1869,9 @@ let test_map_operator_singleton_replace_variable _ =
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
     ~replacement:Type.integer
     (Type.Parametric
-       { name = "Foo"; parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }] });
+       { name = "Foo";
+         parameters = Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
+       });
 
   (* This approach is used to solve concretes against maps *)
   let unary_variable = Type.Variable.Unary.create "T" in
@@ -1844,7 +1880,9 @@ let test_map_operator_singleton_replace_variable _ =
     ~replacement:(Type.Variable unary_variable)
     (Type.Parametric
        { name = "Foo";
-         parameters = [Parametric { name = "Bar"; parameters = [Type.Variable unary_variable] }]
+         parameters =
+           Concrete
+             [Parametric { name = "Bar"; parameters = Concrete [Type.Variable unary_variable] }]
        });
   ()
 
@@ -1880,7 +1918,8 @@ let test_map_operator_replace_variable _ =
        (Concrete
           [ Parametric
               { name = "Foo";
-                parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+                parameters =
+                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
               } ]));
   assert_replaces_into
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"; "Bar"] ~variable)
@@ -1889,11 +1928,12 @@ let test_map_operator_replace_variable _ =
        (Concrete
           [ Parametric
               { name = "Foo";
-                parameters = [Parametric { name = "Bar"; parameters = [Type.integer] }]
+                parameters =
+                  Concrete [Parametric { name = "Bar"; parameters = Concrete [Type.integer] }]
               };
             Parametric
               { name = "Foo";
-                parameters = [Parametric { name = "Bar"; parameters = [Type.string] }]
+                parameters = ![Type.Parametric { name = "Bar"; parameters = ![Type.string] }]
               } ]));
   assert_replaces_into
     ~map:(Type.OrderedTypes.Map.create ~mappers:["Foo"] ~variable)

@@ -602,13 +602,13 @@ let test_populate _ =
   assert_equal (parse_annotation environment !"foo.foo") (Type.Primitive "foo.foo");
   assert_equal
     (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
-    (Type.parametric "Optional" [Type.Primitive "foo.foo"]);
+    (Type.parametric "Optional" (Concrete [Type.Primitive "foo.foo"]));
   assert_equal (parse_annotation environment !"bar") (Type.Primitive "bar");
 
   (* Check custom aliases. *)
   assert_equal
     (parse_annotation environment !"typing.DefaultDict")
-    (Type.parametric "collections.defaultdict" [Type.Any; Type.Any]);
+    (Type.parametric "collections.defaultdict" (Concrete [Type.Any; Type.Any]));
 
   (* Check custom class definitions. *)
   assert_is_some (Handler.class_definition "None");
@@ -1081,10 +1081,10 @@ let test_class_definition _ =
     |}
   in
   assert_true (is_defined environment (Type.Primitive "baz.baz"));
-  assert_true (is_defined environment (Type.parametric "baz.baz" [Type.integer]));
+  assert_true (is_defined environment (Type.parametric "baz.baz" (Concrete [Type.integer])));
   assert_is_some (class_definition environment (Type.Primitive "baz.baz"));
   assert_false (is_defined environment (Type.Primitive "bar.bar"));
-  assert_false (is_defined environment (Type.parametric "bar.bar" [Type.integer]));
+  assert_false (is_defined environment (Type.parametric "bar.bar" (Concrete [Type.integer])));
   assert_is_none (class_definition environment (Type.Primitive "bar.bar"));
   let any = class_definition environment Type.object_primitive |> value |> Node.value in
   assert_equal any.Class.name !&"object"

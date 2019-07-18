@@ -328,7 +328,7 @@ and t =
   | Any
   | Literal of literal
   | Optional of t
-  | Parametric of { name: Identifier.t; parameters: t list }
+  | Parametric of { name: Identifier.t; parameters: t Record.OrderedTypes.record }
   | ParameterVariadicComponent of
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.t
   | Primitive of Primitive.t
@@ -451,7 +451,7 @@ let is_callable = function
 let is_dictionary ?(with_key = None) = function
   | Parametric { name = "dict"; parameters } -> (
     match with_key, parameters with
-    | Some key, [key_parameter; _] -> equal key key_parameter
+    | Some key, Concrete [key_parameter; _] -> equal key key_parameter
     | _ -> true )
   | _ -> false
 
@@ -595,9 +595,9 @@ let rec pp format annotation =
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom -> Format.fprintf format "None"
   | Optional parameter -> Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Parametric { name = "typing.Optional" | "Optional"; parameters = [Bottom] } ->
+  | Parametric { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] } ->
       Format.fprintf format "None"
-  | Parametric { name; parameters } ->
+  | Parametric { name; parameters = Concrete parameters } ->
       let parameters =
         if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter)
         then
@@ -606,6 +606,13 @@ let rec pp format annotation =
           List.map parameters ~f:show |> String.concat ~sep:", "
       in
       Format.fprintf format "%s[%s]" (reverse_substitute name) parameters
+  | Parametric { name; parameters } ->
+      Format.fprintf
+        format
+        "%s[%a]"
+        (reverse_substitute name)
+        (Record.OrderedTypes.pp_concise ~pp_type:pp)
+        parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%a" String.pp name
@@ -700,15 +707,22 @@ let rec pp_concise format annotation =
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom -> Format.fprintf format "None"
   | Optional parameter -> Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Parametric { name = "typing.Optional" | "Optional"; parameters = [Bottom] } ->
+  | Parametric { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] } ->
       Format.fprintf format "None"
-  | Parametric { name; parameters } ->
+  | Parametric { name; parameters = Concrete parameters } ->
       let name = strip_qualification (reverse_substitute name) in
       if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter)
       then
         Format.fprintf format "%s[]" name
       else
         Format.fprintf format "%s[%a]" name pp_comma_separated parameters
+  | Parametric { name; parameters } ->
+      Format.fprintf
+        format
+        "%s[%a]"
+        (strip_qualification (reverse_substitute name))
+        (Record.OrderedTypes.pp_concise ~pp_type:pp)
+        parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
@@ -756,7 +770,9 @@ let rec annotated annotation =
   | _ -> Annotated annotation
 
 
-let awaitable parameter = Parametric { name = "typing.Awaitable"; parameters = [parameter] }
+let awaitable parameter =
+  Parametric { name = "typing.Awaitable"; parameters = Concrete [parameter] }
+
 
 let coroutine parameters = Parametric { name = "typing.Coroutine"; parameters }
 
@@ -766,7 +782,7 @@ let bytes = Primitive "bytes"
 
 let complex = Primitive "complex"
 
-let dictionary ~key ~value = Parametric { name = "dict"; parameters = [key; value] }
+let dictionary ~key ~value = Parametric { name = "dict"; parameters = Concrete [key; value] }
 
 let enumeration = Primitive "enum.Enum"
 
@@ -777,9 +793,9 @@ let number = Primitive "numbers.Number"
 let generator ?(async = false) parameter =
   let none = Optional Bottom in
   if async then
-    Parametric { name = "typing.AsyncGenerator"; parameters = [parameter; none] }
+    Parametric { name = "typing.AsyncGenerator"; parameters = Concrete [parameter; none] }
   else
-    Parametric { name = "typing.Generator"; parameters = [parameter; none; none] }
+    Parametric { name = "typing.Generator"; parameters = Concrete [parameter; none; none] }
 
 
 let generic_primitive = Primitive "typing.Generic"
@@ -788,17 +804,17 @@ let integer = Primitive "int"
 
 let literal_integer literal = Literal (Integer literal)
 
-let iterable parameter = Parametric { name = "typing.Iterable"; parameters = [parameter] }
+let iterable parameter = Parametric { name = "typing.Iterable"; parameters = Concrete [parameter] }
 
-let iterator parameter = Parametric { name = "typing.Iterator"; parameters = [parameter] }
+let iterator parameter = Parametric { name = "typing.Iterator"; parameters = Concrete [parameter] }
 
 let async_iterator parameter =
-  Parametric { name = "typing.AsyncIterator"; parameters = [parameter] }
+  Parametric { name = "typing.AsyncIterator"; parameters = Concrete [parameter] }
 
 
-let list parameter = Parametric { name = "list"; parameters = [parameter] }
+let list parameter = Parametric { name = "list"; parameters = Concrete [parameter] }
 
-let meta annotation = Parametric { name = "type"; parameters = [annotation] }
+let meta annotation = Parametric { name = "type"; parameters = Concrete [annotation] }
 
 let named_tuple = Primitive "typing.NamedTuple"
 
@@ -814,9 +830,9 @@ let rec optional parameter =
   | _ -> Optional parameter
 
 
-let sequence parameter = Parametric { name = "typing.Sequence"; parameters = [parameter] }
+let sequence parameter = Parametric { name = "typing.Sequence"; parameters = Concrete [parameter] }
 
-let set parameter = Parametric { name = "set"; parameters = [parameter] }
+let set parameter = Parametric { name = "set"; parameters = Concrete [parameter] }
 
 let string = Primitive "str"
 
@@ -878,7 +894,7 @@ let variable ?constraints ?variance name =
   Variable (Record.Variable.RecordUnary.create ?constraints ?variance name)
 
 
-let yield parameter = Parametric { name = "Yield"; parameters = [parameter] }
+let yield parameter = Parametric { name = "Yield"; parameters = Concrete [parameter] }
 
 let parametric_substitution_map =
   [ "typing.ChainMap", "collections.ChainMap";
@@ -1047,9 +1063,16 @@ let rec expression annotation =
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
     | Optional Bottom -> create_name "None"
     | Optional parameter -> get_item_call "typing.Optional" [expression parameter]
-    | Parametric { name = "typing.Optional"; parameters = [Bottom] } -> create_name "None"
+    | Parametric { name = "typing.Optional"; parameters = Concrete [Bottom] } -> create_name "None"
     | Parametric { name; parameters } ->
-        get_item_call (reverse_substitute name) (List.map ~f:expression parameters)
+        let parameters =
+          match parameters with
+          | Any -> [expression (Primitive "...")]
+          | Variable { name; _ } -> [expression (Primitive name)]
+          | Concrete parameters -> List.map ~f:expression parameters
+          | Map map -> [map_expression map]
+        in
+        get_item_call (reverse_substitute name) parameters
     | ParameterVariadicComponent { component; variable_name; _ } ->
         get_item_call
           (Record.Variable.RecordVariadic.RecordParameters.RecordComponents.component_name
@@ -1107,7 +1130,7 @@ and map_expression map =
     let single_wrap ~mapper ~inner =
       Parametric
         { name = Record.OrderedTypes.RecordMap.public_name;
-          parameters = [Primitive mapper; inner]
+          parameters = Concrete [Primitive mapper; inner]
         }
     in
     match map with
@@ -1175,8 +1198,13 @@ module Transform = struct
                 overloads = List.map overloads ~f:visit_overload
               }
         | Optional annotation -> optional (visit_annotation annotation ~state)
-        | Parametric { name; parameters } ->
-            Parametric { name; parameters = List.map parameters ~f:(visit_annotation ~state) }
+        | Parametric { parameters = Map _; _ }
+        | Parametric { parameters = Variable _; _ }
+        | Parametric { parameters = Any; _ } ->
+            annotation
+        | Parametric { name; parameters = Concrete parameters } ->
+            Parametric
+              { name; parameters = Concrete (List.map parameters ~f:(visit_annotation ~state)) }
         | Tuple (Bounded (Map _))
         | Tuple (Bounded Any)
         | Tuple (Bounded (Variable _)) ->
@@ -1457,7 +1485,8 @@ let primitive_name = function
 
 let rec create_map_operator_from_annotation annotation ~variable_aliases =
   match annotation with
-  | Parametric { name; parameters = [Primitive left_parameter; Primitive right_parameter] }
+  | Parametric
+      { name; parameters = Concrete [Primitive left_parameter; Primitive right_parameter] }
     when Identifier.equal name Record.OrderedTypes.RecordMap.public_name -> (
     match variable_aliases right_parameter with
     | Some (Record.Variable.ListVariadic variable) ->
@@ -1867,7 +1896,7 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                   in
                   List.map parameters ~f:create_logic
                 in
-                Parametric { name; parameters } |> resolve_aliases
+                Parametric { name; parameters = Concrete parameters } |> resolve_aliases
               in
               match create_logic base, Node.value base with
               | Primitive name, _ -> parametric name
@@ -1912,9 +1941,9 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
           match Identifier.Table.find primitive_substitution_map name with
           | Some substitute -> substitute
           | None -> result )
-        | Parametric { name; parameters } -> (
+        | Parametric { name; parameters = Concrete parameters } -> (
           match Identifier.Table.find parametric_substitution_map name with
-          | Some name -> Parametric { name; parameters }
+          | Some name -> Parametric { name; parameters = Concrete parameters }
           | None -> (
             match name with
             | "typing.Annotated" when List.length parameters > 0 ->
@@ -2106,28 +2135,28 @@ let optional_value = function
 
 
 let async_generator_value = function
-  | Parametric { name = "typing.AsyncGenerator"; parameters = [parameter; _] } ->
+  | Parametric { name = "typing.AsyncGenerator"; parameters = Concrete [parameter; _] } ->
       generator parameter
   | _ -> Top
 
 
 let awaitable_value = function
-  | Parametric { name = "typing.Awaitable"; parameters = [parameter] } -> parameter
+  | Parametric { name = "typing.Awaitable"; parameters = Concrete [parameter] } -> parameter
   | _ -> Top
 
 
 let coroutine_value = function
-  | Parametric { name = "typing.Coroutine"; parameters = [_; _; parameter] } -> parameter
+  | Parametric { name = "typing.Coroutine"; parameters = Concrete [_; _; parameter] } -> parameter
   | _ -> Top
 
 
 let parameters = function
-  | Parametric { parameters; _ } -> parameters
-  | _ -> []
+  | Parametric { parameters; _ } -> Some parameters
+  | _ -> None
 
 
 let single_parameter = function
-  | Parametric { parameters = [parameter]; _ } -> parameter
+  | Parametric { parameters = Concrete [parameter]; _ } -> parameter
   | _ -> failwith "Type does not have single parameter"
 
 
@@ -2199,7 +2228,7 @@ module OrderedTypes = struct
         | Concrete concretes ->
             Concrete
               (List.map concretes ~f:(fun concrete ->
-                   Parametric { name = mapper; parameters = [concrete] }))
+                   Parametric { name = mapper; parameters = Concrete [concrete] }))
         | Variable variable -> Map { mappee = Variable variable; mapper }
         | Any -> Any
         | Map submap -> Map { mappee = SubMap submap; mapper }
@@ -2233,13 +2262,27 @@ module OrderedTypes = struct
     | Variable _ -> object_primitive
     | Any -> Any
     | Map _ -> object_primitive
+
+
+  let variable = function
+    | Concrete _ -> None
+    | Variable variable -> Some variable
+    | Any -> None
+    | Map map -> Some (Map.variable map)
+
+
+  let local_replace_variable ~replacement = function
+    | Concrete _ -> None
+    | Variable variable -> replacement variable
+    | Any -> None
+    | Map map -> Map.replace_variable map ~replacement
 end
 
 let split annotation =
   let open OrderedTypes in
   match annotation with
   | Optional parameter -> Primitive "typing.Optional", Concrete [parameter]
-  | Parametric { name; parameters } -> Primitive name, Concrete parameters
+  | Parametric { name; parameters } -> Primitive name, parameters
   | Tuple tuple ->
       let parameters =
         match tuple with
@@ -2278,15 +2321,16 @@ let class_name annotation =
     Reference.create_from_list identifiers
 
 
-let class_variable annotation = parametric "typing.ClassVar" [annotation]
+let class_variable annotation = parametric "typing.ClassVar" (Concrete [annotation])
 
 let class_variable_value = function
-  | Parametric { name = "typing.ClassVar"; parameters = [parameter] } -> Some parameter
+  | Parametric { name = "typing.ClassVar"; parameters = Concrete [parameter] } -> Some parameter
   | _ -> None
 
 
 let final_value = function
-  | Parametric { name = "typing.Final" | "typing_extensions.Final"; parameters = [parameter] } ->
+  | Parametric
+      { name = "typing.Final" | "typing_extensions.Final"; parameters = Concrete [parameter] } ->
       Some parameter
   | _ -> None
 
@@ -2735,11 +2779,11 @@ end = struct
         with
         | ( Parametric
               { name = "pyre_extensions.type_variable_operators.PositionalArgumentsOf";
-                parameters = [Primitive positional_name]
+                parameters = Concrete [Primitive positional_name]
               },
             Parametric
               { name = "pyre_extensions.type_variable_operators.KeywordArgumentsOf";
-                parameters = [Primitive keywords_name]
+                parameters = Concrete [Primitive keywords_name]
               } )
           when Identifier.equal positional_name keywords_name ->
             get_variable positional_name
@@ -2824,11 +2868,11 @@ end = struct
 
       (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
       let local_replace replacement = function
-        | Tuple (Bounded (Variable variable)) ->
-            replacement variable >>| fun ordered_types -> Tuple (Bounded ordered_types)
-        | Tuple (Bounded (Map map)) ->
-            OrderedTypes.Map.replace_variable map ~replacement
+        | Tuple (Bounded bounded) ->
+            OrderedTypes.local_replace_variable bounded ~replacement
             >>| fun ordered_types -> Tuple (Bounded ordered_types)
+        | Parametric { name; parameters } ->
+            OrderedTypes.local_replace_variable parameters ~replacement >>| parametric name
         | Callable callable ->
             let map = function
               | Defined parameters ->
@@ -2874,8 +2918,7 @@ end = struct
 
       (* TODO(T45087986): Add more entries here as we add hosts for these variables *)
       let local_collect = function
-        | Tuple (Bounded (Variable variable)) -> [variable]
-        | Tuple (Bounded (Map map)) -> [OrderedTypes.Map.variable map]
+        | Tuple (Bounded bounded) -> OrderedTypes.variable bounded |> Option.to_list
         | Callable { implementation; overloads; _ } ->
             let map = function
               | { parameters = Defined parameters; _ } ->
@@ -2888,6 +2931,7 @@ end = struct
               | _ -> []
             in
             implementation :: overloads |> List.concat_map ~f:map
+        | Parametric { parameters; _ } -> OrderedTypes.variable parameters |> Option.to_list
         | _ -> []
 
 
@@ -3200,7 +3244,8 @@ let is_concrete annotation =
 
     let visit_children_before _ = function
       | Optional Bottom -> false
-      | Parametric { name = "typing.Optional" | "Optional"; parameters = [Bottom] } -> false
+      | Parametric { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] } ->
+          false
       | _ -> true
 
 
@@ -3235,10 +3280,12 @@ let rec dequalify map annotation =
       let transformed_annotation =
         match annotation with
         | Optional parameter ->
-            Parametric { name = dequalify_string "typing.Optional"; parameters = [parameter] }
+            Parametric
+              { name = dequalify_string "typing.Optional"; parameters = Concrete [parameter] }
         | Parametric { name; parameters } ->
             Parametric { name = dequalify_identifier map (reverse_substitute name); parameters }
-        | Union parameters -> Parametric { name = dequalify_string "typing.Union"; parameters }
+        | Union parameters ->
+            Parametric { name = dequalify_string "typing.Union"; parameters = Concrete parameters }
         | Primitive name -> Primitive (dequalify_identifier map name)
         | Variable ({ variable = name; _ } as annotation) ->
             Variable { annotation with variable = dequalify_identifier map name }
@@ -3444,14 +3491,14 @@ let remove_undeclared annotation =
     let visit _ annotation =
       let transformed_annotation =
         match annotation with
-        | Parametric { name; parameters } ->
+        | Parametric { name; parameters = Concrete parameters } ->
             let declare annotation =
               match annotation with
               | Primitive "typing.Undeclared" -> Any
               | _ -> annotation
             in
             let parameters = List.map parameters ~f:declare in
-            Parametric { name; parameters }
+            Parametric { name; parameters = Concrete parameters }
         | Union annotations -> (
             let annotations =
               let declared = function

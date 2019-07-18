@@ -43,7 +43,7 @@ let test_return_annotation _ =
   assert_return_annotation
     (Some (Type.expression Type.integer))
     true
-    (Type.coroutine [Type.Any; Type.Any; Type.integer])
+    (Type.coroutine (Concrete [Type.Any; Type.Any; Type.integer]))
 
 
 let test_apply_decorators _ =
@@ -93,14 +93,14 @@ let test_apply_decorators _ =
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:(Some (+String (StringLiteral.create "typing.Iterator[str]"))))
-    (Type.parametric "contextlib._GeneratorContextManager" [Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
   assert_apply_contextlib_decorators
     (create_define
        ~decorators:["contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
          (Some (+String (StringLiteral.create "typing.Generator[str, None, None]"))))
-    (Type.parametric "contextlib._GeneratorContextManager" [Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" (Concrete [Type.string]));
 
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =

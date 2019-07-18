@@ -513,7 +513,7 @@ let select
                     let solve_against =
                       Type.parametric
                         "typing.Mapping"
-                        [Type.string; Type.Variable synthetic_variable]
+                        (Concrete [Type.string; Type.Variable synthetic_variable])
                     in
                     solution_based_extraction ~create_error ~synthetic_variable ~solve_against
                 | SingleStar ->
@@ -578,7 +578,7 @@ let select
       | { kind = Named name;
           implementation =
             { parameters = Defined parameters;
-              annotation = Type.Parametric { parameters = [key_type; _]; _ };
+              annotation = Type.Parametric { parameters = Concrete [key_type; _]; _ };
               _
             };
           _

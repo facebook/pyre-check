@@ -1016,7 +1016,10 @@ module Builder = struct
         "typing.Optional", [], [], [];
         "typing.Undeclared", [], [], [];
         "typing.NoReturn", [], [], [];
-        "typing.Type", [Type.parametric "typing.Generic" [Type.variable "typing._T"]], [], [];
+        ( "typing.Type",
+          [Type.parametric "typing.Generic" (Concrete [Type.variable "typing._T"])],
+          [],
+          [] );
         ( "typing.GenericMeta",
           [],
           [],
@@ -1039,7 +1042,7 @@ module Builder = struct
             |> Node.create_with_default_location ] );
         "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
         ( "TypedDictionary",
-          [Type.parametric "typing.Mapping" [Type.string; Type.Any]],
+          [Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])],
           [],
           Type.TypedDictionary.defines ~t_self_expression ~total:true );
         ( "NonTotalTypedDictionary",

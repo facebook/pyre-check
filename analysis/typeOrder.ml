@@ -425,13 +425,7 @@ module OrderImplementation = struct
             []
       | Type.Callable _, Type.Parametric { name; _ } when is_protocol right ~protocol_assumptions
         ->
-          let assert_concrete = function
-            | Type.OrderedTypes.Concrete concrete -> concrete
-            | _ -> failwith "not implemented"
-          in
           instantiate_protocol_parameters order ~protocol:name ~candidate:left
-          (* TODO(T47346441): remove this when we allow all ordered types in parametrics *)
-          >>| assert_concrete
           >>| Type.parametric name
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
@@ -471,8 +465,10 @@ module OrderImplementation = struct
       | _, Type.Parametric { name = right_name; parameters = right_parameters } ->
           let solve_parameters left_parameters =
             let handle_variables variables =
-              match variables, left_parameters with
-              | ClassHierarchy.Unaries variables, Type.OrderedTypes.Concrete left_parameters ->
+              match variables, left_parameters, right_parameters with
+              | ( ClassHierarchy.Unaries variables,
+                  Type.OrderedTypes.Concrete left_parameters,
+                  Concrete right_parameters ) ->
                   let solve_parameter_pair constraints (variable, (left, right)) =
                     match left, right, variable with
                     (* TODO kill these special cases *)
@@ -506,25 +502,31 @@ module OrderImplementation = struct
                   variables
                   |> zip_on_parameters
                   >>| List.fold ~f:solve_parameter_pair ~init:[constraints]
-              | Unaries _, Any
-              | Unaries _, Variable _
-              | Unaries _, Map _ ->
+              | Unaries _, Any, _
+              | Unaries _, Variable _, _
+              | Unaries _, Map _, _ ->
                   (* These should be impossible, since we shouldn't be propagating a variadic into
                      something that is defined to be not variadic *)
                   None
-              | ListVariadic _, left_parameters ->
+              | Unaries _, _, Variable _
+              | Unaries _, _, Any
+              | Unaries _, _, Map _ ->
+                  (* These should be impossible, since we shouldn't be able to have a not variadic
+                     primitive paired with a variadic in a parametric *)
+                  None
+              | ListVariadic _, left_parameters, right_parameters ->
                   (* TODO(T47346673): currently all variadics are invariant, revisit this when we
                      add variance *)
                   solve_ordered_types_less_or_equal
                     order
                     ~constraints
                     ~left:left_parameters
-                    ~right:(Concrete right_parameters)
+                    ~right:right_parameters
                   |> List.concat_map ~f:(fun constraints ->
                          solve_ordered_types_less_or_equal
                            order
                            ~constraints
-                           ~left:(Concrete right_parameters)
+                           ~left:right_parameters
                            ~right:left_parameters)
                   |> Option.some
             in
@@ -576,10 +578,18 @@ module OrderImplementation = struct
       | Type.Tuple (Type.Bounded left), Type.Tuple (Type.Bounded right) ->
           solve_ordered_types_less_or_equal order ~left ~right ~constraints
       | Type.Tuple (Type.Unbounded parameter), Type.Primitive _ ->
-          solve_less_or_equal order ~constraints ~left:(Type.parametric "tuple" [parameter]) ~right
+          solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.parametric "tuple" (Concrete [parameter]))
+            ~right
       | Type.Tuple (Type.Bounded (Concrete (left :: tail))), Type.Primitive _ ->
           let parameter = List.fold ~f:(join order) ~init:left tail in
-          solve_less_or_equal order ~constraints ~left:(Type.parametric "tuple" [parameter]) ~right
+          solve_less_or_equal
+            order
+            ~constraints
+            ~left:(Type.parametric "tuple" (Concrete [parameter]))
+            ~right
       | Type.Primitive name, Type.Tuple _ ->
           if Type.Primitive.equal name "tuple" then [constraints] else []
       | Type.Tuple _, _
@@ -612,9 +622,11 @@ module OrderImplementation = struct
           >>| (fun left -> solve_less_or_equal order ~constraints ~left ~right)
           |> Option.value ~default:[]
       | left, Type.Callable _ -> (
-          let joined = join order (Type.parametric "typing.Callable" [Type.Bottom]) left in
+          let joined =
+            join order (Type.parametric "typing.Callable" (Concrete [Type.Bottom])) left
+          in
           match joined with
-          | Type.Parametric { name; parameters = [left] }
+          | Type.Parametric { name; parameters = Concrete [left] }
             when Identifier.equal name "typing.Callable" ->
               solve_less_or_equal order ~constraints ~left ~right
           | _ -> [] )
@@ -975,8 +987,12 @@ module OrderImplementation = struct
                           join_parameters left right variable
                           |> replace_free_unary_variables_with_top
                         in
-                        Some (List.map3_exn ~f:join_parameters left right variables)
-                    | _ -> None
+                        Some
+                          (Type.OrderedTypes.Concrete
+                             (List.map3_exn ~f:join_parameters left right variables))
+                    | _ ->
+                        (* TODO(T47348395): Implement joining for variadics *)
+                        None
                   in
                   match parameters with
                   | Some parameters -> Type.Parametric { name = target; parameters }
@@ -986,12 +1002,13 @@ module OrderImplementation = struct
               in
               target >>| handle_target |> Option.value ~default:union
         (* Special case joins of optional collections with their uninstantated counterparts. *)
-        | ( Type.Parametric ({ parameters = [Type.Bottom]; _ } as other),
-            Type.Optional (Type.Parametric ({ parameters = [parameter]; _ } as collection)) )
-        | ( Type.Optional (Type.Parametric ({ parameters = [parameter]; _ } as collection)),
-            Type.Parametric ({ parameters = [Type.Bottom]; _ } as other) )
+        | ( Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other),
+            Type.Optional
+              (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection)) )
+        | ( Type.Optional (Type.Parametric ({ parameters = Concrete [parameter]; _ } as collection)),
+            Type.Parametric ({ parameters = Concrete [Type.Bottom]; _ } as other) )
           when Identifier.equal other.name collection.name ->
-            Type.Parametric { other with parameters = [parameter] }
+            Type.Parametric { other with parameters = Concrete [parameter] }
         (* A <= B -> lub(A, Optional[B]) = Optional[B]. *)
         | other, Type.Optional parameter
         | Type.Optional parameter, other ->
@@ -1014,11 +1031,11 @@ module OrderImplementation = struct
         | Type.Tuple (Type.Unbounded parameter), (Type.Primitive _ as annotation)
         | (Type.Parametric _ as annotation), Type.Tuple (Type.Unbounded parameter)
         | (Type.Primitive _ as annotation), Type.Tuple (Type.Unbounded parameter) ->
-            join order (Type.parametric "tuple" [parameter]) annotation
+            join order (Type.parametric "tuple" (Concrete [parameter])) annotation
         | Type.Tuple (Type.Bounded (Concrete parameters)), (Type.Parametric _ as annotation) ->
             (* Handle cases like `Tuple[int, int]` <= `Iterator[int]`. *)
             let parameter = List.fold ~init:Type.Bottom ~f:(join order) parameters in
-            join order (Type.parametric "tuple" [parameter]) annotation
+            join order (Type.parametric "tuple" (Concrete [parameter])) annotation
         | Type.Tuple _, _
         | _, Type.Tuple _ ->
             Type.union [left; right]
@@ -1032,7 +1049,8 @@ module OrderImplementation = struct
               Type.TypedDictionary.fields_have_colliding_keys left_fields right_fields
               || left_total <> right_total
             then
-              Type.Parametric { name = "typing.Mapping"; parameters = [Type.string; Type.Any] }
+              Type.Parametric
+                { name = "typing.Mapping"; parameters = Concrete [Type.string; Type.Any] }
             else
               let join_fields =
                 if always_less_or_equal order ~left ~right then
@@ -1076,9 +1094,11 @@ module OrderImplementation = struct
         | Type.Callable callable, other
         | other, Type.Callable callable ->
             let default =
-              let other = join order (Type.parametric "typing.Callable" [Type.Bottom]) other in
+              let other =
+                join order (Type.parametric "typing.Callable" (Concrete [Type.Bottom])) other
+              in
               match other with
-              | Type.Parametric { name; parameters = [other_callable] }
+              | Type.Parametric { name; parameters = Concrete [other_callable] }
                 when Identifier.equal name "typing.Callable" ->
                   join order (Type.Callable callable) other_callable
               | _ -> Type.union [left; right]
@@ -1220,10 +1240,13 @@ module OrderImplementation = struct
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
                         Some (List.map3_exn ~f:meet_parameters left right variables)
-                    | _ -> None
+                    | _ ->
+                        (* TODO:(T47348519) handle meeting variadics *)
+                        None
                   in
                   match parameters with
-                  | Some parameters -> Type.Parametric { name = target; parameters }
+                  | Some parameters ->
+                      Type.Parametric { name = target; parameters = Concrete parameters }
                   | _ -> Type.Bottom )
               | _ -> Type.Bottom )
         (* A <= B -> glb(A, Optional[B]) = A. *)
@@ -1344,9 +1367,8 @@ module OrderImplementation = struct
              kinds of comparisons only exists for legacy reasons to do nominal comparisons *)
           None
       | Type.Primitive candidate_name when Identifier.equal candidate_name protocol ->
-          Some (Type.OrderedTypes.Concrete [])
-      | Type.Parametric { name; parameters } when Identifier.equal name protocol ->
-          Some (Concrete parameters)
+          Some (Concrete [])
+      | Type.Parametric { name; parameters } when Identifier.equal name protocol -> Some parameters
       | _ -> (
           let assumed_protocol_parameters =
             ProtocolAssumptions.find_assumed_protocol_parameters
@@ -1550,8 +1572,8 @@ let rec is_compatible_with order ~left ~right =
   | left, Type.Union right ->
       List.exists ~f:(fun right -> is_compatible_with order ~left ~right) right
   (* Parametric *)
-  | ( Parametric { name = left_name; parameters = left_parameters },
-      Parametric { name = right_name; parameters = right_parameters } )
+  | ( Parametric { name = left_name; parameters = Concrete left_parameters },
+      Parametric { name = right_name; parameters = Concrete right_parameters } )
     when Type.Primitive.equal left_name right_name
          && Int.equal (List.length left_parameters) (List.length right_parameters) ->
       List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->

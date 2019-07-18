@@ -41,10 +41,11 @@ let return_annotation
       ~default:Type.Top
   in
   if async && not (is_generator define) then
-    Type.coroutine [Type.Any; Type.Any; annotation]
+    Type.coroutine (Concrete [Type.Any; Type.Any; annotation])
   else if Define.is_coroutine define then
     match annotation with
-    | Type.Parametric { name = "typing.Generator"; parameters = [_; _; return_annotation] } ->
+    | Type.Parametric
+        { name = "typing.Generator"; parameters = Concrete [_; _; return_annotation] } ->
         Type.awaitable return_annotation
     | _ -> Type.Top
   else
@@ -207,7 +208,9 @@ let apply_decorators
           if Type.is_async_iterator joined then
             { overload with
               Type.Callable.annotation =
-                Type.parametric "typing.AsyncContextManager" [Type.single_parameter joined]
+                Type.parametric
+                  "typing.AsyncContextManager"
+                  (Concrete [Type.single_parameter joined])
             }
           else
             overload

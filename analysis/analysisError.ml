@@ -1478,7 +1478,7 @@ let inference_information
               annotation =
                 Some
                   (Type.Parametric
-                    { name = "typing.Optional" | "Optional"; parameters = [Bottom] });
+                    { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] });
               _
             }
           when Reference.equal_sanitized (Reference.create name) parameter_name ->
@@ -1726,7 +1726,7 @@ let due_to_mismatch_with_any resolution { kind; _ } =
   | InvalidArgument (Keyword { annotation = actual; _ }) ->
       is_consistent_with
         ~actual
-        ~expected:(Type.parametric "typing.Mapping" [Type.string; Type.Top])
+        ~expected:(Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Top]))
   | AnalysisFailure _
   | Deobfuscation _
   | IllegalAnnotationTarget _

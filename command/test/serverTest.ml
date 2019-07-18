@@ -685,7 +685,7 @@ let test_query context =
         (Protocol.TypeQuery.TypesByFile
            [ { Protocol.TypeQuery.path = Path.create_relative ~root:local_root ~relative:"test.py";
                types =
-                 [ 4, 7, 4, 16, Type.parametric "type" [Type.Primitive "Exception"];
+                 [ 4, 7, 4, 16, Type.parametric "type" (Concrete [Type.Primitive "Exception"]);
                    3, 6, 3, 7, Type.literal_integer 1;
                    5, 6, 5, 7, Type.literal_integer 2;
                    5, 2, 5, 3, Type.literal_integer 2;

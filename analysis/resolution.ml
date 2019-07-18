@@ -51,7 +51,7 @@ type t = {
   class_definition: Type.Primitive.t -> Class.t Node.t option;
   class_metadata: Type.Primitive.t -> class_metadata option;
   constructor: resolution:t -> Type.Primitive.t -> Type.t option;
-  generics: resolution:t -> Class.t Node.t -> Type.t list;
+  generics: resolution:t -> Class.t Node.t -> Type.OrderedTypes.t;
   attributes: resolution:t -> Type.t -> AnnotatedAttribute.t list option;
   is_protocol: Type.t -> bool;
   parent: Reference.t option;
@@ -318,7 +318,7 @@ let is_string_to_any_mapping resolution annotation =
   less_or_equal
     resolution
     ~left:annotation
-    ~right:(Type.optional (Type.parametric "typing.Mapping" [Type.string; Type.Any]))
+    ~right:(Type.optional (Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])))
 
 
 let check_invalid_type_parameters resolution annotation =
@@ -341,58 +341,78 @@ let check_invalid_type_parameters resolution annotation =
           | "typing.Final"
           | "typing_extensions.Final"
           | "typing.Optional" ->
-              [Type.Variable (Type.Variable.Unary.create "T")]
-          | _ -> generics resolution (Type.Primitive name) |> Option.value ~default:[]
+              Type.OrderedTypes.Concrete [Type.Variable (Type.Variable.Unary.create "T")]
+          | _ ->
+              generics resolution (Type.Primitive name)
+              |> Option.value ~default:(Type.OrderedTypes.Concrete [])
         in
         let invalid_type_parameters ~name ~given =
           let generics = generics_for_name name in
-          match List.zip generics given with
-          | Some [] -> Type.Primitive name, sofar
-          | Some paired ->
-              let check_parameter (generic, given) =
-                match generic with
-                | Type.Variable generic ->
-                    let invalid =
-                      let order =
-                        let order = full_order resolution in
-                        { order with any_is_bottom = true }
+          match generics, given with
+          | Concrete generics, Type.OrderedTypes.Concrete given -> (
+            match List.zip generics given with
+            | Some [] -> Type.Primitive name, sofar
+            | Some paired ->
+                let check_parameter (generic, given) =
+                  match generic with
+                  | Type.Variable generic ->
+                      let invalid =
+                        let order =
+                          let order = full_order resolution in
+                          { order with any_is_bottom = true }
+                        in
+                        let pair = Type.Variable.UnaryPair (generic, given) in
+                        TypeOrder.OrderedConstraints.add_lower_bound
+                          TypeConstraints.empty
+                          ~order
+                          ~pair
+                        >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
+                        |> Option.is_none
                       in
-                      let pair = Type.Variable.UnaryPair (generic, given) in
-                      TypeOrder.OrderedConstraints.add_lower_bound
-                        TypeConstraints.empty
-                        ~order
-                        ~pair
-                      >>| TypeOrder.OrderedConstraints.add_upper_bound ~order ~pair
-                      |> Option.is_none
-                    in
-                    if invalid then
-                      ( Type.Any,
-                        Some
-                          { name;
-                            kind = ViolateConstraints { actual = given; expected = generic }
-                          } )
-                    else
+                      if invalid then
+                        ( Type.Any,
+                          Some
+                            { name;
+                              kind = ViolateConstraints { actual = given; expected = generic }
+                            } )
+                      else
+                        given, None
+                  | _ ->
+                      (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
                       given, None
-                | _ ->
-                    (* TODO(T43939735): Enforce that Generic can only have variable parameters *)
-                    given, None
-              in
-              List.map paired ~f:check_parameter
-              |> List.unzip
-              |> fun (parameters, errors) ->
-              Type.parametric name parameters, List.filter_map errors ~f:Fn.id @ sofar
-          | None ->
-              let mismatch =
-                { name;
-                  kind =
-                    IncorrectNumberOfParameters
-                      { actual = List.length given; expected = List.length generics }
-                }
-              in
-              Type.parametric name (List.map generics ~f:(fun _ -> Type.Any)), mismatch :: sofar
+                in
+                List.map paired ~f:check_parameter
+                |> List.unzip
+                |> fun (parameters, errors) ->
+                Type.parametric name (Concrete parameters), List.filter_map errors ~f:Fn.id @ sofar
+            | None ->
+                let mismatch =
+                  { name;
+                    kind =
+                      IncorrectNumberOfParameters
+                        { actual = List.length given; expected = List.length generics }
+                  }
+                in
+                ( Type.parametric name (Concrete (List.map generics ~f:(fun _ -> Type.Any))),
+                  mismatch :: sofar ) )
+          | Variable _, Any -> Type.parametric name given, sofar
+          | Concrete _, Variable _
+          | Concrete _, Any
+          | Concrete _, Map _ ->
+              (* TODO(T47348228): reject with a new kind of error *)
+              Type.parametric name given, sofar
+          | Variable _, Map _
+          | Variable _, Variable _
+          | Variable _, Concrete _ ->
+              (* TODO(T47348228): accept w/ new kind of validation *)
+              Type.parametric name given, sofar
+          | Map _, _
+          | Any, _ ->
+              (* TODO(T47348287): impossible, todo fix generics to not give this *)
+              Type.parametric name given, sofar
         in
         match annotation with
-        | Type.Primitive name -> invalid_type_parameters ~name ~given:[]
+        | Type.Primitive name -> invalid_type_parameters ~name ~given:(Concrete [])
         (* natural variadics *)
         | Type.Parametric { name = "typing.Protocol"; _ }
         | Type.Parametric { name = "typing.Generic"; _ } ->
@@ -491,8 +511,10 @@ let is_invariance_mismatch resolution ~left ~right =
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
-        match ClassHierarchy.variables (order resolution) left_name with
-        | Some (Unaries variables) -> (
+        match
+          ClassHierarchy.variables (order resolution) left_name, left_parameters, right_parameters
+        with
+        | Some (Unaries variables), Concrete left_parameters, Concrete right_parameters -> (
             List.map3
               variables
               left_parameters
@@ -501,10 +523,10 @@ let is_invariance_mismatch resolution ~left ~right =
             |> function
             | List.Or_unequal_lengths.Ok list -> Some list
             | _ -> None )
-        | Some (ListVariadic _) ->
+        | Some (ListVariadic _), _, _ ->
             (* TODO(T47346673): Do this check when list variadics have variance *)
             None
-        | None -> None
+        | _ -> None
       in
       let due_to_invariant_variable (variance, left, right) =
         match variance with
@@ -520,7 +542,9 @@ let is_invariance_mismatch resolution ~left ~right =
 let rec resolve_literal resolution expression =
   let open Ast.Expression in
   let is_concrete_constructable class_type =
-    generics resolution class_type >>| List.is_empty |> Option.value ~default:false
+    generics resolution class_type
+    >>| Type.OrderedTypes.equal (Concrete [])
+    |> Option.value ~default:false
   in
   match Node.value expression with
   | Await expression -> resolve_literal resolution expression |> Type.awaitable_value
@@ -598,16 +622,16 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
   | Some { Node.value = Expression.List _; _ }, _
   | Some { Node.value = Expression.ListComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = "list"; parameters = [actual] },
-        Type.Parametric { name = "list"; parameters = [expected_parameter] } )
+    | ( Type.Parametric { name = "list"; parameters = Concrete [actual] },
+        Type.Parametric { name = "list"; parameters = Concrete [expected_parameter] } )
       when comparator ~left:actual ~right:expected_parameter ->
         expected
     | _ -> resolved )
   | Some { Node.value = Expression.Set _; _ }, _
   | Some { Node.value = Expression.SetComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = "set"; parameters = [actual] },
-        Type.Parametric { name = "set"; parameters = [expected_parameter] } )
+    | ( Type.Parametric { name = "set"; parameters = Concrete [actual] },
+        Type.Parametric { name = "set"; parameters = Concrete [expected_parameter] } )
       when comparator ~left:actual ~right:expected_parameter ->
         expected
     | _ -> resolved )
@@ -646,8 +670,8 @@ let weaken_mutable_literals resolution ~expression ~resolved ~expected ~comparat
   | Some { Node.value = Expression.Dictionary _; _ }, _
   | Some { Node.value = Expression.DictionaryComprehension _; _ }, _ -> (
     match resolved, expected with
-    | ( Type.Parametric { name = "dict"; parameters = [actual_key; actual_value] },
-        Type.Parametric { name = "dict"; parameters = [expected_key; expected_value] } )
+    | ( Type.Parametric { name = "dict"; parameters = Concrete [actual_key; actual_value] },
+        Type.Parametric { name = "dict"; parameters = Concrete [expected_key; expected_value] } )
       when comparator ~left:actual_key ~right:expected_key
            && comparator ~left:actual_value ~right:expected_value ->
         expected

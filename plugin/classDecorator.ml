@@ -133,7 +133,9 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                           |> Annotation.original
                           |> function
                           | Type.Parametric
-                              { name = "dataclasses.InitVar"; parameters = [single_parameter] } ->
+                              { name = "dataclasses.InitVar";
+                                parameters = Concrete [single_parameter]
+                              } ->
                               single_parameter
                           | annotation -> annotation
                         in

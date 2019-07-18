@@ -322,14 +322,14 @@ let test_is_instantiated _ =
   assert_true (is_instantiated order (Type.Primitive "A"));
   assert_true (is_instantiated order (Type.Primitive "B"));
   assert_false (is_instantiated order (Type.Primitive "C"));
-  assert_true (is_instantiated order (Type.parametric "A" [Type.Primitive "B"]));
-  assert_true (is_instantiated order (Type.parametric "A" [Type.Primitive "A"]));
+  assert_true (is_instantiated order (Type.parametric "A" ![Type.Primitive "B"]));
+  assert_true (is_instantiated order (Type.parametric "A" ![Type.Primitive "A"]));
   assert_true
-    (is_instantiated order (Type.parametric "A" [Type.Primitive "A"; Type.Primitive "B"]));
+    (is_instantiated order (Type.parametric "A" ![Type.Primitive "A"; Type.Primitive "B"]));
   assert_false
-    (is_instantiated order (Type.parametric "A" [Type.Primitive "C"; Type.Primitive "B"]));
+    (is_instantiated order (Type.parametric "A" ![Type.Primitive "C"; Type.Primitive "B"]));
   assert_false
-    (is_instantiated order (Type.parametric "C" [Type.Primitive "A"; Type.Primitive "B"]))
+    (is_instantiated order (Type.parametric "C" ![Type.Primitive "A"; Type.Primitive "B"]))
 
 
 let test_disconnect_successors _ =
@@ -571,21 +571,21 @@ let test_instantiate_successors_parameters _ =
     ~printer
     (instantiate_successors_parameters
        variadic_order
-       ~source:(Type.parametric "SimpleTupleChild" [Type.integer; Type.string; Type.bool])
+       ~source:(Type.parametric "SimpleTupleChild" ![Type.integer; Type.string; Type.bool])
        ~target:"UserTuple")
     (Some ![Type.integer; Type.string; Type.bool]);
   assert_equal
     ~printer
     (instantiate_successors_parameters
        variadic_order
-       ~source:(Type.parametric "SimpleTupleChild" [Type.integer; Type.string; Type.bool])
+       ~source:(Type.parametric "SimpleTupleChild" ![Type.integer; Type.string; Type.bool])
        ~target:"list")
     (Some ![Type.tuple [Type.integer; Type.string; Type.bool]]);
   assert_equal
     ~printer
     (instantiate_successors_parameters
        variadic_order
-       ~source:(Type.parametric "TupleOfLists" [Type.integer; Type.string; Type.bool])
+       ~source:(Type.parametric "TupleOfLists" ![Type.integer; Type.string; Type.bool])
        ~target:"UserTuple")
     (Some ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool]);
   ()
@@ -630,14 +630,14 @@ let test_instantiate_predecessors_parameters _ =
     ~source:
       (Type.parametric
          "UserTuple"
-         [Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
+         ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
     ~target:"SimpleTupleChild"
     (Some (Concrete [Type.list Type.integer; Type.list Type.string; Type.list Type.bool]));
   assert_instantiates_to
     ~source:
       (Type.parametric
          "UserTuple"
-         [Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
+         ![Type.list Type.integer; Type.list Type.string; Type.list Type.bool])
     ~target:"TupleOfLists"
     (Some (Concrete [Type.integer; Type.string; Type.bool]));
   ()
