@@ -134,7 +134,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
         (* TODO: Eliminate the filesystem side-effect *)
         let with_dummy_file_and_state ~f ~path ~content ~state =
           (* Fake environment setup: Write a dummy file under the same directory as the target file *)
-          let dummy_file =
+          let dummy_path =
             (* Intentionally use an illegal & unique Python module name here to make sure nothing
                else gets affected *)
             let dummy_filename =
@@ -142,9 +142,9 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
               Format.sprintf "pyre-autocomplete-%s-%s" (Uuid.to_string uuid) (Path.last path)
             in
             Path.get_directory path
-            |> fun root ->
-            Path.create_relative ~root ~relative:dummy_filename |> File.create ~content
+            |> fun root -> Path.create_relative ~root ~relative:dummy_filename
           in
+          let dummy_file = File.create ~content dummy_path in
           File.write dummy_file;
 
           let run () =
@@ -153,7 +153,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
               IncrementalCheck.recheck
                 ~state
                 ~configuration:{ configuration with ignore_dependencies = true }
-                ~files:[dummy_file]
+                [dummy_path]
             in
             (* Perform auto-completion *)
             f dummy_file state
@@ -167,7 +167,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
               IncrementalCheck.recheck
                 ~state
                 ~configuration:{ configuration with ignore_dependencies = true }
-                ~files:[dummy_file]
+                [dummy_path]
               |> ignore
             with
             (* In case the remove operation fails somehow *)

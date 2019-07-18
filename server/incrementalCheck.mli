@@ -8,5 +8,5 @@ type errors = State.Error.t list [@@deriving show]
 val recheck
   :  state:State.t ->
   configuration:Configuration.Analysis.t ->
-  files:File.t list ->
+  PyrePath.t list ->
   State.t * errors

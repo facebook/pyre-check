@@ -183,15 +183,12 @@ let load
     raise (IncompatibleState "configuration mismatch");
   let module_tracker = ModuleTracker.SharedMemory.load () in
   let symlink_targets_to_sources = SymlinkTargetsToSources.load () in
-  let changed_files =
-    let changed_paths =
-      match changed_paths with
-      | Some changed_paths ->
-          restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
-              Hashtbl.find symlink_targets_to_sources (Path.absolute path))
-      | None -> compute_locally_changed_paths ~scheduler ~configuration ~module_tracker
-    in
-    List.map changed_paths ~f:File.create
+  let changed_paths =
+    match changed_paths with
+    | Some changed_paths ->
+        restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path:(fun path ->
+            Hashtbl.find symlink_targets_to_sources (Path.absolute path))
+    | None -> compute_locally_changed_paths ~scheduler ~configuration ~module_tracker
   in
   let errors = ServerErrors.load () in
   let state =
@@ -207,8 +204,8 @@ let load
       open_documents = Path.Map.empty
     }
   in
-  Log.info "Reanalyzing %d files and their dependencies." (List.length changed_files);
-  let state, _ = IncrementalCheck.recheck ~state ~configuration ~files:changed_files in
+  Log.info "Reanalyzing %d files and their dependencies." (List.length changed_paths);
+  let state, _ = IncrementalCheck.recheck ~state ~configuration changed_paths in
   state
 
 

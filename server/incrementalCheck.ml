@@ -17,16 +17,13 @@ type errors = State.Error.t list [@@deriving show]
 let recheck
     ~state:({ State.module_tracker; environment; errors; scheduler; open_documents; _ } as state)
     ~configuration:({ debug; ignore_dependencies; _ } as configuration)
-    ~files
+    paths
   =
   let timer = Timer.start () in
   Annotated.Class.AttributeCache.clear ();
   Module.Cache.clear ();
   Resolution.Cache.clear ();
-  let module_updates =
-    let paths = List.map files ~f:File.path in
-    ModuleTracker.update module_tracker ~configuration ~paths
-  in
+  let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
   let recheck_source_paths, removed =
     let categorize = function
       | ModuleTracker.IncrementalUpdate.New source_path -> `Fst source_path
@@ -133,6 +130,6 @@ let recheck
   Statistics.performance
     ~name:"incremental check"
     ~timer
-    ~integers:["number of direct files", List.length files; "number of files", List.length recheck]
+    ~integers:["number of direct files", List.length paths; "number of files", List.length recheck]
     ();
   state, new_errors

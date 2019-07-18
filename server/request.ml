@@ -1061,8 +1061,7 @@ let process_type_query_request
 
 
 let process_type_check_request ~state ~configuration paths =
-  let files = List.map paths ~f:File.create in
-  let state, response = IncrementalCheck.recheck ~state ~configuration ~files in
+  let state, response = IncrementalCheck.recheck ~state ~configuration paths in
   { state; response = Some (TypeCheckResponse response) }
 
 
