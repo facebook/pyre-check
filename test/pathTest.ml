@@ -154,6 +154,26 @@ let test_last context =
   assert_equal (Path.last (Path.create_relative ~root ~relative:"some/path")) "path"
 
 
+let test_get_directory context =
+  let _, root = root context in
+  let assert_get_directory ~expected path =
+    let actual = Path.get_directory path in
+    assert_equal ~printer:Path.show ~cmp:Path.equal expected actual
+  in
+  let create_absolute = Path.create_absolute ~follow_symbolic_links:false in
+  assert_get_directory (create_absolute "/") ~expected:(create_absolute "/");
+  assert_get_directory (create_absolute "/foo") ~expected:(create_absolute "/");
+  assert_get_directory (create_absolute "/foo/bar") ~expected:(create_absolute "/foo");
+  assert_get_directory (create_absolute "/foo/bar/baz") ~expected:(create_absolute "/foo/bar");
+  assert_get_directory (Path.create_relative ~root ~relative:"foo") ~expected:root;
+  assert_get_directory
+    (Path.create_relative ~root ~relative:"foo/bar")
+    ~expected:(Path.create_relative ~root ~relative:"foo");
+  assert_get_directory
+    (Path.create_relative ~root ~relative:"foo/bar/baz")
+    ~expected:(Path.create_relative ~root ~relative:"foo/bar")
+
+
 let test_directory_contains context =
   let _, root = root context in
   assert_equal
@@ -230,6 +250,7 @@ let () =
          "is_python_file" >:: test_is_python_file;
          "file_exists" >:: test_file_exists;
          "last" >:: test_last;
+         "get_directory" >:: test_get_directory;
          "link" >:: test_link;
          "remove" >:: test_remove;
          "build_symlink_map" >:: test_build_symlink_map ]

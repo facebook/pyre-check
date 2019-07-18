@@ -80,3 +80,5 @@ module Set : Set.S with type Elt.t = t
 val build_symlink_map : links:t list -> t Map.t
 
 val with_suffix : t -> suffix:string -> t
+
+val get_directory : t -> t

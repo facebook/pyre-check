@@ -55,16 +55,6 @@ let get_exported_imports ~module_reference =
   |> Option.value ~default:Reference.Set.empty
 
 
-let check ~state ~configuration file =
-  let state, _ =
-    IncrementalCheck.recheck_deprecated
-      ~state
-      ~configuration:{ configuration with ignore_dependencies = true }
-      ~files:[file]
-  in
-  state
-
-
 let get_completion_item ~range ~item_name ~item_type =
   (* Filter away special functions like __len__() *)
   if String.is_prefix ~prefix:"__" item_name then
@@ -136,41 +126,78 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
   let { State.open_documents; module_tracker; environment; _ } = state in
   match Service.ModuleTracker.lookup_path ~configuration module_tracker path with
   | None -> []
-  | Some _ ->
-      let file_option =
-        path
-        |> Path.Map.find open_documents
-        >>| remove_dot ~cursor_position
-        >>| fun content -> File.create ~content path
-      in
-      let state = file_option >>| check ~state ~configuration |> Option.value ~default:state in
-      (* This is the position of the item before DOT *)
-      let item_position = { cursor_position with column = cursor_position.column - 2 } in
-      let resolution = TypeCheck.resolution environment () in
-      let class_attributes_list =
-        file_option
-        >>= (fun file ->
-              LookupCache.find_annotation
+  | Some _ -> (
+    match Path.Map.find open_documents path with
+    | None -> []
+    | Some content ->
+        let content = remove_dot ~cursor_position content in
+        (* TODO: Eliminate the filesystem side-effect *)
+        let with_dummy_file_and_state ~f ~path ~content ~state =
+          (* Fake environment setup: Write a dummy file under the same directory as the target file *)
+          let dummy_file =
+            (* Intentionally use an illegal & unique Python module name here to make sure nothing
+               else gets affected *)
+            let dummy_filename =
+              let uuid = Uuid.create () in
+              Format.sprintf "pyre-autocomplete-%s-%s" (Uuid.to_string uuid) (Path.last path)
+            in
+            Path.get_directory path
+            |> fun root ->
+            Path.create_relative ~root ~relative:dummy_filename |> File.create ~content
+          in
+          File.write dummy_file;
+
+          let run () =
+            (* Update server state with the newly added dummy file *)
+            let state, _ =
+              IncrementalCheck.recheck
                 ~state
-                ~configuration
-                ~path:(File.path file)
-                ~position:item_position)
-        >>| (fun (_, class_type) ->
-              class_type
-              |> Annotated.Class.resolve_class ~resolution
-              |> Option.value ~default:[]
-              |> get_class_attributes_list ~resolution ~cursor_position)
-        |> Option.value ~default:[]
-      in
-      if List.is_empty class_attributes_list then
-        (* Find module members only if class attribute completion fails *)
-        file_option
-        >>= File.content
-        >>= find_module_reference ~cursor_position
-        >>= (fun module_reference ->
-              module_reference
-              |> Resolution.module_definition resolution
-              >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
-        |> Option.value ~default:[]
-      else
-        class_attributes_list
+                ~configuration:{ configuration with ignore_dependencies = true }
+                ~files:[dummy_file]
+            in
+            (* Perform auto-completion *)
+            f dummy_file state
+          in
+          let cleanup () =
+            (* Fake environment cleanup: Remove the dummy file *)
+            Sys.remove (Path.absolute (File.path dummy_file));
+
+            (* Trigger another incremental check to revert server state *)
+            IncrementalCheck.recheck
+              ~state
+              ~configuration:{ configuration with ignore_dependencies = true }
+              ~files:[dummy_file]
+            |> ignore
+          in
+          Exn.protect ~f:run ~finally:cleanup
+        in
+        let get_items file state =
+          (* This is the position of the item before DOT *)
+          let item_position = { cursor_position with column = cursor_position.column - 2 } in
+          let resolution = TypeCheck.resolution environment () in
+          let class_attributes_list =
+            LookupCache.find_annotation
+              ~state
+              ~configuration
+              ~path:(File.path file)
+              ~position:item_position
+            >>| (fun (_, class_type) ->
+                  class_type
+                  |> Annotated.Class.resolve_class ~resolution
+                  |> Option.value ~default:[]
+                  |> get_class_attributes_list ~resolution ~cursor_position)
+            |> Option.value ~default:[]
+          in
+          if List.is_empty class_attributes_list then
+            (* Find module members only if class attribute completion fails *)
+            File.content file
+            >>= find_module_reference ~cursor_position
+            >>= (fun module_reference ->
+                  module_reference
+                  |> Resolution.module_definition resolution
+                  >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
+            |> Option.value ~default:[]
+          else
+            class_attributes_list
+        in
+        with_dummy_file_and_state ~f:get_items ~path ~content ~state )

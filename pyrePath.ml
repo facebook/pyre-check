@@ -221,3 +221,7 @@ let with_suffix path ~suffix =
   match path with
   | Absolute prefix -> Absolute (prefix ^ suffix)
   | Relative { root; relative } -> Relative { root; relative = relative ^ suffix }
+
+
+let get_directory path =
+  absolute path |> Filename.dirname |> create_absolute ~follow_symbolic_links:false
