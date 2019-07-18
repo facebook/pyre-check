@@ -1036,6 +1036,24 @@ let test_list_variadics _ =
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[ListVariadic[Ts]]`.";
       "Revealed type [-1]: Revealed type for `i` is `object`.";
       "Revealed type [-1]: Revealed type for `i` is `object`." ];
+  assert_type_errors
+    {|
+    from typing import Tuple, List, Generic, TypeVar
+    from pyre_extensions import ListVariadic
+    from pyre_extensions.type_variable_operators import Map
+    Ts = ListVariadic("Ts")
+    def foo(x: Tuple[Map[List, Ts]], y: Tuple[Ts]) -> None:
+      reveal_type(x)
+      reveal_type(y)
+      for i in x:
+        reveal_type(i)
+      for i in y:
+        reveal_type(i)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[Map[list, Ts]]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[ListVariadic[Ts]]`.";
+      "Revealed type [-1]: Revealed type for `i` is `object`.";
+      "Revealed type [-1]: Revealed type for `i` is `object`." ];
   ()
 
 
@@ -1129,6 +1147,75 @@ let test_map _ =
   ()
 
 
+let test_user_defined_variadics _ =
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List
+    from pyre_extensions.type_variable_operators import Map
+    Ts = pyre_extensions.ListVariadic("Ts")
+    class Foo(Generic[Ts]):
+      x: Tuple[Ts]
+      y: Tuple[Map[List, Ts]]
+      def __init__(self, x: Tuple[Ts], y: Tuple[Map[List, Ts]]) -> None:
+        self.x = x
+        self.y = y
+      def meth(self, x: int, *args: Ts) -> bool:
+        return True
+    def fun(f: Foo[int, str, bool]) -> None:
+      reveal_type(f.x)
+      reveal_type(f.y)
+      reveal_type(f.meth)
+    def gun(f: Foo[bool, int, float]) -> None:
+      reveal_type(f.x)
+      reveal_type(f.y)
+      reveal_type(f.meth)
+    |}
+    [ "Revealed type [-1]: Revealed type for `f.x` is `typing.Tuple[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `f.y` is `typing.Tuple[List[int], List[str], \
+       List[bool]]`.";
+      "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
+       int), int, str, bool], bool]`.";
+      "Revealed type [-1]: Revealed type for `f.x` is `typing.Tuple[bool, int, float]`.";
+      "Revealed type [-1]: Revealed type for `f.y` is `typing.Tuple[List[bool], List[int], \
+       List[float]]`.";
+      "Revealed type [-1]: Revealed type for `f.meth` is `typing.Callable(Foo.meth)[[Named(x, \
+       int), bool, int, float], bool]`." ];
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List, Protocol
+    from pyre_extensions.type_variable_operators import Map
+    Ts = pyre_extensions.ListVariadic("Ts")
+    class Foo(Protocol[Ts]):
+      def m(self, *args: Ts) -> bool: ...
+    class I:
+      def m(self, x: int, y: str, z: bool) -> bool:
+        return True
+    def fun(f: Foo[Ts]) -> Tuple[Ts]: ...
+    def gun(x: I) -> None:
+      reveal_type(fun(x))
+    |}
+    ["Revealed type [-1]: Revealed type for `fun(x)` is `typing.Tuple[int, str, bool]`."];
+  assert_type_errors
+    {|
+    from typing import Generic, Tuple, List, Protocol
+    from pyre_extensions.type_variable_operators import Map
+    Ts = pyre_extensions.ListVariadic("Ts")
+    class Foo(Generic[Ts]):
+      pass
+    def f_in( *args: Ts) -> Foo[Ts]: ...
+    def f_out(f: Foo[Ts]) -> Tuple[Ts]: ...
+    def fun(i: int, s: str, b: bool) -> None:
+      x = f_in(i, s, b)
+      reveal_type(x)
+      y = f_out(x)
+      reveal_type(y)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `Foo[int, str, bool]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, bool]`." ];
+
+  ()
+
+
 let () =
   "typeVariable"
   >::: [ "check_unbounded_variables" >:: test_check_unbounded_variables;
@@ -1139,5 +1226,6 @@ let () =
          "nested_variable_error" >:: test_nested_variable_error;
          "callable_parameter_variadics" >:: test_callable_parameter_variadics;
          "list_variadics" >:: test_list_variadics;
-         "map" >:: test_map ]
+         "map" >:: test_map;
+         "user_defined_variadics" >:: test_user_defined_variadics ]
   |> Test.run

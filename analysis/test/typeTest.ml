@@ -29,6 +29,27 @@ let test_create _ =
   assert_create
     "foo[bar, baz]"
     (Type.parametric "foo" ![Type.Primitive "bar"; Type.Primitive "baz"]);
+  let variadic = Type.Variable.Variadic.List.create "Ts" in
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
+      | _ -> None)
+    "foo[Ts]"
+    (Type.parametric "foo" (Variable variadic));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
+      | _ -> None)
+    "foo[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]"
+    (Type.parametric
+       "foo"
+       (Map (Type.OrderedTypes.Map.create ~mappers:["list"] ~variable:variadic)));
+  assert_create
+    ~aliases:(function
+      | "Ts" -> Some (VariableAlias (Type.Variable.ListVariadic variadic))
+      | _ -> None)
+    "foo[...]"
+    (Type.parametric "foo" Any);
   assert_create "typing.List.__getitem__(int)" (Type.list Type.integer);
   assert_create
     "typing.Dict.__getitem__((int, str))"

@@ -1935,6 +1935,18 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
               |> Option.value ~default:(Primitive value)
           | _ -> Top
         in
+        let substitute_ordered_types = function
+          | [Primitive "..."] -> Record.OrderedTypes.Any
+          | [Primitive primitive] -> (
+            match variable_aliases primitive with
+            | Some (Record.Variable.ListVariadic variable) -> Variable variable
+            | _ -> Concrete [Primitive primitive] )
+          | [parameter] ->
+              create_map_operator_from_annotation parameter ~variable_aliases
+              >>| (fun map -> Record.OrderedTypes.Map map)
+              |> Option.value ~default:(Record.OrderedTypes.Concrete [parameter])
+          | parameters -> Concrete parameters
+        in
         (* Substitutions. *)
         match result with
         | Primitive name -> (
@@ -1955,20 +1967,12 @@ let rec create_logic ?(use_cache = true) ~aliases ~variable_aliases { Node.value
                 let tuple : tuple =
                   match parameters with
                   | [parameter; Primitive "..."] -> Unbounded parameter
-                  | [Primitive "..."] -> Bounded Any
-                  | [Primitive parameter] -> (
-                    match variable_aliases parameter with
-                    | Some (Record.Variable.ListVariadic variable) -> Bounded (Variable variable)
-                    | _ -> Bounded (Concrete parameters) )
-                  | [parameter] -> (
-                    match create_map_operator_from_annotation parameter ~variable_aliases with
-                    | Some map -> Bounded (Map map)
-                    | None -> Bounded (Concrete parameters) )
-                  | _ -> Bounded (Concrete parameters)
+                  | parameters ->
+                      substitute_ordered_types parameters |> fun bounded -> Bounded bounded
                 in
                 Tuple tuple
             | "typing.Union" -> union parameters
-            | _ -> result ) )
+            | _ -> Parametric { name; parameters = substitute_ordered_types parameters } ) )
         | Union elements -> union elements
         | _ -> result
       in

@@ -2433,6 +2433,15 @@ let test_solve_less_or_equal _ =
       class Constructable:
         def Constructable.__init__(self, x: int) -> None:
           pass
+
+      class UserDefinedVariadic(typing.Generic[Ts]):
+        pass
+
+      class UserDefinedVariadicSimpleChild(UserDefinedVariadic[Ts]):
+        pass
+
+      class UserDefinedVariadicMapChild(UserDefinedVariadic[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]):
+        pass
     |}
   in
   let resolution = TypeCheck.resolution environment () in
@@ -2960,6 +2969,44 @@ let test_solve_less_or_equal _ =
       "typing.Callable[[Variable(pyre_extensions.type_variable_operators.Map[typing.List, Ts])], \
        int]"
     [["Ts", "int, str, bool"]];
+
+  assert_solve ~left:"UserDefinedVariadic[int, str]" ~right:"UserDefinedVariadic[int, str]" [[]];
+  assert_solve
+    ~left:"UserDefinedVariadic[int, str]"
+    ~right:"UserDefinedVariadic[int, T]"
+    [["T", "str"]];
+  assert_solve
+    ~left:"UserDefinedVariadic[int, str]"
+    ~right:"UserDefinedVariadic[int, str, bool]"
+    [];
+
+  (* All variadics are invariant for now *)
+  assert_solve ~left:"UserDefinedVariadic[int, str]" ~right:"UserDefinedVariadic[float, str]" [];
+  assert_solve ~left:"UserDefinedVariadic[...]" ~right:"UserDefinedVariadic[int, str]" [[]];
+  assert_solve
+    ~left:"UserDefinedVariadicSimpleChild[int, str]"
+    ~right:"UserDefinedVariadic[int, str]"
+    [[]];
+  assert_solve
+    ~left:"UserDefinedVariadicSimpleChild[int, str]"
+    ~right:"UserDefinedVariadic[int, T]"
+    [["T", "str"]];
+  assert_solve
+    ~left:"UserDefinedVariadicMapChild[int, str]"
+    ~right:"UserDefinedVariadic[typing.List[int], typing.List[str]]"
+    [[]];
+  assert_solve
+    ~left:"UserDefinedVariadicMapChild[int, str]"
+    ~right:"UserDefinedVariadic[T, typing.List[str]]"
+    [["T", "typing.List[int]"]];
+  assert_solve
+    ~left:"UserDefinedVariadicMapChild[int, str]"
+    ~right:"UserDefinedVariadic[Ts]"
+    [["Ts", "typing.List[int], typing.List[str]"]];
+  assert_solve
+    ~left:"UserDefinedVariadicMapChild[int, str]"
+    ~right:"UserDefinedVariadic[pyre_extensions.type_variable_operators.Map[typing.List, Ts]]"
+    [["Ts", "int, str"]];
   ()
 
 
@@ -3166,17 +3213,7 @@ let test_instantiate_protocol_parameters _ =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler =
-        let order = Resolution.order resolution in
-        let variadic = Type.Variable.Variadic.List.create "Ts" in
-        ClassHierarchy.connect
-          order
-          ~predecessor:"VariadicProtocol"
-          ~successor:"typing.Generic"
-          ~parameters:(Variable variadic);
-        order
-      in
-      { handler;
+      { handler = Resolution.order resolution;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
@@ -3308,8 +3345,7 @@ let test_instantiate_protocol_parameters _ =
     ~context:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
-      # Protocol[Ts] handled on backend
-      class VariadicProtocol(): pass
+      class VariadicProtocol(typing.Generic[Ts]): pass
     |}
     ~classes:["A", ["prop", "typing.Tuple[int, str]"]]
     ~protocols:["VariadicProtocol", ["prop", "typing.Tuple[Ts]"]]
@@ -3320,8 +3356,7 @@ let test_instantiate_protocol_parameters _ =
     ~context:
       {|
       Ts = pyre_extensions.ListVariadic("Ts")
-      # Protocol[Ts] handled on backend
-      class VariadicProtocol(): pass
+      class VariadicProtocol(typing.Generic[Ts]): pass
     |}
     ~classes:["A", ["method", "typing.Callable[[int, str], bool]"]]
     ~protocols:["VariadicProtocol", ["method", "typing.Callable[[Ts], bool]"]]
