@@ -1055,9 +1055,7 @@ module State (Context : Context) = struct
                     let parent_annotation =
                       let parent_name = Reference.show parent in
                       let parent_type = Type.Primitive parent_name in
-                      let variables =
-                        ClassHierarchy.variables (Resolution.order resolution) parent_name
-                      in
+                      let variables = Resolution.variables resolution parent_name in
                       match variables with
                       | None
                       | Some (Unaries []) ->

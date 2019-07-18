@@ -149,7 +149,7 @@ let parent { parent; _ } = parent
 
 let with_parent resolution ~parent = { resolution with parent }
 
-let order { order; _ } = order
+let variables { order; _ } = ClassHierarchy.variables order
 
 let resolve ({ resolve; _ } as resolution) expression =
   resolve ~resolution expression |> Annotation.annotation
@@ -505,15 +505,13 @@ let parse_as_parameter_specification_instance_annotation
     ~keywords_parameter_annotation
 
 
-let is_invariance_mismatch resolution ~left ~right =
+let is_invariance_mismatch ({ order; _ } as resolution) ~left ~right =
   match left, right with
   | ( Type.Parametric { name = left_name; parameters = left_parameters },
       Type.Parametric { name = right_name; parameters = right_parameters } )
     when Identifier.equal left_name right_name ->
       let zipped =
-        match
-          ClassHierarchy.variables (order resolution) left_name, left_parameters, right_parameters
-        with
+        match ClassHierarchy.variables order left_name, left_parameters, right_parameters with
         | Some (Unaries variables), Concrete left_parameters, Concrete right_parameters -> (
             List.map3
               variables

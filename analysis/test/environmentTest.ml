@@ -457,12 +457,12 @@ let test_connect_definition _ =
   let class_definition =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
   in
-  Environment.connect_definition ~resolution ~definition:class_definition;
+  Environment.connect_definition (module Handler) ~resolution ~definition:class_definition;
   let definition = +Test.parse_single_class {|
        class D(int, float):
          ...
      |} in
-  Environment.connect_definition ~resolution ~definition;
+  Environment.connect_definition (module Handler) ~resolution ~definition;
   assert_edge ~predecessor:"D" ~successor:"int";
   assert_edge ~predecessor:"D" ~successor:"float"
 

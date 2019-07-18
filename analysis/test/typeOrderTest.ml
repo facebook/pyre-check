@@ -2462,7 +2462,11 @@ let test_solve_less_or_equal _ =
         >>| Class.create
         >>| Class.constructor ~instantiated ~resolution
       in
-      { handler = Resolution.order resolution;
+      let handler =
+        let (module Handler : Environment.Handler) = environment in
+        (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
+      in
+      { handler;
         constructor;
         attributes;
         is_protocol;
@@ -3171,16 +3175,14 @@ let test_instantiate_protocol_parameters _ =
       ~protocol
       expected
     =
-    let resolution =
+    let environment =
       let configuration = Configuration.Analysis.create () in
-      let environment =
-        let environment = Environment.Builder.create () in
-        let source = context >>| parse |> Option.to_list in
-        Test.populate ~configuration (Environment.handler environment) (source @ typeshed_stubs ());
-        environment
-      in
-      TypeCheck.resolution (Environment.handler environment) ()
+      let environment = Environment.Builder.create () in
+      let source = context >>| parse |> Option.to_list in
+      Test.populate ~configuration (Environment.handler environment) (source @ typeshed_stubs ());
+      environment
     in
+    let resolution = TypeCheck.resolution (Environment.handler environment) () in
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
@@ -3213,7 +3215,11 @@ let test_instantiate_protocol_parameters _ =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      { handler = Resolution.order resolution;
+      let handler =
+        let (module Handler : Environment.Handler) = Environment.handler environment in
+        (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
+      in
+      { handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
         is_protocol;
@@ -3367,7 +3373,7 @@ let test_instantiate_protocol_parameters _ =
 
 
 let test_mark_escaped_as_escaped _ =
-  let resolution =
+  let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
       let environment =
@@ -3386,7 +3392,6 @@ let test_mark_escaped_as_escaped _ =
         class G_invariant(typing.Generic[T]):
           pass
       |}
-    |> fun environment -> TypeCheck.resolution environment ()
   in
   let left =
     let variable = Type.variable "T" in
@@ -3401,7 +3406,11 @@ let test_mark_escaped_as_escaped _ =
   in
   let result =
     let handler =
-      { handler = Resolution.order resolution;
+      let (module Handler : Environment.Handler) = environment in
+      (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
+    in
+    let handler =
+      { handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes = (fun _ ~protocol_assumptions:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);

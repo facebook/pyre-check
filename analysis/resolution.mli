@@ -69,7 +69,7 @@ val parent : t -> Reference.t option
 
 val with_parent : t -> parent:Reference.t option -> t
 
-val order : t -> (module ClassHierarchy.Handler)
+val variables : t -> Type.Primitive.t -> ClassHierarchy.variables option
 
 val resolve : t -> Expression.t -> Type.t
 

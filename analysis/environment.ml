@@ -96,10 +96,11 @@ module ResolvedAlias = struct
 end
 
 let connect_definition
+    (module Handler : Handler)
     ~resolution
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
-  let (module Handler : ClassHierarchy.Handler) = Resolution.order resolution in
+  let (module Handler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
   let annotated = Annotated.Class.create definition in
   (* We have to split the type here due to our built-in aliasing. Namely, the "list" and "dict"
      classes get expanded into parametric types of List[Any] and Dict[Any, Any]. *)
@@ -860,7 +861,10 @@ let connect_type_order (module Handler : Handler) resolution source =
 
     let statement _ _ = function
       | { Node.location; value = Class definition } ->
-          connect_definition ~resolution ~definition:(Node.create ~location definition)
+          connect_definition
+            (module Handler)
+            ~resolution
+            ~definition:(Node.create ~location definition)
       | _ -> ()
   end)
   in

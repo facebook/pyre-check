@@ -82,7 +82,11 @@ val handler : t -> (module Handler)
 
 val dependencies : (module Handler) -> Reference.t -> Reference.Set.Tree.t option
 
-val connect_definition : resolution:Resolution.t -> definition:Class.t Node.t -> unit
+val connect_definition
+  :  (module Handler) ->
+  resolution:Resolution.t ->
+  definition:Class.t Node.t ->
+  unit
 
 val register_module : (module Handler) -> Source.t -> unit
 
