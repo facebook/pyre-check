@@ -109,7 +109,8 @@ let test_parse_sources context =
     in
     let module_tracker = Service.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
-    |> List.map ~f:File.Handle.show
+    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
+           Path.RelativePath.relative relative_path)
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -136,17 +137,19 @@ let test_parse_sources context =
     Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Service.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
+    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
+           Path.RelativePath.relative relative_path)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
   assert_equal
-    ~printer:(List.to_string ~f:File.Handle.show)
+    ~printer:(String.concat ~sep:", ")
     ~cmp:(fun left_handles right_handles ->
-      let left_handles = List.sort ~compare:File.Handle.compare left_handles in
-      let right_handles = List.sort ~compare:File.Handle.compare right_handles in
-      List.equal ~equal:File.Handle.equal left_handles right_handles)
+      let left_handles = List.sort ~compare:String.compare left_handles in
+      let right_handles = List.sort ~compare:String.compare right_handles in
+      List.equal ~equal:String.equal left_handles right_handles)
     source_handles
-    [File.Handle.create_for_testing "stub.pyi"; File.Handle.create_for_testing "a.py"];
+    ["stub.pyi"; "a.py"];
   match Ast.SharedMemory.Sources.get (Reference.create "c") with
   | Some { Source.hash; _ } ->
       assert_equal hash ([%hash: string list] (String.split ~on:'\n' content))

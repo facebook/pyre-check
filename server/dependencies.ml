@@ -12,15 +12,10 @@ open Pyre
 let compute_dependencies
     ~state:{ State.environment = (module Handler : Environment.Handler); scheduler; _ }
     ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
-    files
+    source_paths
   =
   let timer = Timer.start () in
-  let handle file =
-    try Some (File.handle file ~configuration) with
-    | File.NonexistentHandle _ -> None
-  in
-  let handles = List.filter_map files ~f:handle in
-  let qualifiers = List.map handles ~f:(fun handle -> Source.qualifier ~handle) in
+  let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
   let old_signature_hashes, new_signature_hashes =
     let signature_hashes ~default =
       let table = Reference.Table.create () in
@@ -35,16 +30,20 @@ let compute_dependencies
     in
     let old_signature_hashes = signature_hashes ~default:0 in
     Ast.SharedMemory.Sources.remove qualifiers;
-    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None ~files
+    Service.Parser.parse_sources ~configuration ~scheduler ~preprocessing_state:None source_paths
     |> ignore;
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
+  in
+  let handles =
+    List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
+        Path.RelativePath.relative relative_path)
   in
   Log.log
     ~section:`Server
     "Handling type check request for files %a"
     Sexp.pp
-    [%message (handles : File.Handle.t list)];
+    [%message (handles : string list)];
   let signature_hash_changed handle =
     (* If the hash is not found, then the handle was not part of handles, hence its hash cannot
        have changed. *)
@@ -68,7 +67,7 @@ let compute_dependencies
     ~name:"Computed dependencies"
     ~timer
     ~randomly_log_every:100
-    ~normals:["changed files", List.to_string ~f:File.Handle.show handles]
+    ~normals:["changed files", String.concat handles ~sep:", "]
     ~integers:
       [ "number of dependencies", Reference.Set.length dependents;
         "number of files", List.length handles ]

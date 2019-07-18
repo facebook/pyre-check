@@ -8,7 +8,7 @@ open Ast
 open Pyre
 
 type result = {
-  handles: File.Handle.t list;
+  analyzed: SourcePath.t list;
   module_tracker: ModuleTracker.t;
   environment: (module Analysis.Environment.Handler);
   errors: Analysis.Error.t list
@@ -122,31 +122,40 @@ let check
   (* Find sources to parse *)
   let module_tracker = ModuleTracker.create configuration in
   (* Parse sources. *)
-  let sources = Parser.parse_all ~scheduler ~configuration module_tracker in
-  let source_paths = ModuleTracker.source_paths module_tracker in
+  let source_paths = Parser.parse_all ~scheduler ~configuration module_tracker in
   Postprocess.register_ignores ~configuration scheduler source_paths;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
-  Environment.populate_shared_memory ~configuration ~scheduler ~sources;
+  let () =
+    (* TODO (T46153421): Refactor `populate_shared_memory` to take `SourcePath` *)
+    let sources =
+      List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
+          Path.RelativePath.relative relative_path |> File.Handle.create_for_testing)
+    in
+    Environment.populate_shared_memory ~configuration ~scheduler ~sources
+  in
   let errors = analyze_sources ~scheduler ~configuration ~environment source_paths in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
     |> Option.value ~default:(Path.absolute local_root)
   in
+  (* Do not count external files when computing coverages *)
+  let source_paths =
+    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
+  in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
-    let number_of_files = List.length sources in
-    let sources = List.map sources ~f:(fun handle -> Source.qualifier ~handle) in
+    let number_of_files = List.length source_paths in
+    let sources = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
     Coverage.coverage ~sources ~number_of_files
   in
   let { Coverage.full; partial; untyped; ignore; crashes } =
-    let aggregate sofar handle =
-      let qualifier = Source.qualifier ~handle in
+    let aggregate sofar { SourcePath.qualifier; _ } =
       match Coverage.get ~qualifier with
       | Some coverage -> Coverage.sum sofar coverage
       | _ -> sofar
     in
-    List.fold sources ~init:(Coverage.create ()) ~f:aggregate
+    List.fold source_paths ~init:(Coverage.create ()) ~f:aggregate
   in
   Statistics.coverage
     ~randomly_log_every:20
@@ -168,4 +177,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { handles = sources; module_tracker; environment; errors }
+  { analyzed = source_paths; module_tracker; environment; errors }

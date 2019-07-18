@@ -10,16 +10,21 @@ open PyreParser
 
 type 'success parse_result =
   | Success of 'success
-  | SyntaxError of File.Handle.t
-  | SystemError of File.Handle.t
+  | SyntaxError of SourcePath.t
+  | SystemError of SourcePath.t
 
-let parse_source ~configuration ?(show_parser_errors = true) file =
-  let parse_lines ~handle lines =
-    let qualifier = Source.qualifier ~handle in
+let parse_source
+    ?(show_parser_errors = true)
+    ({ SourcePath.relative_path; qualifier; _ } as source_path)
+  =
+  let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     try
-      let statements = Parser.parse ~handle lines in
+      let relative = Path.RelativePath.relative relative_path in
+      let statements = Parser.parse ~relative lines in
       let hash = [%hash: string list] lines in
+      (* TODO (T46153421): Kill File.Handle *)
+      let handle = File.Handle.create_for_testing relative in
       Success
         (Source.create
            ~docstring:(Statement.extract_docstring statements)
@@ -32,20 +37,21 @@ let parse_source ~configuration ?(show_parser_errors = true) file =
     | Parser.Error error ->
         if show_parser_errors then
           Log.log ~section:`Parser "%s" error;
-        SyntaxError handle
+        SyntaxError source_path
     | Failure error ->
         Log.error "%s" error;
-        SystemError handle
+        SystemError source_path
   in
-  File.handle ~configuration file
-  |> fun handle ->
-  File.lines file >>| parse_lines ~handle |> Option.value ~default:(SystemError handle)
+  File.create (Path.Relative relative_path)
+  |> File.lines
+  >>| parse_lines
+  |> Option.value ~default:(SystemError source_path)
 
 
 module FixpointResult = struct
   type t = {
-    parsed: File.Handle.t parse_result list;
-    not_parsed: File.t list
+    parsed: SourcePath.t parse_result list;
+    not_parsed: SourcePath.t list
   }
 
   let merge
@@ -55,69 +61,67 @@ module FixpointResult = struct
     { parsed = left_parsed @ right_parsed; not_parsed = left_not_parsed @ right_not_parsed }
 end
 
-let parse_sources_job ~preprocessing_state ~show_parser_errors ~force ~configuration ~files =
-  let parse ({ FixpointResult.parsed; not_parsed } as result) file =
+let parse_sources_job ~preprocessing_state ~show_parser_errors ~force source_paths =
+  let parse
+      ({ FixpointResult.parsed; not_parsed } as result)
+      ({ SourcePath.relative_path; qualifier; _ } as source_path)
+    =
     let use_parsed_source source =
       let source =
         match preprocessing_state with
         | Some state -> ProjectSpecificPreprocessing.preprocess ~state source
         | None -> source
       in
-      let store_result ~preprocessed ~file =
+      let store_result preprocessed =
         let add_module_from_source ({ Source.qualifier; _ } as source) =
           Module.create source
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source preprocessed;
-        let handle = File.handle ~configuration file in
-        let qualifier = Source.qualifier ~handle in
-        Ast.SharedMemory.Handles.add qualifier ~handle:(File.Handle.show handle);
-        Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed);
-        handle
+        let handle = Path.RelativePath.relative relative_path in
+        Ast.SharedMemory.Handles.add qualifier ~handle;
+        Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed)
       in
-      if force then
-        let handle =
-          Analysis.Preprocessing.preprocess source
-          |> fun preprocessed -> store_result ~preprocessed ~file
-        in
-        { result with parsed = Success handle :: parsed }
-      else
+      match force with
+      | true ->
+          store_result (Analysis.Preprocessing.preprocess source);
+          { result with parsed = Success source_path :: parsed }
+      | false -> (
         match Analysis.Preprocessing.try_preprocess source with
         | Some preprocessed ->
-            let handle = store_result ~preprocessed ~file in
-            { result with parsed = Success handle :: parsed }
-        | None -> { result with not_parsed = file :: not_parsed }
+            store_result preprocessed;
+            { result with parsed = Success source_path :: parsed }
+        | None -> { result with not_parsed = source_path :: not_parsed } )
     in
-    parse_source ~configuration ~show_parser_errors file
+    parse_source ~show_parser_errors source_path
     |> fun parsed_source ->
     match parsed_source with
     | Success parsed -> use_parsed_source parsed
     | SyntaxError error -> { result with parsed = SyntaxError error :: parsed }
     | SystemError error -> { result with parsed = SystemError error :: parsed }
   in
-  List.fold ~init:{ FixpointResult.parsed = []; not_parsed = [] } ~f:parse files
+  List.fold ~init:{ FixpointResult.parsed = []; not_parsed = [] } ~f:parse source_paths
 
 
 type parse_sources_result = {
-  parsed: File.Handle.t list;
-  syntax_error: File.Handle.t list;
-  system_error: File.Handle.t list
+  parsed: SourcePath.t list;
+  syntax_error: SourcePath.t list;
+  system_error: SourcePath.t list
 }
 
-let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
+let parse_sources ~configuration ~scheduler ~preprocessing_state source_paths =
   let rec fixpoint ?(force = false) ({ FixpointResult.parsed; not_parsed } as input_state) =
     let { FixpointResult.parsed = new_parsed; not_parsed = new_not_parsed } =
       Scheduler.map_reduce
         scheduler
         ~configuration
         ~initial:{ FixpointResult.parsed = []; not_parsed = [] }
-        ~map:(fun _ files ->
+        ~map:(fun _ source_paths ->
           parse_sources_job
             ~show_parser_errors:(List.length parsed = 0)
             ~preprocessing_state
             ~force
-            ~configuration
-            ~files)
+            source_paths)
         ~reduce:FixpointResult.merge
         ~inputs:not_parsed
         ()
@@ -130,19 +134,16 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state ~files =
     else (* We made some progress, continue with the fixpoint. *)
       fixpoint { parsed = parsed @ new_parsed; not_parsed = new_not_parsed }
   in
-  let result = fixpoint { parsed = []; not_parsed = files } in
+  let result = fixpoint { parsed = []; not_parsed = source_paths } in
   let () =
-    let get_qualifier file =
-      File.handle ~configuration file |> fun handle -> Source.qualifier ~handle
-    in
-    List.map files ~f:get_qualifier
+    List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
     |> fun qualifiers -> Ast.SharedMemory.Modules.remove ~qualifiers
   in
   let categorize ({ parsed; syntax_error; system_error } as result) parse_result =
     match parse_result with
-    | Success handle -> { result with parsed = handle :: parsed }
-    | SyntaxError handle -> { result with syntax_error = handle :: syntax_error }
-    | SystemError handle -> { result with system_error = handle :: system_error }
+    | Success source_path -> { result with parsed = source_path :: parsed }
+    | SyntaxError source_path -> { result with syntax_error = source_path :: syntax_error }
+    | SystemError source_path -> { result with system_error = source_path :: system_error }
   in
   List.fold result ~init:{ parsed = []; syntax_error = []; system_error = [] } ~f:categorize
 
@@ -177,7 +178,11 @@ let log_parse_errors ~syntax_error ~system_error =
         " due to system errors"
     in
     Log.warning "Could not parse %d file%s%s!%s" count (if count > 1 then "s" else "") details hint;
-    let trace list = List.map list ~f:File.Handle.show |> String.concat ~sep:";" in
+    let trace list =
+      List.map list ~f:(fun { SourcePath.relative_path; _ } ->
+          Path.RelativePath.relative relative_path)
+      |> String.concat ~sep:";"
+    in
     Statistics.event
       ~flush:true
       ~name:"parse errors"
@@ -194,8 +199,8 @@ let parse_all ~scheduler ~configuration module_tracker =
     let preprocessing_state =
       ProjectSpecificPreprocessing.initial (ModuleTracker.mem module_tracker)
     in
-    let files = ModuleTracker.paths module_tracker |> List.map ~f:File.create in
-    parse_sources ~configuration ~scheduler ~preprocessing_state:(Some preprocessing_state) ~files
+    ModuleTracker.source_paths module_tracker
+    |> parse_sources ~configuration ~scheduler ~preprocessing_state:(Some preprocessing_state)
   in
   log_parse_errors ~syntax_error ~system_error;
   Statistics.performance ~name:"sources parsed" ~timer ();

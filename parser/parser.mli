@@ -10,7 +10,7 @@ exception Error of string
 val parse
   :  ?start_line:int ->
   ?start_column:int ->
-  ?handle:File.Handle.t ->
+  ?relative:string ->
   string list ->
   Statement.t list
 (** Parse python source. ?handle is path relative to the file's source root, if any. *)

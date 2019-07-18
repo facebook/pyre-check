@@ -6,7 +6,7 @@
 open Analysis
 
 type result = {
-  handles: File.Handle.t list;
+  analyzed: Ast.SourcePath.t list;
   module_tracker: ModuleTracker.t;
   environment: (module Environment.Handler);
   errors: Error.t list

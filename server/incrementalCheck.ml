@@ -34,10 +34,6 @@ let recheck
   let recheck_modules =
     List.map recheck_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
   in
-  let recheck_files =
-    List.map recheck_source_paths ~f:(fun { SourcePath.relative_path; _ } ->
-        File.create (Path.Relative relative_path))
-  in
   if not (List.is_empty removed) then
     List.map removed ~f:Reference.show
     |> String.concat ~sep:", "
@@ -53,7 +49,7 @@ let recheck
     else
       Set.union
         (Reference.Set.of_list recheck_modules)
-        (ServerDependencies.compute_dependencies recheck_files ~state ~configuration)
+        (ServerDependencies.compute_dependencies recheck_source_paths ~state ~configuration)
       |> Set.to_list
   in
   (* Repopulate the environment. *)
@@ -84,18 +80,24 @@ let recheck
         ~configuration
         ~scheduler
         ~preprocessing_state:None
-        ~files:recheck_files
+        recheck_source_paths
     in
     let unparsed = List.concat [syntax_error; system_error] in
     if not (List.is_empty unparsed) then
       Log.warning
         "Unable to parse `%s`."
-        (List.map unparsed ~f:File.Handle.show |> String.concat ~sep:", ");
+        ( List.map unparsed ~f:(fun { SourcePath.relative_path; _ } ->
+              Path.RelativePath.relative relative_path)
+        |> String.concat ~sep:", " );
+    let parsed_paths =
+      List.map parsed ~f:(fun { SourcePath.relative_path; _ } ->
+          Path.RelativePath.show relative_path)
+    in
     Log.log
       ~section:`Debug
       "Repopulating the environment with %a"
       Sexp.pp
-      [%message (parsed : File.Handle.t list)];
+      [%message (parsed_paths : string list)];
     Log.info "Updating the type environment for %d files." (List.length parsed)
   in
   List.filter_map ~f:Ast.SharedMemory.Sources.get recheck_modules

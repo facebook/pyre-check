@@ -1362,13 +1362,12 @@ module ScratchProject = struct
 
 
   let parse_sources ({ configuration; module_tracker } as project) =
-    let files = Service.ModuleTracker.paths module_tracker |> List.map ~f:File.create in
     let { Service.Parser.syntax_error; system_error; _ } =
-      Service.Parser.parse_sources
-        ~configuration
-        ~scheduler:(Scheduler.mock ())
-        ~preprocessing_state:None
-        ~files
+      Service.ModuleTracker.source_paths module_tracker
+      |> Service.Parser.parse_sources
+           ~configuration
+           ~scheduler:(Scheduler.mock ())
+           ~preprocessing_state:None
     in
     (* Normally we shouldn't have any parse errors in tests *)
     assert_true (List.is_empty syntax_error);

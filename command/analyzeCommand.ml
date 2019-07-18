@@ -93,13 +93,14 @@ let run_analysis
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
     let errors =
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
-      |> fun { handles; environment; _ } ->
+      |> fun { analyzed; environment; _ } ->
+      let qualifiers = List.map analyzed ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
       Service.StaticAnalysis.analyze
         ~scheduler
         ~configuration:
           { Configuration.StaticAnalysis.configuration; result_json_path; dump_call_graph }
         ~environment
-        ~qualifiers:(List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle))
+        ~qualifiers
         ()
     in
     let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in

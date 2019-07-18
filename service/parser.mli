@@ -4,20 +4,20 @@
  * LICENSE file in the root directory of this source tree. *)
 
 type parse_sources_result = {
-  parsed: File.Handle.t list;
-  syntax_error: File.Handle.t list;
-  system_error: File.Handle.t list
+  parsed: Ast.SourcePath.t list;
+  syntax_error: Ast.SourcePath.t list;
+  system_error: Ast.SourcePath.t list
 }
 
 val parse_sources
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
   preprocessing_state:ProjectSpecificPreprocessing.state option ->
-  files:File.t list ->
+  Ast.SourcePath.t list ->
   parse_sources_result
 
 val parse_all
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   ModuleTracker.t ->
-  File.Handle.t list
+  Ast.SourcePath.t list

@@ -84,7 +84,11 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               let parsed =
                 (* Start at column + 1 since parsing begins after the opening quote of the string
                    literal. *)
-                Parser.parse ~start_line ~start_column:(start_column + 1) [value ^ "\n"] ~handle
+                Parser.parse
+                  ~start_line
+                  ~start_column:(start_column + 1)
+                  [value ^ "\n"]
+                  ~relative:(File.Handle.show handle)
               in
               match parsed with
               | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
@@ -254,7 +258,13 @@ let expand_format_string ({ Source.handle; _ } as source) =
           let parse ((start_line, start_column), input_string) =
             try
               let string = input_string ^ "\n" in
-              match Parser.parse [string ^ "\n"] ~start_line ~start_column ~handle with
+              match
+                Parser.parse
+                  [string ^ "\n"]
+                  ~start_line
+                  ~start_column
+                  ~relative:(File.Handle.show handle)
+              with
               | [{ Node.value = Expression expression; _ }] -> [expression]
               | _ -> failwith "Not an expression"
             with
@@ -1012,7 +1022,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           in
           if qualify_strings then (
             try
-              match Parser.parse [value ^ "\n"] ~handle with
+              match Parser.parse [value ^ "\n"] ~relative:(File.Handle.show handle) with
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
