@@ -184,7 +184,7 @@ let get_index { Node.value = expression; _ } =
   | String literal -> AbstractTreeDomain.Label.Field literal.value
   | Integer i -> AbstractTreeDomain.Label.Field (string_of_int i)
   | Name name -> (
-      let name = Reference.from_name name >>| Reference.delocalize >>| Reference.last in
+      let name = Expression.name_to_reference name >>| Reference.delocalize >>| Reference.last in
       match name with
       (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
       | Some name
