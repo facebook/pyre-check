@@ -249,51 +249,54 @@ class C:
 ```
 $ pyre query "types(path='a.py')"
 {
-    "response": {
-        "types": [
-            {
-                "annotation": "str",
-                "location": {
-                    "path": "a.py",
-                    "start": {
-                        "column": 16,
-                        "line": 2
-                    },
-                    "stop": {
-                        "column": 18,
-                        "line": 2
+    "response": [
+        {
+            "path": "a.py",
+            "types": [
+                {
+                    "annotation": "str",
+                    "location": {
+                        "path": "a.py",
+                        "start": {
+                            "column": 16,
+                            "line": 2
+                        },
+                        "stop": {
+                            "column": 18,
+                            "line": 2
+                        }
+                    }
+                },
+                {
+                    "annotation": "str",
+                    "location": {
+                        "path": "a.py",
+                        "start": {
+                            "column": 4,
+                            "line": 2
+                        },
+                        "stop": {
+                            "column": 13,
+                            "line": 2
+                        }
+                    }
+                },
+                {
+                    "annotation": "typing.Type[a.C]",
+                    "location": {
+                        "path": "a.py",
+                        "start": {
+                            "column": 4,
+                            "line": 2
+                        },
+                        "stop": {
+                            "column": 13,
+                            "line": 2
+                        }
                     }
                 }
-            },
-            {
-                "annotation": "str",
-                "location": {
-                    "path": "a.py",
-                    "start": {
-                        "column": 4,
-                        "line": 2
-                    },
-                    "stop": {
-                        "column": 13,
-                        "line": 2
-                    }
-                }
-            },
-            {
-                "annotation": "typing.Type[a.C]",
-                "location": {
-                    "path": "a.py",
-                    "start": {
-                        "column": 4,
-                        "line": 2
-                    },
-                    "stop": {
-                        "column": 13,
-                        "line": 2
-                    }
-                }
-            }
-        ]
-    }
+            ]
+        }
+    ]
 }
 ```
