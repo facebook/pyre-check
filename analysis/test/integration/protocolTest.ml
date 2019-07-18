@@ -333,6 +333,69 @@ let test_check_protocol _ =
       P()
     |}
     ["Invalid class instantiation [45]: Cannot instantiate protocol `P`."];
+  assert_type_errors
+    {|
+      class P(typing.Protocol):
+        def foo(self) -> int: ...
+      class AlphaMeta(type):
+        def foo(self) -> int: ...
+      class Alpha(metaclass=AlphaMeta):
+        pass
+      def foo(x: P) -> None:
+        pass
+      def bar() -> None:
+        # should fail
+        foo(Alpha())
+        # should be allowed
+        foo(Alpha)
+    |}
+    [ "Incompatible parameter type [6]: Expected `P` for 1st anonymous parameter to call `foo` \
+       but got `Alpha`." ];
+  assert_type_errors
+    {|
+    from enum import Enum
+    from typing import Iterable, TypeVar
+    T = TypeVar("T")
+
+    class AlphaEnum(Enum):
+        x = 'x'
+        y = 'y'
+
+    def foo(x: Iterable[T]) -> T :...
+
+    def bar() -> None:
+      x = foo(AlphaEnum)
+      reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `AlphaEnum`."];
+  assert_type_errors
+    {|
+    from typing import Protocol, TypeVar, Union
+    class Alpha:
+      x: int = 9
+
+    class Beta:
+      x: str = "A"
+
+    T = TypeVar("T", covariant=True)
+    class P(Protocol[T]):
+      x: T
+
+    def foo(x: P[T]) -> T :
+      return x.x
+
+    def bar(a: Alpha, b: Beta, u: Union[Alpha, Beta]) -> None:
+      x = foo(a)
+      reveal_type(x)
+      y = foo(b)
+      reveal_type(y)
+      z = foo(u)
+      reveal_type(z)
+    |}
+    [ "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `str`.";
+      "Revealed type [-1]: Revealed type for `z` is `Union[int, str]`." ];
+
   ()
 
 

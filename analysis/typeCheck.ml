@@ -4423,9 +4423,22 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
     |> Option.value ~default:false
   in
   let attributes ~resolution annotation =
-    Resolution.class_definition resolution annotation
-    >>| AnnotatedClass.create
-    >>| AnnotatedClass.attributes ~resolution ~transitive:true ~instantiated:annotation
+    match Annotated.Class.resolve_class ~resolution annotation with
+    | None -> None
+    | Some [] -> None
+    | Some [{ instantiated; class_attributes; class_definition }] ->
+        AnnotatedClass.attributes
+          class_definition
+          ~resolution
+          ~transitive:true
+          ~instantiated
+          ~class_attributes
+        |> Option.some
+    | Some (_ :: _) ->
+        (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
+           indirectly by breaking apart the union before doing the instantiate_protocol_parameters.
+           Therefore, there is no reason to deal with joining the attributes together here *)
+        None
   in
   let global reference =
     (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
