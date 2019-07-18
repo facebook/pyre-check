@@ -106,7 +106,13 @@ module Analysis = struct
       log_identifier;
       logger;
       profiling_output;
-      excludes = List.map excludes ~f:Str.regexp;
+      excludes =
+        List.map excludes ~f:(fun exclude_regex ->
+            Str.global_substitute
+              (Str.regexp_string "${SOURCE_DIRECTORY}")
+              (fun _ -> Path.absolute local_root)
+              exclude_regex
+            |> Str.regexp);
       extensions;
       store_type_check_resolution;
       incremental_transitive_dependencies;

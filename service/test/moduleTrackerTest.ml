@@ -381,6 +381,42 @@ let test_creation context =
       ~is_stub:true
       ~is_external:true
   in
+  let test_exclude () =
+    (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    touch local_root "foo.py";
+    touch local_root "bar.py";
+    touch local_root "baz.py";
+    touch external_root "foo.py";
+    touch external_root "bar.py";
+    touch external_root "baz.py";
+
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root external_root]
+        ~excludes:["${SOURCE_DIRECTORY}/ba.*"]
+        ()
+    in
+    let create_exn = create_source_path_exn ~configuration in
+    let assert_create_fail = assert_create_fail ~configuration in
+    assert_source_path (create_exn local_root "foo.py") ~search_root:local_root ~relative:"foo.py";
+    assert_create_fail local_root "bar.py";
+    assert_create_fail local_root "baz.py";
+    assert_source_path
+      (create_exn external_root "foo.py")
+      ~search_root:external_root
+      ~relative:"foo.py";
+    assert_source_path
+      (create_exn external_root "bar.py")
+      ~search_root:external_root
+      ~relative:"bar.py";
+    assert_source_path
+      (create_exn external_root "baz.py")
+      ~search_root:external_root
+      ~relative:"baz.py"
+  in
   let test_directory_filter () =
     (* SETUP:
      * - all_root is the parent of both local_root and external_root
@@ -611,6 +647,7 @@ let test_creation context =
     assert_same_module_greater (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
   in
   test_basic ();
+  test_exclude ();
   test_directory_filter ();
   test_priority ();
   test_overlapping ();
