@@ -2,13 +2,15 @@
  (names
   autoCompleteTest
   connectionsTest
+  lookupLocationTest
   queryTest
   requestTest
   operationsTest
   savedStateTest)
  (preprocess
   (pps
-   ppx_deriving.show
+   ppx_sexp_conv
+   ppx_compare
    ppx_deriving_yojson))
  (libraries
   oUnit
@@ -18,4 +20,5 @@
   pyrelib.languageServer
   pyrelib.network
   pyrelib.server
-  pyrelib.ast))
+  pyrelib.ast)
+(deps locationTests.json))

@@ -246,6 +246,24 @@ let map_printer ~key_pp ~data_pp map =
   Map.to_alist map |> List.map ~f:to_string |> String.concat ~sep:"\n"
 
 
+let collect_nodes_as_strings source =
+  let module Collector = Visit.NodeCollector (struct
+    type t = string * Location.t
+
+    let predicate = function
+      | Visit.Expression expression ->
+          Some (Expression.show_sanitized expression, Node.location expression)
+      | Visit.Statement _ -> None
+      | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
+      | Visit.Parameter { Node.value = { Parameter.name; _ }; location } ->
+          Some (Identifier.sanitized name, location)
+      | Visit.Substring { Node.value; location } ->
+          Some (Expression.StringLiteral.Substring.show value, location)
+  end)
+  in
+  Collector.collect source
+
+
 let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
     { Location.path = Reference.create "test";
@@ -291,20 +309,6 @@ let assert_source_equal_with_locations expected actual =
     let rec print_statement ~prefix statement =
       let indented_prefix = prefix ^ "  " in
       let pp_nested_expressions format statement =
-        let module Collector = Visit.NodeCollector (struct
-          type t = string * Location.t
-
-          let predicate = function
-            | Visit.Expression expression ->
-                Some (Expression.show expression, Node.location expression)
-            | Visit.Statement _ -> None
-            | Visit.Identifier { Node.value; location } -> Some (value, location)
-            | Visit.Parameter parameter ->
-                Some (Parameter.show Expression.pp parameter, Node.location parameter)
-            | Visit.Substring { Node.value; location } ->
-                Some (Expression.StringLiteral.Substring.show value, location)
-        end)
-        in
         let print_expression (node_string, location) =
           let add_indentation expression_string =
             let indent expression_string =
@@ -319,7 +323,7 @@ let assert_source_equal_with_locations expected actual =
             Location.Reference.pp_line_and_column
             location
         in
-        Collector.collect (Source.create [statement]) |> List.iter ~f:print_expression
+        collect_nodes_as_strings (Source.create [statement]) |> List.iter ~f:print_expression
       in
       let pp_nested_statements _ statement =
         let immediate_children =

@@ -1,0 +1,28 @@
+[
+  {
+    "source": "def foo(x: int) -> str:\n\treturn x",
+    "locations": [
+      {
+        "expression": "x",
+        "location": [1, 8, 1, 9]
+      },
+      {
+        "expression": "int",
+        "location": [1, 11, 1, 14]
+      },
+      {
+        "expression": "x",
+        "location": [2, 8, 2, 9]
+      }
+    ]
+  },
+  {
+    "source": "foo(x = 1)",
+    "locations": [
+      {
+        "expression": "x",
+        "location": [1, 4, 1, 5]
+      }
+    ]
+  }
+]
