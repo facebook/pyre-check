@@ -3,12 +3,14 @@ package com.facebook.buck_project_builder.cache;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,12 +19,13 @@ public class BuilderCacheTest {
   @Test
   public void getCachePathTest() {
     assertEquals(
-        "/tmp/pyre/buck_builder_cache/__abc", BuilderCache.getCachePath(ImmutableList.of("//abc")));
+        "/tmp/pyre/buck_builder_cache/6ff3f6302227d54ed823ac603a57d864",
+        BuilderCache.getCachePath(ImmutableList.of("//abc")));
     assertEquals(
-        "/tmp/pyre/buck_builder_cache/__abc-__def:efg",
+        "/tmp/pyre/buck_builder_cache/b8565123512e859863e40feb6d46143e",
         BuilderCache.getCachePath(ImmutableList.of("//abc", "//def:efg")));
     assertEquals(
-        "/tmp/pyre/buck_builder_cache/" + Strings.repeat("a", 255),
+        "/tmp/pyre/buck_builder_cache/cabe45dcc9ae5b66ba86600cca6b8ba8",
         BuilderCache.getCachePath(ImmutableList.of(Strings.repeat("a", 1000))));
   }
 
@@ -55,7 +58,9 @@ public class BuilderCacheTest {
 
   @Test
   public void brokenCacheJsonInvalidatesCacheTest() throws IOException {
-    File temporaryBadJsonFile = new File("/tmp/pyre/buck_builder_cache/__target2/cache.json");
+    String targetHash = DigestUtils.md5Hex("//target2");
+    File temporaryBadJsonFile =
+        Paths.get("/tmp/pyre/buck_builder_cache", targetHash, "cache.json").toFile();
     File temporaryTestCacheDirectory = temporaryBadJsonFile.getParentFile();
     temporaryTestCacheDirectory.mkdirs();
 

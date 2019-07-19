@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class BuilderCache {
 
@@ -31,10 +31,7 @@ public final class BuilderCache {
   }
 
   public static String getCachePath(ImmutableList<String> targets) {
-    String escapedTargets =
-        targets.stream()
-            .map(target -> target.replaceAll("/", "_"))
-            .collect(Collectors.joining("-"));
+    String escapedTargets = DigestUtils.md5Hex(String.join(";", targets));
     if (escapedTargets.length() > 255) {
       // 255 is the Linux filename length limit for EXT4.
       // Most target list is not crazily long, and collision is unlikely to happen.
