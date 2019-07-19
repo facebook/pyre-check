@@ -122,7 +122,6 @@ let check
   let module_tracker = ModuleTracker.create configuration in
   (* Parse sources. *)
   let source_paths = Parser.parse_all ~scheduler ~configuration module_tracker in
-  Postprocess.register_ignores ~configuration scheduler source_paths;
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   let () =
     (* TODO (T46153421): Refactor `populate_shared_memory` to take `SourcePath` *)
@@ -132,15 +131,16 @@ let check
     in
     Environment.populate_shared_memory ~configuration ~scheduler ~sources
   in
+  (* Do not count external files when computing ignores / checking types / computing coverages *)
+  let source_paths =
+    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
+  in
+  Postprocess.register_ignores ~configuration scheduler source_paths;
   let errors = analyze_sources ~scheduler ~configuration ~environment source_paths in
   (* Log coverage results *)
   let path_to_files =
     Path.get_relative_to_root ~root:project_root ~path:local_root
     |> Option.value ~default:(Path.absolute local_root)
-  in
-  (* Do not count external files when computing coverages *)
-  let source_paths =
-    List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
   in
   let open Analysis in
   let { Coverage.strict_coverage; declare_coverage; default_coverage; source_files } =
