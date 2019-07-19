@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,5 +51,17 @@ public class BuilderCacheTest {
         BuilderCache.readFromCache(ImmutableList.of("//target")));
 
     FileUtils.deleteDirectory(new File("/tmp/pyre/buck_builder_cache/__target"));
+  }
+
+  @Test
+  public void brokenCacheJsonInvalidatesCacheTest() throws IOException {
+    File temporaryBadJsonFile = new File("/tmp/pyre/buck_builder_cache/__target/cache.json");
+    File temporaryTestCacheDirectory = temporaryBadJsonFile.getParentFile();
+    temporaryTestCacheDirectory.mkdirs();
+
+    FileUtils.writeStringToFile(temporaryBadJsonFile, "broken", Charset.defaultCharset());
+    assertEquals(new BuilderCache(), BuilderCache.readFromCache(ImmutableList.of("//target")));
+
+    FileUtils.deleteDirectory(temporaryTestCacheDirectory);
   }
 }

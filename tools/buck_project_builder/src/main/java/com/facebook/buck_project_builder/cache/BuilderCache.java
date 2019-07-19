@@ -4,6 +4,7 @@ import com.facebook.buck_project_builder.SimpleLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -50,8 +51,9 @@ public final class BuilderCache {
     File cacheJson = getCacheJsonFile(targets);
     try (FileReader reader = new FileReader(cacheJson)) {
       return new Gson().fromJson(reader, BuilderCache.class);
-    } catch (IOException exception) {
-      SimpleLogger.warning("Buck builder cache not found. Rebuilding everything...");
+    } catch (IOException | JsonSyntaxException exception) {
+      SimpleLogger.warning(
+          "Buck builder cache is not found or corrupted. Rebuilding everything...");
       // Return a cache that will invalidate everything.
       return new BuilderCache();
     }
