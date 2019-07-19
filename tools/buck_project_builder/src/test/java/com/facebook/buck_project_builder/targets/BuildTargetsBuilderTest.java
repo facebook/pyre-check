@@ -57,7 +57,7 @@ public class BuildTargetsBuilderTest {
   public void generatedCodeTargetBuildInformationIsCorrectlyAddedTest() {
     BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
 
-    new ThriftLibraryTarget("CMD_THRIFT", ImmutableList.of()).addToBuilder(builder);
+    new ThriftLibraryTarget("CMD_THRIFT", "PATH", ImmutableList.of()).addToBuilder(builder);
     new SwigLibraryTarget("CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
     new Antlr4LibraryTarget("CMD_ANTLR4", ImmutableList.of()).addToBuilder(builder);
 

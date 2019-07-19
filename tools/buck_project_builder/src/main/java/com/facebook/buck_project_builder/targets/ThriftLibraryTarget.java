@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.targets;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -7,16 +8,29 @@ import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 public final class ThriftLibraryTarget implements BuildTarget {
 
+  private static final Pattern BASE_MODULE_PATH_PATTERN =
+      Pattern.compile("(?<=/gen-py/).*(?=/ttypes.pyi)");
+
   private final String command;
+  private final String baseModulePath;
   private final ImmutableList<String> sources;
 
-  ThriftLibraryTarget(String command, ImmutableList<String> sources) {
+  ThriftLibraryTarget(String command, String baseModulePath, ImmutableList<String> sources) {
     this.command = command;
+    this.baseModulePath = baseModulePath;
     this.sources = sources;
+  }
+
+  @VisibleForTesting
+  static @Nullable String getBaseModulePath(String command) {
+    Matcher matcher = BASE_MODULE_PATH_PATTERN.matcher(command);
+    return matcher.find() ? matcher.group(0) : null;
   }
 
   static @Nullable ThriftLibraryTarget parse(
@@ -37,6 +51,10 @@ public final class ThriftLibraryTarget implements BuildTarget {
       return null;
     }
     String command = commandField.getAsString();
+    String baseModulePath = getBaseModulePath(command);
+    if (baseModulePath == null) {
+      return null;
+    }
     String basePath = targetJsonObject.get("buck.base_path").getAsString();
     JsonArray sourcesField = targetJsonObject.get("srcs").getAsJsonArray();
     ImmutableList<String> sources =
@@ -44,7 +62,7 @@ public final class ThriftLibraryTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
-    return new ThriftLibraryTarget(command, sources);
+    return new ThriftLibraryTarget(command, baseModulePath, sources);
   }
 
   @Override
@@ -65,7 +83,8 @@ public final class ThriftLibraryTarget implements BuildTarget {
 
   @Override
   public String toString() {
-    return String.format("{command=%s, sources=%s}", command, sources);
+    return String.format(
+        "{command=%s, baseModulePath=%s, sources=%s}", command, baseModulePath, sources);
   }
 
   @Override
@@ -78,11 +97,12 @@ public final class ThriftLibraryTarget implements BuildTarget {
     }
     ThriftLibraryTarget thriftLibraryTarget = (ThriftLibraryTarget) other;
     return command.equals(thriftLibraryTarget.command)
+        && baseModulePath.equals(thriftLibraryTarget.baseModulePath)
         && sources.equals(thriftLibraryTarget.sources);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(command, sources);
+    return Objects.hash(command, baseModulePath, sources);
   }
 }

@@ -277,47 +277,70 @@ public class BuildTargetsCollectorTest {
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"genrule\",\n"
-            + "  \"cmd\": \"CMD\",\n"
+            + "  \"cmd\": \"CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD\",\n"
             + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py/compile\"],\n"
             + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
-
+        targetJson,
+        new ThriftLibraryTarget(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "PATH",
+            ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"genrule\",\n"
             + "  \"cmd\": \"CMD\",\n"
+            + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py/compile\"],\n"
+            + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
+            + "}";
+    assertExpectedParsedBuildTarget(targetJson, null);
+
+    targetJson =
+        "{\n"
+            + "  \"buck.base_path\": \"PATH\",\n"
+            + "  \"buck.type\": \"genrule\",\n"
+            + "  \"cmd\": \"CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD\",\n"
             + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=pyi/compile\"],\n"
             + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
+        new ThriftLibraryTarget(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "PATH",
+            ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"genrule\",\n"
-            + "  \"cmd\": \"CMD\",\n"
+            + "  \"cmd\": \"CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD\",\n"
             + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py3/compile\"],\n"
             + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
         targetJson,
-        new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
+        new ThriftLibraryTarget(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "PATH",
+            ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
             + "  \"buck.base_path\": \"PATH\",\n"
             + "  \"buck.type\": \"genrule\",\n"
-            + "  \"cmd\": \"CMD\",\n"
+            + "  \"cmd\": \"CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD\",\n"
             + "  \"labels\": [\"generated\", \"thrift_library\", \"thrift_library=py-extension/compile\"],\n"
             + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
+        targetJson,
+        new ThriftLibraryTarget(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "PATH",
+            ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
 
     targetJson =
         "{\n"
