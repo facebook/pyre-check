@@ -19,12 +19,14 @@ public class BuildTargetsCollectorTest {
       String targetJsonString,
       @Nullable BuildTarget expectedTarget,
       @Nullable String cellPath,
+      String buckRoot,
       String buildTargetName,
       ImmutableSet<String> requiredRemoteFiles) {
     BuildTarget actualBuiltTarget =
         BuildTargetsCollector.parseBuildTarget(
             JSON_PARSER.parse(targetJsonString).getAsJsonObject(),
             cellPath,
+            buckRoot,
             buildTargetName,
             requiredRemoteFiles);
     assertEquals(expectedTarget, actualBuiltTarget);
@@ -32,24 +34,15 @@ public class BuildTargetsCollectorTest {
 
   private static void assertExpectedParsedBuildTarget(
       String targetJsonString, @Nullable BuildTarget expectedTarget) {
-    assertExpectedParsedBuildTarget(targetJsonString, expectedTarget, null, "", ImmutableSet.of());
-  }
-
-  private static void assertExpectedParsedBuildTargetList(
-      String targetsJsonString,
-      ImmutableMap<String, String> cellMappings,
-      ImmutableList<BuildTarget> expectedTargets) {
-    ImmutableList<BuildTarget> actualBuiltTarget =
-        BuildTargetsCollector.parseBuildTargetList(
-            cellMappings, JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
-    assertEquals(expectedTargets, actualBuiltTarget);
+    assertExpectedParsedBuildTarget(
+        targetJsonString, expectedTarget, null, ".", "", ImmutableSet.of());
   }
 
   private static void assertExpectedParsedBuildTargetList(
       String targetsJsonString, ImmutableList<BuildTarget> expectedTargets) {
     ImmutableList<BuildTarget> actualBuiltTarget =
         BuildTargetsCollector.parseBuildTargetList(
-            ImmutableMap.of(), JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
+            ImmutableMap.of(), ".", JSON_PARSER.parse(targetsJsonString).getAsJsonObject());
     assertEquals(expectedTargets, actualBuiltTarget);
   }
 
@@ -62,7 +55,7 @@ public class BuildTargetsCollectorTest {
 
   @Test(expected = BuilderException.class)
   public void emptyTargetListNotAllowed() throws BuilderException {
-    BuildTargetsCollector.collectBuckTargets(ImmutableList.of());
+    BuildTargetsCollector.collectBuckTargets(".", ImmutableList.of());
   }
 
   @Test
@@ -289,7 +282,7 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
+        targetJson, new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
 
     targetJson =
         "{\n"
@@ -300,7 +293,8 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.pyi", "b.pyi")));
+        targetJson,
+        new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
@@ -311,7 +305,8 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": [ \"a.pyi\", \"b.pyi\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.pyi", "b.pyi")));
+        targetJson,
+        new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
     targetJson =
         "{\n"
@@ -322,7 +317,7 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": [ \"a.py\", \"b.py\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new ThriftLibraryTarget("PATH", "CMD", ImmutableList.of("a.py", "b.py")));
+        targetJson, new ThriftLibraryTarget("CMD", ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
 
     targetJson =
         "{\n"
@@ -353,7 +348,7 @@ public class BuildTargetsCollectorTest {
             + "  \"srcs\": [ \"a.i\" ]\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, new SwigLibraryTarget(null, "PATH", "CMD", ImmutableList.of("a.i")));
+        targetJson, new SwigLibraryTarget("CMD", ImmutableList.of("./PATH/a.i")));
 
     // Remote file parsing should be parsed only if base_path + ":" + name is in the set.
     targetJson =
@@ -368,6 +363,7 @@ public class BuildTargetsCollectorTest {
         targetJson,
         new RemoteFileTarget("URL"),
         "../path/to",
+        ".",
         "PATH:NAME",
         ImmutableSet.of("PATH:NAME"));
     targetJson =
@@ -379,7 +375,7 @@ public class BuildTargetsCollectorTest {
             + "  \"url\": \"URL\"\n"
             + "}";
     assertExpectedParsedBuildTarget(
-        targetJson, null, ".", "build-target-name", ImmutableSet.of("PATH:BAD_NAME"));
+        targetJson, null, ".", ".", "build-target-name", ImmutableSet.of("PATH:BAD_NAME"));
 
     // Cell path has impact on build target.
     targetJson =
@@ -393,6 +389,7 @@ public class BuildTargetsCollectorTest {
         new PythonTarget(
             "../path/to/", "PATH", null, ImmutableMap.of("a.py", "a.py"), ImmutableSet.of()),
         "../path/to/",
+        ".",
         "",
         ImmutableSet.of());
 

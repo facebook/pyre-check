@@ -19,10 +19,10 @@ public final class BuckProjectBuilder {
     try {
       long start = System.currentTimeMillis();
       BuilderCommand command = BuilderCommand.fromCommandLineArguments(arguments);
+      String buckRoot = command.getBuckRoot();
       ImmutableList<String> targets = command.getTargets();
-      BuildTargetsBuilder builder =
-          new BuildTargetsBuilder(command.getBuckRoot(), command.getOutputDirectory());
-      BuildTargetsCollector.collectBuckTargets(targets)
+      BuildTargetsBuilder builder = new BuildTargetsBuilder(buckRoot, command.getOutputDirectory());
+      BuildTargetsCollector.collectBuckTargets(buckRoot, targets)
           .forEach(target -> target.addToBuilder(builder));
       DebugOutput debugOutput = builder.buildTargets();
       if (command.isDebug()) {

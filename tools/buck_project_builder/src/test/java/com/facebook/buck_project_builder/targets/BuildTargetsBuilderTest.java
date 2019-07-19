@@ -57,10 +57,9 @@ public class BuildTargetsBuilderTest {
   public void generatedCodeTargetBuildInformationIsCorrectlyAddedTest() {
     BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
 
-    new ThriftLibraryTarget("BASE/PATH", "CMD_THRIFT", ImmutableList.of()).addToBuilder(builder);
-    new SwigLibraryTarget(null, "BASE/PATH", "CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
-    new Antlr4LibraryTarget(null, "BASE/PATH", "CMD_ANTLR4", ImmutableList.of())
-        .addToBuilder(builder);
+    new ThriftLibraryTarget("CMD_THRIFT", ImmutableList.of()).addToBuilder(builder);
+    new SwigLibraryTarget("CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
+    new Antlr4LibraryTarget("CMD_ANTLR4", ImmutableList.of()).addToBuilder(builder);
 
     assertEquals(
         "Thrift library build commands are correctly added.",

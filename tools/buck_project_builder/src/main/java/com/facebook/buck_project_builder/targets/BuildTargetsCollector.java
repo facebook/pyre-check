@@ -28,9 +28,9 @@ public final class BuildTargetsCollector {
    * @return an array that contains all of the buck targets (including the dependencies), given a
    *     list of targets we need to type check
    */
-  public static ImmutableList<BuildTarget> collectBuckTargets(ImmutableList<String> targets)
-      throws BuilderException {
-    return parseBuildTargetList(BuckCells.getCellMappings(), getBuildTargetJson(targets));
+  public static ImmutableList<BuildTarget> collectBuckTargets(
+      String buckRoot, ImmutableList<String> targets) throws BuilderException {
+    return parseBuildTargetList(BuckCells.getCellMappings(), buckRoot, getBuildTargetJson(targets));
   }
 
   /**
@@ -39,7 +39,7 @@ public final class BuildTargetsCollector {
    * @return a list of parsed json targets from target json.
    */
   static ImmutableList<BuildTarget> parseBuildTargetList(
-      ImmutableMap<String, String> cellMappings, JsonObject targetJsonMap) {
+      ImmutableMap<String, String> cellMappings, String buckRoot, JsonObject targetJsonMap) {
     Set<String> requiredRemoteFiles = new HashSet<>();
     // The first pass collects python_library that refers to a remote python_file
     for (Map.Entry<String, JsonElement> entry : targetJsonMap.entrySet()) {
@@ -56,7 +56,7 @@ public final class BuildTargetsCollector {
       JsonObject targetJsonObject = entry.getValue().getAsJsonObject();
       BuildTarget parsedTarget =
           parseBuildTarget(
-              targetJsonObject, cellPath, buildTargetName, immutableRequiredRemoteFiles);
+              targetJsonObject, cellPath, buckRoot, buildTargetName, immutableRequiredRemoteFiles);
       if (parsedTarget != null) {
         buildTargetListBuilder.add(parsedTarget);
       }
@@ -111,6 +111,7 @@ public final class BuildTargetsCollector {
   static @Nullable BuildTarget parseBuildTarget(
       JsonObject targetJsonObject,
       @Nullable String cellPath,
+      String buckRoot,
       String buildTargetName,
       ImmutableSet<String> requiredRemoteFiles) {
     String type = targetJsonObject.get("buck.type").getAsString();
@@ -121,14 +122,14 @@ public final class BuildTargetsCollector {
         return PythonTarget.parse(cellPath, targetJsonObject);
       case "genrule":
         // Thrift library targets have genrule rule type.
-        BuildTarget parsedTarget = ThriftLibraryTarget.parse(cellPath, targetJsonObject);
+        BuildTarget parsedTarget = ThriftLibraryTarget.parse(cellPath, buckRoot, targetJsonObject);
         if (parsedTarget != null) {
           return parsedTarget;
         }
-        return Antlr4LibraryTarget.parse(cellPath, targetJsonObject);
+        return Antlr4LibraryTarget.parse(cellPath, buckRoot, targetJsonObject);
       case "cxx_genrule":
         // Swig library targets have cxx_genrule rule type.
-        return SwigLibraryTarget.parse(cellPath, targetJsonObject);
+        return SwigLibraryTarget.parse(cellPath, buckRoot, targetJsonObject);
       case "remote_file":
         return requiredRemoteFiles.contains(buildTargetName)
             ? RemoteFileTarget.parse(targetJsonObject)
