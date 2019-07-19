@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_flow",
-    "callable_line": 12,
+    "callable_line": 15,
     "code": 5002,
-    "line": 13,
+    "line": 16,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -18,7 +18,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 13,
+              "line": 16,
               "start": 39,
               "end": 41
             },
@@ -33,7 +33,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 13,
+              "line": 16,
               "start": 4,
               "end": 23
             },
@@ -48,9 +48,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_flows.tainted_attribute_for_class",
-    "callable_line": 18,
+    "callable_line": 23,
     "code": 5002,
-    "line": 19,
+    "line": 24,
     "start": 4,
     "end": 23,
     "filename": "class_flows.py",
@@ -63,7 +63,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 19,
+              "line": 24,
               "start": 39,
               "end": 41
             },
@@ -78,7 +78,7 @@
           {
             "root": {
               "filename": "class_flows.py",
-              "line": 19,
+              "line": 24,
               "start": 4,
               "end": 23
             },
