@@ -11,12 +11,12 @@ open Statement
 
 type t = {
   class_definitions: Class.t Node.t Identifier.Table.t;
-  class_metadata: Resolution.class_metadata Identifier.Table.t;
+  class_metadata: GlobalResolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   implicit_submodules: int Reference.Table.t;
   order: ClassHierarchy.t;
   aliases: Type.alias Identifier.Table.t;
-  globals: Resolution.global Reference.Table.t;
+  globals: GlobalResolution.global Reference.Table.t;
   dependencies: Dependencies.t;
   undecorated_functions: Type.t Type.Callable.overload Reference.Table.t
 }
@@ -27,7 +27,7 @@ module type Handler = sig
   val register_global
     :  qualifier:Reference.t ->
     reference:Reference.t ->
-    global:Resolution.global ->
+    global:GlobalResolution.global ->
     unit
 
   val register_undecorated_function
@@ -45,7 +45,7 @@ module type Handler = sig
 
   val class_definition : Identifier.t -> Class.t Node.t option
 
-  val class_metadata : Identifier.t -> Resolution.class_metadata option
+  val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
 
   val register_module : Source.t -> unit
 
@@ -59,7 +59,7 @@ module type Handler = sig
 
   val aliases : Identifier.t -> Type.alias option
 
-  val globals : Reference.t -> Resolution.global option
+  val globals : Reference.t -> GlobalResolution.global option
 
   val undecorated_signature : Reference.t -> Type.t Type.Callable.overload option
 
@@ -95,9 +95,82 @@ module ResolvedAlias = struct
     Handler.register_alias ~qualifier ~key:name ~data:annotation
 end
 
+let resolution (module Handler : Handler) () =
+  let aliases = Handler.aliases in
+  let class_hierarchy = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  let constructor ~resolution class_name =
+    let instantiated = Type.Primitive class_name in
+    Handler.class_definition class_name
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.constructor ~instantiated ~resolution
+  in
+  let generics ~resolution class_definition =
+    AnnotatedClass.create class_definition |> AnnotatedClass.generics ~resolution
+  in
+  let is_protocol annotation =
+    Type.split annotation
+    |> fst
+    |> Type.primitive_name
+    >>= Handler.class_definition
+    >>| AnnotatedClass.create
+    >>| AnnotatedClass.is_protocol
+    |> Option.value ~default:false
+  in
+  let attributes ~resolution annotation =
+    match Annotated.Class.resolve_class ~resolution annotation with
+    | None -> None
+    | Some [] -> None
+    | Some [{ instantiated; class_attributes; class_definition }] ->
+        AnnotatedClass.attributes
+          class_definition
+          ~resolution
+          ~transitive:true
+          ~instantiated
+          ~class_attributes
+        |> Option.some
+    | Some (_ :: _) ->
+        (* These come from calling attributes on Unions, which are handled by solve_less_or_equal
+           indirectly by breaking apart the union before doing the instantiate_protocol_parameters.
+           Therefore, there is no reason to deal with joining the attributes together here *)
+        None
+  in
+  let global reference =
+    (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic
+       for module and for class *)
+    match Reference.last reference with
+    | "__file__"
+    | "__name__" ->
+        let annotation =
+          Annotation.create_immutable ~global:true Type.string |> Node.create_with_default_location
+        in
+        Some annotation
+    | "__dict__" ->
+        let annotation =
+          Type.dictionary ~key:Type.string ~value:Type.Any
+          |> Annotation.create_immutable ~global:true
+          |> Node.create_with_default_location
+        in
+        Some annotation
+    | _ -> Handler.globals reference
+  in
+  GlobalResolution.create
+    ~class_hierarchy
+    ~aliases
+    ~module_definition:Handler.module_definition
+    ~class_definition:Handler.class_definition
+    ~class_metadata:Handler.class_metadata
+    ~constructor
+    ~undecorated_signature:Handler.undecorated_signature
+    ~generics
+    ~attributes
+    ~is_protocol
+    ~global
+    ()
+
+
 let connect_definition
     (module Handler : Handler)
-    ~resolution
+    ~(resolution : GlobalResolution.t)
     ~definition:({ Node.value = { Class.name; bases; _ }; _ } as definition)
   =
   let (module Handler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
@@ -133,7 +206,7 @@ let connect_definition
     | Name _ -> (
         let supertype, parameters =
           (* While building environment, allow untracked to parse into primitives *)
-          Resolution.parse_annotation
+          GlobalResolution.parse_annotation
             ~allow_untracked:true
             ~allow_invalid_type_parameters:true
             resolution
@@ -653,7 +726,11 @@ let register_aliases (module Handler : Handler) sources =
   Type.Cache.enable ()
 
 
-let register_undecorated_functions (module Handler : Handler) resolution source =
+let register_undecorated_functions
+    (module Handler : Handler)
+    (resolution : GlobalResolution.t)
+    source
+  =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -692,7 +769,7 @@ let register_undecorated_functions (module Handler : Handler) resolution source 
 
 let register_values
     (module Handler : Handler)
-    resolution
+    (resolution : GlobalResolution.t)
     ({ Source.statements; qualifier; _ } as source)
   =
   let qualified_reference reference =
@@ -800,7 +877,7 @@ let register_values
               Type.create ~aliases:Handler.aliases annotation, true
           | None ->
               let annotation =
-                try Resolution.resolve_literal resolution value with
+                try GlobalResolution.resolve_literal resolution value with
                 | _ -> Type.Top
               in
               annotation, false
@@ -903,7 +980,7 @@ let register_dependencies (module Handler : Handler) source =
   Visit.visit () source
 
 
-let propagate_nested_classes (module Handler : Handler) resolution source =
+let propagate_nested_classes (module Handler : Handler) source =
   let propagate ~qualifier ({ Statement.Class.name; _ } as definition) successors =
     let nested_class_names { Statement.Class.name; body; _ } =
       let extract_classes = function
@@ -927,8 +1004,7 @@ let propagate_nested_classes (module Handler : Handler) resolution source =
     in
     let own_nested_classes = nested_class_names definition |> List.map ~f:snd in
     successors
-    |> List.filter_map ~f:(fun name ->
-           Resolution.class_definition resolution (Type.Primitive name))
+    |> List.filter_map ~f:Handler.class_definition
     |> List.map ~f:Node.value
     |> List.concat_map ~f:nested_class_names
     |> List.fold ~f:create_alias ~init:own_nested_classes
@@ -942,7 +1018,7 @@ let propagate_nested_classes (module Handler : Handler) resolution source =
     let statement { Source.qualifier; _ } _ = function
       | { Node.value = Class ({ Class.name; _ } as definition); _ } ->
           Handler.class_metadata (Reference.show name)
-          |> Option.iter ~f:(fun { Resolution.successors; _ } ->
+          |> Option.iter ~f:(fun { GlobalResolution.successors; _ } ->
                  propagate ~qualifier definition successors)
       | _ -> ()
   end)
@@ -1004,7 +1080,7 @@ module Builder = struct
       Hashtbl.set
         ~key:name
         ~data:
-          { Resolution.successors;
+          { GlobalResolution.successors;
             is_test = false;
             is_final = false;
             extends_placeholder_stub_class = false

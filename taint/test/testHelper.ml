@@ -401,7 +401,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       ~source
   in
   let callables, stubs =
-    Service.StaticAnalysis.callables ~resolution:(TypeCheck.resolution environment ()) ~source
+    Service.StaticAnalysis.callables ~resolution:(Environment.resolution environment ()) ~source
     |> List.map ~f:(fun (callable, define) -> (callable :> Callable.t), define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in

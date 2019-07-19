@@ -18,7 +18,7 @@ val record_and_merge_call_graph
 val record_overrides : DependencyGraph.overrides -> unit
 
 val callables
-  :  resolution:Resolution.t ->
+  :  resolution:GlobalResolution.t ->
   source:Source.t ->
   (Callable.real_target * Define.t Node.t) list
 

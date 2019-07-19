@@ -15,10 +15,10 @@ val create : Define.t -> t
 
 val define : t -> Define.t
 
-val parameter_annotations : t -> resolution:Resolution.t -> Type.t Int.Map.t
+val parameter_annotations : t -> resolution:GlobalResolution.t -> Type.t Int.Map.t
 
-val parent_definition : t -> resolution:Resolution.t -> Class.t option
+val parent_definition : t -> resolution:GlobalResolution.t -> Class.t option
 
-val decorate : t -> resolution:Resolution.t -> t
+val decorate : t -> resolution:GlobalResolution.t -> t
 
-val is_constructor : t -> resolution:Resolution.t -> bool
+val is_constructor : t -> resolution:GlobalResolution.t -> bool

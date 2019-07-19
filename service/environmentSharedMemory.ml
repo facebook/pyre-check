@@ -83,7 +83,7 @@ module ClassValue = struct
 end
 
 module ClassMetadataValue = struct
-  type t = Analysis.Resolution.class_metadata
+  type t = Analysis.GlobalResolution.class_metadata
 
   let prefix = Prefix.make ()
 
@@ -99,7 +99,7 @@ module AliasValue = struct
 end
 
 module GlobalValue = struct
-  type t = Resolution.global
+  type t = GlobalResolution.global
 
   let prefix = Prefix.make ()
 

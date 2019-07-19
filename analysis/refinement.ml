@@ -16,12 +16,12 @@ let refine ~resolution { annotation; mutability } refined =
         | Type.Top -> refined
         | Type.Bottom -> annotation
         | refined ->
-            Resolution.solve_less_or_equal
+            GlobalResolution.solve_less_or_equal
               resolution
               ~constraints:TypeConstraints.empty
               ~left:refined
               ~right:original
-            |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+            |> List.filter_map ~f:(GlobalResolution.solve_constraints resolution)
             |> List.hd
             >>| (fun solution -> TypeConstraints.Solution.instantiate solution refined)
             |> Option.value ~default:annotation
@@ -29,7 +29,7 @@ let refine ~resolution { annotation; mutability } refined =
       let refine =
         Type.is_top refined
         || (not (Type.is_unbound refined))
-           && Resolution.less_or_equal resolution ~left:refined ~right:original
+           && GlobalResolution.less_or_equal resolution ~left:refined ~right:original
       in
       if refine then
         { annotation = refined; mutability }
@@ -48,7 +48,7 @@ let less_or_equal ~resolution left right =
     | _ -> false
   in
   mutability_less_or_equal
-  && Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+  && GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
 
 
 let join ~resolution left right =
@@ -57,7 +57,7 @@ let join ~resolution left right =
     | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
         Immutable
           { scope = Global;
-            original = Resolution.join resolution left.original right.original;
+            original = GlobalResolution.join resolution left.original right.original;
             final = false
           }
     | (Immutable { scope = Global; _ } as immutable), _
@@ -66,7 +66,7 @@ let join ~resolution left right =
     | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
         Immutable
           { scope = Local;
-            original = Resolution.join resolution left.original right.original;
+            original = GlobalResolution.join resolution left.original right.original;
             final = false
           }
     | (Immutable { scope = Local; _ } as immutable), _
@@ -74,7 +74,7 @@ let join ~resolution left right =
         immutable
     | _ -> Mutable
   in
-  { annotation = Resolution.join resolution left.annotation right.annotation; mutability }
+  { annotation = GlobalResolution.join resolution left.annotation right.annotation; mutability }
 
 
 let meet ~resolution left right =
@@ -86,7 +86,7 @@ let meet ~resolution left right =
     | Immutable ({ scope = Local; _ } as left), Immutable ({ scope = Local; _ } as right) ->
         Immutable
           { scope = Local;
-            original = Resolution.meet resolution left.original right.original;
+            original = GlobalResolution.meet resolution left.original right.original;
             final = false
           }
     | (Immutable { scope = Local; _ } as immutable), _
@@ -95,11 +95,11 @@ let meet ~resolution left right =
     | Immutable ({ scope = Global; _ } as left), Immutable ({ scope = Global; _ } as right) ->
         Immutable
           { scope = Global;
-            original = Resolution.meet resolution left.original right.original;
+            original = GlobalResolution.meet resolution left.original right.original;
             final = false
           }
   in
-  { annotation = Resolution.meet resolution left.annotation right.annotation; mutability }
+  { annotation = GlobalResolution.meet resolution left.annotation right.annotation; mutability }
 
 
 let widen ~resolution ~widening_threshold ~previous ~next ~iteration =

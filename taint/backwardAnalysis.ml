@@ -568,7 +568,7 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
 let run ~environment ~define ~existing_model:_ =
   let ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define) =
     (* Apply decorators to make sure we match parameters up correctly. *)
-    let resolution = TypeCheck.resolution environment () in
+    let resolution = Environment.resolution environment () in
     let decorate define =
       Annotated.Define.create define
       |> Annotated.Define.decorate ~resolution
@@ -591,7 +591,7 @@ let run ~environment ~define ~existing_model:_ =
     | Some entry_state -> Log.log ~section:`Taint "Final state: %a" FixpointState.pp entry_state
     | None -> Log.log ~section:`Taint "No final state found"
   in
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = Environment.resolution environment () in
   let extract_model FixpointState.{ taint; _ } =
     let model = extract_tito_and_sink_models define.value ~resolution taint in
     let () =

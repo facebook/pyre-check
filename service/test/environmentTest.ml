@@ -185,7 +185,7 @@ let test_populate context =
          define_location = None
        });
   let assert_successors name expected_successors =
-    let { Resolution.successors; _ } = ClassMetadata.find_unsafe name in
+    let { GlobalResolution.successors; _ } = ClassMetadata.find_unsafe name in
     assert_equal ~printer:(String.concat ~sep:", ") expected_successors successors
   in
   assert_successors "a.C" ["a.D"; "object"];

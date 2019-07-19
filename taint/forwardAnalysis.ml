@@ -428,8 +428,8 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
       let attribute_taint =
         let annotations =
           let successors =
-            Resolution.class_metadata resolution annotation
-            >>| (fun { Resolution.successors; _ } -> successors)
+            GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
+            >>| (fun { GlobalResolution.successors; _ } -> successors)
             |> Option.value ~default:[]
             |> List.map ~f:(fun name -> Type.Primitive name)
           in
@@ -754,7 +754,7 @@ let run ~environment ~define ~existing_model =
   in
   let () = log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state = Analyzer.forward ~cfg ~initial |> Analyzer.exit in
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = Environment.resolution environment () in
   let extract_model ({ FixpointState.taint; _ } as result) =
     let source_taint = extract_source_model ~define:define.value ~resolution taint in
     let () = log "Model: %a" FixpointState.pp result in

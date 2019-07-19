@@ -29,15 +29,15 @@ val name : t -> Reference.t
 
 val bases : t -> Expression.t Expression.Call.Argument.t list
 
-val get_decorator : t -> resolution:Resolution.t -> decorator:string -> decorator list
+val get_decorator : t -> resolution:GlobalResolution.t -> decorator:string -> decorator list
 
 val annotation : t -> Type.t
 
-val successors : t -> resolution:Resolution.t -> Type.Primitive.t list
+val successors : t -> resolution:GlobalResolution.t -> Type.Primitive.t list
 
 val successors_fold
   :  'a Class.record Node.t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   f:('b -> string -> 'b) ->
   initial:'b ->
   'b
@@ -46,9 +46,9 @@ val is_unit_test : t -> bool
 
 val is_abstract : t -> bool
 
-val metaclass : t -> resolution:Resolution.t -> Type.t
+val metaclass : t -> resolution:GlobalResolution.t -> Type.t
 
-val resolve_class : resolution:Resolution.t -> Type.t -> class_data list option
+val resolve_class : resolution:GlobalResolution.t -> Type.t -> class_data list option
 
 module Method : sig
   type t [@@deriving compare, eq, sexp, show, hash]
@@ -61,19 +61,19 @@ module Method : sig
 
   val parent : t -> Type.t
 
-  val parameter_annotations : t -> resolution:Resolution.t -> (Identifier.t * Type.t) list
+  val parameter_annotations : t -> resolution:GlobalResolution.t -> (Identifier.t * Type.t) list
 
-  val return_annotation : t -> resolution:Resolution.t -> Type.t
+  val return_annotation : t -> resolution:GlobalResolution.t -> Type.t
 end
 
-val generics : t -> resolution:Resolution.t -> Type.OrderedTypes.t
+val generics : t -> resolution:GlobalResolution.t -> Type.OrderedTypes.t
 
 (* Find free variables in the parametric type. E.g. for generic class `class A(typing.Generic[_T],
    typing.Generic[_S]): ...` and instantiated type `A[int, Bottom]` we consider `_S` to be free. *)
 
 val inferred_generic_base
   :  t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   Expression.t Expression.Call.Argument.t list
 
 val constraints
@@ -81,12 +81,15 @@ val constraints
   ?parameters:Type.OrderedTypes.t ->
   t ->
   instantiated:Type.t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   TypeConstraints.Solution.t
 
-val superclasses : t -> resolution:Resolution.t -> t list
+val superclasses : t -> resolution:GlobalResolution.t -> t list
 
-val unimplemented_abstract_methods : t -> resolution:Resolution.t -> Ast.Statement.Define.t list
+val unimplemented_abstract_methods
+  :  t ->
+  resolution:GlobalResolution.t ->
+  Ast.Statement.Define.t list
 
 val methods : t -> Method.t list
 
@@ -95,7 +98,7 @@ val has_abstract_methods : t -> bool
 val is_protocol : t -> bool
 
 val create_attribute
-  :  resolution:Resolution.t ->
+  :  resolution:GlobalResolution.t ->
   parent:t ->
   ?instantiated:Type.t ->
   ?defined:bool ->
@@ -110,7 +113,7 @@ val attributes
   ?include_generated_attributes:bool ->
   ?instantiated:Type.t ->
   t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   Attribute.t list
 
 val attribute_fold
@@ -120,7 +123,7 @@ val attribute_fold
   t ->
   initial:'accumulator ->
   f:('accumulator -> Attribute.t -> 'accumulator) ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   'accumulator
 
 val attribute
@@ -128,7 +131,7 @@ val attribute
   ?class_attributes:bool ->
   ?special_method:bool ->
   t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   name:Identifier.t ->
   instantiated:Type.t ->
   AnnotatedAttribute.t
@@ -136,15 +139,20 @@ val attribute
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute : resolution:Resolution.t -> name:Identifier.t -> t -> Attribute.t option
 
-val constructor : t -> instantiated:Type.t -> resolution:Resolution.t -> Type.t
+val constructor : t -> instantiated:Type.t -> resolution:GlobalResolution.t -> Type.t
 
-val constructors : t -> resolution:Resolution.t -> Define.t list
+val constructors : t -> resolution:GlobalResolution.t -> Define.t list
 
-val overrides : t -> resolution:Resolution.t -> name:Identifier.t -> Attribute.t option
+val overrides : t -> resolution:GlobalResolution.t -> name:Identifier.t -> Attribute.t option
 
-val has_method : ?transitive:bool -> t -> resolution:Resolution.t -> name:Identifier.t -> bool
+val has_method
+  :  ?transitive:bool ->
+  t ->
+  resolution:GlobalResolution.t ->
+  name:Identifier.t ->
+  bool
 
-val inferred_callable_type : t -> resolution:Resolution.t -> Type.Callable.t option
+val inferred_callable_type : t -> resolution:GlobalResolution.t -> Type.Callable.t option
 
 val extends_placeholder_stub_class
   :  t ->

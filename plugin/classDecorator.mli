@@ -7,6 +7,6 @@ open Ast
 open Analysis
 open Environment
 
-val transform_dataclass : (module Handler) -> Resolution.t -> Source.t -> unit
+val transform_dataclass : (module Handler) -> GlobalResolution.t -> Source.t -> unit
 
-val transform_attrs : (module Handler) -> Resolution.t -> Source.t -> unit
+val transform_attrs : (module Handler) -> GlobalResolution.t -> Source.t -> unit

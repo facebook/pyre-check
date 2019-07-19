@@ -163,7 +163,7 @@ type kind =
   | InvalidClassInstantiation of class_kind
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
-  | InvalidTypeParameters of Resolution.type_parameters_mismatch
+  | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.Variable.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
@@ -749,7 +749,7 @@ let messages ~concise ~signature location kind =
             Type.Variable.pp_concise
             variable ] )
   | InvalidTypeParameters
-      { name; kind = Resolution.IncorrectNumberOfParameters { expected; actual } } ->
+      { name; kind = GlobalResolution.IncorrectNumberOfParameters { expected; actual } } ->
       let additional =
         let replacement =
           match name with
@@ -778,7 +778,8 @@ let messages ~concise ~signature location kind =
             additional ]
       else
         [Format.asprintf "Non-generic type `%s` cannot take parameters." name]
-  | InvalidTypeParameters { name; kind = Resolution.ViolateConstraints { expected; actual } } ->
+  | InvalidTypeParameters { name; kind = GlobalResolution.ViolateConstraints { expected; actual } }
+    ->
       [ Format.asprintf
           "Type parameter `%a` violates constraints on `%a` in generic type `%s`"
           pp_type
@@ -1681,10 +1682,11 @@ let due_to_builtin_import { kind; _ } =
   | _ -> false
 
 
-let due_to_mismatch_with_any resolution { kind; _ } =
+let due_to_mismatch_with_any local_resolution { kind; _ } =
+  let resolution = Resolution.global_resolution local_resolution in
   let is_consistent_with ~actual ~expected =
     (Type.contains_any actual || Type.contains_any expected)
-    && Resolution.consistent_solution_exists resolution actual expected
+    && GlobalResolution.consistent_solution_exists resolution actual expected
   in
   match kind with
   | IncompatibleAwaitableType actual
@@ -1715,13 +1717,13 @@ let due_to_mismatch_with_any resolution { kind; _ } =
           | expressions -> List.map expressions ~f:Option.some
         in
         let check_consistent sofar expression =
-          sofar && Resolution.is_consistent_with resolution actual expected ~expression
+          sofar && Resolution.is_consistent_with local_resolution actual expected ~expression
         in
         List.fold expressions ~init:true ~f:check_consistent
       in
       ( Type.contains_any actual
       || Type.contains_any expected
-      || Resolution.is_protocol resolution expected )
+      || GlobalResolution.is_protocol resolution expected )
       && consistent ()
   | InvalidArgument (Keyword { annotation = actual; _ }) ->
       is_consistent_with
@@ -1773,8 +1775,8 @@ let due_to_mismatch_with_any resolution { kind; _ } =
 
 let less_or_equal ~resolution left right =
   let less_or_equal_mismatch left right =
-    Resolution.less_or_equal resolution ~left:left.actual ~right:right.actual
-    && Resolution.less_or_equal resolution ~left:left.expected ~right:right.expected
+    GlobalResolution.less_or_equal resolution ~left:left.actual ~right:right.actual
+    && GlobalResolution.less_or_equal resolution ~left:left.expected ~right:right.expected
   in
   Location.Instantiated.equal left.location right.location
   &&
@@ -1786,12 +1788,12 @@ let less_or_equal ~resolution left right =
     when Expression.equal left.expression right.expression ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
-      Resolution.less_or_equal resolution ~left ~right
+      GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleParameterType left, IncompatibleParameterType right
     when Option.equal Identifier.equal_sanitized left.name right.name ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
-      Resolution.less_or_equal resolution ~left ~right
+      GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleReturnType left, IncompatibleReturnType right ->
       less_or_equal_mismatch left.mismatch right.mismatch
   | IncompatibleOverload left, IncompatibleOverload right -> (
@@ -1808,7 +1810,7 @@ let less_or_equal ~resolution left right =
         { target = right_target; annotation = right; attempted_action = right_attempted_action } )
     when Expression.equal left_target right_target
          && equal_illegal_action_on_incomplete_type left_attempted_action right_attempted_action ->
-      Resolution.less_or_equal resolution ~left ~right
+      GlobalResolution.less_or_equal resolution ~left ~right
   | IncompatibleAttributeType left, IncompatibleAttributeType right
     when Type.equal left.parent right.parent
          && Reference.equal left.incompatible_type.name right.incompatible_type.name ->
@@ -1828,28 +1830,28 @@ let less_or_equal ~resolution left right =
     | _ -> false )
   | InvalidArgument (Keyword left), InvalidArgument (Keyword right)
     when Expression.equal left.expression right.expression ->
-      Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+      GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
     when Expression.equal left.expression right.expression ->
-      Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+      GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
   | InvalidMethodSignature left, InvalidMethodSignature right -> (
     match left.annotation, right.annotation with
-    | Some left, Some right -> Resolution.less_or_equal resolution ~left ~right
+    | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
     | None, None -> true
     | _ -> false )
   | InvalidType (FinalParameter left), InvalidType (FinalParameter right) ->
       Identifier.equal left right
   | InvalidType (InvalidType left), InvalidType (InvalidType right)
   | InvalidType (FinalNested left), InvalidType (FinalNested right) ->
-      Resolution.less_or_equal resolution ~left ~right
+      GlobalResolution.less_or_equal resolution ~left ~right
   | InvalidTypeParameters left, InvalidTypeParameters right ->
-      Resolution.equal_type_parameters_mismatch left right
+      GlobalResolution.equal_type_parameters_mismatch left right
   | ( InvalidTypeVariable { annotation = left; origin = left_origin },
       InvalidTypeVariable { annotation = right; origin = right_origin } ) ->
       Type.Variable.equal left right && equal_type_variable_origin left_origin right_origin
   | ( InvalidTypeVariance { annotation = left; origin = left_origin },
       InvalidTypeVariance { annotation = right; origin = right_origin } ) ->
-      Resolution.less_or_equal resolution ~left ~right
+      GlobalResolution.less_or_equal resolution ~left ~right
       && equal_type_variance_origin left_origin right_origin
   | InvalidInheritance left, InvalidInheritance right -> (
     match left, right with
@@ -1896,20 +1898,21 @@ let less_or_equal ~resolution left right =
   | MissingGlobalAnnotation left, MissingGlobalAnnotation right
     when Reference.equal_sanitized left.name right.name -> (
     match left.annotation, right.annotation with
-    | Some left, Some right -> Resolution.less_or_equal resolution ~left ~right
+    | Some left, Some right -> GlobalResolution.less_or_equal resolution ~left ~right
     | None, None -> true
     | _ -> false )
   | MissingOverloadImplementation left, MissingOverloadImplementation right ->
       Reference.equal left right
-  | NotCallable left, NotCallable right -> Resolution.less_or_equal resolution ~left ~right
-  | RedundantCast left, RedundantCast right -> Resolution.less_or_equal resolution ~left ~right
+  | NotCallable left, NotCallable right -> GlobalResolution.less_or_equal resolution ~left ~right
+  | RedundantCast left, RedundantCast right ->
+      GlobalResolution.less_or_equal resolution ~left ~right
   | RevealedType left, RevealedType right ->
       let less_or_equal_annotation
           { Annotation.annotation = left_annotation; mutability = left_mutability }
           { Annotation.annotation = right_annotation; mutability = right_mutability }
         =
         Annotation.equal_mutability left_mutability right_mutability
-        && Resolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
+        && GlobalResolution.less_or_equal resolution ~left:left_annotation ~right:right_annotation
       in
       Expression.equal left.expression right.expression
       && less_or_equal_annotation left.annotation right.annotation
@@ -1925,7 +1928,7 @@ let less_or_equal ~resolution left right =
     when Identifier.equal_sanitized left.attribute right.attribute -> (
     match left.origin, right.origin with
     | Class left, Class right when left.class_attribute = right.class_attribute ->
-        Resolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
+        GlobalResolution.less_or_equal resolution ~left:left.annotation ~right:right.annotation
     | Module left, Module right -> Reference.equal_sanitized left right
     | _ -> false )
   | UndefinedName left, UndefinedName right when Reference.equal_sanitized left right -> true
@@ -1942,7 +1945,7 @@ let less_or_equal ~resolution left right =
       &&
       match left_problem, right_problem with
       | UnacceptableType left, UnacceptableType right ->
-          Resolution.less_or_equal resolution ~left ~right
+          GlobalResolution.less_or_equal resolution ~left ~right
       | CountMismatch left, CountMismatch right -> left = right
       | _ -> false )
   | AbstractClass left, AbstractClass right ->
@@ -2004,8 +2007,8 @@ let join ~resolution left right =
   let join_mismatch left right =
     if List.equal ~equal:Expression.equal left.actual_expressions right.actual_expressions then
       Some
-        { expected = Resolution.join resolution left.expected right.expected;
-          actual = Resolution.join resolution left.actual right.actual;
+        { expected = GlobalResolution.join resolution left.expected right.expected;
+          actual = GlobalResolution.join resolution left.actual right.actual;
           actual_expressions = left.actual_expressions;
           due_to_invariance = left.due_to_invariance || right.due_to_invariance
         }
@@ -2017,7 +2020,7 @@ let join ~resolution left right =
       (right : missing_annotation)
       : missing_annotation
     =
-    let join_annotation_options = Option.merge ~f:(Resolution.join resolution) in
+    let join_annotation_options = Option.merge ~f:(GlobalResolution.join resolution) in
     { left with
       annotation = join_annotation_options left.annotation right.annotation;
       given_annotation = join_annotation_options left.given_annotation right.given_annotation;
@@ -2036,7 +2039,7 @@ let join ~resolution left right =
       ->
         IllegalAnnotationTarget left
     | IncompatibleAwaitableType left, IncompatibleAwaitableType right ->
-        IncompatibleAwaitableType (Resolution.join resolution left right)
+        IncompatibleAwaitableType (GlobalResolution.join resolution left right)
     | ( IncompleteType
           { target = left_target; annotation = left; attempted_action = left_attempted_action },
         IncompleteType
@@ -2047,11 +2050,11 @@ let join ~resolution left right =
       ->
         IncompleteType
           { target = left_target;
-            annotation = Resolution.join resolution left right;
+            annotation = GlobalResolution.join resolution left right;
             attempted_action = left_attempted_action
           }
     | InvalidTypeParameters left, InvalidTypeParameters right
-      when Resolution.equal_type_parameters_mismatch left right ->
+      when GlobalResolution.equal_type_parameters_mismatch left right ->
         InvalidTypeParameters left
     | ( MissingArgument { callee = left_callee; parameter = Named left_name },
         MissingArgument { callee = right_callee; parameter = Named right_name } )
@@ -2082,10 +2085,11 @@ let join ~resolution left right =
     | MissingOverloadImplementation left, MissingOverloadImplementation right
       when Reference.equal left right ->
         MissingOverloadImplementation left
-    | NotCallable left, NotCallable right -> NotCallable (Resolution.join resolution left right)
+    | NotCallable left, NotCallable right ->
+        NotCallable (GlobalResolution.join resolution left right)
     | ProhibitedAny left, ProhibitedAny right -> ProhibitedAny (join_missing_annotation left right)
     | RedundantCast left, RedundantCast right ->
-        RedundantCast (Resolution.join resolution left right)
+        RedundantCast (GlobalResolution.join resolution left right)
     | ( RevealedType
           { annotation = { Annotation.annotation = left_annotation; mutability = left_mutability };
             expression = left_expression
@@ -2100,7 +2104,8 @@ let join ~resolution left right =
         RevealedType
           { expression = left_expression;
             annotation =
-              { Annotation.annotation = Resolution.join resolution left_annotation right_annotation;
+              { Annotation.annotation =
+                  GlobalResolution.join resolution left_annotation right_annotation;
                 mutability = left_mutability
               }
           }
@@ -2112,7 +2117,7 @@ let join ~resolution left right =
       | Some mismatch -> IncompatibleParameterType { left with mismatch }
       | None -> Top )
     | IncompatibleConstructorAnnotation left, IncompatibleConstructorAnnotation right ->
-        IncompatibleConstructorAnnotation (Resolution.join resolution left right)
+        IncompatibleConstructorAnnotation (GlobalResolution.join resolution left right)
     | IncompatibleReturnType left, IncompatibleReturnType right -> (
       match join_mismatch left.mismatch right.mismatch with
       | Some mismatch ->
@@ -2157,12 +2162,16 @@ let join ~resolution left right =
       when Expression.equal left.expression right.expression ->
         InvalidArgument
           (Keyword
-             { left with annotation = Resolution.join resolution left.annotation right.annotation })
+             { left with
+               annotation = GlobalResolution.join resolution left.annotation right.annotation
+             })
     | InvalidArgument (ConcreteVariable left), InvalidArgument (ConcreteVariable right)
       when Expression.equal left.expression right.expression ->
         InvalidArgument
           (ConcreteVariable
-             { left with annotation = Resolution.join resolution left.annotation right.annotation })
+             { left with
+               annotation = GlobalResolution.join resolution left.annotation right.annotation
+             })
     | InvalidAssignment left, InvalidAssignment right when equal_invalid_assignment_kind left right
       ->
         InvalidAssignment left
@@ -2171,7 +2180,7 @@ let join ~resolution left right =
         InvalidMethodSignature
           { left with
             annotation =
-              Option.merge ~f:(Resolution.join resolution) left.annotation right.annotation
+              Option.merge ~f:(GlobalResolution.join resolution) left.annotation right.annotation
           }
     | InvalidType (InvalidType left), InvalidType (InvalidType right) when Type.equal left right ->
         InvalidType (InvalidType left)
@@ -2199,7 +2208,7 @@ let join ~resolution left right =
     | ( UndefinedAttribute { origin = Class left; attribute = left_attribute },
         UndefinedAttribute { origin = Class right; attribute = right_attribute } )
       when Identifier.equal_sanitized left_attribute right_attribute ->
-        let annotation = Resolution.join resolution left.annotation right.annotation in
+        let annotation = GlobalResolution.join resolution left.annotation right.annotation in
         UndefinedAttribute { origin = Class { left with annotation }; attribute = left_attribute }
     | ( UndefinedAttribute { origin = Module left; attribute = left_attribute },
         UndefinedAttribute { origin = Module right; attribute = right_attribute } )
@@ -2228,7 +2237,7 @@ let join ~resolution left right =
       when left_count = right_count ->
         Unpack
           { expected_count = left_count;
-            unpack_problem = UnacceptableType (Resolution.join resolution left right)
+            unpack_problem = UnacceptableType (GlobalResolution.join resolution left right)
           }
     | ( Unpack { expected_count = left_count; unpack_problem = CountMismatch left },
         Unpack { expected_count = right_count; unpack_problem = CountMismatch right } )
@@ -2397,12 +2406,12 @@ let filter ~configuration ~resolution errors =
           let is_subclass_of_mock annotation =
             try
               (not (Type.is_unbound annotation))
-              && ( Resolution.less_or_equal
+              && ( GlobalResolution.less_or_equal
                      resolution
                      ~left:annotation
                      ~right:(Type.Primitive "unittest.mock.Base")
                  || (* Special-case mypy's workaround for mocks. *)
-                    Resolution.less_or_equal
+                    GlobalResolution.less_or_equal
                       resolution
                       ~left:annotation
                       ~right:(Type.Primitive "unittest.mock.NonCallableMock") )
@@ -2459,7 +2468,7 @@ let filter ~configuration ~resolution errors =
       | IncompatibleVariableType { mismatch = { expected; actual; _ }; _ } -> (
         match actual with
         | Type.Callable _ ->
-            Resolution.less_or_equal
+            GlobalResolution.less_or_equal
               resolution
               ~left:(Type.Callable.create ~annotation:Type.Top ())
               ~right:expected
@@ -2509,8 +2518,8 @@ let suppress ~mode ~resolution error =
     | InconsistentOverride
         { override = StrengthenedPrecondition (Found { expected = Type.Variable _; _ }); _ } ->
         true
-    | InvalidTypeParameters { kind = Resolution.IncorrectNumberOfParameters { actual = 0; _ }; _ }
-      ->
+    | InvalidTypeParameters
+        { kind = GlobalResolution.IncorrectNumberOfParameters { actual = 0; _ }; _ } ->
         true
     | IncompleteType _ ->
         (* TODO(T42467236): Ungate this when ready to codemod upgrade *)
@@ -2715,7 +2724,7 @@ let dequalify
   let signature =
     let dequalify_parameter ({ Node.value; _ } as parameter) =
       value.Parameter.annotation
-      >>| Resolution.parse_annotation ~allow_untracked:true resolution
+      >>| GlobalResolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
       >>| Type.expression
       |> fun annotation -> { parameter with Node.value = { value with Parameter.annotation } }
@@ -2723,7 +2732,7 @@ let dequalify
     let parameters = List.map parameters ~f:dequalify_parameter in
     let return_annotation =
       return_annotation
-      >>| Resolution.parse_annotation ~allow_untracked:true resolution
+      >>| GlobalResolution.parse_annotation ~allow_untracked:true resolution
       >>| dequalify
       >>| Type.expression
     in
@@ -2741,7 +2750,7 @@ let create_mismatch ~resolution ~actual ~actual_expression ~expected ~covariant 
   in
   { expected;
     actual;
-    due_to_invariance = Resolution.is_invariance_mismatch resolution ~left ~right;
+    due_to_invariance = GlobalResolution.is_invariance_mismatch resolution ~left ~right;
     actual_expressions = Option.to_list actual_expression
   }
 

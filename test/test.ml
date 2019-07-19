@@ -1236,7 +1236,7 @@ let assert_errors
     errors
   =
   Annotated.Class.AttributeCache.clear ();
-  Resolution.Cache.clear ();
+  GlobalResolution.Cache.clear ();
   let descriptions =
     let check source =
       let parse ~qualifier ~handle ~source =

@@ -24,7 +24,7 @@ let test_generics _ =
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let resolution =
-          populate source |> fun environment -> TypeCheck.resolution environment ()
+          populate source |> fun environment -> Environment.resolution environment ()
         in
         let printer generics = Format.asprintf "%a" Type.OrderedTypes.pp_concise generics in
         assert_equal
@@ -107,7 +107,7 @@ let test_superclasses _ =
     |> Node.create_with_default_location
     |> Class.create
   in
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = Environment.resolution environment () in
   let assert_successors target expected =
     let actual = Class.successors ~resolution target in
     assert_equal
@@ -141,7 +141,7 @@ type constructor = {
 
 let test_get_decorator _ =
   let assert_get_decorator source decorator expected =
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
+    let resolution = populate source |> fun environment -> Environment.resolution environment () in
     let assert_logic expected =
       match parse_last_statement source with
       | { Node.value = Statement.Class definition; _ } ->
@@ -239,17 +239,17 @@ let test_get_decorator _ =
 let test_constructors _ =
   let assert_constructor source instantiated constructors =
     Class.AttributeCache.clear ();
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
+    let resolution = populate source |> fun environment -> Environment.resolution environment () in
     let instantiated =
       parse_single_expression instantiated
-      |> Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution
+      |> GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution
     in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let callable =
           constructors
           >>| (fun constructors ->
-                Resolution.parse_annotation resolution (parse_single_expression constructors))
+                GlobalResolution.parse_annotation resolution (parse_single_expression constructors))
           |> Option.value ~default:Type.Top
         in
         let actual =
@@ -372,7 +372,7 @@ let test_methods _ =
 
 let test_has_method _ =
   let get_actual source target_method =
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
+    let resolution = populate source |> fun environment -> Environment.resolution environment () in
     match parse_last_statement source with
     | { Node.value = Statement.Class definition; _ } ->
         let actual =
@@ -437,7 +437,7 @@ let test_class_attributes _ =
     in
     populate source
     |> fun environment ->
-    TypeCheck.resolution environment (), Class.create (Node.create_with_default_location parent)
+    Environment.resolution environment (), Class.create (Node.create_with_default_location parent)
   in
   let resolution, parent =
     setup
@@ -841,7 +841,7 @@ let test_fallback_attribute _ =
 
 let test_constraints _ =
   let assert_constraints ~target ~instantiated ?parameters source expected =
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
+    let resolution = populate source |> fun environment -> Environment.resolution environment () in
     let target =
       let { Source.statements; _ } = parse source in
       let target = function
@@ -1108,7 +1108,7 @@ let test_inferred_generic_base _ =
       in
       List.find_map ~f:target statements |> value
     in
-    let resolution = Test.resolution ~sources:[source] () in
+    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
     assert_equal
       ~cmp:(List.equal ~equal:(Argument.equal Expression.equal))
       expected
@@ -1180,7 +1180,7 @@ let test_metaclasses _ =
       in
       List.find_map ~f:target statements
     in
-    let resolution = Test.resolution ~sources:[source] () in
+    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
     match target with
     | Some target ->
         assert_equal (Type.Primitive metaclass) (Annotated.Class.metaclass ~resolution target)
@@ -1295,11 +1295,11 @@ let test_overrides _ =
         def Baz.foo(): pass
         def Baz.baz(): pass
     |}
-    |> fun environment -> TypeCheck.resolution environment ()
+    |> fun environment -> Environment.resolution environment ()
   in
   let definition =
     let definition =
-      Resolution.class_definition resolution (Type.Primitive "Baz") >>| Class.create
+      GlobalResolution.class_definition resolution (Type.Primitive "Baz") >>| Class.create
     in
     Option.value_exn ~message:"Missing definition." definition
   in
@@ -1313,10 +1313,10 @@ let test_overrides _ =
 let test_unimplemented_abstract_methods _ =
   let assert_unimplemented_methods_equal ~source ~class_name ~expected =
     let source = parse source in
-    let resolution = Test.resolution ~sources:[source] () in
+    let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
     let definition =
       let definition =
-        Resolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
+        GlobalResolution.class_definition resolution (Type.Primitive class_name) >>| Class.create
       in
       Option.value_exn ~message:"Missing definition." definition
     in

@@ -8,12 +8,12 @@ open Statement
 
 type t = {
   class_definitions: Class.t Node.t Identifier.Table.t;
-  class_metadata: Resolution.class_metadata Identifier.Table.t;
+  class_metadata: GlobalResolution.class_metadata Identifier.Table.t;
   modules: Module.t Reference.Table.t;
   implicit_submodules: int Reference.Table.t;
   order: ClassHierarchy.t;
   aliases: Type.alias Identifier.Table.t;
-  globals: Resolution.global Reference.Table.t;
+  globals: GlobalResolution.global Reference.Table.t;
   dependencies: Dependencies.t;
   undecorated_functions: Type.t Type.Callable.overload Reference.Table.t
 }
@@ -27,7 +27,7 @@ module type Handler = sig
   val register_global
     :  qualifier:Reference.t ->
     reference:Reference.t ->
-    global:Resolution.global ->
+    global:GlobalResolution.global ->
     unit
 
   val register_undecorated_function
@@ -45,7 +45,7 @@ module type Handler = sig
 
   val class_definition : Identifier.t -> Class.t Node.t option
 
-  val class_metadata : Identifier.t -> Resolution.class_metadata option
+  val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
 
   val register_module : Source.t -> unit
 
@@ -59,7 +59,7 @@ module type Handler = sig
 
   val aliases : Identifier.t -> Type.alias option
 
-  val globals : Reference.t -> Resolution.global option
+  val globals : Reference.t -> GlobalResolution.global option
 
   val undecorated_signature : Reference.t -> Type.t Type.Callable.overload option
 
@@ -80,11 +80,13 @@ val handler : t -> (module Handler)
 (** Provides a default in-process environment handler constructed from an [Environment.t]. Use
     [Environment_service.handler] if interfacing from outside [Analysis]. *)
 
+val resolution : (module Handler) -> unit -> GlobalResolution.t
+
 val dependencies : (module Handler) -> Reference.t -> Reference.Set.Tree.t option
 
 val connect_definition
   :  (module Handler) ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   definition:Class.t Node.t ->
   unit
 
@@ -96,15 +98,15 @@ val register_class_definitions : (module Handler) -> Source.t -> Type.Primitive.
 
 val register_aliases : (module Handler) -> Source.t list -> unit
 
-val register_undecorated_functions : (module Handler) -> Resolution.t -> Source.t -> unit
+val register_undecorated_functions : (module Handler) -> GlobalResolution.t -> Source.t -> unit
 
-val register_values : (module Handler) -> Resolution.t -> Source.t -> unit
+val register_values : (module Handler) -> GlobalResolution.t -> Source.t -> unit
 
-val connect_type_order : (module Handler) -> Resolution.t -> Source.t -> unit
+val connect_type_order : (module Handler) -> GlobalResolution.t -> Source.t -> unit
 
 val register_dependencies : (module Handler) -> Source.t -> unit
 
-val propagate_nested_classes : (module Handler) -> Resolution.t -> Source.t -> unit
+val propagate_nested_classes : (module Handler) -> Source.t -> unit
 
 val built_in_annotations : Type.Primitive.Set.t
 

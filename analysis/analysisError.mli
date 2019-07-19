@@ -154,7 +154,7 @@ type kind =
   | InvalidClassInstantiation of class_kind
   | InvalidMethodSignature of { annotation: Type.t option; name: Identifier.t }
   | InvalidType of invalid_type_kind
-  | InvalidTypeParameters of Resolution.type_parameters_mismatch
+  | InvalidTypeParameters of GlobalResolution.type_parameters_mismatch
   | InvalidTypeVariable of { annotation: Type.Variable.t; origin: type_variable_origin }
   | InvalidTypeVariance of { annotation: Type.t; origin: type_variance_origin }
   | InvalidInheritance of invalid_inheritance
@@ -206,28 +206,32 @@ val due_to_analysis_limitations : t -> bool
 
 val due_to_mismatch_with_any : Resolution.t -> t -> bool
 
-val less_or_equal : resolution:Resolution.t -> t -> t -> bool
+val less_or_equal : resolution:GlobalResolution.t -> t -> t -> bool
 
-val join : resolution:Resolution.t -> t -> t -> t
+val join : resolution:GlobalResolution.t -> t -> t -> t
 
-val meet : resolution:Resolution.t -> t -> t -> t
+val meet : resolution:GlobalResolution.t -> t -> t -> t
 
-val widen : resolution:Resolution.t -> previous:t -> next:t -> iteration:int -> t
+val widen : resolution:GlobalResolution.t -> previous:t -> next:t -> iteration:int -> t
 
-val join_at_define : resolution:Resolution.t -> t list -> t list
+val join_at_define : resolution:GlobalResolution.t -> t list -> t list
 
-val join_at_source : resolution:Resolution.t -> t list -> t list
+val join_at_source : resolution:GlobalResolution.t -> t list -> t list
 
 val deduplicate : t list -> t list
 
-val filter : configuration:Configuration.Analysis.t -> resolution:Resolution.t -> t list -> t list
+val filter
+  :  configuration:Configuration.Analysis.t ->
+  resolution:GlobalResolution.t ->
+  t list ->
+  t list
 
 val suppress : mode:Source.mode -> resolution:Resolution.t -> t -> bool
 
-val dequalify : Reference.t Reference.Map.t -> resolution:Resolution.t -> t -> t
+val dequalify : Reference.t Reference.Map.t -> resolution:GlobalResolution.t -> t -> t
 
 val create_mismatch
-  :  resolution:Resolution.t ->
+  :  resolution:GlobalResolution.t ->
   actual:Type.t ->
   actual_expression:Expression.t option ->
   expected:Type.t ->

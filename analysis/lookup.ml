@@ -54,7 +54,7 @@ module NodeVisitor = struct
         in
         let resolve_definition ~expression =
           let find_definition reference =
-            Resolution.global resolution reference
+            GlobalResolution.global (Resolution.global_resolution resolution) reference
             >>| Node.location
             >>= fun location ->
             if Location.equal location Location.Reference.any then None else Some location
@@ -127,7 +127,12 @@ module Visit = struct
       (* Special-casing for annotations that should be parsed rather than resolved as expressions. *)
       let store_annotation annotation =
         let { NodeVisitor.pre_resolution; annotations_lookup; _ } = !state in
-        let resolved = Resolution.parse_annotation pre_resolution annotation |> Type.meta in
+        let resolved =
+          GlobalResolution.parse_annotation
+            (Resolution.global_resolution pre_resolution)
+            annotation
+          |> Type.meta
+        in
         let location = Node.location annotation in
         if
           (not (Location.equal location Location.Reference.any))

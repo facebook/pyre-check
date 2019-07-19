@@ -57,15 +57,17 @@ let order_and_environment source =
     environment )
 
 
-let global environment = TypeCheck.resolution environment () |> Resolution.global
+let global environment =
+  TypeCheck.resolution environment () |> Resolution.global_resolution |> GlobalResolution.global
+
 
 let class_definition environment =
-  TypeCheck.resolution environment () |> Resolution.class_definition
+  Environment.resolution environment () |> GlobalResolution.class_definition
 
 
 let parse_annotation environment =
   (* Allow untracked because we're not calling all of populate *)
-  TypeCheck.resolution environment () |> Resolution.parse_annotation ~allow_untracked:true
+  Environment.resolution environment () |> GlobalResolution.parse_annotation ~allow_untracked:true
 
 
 let create_location path start_line start_column end_line end_column =
@@ -146,7 +148,7 @@ let test_register_class_metadata _ =
   let all_annotations =
     Environment.register_class_definitions (module Handler) source |> Set.to_list
   in
-  let resolution = TypeCheck.resolution (module Handler) () in
+  let resolution = Environment.resolution (module Handler) () in
   Environment.connect_type_order (module Handler) resolution source;
   ClassHierarchy.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
   ClassHierarchy.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
@@ -158,7 +160,9 @@ let test_register_class_metadata _ =
   Handler.register_class_metadata "E";
   Handler.register_class_metadata "F";
   let assert_successors class_name expected =
-    let { Resolution.successors; _ } = Option.value_exn (Handler.class_metadata class_name) in
+    let { GlobalResolution.successors; _ } =
+      Option.value_exn (Handler.class_metadata class_name)
+    in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       ~cmp:(List.equal ~equal:Type.Primitive.equal)
@@ -170,7 +174,7 @@ let test_register_class_metadata _ =
   assert_successors "B" ["A"; "object"];
   assert_successors "E" ["D"; "C"; "A"; "object"];
   let assert_extends_placeholder_stub_class class_name expected =
-    let { Resolution.extends_placeholder_stub_class; _ } =
+    let { GlobalResolution.extends_placeholder_stub_class; _ } =
       Option.value_exn (Handler.class_metadata class_name)
     in
     assert_equal expected extends_placeholder_stub_class
@@ -435,7 +439,7 @@ let test_register_implicit_submodules _ =
 
 let test_connect_definition _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
-  let resolution = TypeCheck.resolution (module Handler) () in
+  let resolution = Environment.resolution (module Handler) () in
   let (module TypeOrderHandler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
   ClassHierarchy.insert (module TypeOrderHandler) "C";
   ClassHierarchy.insert (module TypeOrderHandler) "D";
@@ -469,7 +473,7 @@ let test_connect_definition _ =
 
 let test_register_globals _ =
   let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
-  let resolution = TypeCheck.resolution (module Handler) () in
+  let resolution = Environment.resolution (module Handler) () in
   let assert_global reference expected =
     let actual = !&reference |> Handler.globals >>| Node.value >>| Annotation.annotation in
     assert_equal
@@ -553,7 +557,7 @@ let test_connect_type_order _ =
   let (module Handler : Environment.Handler) =
     Environment.handler (create_environment ~include_helpers:false ())
   in
-  let resolution = TypeCheck.resolution (module Handler) () in
+  let resolution = Environment.resolution (module Handler) () in
   let source =
     parse
       {|
@@ -690,7 +694,7 @@ let test_populate _ =
     assert_equal
       ~cmp:(Option.equal (Node.equal Annotation.equal))
       ~printer:(function
-        | Some global -> Resolution.show_global global
+        | Some global -> GlobalResolution.show_global global
         | None -> "None")
       (Some (Node.create_with_default_location expected))
       (global environment !&actual)

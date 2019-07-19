@@ -1222,16 +1222,16 @@ let test_less_or_equal _ =
     let resolution =
       let source = parse source |> Preprocessing.preprocess in
       AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
-      |> fun environment -> TypeCheck.resolution environment ()
+      |> fun environment -> Environment.resolution environment ()
     in
     let parse_annotation annotation =
-      annotation |> parse_single_expression |> Resolution.parse_annotation resolution
+      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
     in
     let left, right = parse_annotation left, parse_annotation right in
     assert_equal
       ~printer:(Printf.sprintf "%B")
       expected_result
-      (Resolution.less_or_equal resolution ~left ~right)
+      (GlobalResolution.less_or_equal resolution ~left ~right)
   in
   assert_less_or_equal
     ~source:
@@ -2159,13 +2159,15 @@ let test_join _ =
     let resolution =
       let source = parse source |> Preprocessing.preprocess in
       AnnotatedTest.populate_with_sources (source :: Test.typeshed_stubs ())
-      |> fun environment -> TypeCheck.resolution environment ()
+      |> fun environment -> Environment.resolution environment ()
     in
     let parse_annotation annotation =
-      annotation |> parse_single_expression |> Resolution.parse_annotation resolution
+      annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
     in
     let left, right = parse_annotation left, parse_annotation right in
-    assert_type_equal (parse_annotation expected_result) (Resolution.join resolution left right)
+    assert_type_equal
+      (parse_annotation expected_result)
+      (GlobalResolution.join resolution left right)
   in
   assert_join
     ~source:
@@ -2444,7 +2446,7 @@ let test_solve_less_or_equal _ =
         pass
     |}
   in
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = Environment.resolution environment () in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let assert_solve
       ~left
@@ -2458,7 +2460,7 @@ let test_solve_less_or_equal _ =
     =
     let handler =
       let constructor instantiated ~protocol_assumptions:_ =
-        Resolution.class_definition resolution instantiated
+        GlobalResolution.class_definition resolution instantiated
         >>| Class.create
         >>| Class.constructor ~instantiated ~resolution
       in
@@ -2477,7 +2479,7 @@ let test_solve_less_or_equal _ =
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
-      |> Resolution.parse_annotation
+      |> GlobalResolution.parse_annotation
            ~allow_untracked:true
            ~allow_invalid_type_parameters:true
            resolution
@@ -2741,7 +2743,7 @@ let test_solve_less_or_equal _ =
 
   (* Callback protocols *)
   let parse_annotation annotation =
-    annotation |> parse_single_expression |> Resolution.parse_annotation resolution
+    annotation |> parse_single_expression |> GlobalResolution.parse_annotation resolution
   in
   let is_protocol annotation ~protocol_assumptions:_ =
     match annotation with
@@ -3182,11 +3184,11 @@ let test_instantiate_protocol_parameters _ =
       Test.populate ~configuration (Environment.handler environment) (source @ typeshed_stubs ());
       environment
     in
-    let resolution = TypeCheck.resolution (Environment.handler environment) () in
+    let resolution = Environment.resolution (Environment.handler environment) () in
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
-      |> Resolution.parse_annotation
+      |> GlobalResolution.parse_annotation
            resolution
            ~allow_untracked:true
            ~allow_invalid_type_parameters:true

@@ -1136,7 +1136,7 @@ let test_decode_serialized_ocaml_values context =
   assert_decode
     ~key:(ClassMetadata.serialize_key "int")
     ~value:
-      { Resolution.successors = ["str"];
+      { GlobalResolution.successors = ["str"];
         is_test = false;
         is_final = false;
         extends_placeholder_stub_class = false
@@ -1543,9 +1543,9 @@ let test_incremental_repopulate context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let get_annotation { State.environment; _ } access_name =
-    let resolution = TypeCheck.resolution environment () in
+    let resolution = Environment.resolution environment () in
     match
-      Resolution.function_definitions resolution (Reference.combine qualifier !&access_name)
+      GlobalResolution.function_definitions resolution (Reference.combine qualifier !&access_name)
     with
     | Some [{ Node.value = { Statement.Define.signature = { return_annotation; _ }; _ }; _ }] ->
         return_annotation

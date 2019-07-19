@@ -28,7 +28,7 @@ let analyze_sources
   =
   let open Analysis in
   Annotated.Class.AttributeCache.clear ();
-  Resolution.Cache.clear ();
+  GlobalResolution.Cache.clear ();
   let checked_source_paths =
     List.filter source_paths ~f:(fun { SourcePath.is_external; _ } -> not is_external)
   in
@@ -43,7 +43,7 @@ let analyze_sources
       let map _ source_paths =
         Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
-        Resolution.Cache.clear ();
+        GlobalResolution.Cache.clear ();
         let analyze_source { errors; number_files } { SourcePath.relative_path; qualifier; _ } =
           let path = Path.Relative relative_path in
           match SharedMemory.Sources.get qualifier with

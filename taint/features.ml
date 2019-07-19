@@ -76,12 +76,12 @@ let add_obscure set = Simple.Breadcrumb Breadcrumb.Obscure :: set
 
 let add_type_breadcrumb ~resolution type_annotation =
   let is_scalar =
-    match Option.map ~f:(Resolution.parse_annotation resolution) type_annotation with
+    match Option.map ~f:(GlobalResolution.parse_annotation resolution) type_annotation with
     | None -> false
     | Some return_type ->
-        Resolution.less_or_equal resolution ~left:return_type ~right:Type.number
-        || Resolution.less_or_equal resolution ~left:return_type ~right:Type.bool
-        || Resolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
+        GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
+        || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.bool
+        || GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.enumeration
   in
   let add feature_set =
     if not is_scalar then

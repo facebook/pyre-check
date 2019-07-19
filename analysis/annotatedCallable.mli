@@ -8,16 +8,16 @@ open Statement
 
 val is_generator : Define.t -> bool
 
-val return_annotation : define:Define.t -> resolution:Resolution.t -> Type.t
+val return_annotation : define:Define.t -> resolution:GlobalResolution.t -> Type.t
 
 val create_overload
   :  ?location:Location.t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   Define.t ->
   Type.t Type.Callable.overload
 
 val create
-  :  resolution:Resolution.t ->
+  :  resolution:GlobalResolution.t ->
   parent:Type.t option ->
   name:Identifier.t ->
   (bool * Type.t Type.Callable.overload) list ->
@@ -25,6 +25,6 @@ val create
 
 val apply_decorators
   :  ?location:Location.t ->
-  resolution:Resolution.t ->
+  resolution:GlobalResolution.t ->
   Define.t ->
   Type.t Type.Callable.overload

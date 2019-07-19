@@ -390,13 +390,14 @@ let process_type_query_request
   let process_request () =
     let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
     let resolution = TypeCheck.resolution environment () in
+    let global_resolution = Resolution.global_resolution resolution in
     let parse_and_validate ?(unknown_is_top = false) expression =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
-        Resolution.parse_annotation
+        GlobalResolution.parse_annotation
           ~allow_untracked:true
           ~allow_invalid_type_parameters:true
-          resolution
+          global_resolution
           expression
       in
       let annotation =
@@ -410,7 +411,9 @@ let process_type_query_request
           annotation
       in
       if ClassHierarchy.is_instantiated order annotation then
-        let mismatches, _ = Resolution.check_invalid_type_parameters resolution annotation in
+        let mismatches, _ =
+          GlobalResolution.check_invalid_type_parameters global_resolution annotation
+        in
         if List.is_empty mismatches then
           annotation
         else
@@ -428,7 +431,8 @@ let process_type_query_request
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
-        >>| (fun annotated_class -> Annotated.Class.attributes ~resolution annotated_class)
+        >>| (fun annotated_class ->
+              Annotated.Class.attributes ~resolution:global_resolution annotated_class)
         >>| List.map ~f:to_attribute
         >>| (fun attributes -> TypeQuery.Response (TypeQuery.FoundAttributes attributes))
         |> Option.value
@@ -587,8 +591,12 @@ let process_type_query_request
           | ClassMetadata.Decoded (key, value) ->
               let value =
                 match value with
-                | Some { Resolution.successors; is_test; is_final; extends_placeholder_stub_class }
-                  ->
+                | Some
+                    { GlobalResolution.successors;
+                      is_test;
+                      is_final;
+                      extends_placeholder_stub_class
+                    } ->
                     `Assoc
                       [ "successors", `String (List.to_string ~f:Type.Primitive.show successors);
                         "is_test", `Bool is_test;
@@ -702,7 +710,7 @@ let process_type_query_request
                     | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
                         Option.equal (Node.equal Statement.Class.equal) first second
                     | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
-                        Option.equal Resolution.equal_class_metadata first second
+                        Option.equal GlobalResolution.equal_class_metadata first second
                     | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
                         Option.equal Type.equal_alias first second
                     | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
@@ -836,29 +844,29 @@ let process_type_query_request
           | Type.Top -> right
           | unwrapped -> unwrapped
         in
-        Resolution.is_compatible_with resolution ~left ~right
+        GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result ->
         TypeQuery.Response (TypeQuery.Compatibility { actual = left; expected = right; result })
     | TypeQuery.Join (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        Resolution.join resolution left right
+        GlobalResolution.join global_resolution left right
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        Resolution.less_or_equal resolution ~left ~right
+        GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> TypeQuery.Response (TypeQuery.Boolean response)
     | TypeQuery.Meet (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
-        Resolution.meet resolution left right
+        GlobalResolution.meet global_resolution left right
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.Methods annotation ->
         let to_method annotated_method =
           let open Annotated.Class.Method in
           let annotations =
-            parameter_annotations ~resolution annotated_method
+            parameter_annotations ~resolution:global_resolution annotated_method
             |> List.mapi ~f:(fun index (_, annotation) -> index, annotation)
             |> Int.Map.of_alist_exn
           in
@@ -869,7 +877,9 @@ let process_type_query_request
             |> List.map ~f:(Map.find_exn annotations)
             |> fun parameters -> Type.Primitive "self" :: parameters
           in
-          let return_annotation = return_annotation ~resolution annotated_method in
+          let return_annotation =
+            return_annotation ~resolution:global_resolution annotated_method
+          in
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
         parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
@@ -906,7 +916,7 @@ let process_type_query_request
           | Type.Top -> None
           | _ -> Some annotation
         in
-        match Resolution.global resolution function_name with
+        match GlobalResolution.global global_resolution function_name with
         | Some { Node.value; _ } -> (
           match Annotation.annotation value with
           | Type.Callable { Type.Callable.implementation; overloads; _ } ->
@@ -941,7 +951,7 @@ let process_type_query_request
         |> Type.primitive_name
         >>= Handler.class_definition
         >>| Annotated.Class.create
-        >>| Annotated.Class.superclasses ~resolution
+        >>| Annotated.Class.superclasses ~resolution:global_resolution
         >>| List.map ~f:Annotated.Class.annotation
         >>| (fun classes -> TypeQuery.Response (TypeQuery.Superclasses classes))
         |> Option.value

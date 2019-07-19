@@ -40,7 +40,7 @@ let test_parse_annotation _ =
       ~printer:Type.show
       (parse_single_expression expected |> Type.create ~aliases:(fun _ -> None))
       ( parse_single_expression expression
-      |> Resolution.parse_annotation ~allow_untracked resolution )
+      |> GlobalResolution.parse_annotation ~allow_untracked resolution )
   in
   let resolution =
     Test.resolution
@@ -53,6 +53,7 @@ let test_parse_annotation _ =
               "" ]
         @ Test.typeshed_stubs () )
       ()
+    |> Resolution.global_resolution
   in
   assert_parse_annotation ~resolution ~expected:"int" "int";
   assert_parse_annotation
@@ -90,9 +91,13 @@ let test_parse_reference _ =
       class Foo: ...
       MyType = int
     |}
+    |> Resolution.global_resolution
   in
   let assert_parse_reference reference expected =
-    assert_equal ~printer:Type.show expected (Resolution.parse_reference resolution !&reference)
+    assert_equal
+      ~printer:Type.show
+      expected
+      (GlobalResolution.parse_reference resolution !&reference)
   in
   assert_parse_reference "undefined" Type.Top;
   assert_parse_reference "MyType" Type.integer;
@@ -120,6 +125,7 @@ let test_resolve_literal _ =
       none = None
       awaitable: typing.Awaitable[int]
     |}
+    |> Resolution.global_resolution
   in
   let assert_resolve_literal source expected =
     let expression =
@@ -127,7 +133,10 @@ let test_resolve_literal _ =
       | { Node.value = Statement.Expression expression; _ } -> expression
       | _ -> failwith "No Assign to parse"
     in
-    assert_equal ~printer:Type.show expected (Resolution.resolve_literal resolution expression)
+    assert_equal
+      ~printer:Type.show
+      expected
+      (GlobalResolution.resolve_literal resolution expression)
   in
   assert_resolve_literal "i" Type.Top;
   assert_resolve_literal "await i" Type.Top;
@@ -184,9 +193,11 @@ let test_resolve_exports _ =
         List.map sources ~f:to_source
       in
       AnnotatedTest.populate_with_sources (sources @ Test.typeshed_stubs ())
-      |> fun environment -> TypeCheck.resolution environment ()
+      |> fun environment -> Environment.resolution environment ()
     in
-    let reference = Resolution.resolve_exports resolution ~reference:(Reference.create name) in
+    let reference =
+      GlobalResolution.resolve_exports resolution ~reference:(Reference.create name)
+    in
     assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
   in
   assert_resolve ~sources:[] "a.b" "a.b";
@@ -223,7 +234,9 @@ let test_resolve_mutable_literals _ =
   in
   let assert_resolve_mutable_literals ~source ~against expected_output =
     let parse_annotation annotation =
-      annotation |> parse_single_expression |> Resolution.parse_annotation resolution
+      annotation
+      |> parse_single_expression
+      |> GlobalResolution.parse_annotation (Resolution.global_resolution resolution)
     in
     let expression =
       match parse_single_statement source with
@@ -282,10 +295,10 @@ let test_function_definitions context =
     let sources = ScratchProject.parse_sources project in
     let resolution =
       let configuration = ScratchProject.configuration_of project in
-      resolution ~sources ~configuration ()
+      resolution ~sources ~configuration () |> Resolution.global_resolution
     in
     let functions =
-      Resolution.function_definitions resolution !&function_name
+      GlobalResolution.function_definitions resolution !&function_name
       >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
               Reference.show name)
       |> Option.value ~default:[]
@@ -344,8 +357,10 @@ let test_resolution_shared_memory _ =
 
 let test_source_is_unit_test _ =
   let assert_is_unit_test ?(expected = true) source =
-    let resolution = make_resolution source in
-    assert_equal expected (Resolution.source_is_unit_test resolution ~source:(Test.parse source))
+    let resolution = make_resolution source |> Resolution.global_resolution in
+    assert_equal
+      expected
+      (GlobalResolution.source_is_unit_test resolution ~source:(Test.parse source))
   in
   let assert_not_unit_test = assert_is_unit_test ~expected:false in
   assert_is_unit_test "class C(unittest.case.TestCase): ...";

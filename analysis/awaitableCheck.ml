@@ -234,7 +234,11 @@ module State (Context : Context) = struct
           in
           { unawaited; locals }
       | _ ->
-          if Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
+          if
+            GlobalResolution.less_or_equal
+              resolution
+              ~left:annotation
+              ~right:(Type.awaitable Type.Top)
           then
             { unawaited =
                 Map.set unawaited ~key:(Node.location expression) ~data:(Unawaited expression);
@@ -279,7 +283,7 @@ module State (Context : Context) = struct
                 if not (List.is_empty starred) then
                   let annotation =
                     List.fold starred ~init:Type.Bottom ~f:(fun joined (annotation, _) ->
-                        Resolution.join resolution joined annotation)
+                        GlobalResolution.join resolution joined annotation)
                     |> Type.list
                   in
                   [annotation, Node.create_with_default_location (List (List.map starred ~f:snd))]
@@ -303,10 +307,14 @@ module State (Context : Context) = struct
     let resolution =
       TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key
     in
+    let global_resolution = Resolution.global_resolution resolution in
     let is_awaitable expression =
       try
         let annotation = Resolution.resolve resolution expression in
-        Resolution.less_or_equal resolution ~left:annotation ~right:(Type.awaitable Type.Top)
+        GlobalResolution.less_or_equal
+          global_resolution
+          ~left:annotation
+          ~right:(Type.awaitable Type.Top)
       with
       | ClassHierarchy.Untracked _ -> false
     in
@@ -321,7 +329,7 @@ module State (Context : Context) = struct
     | Assign { value; target; _ } ->
         let state = forward_expression ~state ~expression:value in
         let annotation = Resolution.resolve resolution value in
-        forward_assign ~state ~resolution ~annotation ~expression:value ~target
+        forward_assign ~state ~resolution:global_resolution ~annotation ~expression:value ~target
     | Delete expression
     | Expression expression ->
         let state =

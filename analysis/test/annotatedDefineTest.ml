@@ -28,7 +28,7 @@ let test_parent_definition _ =
       body = [+Pass]
     }
     |> Define.create
-    |> Define.parent_definition ~resolution:(TypeCheck.resolution environment ())
+    |> Define.parent_definition ~resolution:(Environment.resolution environment ())
   in
   let environment = populate {|
       class foo():
@@ -53,8 +53,8 @@ let test_parent_definition _ =
   let base_type =
     match List.hd (Class.bases parent) with
     | Some { Expression.Call.Argument.value; _ } ->
-        TypeCheck.resolution environment ()
-        |> fun resolution -> Resolution.parse_annotation resolution value
+        Environment.resolution environment ()
+        |> fun resolution -> GlobalResolution.parse_annotation resolution value
     | _ -> Type.Top
   in
   assert_equal ~cmp:Reference.equal ~printer:Reference.show (Class.name parent) !&"foo";
@@ -63,7 +63,7 @@ let test_parent_definition _ =
 
 let test_decorate _ =
   let open Statement.Define in
-  let resolution = TypeCheck.resolution (Test.environment ()) () in
+  let resolution = Environment.resolution (Test.environment ()) () in
   let assert_decorated source ~expected =
     let take_define = function
       | [{ Node.value = Statement.Define define; _ }] -> define

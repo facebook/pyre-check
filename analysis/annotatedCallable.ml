@@ -37,7 +37,7 @@ let return_annotation
   let annotation =
     Option.value_map
       return_annotation
-      ~f:(Resolution.parse_annotation resolution)
+      ~f:(GlobalResolution.parse_annotation resolution)
       ~default:Type.Top
   in
   if async && not (is_generator define) then
@@ -60,7 +60,7 @@ let create_overload ?location ~resolution ({ Define.signature = { parameters; _ 
       { Parameter.name; annotation; default }
     in
     let parse_as_annotation annotation =
-      annotation >>| Resolution.parse_annotation resolution |> Option.value ~default:Type.Top
+      annotation >>| GlobalResolution.parse_annotation resolution |> Option.value ~default:Type.Top
     in
     let parse_parameters parameters =
       let parse = function
@@ -76,10 +76,10 @@ let create_overload ?location ~resolution ({ Define.signature = { parameters; _ 
             failwith "impossible"
         | Variable (Concrete annotation) -> (
             let parsed_as_list_variadic () =
-              annotation >>= Resolution.parse_as_list_variadic resolution
+              annotation >>= GlobalResolution.parse_as_list_variadic resolution
             in
             let parsed_as_map_operator () =
-              annotation >>= Resolution.parse_as_list_variadic_map_operator resolution
+              annotation >>= GlobalResolution.parse_as_list_variadic_map_operator resolution
             in
             match parsed_as_list_variadic () with
             | Some variable -> Parameter.Variable (Variadic variable)
@@ -93,7 +93,7 @@ let create_overload ?location ~resolution ({ Define.signature = { parameters; _ 
       | [ Type.Callable.Parameter.Variable (Concrete (Some variable_parameter_annotation));
           Type.Callable.Parameter.Keywords (Some keywords_parameter_annotation) ] -> (
         match
-          Resolution.parse_as_parameter_specification_instance_annotation
+          GlobalResolution.parse_as_parameter_specification_instance_annotation
             resolution
             ~variable_parameter_annotation
             ~keywords_parameter_annotation
@@ -137,13 +137,14 @@ let create ~resolution ~parent ~name overloads =
             in
             let solution =
               try
-                Resolution.solve_less_or_equal
+                GlobalResolution.solve_less_or_equal
                   resolution
                   ~any_is_bottom:true
                   ~left:parent
                   ~right:annotation
                   ~constraints:TypeConstraints.empty
-                |> List.filter_map ~f:(Resolution.solve_constraints ~any_is_bottom:true resolution)
+                |> List.filter_map
+                     ~f:(GlobalResolution.solve_constraints ~any_is_bottom:true resolution)
                 |> List.hd
                 |> Option.value ~default:TypeConstraints.Solution.empty
               with
@@ -199,7 +200,7 @@ let apply_decorators
           { overload with Type.Callable.parameters }
       | name when Set.mem Recognized.asyncio_contextmanager_decorators name ->
           let joined =
-            try Resolution.join resolution annotation (Type.async_iterator Type.Bottom) with
+            try GlobalResolution.join resolution annotation (Type.async_iterator Type.Bottom) with
             | ClassHierarchy.Untracked _ ->
                 (* Apply_decorators gets called when building the environment, which is unsound and
                    can raise. *)
@@ -217,7 +218,7 @@ let apply_decorators
       | name when Set.mem Decorators.special_decorators name ->
           Decorators.apply ~overload ~resolution ~name
       | name -> (
-        match Resolution.undecorated_signature resolution (Reference.create name) with
+        match GlobalResolution.undecorated_signature resolution (Reference.create name) with
         | Some
             { Type.Callable.annotation = return_annotation;
               parameters =
@@ -226,12 +227,12 @@ let apply_decorators
               _
             } -> (
             let decorated_annotation =
-              Resolution.solve_less_or_equal
+              GlobalResolution.solve_less_or_equal
                 resolution
                 ~constraints:TypeConstraints.empty
                 ~left:(Type.Callable.create ~parameters ~annotation ())
                 ~right:parameter_annotation
-              |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+              |> List.filter_map ~f:(GlobalResolution.solve_constraints resolution)
               |> List.hd
               >>| (fun solution -> TypeConstraints.Solution.instantiate solution return_annotation)
               (* If we failed, just default to the old annotation. *)

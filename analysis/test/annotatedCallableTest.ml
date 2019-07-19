@@ -35,7 +35,7 @@ let test_return_annotation _ =
         body = [+Pass]
       }
       |> fun define ->
-      Callable.return_annotation ~define ~resolution:(TypeCheck.resolution environment ())
+      Callable.return_annotation ~define ~resolution:(Environment.resolution environment ())
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal expected return_annotation
   in
@@ -63,7 +63,7 @@ let test_apply_decorators _ =
   in
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
-    let resolution = populate "" |> fun environment -> TypeCheck.resolution environment () in
+    let resolution = populate "" |> fun environment -> Environment.resolution environment () in
     let applied_return_annotation =
       Callable.apply_decorators ~resolution define
       |> fun { Type.Callable.annotation; _ } -> annotation
@@ -105,7 +105,7 @@ let test_apply_decorators _ =
   (* Click related tests *)
   let assert_apply_click_decorators ~expected_count define =
     let actual_count =
-      let resolution = populate "" |> fun environment -> TypeCheck.resolution environment () in
+      let resolution = populate "" |> fun environment -> Environment.resolution environment () in
       Callable.apply_decorators ~resolution define
       |> fun { Type.Callable.parameters; _ } ->
       match parameters with
@@ -135,7 +135,7 @@ let test_apply_decorators _ =
   |> assert_apply_click_decorators ~expected_count:2;
 
   (* Custom decorators. *)
-  let resolution = resolution () in
+  let resolution = resolution () |> Resolution.global_resolution in
   create_define
     ~decorators:["$strip_first_parameter"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
@@ -152,7 +152,7 @@ let test_apply_decorators _ =
 
 let test_create_overload _ =
   let assert_overload source expected =
-    let resolution = resolution () in
+    let resolution = resolution () |> Resolution.global_resolution in
     assert_equal
       ~cmp:(Type.Callable.equal_overload Type.equal)
       expected
@@ -175,8 +175,10 @@ let test_create_overload _ =
 
 let test_create _ =
   let assert_callable ?expected_implicit ?parent ~expected source =
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
-    let expected = Resolution.parse_annotation resolution (parse_single_expression expected) in
+    let resolution = populate source |> fun environment -> Environment.resolution environment () in
+    let expected =
+      GlobalResolution.parse_annotation resolution (parse_single_expression expected)
+    in
     let check_implicit { Type.Callable.implicit = actual; _ } =
       match expected_implicit with
       (* Verify implicit if we're checking for it explicitly, ignore otherwise for convenience. *)

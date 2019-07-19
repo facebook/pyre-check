@@ -349,7 +349,7 @@ let callables_to_dump =
 
 
 let analyze_callable analyses step callable environment =
-  let resolution = Analysis.TypeCheck.resolution environment () in
+  let resolution = Analysis.Environment.resolution environment () in
   let () =
     (* Verify invariants *)
     let open Fixpoint in
@@ -454,7 +454,7 @@ type result = {
 
 (* Called on a worker with a set of functions to analyze. *)
 let one_analysis_pass ~analyses ~step ~environment ~callables =
-  Analysis.Resolution.FunctionDefinitionsCache.enable ();
+  Analysis.GlobalResolution.FunctionDefinitionsCache.enable ();
   let analyses = List.map ~f:Result.get_abstract_analysis analyses in
   let analyze_and_cache callable =
     let timer = Timer.start () in
@@ -633,6 +633,7 @@ let compute_fixpoint
     let iterations = iterate ~iteration:0 all_callables in
     let dump_callable callable =
       let resolution = Analysis.TypeCheck.resolution environment () in
+      let resolution = Analysis.Resolution.global_resolution resolution in
       let { Define.signature = { name; _ }; _ } =
         match callable with
         | #Callable.real_target as callable ->

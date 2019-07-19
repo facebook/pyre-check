@@ -49,7 +49,9 @@ module State (Context : Context) = struct
 
   let pp format { resolution; errors; bottom; _ } =
     let expected =
-      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
+      Annotated.Callable.return_annotation
+        ~define:(Node.value Context.define)
+        ~resolution:(Resolution.global_resolution resolution)
     in
     let annotations =
       let annotation_to_string (name, annotation) =
@@ -124,7 +126,7 @@ module State (Context : Context) = struct
            ~f:
              (entry_less_or_equal
                 (Resolution.annotations right.resolution)
-                (Refinement.less_or_equal ~resolution))
+                (Refinement.less_or_equal ~resolution:(Resolution.global_resolution resolution)))
            (Resolution.annotations left.resolution)
 
 
@@ -136,7 +138,12 @@ module State (Context : Context) = struct
     else
       let join_resolutions left_resolution right_resolution =
         let merge_annotations ~key:_ = function
-          | `Both (left, right) -> Some (Refinement.join ~resolution:left_resolution left right)
+          | `Both (left, right) ->
+              Some
+                (Refinement.join
+                   ~resolution:(Resolution.global_resolution left_resolution)
+                   left
+                   right)
           | `Left _
           | `Right _ ->
               Some (Annotation.create Type.Top)
@@ -150,7 +157,10 @@ module State (Context : Context) = struct
         Resolution.with_annotations left_resolution ~annotations
       in
       let combine_errors ~key:_ left_error right_error =
-        Error.join ~resolution:left.resolution left_error right_error
+        Error.join
+          ~resolution:(Resolution.global_resolution left.resolution)
+          left_error
+          right_error
       in
       { left with
         errors = Map.merge_skewed left.errors right.errors ~combine:combine_errors;
@@ -169,13 +179,19 @@ module State (Context : Context) = struct
       let widen_annotations ~key annotation =
         match annotation with
         | `Both (previous, next) ->
-            Some (Refinement.widen ~resolution ~widening_threshold ~previous ~next ~iteration)
+            Some
+              (Refinement.widen
+                 ~resolution:(Resolution.global_resolution resolution)
+                 ~widening_threshold
+                 ~previous
+                 ~next
+                 ~iteration)
         | `Left previous
         | `Right previous
           when Reference.length key = 1 ->
             let widened =
               Refinement.widen
-                ~resolution
+                ~resolution:(Resolution.global_resolution resolution)
                 ~widening_threshold
                 ~previous
                 ~next:(Annotation.create Type.undeclared)
@@ -197,7 +213,10 @@ module State (Context : Context) = struct
         if iteration > widening_threshold then
           { left_error with Error.kind = Error.Top }
         else
-          Error.join ~resolution:previous.resolution left_error right_error
+          Error.join
+            ~resolution:(Resolution.global_resolution previous.resolution)
+            left_error
+            right_error
       in
       { previous with
         errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
@@ -256,7 +275,9 @@ module State (Context : Context) = struct
 
   let initial_backward ~forward:{ resolution; errors; _ } =
     let expected_return =
-      Annotated.Callable.return_annotation ~define:(Node.value Context.define) ~resolution
+      Annotated.Callable.return_annotation
+        ~define:(Node.value Context.define)
+        ~resolution:(Resolution.global_resolution resolution)
       |> Annotation.create
     in
     let backward_initial_state =
@@ -338,7 +359,11 @@ module State (Context : Context) = struct
       in
       match annotation with
       | None -> add_missing_parameter_error ~given_annotation:None
-      | Some annotation when Type.is_any (Resolution.parse_annotation resolution annotation) ->
+      | Some annotation
+        when Type.is_any
+               (GlobalResolution.parse_annotation
+                  (Resolution.global_resolution resolution)
+                  annotation) ->
           add_missing_parameter_error ~given_annotation:(Some Type.Any)
       | _ -> errors
     in
@@ -603,7 +628,8 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
       | _ -> false
     in
     errors
-    |> List.map ~f:(Error.dequalify dequalify_map ~resolution)
+    |> List.map
+         ~f:(Error.dequalify dequalify_map ~resolution:(Resolution.global_resolution resolution))
     |> List.map ~f:(fun ({ Error.kind; _ } as error) ->
            { error with kind = Error.weaken_literals kind })
     |> List.sort ~compare:Error.compare
@@ -656,7 +682,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
       |> List.map ~f:check
       |> List.map ~f:SingleSourceResult.errors
       |> List.concat
-      |> Error.join_at_source ~resolution
+      |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
     in
     let changed, newly_added_global_errors = add_errors_to_environment errors in
     let widening_threshold = 10 in
@@ -674,7 +700,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
     let errors =
       List.map results ~f:SingleSourceResult.errors
       |> List.concat
-      |> Error.join_at_source ~resolution
+      |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
       |> format_errors
     in
     let coverage =

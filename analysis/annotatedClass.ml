@@ -72,7 +72,8 @@ let get_decorator { Node.value = { Class.decorators; _ }; _ } ~resolution ~decor
   let matches target decorator =
     let name_resolves_to_target ~name =
       let name =
-        Resolution.resolve_exports resolution ~reference:(Reference.create name) |> Reference.show
+        GlobalResolution.resolve_exports resolution ~reference:(Reference.create name)
+        |> Reference.show
       in
       String.equal name target
     in
@@ -91,8 +92,8 @@ let annotation { Node.value = { Class.name; _ }; _ } = Type.Primitive (Reference
 
 let successors { Node.value = { Class.name; _ }; _ } ~resolution =
   Type.Primitive (Reference.show name)
-  |> Resolution.class_metadata resolution
-  >>| (fun { Resolution.successors; _ } -> successors)
+  |> GlobalResolution.class_metadata resolution
+  >>| (fun { GlobalResolution.successors; _ } -> successors)
   |> Option.value ~default:[]
 
 
@@ -129,7 +130,7 @@ let resolve_class ~resolution annotation =
     | annotation when Type.is_meta annotation ->
         Type.single_parameter annotation |> extract ~is_meta:true
     | _ -> (
-      match Resolution.class_definition resolution annotation with
+      match GlobalResolution.class_definition resolution annotation with
       | Some class_definition ->
           Some
             [ { instantiated = original_annotation;
@@ -161,7 +162,7 @@ module Method = struct
     let element { Node.value = { Parameter.name; annotation; _ }; _ } =
       let annotation =
         annotation
-        >>| (fun annotation -> Resolution.parse_annotation resolution annotation)
+        >>| (fun annotation -> GlobalResolution.parse_annotation resolution annotation)
         |> Option.value ~default:Type.Top
       in
       name, annotation
@@ -176,7 +177,7 @@ module Method = struct
     let annotation =
       Option.value_map
         return_annotation
-        ~f:(Resolution.parse_annotation resolution)
+        ~f:(GlobalResolution.parse_annotation resolution)
         ~default:Type.Top
     in
     if async then
@@ -193,7 +194,7 @@ end
 
 let find_propagated_type_variables bases ~resolution =
   let find_type_variables { Expression.Call.Argument.value; _ } =
-    Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
+    GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     |> Type.Variable.all_free_variables
   in
   let handle_deduplicated = function
@@ -216,7 +217,7 @@ let find_propagated_type_variables bases ~resolution =
 let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
   let generic { Expression.Call.Argument.value; _ } =
     let annotation =
-      Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
+      GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
     in
     match annotation with
     | Type.Parametric { name = "typing.Generic"; parameters } -> Some parameters
@@ -231,7 +232,7 @@ let generics { Node.value = { Class.bases; _ }; _ } ~resolution =
 let inferred_generic_base { Node.value = { Class.bases; _ }; _ } ~resolution =
   let is_generic { Expression.Call.Argument.value; _ } =
     let primitive, _ =
-      Resolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
+      GlobalResolution.parse_annotation ~allow_invalid_type_parameters:true resolution value
       |> Type.split
     in
     Type.is_generic_primitive primitive
@@ -267,12 +268,12 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
          with an "instantiated" type of a bare parametric, which will fill with Anys *)
       TypeConstraints.Solution.empty
   | _ ->
-      Resolution.solve_less_or_equal
+      GlobalResolution.solve_less_or_equal
         resolution
         ~constraints:TypeConstraints.empty
         ~left:instantiated
         ~right
-      |> List.filter_map ~f:(Resolution.solve_constraints resolution)
+      |> List.filter_map ~f:(GlobalResolution.solve_constraints resolution)
       |> List.hd
       (* TODO(T39598018): error in this case somehow, something must be wrong *)
       |> Option.value ~default:TypeConstraints.Solution.empty
@@ -280,7 +281,8 @@ let constraints ?target ?parameters definition ~instantiated ~resolution =
 
 let superclasses definition ~resolution =
   successors ~resolution definition
-  |> List.filter_map ~f:(fun name -> Resolution.class_definition resolution (Type.Primitive name))
+  |> List.filter_map ~f:(fun name ->
+         GlobalResolution.class_definition resolution (Type.Primitive name))
   |> List.map ~f:create
 
 
@@ -327,7 +329,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
     let explicit_metaclass =
       let find_explicit_metaclass = function
         | { Expression.Call.Argument.name = Some { Node.value = "metaclass"; _ }; value } ->
-            Some (Resolution.parse_annotation resolution value)
+            Some (GlobalResolution.parse_annotation resolution value)
         | _ -> None
       in
       List.find_map ~f:find_explicit_metaclass bases
@@ -336,7 +338,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
       let explicit_bases =
         let base_to_class { Call.Argument.value; _ } =
           Expression.delocalize value
-          |> Resolution.parse_annotation resolution
+          |> GlobalResolution.parse_annotation resolution
           |> Type.split
           |> fst
         in
@@ -346,7 +348,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
             | _ -> false)
           bases
         |> List.map ~f:base_to_class
-        |> List.filter_map ~f:(Resolution.class_definition resolution)
+        |> List.filter_map ~f:(GlobalResolution.class_definition resolution)
         |> List.filter ~f:(fun base_class -> not (equal base_class original))
       in
       let filter_generic_meta base_metaclasses =
@@ -372,7 +374,7 @@ let rec metaclass ({ Node.value = { Class.bases; _ }; _ } as original) ~resoluti
   match metaclass_candidates with
   | [] -> Type.Primitive "type"
   | first :: candidates -> (
-      let candidate = List.fold candidates ~init:first ~f:(Resolution.meet resolution) in
+      let candidate = List.fold candidates ~init:first ~f:(GlobalResolution.meet resolution) in
       match candidate with
       | Type.Bottom ->
           (* If we get Bottom here, we don't have a "most derived metaclass", so default to one. *)
@@ -432,7 +434,7 @@ let create_attribute
         false
     | _ -> true
   in
-  let parsed_annotation = attribute_annotation >>| Resolution.parse_annotation resolution in
+  let parsed_annotation = attribute_annotation >>| GlobalResolution.parse_annotation resolution in
   (* Account for class attributes. *)
   let annotation, class_attribute =
     parsed_annotation
@@ -540,7 +542,7 @@ let create_attribute
       when String.equal (Reference.show callable_name) "typing.GenericMeta.__getitem__" ->
         let implementation =
           let generics =
-            Resolution.class_definition resolution (Type.Primitive name)
+            GlobalResolution.class_definition resolution (Type.Primitive name)
             >>| create
             >>| generics ~resolution
             |> Option.value ~default:(Type.OrderedTypes.Concrete [])
@@ -581,16 +583,16 @@ let create_attribute
           ~final
           ~original:(Some annotation)
           ( if setter then
-              Resolution.parse_annotation resolution value
+              GlobalResolution.parse_annotation resolution value
           else
             annotation )
     | Some annotation, None -> Annotation.create_immutable ~global:true ~final annotation
     | None, Some value ->
         let literal_value_annotation =
           if setter then
-            Resolution.parse_annotation resolution value
+            GlobalResolution.parse_annotation resolution value
           else
-            Resolution.resolve_literal resolution value
+            GlobalResolution.resolve_literal resolution value
         in
         let is_dataclass_attribute =
           let get_dataclass_decorator annotated =
@@ -610,7 +612,7 @@ let create_attribute
             ~global:true
             ~final
             ~original:(Some Type.Top)
-            (Resolution.parse_annotation resolution value)
+            (GlobalResolution.parse_annotation resolution value)
     | _ -> Annotation.create_immutable ~global:true ~final Type.Top
   in
   (* Special case properties with type variables. *)
@@ -783,8 +785,8 @@ let attribute_table
         if
           extends_placeholder_stub_class
             parent
-            ~aliases:(Resolution.aliases resolution)
-            ~module_definition:(Resolution.module_definition resolution)
+            ~aliases:(GlobalResolution.aliases resolution)
+            ~module_definition:(GlobalResolution.module_definition resolution)
         then
           add_placeholder_stub_inheritances ()
       in
@@ -811,7 +813,7 @@ let attribute_table
       let meta_definitions =
         if class_attributes then
           metaclass ~resolution definition
-          |> Resolution.class_definition resolution
+          |> GlobalResolution.class_definition resolution
           >>| (fun definition -> definition :: superclasses ~resolution definition)
           |> Option.value ~default:[]
         else
@@ -827,7 +829,7 @@ let attribute_table
              ~table);
       let instantiate ~instantiated attribute =
         Attribute.parent attribute
-        |> Resolution.class_definition resolution
+        |> GlobalResolution.class_definition resolution
         >>| fun target ->
         let solution = constraints ~target ~instantiated ~resolution definition in
         Attribute.instantiate
@@ -919,7 +921,7 @@ let attribute
 
 
 let rec fallback_attribute
-    ~resolution
+    ~(resolution : Resolution.t)
     ~name
     ({ Node.value = { Class.name = class_name; _ }; _ } as definition)
   =
@@ -948,7 +950,7 @@ let rec fallback_attribute
           definition
           ~class_attributes:false
           ~transitive:true
-          ~resolution
+          ~resolution:(Resolution.global_resolution resolution)
           ~name
           ~instantiated:(annotation definition)
         |> Option.some
@@ -960,7 +962,7 @@ let rec fallback_attribute
         definition
         ~class_attributes:true
         ~transitive:true
-        ~resolution
+        ~resolution:(Resolution.global_resolution resolution)
         ~name:"__getattr__"
         ~instantiated:(annotation definition)
     in
@@ -988,7 +990,7 @@ let rec fallback_attribute
           let return_annotation = Type.Callable.Overload.return_annotation implementation in
           Some
             (create_attribute
-               ~resolution
+               ~resolution:(Resolution.global_resolution resolution)
                ~parent:definition
                { Node.location;
                  value =

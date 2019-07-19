@@ -20,7 +20,7 @@ let parameter_annotations { Define.signature = { parameters; _ }; _ } ~resolutio
   let element index { Node.value = { Parameter.annotation; _ }; _ } =
     let annotation =
       annotation
-      >>| (fun annotation -> Resolution.parse_annotation resolution annotation)
+      >>| (fun annotation -> GlobalResolution.parse_annotation resolution annotation)
       |> Option.value ~default:Type.Top
     in
     index, annotation
@@ -32,7 +32,7 @@ let parent_definition { Define.signature = { parent; _ }; _ } ~resolution =
   match parent with
   | Some parent ->
       let parent_type = Type.Primitive (Reference.show parent) in
-      Resolution.class_definition resolution parent_type >>| Class.create
+      GlobalResolution.class_definition resolution parent_type >>| Class.create
   | _ -> None
 
 

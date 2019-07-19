@@ -40,7 +40,8 @@ let is_local identifier = String.is_prefix ~prefix:"$" identifier
  *  2) the real target otherwise
  *)
 let compute_indirect_targets ~resolution ~receiver_type target_name =
-  let get_class_type = Resolution.parse_reference resolution in
+  let global_resolution = Resolution.global_resolution resolution in
+  let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
     if DependencyGraphSharedMemory.overrides_exist method_name then
       Callable.create_override method_name
@@ -66,7 +67,10 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
     | Some overriding_types -> (
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
-          Resolution.less_or_equal resolution ~left:candidate_type ~right:receiver_type
+          GlobalResolution.less_or_equal
+            global_resolution
+            ~left:candidate_type
+            ~right:receiver_type
         in
         match List.filter overriding_types ~f:keep_subtypes with
         | [] ->
@@ -81,7 +85,10 @@ let compute_indirect_targets ~resolution ~receiver_type target_name =
               let actual_implementation =
                 declaring_type
                 >>= fun class_type ->
-                Callable.get_method_implementation ~resolution ~class_type ~method_name:target_name
+                Callable.get_method_implementation
+                  ~resolution:global_resolution
+                  ~class_type
+                  ~method_name:target_name
               in
               match actual_implementation with
               | Some implementation -> implementation
@@ -99,12 +106,16 @@ let resolve_target ~resolution ?receiver_type callee =
         None
     | Some base, Name name when Expression.is_simple_name name && not (is_local base) ->
         let reference = Expression.name_to_reference_exn name in
-        let global = reference |> Resolution.global resolution |> Option.is_some in
+        let global =
+          reference
+          |> GlobalResolution.global (Resolution.global_resolution resolution)
+          |> Option.is_some
+        in
         let is_class =
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) ->
               Resolution.resolve resolution base
-              |> Resolution.class_definition resolution
+              |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
               |> Option.is_some
           | _ -> false
         in

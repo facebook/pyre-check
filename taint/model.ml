@@ -415,13 +415,14 @@ let model_compatible ~type_parameters ~normalized_model_parameters =
 
 
 let create ~resolution ?(verify = true) ?path ~configuration source =
+  let global_resolution = Resolution.global_resolution resolution in
   let signatures =
     let filter_define_signature = function
       | { Node.value = Define { signature = { name; _ } as signature; _ }; _ } ->
           let class_candidate =
             Reference.prefix name
-            >>| Resolution.parse_reference resolution
-            >>= Resolution.class_definition resolution
+            >>| GlobalResolution.parse_reference global_resolution
+            >>= GlobalResolution.class_definition global_resolution
           in
           let call_target =
             match class_candidate with
@@ -456,7 +457,9 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
             List.find_map bases ~f:class_source_base
           in
           if Option.is_some sink_annotation || Option.is_some source_annotation then
-            Resolution.class_definition resolution (Type.Primitive (Reference.show name))
+            GlobalResolution.class_definition
+              global_resolution
+              (Type.Primitive (Reference.show name))
             >>| (fun { Node.value = { Class.body; _ }; _ } ->
                   let signature { Node.value; _ } =
                     match value with

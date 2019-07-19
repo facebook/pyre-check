@@ -25,7 +25,7 @@ let record_overrides overrides =
 
 
 let callables ~resolution ~source =
-  if Resolution.source_is_unit_test resolution ~source then
+  if GlobalResolution.source_is_unit_test resolution ~source then
     []
   else
     let defines = Preprocessing.defines ~include_stubs:true ~include_toplevels:true source in
@@ -38,7 +38,7 @@ let callables ~resolution ~source =
       | Some class_name ->
           let class_annotation = Type.Primitive (Reference.show class_name) in
           let class_exists =
-            Resolution.class_definition resolution class_annotation |> Option.is_some
+            GlobalResolution.class_definition resolution class_annotation |> Option.is_some
           in
           if not class_exists then
             Log.warning
@@ -48,9 +48,9 @@ let callables ~resolution ~source =
               Reference.pp
               name;
           let is_test_function =
-            Resolution.less_or_equal
+            GlobalResolution.less_or_equal
               resolution
-              ~left:(Resolution.parse_reference resolution class_name)
+              ~left:(GlobalResolution.parse_reference resolution class_name)
               ~right:(Type.Primitive "unittest.case.TestCase")
           in
           if is_test_function then
@@ -145,7 +145,8 @@ let analyze
     let make_callables result qualifier =
       Ast.SharedMemory.Sources.get qualifier
       >>| (fun source ->
-            callables ~resolution ~source |> List.fold ~f:classify_source ~init:result)
+            callables ~resolution:(Resolution.global_resolution resolution) ~source
+            |> List.fold ~f:classify_source ~init:result)
       |> Option.value ~default:result
     in
     List.fold qualifiers ~f:make_callables ~init:([], [])

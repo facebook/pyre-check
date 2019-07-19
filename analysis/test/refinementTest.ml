@@ -13,7 +13,7 @@ open Test
 let resolution =
   Environment.Builder.create ()
   |> Environment.handler
-  |> fun handler -> TypeCheck.resolution handler ()
+  |> fun handler -> Environment.resolution handler ()
 
 
 let test_refine _ =

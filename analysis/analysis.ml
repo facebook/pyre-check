@@ -23,6 +23,7 @@ module Dependencies = Dependencies
 module Environment = Environment
 module Error = AnalysisError
 module Fixpoint = Fixpoint
+module GlobalResolution = GlobalResolution
 module Lookup = Lookup
 module Preprocessing = Preprocessing
 module Refinement = Refinement

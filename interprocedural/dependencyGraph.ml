@@ -193,7 +193,8 @@ let from_overrides overrides =
 
 let create_overrides ~environment ~source =
   let resolution = TypeCheck.resolution environment () in
-  if Resolution.source_is_unit_test resolution ~source then
+  let resolution = Resolution.global_resolution resolution in
+  if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty
   else
     let class_method_overrides class_node =

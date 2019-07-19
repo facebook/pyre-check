@@ -370,8 +370,8 @@ let select
         let solve concatenated =
           match
             List.concat_map signature_match.constraints_set ~f:(fun constraints ->
-                Resolution.solve_ordered_types_less_or_equal
-                  resolution
+                GlobalResolution.solve_ordered_types_less_or_equal
+                  (Resolution.global_resolution resolution)
                   ~left:concatenated
                   ~right:expected
                   ~constraints)
@@ -439,8 +439,8 @@ let select
             in
             match
               List.concat_map constraints_set ~f:(fun constraints ->
-                  Resolution.solve_less_or_equal
-                    resolution
+                  GlobalResolution.solve_less_or_equal
+                    (Resolution.global_resolution resolution)
                     ~constraints
                     ~left:argument_annotation
                     ~right:parameter_annotation)
@@ -489,8 +489,8 @@ let select
                     if Type.is_unbound resolved then
                       []
                     else
-                      Resolution.solve_less_or_equal
-                        resolution
+                      GlobalResolution.solve_less_or_equal
+                        (Resolution.global_resolution resolution)
                         ~constraints:TypeConstraints.empty
                         ~left:resolved
                         ~right:solve_against
@@ -498,7 +498,9 @@ let select
                   match iterable_constraints with
                   | [] -> signature_with_error
                   | iterable_constraint :: _ ->
-                      Resolution.solve_constraints resolution iterable_constraint
+                      GlobalResolution.solve_constraints
+                        (Resolution.global_resolution resolution)
+                        iterable_constraint
                       >>= (fun solution ->
                             TypeConstraints.Solution.instantiate_single_variable
                               solution
@@ -534,7 +536,9 @@ let select
                         resolved
                     in
                     if Type.is_meta parameter_annotation && Type.is_top argument_annotation then
-                      Resolution.parse_annotation resolution expression
+                      GlobalResolution.parse_annotation
+                        (Resolution.global_resolution resolution)
+                        expression
                       |> Type.meta
                       |> set_constraints_and_reasons
                     else
@@ -550,7 +554,10 @@ let select
         let variables = Type.Variable.all_free_variables (Type.Callable callable) in
         List.filter_map
           constraints_set
-          ~f:(Resolution.partial_solve_constraints ~variables resolution)
+          ~f:
+            (GlobalResolution.partial_solve_constraints
+               ~variables
+               (Resolution.global_resolution resolution))
       in
       if not (List.is_empty solutions) then
         signature_match
@@ -587,8 +594,8 @@ let select
              && has_matched_keyword_parameter parameters ->
           let updated_constraints =
             List.concat_map constraints_set ~f:(fun constraints ->
-                Resolution.solve_less_or_equal
-                  resolution
+                GlobalResolution.solve_less_or_equal
+                  (Resolution.global_resolution resolution)
                   ~constraints
                   ~left:Type.string
                   ~right:key_type)
@@ -643,7 +650,10 @@ let select
             let variables = Type.Variable.all_free_variables (Type.Callable callable) in
             List.filter_map
               constraints_set
-              ~f:(Resolution.partial_solve_constraints ~variables resolution)
+              ~f:
+                (GlobalResolution.partial_solve_constraints
+                   ~variables
+                   (Resolution.global_resolution resolution))
             |> List.map ~f:snd
             |> List.hd
             |> Option.value ~default:TypeConstraints.Solution.empty

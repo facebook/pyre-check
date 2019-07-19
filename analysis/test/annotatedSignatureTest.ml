@@ -55,10 +55,10 @@ let parse_annotation annotation =
      Callable.create on defines. *)
   annotation
   |> parse_single_expression
-  |> Resolution.parse_annotation
+  |> GlobalResolution.parse_annotation
        ~allow_untracked:true
        ~allow_invalid_type_parameters:true
-       resolution
+       (Resolution.global_resolution resolution)
 
 
 let test_select _ =

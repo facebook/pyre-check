@@ -97,7 +97,11 @@ let test_initial _ =
           match annotation with
           | None -> []
           | Some annotation ->
-              let annotation = Resolution.parse_annotation resolution annotation in
+              let annotation =
+                GlobalResolution.parse_annotation
+                  (Resolution.global_resolution resolution)
+                  annotation
+              in
               Type.Variable.all_free_variables annotation
         in
         List.concat_map define.signature.parameters ~f:extract_variables

@@ -179,6 +179,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
           (* This is the position of the item before DOT *)
           let item_position = { cursor_position with column = cursor_position.column - 2 } in
           let resolution = TypeCheck.resolution environment () in
+          let global_resolution = Resolution.global_resolution resolution in
           let class_attributes_list =
             LookupCache.find_annotation
               ~state
@@ -187,9 +188,9 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
               ~position:item_position
             >>| (fun (_, class_type) ->
                   class_type
-                  |> Annotated.Class.resolve_class ~resolution
+                  |> Annotated.Class.resolve_class ~resolution:global_resolution
                   |> Option.value ~default:[]
-                  |> get_class_attributes_list ~resolution ~cursor_position)
+                  |> get_class_attributes_list ~resolution:global_resolution ~cursor_position)
             |> Option.value ~default:[]
           in
           if List.is_empty class_attributes_list then
@@ -198,7 +199,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             >>= find_module_reference ~cursor_position
             >>= (fun module_reference ->
                   module_reference
-                  |> Resolution.module_definition resolution
+                  |> GlobalResolution.module_definition global_resolution
                   >>| get_module_members_list ~resolution ~cursor_position ~module_reference)
             |> Option.value ~default:[]
           else

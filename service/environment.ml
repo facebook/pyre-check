@@ -17,7 +17,7 @@ let populate
     ~scheduler
     sources
   =
-  let resolution = TypeCheck.resolution (module Handler) () in
+  let resolution = Environment.resolution (module Handler) () in
   let populate () =
     List.iter sources ~f:(Environment.register_module (module Handler));
     sources
@@ -44,7 +44,7 @@ let populate
     ClassHierarchy.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
     ClassHierarchy.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
     List.iter all_annotations ~f:Handler.register_class_metadata;
-    List.iter ~f:(Environment.propagate_nested_classes (module Handler) resolution) sources
+    List.iter ~f:(Environment.propagate_nested_classes (module Handler)) sources
   in
   Handler.transaction ~f:populate ();
   let register_undecorated_functions sources =
@@ -69,7 +69,7 @@ let populate
 
   (* Calls to `attribute` might populate this cache, ensure it's cleared. *)
   Annotated.Class.AttributeCache.clear ();
-  Resolution.Cache.clear ()
+  GlobalResolution.Cache.clear ()
 
 
 let build ((module Handler : Environment.Handler) as handler) ~configuration ~scheduler ~sources =
@@ -322,7 +322,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
     in
     ClassMetadata.add
       class_name
-      { Resolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+      { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
 
 
   let register_dependency ~qualifier ~dependency =

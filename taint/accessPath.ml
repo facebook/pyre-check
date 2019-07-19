@@ -217,7 +217,7 @@ let is_property ~resolution = function
       match Type.expression annotation with
       | { Node.value = Name name; _ } when Expression.is_simple_name name ->
           Reference.create ~prefix:(Expression.name_to_reference_exn name) attribute
-          |> Resolution.function_definitions resolution
+          |> GlobalResolution.function_definitions (Resolution.global_resolution resolution)
           >>| (function
                 | [{ Node.value = define; _ }] -> is_property define
                 | _ -> false)
@@ -227,6 +227,7 @@ let is_property ~resolution = function
 
 
 let get_global ~resolution name =
+  let global_resolution = Resolution.global_resolution resolution in
   let global =
     match Node.value name with
     | Name (Name.Identifier identifier)
@@ -241,11 +242,13 @@ let get_global ~resolution name =
     | Name (Name.Attribute { base = { Node.value = Name base_name; _ }; _ } as name) ->
         let name = Expression.name_to_reference name in
         let base_name = Expression.name_to_reference base_name in
-        let is_module name = name >>= Resolution.module_definition resolution |> Option.is_some in
+        let is_module name =
+          name >>= GlobalResolution.module_definition global_resolution |> Option.is_some
+        in
         name >>= Option.some_if (is_module base_name && not (is_module name))
     | _ -> None
   in
-  global >>| fun reference -> Resolution.resolve_exports resolution ~reference
+  global >>| fun reference -> GlobalResolution.resolve_exports global_resolution ~reference
 
 
 let is_global ~resolution name = Option.is_some (get_global ~resolution name)

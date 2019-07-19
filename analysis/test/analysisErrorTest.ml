@@ -631,7 +631,7 @@ let test_due_to_mismatch_with_any _ =
 let test_join _ =
   let assert_join left right expected =
     let environment = Environment.handler (Environment.Builder.create ()) in
-    let resolution = TypeCheck.resolution environment () in
+    let resolution = Environment.resolution environment () in
     let result = Error.join ~resolution left right in
     assert_equal ~printer:Error.show ~cmp:Error.equal expected result
   in
@@ -898,7 +898,7 @@ let test_join _ =
 let test_less_or_equal _ =
   let resolution =
     let environment = Environment.handler (Environment.Builder.create ()) in
-    TypeCheck.resolution environment ()
+    Environment.resolution environment ()
   in
   assert_true
     (Error.less_or_equal
@@ -978,7 +978,7 @@ let test_filter _ =
           class NonMockChild(Foo): ...
         |}
     ];
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = Environment.resolution environment () in
   let assert_filtered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
     assert_equal [] (filter ~configuration ~resolution errors)
