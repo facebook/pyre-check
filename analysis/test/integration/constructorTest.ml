@@ -544,6 +544,19 @@ let test_check_constructors _ =
     ["Abstract class [38]: Class `B` does not implement abstract method `f`."];
   assert_type_errors
     {|
+      from abc import abstractproperty, ABCMeta
+      class A(metaclass=ABCMeta):
+        @abstractproperty
+        def f(self) -> None:
+            pass
+      class B(A):
+         pass
+      def foo() -> None:
+         B()
+   |}
+    ["Abstract class [38]: Class `B` does not implement abstract method `f`."];
+  assert_type_errors
+    {|
       from abc import abstractmethod, ABCMeta
       class A(metaclass=ABCMeta):
           @abstractmethod

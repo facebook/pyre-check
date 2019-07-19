@@ -151,6 +151,11 @@ let test_get_completion_items context =
           ~label:"abstractmethod(callable: unknown) -> unknown"
           ~detail:"(callable: unknown) -> unknown"
           ~new_text:"abstractmethod()";
+        create_completion_item
+          ~cursor_position
+          ~label:"abstractproperty"
+          ~detail:"Type[abstractproperty]"
+          ~new_text:"abstractproperty";
         create_completion_item ~cursor_position ~label:"ABC" ~detail:"Type[ABC]" ~new_text:"ABC" ]
 
 
