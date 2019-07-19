@@ -81,6 +81,11 @@ public final class BuilderCache {
   }
 
   @Override
+  public String toString() {
+    return String.format("{lastBuiltTime=%d, getThriftCaches=%s}", lastBuiltTime, thriftCaches);
+  }
+
+  @Override
   public boolean equals(@Nullable Object other) {
     if (this == other) {
       return true;

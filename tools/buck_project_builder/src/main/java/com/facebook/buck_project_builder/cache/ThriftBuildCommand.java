@@ -33,6 +33,12 @@ public final class ThriftBuildCommand {
   }
 
   @Override
+  public String toString() {
+    return String.format(
+        "{command=%s, baseModulePath=%s, sources=%s", command, baseModulePath, sources);
+  }
+
+  @Override
   public boolean equals(Object other) {
     if (this == other) {
       return true;

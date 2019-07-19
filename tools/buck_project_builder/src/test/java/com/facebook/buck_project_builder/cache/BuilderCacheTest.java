@@ -55,12 +55,12 @@ public class BuilderCacheTest {
 
   @Test
   public void brokenCacheJsonInvalidatesCacheTest() throws IOException {
-    File temporaryBadJsonFile = new File("/tmp/pyre/buck_builder_cache/__target/cache.json");
+    File temporaryBadJsonFile = new File("/tmp/pyre/buck_builder_cache/__target2/cache.json");
     File temporaryTestCacheDirectory = temporaryBadJsonFile.getParentFile();
     temporaryTestCacheDirectory.mkdirs();
 
     FileUtils.writeStringToFile(temporaryBadJsonFile, "broken", Charset.defaultCharset());
-    assertEquals(new BuilderCache(), BuilderCache.readFromCache(ImmutableList.of("//target")));
+    assertEquals(new BuilderCache(), BuilderCache.readFromCache(ImmutableList.of("//target2")));
 
     FileUtils.deleteDirectory(temporaryTestCacheDirectory);
   }
