@@ -6,7 +6,6 @@
 open Analysis
 
 type result = {
-  analyzed: Ast.SourcePath.t list;
   module_tracker: ModuleTracker.t;
   environment: (module Environment.Handler);
   errors: Error.t list

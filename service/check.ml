@@ -8,7 +8,6 @@ open Ast
 open Pyre
 
 type result = {
-  analyzed: SourcePath.t list;
   module_tracker: ModuleTracker.t;
   environment: (module Analysis.Environment.Handler);
   errors: Analysis.Error.t list
@@ -177,4 +176,4 @@ let check
   ( match original_scheduler with
   | None -> Scheduler.destroy scheduler
   | Some _ -> () );
-  { analyzed = source_paths; module_tracker; environment; errors }
+  { module_tracker; environment; errors }

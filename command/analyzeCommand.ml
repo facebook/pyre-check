@@ -93,8 +93,11 @@ let run_analysis
     let scheduler = Scheduler.create ~configuration ~bucket_multiplier () in
     let errors =
       Service.Check.check ~scheduler:(Some scheduler) ~configuration
-      |> fun { analyzed; environment; _ } ->
-      let qualifiers = List.map analyzed ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
+      |> fun { module_tracker; environment; _ } ->
+      let qualifiers =
+        Service.ModuleTracker.source_paths module_tracker
+        |> List.map ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
+      in
       Service.StaticAnalysis.analyze
         ~scheduler
         ~configuration:
