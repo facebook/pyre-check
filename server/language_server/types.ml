@@ -839,8 +839,26 @@ module ShutdownResponse = struct
 end
 
 module CompletionItems = struct
+  module Kind = struct
+    type t =
+      | Function
+      | Variable
+    [@@deriving eq, show]
+
+    let to_yojson : t -> Yojson.Safe.json = function
+      | Function -> `Int 3
+      | Variable -> `Int 6
+
+
+    let of_yojson : Yojson.Safe.json -> (t, string) Result.result = function
+      | `Int 3 -> Result.Ok Function
+      | `Int 6 -> Result.Ok Variable
+      | _ -> Result.Error "Invalid JSON"
+  end
+
   type item = {
     label: string;
+    kind: Kind.t;
     detail: string;
     textEdit: TextEdit.t
   }

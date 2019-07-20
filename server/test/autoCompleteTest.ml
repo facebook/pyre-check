@@ -88,17 +88,23 @@ let test_get_completion_items context =
     let actual = AutoComplete.get_completion_items ~state ~configuration ~path ~cursor_position in
     assert_equal ~printer:Types.CompletionItems.show expected actual
   in
-  let create_completion_item ~cursor_position:{ Location.line; column } ~label ~detail ~new_text =
+  let create_completion_item
+      ~cursor_position:{ Location.line; column }
+      ~label
+      ~kind
+      ~detail
+      ~new_text
+    =
     let position = Types.Position.from_pyre_position ~line ~column in
     let range = { Types.Range.start = position; end_ = position } in
-    { Types.CompletionItems.label; detail; textEdit = { range; newText = new_text } }
+    { Types.CompletionItems.label; kind; detail; textEdit = { range; newText = new_text } }
   in
   (* Class attributes completion *)
   let source =
     {|
       class A:
         foo: bool
-        def bar() -> int:
+        def bar(self) -> int:
           return 3
       def main() -> None:
         a = A()
@@ -114,9 +120,15 @@ let test_get_completion_items context =
       [ create_completion_item
           ~cursor_position
           ~label:"bar() -> int"
+          ~kind:Types.CompletionItems.Kind.Function
           ~detail:"() -> int"
           ~new_text:"bar()";
-        create_completion_item ~cursor_position ~label:"foo" ~detail:"bool" ~new_text:"foo" ];
+        create_completion_item
+          ~cursor_position
+          ~label:"foo"
+          ~kind:Types.CompletionItems.Kind.Variable
+          ~detail:"bool"
+          ~new_text:"foo" ];
 
   (* Module members completion *)
   let source =
@@ -134,29 +146,39 @@ let test_get_completion_items context =
       [ create_completion_item
           ~cursor_position
           ~label:"Type"
+          ~kind:Types.CompletionItems.Kind.Variable
           ~detail:"_SpecialForm"
           ~new_text:"Type";
         create_completion_item
           ~cursor_position
           ~label:"TypeVar"
+          ~kind:Types.CompletionItems.Kind.Variable
           ~detail:"object"
           ~new_text:"TypeVar";
         create_completion_item
           ~cursor_position
           ~label:"ABCMeta"
+          ~kind:Types.CompletionItems.Kind.Variable
           ~detail:"Type[ABCMeta]"
           ~new_text:"ABCMeta";
         create_completion_item
           ~cursor_position
           ~label:"abstractmethod(callable: unknown) -> unknown"
+          ~kind:Types.CompletionItems.Kind.Function
           ~detail:"(callable: unknown) -> unknown"
           ~new_text:"abstractmethod()";
         create_completion_item
           ~cursor_position
           ~label:"abstractproperty"
+          ~kind:Types.CompletionItems.Kind.Variable
           ~detail:"Type[abstractproperty]"
           ~new_text:"abstractproperty";
-        create_completion_item ~cursor_position ~label:"ABC" ~detail:"Type[ABC]" ~new_text:"ABC" ]
+        create_completion_item
+          ~cursor_position
+          ~label:"ABC"
+          ~kind:Types.CompletionItems.Kind.Variable
+          ~detail:"Type[ABC]"
+          ~new_text:"ABC" ]
 
 
 let test_untracked_path context =

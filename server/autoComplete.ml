@@ -61,6 +61,12 @@ let get_completion_item ~range ~item_name ~item_type =
     None
   else
     let type_string = Type.show_concise item_type in
+    let kind =
+      let open LanguageServer.Types.CompletionItems.Kind in
+      match item_type with
+      | Callable _ -> Function
+      | _ -> Variable
+    in
     let display_text, new_text =
       match item_type with
       | Type.Callable _ ->
@@ -69,6 +75,7 @@ let get_completion_item ~range ~item_name ~item_type =
     in
     Some
       { LanguageServer.Types.CompletionItems.label = display_text;
+        kind;
         detail = type_string;
         textEdit = { range; newText = new_text }
       }
