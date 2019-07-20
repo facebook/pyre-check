@@ -37,7 +37,9 @@
               "start": 4,
               "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "c.tainted_attribute" } ]
+            "leaves": [
+              { "kind": "Test", "name": "class_flows.C.tainted_attribute" }
+            ]
           }
         ]
       }
@@ -82,7 +84,9 @@
               "start": 4,
               "end": 23
             },
-            "leaves": [ { "kind": "Test", "name": "c.tainted_attribute" } ]
+            "leaves": [
+              { "kind": "Test", "name": "class_flows.C.tainted_attribute" }
+            ]
           }
         ]
       }

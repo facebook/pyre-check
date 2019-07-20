@@ -638,26 +638,26 @@ let get_global_model ~resolution ~expression =
         |> Option.some
     | _ -> None
   in
-  call_target >>| Callable.create_object >>| fun call_target -> get_callsite_model ~call_target
+  match call_target with
+  | Some target ->
+      let model =
+        Callable.create_object target |> fun call_target -> get_callsite_model ~call_target
+      in
+      Some (target, model)
+  | None -> None
 
 
 let get_global_sink_model ~resolution ~location ~expression =
-  let to_sink { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ } =
-    let name =
-      expression
-      (* To handle the pattern of $local_module$item *)
-      |> Expression.delocalize
-      |> Expression.show
-      (* To handle the qualification of $parameter$x. *)
-      |> Identifier.sanitized
-    in
+  let to_sink
+      (name, { model = { TaintResult.backward = { TaintResult.Backward.sink_taint; _ }; _ }; _ })
+    =
     BackwardState.read
       ~root:(AccessPath.Root.PositionalParameter { position = 0; name = "$global" })
       ~path:[]
       sink_taint
     |> BackwardState.Tree.apply_call
          location
-         ~callees:[`Function name]
+         ~callees:[`Function (Reference.show name)]
          ~port:AccessPath.Root.LocalResult
   in
   get_global_model ~resolution ~expression >>| to_sink
