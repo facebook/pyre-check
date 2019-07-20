@@ -2,6 +2,7 @@ package com.facebook.buck_project_builder.targets;
 
 import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.FileSystemTest;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
@@ -35,7 +36,8 @@ public class BuildTargetTest {
     PythonTarget pythonTargetWithoutBaseModule =
         new PythonTarget(".", null, ImmutableMap.of("a.py", "b.py"));
     BuildTargetsBuilder builder =
-        new BuildTargetsBuilder(buckRoot.getPath(), outputDirectory.getPath());
+        new BuildTargetsBuilder(
+            0, buckRoot.getPath(), outputDirectory.getPath(), ImmutableList.of("//target"));
     pythonTargetWithoutBaseModule.addToBuilder(builder);
     builder.buildTargets();
     FileSystemTest.assertIsSymbolicLinkWithContent(
@@ -43,7 +45,9 @@ public class BuildTargetTest {
 
     PythonTarget pythonTargetWithBaseModule =
         new PythonTarget(".", "foo.bar", ImmutableMap.of("a.py", "b.py"));
-    builder = new BuildTargetsBuilder(buckRoot.getPath(), outputDirectory.getPath());
+    builder =
+        new BuildTargetsBuilder(
+            0, buckRoot.getPath(), outputDirectory.getPath(), ImmutableList.of("//target"));
     pythonTargetWithBaseModule.addToBuilder(builder);
     builder.buildTargets();
     FileSystemTest.assertIsSymbolicLinkWithContent(

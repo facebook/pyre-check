@@ -88,9 +88,51 @@ public final class ThriftLibraryTarget implements BuildTarget {
     return new ThriftLibraryTarget(command, baseModulePath, sources);
   }
 
+  public String getCommand() {
+    return command;
+  }
+
+  public String getBaseModulePath() {
+    return baseModulePath;
+  }
+
+  public List<String> getSources() {
+    return sources;
+  }
+
   @Override
   public void addToBuilder(BuildTargetsBuilder builder) {
-    builder.addThriftLibraryBuildCommand(this.command);
+    builder.addThriftLibraryTarget(this);
+  }
+
+  private boolean canUseCachedBuild(String buckRoot, BuilderCache cache) {
+    if (!cache.getThriftCaches().contains(this)) {
+      return false;
+    }
+    return sources.stream()
+        .allMatch(
+            source -> {
+              File sourceFile = new File(source);
+              if (!sourceFile.isAbsolute()) {
+                sourceFile = Paths.get(buckRoot, source).toFile();
+              }
+              long lastModifiedTime = sourceFile.lastModified();
+              return lastModifiedTime < cache.getLastBuiltTime();
+            });
+  }
+
+  public boolean build(String buckRoot, BuilderCache cache) {
+    if (canUseCachedBuild(buckRoot, cache)) {
+      return true;
+    }
+    FileUtils.deleteQuietly(
+        Paths.get(BuilderCache.THRIFT_CACHE_PATH, this.baseModulePath).toFile());
+    try {
+      return GeneratedBuildRuleRunner.runBuilderCommand(this.command, buckRoot);
+    } catch (IOException exception) {
+      SimpleLogger.error("Failed to build: " + this.sources);
+      return false;
+    }
   }
 
   @Override

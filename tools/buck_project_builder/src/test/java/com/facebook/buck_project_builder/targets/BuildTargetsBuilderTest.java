@@ -15,7 +15,8 @@ public class BuildTargetsBuilderTest {
 
   @Test
   public void pythonTargetsBuildInformationIsCorrectlyAddedTest() throws BuilderException {
-    BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
+    BuildTargetsBuilder builder =
+        new BuildTargetsBuilder(0, "/BUCK/ROOT/", "/OUT/DIR/", ImmutableList.of("//target"));
 
     new PythonTarget(
             null,
@@ -43,7 +44,8 @@ public class BuildTargetsBuilderTest {
 
   @Test
   public void remoteTargetBuildInformationIsCorrectlyAddedTest() {
-    BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
+    BuildTargetsBuilder builder =
+        new BuildTargetsBuilder(0, "/BUCK/ROOT/", "/OUT/DIR/", ImmutableList.of("//target"));
 
     new RemoteFileTarget("REMOTE_URL").addToBuilder(builder);
 
@@ -55,7 +57,8 @@ public class BuildTargetsBuilderTest {
 
   @Test
   public void generatedCodeTargetBuildInformationIsCorrectlyAddedTest() {
-    BuildTargetsBuilder builder = new BuildTargetsBuilder("/BUCK/ROOT/", "/OUT/DIR/");
+    BuildTargetsBuilder builder =
+        new BuildTargetsBuilder(0, "/BUCK/ROOT/", "/OUT/DIR/", ImmutableList.of("//target"));
 
     new ThriftLibraryTarget("CMD_THRIFT", "PATH", ImmutableList.of()).addToBuilder(builder);
     new SwigLibraryTarget("CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
@@ -63,8 +66,8 @@ public class BuildTargetsBuilderTest {
 
     assertEquals(
         "Thrift library build commands are correctly added.",
-        ImmutableSet.of("CMD_THRIFT"),
-        builder.getThriftLibraryBuildCommands());
+        ImmutableSet.of(new ThriftLibraryTarget("CMD_THRIFT", "PATH", ImmutableList.of())),
+        builder.getThriftLibraryTargets());
     assertEquals(
         "Swig library build commands are correctly added.",
         ImmutableSet.of("CMD_SWIG"),

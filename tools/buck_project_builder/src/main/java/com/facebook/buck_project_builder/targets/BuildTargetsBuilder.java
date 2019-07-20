@@ -4,13 +4,16 @@ import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.DebugOutput;
 import com.facebook.buck_project_builder.FileSystem;
 import com.facebook.buck_project_builder.SimpleLogger;
+import com.facebook.buck_project_builder.cache.BuilderCache;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -22,23 +25,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class BuildTargetsBuilder {
 
+  private final long startTime;
   private final String buckRoot;
   private final String outputDirectory;
+  private final ImmutableList<String> targets;
+  private final BuilderCache cache;
   /** key: output path, value: source path */
   private final Map<Path, Path> sources = new HashMap<>();
 
   private final Set<String> unsupportedGeneratedSources = new HashSet<>();
   private final Set<String> pythonWheelUrls = new HashSet<>();
-  private final Set<String> thriftLibraryBuildCommands = new HashSet<>();
+  private final Set<ThriftLibraryTarget> thriftLibraryTargets = new HashSet<>();
   private final Set<String> swigLibraryBuildCommands = new HashSet<>();
   private final Set<String> antlr4LibraryBuildCommands = new HashSet<>();
 
   private final Set<String> conflictingFiles = new HashSet<>();
   private final Set<String> unsupportedFiles = new HashSet<>();
 
-  public BuildTargetsBuilder(String buckRoot, String outputDirectory) {
+  public BuildTargetsBuilder(
+      long startTime, String buckRoot, String outputDirectory, ImmutableList<String> targets) {
+    this.startTime = startTime;
     this.buckRoot = buckRoot;
     this.outputDirectory = outputDirectory;
+    this.targets = targets;
+    this.cache = BuilderCache.readFromCache(targets);
   }
 
   private static void logCodeGenerationIOException(IOException exception) {
@@ -87,8 +97,8 @@ public final class BuildTargetsBuilder {
     SimpleLogger.info("Built python wheels in " + time + "ms.");
   }
 
-  private void runBuildCommands(
-      Collection<String> commands, String buildRuleType, CommandRunner commandRunner)
+  private <T> void runBuildCommands(
+      Collection<T> commands, String buildRuleType, CommandRunner<T> commandRunner)
       throws BuilderException {
     int numberOfSuccessfulRuns =
         commands
@@ -112,38 +122,69 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildThriftLibraries() throws BuilderException {
-    this.thriftLibraryBuildCommands.removeIf(
-        command ->
-            command.contains("py:")
-                && thriftLibraryBuildCommands.contains(command.replace("py:", "mstch_pyi:")));
-    if (this.thriftLibraryBuildCommands.isEmpty()) {
+    this.thriftLibraryTargets.removeIf(
+        target -> {
+          String commandString = target.getCommand();
+          return commandString.contains("py:")
+              && this.thriftLibraryTargets.contains(
+                  new ThriftLibraryTarget(
+                      commandString.replace("py:", "mstch_pyi:"),
+                      target.getBaseModulePath(),
+                      target.getSources()));
+        });
+    if (this.thriftLibraryTargets.isEmpty()) {
       return;
     }
-    int totalNumberOfThriftLibraries = this.thriftLibraryBuildCommands.size();
+    new File(BuilderCache.THRIFT_CACHE_PATH).mkdirs();
+    int totalNumberOfThriftLibraries = this.thriftLibraryTargets.size();
     SimpleLogger.info("Building " + totalNumberOfThriftLibraries + " thrift libraries...");
     AtomicInteger numberOfBuiltThriftLibraries = new AtomicInteger(0);
     long start = System.currentTimeMillis();
+    // First pass: build thrift library in cache path.
     runBuildCommands(
-        this.thriftLibraryBuildCommands,
+        this.thriftLibraryTargets,
         "thrift_library",
-        command -> {
-          boolean successfullyBuilt;
-          try {
-            successfullyBuilt = GeneratedBuildRuleRunner.runBuilderCommand(command, this.buckRoot);
-          } catch (IOException exception) {
-            successfullyBuilt = false;
-            logCodeGenerationIOException(exception);
-          }
-          int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
-          if (builtThriftLibrariesSoFar % 100 == 0) {
-            // Log progress for every 100 built thrift library.
-            SimpleLogger.info(
-                String.format(
-                    "Built %d/%d thrift libraries.",
-                    builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
+        target -> {
+          boolean successfullyBuilt = target.build(this.buckRoot, this.cache);
+          if (successfullyBuilt) {
+            int builtThriftLibrariesSoFar = numberOfBuiltThriftLibraries.addAndGet(1);
+            if (builtThriftLibrariesSoFar % 100 == 0) {
+              // Log progress for every 100 built thrift library.
+              SimpleLogger.info(
+                  String.format(
+                      "Built %d/%d thrift libraries.",
+                      builtThriftLibrariesSoFar, totalNumberOfThriftLibraries));
+            }
           }
           return successfullyBuilt;
         });
+    // Second pass: delete all generated code that should no longer be generated
+    cache
+        .getThriftCaches()
+        .parallelStream()
+        .forEach(
+            target -> {
+              if (!thriftLibraryTargets.contains(target)) {
+                FileUtils.deleteQuietly(
+                    Paths.get(BuilderCache.THRIFT_CACHE_PATH, target.getBaseModulePath()).toFile());
+              }
+            });
+    // Third pass: establishing symbolic links
+    Path thriftCacheRootPath = Paths.get(BuilderCache.THRIFT_CACHE_PATH);
+    try {
+      Files.walk(thriftCacheRootPath)
+          .forEach(
+              absolutePath -> {
+                if (absolutePath.toFile().isDirectory()) {
+                  return;
+                }
+                String relativePath = thriftCacheRootPath.relativize(absolutePath).toString();
+                FileSystem.addSymbolicLink(
+                    Paths.get(this.outputDirectory, relativePath), absolutePath);
+              });
+    } catch (IOException exception) {
+      logCodeGenerationIOException(exception);
+    }
     long time = System.currentTimeMillis() - start;
     SimpleLogger.info("Built thrift libraries in " + time + "ms.");
   }
@@ -264,14 +305,18 @@ public final class BuildTargetsBuilder {
     return outputDirectory;
   }
 
+  public ImmutableList<String> getTargets() {
+    return targets;
+  }
+
   @VisibleForTesting
   Map<Path, Path> getSources() {
     return sources;
   }
 
   @VisibleForTesting
-  Set<String> getThriftLibraryBuildCommands() {
-    return thriftLibraryBuildCommands;
+  Set<ThriftLibraryTarget> getThriftLibraryTargets() {
+    return thriftLibraryTargets;
   }
 
   @VisibleForTesting
@@ -312,8 +357,8 @@ public final class BuildTargetsBuilder {
     pythonWheelUrls.add(url);
   }
 
-  void addThriftLibraryBuildCommand(String command) {
-    thriftLibraryBuildCommands.add(command);
+  void addThriftLibraryTarget(ThriftLibraryTarget thriftLibraryTarget) {
+    thriftLibraryTargets.add(thriftLibraryTarget);
   }
 
   void addSwigLibraryBuildCommand(String command) {
@@ -331,10 +376,11 @@ public final class BuildTargetsBuilder {
     this.buildPythonSources();
     this.buildPythonWheels();
     this.generateEmptyStubs();
+    new BuilderCache(startTime, thriftLibraryTargets).writeToCache(this.targets);
     return new DebugOutput(this.conflictingFiles, this.unsupportedFiles);
   }
 
-  private interface CommandRunner {
-    boolean run(String command);
+  private interface CommandRunner<T> {
+    boolean run(T command);
   }
 }

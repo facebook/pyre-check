@@ -21,7 +21,8 @@ public final class BuckProjectBuilder {
       BuilderCommand command = BuilderCommand.fromCommandLineArguments(arguments);
       String buckRoot = command.getBuckRoot();
       ImmutableList<String> targets = command.getTargets();
-      BuildTargetsBuilder builder = new BuildTargetsBuilder(buckRoot, command.getOutputDirectory());
+      BuildTargetsBuilder builder =
+          new BuildTargetsBuilder(start, buckRoot, command.getOutputDirectory(), targets);
       BuildTargetsCollector.collectBuckTargets(buckRoot, targets)
           .forEach(target -> target.addToBuilder(builder));
       DebugOutput debugOutput = builder.buildTargets();
