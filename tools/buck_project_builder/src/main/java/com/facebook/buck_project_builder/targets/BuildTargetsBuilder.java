@@ -67,6 +67,9 @@ public final class BuildTargetsBuilder {
   }
 
   private void buildPythonWheels() {
+    if (pythonWheelUrls.isEmpty()) {
+      return;
+    }
     SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
     File outputDirectoryFile = new File(outputDirectory);
@@ -76,12 +79,14 @@ public final class BuildTargetsBuilder {
             url -> {
               try {
                 ImmutableSet<String> conflictingFiles =
-                    FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                    FileSystem.unzipRemoteFile(
+                        url, BuilderCache.WHEEL_CACHE_PATH, outputDirectoryFile);
                 this.conflictingFiles.addAll(conflictingFiles);
               } catch (IOException firstException) {
                 try {
                   ImmutableSet<String> conflictingFiles =
-                      FileSystem.unzipRemoteFile(url, outputDirectoryFile);
+                      FileSystem.unzipRemoteFile(
+                          url, BuilderCache.WHEEL_CACHE_PATH, outputDirectoryFile);
                   this.conflictingFiles.addAll(conflictingFiles);
                 } catch (IOException secondException) {
                   SimpleLogger.error(

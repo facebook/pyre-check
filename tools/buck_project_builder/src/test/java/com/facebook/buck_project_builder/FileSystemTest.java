@@ -125,15 +125,17 @@ public class FileSystemTest {
     }
 
     // use file protocol to simulate remote file
+    String cacheDirectory = Files.createTempDirectory("cache-path").toString();
     ImmutableSet<String> conflictingFilesOnFirstUnzip =
-        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), cacheDirectory, outputDirectory);
     assertEquals(ImmutableSet.of(), conflictingFilesOnFirstUnzip);
     // Unzip twice to test file conflict detection
     ImmutableSet<String> conflictingFilesOnSecondUnzip =
-        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), outputDirectory);
+        FileSystem.unzipRemoteFile("file://" + zipFile.toString(), cacheDirectory, outputDirectory);
     assertEquals(ImmutableSet.of("foo/bar/test.txt"), conflictingFilesOnSecondUnzip);
     assertContent(Paths.get(root, "out", "foo", "bar", "test.txt").toFile(), "hello world");
 
+    FileUtils.deleteDirectory(new File(cacheDirectory));
     FileUtils.deleteDirectory(new File(root));
   }
 }

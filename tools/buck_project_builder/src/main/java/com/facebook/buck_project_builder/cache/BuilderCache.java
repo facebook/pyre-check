@@ -20,6 +20,7 @@ import java.util.Set;
 public final class BuilderCache {
 
   public static final String THRIFT_CACHE_PATH = "/tmp/pyre/buck_builder_cache/thrift-gen";
+  public static final String WHEEL_CACHE_PATH = "/tmp/pyre/buck_builder_cache/downloaded-wheels";
 
   private final long lastBuiltTime;
   private final Set<ThriftLibraryTarget> thriftCaches;
@@ -45,6 +46,10 @@ public final class BuilderCache {
 
   private static File getCacheJsonFile(ImmutableList<String> targets) {
     return Paths.get(getCachePath(targets), "cache.json").toFile();
+  }
+
+  public static String getThriftCachePath(ImmutableList<String> targets) {
+    return Paths.get(getCachePath(targets), "thrift-gen").toString();
   }
 
   public static BuilderCache readFromCache(ImmutableList<String> targets) {

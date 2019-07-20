@@ -55,18 +55,28 @@ public final class FileSystem {
     }
   }
 
+  private static File downloadRemoteZip(String remoteUrl, String cacheDirectory)
+      throws IOException {
+    URL url = new URL(remoteUrl);
+    File outputFile = Paths.get(cacheDirectory, url.getPath()).getFileName().toFile();
+    if (outputFile.exists()) {
+      return outputFile;
+    }
+    new File(url.getPath()).getName();
+    try (InputStream remoteInputStream = url.openStream();
+        FileOutputStream zipFileOutputStream = new FileOutputStream(outputFile)) {
+      IOUtils.copy(remoteInputStream, zipFileOutputStream);
+    }
+    return outputFile;
+  }
+
   /**
    * @return a set of files in the zip that are not unzipped because they can override existing
    *     files.
    */
-  public static ImmutableSet<String> unzipRemoteFile(String remoteUrl, File outputDirectory)
-      throws IOException {
-    URL url = new URL(remoteUrl);
-    File temporaryZipFile = Files.createTempFile("remote-", ".zip").toFile();
-    try (InputStream remoteInputStream = url.openStream();
-        FileOutputStream zipFileOutputStream = new FileOutputStream(temporaryZipFile)) {
-      IOUtils.copy(remoteInputStream, zipFileOutputStream);
-    }
+  public static ImmutableSet<String> unzipRemoteFile(
+      String remoteUrl, String cacheDirectory, File outputDirectory) throws IOException {
+    File temporaryZipFile = downloadRemoteZip(remoteUrl, cacheDirectory);
     ImmutableSet.Builder<String> conflictingFileSetBuilder = ImmutableSet.builder();
     try (ZipFile zipFile = new ZipFile(temporaryZipFile)) {
       Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
