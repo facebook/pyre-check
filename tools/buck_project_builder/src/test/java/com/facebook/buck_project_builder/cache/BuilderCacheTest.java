@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.cache;
 
+import com.facebook.buck_project_builder.targets.ThriftLibraryTarget;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -37,20 +38,20 @@ public class BuilderCacheTest {
         new BuilderCache(),
         BuilderCache.readFromCache(ImmutableList.of("//target")));
 
-    ThriftBuildCommand thriftBuildCommand =
-        new ThriftBuildCommand("CMD", "PATH", ImmutableList.of("a.thrift"));
-    new BuilderCache(42, ImmutableSet.of(thriftBuildCommand))
+    ThriftLibraryTarget thriftLibraryTarget =
+        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("a.thrift"));
+    new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget))
         .writeToCache(ImmutableList.of("//target"));
     assertEquals(
         "Expect to read the same cache content that has just been written",
-        new BuilderCache(42, ImmutableSet.of(thriftBuildCommand)),
+        new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget)),
         BuilderCache.readFromCache(ImmutableList.of("//target")));
 
-    new BuilderCache(65536, ImmutableSet.of(thriftBuildCommand))
+    new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget))
         .writeToCache(ImmutableList.of("//target"));
     assertEquals(
         "Expect to read a different cache content that has just been overridden",
-        new BuilderCache(65536, ImmutableSet.of(thriftBuildCommand)),
+        new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget)),
         BuilderCache.readFromCache(ImmutableList.of("//target")));
 
     FileUtils.deleteDirectory(new File("/tmp/pyre/buck_builder_cache/__target"));

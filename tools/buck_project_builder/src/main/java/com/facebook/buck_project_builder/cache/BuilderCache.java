@@ -1,6 +1,7 @@
 package com.facebook.buck_project_builder.cache;
 
 import com.facebook.buck_project_builder.SimpleLogger;
+import com.facebook.buck_project_builder.targets.ThriftLibraryTarget;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
@@ -18,10 +19,12 @@ import java.util.Set;
 
 public final class BuilderCache {
 
-  private final long lastBuiltTime;
-  private final Set<ThriftBuildCommand> thriftCaches;
+  public static final String THRIFT_CACHE_PATH = "/tmp/pyre/buck_builder_cache/thrift-gen";
 
-  public BuilderCache(long lastBuiltTime, Set<ThriftBuildCommand> thriftCaches) {
+  private final long lastBuiltTime;
+  private final Set<ThriftLibraryTarget> thriftCaches;
+
+  public BuilderCache(long lastBuiltTime, Set<ThriftLibraryTarget> thriftCaches) {
     this.lastBuiltTime = lastBuiltTime;
     this.thriftCaches = thriftCaches;
   }
@@ -73,7 +76,7 @@ public final class BuilderCache {
     return lastBuiltTime;
   }
 
-  public Set<ThriftBuildCommand> getThriftCaches() {
+  public Set<ThriftLibraryTarget> getThriftCaches() {
     return thriftCaches;
   }
 

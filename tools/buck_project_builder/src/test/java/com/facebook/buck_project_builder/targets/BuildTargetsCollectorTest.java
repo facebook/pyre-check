@@ -284,7 +284,7 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new ThriftLibraryTarget(
-            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "CMD",
             "PATH",
             ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
     targetJson =
@@ -308,7 +308,7 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new ThriftLibraryTarget(
-            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "CMD",
             "PATH",
             ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
@@ -323,7 +323,7 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new ThriftLibraryTarget(
-            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "CMD",
             "PATH",
             ImmutableList.of("./PATH/a.pyi", "./PATH/b.pyi")));
 
@@ -338,7 +338,7 @@ public class BuildTargetsCollectorTest {
     assertExpectedParsedBuildTarget(
         targetJson,
         new ThriftLibraryTarget(
-            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD",
+            "CMD",
             "PATH",
             ImmutableList.of("./PATH/a.py", "./PATH/b.py")));
 
