@@ -1,0 +1,154 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.len",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.min",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ]
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.named",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(named_parameter)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_via_len",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 10, "start": 15, "end": 16 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_via_min_left",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 13, "start": 15, "end": 16 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_via_min_right",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 16, "start": 18, "end": 19 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "features.tito_via_named",
+    "sources": [],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "decl": null,
+            "tito": [ { "line": 19, "start": 35, "end": 36 } ],
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "type": "scalar" }, { "via": "tito" } ]
+          }
+        ]
+      }
+    ]
+  }
+}

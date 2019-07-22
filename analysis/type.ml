@@ -231,6 +231,15 @@ module Record = struct
         | Variable (Map map) ->
             Format.asprintf "Variable(%a)" OrderedTypes.RecordMap.pp_concise map
         | Keywords annotation -> Format.asprintf "Keywords(%a)" pp_type annotation
+
+
+      let annotation = function
+        | Anonymous { annotation; _ } -> Some annotation
+        | Named { annotation; _ } -> Some annotation
+        | KeywordOnly { annotation; _ } -> Some annotation
+        | Variable (Concrete annotation) -> Some annotation
+        | Keywords annotation -> Some annotation
+        | _ -> None
     end
 
     type kind =

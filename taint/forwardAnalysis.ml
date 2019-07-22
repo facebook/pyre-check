@@ -682,6 +682,9 @@ end
 
 let extract_source_model ~define ~resolution exit_taint =
   let { Define.signature = { return_annotation; _ }; _ } = define in
+  let return_annotation =
+    Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
+  in
   let simplify tree =
     let essential = ForwardState.Tree.essential tree in
     ForwardState.Tree.shape tree ~mold:essential

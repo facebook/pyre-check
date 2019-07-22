@@ -100,6 +100,8 @@ module Record : sig
         | Variable of 'annotation variable
         | Keywords of 'annotation
       [@@deriving compare, eq, sexp, show, hash]
+
+      val annotation : 'annotation t -> 'annotation option
     end
 
     type kind =

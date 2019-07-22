@@ -21,7 +21,7 @@ type t = {
 }
 [@@deriving show, sexp]
 
-type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, sexp]
+type breadcrumbs = Features.Simple.t list [@@deriving show, sexp]
 
 let _ = show_breadcrumbs (* unused but derived *)
 
@@ -37,12 +37,7 @@ exception InvalidModel of string
 
 let raise_invalid_model message = raise (InvalidModel message)
 
-let add_breadcrumbs breadcrumbs init =
-  List.fold
-    breadcrumbs
-    ~f:(fun set breadcrumb -> Features.Simple.Breadcrumb breadcrumb :: set)
-    ~init
-
+let add_breadcrumbs breadcrumbs init = List.rev_append breadcrumbs init
 
 let introduce_sink_taint
     ~root
@@ -145,7 +140,7 @@ let rec parse_annotations ~configuration ~parameters annotation =
     let open Configuration in
     match expression.Node.value with
     | Name (Name.Identifier breadcrumb) ->
-        [Features.Breadcrumb.simple_via ~allowed:configuration.features breadcrumb]
+        [Features.simple_via ~allowed:configuration.features breadcrumb]
     | Tuple expressions -> List.concat_map ~f:extract_breadcrumbs expressions
     | _ -> []
   in
@@ -240,12 +235,70 @@ let rec parse_annotations ~configuration ~parameters annotation =
   | None -> []
 
 
-let taint_parameter ~configuration ~parameters model (root, _name, parameter) =
+let find_positional_parameter_annotation position parameters =
+  List.nth parameters position >>= Type.Record.Callable.RecordParameter.annotation
+
+
+let find_named_parameter_annotation search_name parameters =
+  let has_name = function
+    | Type.Record.Callable.RecordParameter.KeywordOnly { name; _ } ->
+        name = "$parameter$" ^ search_name
+    | Type.Record.Callable.RecordParameter.Named { name; _ } -> name = search_name
+    | _ -> false
+  in
+  List.find ~f:has_name parameters >>= Type.Record.Callable.RecordParameter.annotation
+
+
+let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs =
+  match root, callable_annotation with
+  | ( AccessPath.Root.PositionalParameter { position; _ },
+      Some
+        { Type.Callable.implementation =
+            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+          _
+        } ) ->
+      let parameter_annotation =
+        find_positional_parameter_annotation position implementation_parameters
+      in
+      Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
+  | ( AccessPath.Root.NamedParameter { name; _ },
+      Some
+        { Type.Callable.implementation =
+            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+          _
+        } ) ->
+      let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
+      Features.add_type_breadcrumb ~resolution parameter_annotation breadcrumbs
+  | ( AccessPath.Root.LocalResult,
+      Some { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } ) ->
+      Features.add_type_breadcrumb ~resolution (Some annotation) breadcrumbs
+  | _ -> breadcrumbs
+
+
+let taint_parameter
+    ~configuration
+    ~resolution
+    ~parameters
+    model
+    (root, _name, parameter)
+    ~callable_annotation
+  =
   let add_to_model model annotation =
     match annotation with
-    | Sink { sink; breadcrumbs } -> introduce_sink_taint ~root model sink breadcrumbs
-    | Source { source; breadcrumbs } -> introduce_source_taint ~root model source breadcrumbs
-    | Tito { tito; breadcrumbs } -> introduce_taint_in_taint_out ~root model tito breadcrumbs
+    | Sink { sink; breadcrumbs } ->
+        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        |> introduce_sink_taint ~root model sink
+    | Source { source; breadcrumbs } ->
+        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        |> introduce_source_taint ~root model source
+    | Tito { tito; breadcrumbs } ->
+        (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
+        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        |> add_signature_based_breadcrumbs
+             ~resolution
+             AccessPath.Root.LocalResult
+             ~callable_annotation
+        |> introduce_taint_in_taint_out ~root model tito
     | SkipAnalysis -> raise_invalid_model "SkipAnalysis annotation must be in return position"
     | Sanitize -> raise_invalid_model "Sanitize annotation must be in return position"
   in
@@ -253,12 +306,16 @@ let taint_parameter ~configuration ~parameters model (root, _name, parameter) =
   parse_annotations ~configuration ~parameters annotation |> List.fold ~init:model ~f:add_to_model
 
 
-let taint_return ~configuration ~parameters model expression =
+let taint_return ~configuration ~resolution ~parameters model expression ~callable_annotation =
   let add_to_model model annotation =
     let root = AccessPath.Root.LocalResult in
     match annotation with
-    | Sink { sink; breadcrumbs } -> introduce_sink_taint ~root model sink breadcrumbs
-    | Source { source; breadcrumbs } -> introduce_source_taint ~root model source breadcrumbs
+    | Sink { sink; breadcrumbs } ->
+        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        |> introduce_sink_taint ~root model sink
+    | Source { source; breadcrumbs } ->
+        add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs
+        |> introduce_source_taint ~root model source
     | Tito _ -> raise_invalid_model "Invalid return annotation: TaintInTaintOut"
     | SkipAnalysis -> { model with mode = TaintResult.SkipAnalysis }
     | Sanitize -> { model with mode = TaintResult.Sanitize }
@@ -534,14 +591,14 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
     |> Source.statements
     |> List.concat_map ~f:filter_define_signature
   in
-  let verify_signature ~normalized_model_parameters annotation =
-    match Annotation.annotation annotation with
-    | Type.Callable
-        { Type.Callable.implementation =
-            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-          implicit;
-          _
-        } as callable ->
+  let verify_signature ~normalized_model_parameters callable_annotation =
+    match callable_annotation with
+    | Some
+        ( { Type.Callable.implementation =
+              { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+            implicit;
+            _
+          } as callable ) ->
         let model_compatibility_errors =
           (* Make self as an explicit parameter in type's parameter list *)
           let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
@@ -560,7 +617,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
           let message =
             Format.asprintf
               "Model signature parameters do not match implementation `%s`. Reason(s): %s."
-              (Type.show_for_hover callable)
+              (Type.show_for_hover (Type.Callable callable))
               (String.concat model_compatibility_errors ~sep:"; ")
           in
           Log.error "%s" message;
@@ -569,24 +626,48 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
   in
   let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
     (* Make sure we know about what we model. *)
+    let global_resolution = Resolution.global_resolution resolution in
     try
       let call_target = (call_target :> Callable.t) in
-      let annotation =
+      let callable_annotation =
         name
         |> Expression.from_reference ~location:Location.Reference.any
         |> Resolution.resolve_to_annotation resolution
       in
       let () =
-        if Type.is_top (Annotation.annotation annotation) && not (Annotation.is_global annotation)
+        if
+          Type.is_top (Annotation.annotation callable_annotation)
+          && not (Annotation.is_global callable_annotation)
         then
           raise_invalid_model "Modeled entity is not part of the environment!"
       in
       let normalized_model_parameters = AccessPath.Root.normalize_parameters parameters in
       (* Check model matches callables primary signature. *)
-      let () = if verify then verify_signature ~normalized_model_parameters annotation in
+      let callable_annotation =
+        callable_annotation
+        |> Annotation.annotation
+        |> function
+        | Type.Callable t -> Some t
+        | _ -> None
+      in
+      let () = if verify then verify_signature ~normalized_model_parameters callable_annotation in
       normalized_model_parameters
-      |> List.fold ~init:TaintResult.empty_model ~f:(taint_parameter ~configuration ~parameters)
-      |> (fun model -> taint_return ~configuration ~parameters model return_annotation)
+      |> List.fold
+           ~init:TaintResult.empty_model
+           ~f:
+             (taint_parameter
+                ~configuration
+                ~resolution:global_resolution
+                ~parameters
+                ~callable_annotation)
+      |> (fun model ->
+           taint_return
+             ~configuration
+             ~resolution:global_resolution
+             ~parameters
+             model
+             return_annotation
+             ~callable_annotation)
       |> fun model -> { model; call_target; is_obscure = false }
     with
     | Failure message

@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+features.tito_via_len (fun) -> [features.len (fun)]
+features.tito_via_min_left (fun) -> [features.min (fun)]
+features.tito_via_min_right (fun) -> [features.min (fun)]
+features.tito_via_named (fun) -> [features.named (fun)]

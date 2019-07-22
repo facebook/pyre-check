@@ -518,6 +518,7 @@ let extract_tito_and_sink_models define ~resolution entry_taint =
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
+    let annotation = Option.map ~f:(GlobalResolution.parse_annotation resolution) annotation in
     let essential = BackwardState.Tree.essential tree in
     BackwardState.Tree.shape tree ~mold:essential
     |> BackwardState.Tree.transform

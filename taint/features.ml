@@ -74,9 +74,9 @@ module ComplexSet = AbstractElementSetDomain.Make (Complex)
 
 let add_obscure set = Simple.Breadcrumb Breadcrumb.Obscure :: set
 
-let add_type_breadcrumb ~resolution type_annotation =
+let add_type_breadcrumb ~resolution annotation =
   let is_scalar =
-    match Option.map ~f:(GlobalResolution.parse_annotation resolution) type_annotation with
+    match annotation with
     | None -> false
     | Some return_type ->
         GlobalResolution.less_or_equal resolution ~left:return_type ~right:Type.number
@@ -90,3 +90,6 @@ let add_type_breadcrumb ~resolution type_annotation =
       Simple.Breadcrumb (Breadcrumb.Type "scalar") :: feature_set
   in
   add
+
+
+let simple_via ~allowed name = Simple.Breadcrumb (Breadcrumb.simple_via ~allowed name)
