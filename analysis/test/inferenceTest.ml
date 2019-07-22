@@ -153,7 +153,6 @@ let assert_infer
     ?(debug = false)
     ?(infer = true)
     ?(show_error_traces = false)
-    ?(recursive_infer = false)
     ?(fields = ["description"])
     source
     errors
@@ -177,7 +176,7 @@ let assert_infer
     List.map fields ~f:field_of_error
   in
   let source = parse source |> Preprocessing.preprocess in
-  let configuration = Configuration.Analysis.create ~debug ~infer ~recursive_infer () in
+  let configuration = Configuration.Analysis.create ~debug ~infer () in
   let environment = Test.environment () in
   Test.populate ~configuration environment [source];
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
@@ -544,60 +543,10 @@ let test_infer_backward _ =
   ()
 
 
-let test_recursive_infer _ =
-  assert_infer
-    ~recursive_infer:false
-    ~fields:["inference.annotation"]
-    {|
-      def bar():
-        return a
-      def foo() -> None:
-        global a
-        a = 1
-    |}
-    [];
-  assert_infer
-    ~recursive_infer:true
-    ~fields:["inference.annotation"]
-    {|
-      def foo():
-        return 1
-      def bar():
-        return foo()
-    |}
-    [{|"int"|}];
-  assert_infer
-    ~recursive_infer:true
-    ~fields:["inference.annotation"; "inference.parameters"]
-    {|
-      def foo():
-        return 1
-      def bar(a):
-        a = foo()
-        return a
-    |}
-    [{|"int"|}; {|[]|}];
-  assert_infer
-    ~recursive_infer:true
-    ~fields:["inference.annotation"; "inference.parameters"]
-    {|
-      def foo(a):
-        a: int
-        return a
-      def bar():
-        b = foo(a)
-        return b
-      def baz():
-        return bar()
-    |}
-    [{|"int"|}; {|[{"name":"a","type":null,"value":null}]|}]
-
-
 let () =
   "inference"
   >::: [ "backward" >:: test_backward;
          "missing_parameter" >:: test_check_missing_parameter;
          "infer" >:: test_infer;
-         "infer_backward" >:: test_infer_backward;
-         "recursive_infer" >:: test_recursive_infer ]
+         "infer_backward" >:: test_infer_backward ]
   |> Test.run

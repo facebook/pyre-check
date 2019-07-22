@@ -392,7 +392,6 @@ class Infer(Reporting):
         arguments.show_error_traces = True
         arguments.output = JSON
         super(Infer, self).__init__(arguments, configuration, analysis_directory)
-        self._recursive = arguments.recursive
         self._print_errors = arguments.print_only
         self._local_configuration = arguments.local_configuration
         self._json = arguments.json
@@ -430,8 +429,6 @@ class Infer(Reporting):
         )
         if search_path:
             flags.extend(["-search-path", ",".join(search_path)])
-        if self._recursive:
-            flags.append("-recursive-infer")
         return flags
 
     def _errors_from_stdin(self) -> Result:

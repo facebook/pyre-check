@@ -10,7 +10,6 @@ module Analysis = struct
   type t = {
     start_time: float;
     infer: bool;
-    recursive_infer: bool;
     additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
@@ -42,7 +41,6 @@ module Analysis = struct
 
   let equal first second =
     first.infer = second.infer
-    && first.recursive_infer = second.recursive_infer
     && first.additional_checks = second.additional_checks
     && first.debug = second.debug
     && first.expected_version = second.expected_version
@@ -53,7 +51,6 @@ module Analysis = struct
   let create
       ?(start_time = Unix.time ())
       ?(infer = false)
-      ?(recursive_infer = false)
       ?(additional_checks = [])
       ?configuration_file_hash
       ?(parallel = true)
@@ -84,7 +81,6 @@ module Analysis = struct
     =
     { start_time;
       infer;
-      recursive_infer;
       additional_checks;
       configuration_file_hash;
       parallel;

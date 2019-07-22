@@ -18,7 +18,6 @@ let run_check
     declare
     show_error_traces
     infer
-    recursive_infer
     additional_checks
     sequential
     filter_directories
@@ -60,7 +59,6 @@ let run_check
       ?logger
       ?profiling_output
       ~infer
-      ~recursive_infer
       ~additional_checks
       ~project_root:(Path.create_absolute project_root)
       ~parallel:(not sequential)

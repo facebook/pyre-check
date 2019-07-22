@@ -9,7 +9,6 @@ module Analysis : sig
   type t = {
     start_time: float;
     infer: bool;
-    recursive_infer: bool;
     additional_checks: string list;
     configuration_file_hash: string option;
     parallel: bool;
@@ -42,7 +41,6 @@ module Analysis : sig
   val create
     :  ?start_time:float ->
     ?infer:bool ->
-    ?recursive_infer:bool ->
     ?additional_checks:string list ->
     ?configuration_file_hash:string ->
     ?parallel:bool ->

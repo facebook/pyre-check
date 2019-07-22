@@ -553,7 +553,6 @@ class InferTest(unittest.TestCase):
     @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
     def test_infer(self, directories_to_analyze, json_loads) -> None:
         arguments = mock_arguments()
-        arguments.recursive = False
         arguments.strict = False
 
         configuration = mock_configuration()
@@ -576,7 +575,6 @@ class InferTest(unittest.TestCase):
             call_client.assert_called_once_with(command=commands.Check.NAME)
 
         with patch.object(commands.Command, "_call_client") as call_client:
-            arguments.recursive = True
 
             command = Infer(arguments, configuration, AnalysisDirectory("."))
             self.assertEqual(
@@ -588,7 +586,6 @@ class InferTest(unittest.TestCase):
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",
-                    "-recursive-infer",
                 ],
             )
             command.run()
@@ -606,7 +603,6 @@ class InferTest(unittest.TestCase):
                     "-infer",
                     "-search-path",
                     "path1,path2,path3",
-                    "-recursive-infer",
                 ],
             )
             command.run()

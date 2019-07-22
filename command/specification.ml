@@ -26,10 +26,6 @@ let base_command_line_arguments =
     +> flag "-show-error-traces" no_arg ~doc:"Outputs additional error information"
     +> flag "-infer" no_arg ~doc:"Outputs extra information and errors for inference purposes"
     +> flag
-         "-recursive-infer"
-         no_arg
-         ~doc:"Recursively run infer until no new annotations are generated."
-    +> flag
          "-additional-checks"
          (optional_with_default [] (Arg_type.comma_separated string))
          ~doc:"Run additional checks after type checking"

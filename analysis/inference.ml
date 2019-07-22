@@ -520,7 +520,7 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~environment ~source:({ Source.relative; qualifier; is_stub; _ } as source) =
+let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as source) =
   Log.debug "Checking %s..." relative;
   let resolution = TypeCheck.resolution environment () in
   let dequalify_map = Preprocessing.dequalify_map source in
@@ -632,66 +632,8 @@ let run ~configuration ~environment ~source:({ Source.relative; qualifier; is_st
     |> List.sort ~compare:Error.compare
     |> List.filter ~f:(fun error -> not (contains_unknown error))
   in
-  let rec recursive_infer_source added_global_errors iterations =
-    let add_errors_to_environment errors =
-      let add_error (changed, globals_added_sofar) error =
-        let module Handler = (val environment : Environment.Handler) in
-        let add_missing_annotation_error ~reference ~name ~location ~annotation =
-          match Handler.globals name with
-          | Some { Node.value; _ } when not (Type.is_unknown (Annotation.annotation value)) ->
-              changed, globals_added_sofar
-          | _ ->
-              let global =
-                Annotation.create_immutable ~global:true ~original:(Some Type.Top) annotation
-                |> Node.create ~location
-              in
-              Handler.register_global ~qualifier ~reference ~global;
-              true, error :: globals_added_sofar
-        in
-        (* TODO(T31680236): use inferred annotations in global fixpoint. *)
-        match error with
-        | { Error.kind =
-              Error.MissingAttributeAnnotation
-                { parent; missing_annotation = { Error.name; annotation = Some annotation; _ } };
-            _
-          } as error ->
-            add_missing_annotation_error
-              ~reference:(Reference.combine (Type.show parent |> Reference.create) name)
-              ~name
-              ~location:(Error.location error |> Location.reference)
-              ~annotation
-        | { Error.kind =
-              Error.MissingGlobalAnnotation { Error.name; annotation = Some annotation; _ };
-            _
-          } as error ->
-            add_missing_annotation_error
-              ~reference:name
-              ~name
-              ~location:(Error.location error |> Location.reference)
-              ~annotation
-        | _ -> changed, globals_added_sofar
-      in
-      List.fold ~init:(false, []) ~f:add_error errors
-    in
-    let errors =
-      (* TODO(T31738631): remove include_toplevels *)
-      Preprocessing.defines ~include_toplevels:true source
-      |> List.map ~f:check
-      |> List.map ~f:SingleSourceResult.errors
-      |> List.concat
-      |> Error.join_at_source ~resolution:(Resolution.global_resolution resolution)
-    in
-    let changed, newly_added_global_errors = add_errors_to_environment errors in
-    let widening_threshold = 10 in
-    if changed && iterations <= widening_threshold then
-      recursive_infer_source (newly_added_global_errors @ added_global_errors) (iterations + 1)
-    else
-      errors @ added_global_errors |> format_errors
-  in
   if is_stub then
     []
-  else if configuration.recursive_infer then
-    recursive_infer_source [] 0
   else
     let results = source |> Preprocessing.defines ~include_toplevels:true |> List.map ~f:check in
     let errors =

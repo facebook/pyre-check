@@ -429,7 +429,6 @@ let run_start_command
     declare
     show_error_traces
     infer
-    recursive_infer
     additional_checks
     sequential
     filter_directories
@@ -465,7 +464,6 @@ let run_start_command
       ~sections
       ~debug
       ~infer
-      ~recursive_infer
       ~additional_checks
       ?configuration_file_hash
       ~strict

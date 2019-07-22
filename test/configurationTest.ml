@@ -17,10 +17,6 @@ let test_equal _ =
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~infer:true ())
        (Configuration.Analysis.create ~infer:false ()));
-  assert_false
-    (Configuration.Analysis.equal
-       (Configuration.Analysis.create ~recursive_infer:true ())
-       (Configuration.Analysis.create ~recursive_infer:false ()));
   assert_true
     (Configuration.Analysis.equal
        (Configuration.Analysis.create ~parallel:true ())

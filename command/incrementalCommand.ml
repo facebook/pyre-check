@@ -19,7 +19,6 @@ let run
     declare
     show_error_traces
     infer
-    recursive_infer
     additional_checks
     sequential
     filter_directories
@@ -62,7 +61,6 @@ let run
         ?logger
         ?profiling_output
         ~infer
-        ~recursive_infer
         ~additional_checks
         ~parallel:(not sequential)
         ?filter_directories
