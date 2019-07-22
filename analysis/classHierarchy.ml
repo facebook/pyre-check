@@ -861,6 +861,7 @@ module Builder = struct
       singleton "typing.ClassVar";
       singleton "typing.Final";
       singleton "typing_extensions.Final";
+      singleton "typing_extensions.Literal";
       ["dict"; "typing.Dict"; object_primitive];
       singleton "None";
       (* Numerical hierarchy. *)

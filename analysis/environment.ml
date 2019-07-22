@@ -1128,9 +1128,6 @@ module Builder = struct
           [Type.Primitive "TypedDictionary"],
           [],
           Type.TypedDictionary.defines ~t_self_expression ~total:false ) ];
-
-    (* Register hardcoded aliases. *)
-    ClassHierarchy.insert (ClassHierarchy.handler order) "typing_extensions.Literal";
     { class_definitions;
       class_metadata;
       modules;
