@@ -14,8 +14,7 @@ open Test
 
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
-    let handle = File.Handle.create_for_testing handle in
-    let parse = parse ~qualifier:(Source.qualifier ~handle) in
+    let parse = parse ~handle in
     assert_source_equal (parse expected) (Preprocessing.expand_relative_imports (parse source))
   in
   assert_expand
@@ -53,10 +52,8 @@ let test_expand_relative_imports _ =
 
 
 let test_expand_string_annotations _ =
-  let assert_expand ?(qualifier = "qualifier") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing qualifier))
-    in
+  let assert_expand ?(handle = "qualifier.py") source expected =
+    let parse = parse ~handle in
     assert_source_equal (parse expected) (Preprocessing.expand_string_annotations (parse source))
   in
   assert_expand
@@ -142,11 +139,12 @@ let test_expand_string_annotations _ =
 
 let test_expand_format_string _ =
   let assert_format_string source value expressions =
+    let handle = "test.py" in
     assert_source_equal
       (Source.create
-         ~relative:"test.py"
+         ~relative:handle
          [+Expression (+String (StringLiteral.create ~expressions value))])
-      (Preprocessing.expand_format_string (parse_untrimmed source))
+      (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
   in
   assert_format_string "f'foo'" "foo" [];
   assert_format_string "f'{1}'" "{1}" [+Integer 1];
@@ -241,9 +239,7 @@ let test_expand_format_string _ =
 
 let test_qualify _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse =
-      parse ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing handle)) ~handle
-    in
+    let parse = parse ~handle in
     assert_source_equal (parse expected) (Preprocessing.qualify (parse source))
   in
   (* Base cases for aliasing. *)
@@ -1559,10 +1555,11 @@ let test_expand_implicit_returns _ =
     assert_source_equal (parse expected) (Preprocessing.expand_implicit_returns (parse source))
   in
   let assert_expand_implicit_returns source expected_body =
+    let handle = "test.py" in
     assert_source_equal
-      (Preprocessing.expand_implicit_returns (parse source))
+      (Preprocessing.expand_implicit_returns (parse ~handle source))
       (Source.create
-         ~relative:"test.py"
+         ~relative:handle
          [ +Define
               { signature =
                   { name = !&"foo";
@@ -1623,7 +1620,7 @@ let test_expand_implicit_returns _ =
           pass
     |};
   let assert_implicit_return_location source expected_location =
-    let expanded = Preprocessing.expand_implicit_returns (parse source) in
+    let expanded = Preprocessing.expand_implicit_returns (parse ~handle:"test.py" source) in
     match List.rev (Source.statements expanded) with
     | { Node.value = Define { body; _ }; _ } :: _ -> (
       match List.rev body with
@@ -1878,12 +1875,10 @@ let test_replace_mypy_extensions_stub _ =
 
 
 let test_expand_typed_dictionaries _ =
-  let assert_expand ?(qualifier = Reference.empty) source expected =
-    let expected =
-      parse ~qualifier ~coerce_special_methods:true expected |> Preprocessing.qualify
-    in
+  let assert_expand ?(handle = "") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
     let actual =
-      parse ~qualifier source
+      parse ~handle source
       |> Preprocessing.qualify
       |> Preprocessing.expand_typed_dictionary_declarations
     in
@@ -1938,7 +1933,7 @@ let test_expand_typed_dictionaries _ =
     ( "Movie: "
     ^ "typing.Type[mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]] = "
     ^ "mypy_extensions.TypedDict[('Movie', True, ('name', str), ('year', int))]" )
-    ~qualifier:!&"foo.bar";
+    ~handle:"foo/bar.py";
   assert_expand
     {|
       class Movie(mypy_extensions.TypedDict, total=False):
@@ -2025,10 +2020,7 @@ let test_expand_typed_dictionaries _ =
 
 let test_try_preprocess _ =
   let assert_try_preprocess source expected =
-    let parse source =
-      let handle = File.Handle.create_for_testing "test.py" in
-      parse ~qualifier:(Source.qualifier ~handle) source
-    in
+    let parse source = parse ~handle:"test.py" source in
     let parsed = source |> parse in
     let expected = expected >>| parse in
     let printer source =

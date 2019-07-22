@@ -34,14 +34,12 @@ let populate_with_sources ?(environment = create_environment ()) sources =
   plain_populate ~environment sources |> Environment.handler
 
 
-let populate ?(environment = create_environment ()) ?handle ?qualifier source =
-  populate_with_sources ~environment [parse ?handle ?qualifier source]
+let populate ?(environment = create_environment ()) ?handle source =
+  populate_with_sources ~environment [parse ?handle source]
 
 
-let populate_preprocess ?(environment = create_environment ()) ?handle ?qualifier source =
-  populate_with_sources
-    ~environment
-    [source |> parse ?handle ?qualifier |> Preprocessing.preprocess]
+let populate_preprocess ?(environment = create_environment ()) ?handle source =
+  populate_with_sources ~environment [source |> parse ?handle |> Preprocessing.preprocess]
 
 
 let order_and_environment source =
@@ -222,7 +220,7 @@ let test_register_aliases _ =
     ["C", "C"; "D", "D"; "B", "D"; "A", "D"; "Twiddledee", "Twiddledee"; "Twiddledum", "Twiddledum"];
   assert_resolved
     [ parse
-        ~qualifier:!&"qualifier"
+        ~handle:"qualifier.py"
         {|
           class C: ...
           class D(C): pass
@@ -237,7 +235,7 @@ let test_register_aliases _ =
   assert_resolved [parse "X = None"] ["X", "None"];
   assert_resolved
     [ parse
-        ~qualifier:!&"collections"
+        ~handle:"collections.py"
         {|
           from typing import Iterator as TypingIterator
           from typing import Iterable
@@ -249,7 +247,7 @@ let test_register_aliases _ =
   (* Handle builtins correctly. *)
   assert_resolved
     [ parse
-        ~qualifier:!&"collections"
+        ~handle:"collections.py"
         {|
           from builtins import int
           from builtins import dict as CDict
@@ -258,7 +256,7 @@ let test_register_aliases _ =
     ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
     [ parse
-        ~qualifier:!&"collections"
+        ~handle:"collections.py"
         {|
           from future.builtins import int
           from future.builtins import dict as CDict
@@ -267,7 +265,7 @@ let test_register_aliases _ =
     ["collections.int", "int"; "collections.CDict", "typing.Dict[typing.Any, typing.Any]"];
   assert_resolved
     [ parse
-        ~qualifier:!&"asyncio.tasks"
+        ~handle:"asyncio/tasks.py"
         {|
            from typing import TypeVar, Generic, Union
            _T = typing.TypeVar('_T')
@@ -281,7 +279,7 @@ let test_register_aliases _ =
         "typing.Union[asyncio.tasks.Awaitable[int], asyncio.tasks.Future[int]]" ) ];
   assert_resolved
     [ parse
-        ~qualifier:!&"a"
+        ~handle:"a.py"
         {|
           import typing
           _T = typing.TypeVar("_T")
@@ -293,7 +291,7 @@ let test_register_aliases _ =
   (* Type variable aliases in classes. *)
   assert_resolved
     [ parse
-        ~qualifier:!&"qualifier"
+        ~handle:"qualifier.py"
         {|
           class Class:
             T = typing.TypeVar('T')
@@ -304,9 +302,9 @@ let test_register_aliases _ =
 
   (* Stub-suppressed aliases show up as `Any`. *)
   assert_resolved
-    [ parse ~qualifier:!&"stubbed" ~local_mode:Source.PlaceholderStub ~handle:"stubbed.pyi" "";
+    [ parse ~local_mode:Source.PlaceholderStub ~handle:"stubbed.pyi" "";
       parse
-        ~qualifier:!&"qualifier"
+        ~handle:"qualifier.py"
         {|
           class str: ...
           T = stubbed.Something
@@ -316,7 +314,7 @@ let test_register_aliases _ =
     ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"];
   assert_resolved
     [ parse
-        ~qualifier:!&"t"
+        ~handle:"t.py"
         {|
           import x
           X = typing.Dict[int, int]
@@ -324,7 +322,7 @@ let test_register_aliases _ =
           C = typing.Callable[[T], int]
         |};
       parse
-        ~qualifier:!&"x"
+        ~handle:"x.py"
         {|
           import t
           X = typing.Dict[int, int]
@@ -335,15 +333,15 @@ let test_register_aliases _ =
     [ "x.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]";
       "t.C", "typing.Callable[[typing.Dict[int, typing.Dict[int, int]]], int]" ];
   assert_resolved
-    [ parse ~qualifier:!&"t" {|
+    [ parse ~handle:"t.py" {|
           from typing import Dict
         |};
-      parse ~qualifier:!&"x" {|
+      parse ~handle:"x.py" {|
           from t import *
         |} ]
     ["x.Dict", "x.Dict"];
   assert_resolved
-    [parse ~qualifier:!&"x" {|
+    [parse ~handle:"x.py" {|
           C = typing.Callable[[gurbage], gurbage]
         |}]
     ["x.C", "x.C"];
@@ -361,19 +359,19 @@ let test_register_aliases _ =
     ]
     ["A", "int"; "B", "B"; "C", "C"; "D", "typing.Any"; "E", "E"; "F", "int"; "G", "G"];
   assert_resolved
-    [ parse ~qualifier:!&"a" {|
+    [ parse ~handle:"a.py" {|
           class Foo: ...
         |};
-      parse ~qualifier:!&"b" {|
+      parse ~handle:"b.py" {|
           import a
         |} ]
     ["b.a.Foo", "a.Foo"];
   assert_resolved
-    [ parse ~qualifier:!&"a" {|
+    [ parse ~handle:"a.py" {|
           class Foo: ...
         |};
       parse
-        ~qualifier:!&"b"
+        ~handle:"b.py"
         {|
           from a import Foo
           class Foo:
@@ -381,11 +379,11 @@ let test_register_aliases _ =
         |} ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ parse ~qualifier:!&"a" {|
+    [ parse ~handle:"a.py" {|
           class Bar: ...
         |};
       parse
-        ~qualifier:!&"b"
+        ~handle:"b.py"
         {|
           from a import Bar as Foo
           class Foo:
@@ -393,11 +391,11 @@ let test_register_aliases _ =
         |} ]
     ["b.Foo", "b.Foo"];
   assert_resolved
-    [ parse ~qualifier:!&"a" {|
+    [ parse ~handle:"a.py" {|
           class Foo: ...
         |};
       parse
-        ~qualifier:!&"b"
+        ~handle:"b.py"
         {|
           from a import Foo as Bar
           class Foo: ...
@@ -486,7 +484,7 @@ let test_register_globals _ =
   in
   let source =
     parse
-      ~qualifier:!&"qualifier"
+      ~handle:"qualifier.py"
       {|
         with_join = 1 or 'asdf'
         with_resolve = with_join
@@ -523,7 +521,6 @@ let test_register_globals _ =
   let source =
     parse
       ~handle:"test.py"
-      ~qualifier:!&"test"
       {|
         class Class: ...
         alias = Class
@@ -537,10 +534,7 @@ let test_register_globals _ =
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
   assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"));
   let source =
-    parse
-      ~handle:"tuples.py"
-      ~qualifier:!&"tuples"
-      {|
+    parse ~handle:"tuples.py" {|
         def f():
           return 7, 8
         y, z = f()
@@ -711,7 +705,7 @@ let test_populate _ =
       G: Foo = ...
       H: alias = ...
     |}
-    |> populate_preprocess ~handle:"test.py" ~qualifier:!&"test"
+    |> populate_preprocess ~handle:"test.py"
     |> assert_global_with_environment
   in
   assert_global
@@ -1097,9 +1091,9 @@ let test_class_definition _ =
 let test_modules _ =
   let environment =
     populate_with_sources
-      [ Source.create ~qualifier:!&"wingus" [];
-        Source.create ~qualifier:!&"dingus" [];
-        Source.create ~qualifier:!&"os.path" [] ]
+      [ Source.create ~relative:"wingus.py" [];
+        Source.create ~relative:"dingus.py" [];
+        Source.create ~relative:"os/path.py" [] ]
   in
   let module Handler = (val environment) in
   assert_is_some (Handler.module_definition !&"wingus");
@@ -1131,10 +1125,10 @@ let test_import_dependencies context =
     in
     let environment =
       populate_with_sources
-        [ parse ~handle:"test.py" ~qualifier:!&"test" source;
-          parse ~handle:"a.py" ~qualifier:!&"a" "";
-          parse ~handle:"subdirectory/b.py" ~qualifier:!&"subdirectory.b" "";
-          parse ~handle:"builtins.pyi" ~qualifier:Reference.empty "" ]
+        [ parse ~handle:"test.py" source;
+          parse ~handle:"a.py" "";
+          parse ~handle:"subdirectory/b.py" "";
+          parse ~handle:"builtins.pyi" "" ]
     in
     let dependencies qualifier =
       Environment.dependencies environment !&qualifier
@@ -1158,9 +1152,7 @@ let test_register_dependencies _ =
          from . import ignored # no dependency created here
       |}
   in
-  Environment.register_dependencies
-    (module Handler)
-    (parse ~handle:"test.py" ~qualifier:(Reference.create "test") source);
+  Environment.register_dependencies (module Handler) (parse ~handle:"test.py" source);
   let dependencies qualifier =
     Environment.dependencies (module Handler) !&qualifier
     >>| String.Set.Tree.map ~f:Reference.show
@@ -1183,10 +1175,7 @@ let test_purge _ =
       def foo(): pass
     |}
   in
-  Test.populate
-    ~configuration
-    handler
-    [parse ~handle:"test.py" ~qualifier:(Reference.create "test") source];
+  Test.populate ~configuration handler [parse ~handle:"test.py" source];
   assert_is_some (Handler.class_definition "baz.baz");
   assert_is_some (Handler.aliases "test._T");
   let dependencies handle =
@@ -1261,14 +1250,14 @@ let test_propagate_nested_classes _ =
     ["C.N", "B1.N"];
   test_propagate
     [ parse
-        ~qualifier:!&"qual"
+        ~handle:"qual.py"
         {|
           class B:
             class N:
               pass
         |};
       parse
-        ~qualifier:!&"importer"
+        ~handle:"importer.py"
         {|
           from qual import B
           class C(B):

@@ -5,14 +5,12 @@
 
 open Core
 open OUnit2
-open Ast
 open Plugin
 open Test
 
 let test_transform_ast _ =
-  let assert_expand ?(qualifier = "qualifier") source expected =
-    let handle = File.Handle.create_for_testing qualifier in
-    let parse = parse ~qualifier:(Source.qualifier ~handle) in
+  let assert_expand ?(handle = "qualifier.py") source expected =
+    let parse = parse ~handle in
     assert_source_equal (parse expected) (NewType.transform_ast (parse source))
   in
   assert_expand

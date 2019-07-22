@@ -26,13 +26,7 @@ let instantiate =
 
 
 let generate_lookup source =
-  let parsed =
-    parse
-      ~qualifier:(Source.qualifier ~handle:(File.Handle.create_for_testing "test.py"))
-      ~handle:"test.py"
-      source
-    |> Preprocessing.preprocess
-  in
+  let parsed = parse ~handle:"test.py" source |> Preprocessing.preprocess in
   let configuration = Configuration.Analysis.create ~debug:true ~infer:false () in
   let environment = Test.environment ~configuration () in
   Test.populate ~configuration environment [parsed];

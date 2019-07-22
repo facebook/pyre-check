@@ -52,6 +52,10 @@ val follow_symbolic_link : t -> t option
 
 val is_directory : t -> bool
 
+val is_path_python_stub : string -> bool
+
+val is_path_python_init : string -> bool
+
 val is_python_stub : t -> bool
 
 val is_python_init : t -> bool

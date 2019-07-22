@@ -88,8 +88,7 @@ let run tests =
 
 
 let parse_untrimmed
-    ?(handle = "test.py")
-    ?(qualifier = Reference.empty)
+    ?(handle = "")
     ?(debug = true)
     ?(strict = false)
     ?(declare = false)
@@ -101,10 +100,6 @@ let parse_untrimmed
     ?(coerce_special_methods = false)
     source
   =
-  let is_stub, is_init =
-    let path = Path.create_absolute ~follow_symbolic_links:false handle in
-    Path.is_python_stub path, Path.is_python_init path
-  in
   let buffer = Lexing.from_string (source ^ "\n") in
   buffer.Lexing.lex_curr_p <- { buffer.Lexing.lex_curr_p with Lexing.pos_fname = handle };
   try
@@ -125,10 +120,7 @@ let parse_untrimmed
       Source.create
         ~docstring
         ~metadata
-        ~is_init
-        ~is_stub
         ~relative:handle
-        ~qualifier
         ~hash
         (Generator.parse (Lexer.read state) buffer)
     in
@@ -157,8 +149,7 @@ let parse_untrimmed
 
 
 let parse
-    ?(handle = "test.py")
-    ?(qualifier = Reference.empty)
+    ?(handle = "")
     ?(debug = true)
     ?(version = 3)
     ?(docstring = None)
@@ -169,7 +160,7 @@ let parse
   Ast.SharedMemory.Handles.add (Ast.SourcePath.qualifier_of_relative handle) ~handle;
   let ({ Source.metadata; _ } as source) =
     trim_extra_indentation source
-    |> parse_untrimmed ~handle ~qualifier ~debug ~version ~docstring ~coerce_special_methods
+    |> parse_untrimmed ~handle ~debug ~version ~docstring ~coerce_special_methods
   in
   match local_mode with
   | Some local_mode ->
@@ -270,7 +261,7 @@ let collect_nodes_as_strings source =
 
 let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
   let location =
-    { Location.path = Reference.create "test";
+    { Location.path = Reference.empty;
       start = { Location.line = start_line; Location.column = start_column };
       stop = { Location.line = stop_line; Location.column = stop_column }
     }
@@ -775,9 +766,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     else
       builtin_stubs
   in
-  [ Source.create ~qualifier:(Reference.create "sys") [];
+  [ Source.create ~relative:"sys.py" [];
     parse
-      ~qualifier:(Reference.create "hashlib")
       ~handle:"hashlib.pyi"
       {|
         _DataType = typing.Union[int, str]
@@ -787,7 +777,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "typing")
       ~handle:"typing.pyi"
       {|
         class _SpecialForm:
@@ -926,14 +915,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "asyncio.coroutines")
       ~handle:"asyncio/coroutines.pyi"
       {|
         def coroutine(f: typing.Any) -> typing.Any: ...
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "abc")
       ~handle:"abc.pyi"
       {|
         from typing import Type, TypeVar
@@ -945,10 +932,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class ABC(metaclass=ABCMeta): ...
       |}
     |> Preprocessing.preprocess;
-    Source.create ~qualifier:(Reference.create "unittest.mock") [];
-    parse ~qualifier:Reference.empty ~handle:"builtins.pyi" builtins |> Preprocessing.preprocess;
+    parse ~handle:"unittest/mock.pyi" "";
+    parse ~handle:"builtins.pyi" builtins |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "django.http")
       ~handle:"django/http.pyi"
       {|
         class Request:
@@ -957,21 +943,16 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "dataclasses")
       ~handle:"dataclasses.pyi"
       {|
         _T = typing.TypeVar('_T')
         class InitVar(typing.Generic[_T]): ...
       |};
-    parse
-      ~qualifier:(Reference.create "os")
-      ~handle:"os.pyi"
-      {|
+    parse ~handle:"os.pyi" {|
         environ: typing.Dict[str, str] = ...
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "subprocess")
       ~handle:"subprocess.pyi"
       {|
         def run(command, shell): ...
@@ -981,7 +962,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "enum")
       ~handle:"enum.pyi"
       {|
         from abc import ABCMeta
@@ -1003,16 +983,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             pass
       |}
     |> Preprocessing.preprocess;
-    parse
-      ~qualifier:(Reference.create "threading")
-      ~handle:"threading.pyi"
-      {|
+    parse ~handle:"threading.pyi" {|
         class Thread:
           pass
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "typing_extensions")
       ~handle:"typing_extensions.pyi"
       {|
         class _SpecialForm:
@@ -1021,7 +997,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "collections")
       ~handle:"collections.pyi"
       {|
         from typing import (
@@ -1103,7 +1078,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "contextlib")
       ~handle:"contextlib.pyi"
       (* TODO (T41494196): Change the parameter and return type to AnyCallable *)
       {|
@@ -1121,22 +1095,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def asynccontextmanager(func: Callable[..., AsyncIterator[_T]]) -> Callable[..., AsyncContextManager[_T]]: ...
       |}
     |> Preprocessing.preprocess;
-    parse
-      ~qualifier:(Reference.create "taint")
-      ~handle:"taint.pyi"
-      {|
+    parse ~handle:"taint.pyi" {|
         __global_sink: Any = ...
       |}
     |> Preprocessing.preprocess;
-    parse
-      ~qualifier:(Reference.create "unittest")
-      ~handle:"unittest.pyi"
-      {|
+    parse ~handle:"unittest.pyi" {|
         from unittest.case import TestCase
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "unittest.case")
       ~handle:"unittest/case.pyi"
       {|
         class TestCase:
@@ -1149,7 +1116,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "pyre_extensions")
       ~handle:"pyre_extensions/__init__.pyi"
       {|
         from typing import List, Optional, Type, TypeVar
@@ -1163,7 +1129,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "pyre_extensions.type_variable_operators")
       ~handle:"pyre_extensions/type_variable_operators.pyi"
       {|
         from typing import List, Optional, Type, TypeVar, _SpecialForm
@@ -1173,7 +1138,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       |}
     |> Preprocessing.preprocess;
     parse
-      ~qualifier:(Reference.create "placeholder_stub")
       ~handle:"placeholder_stub.pyi"
       ~local_mode:PlaceholderStub
       {|
@@ -1219,7 +1183,6 @@ let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configurati
 
 
 type test_update_environment_with_t = {
-  qualifier: Reference.t;
   handle: string;
   source: string
 }
@@ -1233,8 +1196,7 @@ let assert_errors
     ?(infer = false)
     ?(show_error_traces = false)
     ?(concise = false)
-    ?(qualifier = Reference.empty)
-    ?(handle = "test.py")
+    ?(handle = "")
     ?(update_environment_with = [])
     ~check
     source
@@ -1244,7 +1206,7 @@ let assert_errors
   GlobalResolution.Cache.clear ();
   let descriptions =
     let check source =
-      let parse ~qualifier ~handle ~source =
+      let parse ~handle ~source =
         let metadata =
           Source.Metadata.create
             ~autogenerated
@@ -1256,17 +1218,16 @@ let assert_errors
             ~number_of_lines:(-1)
             ()
         in
-        parse ~handle ~qualifier source
+        parse ~handle source
         |> (fun source -> { source with Source.metadata })
         |> Preprocessing.preprocess
         |> Plugin.apply_to_ast
       in
-      let source = parse ~qualifier ~handle ~source in
+      let source = parse ~handle ~source in
       let environment =
         let sources =
           source
-          :: List.map update_environment_with ~f:(fun { qualifier; handle; source } ->
-                 parse ~qualifier ~handle ~source)
+          :: List.map update_environment_with ~f:(fun { handle; source } -> parse ~handle ~source)
         in
         let environment =
           environment ~sources:(typeshed_stubs ()) ~configuration:mock_configuration ()

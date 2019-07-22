@@ -45,12 +45,8 @@ let test_parse_annotation _ =
   let resolution =
     Test.resolution
       ~sources:
-        ( [ parse ~qualifier:!&"empty" ~handle:"empty.pyi" "class Empty: ...";
-            parse
-              ~qualifier:!&"empty.stub"
-              ~local_mode:Source.PlaceholderStub
-              ~handle:"empty/stub.pyi"
-              "" ]
+        ( [ parse ~handle:"empty.pyi" "class Empty: ...";
+            parse ~local_mode:Source.PlaceholderStub ~handle:"empty/stub.pyi" "" ]
         @ Test.typeshed_stubs () )
       ()
     |> Resolution.global_resolution
@@ -187,8 +183,7 @@ let test_resolve_exports _ =
     let resolution =
       let sources =
         let to_source (qualifier, source) =
-          parse ~qualifier:!&qualifier ~handle:(qualifier ^ ".pyi") source
-          |> Preprocessing.preprocess
+          parse ~handle:(qualifier ^ ".pyi") source |> Preprocessing.preprocess
         in
         List.map sources ~f:to_source
       in

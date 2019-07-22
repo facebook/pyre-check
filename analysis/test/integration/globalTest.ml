@@ -218,8 +218,7 @@ let test_check_globals _ =
     |}
     [];
   assert_type_errors
-    ~update_environment_with:
-      [{ qualifier = !&"export"; handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
+    ~update_environment_with:[{ handle = "export.py"; source = "a, b, c = 1, 2, 3" }]
     {|
       from export import a
       def foo() -> str:
@@ -227,8 +226,7 @@ let test_check_globals _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
-    ~update_environment_with:
-      [{ qualifier = !&"export"; handle = "export.py"; source = "a, (b, c) = 1, (2, 3)" }]
+    ~update_environment_with:[{ handle = "export.py"; source = "a, (b, c) = 1, (2, 3)" }]
     {|
       from export import b
       def foo() -> str:
@@ -237,8 +235,7 @@ let test_check_globals _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [ { qualifier = !&"export";
-          handle = "export.py";
+      [ { handle = "export.py";
           source = "(a, b), (c, d): typing.Tuple[typing.Tuple[int, int], ...] = ..."
         } ]
     {|
@@ -249,8 +246,7 @@ let test_check_globals _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [ { qualifier = !&"export";
-          handle = "export.py";
+      [ { handle = "export.py";
           source = {|
           class Foo:
             a, b = 1, 2
@@ -264,12 +260,9 @@ let test_check_globals _ =
     ["Incompatible return type [7]: Expected `str` but got `int`."];
   assert_type_errors
     ~update_environment_with:
-      [ { qualifier = !&"export";
-          handle = "export.py";
-          source = {|
+      [{ handle = "export.py"; source = {|
           str_to_int_dictionary = {"a": 1}
-        |}
-        } ]
+        |} }]
     {|
       from export import str_to_int_dictionary
       def foo() -> str:
@@ -277,7 +270,7 @@ let test_check_globals _ =
     |}
     ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."];
   assert_type_errors
-    ~update_environment_with:[{ qualifier = !&"export"; handle = "export.py"; source = "x = 1" }]
+    ~update_environment_with:[{ handle = "export.py"; source = "x = 1" }]
     {|
       from export import x
       def foo() -> str:
@@ -320,9 +313,9 @@ let test_check_globals _ =
     {|
       A = MappBoo[int, str]
     |}
-    [ "Missing global annotation [5]: Globally accessible variable `A` has no type specified.";
-      "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
-       control flow path that doesn't define `MappBoo`." ];
+    [ "Undefined name [18]: Global name `MappBoo` is not defined, or there is at least one \
+       control flow path that doesn't define `MappBoo`.";
+      "Missing global annotation [5]: Globally accessible variable `A` has no type specified." ];
   assert_type_errors
     {|
       MyType = typing.List[typing.Any]

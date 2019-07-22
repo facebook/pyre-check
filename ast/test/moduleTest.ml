@@ -18,8 +18,8 @@ let test_empty_stub _ =
 
 
 let test_aliased_export _ =
-  let assert_aliased_exports ?(qualifier = Reference.empty) source aliased_exports =
-    let module_definition = Module.create (parse ~qualifier source) in
+  let assert_aliased_exports ?(handle = "") source aliased_exports =
+    let module_definition = Module.create (parse ~handle source) in
     let assert_aliased_export (source, expected_target) =
       let actual_target =
         Reference.create source
@@ -48,27 +48,27 @@ let test_aliased_export _ =
     ["one", "some.module.one"; "two", "some.module.two"];
   assert_aliased_exports "from some.module import *" ["*", "some.module"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.module")
+    ~handle:"some/module.py"
     "from . import path as other"
     ["other", "some.path"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.long.module")
+    ~handle:"some/long/module.py"
     "from .relative import path as other"
     ["other", "some.long.relative.path"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.long.module")
+    ~handle:"some/long/module.py"
     "from ..relative import path as other"
     ["other", "some.relative.path"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.long.module")
+    ~handle:"some/long/module.py"
     "from ...relative import path as other"
     ["other", "relative.path"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.module")
+    ~handle:"some/module.py"
     "from some.module.derp import path as other"
     ["other", "some.module.derp.path"];
   assert_aliased_exports
-    ~qualifier:(Reference.create "some.module")
+    ~handle:"some/module.py"
     "from some.module.other import other as other"
     ["other", "some.module.other.other"];
   assert_aliased_exports "from builtins import path as other" ["other", "path"];
@@ -81,7 +81,7 @@ let test_aliased_export _ =
 
   (* Exports through assignments. *)
   assert_aliased_exports
-    ~qualifier:(Reference.create "requests")
+    ~handle:"requests.py"
     {|
       from . import api
       $local_requests$post = requests.api.post

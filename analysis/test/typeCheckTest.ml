@@ -406,22 +406,22 @@ let test_module_exports context =
   assert_exports_resolved "wildcard_default.aliased()" Type.Top;
   let assert_fixpoint_stop =
     assert_resolved
-      [ parse ~qualifier:!&"loop.b" {|
+      [ parse ~handle:"loop/b.py" {|
             b: int = 1
           |};
-        parse ~qualifier:!&"loop.a" {|
+        parse ~handle:"loop/a.py" {|
             from loop.b import b
           |};
-        parse ~qualifier:!&"loop" {|
+        parse ~handle:"loop/a.py" {|
             from loop.a import b
           |};
-        parse ~qualifier:!&"no_loop.b" {|
+        parse ~handle:"no_loop/b.py" {|
             b: int = 1
           |};
-        parse ~qualifier:!&"no_loop.a" {|
+        parse ~handle:"no_loop/a.py" {|
             from no_loop.b import b as c
           |};
-        parse ~qualifier:!&"no_loop" {|
+        parse ~handle:"no_loop/__init__.py" {|
             from no_loop.a import c
           |} ]
   in
@@ -433,7 +433,7 @@ let test_object_callables _ =
   let assert_resolved expression annotation =
     assert_resolved
       [ parse
-          ~qualifier:!&"module"
+          ~handle:"module.py"
           {|
             _K = typing.TypeVar('_K')
             _V = typing.TypeVar('_V')
@@ -1451,7 +1451,7 @@ let test_coverage _ =
       TypeCheck.run
         ~configuration:Test.mock_configuration
         ~environment
-        ~source:(parse ~handle ~qualifier source)
+        ~source:(parse ~handle source)
       |> ignore;
       Coverage.get ~qualifier |> fun coverage -> Option.value_exn coverage
     in
@@ -1488,9 +1488,7 @@ type method_call = {
 
 let test_calls _ =
   let assert_calls source calls =
-    let source =
-      parse ~qualifier:(Reference.create "qualifier") source |> Preprocessing.preprocess
-    in
+    let source = parse ~handle:"qualifier.py" source |> Preprocessing.preprocess in
     (* Clear dependencies for all defines. *)
     let clear_calls
         { Node.value = { Statement.Define.signature = { Statement.Define.name; _ }; _ }; _ }

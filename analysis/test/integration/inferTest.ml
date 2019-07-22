@@ -126,11 +126,7 @@ let test_check_missing_return _ =
     [ "Missing global annotation [5]: Globally accessible variable `MyType` "
       ^ "must be specified as type other than `Any`." ];
   assert_type_errors
-    ~update_environment_with:
-      [ { qualifier = !&"export";
-          handle = "export.py";
-          source = "MyType = typing.List[typing.Any]"
-        } ]
+    ~update_environment_with:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|
       from export import MyType
       MyTypeLocal = typing.List[typing.Any]

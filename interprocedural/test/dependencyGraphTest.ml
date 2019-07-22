@@ -11,9 +11,7 @@ open Interprocedural
 open Statement
 open Test
 
-let parse_source ?(qualifier = Reference.empty) ?handle source =
-  parse ~qualifier ~debug:false source ?handle |> Preprocessing.preprocess
-
+let parse_source ?handle source = parse ~debug:false source ?handle |> Preprocessing.preprocess
 
 let create_call_graph ?(update_environment_with = []) source_text =
   let source = parse_source source_text in
@@ -21,8 +19,7 @@ let create_call_graph ?(update_environment_with = []) source_text =
   let environment = Test.environment ~configuration () in
   let sources =
     source
-    :: List.map update_environment_with ~f:(fun { qualifier; handle; source } ->
-           parse_source ~qualifier ~handle source)
+    :: List.map update_environment_with ~f:(fun { handle; source } -> parse_source ~handle source)
   in
   Test.populate ~configuration environment sources;
   let errors = TypeCheck.run ~configuration ~environment ~source in
@@ -117,8 +114,7 @@ let test_construction _ =
     ~expected:[`Method "A.__init__", []; `Method "B.__init__", [`Method "A.__init__"]];
   assert_call_graph
     ~update_environment_with:
-      [ { qualifier = !&"foobar";
-          handle = "foobar.pyi";
+      [ { handle = "foobar.pyi";
           source = {|
             def bar(x: string) -> str: ...
           |}
@@ -130,12 +126,9 @@ let test_construction _ =
     ~expected:[`Function "foo", [`Function "foobar.bar"]];
   assert_call_graph
     ~update_environment_with:
-      [ { qualifier = !&"bar.baz.qux";
-          handle = "bar.baz.pyi";
-          source = {|
+      [{ handle = "bar/baz/qux.pyi"; source = {|
             def derp() -> str: ...
-          |}
-        } ]
+          |} }]
     {|
      from bar.baz import qux
      def foo():
@@ -179,8 +172,8 @@ let test_construction_reverse _ =
 
 
 let test_type_collection _ =
-  let assert_type_collection source ~qualifier ~expected =
-    let source = parse_source ~qualifier source in
+  let assert_type_collection source ~handle ~expected =
+    let source = parse_source ~handle source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Test.populate ~configuration environment [source];
@@ -240,7 +233,7 @@ let test_type_collection _ =
             a = B()
             a.foo()
         |}
-    ~qualifier:!&"test1"
+    ~handle:"test1.py"
     ~expected:
       [5, 1, "$local_0$a.foo.(...)", "test1.A.foo"; 5, 3, "$local_0$a.foo.(...)", "test1.B.foo"];
   assert_type_collection
@@ -257,19 +250,19 @@ let test_type_collection _ =
          def caller(self):
            a = B().foo().foo()
     |}
-    ~qualifier:!&"test2"
+    ~handle:"test2.py"
     ~expected:[5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
 let test_method_overrides _ =
-  let assert_method_overrides ?(update_environment_with = []) ?qualifier source ~expected =
+  let assert_method_overrides ?(update_environment_with = []) ?handle source ~expected =
     let expected =
       let create_callables (member, overriding_types) =
         !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
-    let source = parse_source ?qualifier source in
+    let source = parse_source ?handle source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Test.populate ~configuration environment (source :: update_environment_with);
@@ -314,14 +307,14 @@ let test_method_overrides _ =
   assert_method_overrides
     ~update_environment_with:
       [ parse
-          ~qualifier:(Reference.create "module")
+          ~handle:"module.py"
           {|
         import module
         class Baz(module.Foo):
           def foo(): pass
       |}
       ]
-    ~qualifier:(Reference.create "test_module")
+    ~handle:"test_module.py"
     {|
       import module
       class Test(unittest.case.TestCase):
@@ -332,10 +325,9 @@ let test_method_overrides _ =
 
 
 let test_strongly_connected_components _ =
-  let assert_strongly_connected_components source ~qualifier ~expected =
-    let qualifier = !&qualifier in
+  let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
-    let source = parse_source ~qualifier source in
+    let source = parse_source ~handle source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
     Test.populate ~configuration environment [source];
@@ -361,7 +353,7 @@ let test_strongly_connected_components _ =
       def c2(self):
         return self.c1()
     |}
-    ~qualifier:"s0"
+    ~handle:"s0.py"
     ~expected:[[`Method "s0.Foo.__init__"]; [`Method "s0.Foo.c1"]; [`Method "s0.Foo.c2"]];
   assert_strongly_connected_components
     {|
@@ -384,7 +376,7 @@ let test_strongly_connected_components _ =
       def c5(self):
         return self.c5()
     |}
-    ~qualifier:"s1"
+    ~handle:"s1.py"
     ~expected:
       [ [`Method "s1.Foo.__init__"];
         [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
@@ -418,7 +410,7 @@ let test_strongly_connected_components _ =
         f = Foo()
         return f.c3()
     |}
-    ~qualifier:"s2"
+    ~handle:"s2.py"
     ~expected:
       [ [`Method "s2.Foo.__init__"];
         [`Method "s2.Bar.__init__"];

@@ -5,16 +5,12 @@
 
 open Core
 open OUnit2
-open Ast
 open Plugin
 open Test
 
 let test_transform_ast _ =
-  let assert_expand ?(qualifier = "qualifier") source expected =
-    let handle = File.Handle.create_for_testing qualifier in
-    let parse source =
-      parse source ~qualifier:(Source.qualifier ~handle) |> Analysis.Preprocessing.preprocess
-    in
+  let assert_expand ?(handle = "qualifier.py") source expected =
+    let parse source = parse source ~handle |> Analysis.Preprocessing.preprocess in
     assert_source_equal (parse expected) (NamedTuples.transform_ast (parse source))
   in
   assert_expand

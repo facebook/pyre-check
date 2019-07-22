@@ -63,8 +63,7 @@ let test_check_data_class _ =
 let test_check_attr _ =
   assert_type_errors
     ~update_environment_with:
-      [ { Test.qualifier = Ast.Reference.create "attr";
-          handle = "attr/__init__.pyi";
+      [ { handle = "attr/__init__.pyi";
           source =
             {|
         _T = typing.TypeVar("T")

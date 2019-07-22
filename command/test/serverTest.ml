@@ -32,12 +32,10 @@ let test_language_server_protocol_json_format context =
     File.write (File.create ~content:"" path);
     "filename.py"
   in
-  let qualifier = Ast.SourcePath.qualifier_of_relative filename in
-  Ast.SharedMemory.Sources.add (Source.create ~relative:filename ~qualifier []);
+  Ast.SharedMemory.Sources.add (Source.create ~relative:filename []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       ~handle:filename
-      ~qualifier
       {|
         class unittest.mock.Base: ...
         class unittest.mock.NonCallableMock: ...
@@ -303,9 +301,7 @@ let test_protocol_type_check context =
         def foo() -> None:
           return 1
     |} in
-  let errors =
-    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
-  in
+  let errors = CommandTest.make_errors ~handle source in
   assert_response ~sources:[handle, source] ~request:[] errors;
   assert_response ~sources:[handle, source] ~request:[handle] errors;
   assert_response ~sources:[handle, source] ~request:["wrong_handle.pyi"] [];
@@ -1316,9 +1312,7 @@ let test_incremental_typecheck context =
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Path.create_relative ~root:local_root ~relative:handle in
   let stub_path = Path.create_relative ~root:local_root ~relative:stub_handle in
-  let errors =
-    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
-  in
+  let errors = CommandTest.make_errors ~handle source in
   assert_response
     ~state
     ~request:(Protocol.Request.TypeCheckRequest [path])
@@ -1340,12 +1334,7 @@ let test_incremental_typecheck context =
     ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:""])
     (Protocol.TypeCheckResponse []);
   let source = "def foo() -> int: return \"\"" in
-  let errors =
-    CommandTest.make_errors
-      ~handle:stub_handle
-      ~qualifier:(Ast.SourcePath.qualifier_of_relative stub_handle)
-      source
-  in
+  let errors = CommandTest.make_errors ~handle:stub_handle source in
   assert_response
     ~state
     ~request:(Protocol.Request.TypeCheckRequest [update_file stub_path ~content:source])
@@ -1373,9 +1362,7 @@ let test_did_save_with_content context =
     ScratchServer.start ~context [handle, source]
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let errors =
-    CommandTest.make_errors ~handle ~qualifier:(Ast.SourcePath.qualifier_of_relative handle) source
-  in
+  let errors = CommandTest.make_errors ~handle source in
   let request =
     LanguageServer.Protocol.DidSaveTextDocument.create ~root:local_root handle (Some source)
     |> Or_error.ok_exn

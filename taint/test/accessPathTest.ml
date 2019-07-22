@@ -5,7 +5,6 @@
 
 open OUnit2
 open Core
-open Ast
 open Analysis
 open Taint
 open Test
@@ -43,7 +42,7 @@ let test_of_expression _ =
   let resolution =
     Test.resolution
       ~sources:
-        [ Test.parse ~qualifier:(Reference.create "qualifier") "unannotated = unknown_value()"
+        [ Test.parse ~handle:"qualifier.py" "unannotated = unknown_value()"
           |> Preprocessing.preprocess ]
       ()
   in

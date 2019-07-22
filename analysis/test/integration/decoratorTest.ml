@@ -146,8 +146,7 @@ let test_check_asynccontextmanager _ =
 let test_check_click_command _ =
   let assert_type_errors =
     let update_environment_with =
-      [ { Test.qualifier = !&"click";
-          handle = "click.pyi";
+      [ { handle = "click.pyi";
           (* This is just a mock stub of click and is not meant to be accurate or complete *)
           source =
             {|

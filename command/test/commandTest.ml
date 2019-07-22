@@ -56,9 +56,9 @@ let environment () =
   environment
 
 
-let make_errors ?handle ?qualifier source =
+let make_errors ?handle source =
   let configuration = Configuration.Analysis.create () in
-  let source = parse ?handle ?qualifier source |> Preprocessing.preprocess in
+  let source = parse ?handle source |> Preprocessing.preprocess in
   let environment = Environment.handler (environment ()) in
   Service.Environment.populate environment ~configuration ~scheduler:(Scheduler.mock ()) [source];
   let configuration = mock_analysis_configuration () in

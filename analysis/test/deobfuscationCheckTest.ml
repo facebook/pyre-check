@@ -12,9 +12,9 @@ open Test
 let assert_deobfuscation source expected =
   let environment = environment () in
   let configuration = mock_configuration in
-  let qualifier = !&"qualifier" in
+  let handle = "qualifier.py" in
   let actual =
-    let source = parse ~qualifier source in
+    let source = parse ~handle source in
     TypeCheck.run ~configuration ~environment ~source |> ignore;
     DeobfuscationCheck.run ~configuration ~environment ~source
     |> function
@@ -24,7 +24,7 @@ let assert_deobfuscation source expected =
   let source_equal left right =
     Source.equal { left with Source.hash = -1 } { right with Source.hash = -1 }
   in
-  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~qualifier expected) actual
+  assert_equal ~cmp:source_equal ~printer:Source.show (parse ~handle expected) actual
 
 
 let test_forward _ =

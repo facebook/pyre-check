@@ -99,15 +99,15 @@ let get_suffix_path = function
   | Relative { relative; _ } -> relative
 
 
-let is_python_stub path =
-  let path = get_suffix_path path in
-  String.is_suffix ~suffix:".pyi" path
+let is_path_python_stub path = String.is_suffix ~suffix:".pyi" path
 
-
-let is_python_init path =
-  let path = get_suffix_path path in
+let is_path_python_init path =
   String.is_suffix ~suffix:"__init__.pyi" path || String.is_suffix ~suffix:"__init__.py" path
 
+
+let is_python_stub path = get_suffix_path path |> is_path_python_stub
+
+let is_python_init path = get_suffix_path path |> is_path_python_init
 
 let file_exists path = absolute path |> fun path -> Sys.file_exists path = `Yes
 

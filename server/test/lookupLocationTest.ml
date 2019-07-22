@@ -19,11 +19,7 @@ let test_locations _ =
       let actual_nodes =
         let source =
           let source = test_case |> member "source" |> to_string in
-          parse_untrimmed
-            ~qualifier:(SourcePath.qualifier_of_relative "test.py")
-            ~handle:"test.py"
-            source
-          |> Preprocessing.preprocess
+          parse_untrimmed ~handle:"test.py" source |> Preprocessing.preprocess
         in
         let deconstruct_location
             ( expression,

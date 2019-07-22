@@ -455,7 +455,7 @@ let test_attributes _ =
           | None -> None
           | Some ((start_line, start_column), (stop_line, stop_column)) ->
               Some
-                { Location.path = !&"test";
+                { Location.path = Reference.empty;
                   start = { Location.line = start_line; column = start_column };
                   stop = { Location.line = stop_line; column = stop_column }
                 }
@@ -1048,6 +1048,7 @@ let () =
          "update" >:: test_update;
          "is_unit_test" >:: test_is_unit_test ]
   |> Test.run;
+
   "statement"
   >::: [ "assume" >:: test_assume;
          "preamble" >:: test_preamble;

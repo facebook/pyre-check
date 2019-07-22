@@ -651,13 +651,12 @@ let test_language_server_definition_response context =
     ~location:None
     ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `List []]);
   let add_paths relatives =
-    let qualifiers = List.map relatives ~f:Ast.SourcePath.qualifier_of_relative in
-    Ast.SharedMemory.Sources.remove qualifiers;
-    let add_source (qualifier, relative) =
-      let source = Ast.Source.create ~relative ~qualifier [] in
+    List.map relatives ~f:Ast.SourcePath.qualifier_of_relative |> Ast.SharedMemory.Sources.remove;
+    let add_source relative =
+      let source = Ast.Source.create ~relative [] in
       Ast.SharedMemory.Sources.add source
     in
-    List.iter (List.zip_exn qualifiers relatives) ~f:add_source
+    List.iter relatives ~f:add_source
   in
   let touch path = File.create ~content:"" path |> File.write in
   let file = Path.create_relative ~root:local_root ~relative:"a.py" in

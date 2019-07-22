@@ -11,7 +11,6 @@ open Interprocedural
 val record_and_merge_call_graph
   :  environment:(module Environment.Handler) ->
   call_graph:DependencyGraph.callgraph ->
-  qualifier:Reference.t ->
   source:Source.t ->
   DependencyGraph.callgraph
 

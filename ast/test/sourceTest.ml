@@ -151,16 +151,12 @@ let test_qualifier _ =
 
 let test_expand_relative_import _ =
   let assert_export ~relative ~from ~expected =
-    let qualifier = SourcePath.qualifier_of_relative relative in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in
-    let source =
-      let is_init = String.is_suffix relative ~suffix:"__init__.py" in
-      Source.create ~relative ~qualifier ~is_init []
-    in
+    let source = Source.create ~relative [] in
     assert_equal
       ~cmp:Reference.equal
       ~printer:Reference.show

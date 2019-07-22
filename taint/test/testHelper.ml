@@ -354,7 +354,6 @@ type test_environment = {
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =
-  let qualifier = Ast.SourcePath.qualifier_of_relative handle in
   let configuration, source =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     let source = Test.ScratchProject.parse_sources project |> List.hd_exn in
@@ -362,7 +361,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
   in
   let environment =
     let models =
-      models >>| (fun model -> [Test.parse ~qualifier model]) |> Option.value ~default:[]
+      models >>| (fun model -> [Test.parse ~handle model]) |> Option.value ~default:[]
     in
     Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
   in
@@ -397,7 +396,6 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     Service.StaticAnalysis.record_and_merge_call_graph
       ~environment
       ~call_graph:DependencyGraph.empty_callgraph
-      ~qualifier
       ~source
   in
   let callables, stubs =

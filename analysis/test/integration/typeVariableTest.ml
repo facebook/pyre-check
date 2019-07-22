@@ -774,7 +774,7 @@ let test_callable_parameter_variadics _ =
     [ "Invalid type variable [34]: Cannot propagate callable parameter variadic `V`.  "
       ^ "Classes parameterized by callable parameter variadics are not supported at this time" ];
   assert_type_errors
-    ~qualifier:(Ast.Reference.create "qualifier")
+    ~handle:"qualifier.py"
     {|
       from typing import Callable
       from pyre_extensions import ParameterSpecification
@@ -1073,7 +1073,7 @@ let test_map _ =
     [ "Revealed type [-1]: Revealed type for `wrap((x, y))` is `typing.Tuple[List[int], List[str]]`.";
       "Revealed type [-1]: Revealed type for `unwrap((lx, ly))` is `typing.Tuple[int, str]`." ];
   assert_type_errors
-    ~qualifier:(Ast.Reference.create "qualifier")
+    ~handle:"qualifier.py"
     {|
     from typing import Tuple, List, Generic, TypeVar
     from pyre_extensions import ListVariadic

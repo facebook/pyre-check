@@ -106,7 +106,7 @@ let test_collect _ =
 
 let test_collect_location _ =
   let assert_collect_location source expected_locations =
-    let source = parse source in
+    let source = parse ~handle:"test.py" source in
     let actual_locations = Visit.collect_locations source in
     let expected_locations =
       let create_location (start_line, start_column, end_line, end_column) =

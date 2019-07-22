@@ -19,10 +19,7 @@ let test_index _ =
       def foo(): pass
     |}
   in
-  Test.populate
-    ~configuration
-    (Environment.handler environment)
-    [parse ~handle:"test.py" ~qualifier:(Reference.create "test") source];
+  Test.populate ~configuration (Environment.handler environment) [parse ~handle:"test.py" source];
   let { Dependencies.class_keys; function_keys; alias_keys; _ } =
     environment.Environment.dependencies.Dependencies.index
   in

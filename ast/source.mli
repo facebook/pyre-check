@@ -51,13 +51,18 @@ type t = {
 
 val mode : configuration:Configuration.Analysis.t -> local_mode:mode option -> mode
 
+val create_from_source_path
+  :  docstring:string option ->
+  metadata:Metadata.t ->
+  hash:int ->
+  source_path:SourcePath.t ->
+  Statement.t list ->
+  t
+
 val create
   :  ?docstring:string option ->
   ?metadata:Metadata.t ->
   ?relative:string ->
-  ?is_stub:bool ->
-  ?is_init:bool ->
-  ?qualifier:Reference.t ->
   ?hash:int ->
   Statement.t list ->
   t

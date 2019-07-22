@@ -223,16 +223,27 @@ let mode ~configuration ~local_mode =
   | _ -> Default
 
 
+let create_from_source_path
+    ~docstring
+    ~metadata
+    ~hash
+    ~source_path:{ SourcePath.relative_path; qualifier; is_init; is_stub; _ }
+    statements
+  =
+  let relative = Path.RelativePath.relative relative_path in
+  { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
+
+
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
     ?(relative = "")
-    ?(is_stub = false)
-    ?(is_init = false)
-    ?(qualifier = Reference.empty)
     ?(hash = -1)
     statements
   =
+  let is_stub = Path.is_path_python_stub relative in
+  let is_init = Path.is_path_python_init relative in
+  let qualifier = SourcePath.qualifier_of_relative relative in
   { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
 
 

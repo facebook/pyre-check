@@ -10,7 +10,7 @@ open Interprocedural
 open Statement
 open Pyre
 
-let record_and_merge_call_graph ~environment ~call_graph ~qualifier:_ ~source =
+let record_and_merge_call_graph ~environment ~call_graph ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
@@ -109,7 +109,7 @@ let analyze
     let build_call_graph call_graph qualifier =
       try
         Ast.SharedMemory.Sources.get qualifier
-        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~qualifier ~source)
+        >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
         |> Option.value ~default:call_graph
       with
       | ClassHierarchy.Untracked untracked_type ->
