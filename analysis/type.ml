@@ -1483,7 +1483,11 @@ let primitive_substitution_map =
     "typing.List", Primitive "list";
     "typing.Tuple", Tuple (Unbounded Any);
     "typing.Type", Primitive "type";
-    "typing_extensions.Protocol", Primitive "typing.Protocol" ]
+    "typing_extensions.Protocol", Primitive "typing.Protocol";
+    (* This is broken in typeshed:
+       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
+    "PathLike", Primitive "_PathLike";
+    "TSelf", variable "_PathLike" ]
   |> Identifier.Table.of_alist_exn
 
 

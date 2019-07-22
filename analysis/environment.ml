@@ -1130,16 +1130,6 @@ module Builder = struct
           Type.TypedDictionary.defines ~t_self_expression ~total:false ) ];
 
     (* Register hardcoded aliases. *)
-    Hashtbl.set
-      aliases
-      ~key:"typing.DefaultDict"
-      ~data:(Type.TypeAlias (Type.Primitive "collections.defaultdict"));
-    Hashtbl.set aliases ~key:"None" ~data:(Type.TypeAlias (Type.Optional Type.Bottom));
-
-    (* This is broken in typeshed:
-       https://github.com/python/typeshed/pull/991#issuecomment-288160993 *)
-    Hashtbl.set aliases ~key:"PathLike" ~data:(Type.TypeAlias (Type.Primitive "_PathLike"));
-    Hashtbl.set aliases ~key:"TSelf" ~data:(Type.TypeAlias (Type.variable "_PathLike"));
     ClassHierarchy.insert (ClassHierarchy.handler order) "typing_extensions.Literal";
     { class_definitions;
       class_metadata;
