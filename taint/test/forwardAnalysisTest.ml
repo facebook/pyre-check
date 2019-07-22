@@ -26,18 +26,19 @@ let assert_taint ?models ~context source expect =
     Test.populate ~configuration environment [source];
     environment
   in
+  let global_resolution = Environment.resolution environment () in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
         Model.parse
-          ~resolution:(TypeCheck.resolution environment ())
+          ~resolution:(TypeCheck.resolution global_resolution ())
           ~source:model_source
           ~configuration:TaintConfiguration.default
           Callable.Map.empty
         |> Callable.Map.map ~f:(Interprocedural.Result.make_model Taint.Result.kind)
         |> Interprocedural.Analysis.record_initial_models ~functions:[] ~stubs:[])
   |> ignore;
-  TypeCheck.run ~configuration ~environment ~source |> ignore;
+  TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
   let defines = source |> Preprocessing.defines |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

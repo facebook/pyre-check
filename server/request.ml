@@ -389,8 +389,8 @@ let process_type_query_request
   let (module Handler : Environment.Handler) = environment in
   let process_request () =
     let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
-    let resolution = TypeCheck.resolution environment () in
-    let global_resolution = Resolution.global_resolution resolution in
+    let global_resolution = Environment.resolution environment () in
+    let resolution = TypeCheck.resolution global_resolution () in
     let parse_and_validate ?(unknown_is_top = false) expression =
       let annotation =
         (* Return untracked so we can specifically message the user about them. *)
@@ -1026,7 +1026,7 @@ let process_type_query_request
         let create_models sources =
           let create_model (path, source) =
             Taint.Model.parse
-              ~resolution:(TypeCheck.resolution environment ())
+              ~resolution:(TypeCheck.resolution global_resolution ())
               ~path
               ~source
               ~configuration

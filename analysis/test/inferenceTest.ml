@@ -157,8 +157,8 @@ let assert_infer
     source
     errors
   =
-  let check_errors configuration environment source =
-    Inference.run ~configuration ~environment ~source
+  let check_errors configuration global_resolution source =
+    Inference.run ~configuration ~global_resolution ~source
   in
   let fields_of_error error =
     let field_of_error field =
@@ -178,6 +178,7 @@ let assert_infer
   let source = parse source |> Preprocessing.preprocess in
   let configuration = Configuration.Analysis.create ~debug ~infer () in
   let environment = Test.environment () in
+  let global_resolution = Environment.resolution environment () in
   Test.populate ~configuration environment [source];
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
   assert_equal
@@ -187,7 +188,7 @@ let assert_infer
       (diff ~print:(fun format errors ->
            Format.fprintf format "%a" Sexp.pp [%message (errors : string list)]))
     (List.map ~f:(fun string -> Yojson.Safe.from_string string |> to_string) errors)
-    ( List.map ~f:fields_of_error (check_errors configuration environment source)
+    ( List.map ~f:fields_of_error (check_errors configuration global_resolution source)
     |> List.concat
     |> List.map ~f:to_string )
 

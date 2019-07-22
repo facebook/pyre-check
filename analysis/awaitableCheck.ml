@@ -12,7 +12,7 @@ module Error = AnalysisError
 module type Context = sig
   val define : Define.t Node.t
 
-  val environment : (module Environment.Handler)
+  val global_resolution : GlobalResolution.t
 end
 
 module State (Context : Context) = struct
@@ -305,7 +305,7 @@ module State (Context : Context) = struct
   let forward ?key ({ unawaited; locals } as state) ~statement:{ Node.value; _ } =
     let { Node.value = { Define.signature = { name; parent; _ }; _ }; _ } = Context.define in
     let resolution =
-      TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key
+      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     let global_resolution = Resolution.global_resolution resolution in
     let is_awaitable expression =
@@ -379,12 +379,12 @@ end
 
 let name = "Awaitable"
 
-let run ~configuration:_ ~environment ~source =
+let run ~configuration:_ ~global_resolution ~source =
   let check define =
     let module Context = struct
       let define = define
 
-      let environment = environment
+      let global_resolution = global_resolution
     end
     in
     let module State = State (Context) in

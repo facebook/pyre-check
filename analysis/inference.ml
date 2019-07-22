@@ -520,9 +520,9 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as source) =
+let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _ } as source) =
   Log.debug "Checking %s..." relative;
-  let resolution = TypeCheck.resolution environment () in
+  let resolution = TypeCheck.resolution global_resolution () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check
       ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
@@ -577,7 +577,6 @@ let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as 
         >>| print_state "Entry"
         >>| State.check_entry
       in
-      let (module Handler : Environment.Handler) = environment in
       let errors =
         let errors = exit >>| State.errors |> Option.value ~default:[] in
         if configuration.debug then
@@ -585,7 +584,7 @@ let run ~configuration ~environment ~source:({ Source.relative; is_stub; _ } as 
         else
           let keep_error error =
             let mode =
-              Handler.local_mode (Error.path error)
+              GlobalResolution.local_mode global_resolution (Error.path error)
               |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
             in
             not (Error.suppress ~mode ~resolution error)

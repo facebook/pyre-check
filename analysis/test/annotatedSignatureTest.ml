@@ -47,7 +47,7 @@ let resolution =
       class ExtendsDictStrInt(typing.Dict[str, int]): pass
       optional: typing.Optional[int]
     |}
-  |> fun environment -> TypeCheck.resolution environment ()
+  |> fun environment -> TypeCheck.resolution (Environment.resolution environment ()) ()
 
 
 let parse_annotation annotation =

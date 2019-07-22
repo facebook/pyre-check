@@ -1495,10 +1495,11 @@ let test_incremental_lookups context =
     Protocol.Request.TypeCheckRequest [Path.create_relative ~root:local_root ~relative:handle]
   in
   let { Request.state; _ } = Request.process ~state ~configuration:server_configuration ~request in
+  let global_resolution = Environment.resolution state.State.environment () in
   let annotations =
     Ast.SharedMemory.Sources.get qualifier
     |> (fun value -> Option.value_exn value)
-    |> Lookup.create_of_source state.State.environment
+    |> Lookup.create_of_source global_resolution
     |> Lookup.get_all_annotations
     |> List.map ~f:(fun (key, data) ->
            Format.asprintf "%a/%a" Location.Instantiated.pp key Type.pp data

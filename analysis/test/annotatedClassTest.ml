@@ -728,7 +728,8 @@ let test_class_attributes _ =
 let test_fallback_attribute _ =
   let assert_fallback_attribute ~name source annotation =
     Class.AttributeCache.clear ();
-    let resolution = populate source |> fun environment -> TypeCheck.resolution environment () in
+    let global_resolution = Environment.resolution (populate source) () in
+    let resolution = TypeCheck.resolution global_resolution () in
     let attribute =
       parse_last_statement source
       |> (function

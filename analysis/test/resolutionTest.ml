@@ -77,7 +77,8 @@ let make_resolution source =
     in
     Environment.handler environment
   in
-  populate source |> fun environment -> TypeCheck.resolution environment ()
+  let global_resolution = Environment.resolution (populate source) () in
+  TypeCheck.resolution global_resolution ()
 
 
 let test_parse_reference _ =

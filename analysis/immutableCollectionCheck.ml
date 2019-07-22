@@ -9,7 +9,7 @@ let name = "ImmutableCollection"
 module type Context = sig
   val define : Define.t Node.t
 
-  val environment : (module Environment.Handler)
+  val global_resolution : GlobalResolution.t
 end
 
 module State (Context : Context) = struct
@@ -63,16 +63,16 @@ module State (Context : Context) = struct
   let backward ?key:_ _ ~statement:_ =
     (* TODO (T44181093): Remove the ignores *)
     ignore Context.define;
-    ignore Context.environment;
+    ignore Context.global_resolution;
     failwith "Not implemented"
 end
 
-let run ~configuration:_ ~environment ~source =
+let run ~configuration:_ ~global_resolution ~source =
   let check define =
     let module Context = struct
       let define = define
 
-      let environment = environment
+      let global_resolution = global_resolution
     end
     in
     let module State = State (Context) in

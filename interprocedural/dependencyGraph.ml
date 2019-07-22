@@ -32,8 +32,9 @@ let create_callgraph ~environment ~source =
       let statements = Cfg.Node.statements node in
       let fold_statements index callees statement =
         let resolution =
+          let global_resolution = Environment.resolution environment () in
           TypeCheck.resolution_with_key
-            ~environment
+            ~global_resolution
             ~parent
             ~name:caller
             ~key:(Some ([%hash: int * int] (node_id, index)))
@@ -193,7 +194,8 @@ let from_overrides overrides =
 
 
 let create_overrides ~environment ~source =
-  let resolution = TypeCheck.resolution environment () in
+  let global_resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution global_resolution () in
   let resolution = Resolution.global_resolution resolution in
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty

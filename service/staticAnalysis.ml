@@ -69,7 +69,8 @@ let analyze
     ~qualifiers
     ()
   =
-  let resolution = TypeCheck.resolution environment () in
+  let global_resolution = Environment.resolution environment () in
+  let resolution = TypeCheck.resolution global_resolution () in
   Log.info "Recording overrides...";
   let timer = Timer.start () in
   let overrides =

@@ -45,7 +45,8 @@ let get_lookups
   let generate_lookups paths =
     let generate_lookup (path, ({ SourcePath.qualifier; _ } as source_path)) =
       let lookup =
-        Ast.SharedMemory.Sources.get qualifier >>| Lookup.create_of_source environment
+        let global_resolution = Environment.resolution environment () in
+        Ast.SharedMemory.Sources.get qualifier >>| Lookup.create_of_source global_resolution
       in
       lookup
       >>| (fun lookup -> String.Table.set lookups ~key:(Reference.show qualifier) ~data:lookup)

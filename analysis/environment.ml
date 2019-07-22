@@ -165,6 +165,7 @@ let resolution (module Handler : Handler) () =
     ~attributes
     ~is_protocol
     ~global
+    ~local_mode:Handler.local_mode
     ()
 
 

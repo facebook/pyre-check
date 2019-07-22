@@ -54,7 +54,8 @@ let analyze_sources
                 else
                   configuration
               in
-              let new_errors = Check.run ~configuration ~environment ~source in
+              let global_resolution = Environment.resolution environment () in
+              let new_errors = Check.run ~configuration ~global_resolution ~source in
               { errors = List.append new_errors errors; number_files = number_files + 1 }
           | _ -> { errors; number_files = number_files + 1 }
         in

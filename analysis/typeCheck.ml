@@ -4491,7 +4491,7 @@ type result = {
   coverage: Coverage.t
 }
 
-let resolution (module Handler : Environment.Handler) ?(annotations = Reference.Map.empty) () =
+let resolution global_resolution ?(annotations = Reference.Map.empty) () =
   let define =
     Define.create_toplevel ~qualifier:None ~statements:[] |> Node.create_with_default_location
   in
@@ -4503,7 +4503,6 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
     let calls = Location.Reference.Table.create ()
   end)
   in
-  let global_resolution = Environment.resolution (module Handler) () in
   let state_without_resolution =
     let empty_resolution =
       Resolution.create
@@ -4529,7 +4528,7 @@ let resolution (module Handler : Environment.Handler) ?(annotations = Reference.
   Resolution.create ~global_resolution ~annotations ~resolve ()
 
 
-let resolution_with_key ~environment ~parent ~name ~key =
+let resolution_with_key ~global_resolution ~parent ~name ~key =
   let annotations =
     match key, ResolutionSharedMemory.get name with
     | Some key, Some map ->
@@ -4541,14 +4540,14 @@ let resolution_with_key ~environment ~parent ~name ~key =
         |> Option.value ~default:Reference.Map.empty
     | _ -> Reference.Map.empty
   in
-  resolution environment ~annotations () |> Resolution.with_parent ~parent
+  resolution global_resolution ~annotations () |> Resolution.with_parent ~parent
 
 
 let name = "TypeCheck"
 
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
-    ~environment
+    ~global_resolution
     ~source:({ Source.relative; qualifier; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
@@ -4561,11 +4560,10 @@ let check_define
     let calls = Location.Reference.Table.create ()
   end
   in
-  let global_resolution = Resolution.global_resolution resolution in
   let filter_errors errors =
     let mode =
-      let (module Handler : Environment.Handler) = environment in
-      Handler.local_mode relative |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
+      GlobalResolution.local_mode global_resolution relative
+      |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
     in
     let filter errors =
       if debug then
@@ -4675,11 +4673,11 @@ let check_define
 
 let check_defines
     ~configuration
-    ~environment
+    ~global_resolution
     ~source:({ Source.metadata = { Source.Metadata.local_mode; debug; _ }; _ } as source)
     defines
   =
-  let resolution = resolution environment () in
+  let resolution = resolution global_resolution () in
   let configuration =
     (* Override file-specific local debug configuraiton *)
     let local_strict, declare =
@@ -4703,7 +4701,9 @@ let check_defines
       match Queue.dequeue queue with
       | None -> ()
       | Some define ->
-          let result, nested_defines = check_define ~configuration ~environment ~source define in
+          let result, nested_defines =
+            check_define ~configuration ~global_resolution ~source define
+          in
           results := result :: !results;
           Queue.enqueue_all queue nested_defines;
           compute_results ()
@@ -4718,14 +4718,14 @@ let check_defines
   results
 
 
-let run_on_defines ~configuration ~environment ~source defines =
-  let results = check_defines ~configuration ~environment ~source defines in
+let run_on_defines ~configuration ~global_resolution ~source defines =
+  let results = check_defines ~configuration ~global_resolution ~source defines in
   List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare
 
 
 let run
     ~configuration
-    ~environment
+    ~global_resolution
     ~source:( { Source.relative; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ }
             as source )
   =
@@ -4733,7 +4733,7 @@ let run
   Log.log ~section:`Check "Checking `%s`..." relative;
   let results =
     let toplevel = Source.top_level_define_node source in
-    check_defines ~configuration ~environment ~source [toplevel]
+    check_defines ~configuration ~global_resolution ~source [toplevel]
   in
   let errors =
     List.concat_map results ~f:(fun { errors; _ } -> errors) |> List.sort ~compare:Error.compare

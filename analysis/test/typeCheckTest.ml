@@ -343,7 +343,7 @@ let assert_resolved sources expression expected =
   in
   let resolution =
     AnnotatedTest.populate_with_sources (sources @ typeshed_stubs ())
-    |> fun environment -> TypeCheck.resolution environment ()
+    |> fun environment -> TypeCheck.resolution (Environment.resolution environment ()) ()
   in
   let resolved =
     let state = State.create ~resolution () in
@@ -1446,11 +1446,12 @@ let test_coverage _ =
   let assert_coverage source expected =
     let coverage =
       let environment = Test.environment () in
+      let global_resolution = Environment.resolution environment () in
       let handle = "coverage_test.py" in
       let qualifier = Reference.create "coverage_test" in
       TypeCheck.run
         ~configuration:Test.mock_configuration
-        ~environment
+        ~global_resolution
         ~source:(parse ~handle source)
       |> ignore;
       Coverage.get ~qualifier |> fun coverage -> Option.value_exn coverage
@@ -1498,7 +1499,8 @@ let test_calls _ =
     Preprocessing.defines ~include_stubs:true ~include_nested:true ~include_toplevels:true source
     |> List.iter ~f:clear_calls;
     let environment = Test.environment ~sources:(source :: Test.typeshed_stubs ()) () in
-    TypeCheck.run ~configuration:Test.mock_configuration ~environment ~source |> ignore;
+    let global_resolution = Environment.resolution environment () in
+    TypeCheck.run ~configuration:Test.mock_configuration ~global_resolution ~source |> ignore;
 
     (* Check calls. *)
     let assert_calls (caller, callees) =

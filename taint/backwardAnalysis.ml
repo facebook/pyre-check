@@ -496,8 +496,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let backward ?key state ~statement:{ Node.value = statement; _ } =
       let resolution =
+        let global_resolution = Environment.resolution FunctionContext.environment () in
         TypeCheck.resolution_with_key
-          ~environment:FunctionContext.environment
+          ~global_resolution
           ~parent:FunctionContext.definition.value.signature.parent
           ~name:FunctionContext.definition.value.signature.name
           ~key

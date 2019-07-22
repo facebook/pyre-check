@@ -14,9 +14,10 @@ include TaintResult.Register (struct
   let init ~configuration ~environment ~functions:_ =
     (* Parse models *)
     let create_models ~configuration sources =
+      let global_resolution = Analysis.Environment.resolution environment () in
       List.fold sources ~init:Callable.Map.empty ~f:(fun models (path, source) ->
           Model.parse
-            ~resolution:(Analysis.TypeCheck.resolution environment ())
+            ~resolution:(Analysis.TypeCheck.resolution global_resolution ())
             ~path
             ~source
             ~configuration

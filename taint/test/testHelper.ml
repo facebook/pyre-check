@@ -334,9 +334,10 @@ let run_with_taint_models tests =
   let environment =
     Test.environment ~sources:(Test.typeshed_stubs () @ [Test.parse model_source]) ()
   in
+  let global_resolution = Environment.resolution environment () in
   let () =
     Model.parse
-      ~resolution:(TypeCheck.resolution environment ())
+      ~resolution:(TypeCheck.resolution global_resolution ())
       ~source:model_source
       ~configuration:TaintConfiguration.default
       Callable.Map.empty
@@ -365,13 +366,14 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     in
     Test.environment ~sources:(Test.typeshed_stubs () @ models) ~configuration ()
   in
+  let global_resolution = Environment.resolution environment () in
   Service.Environment.populate
     ~configuration:Test.mock_configuration
     ~scheduler:(Scheduler.mock ())
     environment
     [source];
   let errors =
-    TypeCheck.run ~configuration ~environment ~source
+    TypeCheck.run ~configuration ~global_resolution ~source
     |> List.filter ~f:(fun error -> AnalysisError.code error = 11)
     (* Undefined types. *)
   in
@@ -416,7 +418,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       | None -> Callable.Map.empty
       | Some source ->
           Model.parse
-            ~resolution:(TypeCheck.resolution environment ())
+            ~resolution:(TypeCheck.resolution global_resolution ())
             ~source:(Test.trim_extra_indentation source)
             ~configuration:TaintConfiguration.default
             Callable.Map.empty

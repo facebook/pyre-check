@@ -29,9 +29,10 @@ let generate_lookup source =
   let parsed = parse ~handle:"test.py" source |> Preprocessing.preprocess in
   let configuration = Configuration.Analysis.create ~debug:true ~infer:false () in
   let environment = Test.environment ~configuration () in
+  let global_resolution = Environment.resolution environment () in
   Test.populate ~configuration environment [parsed];
-  TypeCheck.run ~configuration ~environment ~source:parsed |> ignore;
-  Lookup.create_of_source environment parsed
+  TypeCheck.run ~configuration ~global_resolution ~source:parsed |> ignore;
+  Lookup.create_of_source global_resolution parsed
 
 
 let test_lookup _ =

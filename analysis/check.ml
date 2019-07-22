@@ -12,7 +12,7 @@ module type Signature = sig
 
   val run
     :  configuration:Configuration.Analysis.t ->
-    environment:(module Environment.Handler) ->
+    global_resolution:GlobalResolution.t ->
     source:Source.t ->
     Error.t list
 end

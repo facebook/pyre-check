@@ -55,10 +55,6 @@ let order_and_environment source =
     environment )
 
 
-let global environment =
-  TypeCheck.resolution environment () |> Resolution.global_resolution |> GlobalResolution.global
-
-
 let class_definition environment =
   Environment.resolution environment () |> GlobalResolution.class_definition
 
@@ -685,13 +681,14 @@ let test_populate _ =
 
   (* Globals *)
   let assert_global_with_environment environment actual expected =
+    let global_resolution = Environment.resolution environment () in
     assert_equal
       ~cmp:(Option.equal (Node.equal Annotation.equal))
       ~printer:(function
         | Some global -> GlobalResolution.show_global global
         | None -> "None")
       (Some (Node.create_with_default_location expected))
-      (global environment !&actual)
+      (GlobalResolution.global global_resolution !&actual)
   in
   let assert_global =
     {|

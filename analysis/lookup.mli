@@ -7,7 +7,7 @@ open Ast
 
 type t
 
-val create_of_source : (module Environment.Handler) -> Source.t -> t
+val create_of_source : GlobalResolution.t -> Source.t -> t
 
 val get_annotation : t -> position:Location.position -> (Location.Instantiated.t * Type.t) option
 

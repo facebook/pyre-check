@@ -1179,7 +1179,8 @@ let mock_define = { Define.signature = mock_signature; body = [] }
 let resolution ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
   let environment = environment ~sources () in
   add_defaults_to_environment ~configuration environment;
-  TypeCheck.resolution environment ()
+  let global_resolution = Environment.resolution environment () in
+  TypeCheck.resolution global_resolution ()
 
 
 type test_update_environment_with_t = {
@@ -1239,8 +1240,9 @@ let assert_errors
           sources;
         environment
       in
+      let global_resolution = Environment.resolution environment () in
       let configuration = Configuration.Analysis.create ~debug ~strict ~declare ~infer () in
-      check ~configuration ~environment ~source
+      check ~configuration ~global_resolution ~source
     in
     let errors = check source in
     let errors_with_any_location =

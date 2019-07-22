@@ -30,7 +30,7 @@ module NestedDefines = struct
 end
 
 module type Context = sig
-  val environment : (module Environment.Handler)
+  val global_resolution : GlobalResolution.t
 
   val transformations : Statement.t list Location.Reference.Table.t
 end
@@ -98,7 +98,7 @@ module ConstantPropagationState (Context : Context) = struct
       ~statement
     =
     let resolution =
-      TypeCheck.resolution_with_key ~environment:Context.environment ~parent ~name ~key
+      TypeCheck.resolution_with_key ~global_resolution:Context.global_resolution ~parent ~name ~key
     in
     (* Update transformations. *)
     let transformed =
@@ -345,9 +345,9 @@ module Scheduler (State : State) (Context : Context) = struct
     Transform.transform () source |> Transform.source
 end
 
-let run ~configuration:_ ~environment ~source:({ Source.qualifier; _ } as source) =
+let run ~configuration:_ ~global_resolution ~source:({ Source.qualifier; _ } as source) =
   let module Context = struct
-    let environment = environment
+    let global_resolution = global_resolution
 
     let transformations = Location.Reference.Table.create ()
   end

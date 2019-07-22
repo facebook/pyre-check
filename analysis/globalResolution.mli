@@ -41,6 +41,7 @@ val create
   attributes:(resolution:t -> Type.t -> AnnotatedAttribute.t list option) ->
   is_protocol:(Type.t -> bool) ->
   global:(Reference.t -> global option) ->
+  local_mode:(string -> Source.mode option) ->
   unit ->
   t
 
@@ -162,3 +163,5 @@ end
 val consistent_solution_exists : t -> Type.t -> Type.t -> bool
 
 val global : t -> Reference.t -> global option
+
+val local_mode : t -> string -> Source.mode option

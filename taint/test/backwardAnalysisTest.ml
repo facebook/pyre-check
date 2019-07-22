@@ -19,8 +19,9 @@ let assert_taint ~context source expected =
     Test.ScratchProject.configuration_of project, source
   in
   let environment = Test.environment ~configuration () in
+  let global_resolution = Environment.resolution environment () in
   Service.Environment.populate ~configuration ~scheduler:(Scheduler.mock ()) environment [source];
-  TypeCheck.run ~configuration ~environment ~source |> ignore;
+  TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () = List.map ~f:Callable.create defines |> Fixpoint.KeySet.of_list |> Fixpoint.remove_new in
   let analyze_and_store_in_order define =

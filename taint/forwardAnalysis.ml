@@ -664,8 +664,9 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
     let forward ?key state ~statement =
       log "State: %a\nAnalyzing statement: %a" pp state Statement.pp statement;
       let resolution =
+        let global_resolution = Environment.resolution FunctionContext.environment () in
         TypeCheck.resolution_with_key
-          ~environment:FunctionContext.environment
+          ~global_resolution
           ~parent:FunctionContext.definition.value.signature.parent
           ~name:FunctionContext.definition.value.signature.name
           ~key

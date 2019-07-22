@@ -11,12 +11,13 @@ open Test
 
 let assert_deobfuscation source expected =
   let environment = environment () in
+  let global_resolution = Environment.resolution environment () in
   let configuration = mock_configuration in
   let handle = "qualifier.py" in
   let actual =
     let source = parse ~handle source in
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
-    DeobfuscationCheck.run ~configuration ~environment ~source
+    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
+    DeobfuscationCheck.run ~configuration ~global_resolution ~source
     |> function
     | [{ Error.kind = Error.Deobfuscation actual; _ }] -> actual
     | _ -> failwith "Did not generate a source"

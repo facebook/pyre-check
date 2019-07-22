@@ -76,13 +76,13 @@ end
 module State (Context : Context) : Signature
 
 val resolution
-  :  (module Environment.Handler) ->
+  :  GlobalResolution.t ->
   ?annotations:Annotation.t Reference.Map.t ->
   unit ->
   Resolution.t
 
 val resolution_with_key
-  :  environment:(module Environment.Handler) ->
+  :  global_resolution:GlobalResolution.t ->
   parent:Reference.t option ->
   name:Reference.t ->
   key:int option ->
@@ -92,13 +92,13 @@ val name : string
 
 val run_on_defines
   :  configuration:Configuration.Analysis.t ->
-  environment:(module Environment.Handler) ->
+  global_resolution:GlobalResolution.t ->
   source:Source.t ->
   Define.t Node.t list ->
   Error.t list
 
 val run
   :  configuration:Configuration.Analysis.t ->
-  environment:(module Environment.Handler) ->
+  global_resolution:GlobalResolution.t ->
   source:Source.t ->
   Error.t list

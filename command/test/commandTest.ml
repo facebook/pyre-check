@@ -62,7 +62,8 @@ let make_errors ?handle source =
   let environment = Environment.handler (environment ()) in
   Service.Environment.populate environment ~configuration ~scheduler:(Scheduler.mock ()) [source];
   let configuration = mock_analysis_configuration () in
-  TypeCheck.run ~configuration ~environment ~source
+  let global_resolution = Environment.resolution environment () in
+  TypeCheck.run ~configuration ~global_resolution ~source
 
 
 let run_command_tests test_category tests =
@@ -165,11 +166,12 @@ module ScratchServer = struct
       in
       Analysis.Environment.handler environment
     in
+    let global_resolution = Environment.resolution environment () in
     add_defaults_to_environment ~configuration environment;
     let errors =
       let table = Ast.Reference.Table.create () in
       List.iter sources ~f:(fun ({ Ast.Source.qualifier; _ } as source) ->
-          let errors = Analysis.TypeCheck.run ~configuration ~environment ~source in
+          let errors = Analysis.TypeCheck.run ~configuration ~global_resolution ~source in
           Hashtbl.set table ~key:qualifier ~data:errors);
       table
     in

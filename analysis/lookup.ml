@@ -160,7 +160,7 @@ module Visit = struct
     !state
 end
 
-let create_of_source environment source =
+let create_of_source global_resolution source =
   let annotations_lookup = Location.Reference.Table.create () in
   let definitions_lookup = Location.Reference.Table.create () in
   let walk_define
@@ -177,8 +177,12 @@ let create_of_source environment source =
               Reference.Map.of_tree precondition, Reference.Map.of_tree postcondition)
         |> Option.value ~default:(Reference.Map.empty, Reference.Map.empty)
       in
-      let pre_resolution = TypeCheck.resolution environment ~annotations:pre_annotations () in
-      let post_resolution = TypeCheck.resolution environment ~annotations:post_annotations () in
+      let pre_resolution =
+        TypeCheck.resolution global_resolution ~annotations:pre_annotations ()
+      in
+      let post_resolution =
+        TypeCheck.resolution global_resolution ~annotations:post_annotations ()
+      in
       let statement =
         match Node.value statement with
         | Class class_statement ->

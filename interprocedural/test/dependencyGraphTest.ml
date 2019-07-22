@@ -22,7 +22,8 @@ let create_call_graph ?(update_environment_with = []) source_text =
     :: List.map update_environment_with ~f:(fun { handle; source } -> parse_source ~handle source)
   in
   Test.populate ~configuration environment sources;
-  let errors = TypeCheck.run ~configuration ~environment ~source in
+  let global_resolution = Environment.resolution environment () in
+  let errors = TypeCheck.run ~configuration ~global_resolution ~source in
   if not (List.is_empty errors) then
     Format.asprintf
       "Type errors in %s\n%a"
@@ -176,8 +177,9 @@ let test_type_collection _ =
     let source = parse_source ~handle source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
+    let global_resolution = Environment.resolution environment () in
     Test.populate ~configuration environment [source];
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
     let defines =
       Preprocessing.defines ~include_toplevels:true source
       |> List.map ~f:(fun { Node.value; _ } -> value)
@@ -192,7 +194,7 @@ let test_type_collection _ =
         Map.find_exn lookup key
         |> fun { ResolutionSharedMemory.precondition; _ } -> Reference.Map.of_tree precondition
       in
-      let resolution = TypeCheck.resolution environment ~annotations () in
+      let resolution = TypeCheck.resolution global_resolution ~annotations () in
       let statement = List.nth_exn statements statement_index in
       Visit.collect_calls_and_names statement
       |> List.filter ~f:Expression.has_identifier_base
@@ -330,8 +332,9 @@ let test_strongly_connected_components _ =
     let source = parse_source ~handle source in
     let configuration = Test.mock_configuration in
     let environment = Test.environment ~configuration () in
+    let global_resolution = Environment.resolution environment () in
     Test.populate ~configuration environment [source];
-    TypeCheck.run ~configuration ~environment ~source |> ignore;
+    TypeCheck.run ~configuration ~global_resolution ~source |> ignore;
     let partitions =
       let edges =
         DependencyGraph.create_callgraph ~environment ~source |> DependencyGraph.from_callgraph
