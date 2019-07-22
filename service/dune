@@ -37,7 +37,8 @@
    ppx_deriving.show
    ppx_hash
    ppx_compare
-   ppx_sexp_conv))
+   ppx_sexp_conv
+   ppx_deriving_yojson))
  (libraries
   core
   sexplib
@@ -58,7 +59,8 @@
    ppx_deriving.show
    ppx_hash
    ppx_compare
-   ppx_sexp_conv))
+   ppx_sexp_conv
+   ppx_deriving_yojson))
  (libraries
   base64
   core

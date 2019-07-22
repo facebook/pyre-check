@@ -15,6 +15,14 @@
  (name version)
  (modules version)
  (public_name pyrelib.version)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.log
   core))
@@ -24,6 +32,14 @@
  (name timer)
  (modules timer)
  (public_name pyrelib.timer)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   core))
 
@@ -32,6 +48,14 @@
  (name log)
  (public_name pyrelib.log)
  (modules log)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   core))
 
@@ -40,6 +64,14 @@
  (name recognized)
  (modules recognized)
  (public_name pyrelib.recognized)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   core))
 
@@ -48,6 +80,14 @@
  (name decorators)
  (modules decorators)
  (public_name pyrelib.decorators)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   core
   pyrelib.ast
@@ -58,6 +98,14 @@
  (name projectSpecificPreprocessing)
  (modules projectSpecificPreprocessing)
  (public_name pyrelib.projectSpecificPreprocessing)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.network
   pyrePath
@@ -70,6 +118,14 @@
  (name fetchSavedState)
  (modules fetchSavedState)
  (public_name pyrelib.fetchSavedState)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.network
   pyrePath
@@ -82,7 +138,14 @@
  (name profiling)
  (modules profiling)
  (public_name pyrelib.profiling)
- (preprocess (pps ppx_deriving_yojson))
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.configuration
   pyrelib.timer
@@ -94,7 +157,14 @@
  (name statistics)
  (modules statistics)
  (public_name pyrelib.statistics)
- (preprocess (pps ppx_deriving_yojson))
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.configuration
   pyrelib.timer
@@ -130,6 +200,7 @@
   (pps
    ppx_deriving.eq
    ppx_deriving.show
+   ppx_deriving_yojson
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
@@ -151,6 +222,7 @@
   (pps
    ppx_deriving.eq
    ppx_deriving.show
+   ppx_deriving_yojson
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
@@ -174,6 +246,7 @@
   (pps
    ppx_deriving.eq
    ppx_deriving.show
+   ppx_deriving_yojson
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
@@ -192,8 +265,12 @@
  (modules configuration)
  (preprocess
   (pps
+   ppx_deriving.eq
    ppx_deriving.show
-   ppx_deriving.eq))
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   core
   ppx_deriving
@@ -206,6 +283,14 @@
  (name pyrelib)
  (public_name pyrelib)
  (modules ())
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib.pyreParser
   pyrelib.plugin
@@ -232,6 +317,14 @@
   fetchSavedStateTest
   projectSpecificPreprocessingTest
   )
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (libraries
   pyrelib
   pyrelib.integrationTest
@@ -244,6 +337,14 @@
 (executable
  (name main)
  (modules main)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
  (ocamlc_flags (:standard -custom))
  (libraries pyrelib))
 
