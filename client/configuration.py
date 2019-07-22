@@ -472,8 +472,9 @@ class Configuration:
                 if configuration.consume("saved_state"):
                     self.file_hash = configuration.file_hash
 
+                use_buck_builder = configuration.consume("use_buck_builder")
                 if self._use_buck_builder is None:
-                    self._use_buck_builder = configuration.consume("use_buck_builder")
+                    self._use_buck_builder = use_buck_builder
 
                 # This block should be at the bottom to be effective.
                 unused_keys = configuration.unused_keys()
