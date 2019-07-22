@@ -112,12 +112,4 @@ val built_in_annotations : Type.Primitive.Set.t
 
 module Builder : sig
   val create : unit -> t
-
-  val copy : t -> t
-
-  val statistics : t -> string
-
-  val pp : Format.formatter -> t -> unit
-
-  val show : t -> string
 end
