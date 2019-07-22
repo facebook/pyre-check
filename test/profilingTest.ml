@@ -5,8 +5,6 @@
 
 open Core
 open OUnit2
-open! Test (* Suppresses logging. *)
-
 module Json = Yojson.Safe
 
 let set_profiling_output path =

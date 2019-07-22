@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
-open! Test (* Suppresses logging. *)
 
 let () =
   let configuration = Configuration.Analysis.create () in
