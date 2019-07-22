@@ -1486,7 +1486,7 @@ let test_expand_wildcard_imports context =
       |> ScratchProject.parse_sources
     in
     assert_equal
-      ~cmp:(List.equal ~equal:Statement.equal)
+      ~cmp:(List.equal Statement.equal)
       ~printer:(fun statement_list ->
         List.map statement_list ~f:Statement.show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
@@ -1710,7 +1710,7 @@ let test_defines _ =
   let assert_defines statements defines =
     let printer defines = List.map defines ~f:Define.show |> String.concat ~sep:"\n" in
     assert_equal
-      ~cmp:(List.equal ~equal:Define.equal)
+      ~cmp:(List.equal Define.equal)
       ~printer
       defines
       ( Preprocessing.defines ~include_toplevels:true (Source.create statements)
@@ -1805,7 +1805,7 @@ let test_defines _ =
 let test_classes _ =
   let assert_classes statements class_defines =
     assert_equal
-      ~cmp:(List.equal ~equal:Class.equal)
+      ~cmp:(List.equal Class.equal)
       (Preprocessing.classes (Source.create statements) |> List.map ~f:Node.value)
       class_defines
   in

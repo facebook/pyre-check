@@ -599,7 +599,7 @@ let test_did_save_notification context =
   let link_name = "test_did_save_notification_link.py" in
   let link_root = bracket_tmpdir context |> Path.create_absolute in
   let link_path = Path.create_relative ~root:link_root ~relative:link_name in
-  Unix.symlink ~src:(Path.absolute source_path) ~dst:(Path.absolute link_path);
+  Unix.symlink ~target:(Path.absolute source_path) ~link_name:(Path.absolute link_path);
   let message =
     DidSaveTextDocument.create ~root:local_root source_name None
     |> Or_error.ok_exn
@@ -790,7 +790,7 @@ let test_request_parser context =
      remove the file here and replace it with a real symlink. *)
   File.write (File.create ~content:"" symlink_target);
   Unix.unlink (Path.absolute symlink_source);
-  Unix.symlink ~src:(Path.absolute symlink_target) ~dst:(Path.absolute symlink_source);
+  Unix.symlink ~target:(Path.absolute symlink_target) ~link_name:(Path.absolute symlink_source);
   Hashtbl.set symlink_targets_to_sources ~key:(Path.absolute symlink_target) ~data:symlink_source;
 
   let open_message path =

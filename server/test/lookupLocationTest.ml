@@ -54,7 +54,7 @@ let test_locations _ =
           (List.nth_exn location 3)
       in
       assert_equal
-        ~cmp:(fun expected actual -> Set.subset expected actual)
+        ~cmp:(fun expected actual -> Set.is_subset expected ~of_:actual)
         ~printer:(fun node_list -> Set.fold ~init:"" ~f:print_node node_list)
         ~pp_diff:(fun format (expected, actual) ->
           Format.fprintf

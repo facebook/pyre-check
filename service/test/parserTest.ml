@@ -95,11 +95,11 @@ let test_parse_sources context =
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
     Unix.symlink
-      ~src:(Path.absolute link_root ^/ "link.py")
-      ~dst:(Path.absolute local_root ^/ "d.py");
+      ~target:(Path.absolute link_root ^/ "link.py")
+      ~link_name:(Path.absolute local_root ^/ "d.py");
     Unix.symlink
-      ~src:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
-      ~dst:(Path.absolute local_root ^/ "d.pyi");
+      ~target:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
+      ~link_name:(Path.absolute local_root ^/ "d.pyi");
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -114,7 +114,7 @@ let test_parse_sources context =
     |> List.sort ~compare:String.compare
   in
   assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
+    ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:", ")
     ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
@@ -147,7 +147,7 @@ let test_parse_sources context =
     ~cmp:(fun left_handles right_handles ->
       let left_handles = List.sort ~compare:String.compare left_handles in
       let right_handles = List.sort ~compare:String.compare right_handles in
-      List.equal ~equal:String.equal left_handles right_handles)
+      List.equal String.equal left_handles right_handles)
     source_handles
     ["stub.pyi"; "a.py"];
   match Ast.SharedMemory.Sources.get (Reference.create "c") with
@@ -175,7 +175,7 @@ let test_register_modules context =
         Option.value_exn (Service.EnvironmentSharedMemory.Modules.get qualifier)
       in
       assert_equal
-        ~cmp:(List.equal ~equal:Reference.equal)
+        ~cmp:(List.equal Reference.equal)
         ~printer:(fun expression_list ->
           List.map ~f:Reference.show expression_list |> String.concat ~sep:", ")
         (List.map ~f:Reference.create expected_exports)
@@ -240,7 +240,7 @@ let test_parse_repository context =
     let expected =
       List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
     in
-    assert_equal ~cmp:(List.equal ~equal) ~printer:(List.to_string ~f:printer) expected actual
+    assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
   in
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."]

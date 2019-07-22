@@ -187,8 +187,8 @@ let test_link context =
   let path, root = root context in
   let link = path ^ "-link" in
   let linklink = link ^ "-link" in
-  Unix.symlink ~src:path ~dst:link;
-  Unix.symlink ~src:link ~dst:linklink;
+  Unix.symlink ~target:path ~link_name:link;
+  Unix.symlink ~target:link ~link_name:linklink;
   let symbolic = Path.create_absolute ~follow_symbolic_links:false link in
   let link = Path.create_absolute link in
   let linklink = Path.create_absolute linklink in
@@ -219,7 +219,7 @@ let test_build_symlink_map context =
   let link = path "link.py" in
   let target = path "original.py" in
   create_file target;
-  Unix.symlink ~src:(Path.absolute target) ~dst:(Path.absolute link);
+  Unix.symlink ~target:(Path.absolute target) ~link_name:(Path.absolute link);
   let assert_keys ~links expected =
     let expected_map = Path.Map.of_alist_exn expected in
     let map = Path.build_symlink_map ~links in
@@ -229,7 +229,7 @@ let test_build_symlink_map context =
   let broken = path "broken.py" in
   create_file broken;
   let broken_link = path "broken_link.py" in
-  Unix.symlink ~src:(Path.absolute broken) ~dst:(Path.absolute broken_link);
+  Unix.symlink ~target:(Path.absolute broken) ~link_name:(Path.absolute broken_link);
   Unix.remove (Path.absolute broken);
   assert_keys ~links:[link; broken_link] [target, link];
   let nonexistent = path "nonexistent.py" in

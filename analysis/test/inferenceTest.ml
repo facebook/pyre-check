@@ -182,7 +182,7 @@ let assert_infer
   Test.populate ~configuration environment [source];
   let to_string json = Yojson.Safe.sort json |> Yojson.Safe.to_string in
   assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
+    ~cmp:(List.equal String.equal)
     ~printer:(fun errors -> Format.asprintf "%a" Sexp.pp [%message (errors : string list)])
     ~pp_diff:
       (diff ~print:(fun format errors ->

@@ -76,7 +76,7 @@ module Target = struct
 
     let mem = List.mem ~equal:target_equal
 
-    let equal = List.equal ~equal:target_equal
+    let equal = List.equal target_equal
 
     let add list element = element :: list
 
@@ -592,7 +592,10 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                     | Unaries variables -> (
                         let zipped =
                           match parameters with
-                          | Type.OrderedTypes.Concrete parameters -> List.zip variables parameters
+                          | Type.OrderedTypes.Concrete parameters -> (
+                            match List.zip variables parameters with
+                            | Ok zipped -> Some zipped
+                            | _ -> None )
                           | Variable _
                           | Any
                           | Map _ ->

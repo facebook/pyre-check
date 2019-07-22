@@ -721,25 +721,25 @@ let process_type_query_request
                     | Dependents.Decoded (_, first), Dependents.Decoded (_, second) ->
                         Option.equal Reference.Set.Tree.equal first second
                     | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Reference.equal) first second
+                        Option.equal (List.equal Reference.equal) first second
                     | ClassKeys.Decoded (_, first), ClassKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Identifier.equal) first second
+                        Option.equal (List.equal Identifier.equal) first second
                     | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Reference.equal) first second
+                        Option.equal (List.equal Reference.equal) first second
                     | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Identifier.equal) first second
+                        Option.equal (List.equal Identifier.equal) first second
                     | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Reference.equal) first second
+                        Option.equal (List.equal Reference.equal) first second
                     | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
                         Option.equal Int.equal first second
                     | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
                         Option.equal String.equal first second
                     | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:ClassHierarchy.Target.equal) first second
+                        Option.equal (List.equal ClassHierarchy.Target.equal) first second
                     | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
                         Option.equal ClassHierarchy.Target.Set.Tree.equal first second
                     | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
-                        Option.equal (List.equal ~equal:Int.equal) first second
+                        Option.equal (List.equal Int.equal) first second
                     | ( Ast.SharedMemory.Sources.Sources.Decoded (_, first),
                         Ast.SharedMemory.Sources.Sources.Decoded (_, second) ) ->
                         Option.equal Source.equal first second

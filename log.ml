@@ -160,5 +160,5 @@ let rotate ?(number_to_keep = 10) basename =
   if is_file_or_link basename then
     suppress_system_error (fun () -> Unix.unlink basename);
   let actual_path = Format.sprintf "%s.%s" basename timestamp in
-  suppress_system_error (fun () -> Unix.symlink ~src:actual_path ~dst:basename);
+  suppress_system_error (fun () -> Unix.symlink ~target:actual_path ~link_name:basename);
   actual_path

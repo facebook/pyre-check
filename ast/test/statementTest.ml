@@ -304,7 +304,7 @@ let test_attributes _ =
       { Record.Class.name = !&""; bases = []; body = []; decorators = []; docstring = None }
     in
     assert_equal
-      ~cmp:(List.equal ~equal:Attribute.equal)
+      ~cmp:(List.equal Attribute.equal)
       ~printer:(fun attributes -> List.map ~f:Attribute.show attributes |> String.concat ~sep:"\n")
       expected
       ( parse_single_define source
@@ -506,7 +506,7 @@ let test_attributes _ =
          || Location.equal left_location right_location )
     in
     assert_equal
-      ~cmp:(List.equal ~equal)
+      ~cmp:(List.equal equal)
       ~printer
       expected
       ( parse_single_class source
@@ -736,7 +736,7 @@ let test_preamble _ =
     in
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
-      ~cmp:(List.equal ~equal:Statement.equal)
+      ~cmp:(List.equal Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
       preamble
       (With.preamble block)
@@ -753,7 +753,7 @@ let test_preamble _ =
     in
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
     assert_equal
-      ~cmp:(List.equal ~equal:Statement.equal)
+      ~cmp:(List.equal Statement.equal)
       ~printer:(fun statements -> List.map ~f:Statement.show statements |> String.concat ~sep:", ")
       preamble
       [For.preamble block]
@@ -781,7 +781,7 @@ let test_preamble _ =
       |> String.concat ~sep:"\n"
     in
     assert_equal
-      ~cmp:(List.equal ~equal:(List.equal ~equal:Statement.equal))
+      ~cmp:(List.equal (List.equal Statement.equal))
       ~printer
       preambles
       (List.map handlers ~f:Try.preamble)

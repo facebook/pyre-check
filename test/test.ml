@@ -1258,7 +1258,7 @@ let assert_errors
     List.map ~f:(fun error -> Error.description error ~show_error_traces ~concise) errors
   in
   assert_equal
-    ~cmp:(List.equal ~equal:String.equal)
+    ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:"\n")
     errors
     descriptions

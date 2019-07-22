@@ -281,7 +281,7 @@ module Record = struct
       (* Ignores implicit argument to simplify unit tests. *)
       equal_kind left.kind right.kind
       && equal_overload equal_annotation left.implementation right.implementation
-      && List.equal ~equal:(equal_overload equal_annotation) left.overloads right.overloads
+      && List.equal (equal_overload equal_annotation) left.overloads right.overloads
   end
 end
 

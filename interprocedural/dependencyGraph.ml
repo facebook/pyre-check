@@ -143,6 +143,7 @@ let pp formatter edges =
 
 
 let dump call_graph ~configuration =
+  let module Buffer = Caml.Buffer in
   let buffer = Buffer.create 1024 in
   Buffer.add_string buffer "{\n";
   let remove_trailing_comma () =

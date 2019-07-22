@@ -170,9 +170,9 @@ let assert_errors_equal ~actual_errors ~expected_errors =
   in
   let equal left right =
     List.equal
+      String.equal
       (List.sort ~compare:String.compare left)
       (List.sort ~compare:String.compare right)
-      ~equal:String.equal
   in
   let printer errors = Format.asprintf "%s" (String.concat errors ~sep:", ") in
   assert_equal ~cmp:equal ~printer expected_errors actual_errors

@@ -14,7 +14,7 @@ let test_socket_path context =
   let socket_link = Service.Constants.Server.root configuration ^| "server.sock" in
   let preexisting = Path.create_relative ~root ~relative:"preexisting.sock" in
   File.write (File.create ~content:"1234" preexisting);
-  Unix.symlink ~src:(Path.absolute preexisting) ~dst:(Path.absolute socket_link);
+  Unix.symlink ~target:(Path.absolute preexisting) ~link_name:(Path.absolute socket_link);
   assert_equal (Filename.realpath (Path.absolute socket_link)) (Path.absolute preexisting);
 
   (* Reading the socket path gives us the preexisting file. *)

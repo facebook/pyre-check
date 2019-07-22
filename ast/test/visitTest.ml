@@ -42,8 +42,8 @@ let test_collect _ =
       expressions, statements
     in
     let equal left right =
-      List.equal (fst left) (fst right) ~equal:Expression.equal
-      && List.equal (snd left) (snd right) ~equal:Statement.equal
+      List.equal Expression.equal (fst left) (fst right)
+      && List.equal Statement.equal (snd left) (snd right)
     in
     let printer (expressions, statements) =
       Format.asprintf
@@ -117,7 +117,7 @@ let test_collect_location _ =
       in
       List.map ~f:create_location expected_locations
     in
-    let equal left right = List.equal left right ~equal:Location.equal in
+    let equal left right = List.equal Location.equal left right in
     let printer locations =
       Format.asprintf "%a" Sexp.pp [%message (locations : Location.t list)]
     in

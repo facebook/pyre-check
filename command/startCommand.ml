@@ -530,7 +530,7 @@ let command =
       empty
       +> flag
            "-log-file"
-           (optional file)
+           (optional string)
            ~doc:(Format.sprintf "filename Log file (Default is ./pyre/server/server.stdout)")
       +> flag
            "-terminal"

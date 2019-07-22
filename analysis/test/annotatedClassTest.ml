@@ -112,7 +112,7 @@ let test_superclasses _ =
     let actual = Class.successors ~resolution target in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
-      ~cmp:(List.equal ~equal:Type.Primitive.equal)
+      ~cmp:(List.equal Type.Primitive.equal)
       expected
       actual
   in
@@ -121,7 +121,7 @@ let test_superclasses _ =
     let equal left right = Reference.equal (Class.name left) (Class.name right) in
     assert_equal
       ~printer:(fun classes -> Format.asprintf "%a" Sexp.pp [%message (classes : Class.t list)])
-      ~cmp:(List.equal ~equal)
+      ~cmp:(List.equal equal)
       expected
       actual
   in
@@ -152,7 +152,7 @@ let test_get_decorator _ =
           in
           assert_equal
             ~printer:(List.to_string ~f:Class.show_decorator)
-            ~cmp:(List.equal ~equal:Class.equal_decorator)
+            ~cmp:(List.equal Class.equal_decorator)
             expected
             actual
       | _ -> assert_true (List.is_empty expected)
@@ -503,7 +503,7 @@ let test_class_attributes _ =
         Attribute.name left = Attribute.name right
         && Type.equal (Attribute.parent left) (Attribute.parent right)
       in
-      List.equal ~equal
+      List.equal equal
     in
     let print_attributes attributes =
       let print_attribute { Node.value = { Annotated.Attribute.name; _ }; _ } = name in
@@ -1110,7 +1110,7 @@ let test_inferred_generic_base _ =
     in
     let resolution = Test.resolution ~sources:[source] () |> Resolution.global_resolution in
     assert_equal
-      ~cmp:(List.equal ~equal:(Argument.equal Expression.equal))
+      ~cmp:(List.equal (Argument.equal Expression.equal))
       expected
       (Annotated.Class.inferred_generic_base target ~resolution)
   in

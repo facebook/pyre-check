@@ -20,7 +20,7 @@ module Event = struct
 
   let now_in_milliseconds () =
     Time_stamp_counter.now ()
-    |> Time_stamp_counter.to_time
+    |> Time_stamp_counter.to_time ~calibrator:Timer.calibrator
     |> Time.to_span_since_epoch
     |> Time.Span.to_ms
     |> Int.of_float

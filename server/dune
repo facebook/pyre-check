@@ -13,6 +13,7 @@
  (libraries
   base64
   core
+  core.uuid
   sexplib
   ppxlib
   yojson

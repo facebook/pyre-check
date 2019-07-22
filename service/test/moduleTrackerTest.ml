@@ -729,7 +729,7 @@ let test_update context =
       |> List.sort ~compare:Reference.compare
     in
     assert_equal
-      ~cmp:(List.equal ~equal:Reference.equal)
+      ~cmp:(List.equal Reference.equal)
       ~printer:(List.to_string ~f:Reference.show)
       expected
       actual
@@ -742,7 +742,7 @@ let test_update context =
       |> List.sort ~compare:Path.compare
     in
     assert_equal
-      ~cmp:(List.equal ~equal:Path.equal)
+      ~cmp:(List.equal Path.equal)
       ~printer:(List.to_string ~f:Path.show)
       expected
       actual
@@ -817,7 +817,7 @@ let test_update context =
     in
     (* Check that the computed incremental update is expected *)
     assert_equal
-      ~cmp:(List.equal ~equal:ModuleTracker.IncrementalUpdate.equal)
+      ~cmp:(List.equal ModuleTracker.IncrementalUpdate.equal)
       ~printer:(fun updates ->
         List.map updates ~f:ModuleTracker.IncrementalUpdate.sexp_of_t
         |> (fun sexps -> Sexp.List sexps)

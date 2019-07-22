@@ -16,7 +16,7 @@ let test_restore_symbolic_links context =
   let link name =
     let actual = Path.absolute (path name) in
     let link = Path.create_relative ~root:local_root ~relative:name |> Path.absolute in
-    Unix.symlink ~src:actual ~dst:link
+    Unix.symlink ~target:actual ~link_name:link
   in
   create_file "a.py";
   create_file "b.py";
@@ -37,7 +37,7 @@ let test_restore_symbolic_links context =
     in
     assert_equal
       ~printer:(List.to_string ~f:Path.show)
-      ~cmp:(List.equal ~equal:Path.equal)
+      ~cmp:(List.equal Path.equal)
       expected
       (Server.SavedState.restore_symbolic_links ~changed_paths:names ~local_root ~get_old_link_path)
   in

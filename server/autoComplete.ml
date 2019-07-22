@@ -145,7 +145,7 @@ let get_completion_items ~state ~configuration ~path ~cursor_position =
             (* Intentionally use an illegal & unique Python module name here to make sure nothing
                else gets affected *)
             let dummy_filename =
-              let uuid = Uuid.create () in
+              let uuid = Uuid_unix.create () in
               Format.sprintf "pyre-autocomplete-%s-%s" (Uuid.to_string uuid) (Path.last path)
             in
             Path.get_directory path

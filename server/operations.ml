@@ -34,7 +34,7 @@ let socket_path ?(create = false) ?(name = "server") configuration =
     in
     ( try Unix.unlink (Path.absolute link_path) with
     | Unix.Unix_error _ -> () );
-    Unix.symlink ~src:(Path.absolute socket_path) ~dst:(Path.absolute link_path);
+    Unix.symlink ~target:(Path.absolute socket_path) ~link_name:(Path.absolute link_path);
     socket_path
 
 

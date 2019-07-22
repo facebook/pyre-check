@@ -163,7 +163,7 @@ let test_register_class_metadata _ =
     in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
-      ~cmp:(List.equal ~equal:Type.Primitive.equal)
+      ~cmp:(List.equal Type.Primitive.equal)
       expected
       successors
   in
@@ -655,7 +655,7 @@ let test_populate _ =
     in
     assert_equal
       ~printer:show_targets
-      ~cmp:(Option.equal (List.equal ~equal:ClassHierarchy.Target.equal))
+      ~cmp:(Option.equal (List.equal ClassHierarchy.Target.equal))
       (Some (List.map superclasses ~f:to_target))
       targets
   in

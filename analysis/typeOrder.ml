@@ -497,7 +497,12 @@ module OrderImplementation = struct
                                solve_less_or_equal order ~constraints ~left:right ~right:left)
                   in
                   let zip_on_parameters variables =
-                    List.zip left_parameters right_parameters >>= List.zip variables
+                    match List.zip left_parameters right_parameters with
+                    | Unequal_lengths -> None
+                    | Ok zipped -> (
+                      match List.zip variables zipped with
+                      | Unequal_lengths -> None
+                      | Ok zipped -> Some zipped )
                   in
                   variables
                   |> zip_on_parameters

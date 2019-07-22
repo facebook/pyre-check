@@ -42,7 +42,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) |> Handler.purge;
   assert_equal
     ~printer:(List.to_string ~f:ident)
-    ~cmp:(List.equal ~equal:String.equal)
+    ~cmp:(List.equal String.equal)
     errors
     actual_errors
 

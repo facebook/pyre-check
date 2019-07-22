@@ -2005,7 +2005,7 @@ let less_or_equal ~resolution left right =
 
 let join ~resolution left right =
   let join_mismatch left right =
-    if List.equal ~equal:Expression.equal left.actual_expressions right.actual_expressions then
+    if List.equal Expression.equal left.actual_expressions right.actual_expressions then
       Some
         { expected = GlobalResolution.join resolution left.expected right.expected;
           actual = GlobalResolution.join resolution left.actual right.actual;
@@ -2248,7 +2248,7 @@ let join ~resolution left right =
            && String.equal left.missing_key right.missing_key ->
         TypedDictionaryKeyNotFound left
     | TypedDictionaryAccessWithNonLiteral left, TypedDictionaryAccessWithNonLiteral right
-      when List.equal ~equal:String.equal left right ->
+      when List.equal String.equal left right ->
         TypedDictionaryAccessWithNonLiteral left
     | Top, _
     | _, Top ->

@@ -171,14 +171,14 @@ let check_expectation
     match data with
     | `Both (expected, actual) ->
         assert_equal
-          ~cmp:(List.equal ~equal:Taint.Sinks.equal)
+          ~cmp:(List.equal Taint.Sinks.equal)
           ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sinks.t list)])
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
-          ~cmp:(List.equal ~equal:Taint.Sinks.equal)
+          ~cmp:(List.equal Taint.Sinks.equal)
           ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sinks.t list)])
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
@@ -191,14 +191,14 @@ let check_expectation
     match data with
     | `Both (expected, actual) ->
         assert_equal
-          ~cmp:(List.equal ~equal:Taint.Sources.equal)
+          ~cmp:(List.equal Taint.Sources.equal)
           ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sources.t list)])
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected
           actual
     | `Left expected ->
         assert_equal
-          ~cmp:(List.equal ~equal:Taint.Sources.equal)
+          ~cmp:(List.equal Taint.Sources.equal)
           ~printer:(fun list -> Sexp.to_string [%message (list : Taint.Sources.t list)])
           ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
           expected

@@ -7,12 +7,14 @@ open Core
 
 type t = Time_stamp_counter.t
 
+let calibrator = Time_stamp_counter.Calibrator.create ()
+
 let start () = Time_stamp_counter.now ()
 
 let span start_time =
   let stop_time = Time_stamp_counter.now () in
   let timestamp_span = Time_stamp_counter.diff stop_time start_time in
-  Time_stamp_counter.Span.to_time_span timestamp_span
+  Time_stamp_counter.Span.to_time_span ~calibrator timestamp_span
 
 
 let stop start_time = start_time |> span

@@ -48,7 +48,7 @@ end
 
 let list_orderless_equal left right =
   List.equal
-    ~equal:String.equal
+    String.equal
     (List.dedup_and_sort ~compare:String.compare left)
     (List.dedup_and_sort ~compare:String.compare right)
 
@@ -113,7 +113,7 @@ let test_initial _ =
     in
     assert_state_equal state initial;
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:(List.equal String.equal)
       ~printer:(fun elements -> Format.asprintf "%a" Sexp.pp [%message (elements : string list)])
       (List.map (State.errors initial) ~f:(Error.description ~show_error_traces:false))
       errors
@@ -274,7 +274,7 @@ let test_check_annotation _ =
     let errors = State.parse_and_check_annotation ~state !expression |> fst |> State.errors in
     let errors = List.map ~f:(Error.description ~show_error_traces:false) errors in
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:(List.equal String.equal)
       ~printer:(String.concat ~sep:"\n")
       descriptions
       errors

@@ -268,7 +268,7 @@ let test_method_overrides _ =
     Test.populate ~configuration environment (source :: update_environment_with);
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
-    let equal_elements = List.equal ~equal:Reference.equal in
+    let equal_elements = List.equal Reference.equal in
     let printer map =
       map |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t) |> Sexp.to_string
     in

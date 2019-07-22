@@ -7,6 +7,8 @@ open Core
 
 type t
 
+val calibrator : Time_stamp_counter.Calibrator.t
+
 val start : unit -> t
 
 val stop : t -> Time.Span.t

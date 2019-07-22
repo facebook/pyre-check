@@ -835,7 +835,7 @@ module AbstractElementSet = struct
 
 
   let test_additional _ =
-    let cmp a b = List.equal (elements a) (elements b) ~equal:AbstractElement.equal in
+    let cmp a b = List.equal AbstractElement.equal (elements a) (elements b) in
     let set = of_list [B; C ("x", 5); C ("y", 5)] in
     assert_equal set (add set (C ("x", 4))) ~msg:"add subsumed" ~cmp ~printer:show;
     assert_equal

@@ -132,7 +132,7 @@ let command =
       +> flag "-taint" no_arg ~doc:"Run the taint analysis."
       +> flag
            "-save-results-to"
-           (optional file)
+           (optional string)
            ~doc:"file A JSON file that Pyre Analyze will save its' results to."
       +> flag "-dump-call-graph" no_arg ~doc:"Store call graph in .pyre/call_graph.json"
       ++ Specification.base_command_line_arguments)

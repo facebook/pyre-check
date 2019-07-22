@@ -512,11 +512,12 @@ module OrderedConstraints (Order : OrderType) = struct
         | _, Variable _
         | Variable _, _ ->
             false
-        | Concrete upper_bounds, Concrete lower_bounds ->
-            List.zip upper_bounds lower_bounds
-            >>| List.for_all ~f:(fun (left, right) ->
-                    Order.always_less_or_equal order ~left ~right)
-            |> Option.value ~default:false
+        | Concrete upper_bounds, Concrete lower_bounds -> (
+          match List.zip upper_bounds lower_bounds with
+          | Ok bounds ->
+              List.for_all bounds ~f:(fun (left, right) ->
+                  Order.always_less_or_equal order ~left ~right)
+          | _ -> false )
 
 
     let narrowest_valid_value interval ~order ~variable:_ =
@@ -539,10 +540,12 @@ module OrderedConstraints (Order : OrderType) = struct
           Some right
         else
           match left, right with
-          | Concrete left, Concrete right ->
-              List.zip left right
-              >>| List.map ~f:(fun (left, right) -> Order.meet order left right)
-              >>| fun concrete_list -> Type.OrderedTypes.Concrete concrete_list
+          | Concrete left, Concrete right -> (
+            match List.zip left right with
+            | Ok zipped ->
+                List.map zipped ~f:(fun (left, right) -> Order.meet order left right)
+                |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+            | _ -> None )
           | _ -> None
       in
       let join left right =
@@ -554,10 +557,12 @@ module OrderedConstraints (Order : OrderType) = struct
           Some left
         else
           match left, right with
-          | Concrete left, Concrete right ->
-              List.zip left right
-              >>| List.map ~f:(fun (left, right) -> Order.join order left right)
-              >>| fun concrete_list -> Type.OrderedTypes.Concrete concrete_list
+          | Concrete left, Concrete right -> (
+            match List.zip left right with
+            | Ok zipped ->
+                List.map zipped ~f:(fun (left, right) -> Order.join order left right)
+                |> fun concrete_list -> Some (Type.OrderedTypes.Concrete concrete_list)
+            | _ -> None )
           | _ -> None
       in
       match left, right with

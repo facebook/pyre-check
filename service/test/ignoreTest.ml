@@ -37,7 +37,7 @@ let ignore_lines_test context =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
     in
     assert_equal
-      ~cmp:(List.equal ~equal:String.equal)
+      ~cmp:(List.equal String.equal)
       ~printer:description_list_to_string
       ~pp_diff:
         (diff ~print:(fun format expected_errors ->

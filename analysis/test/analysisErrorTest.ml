@@ -985,7 +985,7 @@ let test_filter _ =
   in
   let assert_unfiltered ?(location = Location.Instantiated.any) ?(signature = mock_signature) kind =
     let errors = [error ~signature ~location kind] in
-    assert_equal ~cmp:(List.equal ~equal) errors (filter ~configuration ~resolution errors)
+    assert_equal ~cmp:(List.equal equal) errors (filter ~configuration ~resolution errors)
   in
   (* Suppress stub errors. *)
   let stub = { Location.Instantiated.any with Location.path = "stub.pyi" } in

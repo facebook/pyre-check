@@ -162,8 +162,8 @@ let check_invalid_type_parameters resolution annotation =
           match generics, given with
           | Concrete generics, Type.OrderedTypes.Concrete given -> (
             match List.zip generics given with
-            | Some [] -> Type.Primitive name, sofar
-            | Some paired ->
+            | Ok [] -> Type.Primitive name, sofar
+            | Ok paired ->
                 let check_parameter (generic, given) =
                   match generic with
                   | Type.Variable generic ->
@@ -196,7 +196,7 @@ let check_invalid_type_parameters resolution annotation =
                 |> List.unzip
                 |> fun (parameters, errors) ->
                 Type.parametric name (Concrete parameters), List.filter_map errors ~f:Fn.id @ sofar
-            | None ->
+            | Unequal_lengths ->
                 let mismatch =
                   { name;
                     kind =

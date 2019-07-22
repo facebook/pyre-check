@@ -152,13 +152,11 @@ test "$ocaml_succeeded" = 1 \
 
 opam install --yes \
   base64.3.1.0 \
-  core.v0.11.3 \
-  dune.1.6.2 \
+  core.v0.12.3 \
+  dune.1.10.0 \
   yojson.1.5.0 \
   ppx_deriving.4.2.1 \
   ppx_deriving_yojson.3.3 \
-  ppx_compare.v0.11.1 \
-  ppx_hash.v0.11.1 \
   ounit.2.0.8 \
   menhir \
   utop \

@@ -377,7 +377,7 @@ let test_create_name _ =
 let test_name_to_identifiers _ =
   let assert_name_to_identifiers name identifiers =
     assert_equal
-      ~cmp:(Option.equal (List.equal ~equal:String.equal))
+      ~cmp:(Option.equal (List.equal String.equal))
       identifiers
       (Expression.name_to_identifiers name)
   in
