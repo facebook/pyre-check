@@ -51,7 +51,7 @@ public final class FileSystem {
       Files.deleteIfExists(linkPath);
       Files.createSymbolicLink(linkPath, actualPath);
     } catch (IOException exception) {
-      Logger.getGlobal().severe("Cannot create symbolic link: " + exception.getMessage());
+      SimpleLogger.error("Cannot create symbolic link: " + exception.getMessage());
     }
   }
 
