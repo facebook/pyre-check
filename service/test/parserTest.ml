@@ -57,14 +57,14 @@ let test_parse_source context =
     ScratchProject.setup ~context ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.parse_sources
   in
-  let handles = List.map sources ~f:(fun { Source.handle; _ } -> handle) in
-  assert_equal handles [File.Handle.create_for_testing "x.py"];
+  let handles = List.map sources ~f:(fun { Source.relative; _ } -> relative) in
+  assert_equal handles ["x.py"];
   let source = Ast.SharedMemory.Sources.get !&"x" in
   assert_equal (Option.is_some source) true;
-  let { Source.handle; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
+  let { Source.relative; statements; metadata = { Source.Metadata.number_of_lines; _ }; _ } =
     Option.value_exn source
   in
-  assert_equal handle (File.Handle.create_for_testing "x.py");
+  assert_equal relative "x.py";
   assert_equal number_of_lines 2;
   match statements with
   | [{ Node.value = Statement.Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
@@ -228,20 +228,17 @@ let test_parse_repository context =
     let actual =
       ScratchProject.setup ~context repository
       |> ScratchProject.parse_sources
-      |> List.map ~f:(fun ({ Source.handle; _ } as source) -> handle, source)
+      |> List.map ~f:(fun ({ Source.relative; _ } as source) -> relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
-             File.Handle.compare left_handle right_handle)
+             String.compare left_handle right_handle)
     in
     let equal (expected_handle, expected_source) (handle, { Ast.Source.statements; _ }) =
-      File.Handle.equal expected_handle handle
+      String.equal expected_handle handle
       && Ast.Source.equal expected_source { expected_source with Ast.Source.statements }
     in
-    let printer (handle, source) =
-      Format.sprintf "%s: %s" (File.Handle.show handle) (Ast.Source.show source)
-    in
+    let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
     let expected =
-      List.map expected ~f:(fun (handle, parsed_source) ->
-          File.Handle.create_for_testing handle, Test.parse parsed_source)
+      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
     in
     assert_equal ~cmp:(List.equal ~equal) ~printer:(List.to_string ~f:printer) expected actual
   in

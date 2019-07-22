@@ -9,8 +9,6 @@ val empty_stub : t -> bool
 
 val from_empty_stub : reference:Reference.t -> module_definition:(Reference.t -> t option) -> bool
 
-val handle : t -> File.Handle.t option
-
 val wildcard_exports : t -> Reference.t list
 
 val aliased_export : t -> Reference.t -> Reference.t option

@@ -101,10 +101,12 @@ let parse_untrimmed
     ?(coerce_special_methods = false)
     source
   =
-  let handle = File.Handle.create_for_testing handle in
+  let is_stub, is_init =
+    let path = Path.create_absolute ~follow_symbolic_links:false handle in
+    Path.is_python_stub path, Path.is_python_init path
+  in
   let buffer = Lexing.from_string (source ^ "\n") in
-  buffer.Lexing.lex_curr_p <-
-    { buffer.Lexing.lex_curr_p with Lexing.pos_fname = File.Handle.show handle };
+  buffer.Lexing.lex_curr_p <- { buffer.Lexing.lex_curr_p with Lexing.pos_fname = handle };
   try
     let source =
       let state = Lexer.State.initial () in
@@ -123,7 +125,9 @@ let parse_untrimmed
       Source.create
         ~docstring
         ~metadata
-        ~handle
+        ~is_init
+        ~is_stub
+        ~relative:handle
         ~qualifier
         ~hash
         (Generator.parse (Lexer.read state) buffer)

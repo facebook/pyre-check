@@ -41,7 +41,9 @@ type t = {
   docstring: string option;
   hash: int;
   metadata: Metadata.t;
-  handle: File.Handle.t;
+  relative: string;
+  is_stub: bool;
+  is_init: bool;
   qualifier: Reference.t;
   statements: Statement.t list
 }
@@ -52,7 +54,9 @@ val mode : configuration:Configuration.Analysis.t -> local_mode:mode option -> m
 val create
   :  ?docstring:string option ->
   ?metadata:Metadata.t ->
-  ?handle:File.Handle.t ->
+  ?relative:string ->
+  ?is_stub:bool ->
+  ?is_init:bool ->
   ?qualifier:Reference.t ->
   ?hash:int ->
   Statement.t list ->

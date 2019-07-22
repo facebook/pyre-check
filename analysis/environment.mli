@@ -65,7 +65,7 @@ module type Handler = sig
 
   val dependencies : Reference.t -> Reference.Set.Tree.t option
 
-  val local_mode : File.Handle.t -> Source.mode option
+  val local_mode : string -> Source.mode option
 
   (* Instead of writing values to shared memory, changes to shared memory are cached locally in
      this block. Forking off via Scheduler.map_reduce will ignore these caches. is called. *)

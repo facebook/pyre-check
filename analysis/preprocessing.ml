@@ -31,7 +31,7 @@ let expand_relative_imports ({ Source.qualifier; _ } as source) =
   Transform.transform qualifier source |> Transform.source
 
 
-let expand_string_annotations ({ Source.handle; _ } as source) =
+let expand_string_annotations ({ Source.relative; _ } as source) =
   let module Transform = Transform.Make (struct
     type t = unit
 
@@ -39,7 +39,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
 
     let transform_children _ _ = true
 
-    let rec transform_string_annotation_expression handle =
+    let rec transform_string_annotation_expression relative =
       let rec transform_expression
           ( { Node.location =
                 { Location.start = { Location.line = start_line; column = start_column }; _ } as
@@ -84,11 +84,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
               let parsed =
                 (* Start at column + 1 since parsing begins after the opening quote of the string
                    literal. *)
-                Parser.parse
-                  ~start_line
-                  ~start_column:(start_column + 1)
-                  [value ^ "\n"]
-                  ~relative:(File.Handle.show handle)
+                Parser.parse ~start_line ~start_column:(start_column + 1) [value ^ "\n"] ~relative
               in
               match parsed with
               | [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
@@ -115,7 +111,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
     let statement _ ({ Node.value; _ } as statement) =
       let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
         { assign with
-          Assign.annotation = annotation >>| transform_string_annotation_expression handle
+          Assign.annotation = annotation >>| transform_string_annotation_expression relative
         }
       in
       let transform_define
@@ -125,14 +121,16 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
           { node with
             Node.value =
               { parameter with
-                Parameter.annotation = annotation >>| transform_string_annotation_expression handle
+                Parameter.annotation =
+                  annotation >>| transform_string_annotation_expression relative
               }
           }
         in
         let signature =
           { define.signature with
             parameters = List.map parameters ~f:parameter;
-            return_annotation = return_annotation >>| transform_string_annotation_expression handle
+            return_annotation =
+              return_annotation >>| transform_string_annotation_expression relative
           }
         in
         { define with signature }
@@ -142,7 +140,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
           let value =
             match value with
             | { Node.value = Expression.String _; _ } -> value
-            | _ -> transform_string_annotation_expression handle value
+            | _ -> transform_string_annotation_expression relative value
           in
           { base with value }
         in
@@ -166,7 +164,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
         | [ ( { Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
             type_argument );
             value_argument ] ->
-            let annotation = transform_string_annotation_expression handle value in
+            let annotation = transform_string_annotation_expression relative value in
             [{ type_argument with value = annotation }; value_argument]
         | arguments -> arguments
       in
@@ -185,7 +183,7 @@ let expand_string_annotations ({ Source.handle; _ } as source) =
   Transform.transform () source |> Transform.source
 
 
-let expand_format_string ({ Source.handle; _ } as source) =
+let expand_format_string ({ Source.relative; _ } as source) =
   let module Transform = Transform.Make (struct
     include Transform.Identity
 
@@ -258,13 +256,7 @@ let expand_format_string ({ Source.handle; _ } as source) =
           let parse ((start_line, start_column), input_string) =
             try
               let string = input_string ^ "\n" in
-              match
-                Parser.parse
-                  [string ^ "\n"]
-                  ~start_line
-                  ~start_column
-                  ~relative:(File.Handle.show handle)
-              with
+              match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
               | [{ Node.value = Expression expression; _ }] -> [expression]
               | _ -> failwith "Not an expression"
             with
@@ -307,7 +299,7 @@ let qualify_local_identifier name ~qualifier =
   name |> Format.asprintf "$local_%s$%s" qualifier |> fun identifier -> Name.Identifier identifier
 
 
-let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as source) =
+let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as source) =
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
@@ -1022,7 +1014,7 @@ let qualify ({ Source.handle; qualifier = source_qualifier; statements; _ } as s
           in
           if qualify_strings then (
             try
-              match Parser.parse [value ^ "\n"] ~relative:(File.Handle.show handle) with
+              match Parser.parse [value ^ "\n"] ~relative with
               | [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
@@ -1427,8 +1419,8 @@ let dequalify_map source =
   ImportDequalifier.transform map source |> fun { ImportDequalifier.state; _ } -> state
 
 
-let replace_mypy_extensions_stub ({ Source.handle; statements; _ } as source) =
-  if String.is_suffix (File.Handle.show handle) ~suffix:"mypy_extensions.pyi" then
+let replace_mypy_extensions_stub ({ Source.relative; statements; _ } as source) =
+  if String.is_suffix relative ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
       Assign

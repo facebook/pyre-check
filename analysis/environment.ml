@@ -65,7 +65,7 @@ module type Handler = sig
 
   val dependencies : Reference.t -> Reference.Set.Tree.t option
 
-  val local_mode : File.Handle.t -> Source.mode option
+  val local_mode : string -> Source.mode option
 
   val transaction : f:(unit -> 'a) -> unit -> 'a
 
@@ -445,11 +445,10 @@ let register_class_definitions (module Handler : Handler) source =
 
     let visit_children _ = true
 
-    let statement { Source.handle; _ } new_annotations = function
+    let statement { Source.qualifier; _ } new_annotations = function
       | { Node.location; value = Class ({ Class.name; _ } as definition) } ->
           let name = Reference.show name in
           let primitive = name in
-          let qualifier = Source.qualifier ~handle in
           Handler.DependencyHandler.add_class_key ~qualifier name;
           Handler.set_class_definition ~name ~definition:{ Node.location; value = definition };
           if not (ClassHierarchy.contains order primitive) then
@@ -792,9 +791,8 @@ let register_values
       | _ -> true
 
 
-    let statement { Source.handle; _ } callables statement =
+    let statement { Source.qualifier; _ } callables statement =
       let collect_callable ~name callables callable =
-        let qualifier = Source.qualifier ~handle in
         Handler.DependencyHandler.add_function_key ~qualifier name;
 
         (* Register callable global. *)

@@ -150,30 +150,32 @@ let test_qualifier _ =
 
 
 let test_expand_relative_import _ =
-  let assert_export ~handle ~from ~expected =
-    let handle = File.Handle.create_for_testing handle in
-    let qualifier = Source.qualifier ~handle in
+  let assert_export ~relative ~from ~expected =
+    let qualifier = SourcePath.qualifier_of_relative relative in
     let from =
       match parse_single_statement ("from " ^ from ^ " import something") with
       | { Node.value = Import { Import.from = Some from; _ }; _ } -> from
       | _ -> failwith "Could not parse import"
     in
-    let source = Source.create ~handle ~qualifier [] in
+    let source =
+      let is_init = String.is_suffix relative ~suffix:"__init__.py" in
+      Source.create ~relative ~qualifier ~is_init []
+    in
     assert_equal
       ~cmp:Reference.equal
       ~printer:Reference.show
       (Reference.create expected)
       (Source.expand_relative_import source ~from)
   in
-  assert_export ~handle:"module/qualifier.py" ~from:"." ~expected:"module";
+  assert_export ~relative:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export
-    ~handle:"module/submodule/qualifier.py"
+    ~relative:"module/submodule/qualifier.py"
     ~from:".other"
     ~expected:"module.submodule.other";
-  assert_export ~handle:"module/submodule/qualifier.py" ~from:"..other" ~expected:"module.other";
+  assert_export ~relative:"module/submodule/qualifier.py" ~from:"..other" ~expected:"module.other";
 
   (* `__init__` modules are special. *)
-  assert_export ~handle:"module/__init__.py" ~from:"." ~expected:"module"
+  assert_export ~relative:"module/__init__.py" ~from:"." ~expected:"module"
 
 
 let test_signature_hash _ =

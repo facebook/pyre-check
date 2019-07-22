@@ -650,22 +650,22 @@ let test_language_server_definition_response context =
     ~id:(string_request_id "abcd")
     ~location:None
     ~expected:(`Assoc ["id", `String "abcd"; "jsonrpc", `String "2.0"; "result", `List []]);
-  let add_paths handles =
-    let qualifiers = List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle) in
+  let add_paths relatives =
+    let qualifiers = List.map relatives ~f:Ast.SourcePath.qualifier_of_relative in
     Ast.SharedMemory.Sources.remove qualifiers;
-    let add_source (qualifier, handle) =
-      let source = Ast.Source.create ~handle ~qualifier [] in
+    let add_source (qualifier, relative) =
+      let source = Ast.Source.create ~relative ~qualifier [] in
       Ast.SharedMemory.Sources.add source
     in
-    List.iter (List.zip_exn qualifiers handles) ~f:add_source
+    List.iter (List.zip_exn qualifiers relatives) ~f:add_source
   in
   let touch path = File.create ~content:"" path |> File.write in
   let file = Path.create_relative ~root:local_root ~relative:"a.py" in
   touch file;
   let stub = Path.create_relative ~root:local_root ~relative:"b.pyi" in
   touch stub;
-  let handles = [File.Handle.create_for_testing "a.py"; File.Handle.create_for_testing "b.pyi"] in
-  add_paths handles;
+  let relatives = ["a.py"; "b.pyi"] in
+  add_paths relatives;
   assert_response
     ~id:(int_request_id 1)
     ~location:

@@ -520,8 +520,8 @@ end
 
 let name = "Inference"
 
-let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as source) =
-  Log.debug "Checking %s..." (File.Handle.show handle);
+let run ~configuration ~environment ~source:({ Source.relative; qualifier; is_stub; _ } as source) =
+  Log.debug "Checking %s..." relative;
   let resolution = TypeCheck.resolution environment () in
   let dequalify_map = Preprocessing.dequalify_map source in
   let check
@@ -585,7 +585,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
         else
           let keep_error error =
             let mode =
-              Handler.local_mode (Error.path error |> File.Handle.create_for_testing)
+              Handler.local_mode (Error.path error)
               |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
             in
             not (Error.suppress ~mode ~resolution error)
@@ -599,10 +599,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
         Statistics.event
           ~name:"undefined type"
           ~integers:[]
-          ~normals:
-            [ "handle", File.Handle.show handle;
-              "define", Reference.show name;
-              "type", Type.show annotation ]
+          ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
           ();
         { SingleSourceResult.errors =
             ( if configuration.debug then
@@ -691,7 +688,7 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
     else
       errors @ added_global_errors |> format_errors
   in
-  if File.Handle.is_stub handle then
+  if is_stub then
     []
   else if configuration.recursive_infer then
     recursive_infer_source [] 0
@@ -706,5 +703,5 @@ let run ~configuration ~environment ~source:({ Source.handle; qualifier; _ } as 
     let coverage =
       List.map results ~f:SingleSourceResult.coverage |> Coverage.aggregate_over_source ~source
     in
-    Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
+    Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
     errors

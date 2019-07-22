@@ -195,7 +195,9 @@ type t = {
   docstring: string option;
   hash: int;
   metadata: Metadata.t;
-  handle: File.Handle.t;
+  relative: string;
+  is_stub: bool;
+  is_init: bool;
   qualifier: Reference.t;
   statements: Statement.t list
 }
@@ -224,17 +226,19 @@ let mode ~configuration ~local_mode =
 let create
     ?(docstring = None)
     ?(metadata = Metadata.create ~number_of_lines:(-1) ())
-    ?(handle = File.Handle.create_for_testing "")
+    ?(relative = "")
+    ?(is_stub = false)
+    ?(is_init = false)
     ?(qualifier = Reference.empty)
     ?(hash = -1)
     statements
   =
-  { docstring; hash; metadata; handle; qualifier; statements }
+  { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
 
 
 let hash { hash; _ } = hash
 
-let signature_hash { metadata; handle; qualifier; statements; _ } =
+let signature_hash { metadata; is_init; qualifier; statements; _ } =
   let rec statement_hashes statements =
     let statement_hash { Node.value; _ } =
       let open Statement in
@@ -286,8 +290,8 @@ let signature_hash { metadata; handle; qualifier; statements; _ } =
     in
     List.map statements ~f:statement_hash
   in
-  [%hash: int * File.Handle.t * Reference.t * int list]
-    (Metadata.signature_hash metadata, handle, qualifier, statement_hashes statements)
+  [%hash: int * bool * Reference.t * int list]
+    (Metadata.signature_hash metadata, is_init, qualifier, statement_hashes statements)
 
 
 let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
@@ -342,7 +346,7 @@ let top_level_define_node ({ qualifier; _ } as source) =
   Node.create ~location (top_level_define source)
 
 
-let expand_relative_import ~from { handle; qualifier; _ } =
+let expand_relative_import ~from { is_init; qualifier; _ } =
   match Reference.show from with
   | "builtins" -> Reference.empty
   | serialized ->
@@ -357,14 +361,10 @@ let expand_relative_import ~from { handle; qualifier; _ } =
       let prefix =
         if not (String.is_empty dots) then
           let initializer_module_offset =
-            let path = File.Handle.show handle in
             (* `.` corresponds to the directory containing the module. For non-init modules, the
                qualifier matches the path, so we drop exactly the number of dots. However, for
                __init__ modules, the directory containing it represented by the qualifier. *)
-            if
-              String.is_suffix path ~suffix:"/__init__.py"
-              || String.is_suffix path ~suffix:"/__init__.pyi"
-            then
+            if is_init then
               1
             else
               0

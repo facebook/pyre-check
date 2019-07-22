@@ -144,7 +144,7 @@ let test_expand_format_string _ =
   let assert_format_string source value expressions =
     assert_source_equal
       (Source.create
-         ~handle:(File.Handle.create_for_testing "test.py")
+         ~relative:"test.py"
          [+Expression (+String (StringLiteral.create ~expressions value))])
       (Preprocessing.expand_format_string (parse_untrimmed source))
   in
@@ -1562,7 +1562,7 @@ let test_expand_implicit_returns _ =
     assert_source_equal
       (Preprocessing.expand_implicit_returns (parse source))
       (Source.create
-         ~handle:(File.Handle.create_for_testing "test.py")
+         ~relative:"test.py"
          [ +Define
               { signature =
                   { name = !&"foo";

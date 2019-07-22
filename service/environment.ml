@@ -404,7 +404,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
       ClassHierarchy.check_integrity (module TypeOrderHandler)
 
 
-  let local_mode handle = ErrorModes.get (File.Handle.show handle)
+  let local_mode = ErrorModes.get
 end
 
 (** First dumps environment to shared memory, then exposes through Environment_handler *)

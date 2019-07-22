@@ -32,9 +32,8 @@ let test_language_server_protocol_json_format context =
     File.write (File.create ~content:"" path);
     "filename.py"
   in
-  let handle = File.Handle.create_for_testing filename in
-  let qualifier = Source.qualifier ~handle in
-  Ast.SharedMemory.Sources.add (Source.create ~handle ~qualifier []);
+  let qualifier = Ast.SourcePath.qualifier_of_relative filename in
+  Ast.SharedMemory.Sources.add (Source.create ~relative:filename ~qualifier []);
   let ({ Error.location; _ } as type_error) =
     CommandTest.make_errors
       ~handle:filename

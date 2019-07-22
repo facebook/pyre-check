@@ -11,7 +11,6 @@ open Statement
 type t = {
   aliased_exports: Reference.t Reference.Map.Tree.t;
   empty_stub: bool;
-  handle: File.Handle.t option;
   wildcard_exports: Reference.t list
 }
 [@@deriving eq, sexp]
@@ -24,7 +23,7 @@ module Cache = struct
   let clear () = Reference.Table.clear cache
 end
 
-let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
+let pp format { aliased_exports; empty_stub; wildcard_exports } =
   let aliased_exports =
     Map.Tree.to_alist aliased_exports
     |> List.map ~f:(fun (source, target) ->
@@ -36,8 +35,7 @@ let pp format { aliased_exports; empty_stub; handle; wildcard_exports } =
   in
   Format.fprintf
     format
-    "%s: [%s, empty_stub = %b, __all__ = [%s]]"
-    (Option.value ~default:"unknown path" (handle >>| File.Handle.show))
+    "MODULE[%s, empty_stub = %b, __all__ = [%s]]"
     aliased_exports
     empty_stub
     wildcard_exports
@@ -63,20 +61,17 @@ let from_empty_stub ~reference ~module_definition =
       is_empty_stub ~lead:[] ~tail:(Reference.as_list reference))
 
 
-let handle { handle; _ } = handle
-
 let wildcard_exports { wildcard_exports; _ } = wildcard_exports
 
 let create_for_testing ~local_mode ~stub =
   { aliased_exports = Reference.Map.empty |> Map.to_tree;
     empty_stub = stub && Source.equal_mode local_mode Source.PlaceholderStub;
-    handle = None;
     wildcard_exports = []
   }
 
 
 let create
-    ( { Source.qualifier; handle; statements; metadata = { Source.Metadata.local_mode; _ }; _ } as
+    ( { Source.is_stub; qualifier; statements; metadata = { Source.Metadata.local_mode; _ }; _ } as
     source )
   =
   let aliased_exports =
@@ -161,18 +156,13 @@ let create
     List.fold ~f:gather_toplevel ~init:([], None) statements
   in
   { aliased_exports;
-    empty_stub = File.Handle.is_stub handle && Source.equal_mode local_mode Source.PlaceholderStub;
-    handle = Some handle;
+    empty_stub = is_stub && Source.equal_mode local_mode Source.PlaceholderStub;
     wildcard_exports = Option.value dunder_all ~default:toplevel_public
   }
 
 
 let create_implicit ?(empty_stub = false) () =
-  { aliased_exports = Reference.Map.empty |> Map.to_tree;
-    empty_stub;
-    handle = None;
-    wildcard_exports = []
-  }
+  { aliased_exports = Reference.Map.empty |> Map.to_tree; empty_stub; wildcard_exports = [] }
 
 
 let aliased_export { aliased_exports; _ } reference =

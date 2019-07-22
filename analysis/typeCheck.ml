@@ -4549,7 +4549,7 @@ let name = "TypeCheck"
 let check_define
     ~configuration:({ Configuration.Analysis.include_hints; debug; _ } as configuration)
     ~environment
-    ~source:({ Source.handle; qualifier; _ } as source)
+    ~source:({ Source.relative; qualifier; _ } as source)
     ( ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node),
       resolution )
   =
@@ -4565,7 +4565,7 @@ let check_define
   let filter_errors errors =
     let mode =
       let (module Handler : Environment.Handler) = environment in
-      Handler.local_mode handle |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
+      Handler.local_mode relative |> fun local_mode -> Ast.Source.mode ~configuration ~local_mode
     in
     let filter errors =
       if debug then
@@ -4661,10 +4661,7 @@ let check_define
       Statistics.event
         ~name:"undefined type"
         ~integers:[]
-        ~normals:
-          [ "handle", File.Handle.show handle;
-            "define", Reference.show name;
-            "type", Type.show annotation ]
+        ~normals:["handle", relative; "define", Reference.show name; "type", Type.show annotation]
         ();
       if Define.dump define then
         Log.dump
@@ -4729,11 +4726,11 @@ let run_on_defines ~configuration ~environment ~source defines =
 let run
     ~configuration
     ~environment
-    ~source:( { Source.handle; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ } as
-            source )
+    ~source:( { Source.relative; qualifier; metadata = { Source.Metadata.number_of_lines; _ }; _ }
+            as source )
   =
   let timer = Timer.start () in
-  Log.log ~section:`Check "Checking `%a`..." File.Handle.pp handle;
+  Log.log ~section:`Check "Checking `%s`..." relative;
   let results =
     let toplevel = Source.top_level_define_node source in
     check_defines ~configuration ~environment ~source [toplevel]
@@ -4744,7 +4741,7 @@ let run
   let coverage =
     List.map results ~f:(fun { coverage; _ } -> coverage) |> Coverage.aggregate_over_source ~source
   in
-  Coverage.log coverage ~total_errors:(List.length errors) ~path:(File.Handle.show handle);
+  Coverage.log coverage ~total_errors:(List.length errors) ~path:relative;
   Coverage.add coverage ~qualifier;
   Statistics.performance
     ~flush:false
@@ -4752,7 +4749,7 @@ let run
     ~section:`Check
     ~name:"SingleFileTypeCheck"
     ~timer
-    ~normals:["handle", File.Handle.show handle; "request kind", "SingleFileTypeCheck"]
+    ~normals:["handle", relative; "request kind", "SingleFileTypeCheck"]
     ~integers:["number of lines", number_of_lines]
     ();
   errors

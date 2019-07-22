@@ -11,7 +11,8 @@ open Statement
 open Test
 
 let assert_parsed_equal source statements =
-  let parsed_source = parse_untrimmed source in
+  let handle = "test.py" in
+  let parsed_source = parse_untrimmed ~handle ~qualifier:!&"test" source in
   let found_any =
     Visit.collect_locations parsed_source
     |> List.for_all ~f:(Location.equal Location.Reference.any)
@@ -20,7 +21,7 @@ let assert_parsed_equal source statements =
     Printf.printf "\nLocation.any found in parse of %s\n" source;
   assert_false found_any;
   assert_source_equal
-    (Source.create ~handle:(File.Handle.create_for_testing "test.py") statements)
+    (Source.create ~relative:"test.py" ~qualifier:!&"test" statements)
     parsed_source
 
 

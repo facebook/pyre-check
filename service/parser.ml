@@ -15,7 +15,7 @@ type 'success parse_result =
 
 let parse_source
     ?(show_parser_errors = true)
-    ({ SourcePath.relative_path; qualifier; _ } as source_path)
+    ({ SourcePath.relative_path; qualifier; is_stub; is_init; _ } as source_path)
   =
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
@@ -23,14 +23,14 @@ let parse_source
       let relative = Path.RelativePath.relative relative_path in
       let statements = Parser.parse ~relative lines in
       let hash = [%hash: string list] lines in
-      (* TODO (T46153421): Kill File.Handle *)
-      let handle = File.Handle.create_for_testing relative in
       Success
         (Source.create
            ~docstring:(Statement.extract_docstring statements)
            ~hash
            ~metadata
-           ~handle
+           ~is_stub
+           ~is_init
+           ~relative
            ~qualifier
            statements)
     with

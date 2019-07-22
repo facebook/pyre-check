@@ -383,7 +383,7 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
       in
       failwithf
         "Unable to construct callgraph for %s because of undefined types:\n%s"
-        (File.Handle.show source.Source.handle)
+        handle
         errors
         () );
 
