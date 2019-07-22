@@ -534,6 +534,39 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
     |> Source.statements
     |> List.concat_map ~f:filter_define_signature
   in
+  let verify_signature ~normalized_model_parameters annotation =
+    match Annotation.annotation annotation with
+    | Type.Callable
+        { Type.Callable.implementation =
+            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
+          implicit;
+          _
+        } as callable ->
+        let model_compatibility_errors =
+          (* Make self as an explicit parameter in type's parameter list *)
+          let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
+            let open Type.Callable.RecordParameter in
+            Named { name; annotation = implicit_annotation; default = false }
+          in
+          let type_parameters =
+            implicit
+            >>| implicit_to_explicit_self
+            >>| (fun explicit_self -> explicit_self :: implementation_parameters)
+            |> Option.value ~default:implementation_parameters
+          in
+          model_compatible ~type_parameters ~normalized_model_parameters
+        in
+        if not (List.is_empty model_compatibility_errors) then (
+          let message =
+            Format.asprintf
+              "Model signature parameters do not match implementation `%s`. Reason(s): %s."
+              (Type.show_for_hover callable)
+              (String.concat model_compatibility_errors ~sep:"; ")
+          in
+          Log.error "%s" message;
+          raise_invalid_model message )
+    | _ -> ()
+  in
   let create_model ({ Define.name; parameters; return_annotation; _ }, call_target) =
     (* Make sure we know about what we model. *)
     try
@@ -550,42 +583,7 @@ let create ~resolution ?(verify = true) ?path ~configuration source =
       in
       let normalized_model_parameters = AccessPath.Root.normalize_parameters parameters in
       (* Check model matches callables primary signature. *)
-      let () =
-        match verify, Annotation.annotation annotation with
-        | ( true,
-            ( Type.Callable
-                { Type.Callable.implementation =
-                    { Type.Callable.parameters = Type.Callable.Defined implementation_parameters;
-                      _
-                    };
-                  implicit;
-                  _
-                } as callable ) ) ->
-            let model_compatibility_errors =
-              (* Make self as an explicit parameter in type's parameter list *)
-              let implicit_to_explicit_self { Type.Callable.name; implicit_annotation } =
-                let open Type.Callable.RecordParameter in
-                Named { name; annotation = implicit_annotation; default = false }
-              in
-              let type_parameters =
-                implicit
-                >>| implicit_to_explicit_self
-                >>| (fun explicit_self -> explicit_self :: implementation_parameters)
-                |> Option.value ~default:implementation_parameters
-              in
-              model_compatible ~type_parameters ~normalized_model_parameters
-            in
-            if not (List.is_empty model_compatibility_errors) then (
-              let message =
-                Format.asprintf
-                  "Model signature parameters do not match implementation `%s`. Reason(s): %s."
-                  (Type.show_for_hover callable)
-                  (String.concat model_compatibility_errors ~sep:"; ")
-              in
-              Log.error "%s" message;
-              raise_invalid_model message )
-        | _ -> ()
-      in
+      let () = if verify then verify_signature ~normalized_model_parameters annotation in
       normalized_model_parameters
       |> List.fold ~init:TaintResult.empty_model ~f:(taint_parameter ~configuration ~parameters)
       |> (fun model -> taint_return ~configuration ~parameters model return_annotation)
