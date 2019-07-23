@@ -597,6 +597,100 @@ let test_qualify _ =
     |};
   assert_qualify
     {|
+      from abc import foo
+      def foo(): pass
+      foo()
+    |}
+    {|
+      from abc import foo
+      def qualifier.foo(): pass
+      qualifier.foo()
+    |};
+  assert_qualify
+    {|
+      from abc import foo
+      def foo(): pass
+      foo()
+      def foo(): pass
+      foo()
+    |}
+    {|
+      from abc import foo
+      def qualifier.foo(): pass
+      qualifier.foo()
+      def qualifier.foo(): pass
+      qualifier.foo()
+    |};
+
+  (* TODO(T47589601): We cannot correctly handle this case for now due to our current limited
+     aliases recording mechanism. *)
+  assert_qualify
+    {|
+      def foo():
+        from abc import bar
+        bar()
+        def bar(): pass
+        bar()
+    |}
+    {|
+      def qualifier.foo():
+        from abc import bar
+        abc.bar()
+        def abc.bar(): pass
+        abc.bar()
+    |};
+  assert_qualify
+    {|
+      from abc import foo
+      foo();
+      def foo(): pass
+      foo()
+    |}
+    {|
+      from abc import foo
+      abc.foo();
+      def qualifier.foo(): pass
+      qualifier.foo()
+    |};
+
+  (* TODO(T47589601): We cannot correctly handle this case for now due to our current limited
+     aliases recording mechanism. *)
+  assert_qualify
+    {|
+      from abc import foo
+      def bar(): foo()
+      def foo(): pass
+      foo()
+      |}
+    {|
+      from abc import foo
+      def qualifier.bar(): abc.foo()
+      def qualifier.foo(): pass
+      qualifier.foo()
+    |};
+  assert_qualify
+    {|
+      from abc import foo
+      foo();
+      def foo(): pass
+      foo()
+      from abc import foo
+      foo()
+      def foo(): pass
+      foo()
+    |}
+    {|
+      from abc import foo
+      abc.foo();
+      def qualifier.foo(): pass
+      qualifier.foo()
+      from abc import foo
+      abc.foo();
+      def qualifier.foo(): pass
+      qualifier.foo()
+    |};
+  assert_qualify
+    {|
       for b in []: pass
       def b(): pass
     |}

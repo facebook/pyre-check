@@ -291,7 +291,8 @@ type scope = {
   use_forward_references: bool;
   is_top_level: bool;
   skip: Location.Reference.Set.t;
-  is_in_function: bool
+  is_in_function: bool;
+  is_in_class: bool
 }
 
 let qualify_local_identifier name ~qualifier =
@@ -373,7 +374,7 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
     in
     List.fold statements ~init:scope ~f:explore_scope
   and qualify_function_name
-      ~scope:({ aliases; locals; immutables; is_in_function; qualifier; _ } as scope)
+      ~scope:({ aliases; locals; immutables; is_in_function; is_in_class; qualifier; _ } as scope)
       name
     =
     if is_in_function then
@@ -396,6 +397,22 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
             alias )
       | _ -> scope, qualify_reference ~scope name
     else
+      let scope =
+        if is_in_class then
+          scope
+        else
+          { scope with
+            aliases =
+              Map.set
+                aliases
+                ~key:name
+                ~data:
+                  { name = Reference.combine qualifier name;
+                    qualifier;
+                    is_forward_reference = false
+                  }
+          }
+      in
       scope, qualify_reference ~suppress_synthetics:true ~scope name
   and qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
@@ -641,7 +658,9 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
         in
         let body =
           let qualifier = Reference.combine qualifier name in
-          let original_scope = { scope with qualifier; is_in_function = false } in
+          let original_scope =
+            { scope with qualifier; is_in_function = false; is_in_class = true }
+          in
           let scope = explore_scope body ~scope:original_scope in
           let qualify (scope, statements) ({ Node.location; value } as statement) =
             let scope, statement =
@@ -1064,7 +1083,8 @@ let qualify ({ Source.relative; qualifier = source_qualifier; statements; _ } as
       use_forward_references = true;
       is_top_level = true;
       skip = Location.Reference.Set.empty;
-      is_in_function = false
+      is_in_function = false;
+      is_in_class = false
     }
   in
   { source with Source.statements = qualify_statements ~scope statements |> snd }
