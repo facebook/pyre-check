@@ -618,9 +618,7 @@ let run ~configuration ~global_resolution ~source:({ Source.relative; is_stub; _
       | MissingParameterAnnotation { annotation = Some annotation; _ }
       | MissingAttributeAnnotation { missing_annotation = { annotation = Some annotation; _ }; _ }
       | MissingGlobalAnnotation { annotation = Some annotation; _ } ->
-          Type.contains_unknown annotation
-          || Type.is_undeclared annotation
-          || Type.contains_variable annotation
+          Type.contains_unknown annotation || Type.is_undeclared annotation
       | _ -> false
     in
     errors
