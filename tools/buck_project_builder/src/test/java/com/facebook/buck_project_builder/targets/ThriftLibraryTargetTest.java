@@ -14,6 +14,14 @@ public class ThriftLibraryTargetTest {
         ThriftLibraryTarget.extractBaseModulePath(
             "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.pyi ]; CMD CMD"));
     assertEquals(
+        "PATH",
+        ThriftLibraryTarget.extractBaseModulePath(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.py ]; CMD CMD"));
+    assertEquals(
+        "PATH",
+        ThriftLibraryTarget.extractBaseModulePath(
+            "CMD && if [ ! -f $OUT/gen-py/PATH/ttypes.py ]; echo /gen-py/PATH/ttypes.py"));
+    assertEquals(
         "some/base/path",
         ThriftLibraryTarget.extractBaseModulePath(
             "CMD && if [ ! -f $OUT/gen-py/some/base/path/ttypes.pyi ]; CMD CMD"));
