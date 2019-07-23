@@ -290,6 +290,33 @@ let test_creation context =
       ~is_external:false
       ~is_init:false
   in
+  let test_search_path_subdirectory () =
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let search_root = bracket_tmpdir context |> Path.create_absolute in
+    let search_subdirectory_path = Path.absolute search_root ^ "/sub" in
+    Sys_utils.mkdir_no_fail search_subdirectory_path;
+    let search_subdirectory = Path.create_absolute search_subdirectory_path in
+    touch local_root "a.py";
+    touch search_root "b.py";
+    touch search_subdirectory "c.py";
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Subdirectory { root = search_root; subdirectory = "sub" }]
+        ~filter_directories:[local_root]
+        ()
+    in
+    let assert_path = assert_equal ~cmp:Path.equal ~printer:Path.show in
+    assert_create_fail ~configuration search_root "b.py";
+    let source_path_a = create_source_path_exn ~configuration local_root "a.py" in
+    assert_path
+      (Path.create_relative ~root:local_root ~relative:"a.py")
+      (SourcePath.full_path ~configuration source_path_a);
+    let source_path_b = create_source_path_exn ~configuration search_subdirectory "c.py" in
+    assert_path
+      (Path.create_relative ~root:search_subdirectory ~relative:"c.py")
+      (SourcePath.full_path ~configuration source_path_b)
+  in
   let test_priority () =
     let local_root = bracket_tmpdir context |> Path.create_absolute in
     let external_root0 = bracket_tmpdir context |> Path.create_absolute in
@@ -718,6 +745,7 @@ let test_creation context =
       source_paths_copy
   in
   test_basic ();
+  test_search_path_subdirectory ();
   test_exclude ();
   test_directory_filter ();
   test_directory_filter2 ();

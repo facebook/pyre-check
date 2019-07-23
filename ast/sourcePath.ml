@@ -101,7 +101,7 @@ let create
 let full_path ~configuration { relative; priority; _ } =
   let root =
     Configuration.Analysis.search_path configuration
-    |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.to_path
+    |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
   in
   Path.create_relative ~root ~relative
 
