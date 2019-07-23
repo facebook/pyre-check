@@ -463,6 +463,7 @@ let populate_shared_memory
   in
   let environment = Environment.Builder.create () in
   add_to_shared_memory environment;
+  Environment.add_special_classes (module SharedHandler);
   build (module SharedHandler) ~configuration ~scheduler ~sources;
   if debug then
     ClassHierarchy.check_integrity (module SharedHandler.TypeOrderHandler);

@@ -76,6 +76,8 @@ module type Handler = sig
   module TypeOrderHandler : ClassHierarchy.Handler
 end
 
+val add_special_classes : (module Handler) -> unit
+
 val handler : t -> (module Handler)
 (** Provides a default in-process environment handler constructed from an [Environment.t]. Use
     [Environment_service.handler] if interfacing from outside [Analysis]. *)

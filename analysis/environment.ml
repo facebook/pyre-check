@@ -236,6 +236,73 @@ let connect_definition
   |> List.iter ~f:register_supertype
 
 
+let add_special_classes (module Handler : Handler) =
+  (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
+     the stubs. *)
+  let add_special_class ~name ~bases ~metaclasses ~body =
+    let definition =
+      let create_base annotation =
+        { Expression.Call.Argument.name = None; value = Type.expression annotation }
+      in
+      let create_metaclass annotation =
+        { Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
+          value = Type.expression annotation
+        }
+      in
+      { Class.name = Reference.create name;
+        bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
+        body;
+        decorators = [];
+        docstring = None
+      }
+    in
+    let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+    Handler.set_class_definition ~name ~definition:(Node.create_with_default_location definition);
+    ClassHierarchy.insert order name;
+    Handler.register_class_metadata name
+  in
+  let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
+  List.iter
+    ~f:(fun (name, bases, metaclasses, body) -> add_special_class ~name ~bases ~metaclasses ~body)
+    [ "None", [], [], [];
+      "typing.Optional", [], [], [];
+      "typing.Undeclared", [], [], [];
+      "typing.NoReturn", [], [], [];
+      ( "typing.Type",
+        [Type.parametric "typing.Generic" (Concrete [Type.variable "typing._T"])],
+        [],
+        [] );
+      ( "typing.GenericMeta",
+        [],
+        [],
+        [ Define
+            { signature =
+                { name = Reference.create "typing.GenericMeta.__getitem__";
+                  parameters =
+                    [ { Parameter.name = "cls"; value = None; annotation = None }
+                      |> Node.create_with_default_location;
+                      { Parameter.name = "arg"; value = None; annotation = None }
+                      |> Node.create_with_default_location ];
+                  decorators = [];
+                  docstring = None;
+                  return_annotation = None;
+                  async = false;
+                  parent = Some (Reference.create "typing.GenericMeta")
+                };
+              body = []
+            }
+          |> Node.create_with_default_location ] );
+      "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
+      ( "TypedDictionary",
+        [Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])],
+        [],
+        Type.TypedDictionary.defines ~t_self_expression ~total:true );
+      ( "NonTotalTypedDictionary",
+        [Type.Primitive "TypedDictionary"],
+        [],
+        Type.TypedDictionary.defines ~t_self_expression ~total:false ) ]
+
+
 let handler
     { class_definitions;
       class_metadata;
@@ -249,180 +316,188 @@ let handler
     }
   =
   let (module DependencyHandler : Dependencies.Handler) = Dependencies.handler dependencies in
-  ( module struct
-    module TypeOrderHandler = (val ClassHierarchy.handler order : ClassHierarchy.Handler)
+  let handler =
+    ( module struct
+      module TypeOrderHandler = (val ClassHierarchy.handler order : ClassHierarchy.Handler)
 
-    module DependencyHandler = DependencyHandler
+      module DependencyHandler = DependencyHandler
 
-    let register_dependency ~qualifier ~dependency =
-      Log.log
-        ~section:`Dependencies
-        "Adding dependency from %a to %a"
-        Reference.pp
-        dependency
-        Reference.pp
-        qualifier;
-      DependencyHandler.add_dependent ~qualifier dependency
-
-
-    let register_global ~qualifier ~reference ~global =
-      DependencyHandler.add_global_key ~qualifier reference;
-      Hashtbl.set ~key:reference ~data:global globals
+      let register_dependency ~qualifier ~dependency =
+        Log.log
+          ~section:`Dependencies
+          "Adding dependency from %a to %a"
+          Reference.pp
+          dependency
+          Reference.pp
+          qualifier;
+        DependencyHandler.add_dependent ~qualifier dependency
 
 
-    let register_undecorated_function ~reference ~annotation =
-      Hashtbl.set undecorated_functions ~key:reference ~data:annotation
+      let register_global ~qualifier ~reference ~global =
+        DependencyHandler.add_global_key ~qualifier reference;
+        Hashtbl.set ~key:reference ~data:global globals
 
 
-    let set_class_definition ~name ~definition =
-      let definition =
-        match Hashtbl.find class_definitions name with
-        | Some { Node.location; value = preexisting } ->
-            { Node.location; value = Class.update preexisting ~definition:(Node.value definition) }
-        | _ -> definition
-      in
-      Hashtbl.set class_definitions ~key:name ~data:definition
+      let register_undecorated_function ~reference ~annotation =
+        Hashtbl.set undecorated_functions ~key:reference ~data:annotation
 
 
-    let register_alias ~qualifier ~key ~data =
-      DependencyHandler.add_alias_key ~qualifier key;
-      Hashtbl.set ~key ~data aliases
-
-
-    let purge ?(debug = false) qualifiers =
-      let purge_table_given_keys table keys =
-        List.iter ~f:(fun key -> Hashtbl.remove table key) keys
-      in
-      (* Dependents are handled differently from other keys, because in each other
-       * instance, the path is the only one adding entries to the key. However, we can have
-       *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
-       * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
-      let purge_dependents keys =
-        let remove_paths entry =
-          entry
-          >>| fun entry ->
-          let qualifiers = Reference.Set.of_list qualifiers in
-          Set.diff entry qualifiers
+      let set_class_definition ~name ~definition =
+        let definition =
+          match Hashtbl.find class_definitions name with
+          | Some { Node.location; value = preexisting } ->
+              { Node.location;
+                value = Class.update preexisting ~definition:(Node.value definition)
+              }
+          | _ -> definition
         in
-        List.iter
-          ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
-          keys
-      in
-      let purge_submodules qualifier =
-        let rec do_purge = function
-          | None -> ()
-          | Some qualifier ->
-              ( if not (Hashtbl.mem modules qualifier) then
-                  let change = function
-                    | None
-                    | Some 0 ->
-                        None
-                    | Some count -> (
-                      match count - 1 with
-                      | 0 -> None
-                      | _ as count -> Some count )
-                  in
-                  Hashtbl.change implicit_submodules qualifier ~f:change );
-              do_purge (Reference.prefix qualifier)
+        Hashtbl.set class_definitions ~key:name ~data:definition
+
+
+      let register_alias ~qualifier ~key ~data =
+        DependencyHandler.add_alias_key ~qualifier key;
+        Hashtbl.set ~key ~data aliases
+
+
+      let purge ?(debug = false) qualifiers =
+        let purge_table_given_keys table keys =
+          List.iter ~f:(fun key -> Hashtbl.remove table key) keys
         in
-        do_purge (Reference.prefix qualifier)
-      in
-      let class_keys =
-        List.concat_map
-          ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier)
-          qualifiers
-      in
-      purge_table_given_keys class_definitions class_keys;
-      purge_table_given_keys class_metadata class_keys;
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
-      |> purge_table_given_keys aliases;
-      let global_keys =
-        List.concat_map
-          ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier)
-          qualifiers
-      in
-      purge_table_given_keys globals global_keys;
-      purge_table_given_keys undecorated_functions global_keys;
-      List.concat_map
-        ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
-        qualifiers
-      |> purge_dependents;
-      DependencyHandler.clear_keys_batch qualifiers;
-      List.iter ~f:purge_submodules qualifiers;
-      List.iter ~f:(Hashtbl.remove modules) qualifiers;
-      SharedMem.collect `aggressive;
-      if debug then
-        ClassHierarchy.check_integrity (ClassHierarchy.handler order)
-
-
-    let class_definition annotation = Hashtbl.find class_definitions annotation
-
-    let register_module ({ Source.qualifier; _ } as source) =
-      Hashtbl.set ~key:qualifier ~data:(Module.create source) modules
-
-
-    let register_implicit_submodule qualifier =
-      match Hashtbl.mem modules qualifier with
-      | true -> ()
-      | false ->
-          let update = function
-            | None -> 1
-            | Some count -> count + 1
+        (* Dependents are handled differently from other keys, because in each other
+         * instance, the path is the only one adding entries to the key. However, we can have
+         *  both a.py and b.py import c.py, and thus have c.py in its keys. Therefore, when
+         * purging a.py, we need to take care not to remove the c -> b dependent relationship. *)
+        let purge_dependents keys =
+          let remove_paths entry =
+            entry
+            >>| fun entry ->
+            let qualifiers = Reference.Set.of_list qualifiers in
+            Set.diff entry qualifiers
           in
-          Hashtbl.update implicit_submodules qualifier ~f:update
+          List.iter
+            ~f:(fun key -> Hashtbl.change dependencies.Dependencies.dependents key ~f:remove_paths)
+            keys
+        in
+        let purge_submodules qualifier =
+          let rec do_purge = function
+            | None -> ()
+            | Some qualifier ->
+                ( if not (Hashtbl.mem modules qualifier) then
+                    let change = function
+                      | None
+                      | Some 0 ->
+                          None
+                      | Some count -> (
+                        match count - 1 with
+                        | 0 -> None
+                        | _ as count -> Some count )
+                    in
+                    Hashtbl.change implicit_submodules qualifier ~f:change );
+                do_purge (Reference.prefix qualifier)
+          in
+          do_purge (Reference.prefix qualifier)
+        in
+        let class_keys =
+          List.concat_map
+            ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier)
+            qualifiers
+        in
+        purge_table_given_keys class_definitions class_keys;
+        purge_table_given_keys class_metadata class_keys;
+        List.concat_map
+          ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier)
+          qualifiers
+        |> purge_table_given_keys aliases;
+        let global_keys =
+          List.concat_map
+            ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier)
+            qualifiers
+        in
+        purge_table_given_keys globals global_keys;
+        purge_table_given_keys undecorated_functions global_keys;
+        List.concat_map
+          ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
+          qualifiers
+        |> purge_dependents;
+        DependencyHandler.clear_keys_batch qualifiers;
+        List.iter ~f:purge_submodules qualifiers;
+        List.iter ~f:(Hashtbl.remove modules) qualifiers;
+        SharedMem.collect `aggressive;
+        if debug then
+          ClassHierarchy.check_integrity (ClassHierarchy.handler order)
 
 
-    let is_module name = Hashtbl.mem modules name || Hashtbl.mem implicit_submodules name
+      let class_definition annotation = Hashtbl.find class_definitions annotation
 
-    let module_definition name =
-      match Hashtbl.find modules name with
-      | Some _ as result -> result
-      | None -> (
-        match Hashtbl.mem implicit_submodules name with
-        | true -> Some (Module.create_implicit ())
-        | false -> None )
+      let register_module ({ Source.qualifier; _ } as source) =
+        Hashtbl.set ~key:qualifier ~data:(Module.create source) modules
 
 
-    let in_class_definition_keys = Hashtbl.mem class_definitions
-
-    let aliases = Hashtbl.find aliases
-
-    let register_class_metadata class_name =
-      let successors = ClassHierarchy.successors (module TypeOrderHandler) class_name in
-      let in_test =
-        let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-        List.filter_map successors ~f:(Hashtbl.find class_definitions)
-        |> List.exists ~f:is_unit_test
-      in
-      let is_final =
-        Hashtbl.find class_definitions class_name
-        >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
-        |> Option.value ~default:false
-      in
-      let extends_placeholder_stub_class =
-        Hashtbl.find class_definitions class_name
-        >>| AnnotatedClass.create
-        >>| AnnotatedClass.extends_placeholder_stub_class ~aliases ~module_definition
-        |> Option.value ~default:false
-      in
-      Hashtbl.set
-        class_metadata
-        ~key:class_name
-        ~data:{ is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+      let register_implicit_submodule qualifier =
+        match Hashtbl.mem modules qualifier with
+        | true -> ()
+        | false ->
+            let update = function
+              | None -> 1
+              | Some count -> count + 1
+            in
+            Hashtbl.update implicit_submodules qualifier ~f:update
 
 
-    let class_metadata = Hashtbl.find class_metadata
+      let is_module name = Hashtbl.mem modules name || Hashtbl.mem implicit_submodules name
 
-    let globals = Hashtbl.find globals
+      let module_definition name =
+        match Hashtbl.find modules name with
+        | Some _ as result -> result
+        | None -> (
+          match Hashtbl.mem implicit_submodules name with
+          | true -> Some (Module.create_implicit ())
+          | false -> None )
 
-    let undecorated_signature = Hashtbl.find undecorated_functions
 
-    let dependencies = DependencyHandler.dependents
+      let in_class_definition_keys = Hashtbl.mem class_definitions
 
-    let local_mode _ = None
+      let aliases = Hashtbl.find aliases
 
-    let transaction ~f () = f ()
-  end : Handler )
+      let register_class_metadata class_name =
+        let successors = ClassHierarchy.successors (module TypeOrderHandler) class_name in
+        let in_test =
+          let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
+          List.filter_map successors ~f:(Hashtbl.find class_definitions)
+          |> List.exists ~f:is_unit_test
+        in
+        let is_final =
+          Hashtbl.find class_definitions class_name
+          >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
+          |> Option.value ~default:false
+        in
+        let extends_placeholder_stub_class =
+          Hashtbl.find class_definitions class_name
+          >>| AnnotatedClass.create
+          >>| AnnotatedClass.extends_placeholder_stub_class ~aliases ~module_definition
+          |> Option.value ~default:false
+        in
+        Hashtbl.set
+          class_metadata
+          ~key:class_name
+          ~data:{ is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+
+
+      let class_metadata = Hashtbl.find class_metadata
+
+      let globals = Hashtbl.find globals
+
+      let undecorated_signature = Hashtbl.find undecorated_functions
+
+      let dependencies = DependencyHandler.dependents
+
+      let local_mode _ = None
+
+      let transaction ~f () = f ()
+    end : Handler )
+  in
+  add_special_classes handler;
+  handler
 
 
 let dependencies (module Handler : Handler) = Handler.dependencies
@@ -1053,81 +1128,6 @@ module Builder = struct
     Hashtbl.set globals ~key:(Reference.create "None") ~data:(annotation Type.none);
     Hashtbl.set globals ~key:(Reference.create "...") ~data:(annotation Type.Any);
 
-    (* Add classes for `typing.Optional` and `typing.Undeclared` that are currently not encoded in
-       the stubs. *)
-    let add_special_class ~name ~bases ~metaclasses ~body =
-      let definition =
-        let create_base annotation =
-          { Expression.Call.Argument.name = None; value = Type.expression annotation }
-        in
-        let create_metaclass annotation =
-          { Expression.Call.Argument.name = Some (Node.create_with_default_location "metaclass");
-            value = Type.expression annotation
-          }
-        in
-        { Class.name = Reference.create name;
-          bases = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
-          body;
-          decorators = [];
-          docstring = None
-        }
-      in
-      let successors =
-        let successor annotation = annotation |> Type.split |> fst |> Type.primitive_name in
-        List.filter_map bases ~f:successor @ ["object"]
-      in
-      Hashtbl.set
-        ~key:name
-        ~data:
-          { GlobalResolution.successors;
-            is_test = false;
-            is_final = false;
-            extends_placeholder_stub_class = false
-          }
-        class_metadata;
-      Hashtbl.set ~key:name ~data:(Node.create_with_default_location definition) class_definitions
-    in
-    let t_self_expression = Name (Name.Identifier "TSelf") |> Node.create_with_default_location in
-    List.iter
-      ~f:(fun (name, bases, metaclasses, body) ->
-        add_special_class ~name ~bases ~metaclasses ~body)
-      [ "None", [], [], [];
-        "typing.Optional", [], [], [];
-        "typing.Undeclared", [], [], [];
-        "typing.NoReturn", [], [], [];
-        ( "typing.Type",
-          [Type.parametric "typing.Generic" (Concrete [Type.variable "typing._T"])],
-          [],
-          [] );
-        ( "typing.GenericMeta",
-          [],
-          [],
-          [ Define
-              { signature =
-                  { name = Reference.create "typing.GenericMeta.__getitem__";
-                    parameters =
-                      [ { Parameter.name = "cls"; value = None; annotation = None }
-                        |> Node.create_with_default_location;
-                        { Parameter.name = "arg"; value = None; annotation = None }
-                        |> Node.create_with_default_location ];
-                    decorators = [];
-                    docstring = None;
-                    return_annotation = None;
-                    async = false;
-                    parent = Some (Reference.create "typing.GenericMeta")
-                  };
-                body = []
-              }
-            |> Node.create_with_default_location ] );
-        "typing.Generic", [], [Type.Primitive "typing.GenericMeta"], [];
-        ( "TypedDictionary",
-          [Type.parametric "typing.Mapping" (Concrete [Type.string; Type.Any])],
-          [],
-          Type.TypedDictionary.defines ~t_self_expression ~total:true );
-        ( "NonTotalTypedDictionary",
-          [Type.Primitive "TypedDictionary"],
-          [],
-          Type.TypedDictionary.defines ~t_self_expression ~total:false ) ];
     { class_definitions;
       class_metadata;
       modules;
