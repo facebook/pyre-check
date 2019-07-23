@@ -1527,16 +1527,6 @@ expression:
       }
     }
 
-  | start = LEFTPARENS; expression = test_list; RIGHTPARENS; DOT; identifier = identifier {
-      {
-        Node.location =
-          location_create_with_stop ~start ~stop:(Location.Reference.stop (fst identifier));
-        value = Name (
-          Name.Attribute { base = expression; attribute = snd identifier; special = false }
-        )
-      }
-  }
-
   | expression = expression; DOT; identifier = identifier {
       let location =
         { expression.Node.location with Location.stop = Location.Reference.stop (fst identifier) }
