@@ -16,7 +16,6 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -58,7 +57,8 @@ public final class FileSystem {
   private static File downloadRemoteZip(String remoteUrl, String cacheDirectory)
       throws IOException {
     URL url = new URL(remoteUrl);
-    File outputFile = Paths.get(cacheDirectory, url.getPath()).getFileName().toFile();
+    String relativeZipPath = Paths.get(url.getPath()).getFileName().toString();
+    File outputFile = Paths.get(cacheDirectory, relativeZipPath).toFile();
     if (outputFile.exists()) {
       return outputFile;
     }
@@ -76,9 +76,9 @@ public final class FileSystem {
    */
   public static ImmutableSet<String> unzipRemoteFile(
       String remoteUrl, String cacheDirectory, File outputDirectory) throws IOException {
-    File temporaryZipFile = downloadRemoteZip(remoteUrl, cacheDirectory);
+    File downloadedZipFile = downloadRemoteZip(remoteUrl, cacheDirectory);
     ImmutableSet.Builder<String> conflictingFileSetBuilder = ImmutableSet.builder();
-    try (ZipFile zipFile = new ZipFile(temporaryZipFile)) {
+    try (ZipFile zipFile = new ZipFile(downloadedZipFile)) {
       Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
       while (zipEntries.hasMoreElements()) {
         ZipEntry zipEntry = zipEntries.nextElement();
@@ -94,7 +94,6 @@ public final class FileSystem {
         }
       }
     }
-    temporaryZipFile.delete();
     return conflictingFileSetBuilder.build();
   }
 }

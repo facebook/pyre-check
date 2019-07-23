@@ -72,6 +72,7 @@ public final class BuildTargetsBuilder {
     }
     SimpleLogger.info("Building " + this.pythonWheelUrls.size() + " python wheels...");
     long start = System.currentTimeMillis();
+    new File(BuilderCache.WHEEL_CACHE_PATH).mkdirs();
     File outputDirectoryFile = new File(outputDirectory);
     this.pythonWheelUrls
         .parallelStream()

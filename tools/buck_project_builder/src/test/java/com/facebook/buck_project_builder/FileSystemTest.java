@@ -135,6 +135,9 @@ public class FileSystemTest {
     assertEquals(ImmutableSet.of("foo/bar/test.txt"), conflictingFilesOnSecondUnzip);
     assertContent(Paths.get(root, "out", "foo", "bar", "test.txt").toFile(), "hello world");
 
+    // Check the zip is cached.
+    assertTrue(Paths.get(cacheDirectory, "test.zip").toFile().exists());
+
     FileUtils.deleteDirectory(new File(cacheDirectory));
     FileUtils.deleteDirectory(new File(root));
   }
