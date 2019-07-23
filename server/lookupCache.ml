@@ -103,8 +103,7 @@ let find_annotation ~state ~configuration ~path ~position =
   let annotation = lookup >>= Lookup.get_annotation ~position in
   let _ =
     match source_path with
-    | Some { SourcePath.relative_path; _ } ->
-        let handle = Path.RelativePath.relative relative_path in
+    | Some { SourcePath.relative = handle; _ } ->
         let normals =
           annotation
           >>| fun (location, annotation) ->
@@ -123,8 +122,7 @@ let find_all_annotations ~state ~configuration ~path =
   let annotations = lookup >>| Lookup.get_all_annotations in
   let _ =
     match source_path, annotations with
-    | Some { SourcePath.relative_path; _ }, Some annotations ->
-        let handle = Path.RelativePath.relative relative_path in
+    | Some { SourcePath.relative = handle; _ }, Some annotations ->
         let integers = ["annotation list size", List.length annotations] in
         log_lookup
           ~handle
@@ -152,8 +150,7 @@ let find_definition ~state ~configuration path position =
   let definition = lookup >>= Lookup.get_definition ~position in
   let _ =
     match source_path with
-    | Some { SourcePath.relative_path; _ } ->
-        let handle = Path.RelativePath.relative relative_path in
+    | Some { SourcePath.relative = handle; _ } ->
         let normals =
           definition >>| fun location -> ["resolved location", Location.Instantiated.show location]
         in

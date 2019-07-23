@@ -35,10 +35,7 @@ let compute_dependencies
     let new_signature_hashes = signature_hashes ~default:(-1) in
     old_signature_hashes, new_signature_hashes
   in
-  let handles =
-    List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
-        Path.RelativePath.relative relative_path)
-  in
+  let handles = List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative) in
   Log.log
     ~section:`Server
     "Handling type check request for files %a"

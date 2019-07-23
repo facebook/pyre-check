@@ -75,8 +75,8 @@ let start_from_scratch ?old_state ~connections ~configuration () =
   in
   let symlink_targets_to_sources =
     let table = String.Table.create () in
-    let add_source_path { Ast.SourcePath.relative_path; _ } =
-      let symlink_source = Path.Relative relative_path in
+    let add_source_path source_path =
+      let symlink_source = Ast.SourcePath.full_path ~configuration source_path in
       match Path.readlink symlink_source with
       | None -> ()
       | Some symlink_target -> Hashtbl.set table ~key:symlink_target ~data:symlink_source

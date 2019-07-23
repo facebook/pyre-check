@@ -7,7 +7,7 @@ open Core
 open Pyre
 
 type t = {
-  relative_path: Path.RelativePath.t;
+  relative: string;
   qualifier: Reference.t;
   priority: int;
   is_stub: bool;
@@ -18,19 +18,17 @@ type t = {
 
 let equal = [%compare.equal: t]
 
-let pp formatter { relative_path; qualifier; priority; is_stub; is_external; is_init } =
-  let priority = Int.to_string priority in
+let pp formatter { relative; qualifier; priority; is_stub; is_external; is_init } =
   let is_stub = if is_stub then " [STUB]" else "" in
   let is_external = if is_external then " [EXTERNAL]" else "" in
   let is_init = if is_init then " [INIT]" else "" in
   Format.fprintf
     formatter
-    "[%a(%a:%s)%s%s%s]"
-    Path.RelativePath.pp
-    relative_path
+    "[%d/%s(%a)%s%s%s]"
+    priority
+    relative
     Reference.pp
     qualifier
-    priority
     is_stub
     is_external
     is_init
@@ -68,11 +66,11 @@ let qualifier_of_relative relative =
 let create_from_search_path ~is_external ~search_path path =
   SearchPath.search_for_path ~search_path path
   >>= fun SearchPath.{ relative_path; priority } ->
-  let path = Path.Relative relative_path in
-  let qualifier = qualifier_of_relative (Path.RelativePath.relative relative_path) in
-  let is_stub = Path.is_python_stub path in
-  let is_init = Path.is_python_init path in
-  Some { relative_path; qualifier; priority; is_stub; is_external; is_init }
+  let relative = Path.RelativePath.relative relative_path in
+  let qualifier = qualifier_of_relative relative in
+  let is_stub = Path.is_path_python_stub relative in
+  let is_init = Path.is_path_python_init relative in
+  Some { relative; qualifier; priority; is_stub; is_external; is_init }
 
 
 let should_type_check
@@ -98,6 +96,14 @@ let create
       let search_path = List.append search_path [SearchPath.Root local_root] in
       let is_external = not (should_type_check ~configuration path) in
       create_from_search_path ~is_external ~search_path path
+
+
+let full_path ~configuration { relative; priority; _ } =
+  let root =
+    Configuration.Analysis.search_path configuration
+    |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.to_path
+  in
+  Path.create_relative ~root ~relative
 
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module

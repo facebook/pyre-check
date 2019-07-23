@@ -55,22 +55,19 @@ let test_creation context =
       ?is_stub
       ?is_external
       ?is_init
+      ~configuration
       ~search_root
       ~relative
-      { SourcePath.relative_path = actual_relative_path;
-        qualifier = _;
-        priority = actual_priority;
-        is_stub = actual_is_stub;
-        is_external = actual_is_external;
-        is_init = actual_is_init
-      }
+      ( { SourcePath.priority = actual_priority;
+          is_stub = actual_is_stub;
+          is_external = actual_is_external;
+          is_init = actual_is_init;
+          _
+        } as source_path )
     =
     let expected_path = Path.create_relative ~root:search_root ~relative in
-    assert_equal
-      ~cmp:Path.equal
-      ~printer:Path.show
-      expected_path
-      (Path.Relative actual_relative_path);
+    let actual_path = SourcePath.full_path ~configuration source_path in
+    assert_equal ~cmp:Path.equal ~printer:Path.show expected_path actual_path;
     Option.iter priority ~f:(fun expected_priority ->
         assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
     Option.iter is_stub ~f:(fun expected_is_stub ->
@@ -140,6 +137,7 @@ let test_creation context =
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
     let assert_create_fail = assert_create_fail ~configuration in
     (* Creation test *)
     let local_a = create_exn local_root "a.py" in
@@ -310,6 +308,7 @@ let test_creation context =
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
     (* Creation test *)
     List.iter local_paths ~f:(fun path ->
         assert_source_path
@@ -400,6 +399,7 @@ let test_creation context =
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
     let assert_create_fail = assert_create_fail ~configuration in
     assert_source_path (create_exn local_root "foo.py") ~search_root:local_root ~relative:"foo.py";
     assert_create_fail local_root "bar.py";
@@ -446,6 +446,7 @@ let test_creation context =
         ~ignore_all_errors:[durp]
         ()
     in
+    let assert_source_path = assert_source_path ~configuration in
     let create_exn = create_source_path_exn ~configuration in
     assert_source_path
       (create_exn local_root "a.py")
@@ -491,11 +492,13 @@ let test_creation context =
     let create_exn = create_source_path_exn ~configuration in
     assert_source_path
       (create_exn local_root "a.py")
+      ~configuration
       ~search_root:local_root
       ~relative:"a.py"
       ~is_external:false;
     assert_source_path
       (create_exn search_root "b.py")
+      ~configuration
       ~search_root
       ~relative:"b.py"
       ~is_external:true
@@ -527,6 +530,7 @@ let test_creation context =
           ()
       in
       let create_exn = create_source_path_exn ~configuration in
+      let assert_source_path = assert_source_path ~configuration in
       assert_source_path
         (create_exn local_root "a.py")
         ~search_root:local_root
@@ -570,6 +574,7 @@ let test_creation context =
           ()
       in
       let create_exn = create_source_path_exn ~configuration in
+      let assert_source_path = assert_source_path ~configuration in
       assert_source_path
         (create_exn local_root "a.py")
         ~search_root:local_root
@@ -629,6 +634,7 @@ let test_creation context =
         ()
     in
     let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
     assert_source_path
       (create_exn local_root "a.py")
       ~search_root:local_root
@@ -678,13 +684,47 @@ let test_creation context =
     assert_same_module_greater (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
     assert_same_module_greater (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
   in
+  let test_root_independence () =
+    (* We want to test that `ModuleTracker` creation is independent of where the root is located
+       at. *)
+    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root0 = bracket_tmpdir context |> Path.create_absolute in
+    let external_root1 = bracket_tmpdir context |> Path.create_absolute in
+    let local_root_copy = bracket_tmpdir context |> Path.create_absolute in
+    let external_root0_copy = bracket_tmpdir context |> Path.create_absolute in
+    let external_root1_copy = bracket_tmpdir context |> Path.create_absolute in
+    let setup local_root external_root0 external_root1 =
+      touch local_root "a.py";
+      touch local_root "b.pyi";
+      touch external_root0 "c.py";
+      touch external_root0 "d.pyi";
+      touch external_root1 "e.py";
+      touch external_root1 "f.pyi";
+      Configuration.Analysis.create
+        ~local_root
+        ~search_path:[SearchPath.Root external_root0; SearchPath.Root external_root1]
+        ~filter_directories:[local_root; external_root0]
+        ()
+      |> ModuleTracker.create
+      |> ModuleTracker.all_source_paths
+      |> List.sort ~compare:SourcePath.compare
+    in
+    let source_paths_original = setup local_root external_root0 external_root1 in
+    let source_paths_copy = setup local_root_copy external_root0_copy external_root1_copy in
+    assert_equal
+      ~cmp:(List.equal SourcePath.equal)
+      ~printer:(List.to_string ~f:(Format.asprintf "%a" SourcePath.pp))
+      source_paths_original
+      source_paths_copy
+  in
   test_basic ();
   test_exclude ();
   test_directory_filter ();
   test_directory_filter2 ();
   test_priority ();
   test_overlapping ();
-  test_overlapping2 ()
+  test_overlapping2 ();
+  test_root_independence ()
 
 
 module Root = struct
@@ -734,11 +774,11 @@ let test_update context =
       expected
       actual
   in
-  let assert_module_paths ~expected tracker =
+  let assert_module_paths ~configuration ~expected tracker =
     let expected = List.sort ~compare:Path.compare expected in
     let actual =
       ModuleTracker.source_paths tracker
-      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
+      |> List.map ~f:(SourcePath.full_path ~configuration)
       |> List.sort ~compare:Path.compare
     in
     assert_equal
@@ -783,6 +823,7 @@ let test_update context =
     assert_modules tracker ~expected:["a"; "b"; "c"; "d"];
     assert_module_paths
       tracker
+      ~configuration
       ~expected:
         [ Path.create_relative ~root:external_root ~relative:"a.pyi";
           Path.create_relative ~root:external_root ~relative:"b/__init__.pyi";
@@ -836,10 +877,9 @@ let test_update context =
     in
     assert_modules ~expected:expect_modules tracker;
     let expect_paths =
-      ModuleTracker.source_paths fresh_tracker
-      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
+      ModuleTracker.source_paths fresh_tracker |> List.map ~f:(SourcePath.full_path ~configuration)
     in
-    assert_module_paths ~expected:expect_paths tracker
+    assert_module_paths ~configuration ~expected:expect_paths tracker
   in
   let test_incremental () =
     (* Adding new file for a new module *)

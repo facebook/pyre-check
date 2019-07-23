@@ -1329,8 +1329,7 @@ module ScratchProject = struct
 
   let handles_of { module_tracker; _ } =
     Service.ModuleTracker.source_paths module_tracker
-    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
-           Path.RelativePath.relative relative_path |> File.Handle.create_for_testing)
+    |> List.map ~f:(fun { SourcePath.relative; _ } -> File.Handle.create_for_testing relative)
 
 
   let parse_sources ({ configuration; module_tracker } as project) =

@@ -96,10 +96,11 @@ let lookup tracker module_name =
 
 let lookup_path ~configuration tracker path =
   SourcePath.create ~configuration path
-  >>= fun { SourcePath.relative_path; qualifier; _ } ->
+  >>= fun { SourcePath.relative; priority; qualifier; _ } ->
   lookup tracker qualifier
-  >>= fun ({ SourcePath.relative_path = tracked_relative_path; _ } as source_path) ->
-  if Path.RelativePath.equal relative_path tracked_relative_path then
+  >>= fun ( { SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
+          source_path ) ->
+  if String.equal relative tracked_relative && Int.equal priority tracked_priority then
     Some source_path
   else
     None
@@ -110,11 +111,6 @@ let mem = Hashtbl.mem
 let source_paths tracker = Hashtbl.data tracker |> List.filter_map ~f:List.hd
 
 let all_source_paths tracker = Hashtbl.data tracker |> List.concat
-
-let paths tracker =
-  source_paths tracker
-  |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
-
 
 let qualifiers tracker =
   source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)

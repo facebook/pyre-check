@@ -78,6 +78,16 @@ let restore_symbolic_links ~changed_paths ~local_root ~get_old_link_path =
   new_paths @ removed_paths
 
 
+(* Used for removed path detection *)
+module IndexedRelativePath = struct
+  module T = struct
+    type t = int * string [@@deriving sexp, compare, hash]
+  end
+
+  include T
+  include Hashable.Make (T)
+end
+
 (* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
    to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
 let compute_locally_changed_paths ~scheduler ~configuration ~module_tracker:old_module_tracker =
@@ -85,9 +95,9 @@ let compute_locally_changed_paths ~scheduler ~configuration ~module_tracker:old_
   let timer = Timer.start () in
   let new_module_tracker = ModuleTracker.create configuration in
   let changed_paths changed new_source_paths =
-    let changed_path { SourcePath.relative_path; qualifier; _ } =
-      let path = Path.Relative relative_path in
+    let changed_path ({ SourcePath.qualifier; _ } as source_path) =
       let old_hash = Ast.SharedMemory.Sources.get qualifier >>| Ast.Source.hash in
+      let path = SourcePath.full_path ~configuration source_path in
       let current_hash = File.hash (File.create path) in
       if Option.equal Int.equal old_hash current_hash then
         None
@@ -107,16 +117,16 @@ let compute_locally_changed_paths ~scheduler ~configuration ~module_tracker:old_
       ()
   in
   let removed_paths =
-    let get_tracked_paths module_tracker =
-      ModuleTracker.all_source_paths module_tracker
-      |> List.map ~f:(fun { SourcePath.relative_path; _ } -> Path.Relative relative_path)
+    let tracked_set =
+      ModuleTracker.all_source_paths new_module_tracker
+      |> List.map ~f:(fun { SourcePath.priority; relative; _ } -> priority, relative)
+      |> IndexedRelativePath.Hash_set.of_list
     in
-    let old_tracked_paths = get_tracked_paths old_module_tracker in
-    let new_tracked_set =
-      get_tracked_paths new_module_tracker |> List.map ~f:Path.absolute |> String.Hash_set.of_list
-    in
-    List.filter old_tracked_paths ~f:(fun path ->
-        not (Hash_set.mem new_tracked_set (Path.absolute path)))
+    ModuleTracker.all_source_paths old_module_tracker
+    |> List.filter ~f:(fun { SourcePath.priority; relative; _ } ->
+           let key = priority, relative in
+           not (Hash_set.mem tracked_set key))
+    |> List.map ~f:(SourcePath.full_path ~configuration)
   in
   Statistics.performance ~name:"computed files to reanalyze" ~timer ();
   changed_paths @ removed_paths

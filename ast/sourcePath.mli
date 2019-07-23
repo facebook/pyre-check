@@ -6,7 +6,7 @@
 open Pyre
 
 type t = private {
-  relative_path: Path.RelativePath.t;
+  relative: string;
   qualifier: Reference.t;
   priority: int;
   is_stub: bool;
@@ -20,6 +20,8 @@ val pp : Format.formatter -> t -> unit
 val create : configuration:Configuration.Analysis.t -> Path.t -> t option
 
 val qualifier_of_relative : string -> Reference.t
+
+val full_path : configuration:Configuration.Analysis.t -> t -> Path.t
 
 (* Expose for testing *)
 val same_module_compare : t -> t -> int

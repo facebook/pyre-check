@@ -44,8 +44,8 @@ let analyze_sources
         Annotated.Class.AttributeCache.clear ();
         Module.Cache.clear ();
         GlobalResolution.Cache.clear ();
-        let analyze_source { errors; number_files } { SourcePath.relative_path; qualifier; _ } =
-          let path = Path.Relative relative_path in
+        let analyze_source { errors; number_files } ({ SourcePath.qualifier; _ } as source_path) =
+          let path = SourcePath.full_path ~configuration source_path in
           match SharedMemory.Sources.get qualifier with
           | Some source ->
               let configuration =
@@ -127,8 +127,8 @@ let check
   let () =
     (* TODO (T46153421): Refactor `populate_shared_memory` to take `SourcePath` *)
     let sources =
-      List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
-          Path.RelativePath.relative relative_path |> File.Handle.create_for_testing)
+      List.map source_paths ~f:(fun { SourcePath.relative; _ } ->
+          File.Handle.create_for_testing relative)
     in
     Environment.populate_shared_memory ~configuration ~scheduler ~sources
   in

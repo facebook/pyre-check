@@ -109,8 +109,7 @@ let test_parse_sources context =
     in
     let module_tracker = Service.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
-    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
-           Path.RelativePath.relative relative_path)
+    |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
     |> List.sort ~compare:String.compare
   in
   assert_equal
@@ -137,8 +136,7 @@ let test_parse_sources context =
     Ast.SharedMemory.Sources.remove [Reference.create "a"; Reference.create "stub"];
     let module_tracker = Service.ModuleTracker.create configuration in
     Service.Parser.parse_all ~scheduler ~configuration module_tracker
-    |> List.map ~f:(fun { SourcePath.relative_path; _ } ->
-           Path.RelativePath.relative relative_path)
+    |> List.map ~f:(fun { SourcePath.relative; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)

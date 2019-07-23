@@ -898,8 +898,8 @@ let process_type_query_request
         |> fun annotation -> TypeQuery.Response (TypeQuery.Type annotation)
     | TypeQuery.PathOfModule module_name ->
         Service.ModuleTracker.lookup module_tracker module_name
-        >>= (fun { SourcePath.relative_path; _ } ->
-              let path = Path.Relative relative_path |> Path.absolute in
+        >>= (fun source_path ->
+              let path = SourcePath.full_path ~configuration source_path |> Path.absolute in
               Some (TypeQuery.Response (TypeQuery.FoundPath path)))
         |> Option.value
              ~default:

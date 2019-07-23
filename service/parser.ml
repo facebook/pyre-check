@@ -15,12 +15,12 @@ type 'success parse_result =
 
 let parse_source
     ?(show_parser_errors = true)
-    ({ SourcePath.relative_path; qualifier; _ } as source_path)
+    ~configuration
+    ({ SourcePath.relative; qualifier; _ } as source_path)
   =
   let parse_lines lines =
     let metadata = Source.Metadata.parse ~qualifier lines in
     try
-      let relative = Path.RelativePath.relative relative_path in
       let statements = Parser.parse ~relative lines in
       let hash = [%hash: string list] lines in
       Success
@@ -39,7 +39,8 @@ let parse_source
         Log.error "%s" error;
         SystemError source_path
   in
-  File.create (Path.Relative relative_path)
+  SourcePath.full_path ~configuration source_path
+  |> File.create
   |> File.lines
   >>| parse_lines
   |> Option.value ~default:(SystemError source_path)
@@ -58,10 +59,10 @@ module FixpointResult = struct
     { parsed = left_parsed @ right_parsed; not_parsed = left_not_parsed @ right_not_parsed }
 end
 
-let parse_sources_job ~preprocessing_state ~show_parser_errors ~force source_paths =
+let parse_sources_job ~configuration ~preprocessing_state ~show_parser_errors ~force source_paths =
   let parse
       ({ FixpointResult.parsed; not_parsed } as result)
-      ({ SourcePath.relative_path; qualifier; _ } as source_path)
+      ({ SourcePath.relative; qualifier; _ } as source_path)
     =
     let use_parsed_source source =
       let source =
@@ -75,8 +76,7 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force source_pat
           |> fun ast_module -> Ast.SharedMemory.Modules.add ~qualifier ~ast_module
         in
         add_module_from_source preprocessed;
-        let handle = Path.RelativePath.relative relative_path in
-        Ast.SharedMemory.Handles.add qualifier ~handle;
+        Ast.SharedMemory.Handles.add qualifier ~handle:relative;
         Ast.SharedMemory.Sources.add (Plugin.apply_to_ast preprocessed)
       in
       match force with
@@ -90,7 +90,7 @@ let parse_sources_job ~preprocessing_state ~show_parser_errors ~force source_pat
             { result with parsed = Success source_path :: parsed }
         | None -> { result with not_parsed = source_path :: not_parsed } )
     in
-    parse_source ~show_parser_errors source_path
+    parse_source ~configuration ~show_parser_errors source_path
     |> fun parsed_source ->
     match parsed_source with
     | Success parsed -> use_parsed_source parsed
@@ -115,6 +115,7 @@ let parse_sources ~configuration ~scheduler ~preprocessing_state source_paths =
         ~initial:{ FixpointResult.parsed = []; not_parsed = [] }
         ~map:(fun _ source_paths ->
           parse_sources_job
+            ~configuration
             ~show_parser_errors:(List.length parsed = 0)
             ~preprocessing_state
             ~force
@@ -176,9 +177,7 @@ let log_parse_errors ~syntax_error ~system_error =
     in
     Log.warning "Could not parse %d file%s%s!%s" count (if count > 1 then "s" else "") details hint;
     let trace list =
-      List.map list ~f:(fun { SourcePath.relative_path; _ } ->
-          Path.RelativePath.relative relative_path)
-      |> String.concat ~sep:";"
+      List.map list ~f:(fun { SourcePath.relative; _ } -> relative) |> String.concat ~sep:";"
     in
     Statistics.event
       ~flush:true

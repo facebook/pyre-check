@@ -26,8 +26,8 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
     (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
   in
   let handles =
-    List.map source_paths ~f:(fun { Ast.SourcePath.relative_path; _ } ->
-        File.Handle.create_for_testing (Path.RelativePath.relative relative_path))
+    List.map source_paths ~f:(fun { Ast.SourcePath.relative; _ } ->
+        File.Handle.create_for_testing relative)
   in
   Test.populate_shared_memory ~configuration ~sources:handles;
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());

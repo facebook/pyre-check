@@ -227,10 +227,9 @@ let create_from_source_path
     ~docstring
     ~metadata
     ~hash
-    ~source_path:{ SourcePath.relative_path; qualifier; is_init; is_stub; _ }
+    ~source_path:{ SourcePath.relative; qualifier; is_init; is_stub; _ }
     statements
   =
-  let relative = Path.RelativePath.relative relative_path in
   { docstring; hash; metadata; is_stub; is_init; relative; qualifier; statements }
 
 

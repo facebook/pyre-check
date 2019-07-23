@@ -86,13 +86,9 @@ let recheck
     if not (List.is_empty unparsed) then
       Log.warning
         "Unable to parse `%s`."
-        ( List.map unparsed ~f:(fun { SourcePath.relative_path; _ } ->
-              Path.RelativePath.relative relative_path)
+        ( List.map unparsed ~f:(fun { SourcePath.relative; _ } -> relative)
         |> String.concat ~sep:", " );
-    let parsed_paths =
-      List.map parsed ~f:(fun { SourcePath.relative_path; _ } ->
-          Path.RelativePath.show relative_path)
-    in
+    let parsed_paths = List.map parsed ~f:(fun { SourcePath.relative; _ } -> relative) in
     Log.log
       ~section:`Debug
       "Repopulating the environment with %a"

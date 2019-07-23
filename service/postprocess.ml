@@ -10,10 +10,7 @@ open Pyre
 open PostprocessSharedMemory
 
 let register_ignores ~configuration scheduler source_paths =
-  let handles =
-    List.map source_paths ~f:(fun { SourcePath.relative_path; _ } ->
-        Path.RelativePath.relative relative_path)
-  in
+  let handles = List.map source_paths ~f:(fun { SourcePath.relative; _ } -> relative) in
   (* Invalidate keys before updating *)
   let remove_ignores handles =
     List.filter_map ~f:IgnoreKeys.get handles
@@ -28,8 +25,7 @@ let register_ignores ~configuration scheduler source_paths =
   remove_modes handles;
 
   (* Register new values *)
-  let register_ignore { SourcePath.relative_path; qualifier; _ } =
-    let key = Path.RelativePath.relative relative_path in
+  let register_ignore { SourcePath.relative; qualifier; _ } =
     (* Register new ignores. *)
     match Ast.SharedMemory.Sources.get qualifier with
     | Some source ->
@@ -44,14 +40,13 @@ let register_ignores ~configuration scheduler source_paths =
           List.fold ~init:Location.Reference.Map.empty ~f:add_ignore ignore_lines
         in
         Map.iteri ~f:(fun ~key ~data -> IgnoreLines.add key data) ignore_map;
-        IgnoreKeys.add key (List.map ~f:Ignore.key ignore_lines)
+        IgnoreKeys.add relative (List.map ~f:Ignore.key ignore_lines)
     | _ -> ()
   in
-  let register_local_mode { SourcePath.relative_path; qualifier; _ } =
+  let register_local_mode { SourcePath.relative; qualifier; _ } =
     match Ast.SharedMemory.Sources.get qualifier with
     | Some { metadata = { Ast.Source.Metadata.local_mode; _ }; _ } ->
-        let handle = Path.RelativePath.relative relative_path in
-        ErrorModes.add handle local_mode
+        ErrorModes.add relative local_mode
     | _ -> ()
   in
   let register source_paths =
@@ -82,15 +77,12 @@ let ignore ~configuration scheduler source_paths errors =
     List.filter ~f:not_ignored errors
   in
   let unused_ignores =
-    let get_unused_ignores { SourcePath.relative_path; _ } =
+    let get_unused_ignores { SourcePath.relative; _ } =
       let ignores =
         let key_to_ignores sofar key =
           IgnoreLines.get key >>| (fun ignores -> ignores @ sofar) |> Option.value ~default:sofar
         in
-        List.fold
-          (IgnoreKeys.get (Path.RelativePath.relative relative_path) |> Option.value ~default:[])
-          ~init:[]
-          ~f:key_to_ignores
+        List.fold (IgnoreKeys.get relative |> Option.value ~default:[]) ~init:[] ~f:key_to_ignores
       in
       let ignores = List.dedup_and_sort ~compare:Ignore.compare ignores in
       let filter_active_ignores sofar ignore =
