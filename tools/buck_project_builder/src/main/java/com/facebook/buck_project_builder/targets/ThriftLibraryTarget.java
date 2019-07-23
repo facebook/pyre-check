@@ -22,7 +22,7 @@ import java.util.stream.StreamSupport;
 public final class ThriftLibraryTarget implements BuildTarget {
 
   private static final Pattern BASE_MODULE_PATH_PATTERN =
-      Pattern.compile("(?<=/gen-py/).*(?=/ttypes\\.py(i?) ];)");
+      Pattern.compile("(?<=/gen-py(.?)/).*(?=/(t?)types\\.py(.?) ];)");
 
   private final String command;
   private final String baseModulePath;
