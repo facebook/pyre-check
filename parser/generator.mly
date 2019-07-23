@@ -513,7 +513,7 @@ statement:
   | statement = async_statement { statement.Node.location, [statement] }
 
 simple_statement:
-  | statements = separated_nonempty_list_of_lists(SEMICOLON, small_statement);
+  | statements = parser_generator_separated_nonempty_list_of_lists(SEMICOLON, small_statement);
     NEWLINE {
       let flattened_statements = List.concat statements in
       let head = List.hd_exn flattened_statements in
@@ -656,7 +656,7 @@ small_statement:
       [{ Node.location = test.Node.location; value = Expression (convert test) }]
     }
 
-  | start = GLOBAL; globals = separated_nonempty_list(COMMA, identifier) {
+  | start = GLOBAL; globals = parser_generator_separated_nonempty_list(COMMA, identifier) {
       let last = List.last_exn globals in
       let stop = (fst last).Location.stop in
       [{
@@ -681,7 +681,7 @@ small_statement:
       }]
     }
 
-  | start = NONLOCAL; nonlocals = separated_nonempty_list(COMMA, identifier) {
+  | start = NONLOCAL; nonlocals = parser_generator_separated_nonempty_list(COMMA, identifier) {
       let stop = (fst (List.last_exn nonlocals)).Location.stop in
       [{
         Node.location = location_create_with_stop ~start ~stop;
@@ -962,7 +962,7 @@ compound_statement:
     }
 
   | start = WITH;
-    items = separated_nonempty_list(COMMA, with_item); COLON;
+    items = parser_generator_separated_nonempty_list(COMMA, with_item); COLON;
     body = block {
       let convert_item (expression, expression_option) =
         (convert expression, expression_option >>| convert)
@@ -1079,7 +1079,7 @@ conditional:
 
 bases:
   | { [] }
-  | LEFTPARENS; bases = separated_list(COMMA, argument); RIGHTPARENS {
+  | LEFTPARENS; bases = parser_generator_separated_list(COMMA, argument); RIGHTPARENS {
       bases
     }
   ;
@@ -1100,7 +1100,7 @@ identifier:
   ;
 
 reference:
-  | identifiers = separated_nonempty_list(DOT, identifier) {
+  | identifiers = parser_generator_separated_nonempty_list(DOT, identifier) {
       let location =
         let (start, _) = List.hd_exn identifiers in
         let (stop, _) = List.last_exn identifiers in
@@ -1207,7 +1207,7 @@ define_parameters:
 %inline subscript:
   | head = expression;
     left = LEFTBRACKET;
-    subscripts = separated_nonempty_list(COMMA, subscript_key);
+    subscripts = parser_generator_separated_nonempty_list(COMMA, subscript_key);
     right = RIGHTBRACKET {
       head, subscripts, Location.create ~start:left ~stop:right
     }
@@ -1273,7 +1273,7 @@ ellipsis_or_dot:
   ;
 
 imports:
-  | imports = separated_nonempty_list(COMMA, import) {
+  | imports = parser_generator_separated_nonempty_list(COMMA, import) {
       let location =
         let (start, _) = List.hd_exn imports in
         let (stop, _) = List.last_exn imports in
@@ -1282,7 +1282,7 @@ imports:
       location, List.map ~f:snd imports
     }
   | start = LEFTPARENS;
-    imports = separated_nonempty_list(COMMA, import);
+    imports = parser_generator_separated_nonempty_list(COMMA, import);
     stop = RIGHTPARENS {
       (Location.create ~start ~stop),
       List.map ~f:snd imports
@@ -1437,7 +1437,7 @@ atom:
     }
 
   | start = LEFTBRACKET;
-    items = separated_list(COMMA, test);
+    items = parser_generator_separated_list(COMMA, test);
     stop = RIGHTBRACKET {
       {
         Node.location = Location.create ~start ~stop;
@@ -1674,7 +1674,7 @@ test:
       }
     }
   | start = LAMBDA;
-    parameters = separated_list(COMMA, lambda_parameter);
+    parameters = parser_generator_separated_list(COMMA, lambda_parameter);
     COLON;
     body = test {
       {
@@ -1781,7 +1781,7 @@ comparison_operator:
   ;
 
 arguments:
-  | arguments = separated_list(COMMA, argument) { arguments }
+  | arguments = parser_generator_separated_list(COMMA, argument) { arguments }
   | test = test_with_generator { [{ Call.Argument.name = None; value = test }] }
   | test = generator; COMMA { [{ Call.Argument.name = None; value = test }] }
   ;
@@ -1894,10 +1894,10 @@ condition:
 
 (* Helper rule dumping ground. *)
 
-separated_list(SEPARATOR, item):
+parser_generator_separated_list(SEPARATOR, item):
   | { [] }
   | item = item { [item] }
-  | item = item; SEPARATOR; rest = separated_list(SEPARATOR, item) {
+  | item = item; SEPARATOR; rest = parser_generator_separated_list(SEPARATOR, item) {
       item::rest
     }
   ;
@@ -1919,26 +1919,26 @@ separated_nonempty_list_indicator(SEPARATOR, item):
   ;
 
 
-separated_nonempty_list(SEPARATOR, item):
+parser_generator_separated_nonempty_list(SEPARATOR, item):
   | item = item { [item] }
-  | item = item; SEPARATOR; rest = separated_list(SEPARATOR, item) {
+  | item = item; SEPARATOR; rest = parser_generator_separated_list(SEPARATOR, item) {
       item::rest
     }
   ;
 
-separated_list_of_lists(SEPARATOR, list_item):
+parser_generator_separated_list_of_lists(SEPARATOR, list_item):
   | { [] }
   | list_item = list_item { [list_item] }
   | list_item = list_item; SEPARATOR;
-    rest = separated_list_of_lists(SEPARATOR, list_item) {
+    rest = parser_generator_separated_list_of_lists(SEPARATOR, list_item) {
       list_item::rest
     }
   ;
 
-separated_nonempty_list_of_lists(SEPARATOR, list_item):
+parser_generator_separated_nonempty_list_of_lists(SEPARATOR, list_item):
   | list_item = list_item { [list_item] }
   | list_item = list_item; SEPARATOR;
-    rest = separated_list_of_lists(SEPARATOR, list_item) {
+    rest = parser_generator_separated_list_of_lists(SEPARATOR, list_item) {
       list_item::rest
     }
   ;
