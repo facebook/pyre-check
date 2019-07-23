@@ -1079,14 +1079,24 @@ let test_nonlocal_locations _ =
 
 
 let test_number_locations _ =
-  assert_source_locations "((1))" [node ~start:(1, 2) ~stop:(1, 3) (Expression (+Integer 1))];
+  assert_source_locations
+    "((1))"
+    [node ~start:(1, 0) ~stop:(1, 5) (Expression (node ~start:(1, 2) ~stop:(1, 3) (Integer 1)))];
   assert_source_locations "((1))" [+Expression (node ~start:(1, 2) ~stop:(1, 3) (Integer 1))];
   assert_source_locations "1;" [+Expression (node ~start:(1, 0) ~stop:(1, 1) (Integer 1))];
   assert_source_locations ".1" [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Float 0.1))];
   assert_source_locations "1." [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Float 1.0))];
   assert_source_locations "1e10" [+Expression (node ~start:(1, 0) ~stop:(1, 4) (Float 1e10))];
   assert_source_locations "0.1j" [+Expression (node ~start:(1, 0) ~stop:(1, 4) (Complex 0.1))];
-  assert_source_locations "1L" [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Integer 1))]
+  assert_source_locations "1L" [+Expression (node ~start:(1, 0) ~stop:(1, 2) (Integer 1))];
+  assert_source_locations
+    "-(1)"
+    [ node
+        ~start:(1, 0)
+        ~stop:(1, 4)
+        (Expression
+           (+UnaryOperator
+               { UnaryOperator.operator = UnaryOperator.Negative; operand = +Integer 1 })) ]
 
 
 let test_operator_locations _ =
@@ -1535,7 +1545,7 @@ let test_tuple_locations _ =
   assert_source_locations "()" [node ~start:(1, 0) ~stop:(1, 2) (Expression (+Tuple []))];
   assert_source_locations
     "(1,)"
-    [node ~start:(1, 1) ~stop:(1, 2) (Expression (+Tuple [+Integer 1]))];
+    [node ~start:(1, 0) ~stop:(1, 4) (Expression (+Tuple [+Integer 1]))];
   assert_source_locations
     "1, 2"
     [node ~start:(1, 0) ~stop:(1, 4) (Expression (+Tuple [+Integer 1; +Integer 2]))];

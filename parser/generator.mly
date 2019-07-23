@@ -11,27 +11,172 @@
   open Statement
   open Pyre
 
+  type parser_expression =
+    | Await of parser_expression_node
+    | BooleanOperator of parser_expression_node BooleanOperator.t
+    | Call of parser_expression_node Call.t
+    | ComparisonOperator of parser_expression_node Expression.Record.ComparisonOperator.record
+    | Complex of float
+    | Dictionary of parser_expression_node Dictionary.t
+    | DictionaryComprehension of
+        (parser_expression_node Dictionary.entry, parser_expression_node) Comprehension.t
+    | Ellipsis
+    | False
+    | Float of float
+    | Generator of (parser_expression_node, parser_expression_node) Comprehension.t
+    | Integer of int
+    | Lambda of parser_expression_node Lambda.t
+    | List of parser_expression_node list
+    | ListComprehension of (parser_expression_node, parser_expression_node) Comprehension.t
+    | Name of parser_expression_node Name.t
+    | Parenthesis of parser_expression_node
+    | Set of parser_expression_node list
+    | SetComprehension of (parser_expression_node, parser_expression_node) Comprehension.t
+    | Starred of parser_expression_node Starred.t
+    | String of parser_expression_node StringLiteral.t
+    | Ternary of parser_expression_node Ternary.t
+    | True
+    | Tuple of parser_expression_node list
+    | UnaryOperator of parser_expression_node Expression.Record.UnaryOperator.record
+    | Yield of parser_expression_node option
+
+  and parser_expression_node = parser_expression Node.t
+
+  let rec convert { Node.location; value } =
+    let convert_entry { Dictionary.key; value } =
+      { Dictionary.key = convert key; value = convert value}
+    in
+    let convert_generator { Comprehension.target; iterator; conditions; async } =
+      {
+        Comprehension.target = convert target;
+        iterator = convert iterator;
+        conditions = List.map ~f:convert conditions;
+        async;
+      }
+    in
+    match value with
+    | Await expression -> Expression.Await (convert expression) |> Node.create ~location
+    | BooleanOperator { left; operator; right } ->
+        Expression.BooleanOperator { left = convert left; operator; right = convert right }
+        |> Node.create ~location
+    | Call { callee; arguments } ->
+        Expression.Call {
+          callee = convert callee;
+          arguments = List.map ~f:convert_argument arguments;
+        }
+        |> Node.create ~location
+    | ComparisonOperator { left; operator; right } ->
+        Expression.ComparisonOperator { left = convert left; operator; right = convert right }
+        |> Node.create ~location
+    | Complex value -> Expression.Complex value |> Node.create ~location
+    | Dictionary { Dictionary.entries; keywords } ->
+        Expression.Dictionary {
+          entries = List.map ~f:convert_entry entries;
+          keywords = List.map ~f:convert keywords;
+        }
+        |> Node.create ~location
+    | DictionaryComprehension { Comprehension.element; generators } ->
+        Expression.DictionaryComprehension {
+          element = convert_entry element;
+          generators = List.map ~f:convert_generator generators;
+        }
+        |> Node.create ~location
+    | Ellipsis -> Expression.Ellipsis |> Node.create ~location
+    | False -> Expression.False |> Node.create ~location
+    | Float value -> Expression.Float value |> Node.create ~location
+    | Generator { Comprehension.element; generators } ->
+        Expression.Generator {
+          element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        }
+        |> Node.create ~location
+    | Integer value -> Expression.Integer value |> Node.create ~location
+    | Lambda { Lambda.parameters; body } ->
+        Expression.Lambda {
+          parameters = List.map ~f:convert_parameter parameters;
+          body = convert body;
+        }
+        |> Node.create ~location
+    | List expression_list ->
+        Expression.List (List.map ~f:convert expression_list) |> Node.create ~location
+    | ListComprehension { Comprehension.element; generators } ->
+        Expression.ListComprehension {
+          element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        }
+        |> Node.create ~location
+    | Name (Name.Attribute { base; attribute; special }) ->
+        Expression.Name (Name.Attribute { base = convert base; attribute; special })
+        |> Node.create ~location
+    | Name (Name.Identifier name) ->
+        Expression.Name (Expression.Name.Identifier name) |> Node.create ~location
+    | Parenthesis expression -> convert expression
+    | Set expression_list ->
+        Expression.Set (List.map ~f:convert expression_list) |> Node.create ~location
+    | SetComprehension { Comprehension.element; generators } ->
+        Expression.SetComprehension {
+          element = convert element;
+          generators = List.map ~f:convert_generator generators;
+        }
+        |> Node.create ~location
+    | Starred (Once expression) ->
+        Expression.Starred (Once (convert expression)) |> Node.create ~location
+    | Starred (Twice expression) ->
+        Expression.Starred (Twice (convert expression)) |> Node.create ~location
+    | String { value; kind } ->
+        let value =
+          match kind with
+          | Format expression_list ->
+              Expression.String { value; kind = Format (List.map ~f:convert expression_list) }
+          | Mixed mixed -> Expression.String { value; kind = Mixed mixed }
+          | String -> Expression.String { value; kind = String }
+          | Bytes -> Expression.String { value; kind = Bytes }
+        in
+        { Node.location; value }
+    | Ternary { target; test; alternative } ->
+        Expression.Ternary {
+          target = convert target;
+          test = convert test;
+          alternative = convert alternative;
+        }
+        |> Node.create ~location
+    | True -> Expression.True |> Node.create ~location
+    | Tuple expression_list ->
+        Expression.Tuple (List.map ~f:convert expression_list) |> Node.create ~location
+    | UnaryOperator { UnaryOperator.operator; operand } ->
+        Expression.UnaryOperator { operator; operand = convert operand } |> Node.create ~location
+    | Yield expression -> Expression.Yield (expression >>| convert) |> Node.create ~location
+
+  and convert_argument { Call.Argument.name; value } =
+    { Call.Argument.name; value = convert value }
+
+  and convert_parameter { Node.location; value = { Parameter.name; value; annotation } } =
+    { Parameter.name; value = value >>| convert; annotation = annotation >>| convert }
+    |> Node.create ~location
+
   let with_decorators decorators = function
     | { Node.location; value = Class value } ->
-        let decorated = { value with Class.decorators = decorators; } in
+        let decorated = { value with Class.decorators = List.map ~f:convert decorators; } in
         { Node.location; value = Class decorated }
     | { Node.location; value = Define value } ->
-        let signature = { value.signature with Define.decorators = decorators } in
+        let signature =
+          { value.signature with Define.decorators = List.map ~f:convert decorators }
+        in
         let decorated = { value with signature } in
         { Node.location; value = Define decorated }
     | _ -> raise (ParserError "Cannot decorate statement")
 
   type entry =
-    | Entry of Expression.t Dictionary.entry
-    | Item of Expression.t
-    | Keywords of Expression.t
-    | Comprehension of Expression.t Comprehension.generator
+    | Entry of parser_expression_node Dictionary.entry
+    | Item of parser_expression_node
+    | Keywords of parser_expression_node
+    | Comprehension of parser_expression_node Comprehension.generator
 
   type entries = {
-      entries: Expression.t Dictionary.entry list;
-      items: Expression.t list;
-      keywords: Expression.t list;
-      comprehensions: Expression.t Comprehension.generator list;
+      entries: parser_expression_node Dictionary.entry list;
+      items: parser_expression_node list;
+      keywords: parser_expression_node list;
+      comprehensions: parser_expression_node Comprehension.generator list;
     }
 
 
@@ -197,7 +342,7 @@
       arguments = [subscript_argument ~subscripts ~location; { Call.Argument.name = None; value }];
     }
     |> Node.create ~location
-    |> fun expression -> Expression expression
+    |> fun expression -> Expression (convert expression)
     |> Node.create ~location
 
   let with_annotation ~parameter ~annotation =
@@ -399,9 +544,9 @@ small_statement:
             value.Node.location.Location.stop;
         };
         value = Assign {
-          Assign.target;
+          Assign.target = convert target;
           annotation = None;
-          value;
+          value = convert value;
           parent = None;
         };
       }]
@@ -414,9 +559,9 @@ small_statement:
             annotation.Node.location.Location.stop;
         };
         value = Assign {
-          Assign.target;
-          annotation = Some annotation;
-          value = create_ellipsis_after annotation;
+          Assign.target = convert target;
+          annotation = Some annotation >>| convert;
+          value = create_ellipsis_after annotation |> convert;
           parent = None;
         };
       }]
@@ -429,9 +574,9 @@ small_statement:
             annotation.Node.location.Location.stop;
         };
         value = Assign {
-          Assign.target;
-          annotation = Some annotation;
-          value = create_ellipsis_after annotation;
+          Assign.target = convert target;
+          annotation = Some annotation >>| convert;
+          value = create_ellipsis_after annotation |> convert;
           parent = None;
         };
       }]
@@ -446,9 +591,9 @@ small_statement:
             value.Node.location.Location.stop;
         };
         value = Assign {
-          Assign.target;
-          annotation = Some annotation;
-          value;
+          Assign.target = convert target;
+          annotation = Some annotation >>| convert;
+          value = convert value;
           parent = None;
         };
       }]
@@ -471,9 +616,9 @@ small_statement:
             ellipsis.Node.location.Location.stop;
         };
         value = Assign {
-          Assign.target;
-          annotation = Some annotation;
-          value = ellipsis;
+          Assign.target = convert target;
+          annotation = Some annotation >>| convert;
+          value = convert ellipsis;
           parent = None;
         };
       }]
@@ -482,14 +627,18 @@ small_statement:
   | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test; message = None; origin = Assert.Assertion }
+        value = Assert { Assert.test = convert test; message = None; origin = Assert.Assertion }
       }]
     }
   | start = ASSERT; test = test;
     COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test; message = Some message; origin = Assert.Assertion }
+        value = Assert {
+          Assert.test = convert test;
+          message = Some message >>| convert;
+          origin = Assert.Assertion
+        }
       }]
     }
 
@@ -504,7 +653,7 @@ small_statement:
     }
 
   | test = test_list {
-      [{ Node.location = test.Node.location; value = Expression test }]
+      [{ Node.location = test.Node.location; value = Expression (convert test) }]
     }
 
   | start = GLOBAL; globals = separated_nonempty_list(COMMA, identifier) {
@@ -557,7 +706,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Raise { Raise.expression = test; from = raise_from };
+        value = Raise { Raise.expression = test >>| convert; from = raise_from >>| convert };
       }]
     }
 
@@ -570,7 +719,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Return { Return.expression = test; is_implicit = false };
+        value = Return { Return.expression = test >>| convert; is_implicit = false };
       }]
     }
 
@@ -579,7 +728,7 @@ small_statement:
       let stop = Node.stop expression in
       [{
         Node.location = location_create_with_stop ~start:delete ~stop;
-        value = Delete expression;
+        value = Delete (convert expression);
       }]
     }
 
@@ -591,15 +740,15 @@ small_statement:
           match yield with
           | { Node.value = Yield (Some yield); _ } ->
               let callee =
-                Expression.Name (
-                  Expression.Name.Attribute {
+                Name (
+                  Name.Attribute {
                     base = yield;
                     attribute = "__iter__";
                     special = true
                   }
                 ) |> Node.create ~location
               in
-              Expression.Call { callee; arguments = [] }
+              Call { callee; arguments = [] }
               |> Node.create ~location
           | _ ->
               yield
@@ -607,11 +756,11 @@ small_statement:
         [
           {
             Node.location;
-            value = Statement.YieldFrom { Node.location; value = Expression.Yield (Some yield) }
+            value = YieldFrom { Node.location; value = Yield (Some (convert yield)) }
           };
         ]
       else
-        [{ Node.location; value = Statement.Yield yield }]
+        [{ Node.location; value = Yield (convert yield) }]
     }
   ;
 
@@ -660,11 +809,14 @@ compound_statement:
               statement
         in
         List.map ~f:transform_toplevel_statements body in
+      let convert_argument { Expression.Call.Argument.name; value } =
+        { Expression.Call.Argument.name; value = convert value}
+      in
       {
         Node.location;
         value = Class {
           Class.name;
-          bases;
+          bases = List.map ~f:convert_argument bases;
           body;
           decorators = [];
           docstring = Statement.extract_docstring body;
@@ -746,9 +898,9 @@ compound_statement:
         value = Define {
           signature = {
             name = snd name;
-            parameters;
+            parameters = List.map ~f:convert_parameter parameters;
             decorators = [];
-            return_annotation = annotation;
+            return_annotation = annotation >>| convert;
             async = false;
             parent = None;
             docstring = docstring;
@@ -767,8 +919,8 @@ compound_statement:
       {
         Node.location = location_create_with_stop ~start ~stop;
         value = For {
-          For.target;
-          iterator;
+          For.target = convert target;
+          iterator = convert iterator;
           body = snd body;
           orelse = snd orelse;
           async = false
@@ -812,9 +964,16 @@ compound_statement:
   | start = WITH;
     items = separated_nonempty_list(COMMA, with_item); COLON;
     body = block {
+      let convert_item (expression, expression_option) =
+        (convert expression, expression_option >>| convert)
+      in
       {
         Node.location = location_create_with_stop ~start ~stop:(fst body).Location.stop;
-        value = With { With.items; body = snd body; async = false };
+        value = With {
+          With.items = List.map ~f:convert_item items;
+          body = snd body;
+          async = false;
+        };
       }
     }
 
@@ -826,7 +985,7 @@ compound_statement:
         | location, _ -> location.Location.stop in
       {
         Node.location = location_create_with_stop ~start ~stop;
-        value = While { While.test; body = snd body; orelse = snd orelse };
+        value = While { While.test = convert test; body = snd body; orelse = snd orelse };
       }
     }
   ;
@@ -871,7 +1030,7 @@ block_or_stub_body:
   | ellipsis = ELLIPSES; NEWLINE
   | NEWLINE+; INDENT; ellipsis = ELLIPSES; NEWLINE; DEDENT; NEWLINE* {
     let location = Location.create ~start:(fst ellipsis) ~stop:(snd ellipsis) in
-    let body = [Node.create (Expression (Node.create Ellipsis ~location)) ~location] in
+    let body = [Node.create (Expression (Node.create Expression.Ellipsis ~location)) ~location] in
     location, body
    }
   | statements = block { statements }
@@ -899,7 +1058,7 @@ conditional:
           | _, [] -> (fst body).Location.stop
           | location, _ -> location.Location.stop;
       },
-      If { If.test; body = snd body; orelse = snd orelse }
+      If { If.test = convert test; body = snd body; orelse = snd orelse }
     }
   | test = test_list; COLON;
     body = block;
@@ -907,7 +1066,7 @@ conditional:
       let stop = (fst value).Location.stop in
       { test.Node.location with Location.stop },
       If {
-        If.test;
+        If.test = convert test;
         body = (snd body);
         orelse = [{
           Node.location =
@@ -1066,7 +1225,7 @@ handler:
     }
   | start = EXCEPT; kind = expression; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind; name = None; handler_body = snd handler_body }
+      { Try.kind = Some kind >>| convert; name = None; handler_body = snd handler_body }
     }
   | start = EXCEPT;
     kind = expression; AS; name = identifier;
@@ -1075,18 +1234,18 @@ handler:
     kind = expression; COMMA; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
+      { Try.kind = Some kind >>| convert; name = Some (snd name); handler_body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind; name = None; handler_body = snd handler_body }
+      { Try.kind = Some kind >>| convert; name = None; handler_body = snd handler_body }
     }
   | start = EXCEPT;
     kind = or_test; AS; name = identifier;
     COLON; handler_body = block {
       location_create_with_stop ~start ~stop:(fst handler_body).Location.stop,
-      { Try.kind = Some kind; name = Some (snd name); handler_body = snd handler_body }
+      { Try.kind = Some kind >>| convert; name = Some (snd name); handler_body = snd handler_body }
     }
   ;
 
@@ -1165,9 +1324,9 @@ import:
               value.Node.location.Location.stop;
           };
           value = Assign {
-            Assign.target;
-            annotation;
-            value;
+            Assign.target = convert target;
+            annotation = annotation >>| convert;
+            value = convert value;
             parent = None;
           };
         }
@@ -1236,7 +1395,7 @@ atom:
     arguments = arguments;
     stop = RIGHTPARENS {
       let call_location = Location.create ~start ~stop in
-      Expression.Call { callee = name; arguments }
+      Call { callee = name; arguments }
       |> Node.create
         ~location:({ name.Node.location with Location.stop = call_location.Location.stop })
     }
@@ -1361,7 +1520,12 @@ expression:
       }
     }
 
-  | LEFTPARENS; test = test_list; RIGHTPARENS { test }
+  | start = LEFTPARENS; test = test_list; stop = RIGHTPARENS {
+      {
+        Node.location = Location.create ~start ~stop;
+        value = Parenthesis test;
+      }
+    }
 
   | start = LEFTPARENS; expression = test_list; RIGHTPARENS; DOT; identifier = identifier {
       {
@@ -1563,7 +1727,7 @@ yield:
       has_from <> None,
       {
         Node.location;
-        value = Expression.Yield test;
+        value = Yield test;
       }
     }
   ;

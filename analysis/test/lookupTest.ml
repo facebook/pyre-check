@@ -140,17 +140,17 @@ let test_lookup_pick_narrowest _ =
       "3:17-3:27/bool";
       "3:21-3:27/typing.Optional[bool]";
       "3:7-3:11/bool";
-      "3:7-3:27/bool" ];
+      "3:7-3:28/bool" ];
   let assert_annotation = assert_annotation ~lookup ~path:"test.py" in
-  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:27/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:27/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:28/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 16 } ~annotation:(Some "3:7-3:28/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 17 }
     ~annotation:(Some "3:17-3:27/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 21 }
     ~annotation:(Some "3:21-3:27/typing.Optional[bool]");
-  assert_annotation ~position:{ Location.line = 3; column = 27 } ~annotation:None
+  assert_annotation ~position:{ Location.line = 3; column = 28 } ~annotation:None
 
 
 let test_lookup_class_attributes _ =
@@ -276,15 +276,15 @@ let test_lookup_multiline_accesses _ =
       "17:12-17:15/test.A";
       "17:12-19:13/int";
       "2:13-2:17/None";
-      "3:7-5:14/bool";
+      "3:7-5:15/bool";
       "9:13-9:15/typing_extensions.Literal[12]";
       "9:4-9:5/int";
       "9:7-9:10/typing.Type[int]" ];
-  assert_annotation ~position:{ Location.line = 3; column = 7 } ~annotation:(Some "3:7-5:14/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 14 } ~annotation:(Some "3:7-5:14/bool");
-  assert_annotation ~position:{ Location.line = 3; column = 15 } ~annotation:(Some "3:7-5:14/bool");
-  assert_annotation ~position:{ Location.line = 4; column = 8 } ~annotation:(Some "3:7-5:14/bool");
-  assert_annotation ~position:{ Location.line = 5; column = 8 } ~annotation:(Some "3:7-5:14/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 7 } ~annotation:(Some "3:7-5:15/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 14 } ~annotation:(Some "3:7-5:15/bool");
+  assert_annotation ~position:{ Location.line = 3; column = 15 } ~annotation:(Some "3:7-5:15/bool");
+  assert_annotation ~position:{ Location.line = 4; column = 8 } ~annotation:(Some "3:7-5:15/bool");
+  assert_annotation ~position:{ Location.line = 5; column = 8 } ~annotation:(Some "3:7-5:15/bool");
   assert_annotation
     ~position:{ Location.line = 13; column = 12 }
     ~annotation:(Some "13:12-13:13/test.A");
