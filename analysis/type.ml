@@ -834,7 +834,6 @@ let object_primitive = Primitive "object"
 let rec optional parameter =
   match parameter with
   | Top -> Top
-  | Any -> Any
   | Optional _ -> parameter
   | _ -> Optional parameter
 
@@ -871,8 +870,6 @@ let union parameters =
   in
   if List.mem ~equal parameters undeclared then
     Union parameters
-  else if List.exists ~f:is_any parameters then
-    Any
   else if List.exists ~f:is_top parameters then
     Top
   else

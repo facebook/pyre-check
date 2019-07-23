@@ -83,7 +83,7 @@ let test_create _ =
   assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
   assert_create "typing.Set[int]" (Type.set Type.integer);
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
-  assert_create "typing.Union[int, typing.Any]" Type.Any;
+  assert_create "typing.Union[int, typing.Any]" (Type.union [Type.integer; Type.Any]);
   assert_create "typing.Union[int, typing.Optional[$bottom]]" (Type.optional Type.integer);
   assert_create
     "typing.Union[int, typing.Optional[$bottom], str, typing.Tuple[int, str]]"
@@ -629,7 +629,7 @@ let test_union _ =
   assert_equal
     (Type.union [Type.float; Type.string; Type.optional Type.float])
     (Type.Optional (Type.Union [Type.float; Type.string]));
-  assert_true (Type.equal (Type.union [Type.float; Type.Any]) Type.Any);
+  assert_false (Type.equal (Type.union [Type.float; Type.Any]) Type.Any);
   assert_true (Type.equal (Type.union [Type.float; Type.Top]) Type.Top);
   assert_true
     (Type.equal (Type.union [Type.string; Type.float]) (Type.Union [Type.float; Type.string]));

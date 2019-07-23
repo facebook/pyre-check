@@ -307,7 +307,7 @@ let test_register_aliases _ =
           Q = typing.Union[stubbed.Something, str]
         |}
     ]
-    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Any"];
+    ["qualifier.T", "typing.Any"; "qualifier.Q", "typing.Union[typing.Any, qualifier.str]"];
   assert_resolved
     [ parse
         ~handle:"t.py"

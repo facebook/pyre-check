@@ -147,6 +147,29 @@ let test_check_return _ =
         return x
     |}
     ["Incompatible return type [7]: Expected `C` but got `typing.Optional[C]`."];
+  assert_default_type_errors {|
+      def bar(x: typing.Any) -> int:
+          return x
+    |} [];
+  assert_default_type_errors
+    {|
+      def bar(x: typing.Union[int, typing.Any]) -> int:
+          return x
+    |}
+    [];
+  assert_default_type_errors
+    {|
+      def bar(x: typing.Optional[typing.Any]) -> int:
+          return x
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[typing.Any]`."];
+  assert_default_type_errors
+    {|
+      def bar(x: typing.Union[int, typing.Any, None]) -> int:
+          return x
+    |}
+    [ "Incompatible return type [7]: Expected `int` but got \
+       `typing.Optional[typing.Union[typing.Any, int]]`." ];
   ()
 
 
