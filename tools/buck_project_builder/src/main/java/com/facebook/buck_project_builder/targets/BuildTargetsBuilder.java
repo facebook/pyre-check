@@ -163,33 +163,33 @@ public final class BuildTargetsBuilder {
           }
           return successfullyBuilt;
         });
-    // Second pass: delete all generated code that should no longer be generated
-    cache
-        .getThriftCaches()
+    // Second pass: establishing symbolic links
+    Path thriftCacheRootPath = Paths.get(BuilderCache.THRIFT_CACHE_PATH);
+    this.thriftLibraryTargets
         .parallelStream()
         .forEach(
-            target -> {
-              if (!thriftLibraryTargets.contains(target)) {
-                FileUtils.deleteQuietly(
-                    Paths.get(BuilderCache.THRIFT_CACHE_PATH, target.getBaseModulePath()).toFile());
+            command -> {
+              String baseModulePath = command.getBaseModulePath();
+              try {
+                Files.walk(Paths.get(BuilderCache.THRIFT_CACHE_PATH, baseModulePath))
+                    .forEach(
+                        absolutePath -> {
+                          if (absolutePath.toFile().isDirectory()) {
+                            return;
+                          }
+                          String relativePath =
+                              thriftCacheRootPath.relativize(absolutePath).toString();
+                          FileSystem.addSymbolicLink(
+                              Paths.get(this.outputDirectory, relativePath), absolutePath);
+                        });
+              } catch (IOException exception) {
+                SimpleLogger.warning(
+                    String.format(
+                        "Cannot find generated python code because the namespace directive in the thrift file"
+                            + " does not match the base_module %s specified in the TARGETS file.",
+                        baseModulePath));
               }
             });
-    // Third pass: establishing symbolic links
-    Path thriftCacheRootPath = Paths.get(BuilderCache.THRIFT_CACHE_PATH);
-    try {
-      Files.walk(thriftCacheRootPath)
-          .forEach(
-              absolutePath -> {
-                if (absolutePath.toFile().isDirectory()) {
-                  return;
-                }
-                String relativePath = thriftCacheRootPath.relativize(absolutePath).toString();
-                FileSystem.addSymbolicLink(
-                    Paths.get(this.outputDirectory, relativePath), absolutePath);
-              });
-    } catch (IOException exception) {
-      logCodeGenerationIOException(exception);
-    }
     long time = System.currentTimeMillis() - start;
     SimpleLogger.info("Built thrift libraries in " + time + "ms.");
   }
