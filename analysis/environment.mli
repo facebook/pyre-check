@@ -65,3 +65,7 @@ val normalize_shared_memory : Reference.t list -> unit
 val fill_shared_memory_with_default_typeorder : unit -> unit
 
 val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> string String.Map.t
+
+val serialize_decoded : Memory.decodable -> (string * string * string sexp_option) sexp_option
+
+val decoded_equal : Memory.decodable -> Memory.decodable -> bool

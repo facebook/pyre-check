@@ -1657,3 +1657,132 @@ let shared_memory_hash_to_key_map ~qualifiers () =
     extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
   in
   map
+
+
+let serialize_decoded decoded =
+  let decode index =
+    let annotation =
+      SharedMemoryClassHierarchyHandler.find
+        (SharedMemoryClassHierarchyHandler.annotations ())
+        index
+    in
+    match annotation with
+    | None -> Format.sprintf "Undecodable(%d)" index
+    | Some annotation -> annotation
+  in
+  let decode_target { ClassHierarchy.Target.target; parameters } =
+    Format.asprintf "%s[%a]" (decode target) Type.OrderedTypes.pp_concise parameters
+  in
+  match decoded with
+  | ClassDefinitions.Decoded (key, value) ->
+      let value =
+        match value with
+        | Some { Node.value = definition; _ } ->
+            `Assoc ["class_definition", `String (Ast.Statement.Class.show definition)]
+            |> Yojson.to_string
+            |> Option.some
+        | None -> None
+      in
+      Some (ClassValue.description, key, value)
+  | ClassMetadata.Decoded (key, value) ->
+      let value =
+        match value with
+        | Some { GlobalResolution.successors; is_test; is_final; extends_placeholder_stub_class }
+          ->
+            `Assoc
+              [ "successors", `String (List.to_string ~f:Type.Primitive.show successors);
+                "is_test", `Bool is_test;
+                "is_final", `Bool is_final;
+                "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class ]
+            |> Yojson.to_string
+            |> Option.some
+        | None -> None
+      in
+      Some (ClassMetadataValue.description, key, value)
+  | Aliases.Decoded (key, value) -> Some (AliasValue.description, key, value >>| Type.show_alias)
+  | Globals.Decoded (key, value) ->
+      let value = value >>| Node.value >>| Annotation.sexp_of_t >>| Sexp.to_string in
+      Some (GlobalValue.description, Reference.show key, value)
+  | UndecoratedFunctions.Decoded (key, value) ->
+      Some
+        ( UndecoratedFunctionValue.description,
+          Reference.show key,
+          value >>| Type.Callable.show_overload Type.pp )
+  | Dependents.Decoded (key, value) ->
+      Some
+        ( DependentValue.description,
+          Reference.show key,
+          value >>| Reference.Set.Tree.to_list >>| List.to_string ~f:Reference.show )
+  | FunctionKeys.Decoded (key, value) ->
+      Some
+        ( FunctionKeyValue.description,
+          Reference.show key,
+          value >>| List.to_string ~f:Reference.show )
+  | ClassKeys.Decoded (key, value) ->
+      Some (ClassKeyValue.description, Reference.show key, value >>| List.to_string ~f:Fn.id)
+  | GlobalKeys.Decoded (key, value) ->
+      Some
+        (GlobalKeyValue.description, Reference.show key, value >>| List.to_string ~f:Reference.show)
+  | AliasKeys.Decoded (key, value) ->
+      Some (AliasKeyValue.description, Reference.show key, value >>| List.to_string ~f:ident)
+  | DependentKeys.Decoded (key, value) ->
+      Some
+        ( DependentKeyValue.description,
+          Reference.show key,
+          value >>| List.to_string ~f:Reference.show )
+  | OrderIndices.Decoded (key, value) ->
+      Some (OrderIndexValue.description, key, value >>| Int.to_string)
+  | OrderAnnotations.Decoded (key, value) ->
+      Some (OrderAnnotationValue.description, Int.to_string key, value)
+  | OrderEdges.Decoded (key, value) ->
+      Some (EdgeValue.description, decode key, value >>| List.to_string ~f:decode_target)
+  | OrderBackedges.Decoded (key, value) ->
+      Some
+        ( BackedgeValue.description,
+          decode key,
+          value >>| ClassHierarchy.Target.Set.Tree.to_list >>| List.to_string ~f:decode_target )
+  | OrderKeys.Decoded (key, value) ->
+      Some (OrderKeyValue.description, Int.to_string key, value >>| List.to_string ~f:decode)
+  | Modules.Decoded (key, value) ->
+      Some
+        (ModuleValue.description, Reference.show key, value >>| Module.sexp_of_t >>| Sexp.to_string)
+  | _ -> None
+
+
+let decoded_equal first second =
+  match first, second with
+  | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
+      Option.equal (Node.equal Statement.Class.equal) first second
+  | ClassMetadata.Decoded (_, first), ClassMetadata.Decoded (_, second) ->
+      Option.equal GlobalResolution.equal_class_metadata first second
+  | Aliases.Decoded (_, first), Aliases.Decoded (_, second) ->
+      Option.equal Type.equal_alias first second
+  | Globals.Decoded (_, first), Globals.Decoded (_, second) ->
+      Option.equal Annotation.equal (first >>| Node.value) (second >>| Node.value)
+  | UndecoratedFunctions.Decoded (_, first), UndecoratedFunctions.Decoded (_, second) ->
+      Option.equal (Type.Callable.equal_overload Type.equal) first second
+  | Dependents.Decoded (_, first), Dependents.Decoded (_, second) ->
+      Option.equal Reference.Set.Tree.equal first second
+  | FunctionKeys.Decoded (_, first), FunctionKeys.Decoded (_, second) ->
+      Option.equal (List.equal Reference.equal) first second
+  | ClassKeys.Decoded (_, first), ClassKeys.Decoded (_, second) ->
+      Option.equal (List.equal Identifier.equal) first second
+  | GlobalKeys.Decoded (_, first), GlobalKeys.Decoded (_, second) ->
+      Option.equal (List.equal Reference.equal) first second
+  | AliasKeys.Decoded (_, first), AliasKeys.Decoded (_, second) ->
+      Option.equal (List.equal Identifier.equal) first second
+  | DependentKeys.Decoded (_, first), DependentKeys.Decoded (_, second) ->
+      Option.equal (List.equal Reference.equal) first second
+  | OrderIndices.Decoded (_, first), OrderIndices.Decoded (_, second) ->
+      Option.equal Int.equal first second
+  | OrderAnnotations.Decoded (_, first), OrderAnnotations.Decoded (_, second) ->
+      Option.equal String.equal first second
+  | OrderEdges.Decoded (_, first), OrderEdges.Decoded (_, second) ->
+      Option.equal (List.equal ClassHierarchy.Target.equal) first second
+  | OrderBackedges.Decoded (_, first), OrderBackedges.Decoded (_, second) ->
+      Option.equal ClassHierarchy.Target.Set.Tree.equal first second
+  | OrderKeys.Decoded (_, first), OrderKeys.Decoded (_, second) ->
+      Option.equal (List.equal Int.equal) first second
+  | Modules.Decoded (_, first), Modules.Decoded (_, second) ->
+      Option.equal Module.equal first second
+  | _ -> false
