@@ -610,7 +610,7 @@ let test_instantiate_predecessors_parameters _ =
         ~left:predecessor_variables
         ~right:parameters
       |> List.filter_map ~f:(TypeOrder.OrderedConstraints.solve ~order)
-      |> List.hd_exn
+      |> List.hd
     in
     let printer optional_ordered_types =
       optional_ordered_types
@@ -622,6 +622,14 @@ let test_instantiate_predecessors_parameters _ =
       expected
       (ClassHierarchy.instantiate_predecessors_parameters handler ~source ~target ~step)
   in
+  assert_instantiates_to
+    ~source:(Type.parametric "GenericContainer" ![Type.Primitive "int"; Type.Primitive "str"])
+    ~target:"NonGenericContainerChild"
+    (Some (Concrete []));
+  assert_instantiates_to
+    ~source:(Type.parametric "GenericContainer" ![Type.Primitive "int"; Type.Primitive "int"])
+    ~target:"NonGenericContainerChild"
+    None;
   assert_instantiates_to
     ~source:(Type.list (Type.tuple [Type.integer; Type.string; Type.bool]))
     ~target:"UserTuple"

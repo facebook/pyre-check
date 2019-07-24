@@ -1198,7 +1198,6 @@ module OrderImplementation = struct
                       ~right:parameters
                     |> List.filter_map ~f:(OrderedConstraints.solve ~order)
                     |> List.hd
-                    |> Option.value ~default:TypeConstraints.Solution.empty
                   in
                   let left_parameters =
                     ClassHierarchy.instantiate_predecessors_parameters

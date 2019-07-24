@@ -676,15 +676,17 @@ let instantiate_predecessors_parameters
 
                    and an instantiated: Base[str, int, float] This mapping would include: { T1 =>
                    str; T2 => float } *)
-                let substitutions = step ~predecessor_variables ~parameters in
-                { Target.target;
-                  parameters =
-                    TypeConstraints.Solution.instantiate_ordered_types
-                      substitutions
-                      generic_parameters
-                }
+                let handle_substitutions substitutions =
+                  { Target.target;
+                    parameters =
+                      TypeConstraints.Solution.instantiate_ordered_types
+                        substitutions
+                        generic_parameters
+                  }
+                in
+                step ~predecessor_variables ~parameters >>| handle_substitutions
               in
-              List.map predecessors ~f:instantiate
+              List.filter_map predecessors ~f:instantiate
             in
             if target_index = index_of handler target then
               Some parameters

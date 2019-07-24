@@ -2254,6 +2254,7 @@ let test_meet _ =
     "GenericContainer[int, str]"
     "DifferentGenericContainer[int, str]"
     "CommonNonGenericChild";
+  assert_meet "GenericContainer[int, str]" "DifferentGenericContainer[str, int]" "$bottom";
 
   (* TypedDictionaries *)
   assert_meet

@@ -169,7 +169,7 @@ val instantiate_predecessors_parameters
   target:Type.Primitive.t ->
   step:(predecessor_variables:Type.OrderedTypes.t ->
        parameters:Type.OrderedTypes.t ->
-       TypeConstraints.Solution.t) ->
+       TypeConstraints.Solution.t option) ->
   Type.OrderedTypes.t Option.t
 
 module Builder : sig
