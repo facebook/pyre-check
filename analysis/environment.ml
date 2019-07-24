@@ -25,7 +25,7 @@ module type Handler = sig
   val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
 
   val register_global
-    :  qualifier:Reference.t ->
+    :  ?qualifier:Reference.t ->
     reference:Reference.t ->
     global:GlobalResolution.global ->
     unit
@@ -311,6 +311,21 @@ let add_dummy_modules (module Handler : Handler) =
   Handler.register_module future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
 
 
+let add_special_globals (module Handler : Handler) =
+  (* Add `None` constant to globals. *)
+  let annotation annotation =
+    Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
+  in
+  Handler.register_global
+    ?qualifier:None
+    ~reference:(Reference.create "None")
+    ~global:(annotation Type.none);
+  Handler.register_global
+    ?qualifier:None
+    ~reference:(Reference.create "...")
+    ~global:(annotation Type.Any)
+
+
 let handler
     { class_definitions;
       class_metadata;
@@ -341,8 +356,9 @@ let handler
         DependencyHandler.add_dependent ~qualifier dependency
 
 
-      let register_global ~qualifier ~reference ~global =
-        DependencyHandler.add_global_key ~qualifier reference;
+      let register_global ?qualifier ~reference ~global =
+        Option.iter qualifier ~f:(fun qualifier ->
+            DependencyHandler.add_global_key ~qualifier reference);
         Hashtbl.set ~key:reference ~data:global globals
 
 
@@ -504,6 +520,7 @@ let handler
   in
   add_special_classes handler;
   add_dummy_modules handler;
+  add_special_globals handler;
   handler
 
 
@@ -1124,13 +1141,6 @@ module Builder = struct
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
     let undecorated_functions = Reference.Table.create () in
-    (* Add `None` constant to globals. *)
-    let annotation annotation =
-      Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
-    in
-    Hashtbl.set globals ~key:(Reference.create "None") ~data:(annotation Type.none);
-    Hashtbl.set globals ~key:(Reference.create "...") ~data:(annotation Type.Any);
-
     { class_definitions;
       class_metadata;
       modules;

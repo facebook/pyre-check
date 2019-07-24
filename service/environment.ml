@@ -334,8 +334,9 @@ module SharedHandler : Analysis.Environment.Handler = struct
     DependencyHandler.add_dependent ~qualifier dependency
 
 
-  let register_global ~qualifier ~reference ~global =
-    DependencyHandler.add_global_key ~qualifier reference;
+  let register_global ?qualifier ~reference ~global =
+    Option.iter qualifier ~f:(fun qualifier ->
+        DependencyHandler.add_global_key ~qualifier reference);
     Globals.add reference global
 
 
@@ -463,6 +464,7 @@ let populate_shared_memory
   add_to_shared_memory environment;
   Environment.add_special_classes (module SharedHandler);
   Environment.add_dummy_modules (module SharedHandler);
+  Environment.add_special_globals (module SharedHandler);
   build (module SharedHandler) ~configuration ~scheduler ~sources;
   if debug then
     ClassHierarchy.check_integrity (module SharedHandler.TypeOrderHandler);

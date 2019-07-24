@@ -25,7 +25,7 @@ module type Handler = sig
   val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
 
   val register_global
-    :  qualifier:Reference.t ->
+    :  ?qualifier:Reference.t ->
     reference:Reference.t ->
     global:GlobalResolution.global ->
     unit
@@ -79,6 +79,8 @@ end
 val add_special_classes : (module Handler) -> unit
 
 val add_dummy_modules : (module Handler) -> unit
+
+val add_special_globals : (module Handler) -> unit
 
 val handler : t -> (module Handler)
 (** Provides a default in-process environment handler constructed from an [Environment.t]. Use
