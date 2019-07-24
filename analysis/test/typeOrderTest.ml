@@ -431,6 +431,24 @@ let default =
     ~predecessor:"NonGenericContainerChild"
     ~successor:"GenericContainer"
     ~parameters:[Primitive "int"; Primitive "str"];
+
+  insert order "DifferentGenericContainer";
+  concrete_connect
+    order
+    ~predecessor:"DifferentGenericContainer"
+    ~successor:"typing.Generic"
+    ~parameters:[variable; other_variable];
+  insert order "CommonNonGenericChild";
+  concrete_connect
+    order
+    ~predecessor:"CommonNonGenericChild"
+    ~successor:"GenericContainer"
+    ~parameters:[Primitive "int"; Primitive "str"];
+  concrete_connect
+    order
+    ~predecessor:"CommonNonGenericChild"
+    ~successor:"DifferentGenericContainer"
+    ~parameters:[Primitive "int"; Primitive "str"];
   order
 
 
@@ -2232,6 +2250,10 @@ let test_meet _ =
     "typing.Dict[str, typing.List[str]]"
     "typing.Dict[str, $bottom]";
   assert_meet ~order:disconnected_order "A" "B" "$bottom";
+  assert_meet
+    "GenericContainer[int, str]"
+    "DifferentGenericContainer[int, str]"
+    "CommonNonGenericChild";
 
   (* TypedDictionaries *)
   assert_meet

@@ -1241,6 +1241,7 @@ module OrderImplementation = struct
                             Type.Bottom
                     in
                     match left_parameters, right_parameters, variables with
+                    | Some (Concrete []), Some (Concrete []), None -> Some []
                     | Some (Concrete left), Some (Concrete right), Some (Unaries variables)
                       when List.length left = List.length right
                            && List.length left = List.length variables ->
@@ -1250,6 +1251,7 @@ module OrderImplementation = struct
                         None
                   in
                   match parameters with
+                  | Some [] -> Type.Primitive target
                   | Some parameters ->
                       Type.Parametric { name = target; parameters = Concrete parameters }
                   | _ -> Type.Bottom )
