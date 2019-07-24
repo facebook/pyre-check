@@ -132,21 +132,13 @@ let test_parse _ =
 
 let test_qualifier _ =
   let qualifier = Reference.create_from_list in
+  assert_equal (SourcePath.qualifier_of_relative "module.py") (qualifier ["module"]);
   assert_equal
-    (Source.qualifier ~handle:(File.Handle.create_for_testing "module.py"))
-    (qualifier ["module"]);
-  assert_equal
-    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/submodule.py"))
+    (SourcePath.qualifier_of_relative "module/submodule.py")
     (qualifier ["module"; "submodule"]);
-  assert_equal
-    (Source.qualifier ~handle:(File.Handle.create_for_testing "builtins.pyi"))
-    (qualifier []);
-  assert_equal
-    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/builtins.pyi"))
-    (qualifier ["module"]);
-  assert_equal
-    (Source.qualifier ~handle:(File.Handle.create_for_testing "module/__init__.pyi"))
-    (qualifier ["module"])
+  assert_equal (SourcePath.qualifier_of_relative "builtins.pyi") (qualifier []);
+  assert_equal (SourcePath.qualifier_of_relative "module/builtins.pyi") (qualifier ["module"]);
+  assert_equal (SourcePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"])
 
 
 let test_expand_relative_import _ =

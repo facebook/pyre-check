@@ -1170,9 +1170,8 @@ let test_purge _ =
   let global_resolution = Environment.resolution handler () in
   assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "baz.baz"));
   assert_is_some (GlobalResolution.aliases global_resolution "test._T");
-  let dependencies handle =
-    let handle = File.Handle.create_for_testing handle in
-    Environment.dependencies handler (Source.qualifier ~handle)
+  let dependencies relative =
+    Environment.dependencies handler (SourcePath.qualifier_of_relative relative)
     >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in

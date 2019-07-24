@@ -308,34 +308,6 @@ let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
 
 let statements { statements; _ } = statements
 
-let qualifier ~handle =
-  let qualifier =
-    let reversed_elements =
-      Filename.parts (File.Handle.show handle)
-      |> List.tl_exn (* Strip current directory. *)
-      |> List.rev
-    in
-    let last_without_suffix =
-      let last = List.hd_exn reversed_elements in
-      match String.rindex last '.' with
-      | Some index -> String.slice last 0 index
-      | _ -> last
-    in
-    let strip = function
-      | "future" :: "builtins" :: tail
-      | "builtins" :: tail ->
-          tail
-      | "__init__" :: tail -> tail
-      | elements -> elements
-    in
-    last_without_suffix :: List.tl_exn reversed_elements
-    |> strip
-    |> List.rev_map ~f:(String.split ~on:'.')
-    |> List.concat
-  in
-  Reference.create_from_list qualifier
-
-
 let top_level_define { qualifier; statements; metadata = { Metadata.version; _ }; _ } =
   let statements =
     if version < 3 then

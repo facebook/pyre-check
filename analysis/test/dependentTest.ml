@@ -28,11 +28,8 @@ let test_index _ =
 
 
 let add_dependent table handle dependent =
-  let handle = File.Handle.create_for_testing handle in
-  let source = Source.qualifier ~handle in
-  let dependent =
-    File.Handle.create_for_testing dependent |> fun handle -> Source.qualifier ~handle
-  in
+  let source = SourcePath.qualifier_of_relative handle in
+  let dependent = SourcePath.qualifier_of_relative dependent in
   let update entry =
     match entry with
     | None -> Reference.Set.singleton dependent
@@ -114,7 +111,7 @@ let test_transitive_dependents _ =
     let get_dependencies = get_dependencies environment in
     let dependencies =
       Dependencies.transitive_of_list
-        ~modules:[Source.qualifier ~handle:(File.Handle.create_for_testing handle)]
+        ~modules:[SourcePath.qualifier_of_relative handle]
         ~get_dependencies
       |> Set.to_list
       |> List.map ~f:Reference.show

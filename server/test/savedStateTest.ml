@@ -99,9 +99,7 @@ let test_compute_locally_changed_files context =
       |> List.filter_map ~f:(fun path -> Path.get_relative_to_root ~root:local_root ~path)
     in
     (* Ensure sources are cleaned up afterwards. *)
-    List.map files ~f:(fun { relative; _ } -> File.Handle.create_for_testing relative)
-    |> fun handles ->
-    List.map handles ~f:(fun handle -> Ast.Source.qualifier ~handle)
+    List.map files ~f:(fun { relative; _ } -> Ast.SourcePath.qualifier_of_relative relative)
     |> Ast.SharedMemory.Sources.remove;
     assert_equal
       ~printer:(List.to_string ~f:ident)

@@ -1156,7 +1156,7 @@ let test_decode_serialized_ocaml_values context =
     ~response:("AST", "handle", Some "x = 1.__add__(2)\n");
   assert_decode
     ~key:(Ast.SharedMemory.Handles.Paths.serialize_key !&"five")
-    ~value:(File.Handle.create_for_testing "five.py")
+    ~value:"five.py"
     ~response:("Path", "five", Some "five.py");
   assert_decode
     ~key:(Coverage.SharedMemory.serialize_key (Reference.create "file"))
