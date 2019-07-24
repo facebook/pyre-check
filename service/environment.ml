@@ -412,56 +412,23 @@ let populate_shared_memory
     ~scheduler
     ~sources
   =
-  let add_to_shared_memory
-      { Environment.class_definitions;
-        class_metadata;
-        modules;
-        implicit_submodules;
-        aliases;
-        globals;
-        order;
-        dependencies =
-          { Dependencies.index =
-              { Dependencies.function_keys; class_keys; alias_keys; global_keys; dependent_keys };
-            dependents
-          };
-        undecorated_functions
-      }
-    =
-    Log.info "Adding environment information to shared memory...";
-
+  Log.info "Adding built-in environment information to shared memory...";
+  let timer = Timer.start () in
+  let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
+  let add_type_order { ClassHierarchy.edges; backedges; indices; annotations } =
     (* Writing through the caches because we are doing a batch-add. Especially while still adding
        amounts of data that exceed the cache size, the time spent doing cache bookkeeping is
        wasted. *)
-    let timer = Timer.start () in
-    let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
-    let add_type_order { ClassHierarchy.edges; backedges; indices; annotations } =
-      add_table OrderEdges.write_through edges;
-      add_table
-        OrderBackedges.write_through
-        (Hashtbl.map ~f:ClassHierarchy.Target.Set.to_tree backedges);
-      add_table OrderIndices.write_through indices;
-      add_table OrderAnnotations.write_through annotations;
-      OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations)
-    in
-    add_type_order order;
-    add_table ClassDefinitions.write_through class_definitions;
-    add_table ClassMetadata.write_through class_metadata;
-    add_table Aliases.add aliases;
-    add_table Globals.write_through globals;
-    add_table UndecoratedFunctions.write_through undecorated_functions;
-    add_table Dependents.write_through (Hashtbl.map ~f:Set.to_tree dependents);
-    add_table FunctionKeys.write_through (Hashtbl.map ~f:Hash_set.to_list function_keys);
-    add_table ClassKeys.write_through (Hashtbl.map ~f:Hash_set.to_list class_keys);
-    add_table AliasKeys.write_through (Hashtbl.map ~f:Hash_set.to_list alias_keys);
-    add_table GlobalKeys.write_through (Hashtbl.map ~f:Hash_set.to_list global_keys);
-    add_table DependentKeys.write_through (Hashtbl.map ~f:Hash_set.to_list dependent_keys);
-    add_table (fun qualifier ast_module -> Modules.add qualifier ast_module) modules;
-    add_table ImplicitSubmodules.add implicit_submodules;
-    Statistics.performance ~name:"added environment to shared memory" ~timer ()
+    add_table OrderEdges.write_through edges;
+    add_table
+      OrderBackedges.write_through
+      (Hashtbl.map ~f:ClassHierarchy.Target.Set.to_tree backedges);
+    add_table OrderIndices.write_through indices;
+    add_table OrderAnnotations.write_through annotations;
+    OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations)
   in
-  let environment = Environment.Builder.create () in
-  add_to_shared_memory environment;
+  add_type_order (ClassHierarchy.Builder.default ());
+  Statistics.performance ~name:"added environment to shared memory" ~timer ();
   Environment.add_special_classes (module SharedHandler);
   Environment.add_dummy_modules (module SharedHandler);
   Environment.add_special_globals (module SharedHandler);
