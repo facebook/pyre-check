@@ -1576,3 +1576,75 @@ let normalize_shared_memory qualifiers =
       OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
       List.sort ~compare:Int.compare keys |> OrderKeys.add SharedMemory.SingletonKey.key );
   SharedMemoryPartialHandler.DependencyHandler.normalize qualifiers
+
+
+let shared_memory_hash_to_key_map ~qualifiers () =
+  let extend_map map ~new_map =
+    Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
+  in
+  let map =
+    let map =
+      Map.set
+        String.Map.empty
+        ~key:(OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
+        ~data:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
+    in
+    match OrderKeys.get SharedMemory.SingletonKey.key with
+    | Some indices ->
+        let annotations = List.filter_map indices ~f:OrderAnnotations.get in
+        let class_hierarchy_map =
+          let add_index_mappings map key =
+            Map.set
+              map
+              ~key:(OrderAnnotations.hash_of_key key)
+              ~data:(OrderAnnotations.serialize_key key)
+            |> Map.set ~key:(OrderEdges.hash_of_key key) ~data:(OrderEdges.serialize_key key)
+            |> Map.set
+                 ~key:(OrderBackedges.hash_of_key key)
+                 ~data:(OrderBackedges.serialize_key key)
+          in
+          let add_annotation_mappings map annotation =
+            Map.set
+              map
+              ~key:(OrderIndices.hash_of_key annotation)
+              ~data:(OrderIndices.serialize_key annotation)
+          in
+          List.fold indices ~init:String.Map.empty ~f:add_index_mappings
+          |> fun map -> List.fold annotations ~init:map ~f:add_annotation_mappings
+        in
+        extend_map map ~new_map:class_hierarchy_map
+    | None -> map
+  in
+  let map = extend_map map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers) in
+  (* Handle-based keys. *)
+  let map =
+    map
+    |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:qualifiers)
+    |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:qualifiers)
+    |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
+    |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
+    |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
+  in
+  (* Class definitions. *)
+  let map =
+    let keys = List.filter_map qualifiers ~f:ClassKeys.get |> List.concat in
+    extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
+    |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
+  in
+  (* Aliases. *)
+  let map =
+    let keys = List.filter_map qualifiers ~f:AliasKeys.get |> List.concat in
+    extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
+  in
+  (* Globals and undecorated functions. *)
+  let map =
+    let keys = List.filter_map qualifiers ~f:GlobalKeys.get |> List.concat in
+    extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
+    |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
+  in
+  (* Dependents. *)
+  let map =
+    let keys = List.filter_map qualifiers ~f:DependentKeys.get |> List.concat in
+    extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
+  in
+  map

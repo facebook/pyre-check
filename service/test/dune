@@ -6,8 +6,7 @@
   memoryTest
   moduleTrackerTest
   parserTest
-  typeCheckTest
-  typeOrderTest)
+  typeCheckTest)
  (preprocess
   (pps ppx_sexp_message ppx_hash))
  (libraries

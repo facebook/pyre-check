@@ -440,64 +440,17 @@ let process_type_query_request
     | TypeQuery.Callees caller ->
         TypeQuery.Response (TypeQuery.Callees (Dependencies.Callgraph.get ~caller))
     | TypeQuery.ComputeHashesToKeys ->
-        let open Analysis.EnvironmentSharedMemory in
         (* Type order. *)
         let extend_map map ~new_map =
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
         in
-        let map =
-          let map =
-            Map.set
-              String.Map.empty
-              ~key:(OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
-              ~data:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
-          in
-          match OrderKeys.get SharedMemory.SingletonKey.key with
-          | Some indices ->
-              let annotations = List.filter_map indices ~f:OrderAnnotations.get in
-              extend_map
-                map
-                ~new_map:(Service.TypeOrder.compute_hashes_to_keys ~indices ~annotations)
-          | None -> map
-        in
         let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
+        let map = Analysis.Environment.shared_memory_hash_to_key_map ~qualifiers () in
         (* AST shared memory. *)
         let map =
           map
           |> extend_map ~new_map:(Ast.SharedMemory.Sources.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(Modules.compute_hashes_to_keys ~keys:qualifiers)
           |> extend_map ~new_map:(Ast.SharedMemory.Handles.compute_hashes_to_keys ~keys:qualifiers)
-        in
-        (* Handle-based keys. *)
-        let map =
-          map
-          |> extend_map ~new_map:(FunctionKeys.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(ClassKeys.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(GlobalKeys.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(AliasKeys.compute_hashes_to_keys ~keys:qualifiers)
-          |> extend_map ~new_map:(DependentKeys.compute_hashes_to_keys ~keys:qualifiers)
-        in
-        (* Class definitions. *)
-        let map =
-          let keys = List.filter_map qualifiers ~f:ClassKeys.get |> List.concat in
-          extend_map map ~new_map:(ClassDefinitions.compute_hashes_to_keys ~keys)
-          |> extend_map ~new_map:(ClassMetadata.compute_hashes_to_keys ~keys)
-        in
-        (* Aliases. *)
-        let map =
-          let keys = List.filter_map qualifiers ~f:AliasKeys.get |> List.concat in
-          extend_map map ~new_map:(Aliases.compute_hashes_to_keys ~keys)
-        in
-        (* Globals and undecorated functions. *)
-        let map =
-          let keys = List.filter_map qualifiers ~f:GlobalKeys.get |> List.concat in
-          extend_map map ~new_map:(Globals.compute_hashes_to_keys ~keys)
-          |> extend_map ~new_map:(UndecoratedFunctions.compute_hashes_to_keys ~keys)
-        in
-        (* Dependents. *)
-        let map =
-          let keys = List.filter_map qualifiers ~f:DependentKeys.get |> List.concat in
-          extend_map map ~new_map:(Dependents.compute_hashes_to_keys ~keys)
         in
         (* Resolution shared memory. *)
         let map =

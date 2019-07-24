@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree. *)
 
+open Core
 open Ast
 open Statement
 
@@ -62,3 +63,5 @@ val shared_memory_handler : local_mode:(string -> Source.mode option) -> unit ->
 val normalize_shared_memory : Reference.t list -> unit
 
 val fill_shared_memory_with_default_typeorder : unit -> unit
+
+val shared_memory_hash_to_key_map : qualifiers:Ast.Reference.t list -> unit -> string String.Map.t
