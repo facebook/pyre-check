@@ -147,13 +147,6 @@ class Start(Reporting):
             LOG.error(
                 "--load-initial-state-from must be set if --changed-files-path is set."
             )
-        elif (
-            self._load_initial_state_from is not None
-            and self._changed_files_path is None
-        ):
-            LOG.error(
-                "--changed-files-path must be set if --load-initial-state-from is set."
-            )
         flags.extend(
             [
                 "-workers",
