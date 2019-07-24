@@ -100,6 +100,7 @@ class _ConfigurationFile:
         """
 
         return self._configuration.keys() - {
+            "buck_builder_binary",
             "continuous",
             "coverage",
             "differential",
