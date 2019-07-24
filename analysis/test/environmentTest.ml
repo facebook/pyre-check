@@ -16,22 +16,21 @@ let value option = Option.value_exn option
 let configuration = Configuration.Analysis.create ~infer:true ()
 
 let create_environment ?(include_helpers = false) () =
-  let environment = Environment.Builder.create () in
+  let environment = Environment.in_process_handler () in
   Test.populate
     ~configuration
-    (Environment.handler environment)
+    environment
     (typeshed_stubs ~include_helper_builtins:include_helpers ());
   environment
 
 
 let plain_populate ~environment sources =
-  let handler = Environment.handler environment in
-  Test.populate ~configuration handler sources;
+  Test.populate ~configuration environment sources;
   environment
 
 
 let populate_with_sources ?(environment = create_environment ()) sources =
-  plain_populate ~environment sources |> Environment.handler
+  plain_populate ~environment sources
 
 
 let populate ?(environment = create_environment ()) ?handle source =
@@ -71,7 +70,7 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_definitions _ =
-  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  let (module Handler : Environment.Handler) = create_environment () in
   Environment.register_class_definitions
     (module Handler)
     (parse
@@ -118,9 +117,7 @@ let test_register_class_definitions _ =
 
 
 let test_register_class_metadata _ =
-  let (module Handler : Environment.Handler) =
-    Environment.handler (create_environment ~include_helpers:false ())
-  in
+  let (module Handler : Environment.Handler) = create_environment ~include_helpers:false () in
   let source =
     parse
       {|
@@ -180,7 +177,7 @@ let test_register_class_metadata _ =
 
 let test_register_aliases _ =
   let register_all sources =
-    let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+    let (module Handler : Environment.Handler) = create_environment () in
     let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
     let register source =
       Environment.register_module (module Handler) source;
@@ -424,7 +421,7 @@ let test_register_aliases _ =
 
 
 let test_register_implicit_submodules _ =
-  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  let (module Handler : Environment.Handler) = create_environment () in
   Environment.register_implicit_submodules (module Handler) (Reference.create "a.b.c");
   assert_equal None (Handler.module_definition (Reference.create "a.b.c"));
   assert_true (Handler.is_module (Reference.create "a.b"));
@@ -432,7 +429,7 @@ let test_register_implicit_submodules _ =
 
 
 let test_connect_definition _ =
-  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  let (module Handler : Environment.Handler) = create_environment () in
   let resolution = Environment.resolution (module Handler) () in
   let (module TypeOrderHandler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
   ClassHierarchy.insert (module TypeOrderHandler) "C";
@@ -466,7 +463,7 @@ let test_connect_definition _ =
 
 
 let test_register_globals _ =
-  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  let (module Handler : Environment.Handler) = create_environment () in
   let resolution = Environment.resolution (module Handler) () in
   let assert_global reference expected =
     let actual = !&reference |> Handler.globals >>| Node.value >>| Annotation.annotation in
@@ -544,9 +541,7 @@ let test_register_globals _ =
 
 
 let test_connect_type_order _ =
-  let (module Handler : Environment.Handler) =
-    Environment.handler (create_environment ~include_helpers:false ())
-  in
+  let (module Handler : Environment.Handler) = create_environment ~include_helpers:false () in
   let resolution = Environment.resolution (module Handler) () in
   let source =
     parse
@@ -1141,7 +1136,7 @@ let test_import_dependencies context =
 
 
 let test_register_dependencies _ =
-  let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
+  let (module Handler : Environment.Handler) = create_environment () in
   let source =
     {|
          import a # a is added here
@@ -1160,8 +1155,7 @@ let test_register_dependencies _ =
 
 
 let test_purge _ =
-  let environment = Environment.Builder.create () in
-  let ((module Handler : Environment.Handler) as handler) = Environment.handler environment in
+  let ((module Handler : Environment.Handler) as handler) = Environment.in_process_handler () in
   let source =
     {|
       import a

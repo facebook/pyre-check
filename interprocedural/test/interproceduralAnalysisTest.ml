@@ -14,8 +14,7 @@ let configuration = Configuration.Analysis.create ()
 let environment ?(sources = []) ?(configuration = configuration) () =
   let _ = Test.parse "" in
   (* Make sure Test module is loaded. *)
-  let environment = Environment.Builder.create () in
-  let handler = Environment.handler environment in
+  let handler = Environment.in_process_handler () in
   Test.populate ~configuration handler sources;
   handler
 

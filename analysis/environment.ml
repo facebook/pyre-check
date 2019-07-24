@@ -9,18 +9,6 @@ open Expression
 open Pyre
 open Statement
 
-type t = {
-  class_definitions: Class.t Node.t Identifier.Table.t;
-  class_metadata: GlobalResolution.class_metadata Identifier.Table.t;
-  modules: Module.t Reference.Table.t;
-  implicit_submodules: int Reference.Table.t;
-  order: ClassHierarchy.t;
-  aliases: Type.alias Identifier.Table.t;
-  globals: GlobalResolution.global Reference.Table.t;
-  dependencies: Dependencies.t;
-  undecorated_functions: Type.t Type.Callable.overload Reference.Table.t
-}
-
 module type Handler = sig
   val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
 
@@ -326,20 +314,17 @@ let add_special_globals (module Handler : Handler) =
     ~global:(annotation Type.Any)
 
 
-let handler
-    { class_definitions;
-      class_metadata;
-      modules;
-      implicit_submodules;
-      order;
-      aliases;
-      globals;
-      dependencies;
-      undecorated_functions
-    }
-  =
-  let (module DependencyHandler : Dependencies.Handler) = Dependencies.handler dependencies in
+let in_process_handler ?(dependencies = Dependencies.create ()) () =
   let handler =
+    let class_definitions = Identifier.Table.create () in
+    let class_metadata = Identifier.Table.create () in
+    let modules = Reference.Table.create () in
+    let implicit_submodules = Reference.Table.create () in
+    let order = ClassHierarchy.Builder.default () in
+    let aliases = Identifier.Table.create () in
+    let globals = Reference.Table.create () in
+    let undecorated_functions = Reference.Table.create () in
+    let (module DependencyHandler : Dependencies.Handler) = Dependencies.handler dependencies in
     ( module struct
       module TypeOrderHandler = (val ClassHierarchy.handler order : ClassHierarchy.Handler)
 
@@ -502,7 +487,12 @@ let handler
         Hashtbl.set
           class_metadata
           ~key:class_name
-          ~data:{ is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+          ~data:
+            { GlobalResolution.is_test = in_test;
+              successors;
+              is_final;
+              extends_placeholder_stub_class
+            }
 
 
       let class_metadata = Hashtbl.find class_metadata
@@ -1128,27 +1118,3 @@ let propagate_nested_classes (module Handler : Handler) source =
 
 let built_in_annotations =
   ["TypedDictionary"; "NonTotalTypedDictionary"] |> Type.Primitive.Set.of_list
-
-
-module Builder = struct
-  let create () =
-    let class_definitions = Identifier.Table.create () in
-    let class_metadata = Identifier.Table.create () in
-    let modules = Reference.Table.create () in
-    let implicit_submodules = Reference.Table.create () in
-    let order = ClassHierarchy.Builder.default () in
-    let aliases = Identifier.Table.create () in
-    let globals = Reference.Table.create () in
-    let dependencies = Dependencies.create () in
-    let undecorated_functions = Reference.Table.create () in
-    { class_definitions;
-      class_metadata;
-      modules;
-      implicit_submodules;
-      order;
-      aliases;
-      globals;
-      dependencies;
-      undecorated_functions
-    }
-end

@@ -10,24 +10,15 @@ open Test
 let configuration = Configuration.Analysis.create ()
 
 let populate_with_sources sources =
-  let environment =
-    let environment = Environment.Builder.create () in
-    Test.populate ~configuration (Environment.handler environment) sources;
-    environment
-  in
-  Environment.handler environment
+  let environment = Environment.in_process_handler () in
+  Test.populate ~configuration environment sources;
+  environment
 
 
 let populate source =
-  let environment =
-    let environment = Environment.Builder.create () in
-    Test.populate
-      ~configuration
-      (Environment.handler environment)
-      (parse source :: typeshed_stubs ());
-    environment
-  in
-  Environment.handler environment
+  let environment = Environment.in_process_handler () in
+  Test.populate ~configuration environment (parse source :: typeshed_stubs ());
+  environment
 
 
 let value option = Option.value_exn option

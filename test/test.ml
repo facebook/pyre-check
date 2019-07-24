@@ -1155,10 +1155,7 @@ let populate_shared_memory =
 
 
 let environment ?(sources = typeshed_stubs ()) ?(configuration = mock_configuration) () =
-  let environment =
-    let environment = Environment.Builder.create () in
-    Environment.handler environment
-  in
+  let environment = Environment.in_process_handler () in
   populate ~configuration environment sources;
   environment
 

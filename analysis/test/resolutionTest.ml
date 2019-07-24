@@ -67,15 +67,9 @@ let test_parse_annotation _ =
 let make_resolution source =
   let configuration = Configuration.Analysis.create () in
   let populate source =
-    let environment =
-      let environment = Environment.Builder.create () in
-      Test.populate
-        ~configuration
-        (Environment.handler environment)
-        (parse source :: typeshed_stubs ());
-      environment
-    in
-    Environment.handler environment
+    let environment = Environment.in_process_handler () in
+    Test.populate ~configuration environment (parse source :: typeshed_stubs ());
+    environment
   in
   let global_resolution = Environment.resolution (populate source) () in
   TypeCheck.resolution global_resolution ()

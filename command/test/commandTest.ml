@@ -38,9 +38,9 @@ let start_server ~local_root ?expected_version () =
 
 let environment () =
   let configuration = Configuration.Analysis.create () in
-  let environment = Environment.Builder.create () in
+  let environment = Environment.in_process_handler () in
   Service.Environment.populate
-    (Environment.handler environment)
+    environment
     ~configuration
     ~scheduler:(Scheduler.mock ())
     [ parse
@@ -59,7 +59,7 @@ let environment () =
 let make_errors ?handle source =
   let configuration = Configuration.Analysis.create () in
   let source = parse ?handle source |> Preprocessing.preprocess in
-  let environment = Environment.handler (environment ()) in
+  let environment = environment () in
   Service.Environment.populate environment ~configuration ~scheduler:(Scheduler.mock ()) [source];
   let configuration = mock_analysis_configuration () in
   let global_resolution = Environment.resolution environment () in
@@ -156,15 +156,9 @@ module ScratchServer = struct
     in
     let external_sources = typeshed_stubs ~include_helper_builtins:false () in
     let environment =
-      let environment =
-        let environment = Analysis.Environment.Builder.create () in
-        Test.populate
-          ~configuration
-          (Analysis.Environment.handler environment)
-          (sources @ external_sources);
-        environment
-      in
-      Analysis.Environment.handler environment
+      let environment = Analysis.Environment.in_process_handler () in
+      Test.populate ~configuration environment (sources @ external_sources);
+      environment
     in
     let global_resolution = Environment.resolution environment () in
     add_defaults_to_environment ~configuration environment;

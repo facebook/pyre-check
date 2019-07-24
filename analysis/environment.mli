@@ -6,18 +6,6 @@
 open Ast
 open Statement
 
-type t = {
-  class_definitions: Class.t Node.t Identifier.Table.t;
-  class_metadata: GlobalResolution.class_metadata Identifier.Table.t;
-  modules: Module.t Reference.Table.t;
-  implicit_submodules: int Reference.Table.t;
-  order: ClassHierarchy.t;
-  aliases: Type.alias Identifier.Table.t;
-  globals: GlobalResolution.global Reference.Table.t;
-  dependencies: Dependencies.t;
-  undecorated_functions: Type.t Type.Callable.overload Reference.Table.t
-}
-
 (** The handler module is an interface for performing lookups on the type environment. It abstracts
     the underlying data structure, so that we can use e.g., in-process hash tables, shared memory,
     or network streams to provide lookups. *)
@@ -82,9 +70,8 @@ val add_dummy_modules : (module Handler) -> unit
 
 val add_special_globals : (module Handler) -> unit
 
-val handler : t -> (module Handler)
-(** Provides a default in-process environment handler constructed from an [Environment.t]. Use
-    [Environment_service.handler] if interfacing from outside [Analysis]. *)
+val in_process_handler : ?dependencies:Dependencies.t -> unit -> (module Handler)
+(** Provides a default in-process environment handler, only for tests *)
 
 val resolution : (module Handler) -> unit -> GlobalResolution.t
 
@@ -115,7 +102,3 @@ val register_dependencies : (module Handler) -> Source.t -> unit
 val propagate_nested_classes : (module Handler) -> Source.t -> unit
 
 val built_in_annotations : Type.Primitive.Set.t
-
-module Builder : sig
-  val create : unit -> t
-end

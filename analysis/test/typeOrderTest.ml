@@ -2393,15 +2393,9 @@ let test_solve_less_or_equal _ =
   let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
-      let environment =
-        let environment = Environment.Builder.create () in
-        Test.populate
-          ~configuration
-          (Environment.handler environment)
-          (parse source :: typeshed_stubs ());
-        environment
-      in
-      Environment.handler environment
+      let environment = Environment.in_process_handler () in
+      Test.populate ~configuration environment (parse source :: typeshed_stubs ());
+      environment
     in
     populate
       {|
@@ -3179,12 +3173,12 @@ let test_instantiate_protocol_parameters _ =
     =
     let environment =
       let configuration = Configuration.Analysis.create () in
-      let environment = Environment.Builder.create () in
+      let environment = Environment.in_process_handler () in
       let source = context >>| parse |> Option.to_list in
-      Test.populate ~configuration (Environment.handler environment) (source @ typeshed_stubs ());
+      Test.populate ~configuration environment (source @ typeshed_stubs ());
       environment
     in
-    let resolution = Environment.resolution (Environment.handler environment) () in
+    let resolution = Environment.resolution environment () in
     let parse_annotation annotation =
       annotation
       |> parse_single_expression
@@ -3218,7 +3212,7 @@ let test_instantiate_protocol_parameters _ =
         | _ -> false
       in
       let handler =
-        let (module Handler : Environment.Handler) = Environment.handler environment in
+        let (module Handler : Environment.Handler) = environment in
         (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
       in
       { handler;
@@ -3378,15 +3372,9 @@ let test_mark_escaped_as_escaped _ =
   let environment =
     let configuration = Configuration.Analysis.create () in
     let populate source =
-      let environment =
-        let environment = Environment.Builder.create () in
-        Test.populate
-          ~configuration
-          (Environment.handler environment)
-          (parse source :: typeshed_stubs ());
-        environment
-      in
-      Environment.handler environment
+      let environment = Environment.in_process_handler () in
+      Test.populate ~configuration environment (parse source :: typeshed_stubs ());
+      environment
     in
     populate
       {|
