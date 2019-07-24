@@ -111,6 +111,34 @@ let test_expand_string_annotations _ =
   assert_expand "x = typing.cast('1234', 42)" "x = typing.cast($unparsed_annotation, 42)";
   assert_expand
     {|
+        from pyre_extensions import safe_cast
+        class A: ...
+        class B(A): ...
+        def foo(o: object) -> B:
+          s = safe_cast('str', o)
+          i = 42 + safe_cast('int', o)
+          a = safe_cast('A', o)
+          return safe_cast('B', safe_cast('A', o))
+        class Foo:
+          x: B = safe_cast('float', 42)
+      |}
+    {|
+        from pyre_extensions import safe_cast
+        class A: ...
+        class B(A): ...
+        def foo(o: object) -> B:
+          s = safe_cast(str, o)
+          i = 42 + safe_cast(int, o)
+          a = safe_cast(A, o)
+          return safe_cast(B, safe_cast(A, o))
+        class Foo:
+          x: B = safe_cast(float, 42)
+      |};
+  assert_expand
+    "x = pyre_extensions.safe_cast('1234', 42)"
+    "x = pyre_extensions.safe_cast($unparsed_annotation, 42)";
+  assert_expand
+    {|
       import typing
       class Foo: ...
       def foo(x: typing.Any):

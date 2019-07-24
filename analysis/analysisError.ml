@@ -183,6 +183,7 @@ type kind =
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Annotation.t }
+  | UnsafeCast of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
@@ -260,6 +261,7 @@ let code = function
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 101
   | Deobfuscation _ -> 102
+  | UnsafeCast _ -> 103
 
 
 let name = function
@@ -280,6 +282,7 @@ let name = function
   | InvalidMethodSignature _ -> "Invalid method signature"
   | InvalidClass _ -> "Invalid class"
   | InvalidClassInstantiation _ -> "Invalid class instantiation"
+  | UnsafeCast _ -> "Unsafe cast"
   | InvalidType _ -> "Invalid type"
   | InvalidTypeParameters _ -> "Invalid type parameters"
   | InvalidTypeVariable _ -> "Invalid type variable"
@@ -1250,6 +1253,20 @@ let messages ~concise ~signature location kind =
           (Expression.show_sanitized expression)
           annotation
           detail ]
+  | UnsafeCast { expression; annotation } when concise ->
+      [ Format.asprintf
+          "`safe_cast` `%a` is not a subclass of `%s`."
+          pp_type
+          annotation
+          (Expression.show_sanitized expression) ]
+  | UnsafeCast { expression; annotation } ->
+      [ Format.asprintf
+          "`safe_cast` is only permitted to loosen the type of `%s`. `%a` is not a super type of \
+           `%s`."
+          (Expression.show_sanitized expression)
+          pp_type
+          annotation
+          (Expression.show_sanitized expression) ]
   | TooManyArguments { expected; _ } when concise ->
       [ Format.asprintf
           "Expected %d positional argument%s."
@@ -1666,6 +1683,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TypedDictionaryKeyNotFound _
   | Unpack _
   | RevealedType _
+  | UnsafeCast _
   | UnawaitedAwaitable _
   | UndefinedAttribute _
   | UndefinedName _
@@ -1757,6 +1775,7 @@ let due_to_mismatch_with_any local_resolution { kind; _ } =
   | ProhibitedAny _
   | RedundantCast _
   | RevealedType _
+  | UnsafeCast _
   | TooManyArguments _
   | Top
   | TypedDictionaryAccessWithNonLiteral _
@@ -1987,6 +2006,7 @@ let less_or_equal ~resolution left right =
   | ProhibitedAny _, _
   | RedundantCast _, _
   | RevealedType _, _
+  | UnsafeCast _, _
   | TooManyArguments _, _
   | Top, _
   | TypedDictionaryAccessWithNonLiteral _, _
@@ -2289,6 +2309,7 @@ let join ~resolution left right =
     | ProhibitedAny _, _
     | RedundantCast _, _
     | RevealedType _, _
+    | UnsafeCast _, _
     | TooManyArguments _, _
     | TypedDictionaryAccessWithNonLiteral _, _
     | TypedDictionaryKeyNotFound _, _
@@ -2542,6 +2563,7 @@ let suppress ~mode ~resolution error =
     | UndefinedImport _ -> false
     | UndefinedName name when String.equal (Reference.show name) "reveal_type" -> true
     | RevealedType _ -> false
+    | UnsafeCast _ -> false
     | _ ->
         due_to_analysis_limitations error
         || due_to_mismatch_with_any resolution error
@@ -2698,6 +2720,7 @@ let dequalify
     | UninitializedAttribute ({ mismatch; _ } as inconsistent_usage) ->
         UninitializedAttribute { inconsistent_usage with mismatch = dequalify_mismatch mismatch }
     | AbstractClass kind -> AbstractClass kind
+    | UnsafeCast kind -> UnsafeCast kind
     | UnawaitedAwaitable left -> UnawaitedAwaitable left
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =

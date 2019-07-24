@@ -2359,18 +2359,17 @@ module State (Context : Context) = struct
         in
         { state; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
-        { callee =
-            { Node.location;
-              value =
-                Name
-                  (Name.Attribute
-                    { base = { Node.value = Name (Name.Identifier "typing"); _ };
-                      attribute = "cast";
-                      _
-                    })
-            };
+        { callee = { Node.location; value = Name name };
           arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }]
-        } ->
+        }
+      when Option.equal
+             Reference.equal
+             (Expression.name_to_reference name)
+             (Some (Reference.create "typing.cast"))
+           || Option.equal
+                Reference.equal
+                (Expression.name_to_reference name)
+                (Some (Reference.create "pyre_extensions.safe_cast")) ->
         let contains_literal_any = Type.expression_contains_any cast_annotation in
         let state, cast_annotation = parse_and_check_annotation ~state cast_annotation in
         let { state; resolved; _ } = forward_expression ~state ~expression:value in
@@ -2381,7 +2380,7 @@ module State (Context : Context) = struct
               ~location
               ~kind:
                 (Error.ProhibitedAny
-                   { Error.name = Reference.create "typing.cast";
+                   { Error.name = Expression.name_to_reference_exn name;
                      annotation = None;
                      given_annotation = Some cast_annotation;
                      evidence_locations = [];
@@ -2389,6 +2388,19 @@ module State (Context : Context) = struct
                    })
           else if Type.equal cast_annotation resolved then
             emit_error ~state ~location ~kind:(Error.RedundantCast resolved)
+          else if
+            Reference.equal
+              (Expression.name_to_reference_exn name)
+              (Reference.create "pyre_extensions.safe_cast")
+            && GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:cast_annotation
+                 ~right:resolved
+          then
+            emit_error
+              ~state
+              ~location
+              ~kind:(Error.UnsafeCast { expression = value; annotation = resolved })
           else
             state
         in

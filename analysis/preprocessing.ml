@@ -170,10 +170,11 @@ let expand_string_annotations ({ Source.relative; _ } as source) =
       in
       let value =
         match Node.value expression with
-        | Call { callee = { Node.value = Name (Name.Identifier "cast"); _ } as callee; arguments }
-          ->
-            Call { callee; arguments = transform_arguments arguments }
-        | Call { callee; arguments } when Expression.name_is ~name:"typing.cast" callee ->
+        | Call { callee; arguments }
+          when Expression.name_is ~name:"pyre_extensions.safe_cast" callee
+               || Expression.name_is ~name:"typing.cast" callee
+               || Expression.name_is ~name:"cast" callee
+               || Expression.name_is ~name:"safe_cast" callee ->
             Call { callee; arguments = transform_arguments arguments }
         | value -> value
       in

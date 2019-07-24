@@ -13,6 +13,12 @@ let test_check_redundant_cast _ =
         typing.cast(int, x)
     |}
     ["Redundant cast [22]: The value being cast is already of type `int`."];
+  assert_type_errors
+    {|
+        def foo(x: int) -> None:
+          pyre_extensions.safe_cast(int, x)
+      |}
+    ["Redundant cast [22]: The value being cast is already of type `int`."];
   assert_type_errors {|
       def foo(x: str) -> None:
         typing.cast(int, x)

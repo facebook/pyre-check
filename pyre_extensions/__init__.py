@@ -1,5 +1,5 @@
 # pyre-ignore-all-errors
-from typing import Any, TypeVar
+from typing import Any, Type, TypeVar
 
 from . import tests, type_variable_operators  # noqa F401
 
@@ -14,6 +14,12 @@ def none_throws(optional):
     if optional is None:
         raise AssertionError("Unexpected `None`")
     return optional
+
+
+def safe_cast(new_type: Type[_T], value: Any) -> _T:
+    """safe_cast will change the type checker's inference of x if it was
+    already a subtype of what we are casting to, and error otherwise."""
+    return new_type(value)
 
 
 def ParameterSpecification(name):

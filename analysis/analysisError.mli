@@ -174,6 +174,7 @@ type kind =
   | ProhibitedAny of missing_annotation
   | RedundantCast of Type.t
   | RevealedType of { expression: Expression.t; annotation: Annotation.t }
+  | UnsafeCast of { expression: Expression.t; annotation: Type.t }
   | TooManyArguments of { callee: Reference.t option; expected: int; provided: int }
   | Top
   | TypedDictionaryAccessWithNonLiteral of Identifier.t list
