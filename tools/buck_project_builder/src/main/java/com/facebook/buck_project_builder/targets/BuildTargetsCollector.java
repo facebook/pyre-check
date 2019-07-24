@@ -146,14 +146,16 @@ public final class BuildTargetsCollector {
     }
     SimpleLogger.info("Querying targets' information...");
     long start = System.currentTimeMillis();
-    try (InputStream commandLineOutput = getBuildTargetJsonStream(targets)) {
+    ImmutableList<String> buildCommand = getBuildCommand(targets);
+    try (InputStream commandLineOutput = CommandLine.getCommandLineOutput(buildCommand)) {
       JsonElement parsedJson = new JsonParser().parse(new InputStreamReader(commandLineOutput));
       long buckQueryTime = System.currentTimeMillis() - start;
       SimpleLogger.info("Found targets' information in " + buckQueryTime + "ms.");
       if (!parsedJson.isJsonObject()) {
-        throw new Error(
-            "Unexpected buck query output. It should always be a json object. Bad json: "
-                + parsedJson);
+        throw new BuilderException(
+            String.format(
+                "Unexpected `buck query` output. It should always be a json object.\nBad json: %s. Query: %s.",
+                parsedJson, String.join(" ", buildCommand)));
       }
       return parsedJson.getAsJsonObject();
     } catch (IOException exception) {
@@ -174,8 +176,7 @@ public final class BuildTargetsCollector {
     return "//" + target;
   }
 
-  private static InputStream getBuildTargetJsonStream(ImmutableList<String> targets)
-      throws IOException {
+  private static ImmutableList<String> getBuildCommand(ImmutableList<String> targets) {
     /*
      * The command that we will run has the form:
      *
@@ -190,31 +191,29 @@ public final class BuildTargetsCollector {
      *
      * See: https://buck.build/command/query.html for more detail.
      */
-    ImmutableList<String> command =
-        ImmutableList.<String>builder()
-            .add("buck")
-            .add("query")
-            .add(
-                "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
-            .addAll(
-                targets.stream()
-                    .map(BuildTargetsCollector::normalizeTarget)
-                    .collect(Collectors.toList()))
-            .add("--output-attributes")
-            .add("buck.type")
-            .add("buck.base_path")
-            .add("base_module")
-            .add("labels")
-            .add("srcs")
-            .add("versioned_srcs")
-            .add("platform_srcs")
-            .add("cmd")
-            .add("url")
-            .add("binary_src")
-            .add("name")
-            .add("deps")
-            .add("platform_deps")
-            .build();
-    return CommandLine.getCommandLineOutput(command);
+    return ImmutableList.<String>builder()
+        .add("buck")
+        .add("query")
+        .add(
+            "kind('python_binary|python_library|python_test|genrule|cxx_genrule|remote_file', deps(%s))")
+        .addAll(
+            targets.stream()
+                .map(BuildTargetsCollector::normalizeTarget)
+                .collect(Collectors.toList()))
+        .add("--output-attributes")
+        .add("buck.type")
+        .add("buck.base_path")
+        .add("base_module")
+        .add("labels")
+        .add("srcs")
+        .add("versioned_srcs")
+        .add("platform_srcs")
+        .add("cmd")
+        .add("url")
+        .add("binary_src")
+        .add("name")
+        .add("deps")
+        .add("platform_deps")
+        .build();
   }
 }
