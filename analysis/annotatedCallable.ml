@@ -179,7 +179,6 @@ let apply_decorators
     ~resolution
     ({ Define.signature = { Define.decorators; _ }; _ } as define)
   =
-  ignore location;
   let apply_decorator
       ({ Type.Callable.annotation; parameters; _ } as overload)
       { Node.value = decorator; _ }
