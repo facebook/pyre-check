@@ -1341,8 +1341,7 @@ module ScratchProject = struct
     let errors = system_error @ syntax_error in
     ( if not (List.is_empty errors) then
         let relative_paths =
-          List.map errors ~f:(fun { SourcePath.relative_path; _ } -> relative_path)
-          |> List.map ~f:Path.RelativePath.show
+          List.map errors ~f:(fun { SourcePath.relative; _ } -> relative)
           |> String.concat ~sep:", "
         in
         raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
