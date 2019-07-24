@@ -166,10 +166,7 @@ let test_populate context =
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
-  Service.Environment.populate_shared_memory
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~sources:[File.Handle.create_for_testing "a.py"];
+  Service.Environment.populate_shared_memory ~configuration ~scheduler:(Scheduler.mock ()) [!&"a"];
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
     (GlobalKeys.find_unsafe (Reference.create "a"))
@@ -212,10 +209,7 @@ let test_purge context =
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
-  Service.Environment.populate_shared_memory
-    ~configuration
-    ~scheduler:(Scheduler.mock ())
-    ~sources:[File.Handle.create_for_testing "x.py"];
+  Service.Environment.populate_shared_memory ~configuration ~scheduler:(Scheduler.mock ()) [!&"x"];
   assert_is_some (Handler.class_metadata "x.D");
   Handler.purge [Reference.create "x"];
   assert_is_none (Handler.class_metadata "x.D")

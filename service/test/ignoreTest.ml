@@ -11,16 +11,15 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, source_paths, handles, qualifiers =
+    let configuration, source_paths, qualifiers =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
       let _ = ScratchProject.parse_sources project in
       let configuration = ScratchProject.configuration_of project in
       let source_paths = ScratchProject.source_paths_of project in
-      let handles = ScratchProject.handles_of project in
       let qualifiers = ScratchProject.qualifiers_of project in
-      configuration, source_paths, handles, qualifiers
+      configuration, source_paths, qualifiers
     in
-    Test.populate_shared_memory ~configuration ~sources:handles;
+    Test.populate_shared_memory ~configuration qualifiers;
     let ((module Handler : Analysis.Environment.Handler) as environment) =
       (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
     in

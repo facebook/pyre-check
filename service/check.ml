@@ -126,11 +126,8 @@ let check
   let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
   let () =
     (* TODO (T46153421): Refactor `populate_shared_memory` to take `SourcePath` *)
-    let sources =
-      List.map source_paths ~f:(fun { SourcePath.relative; _ } ->
-          File.Handle.create_for_testing relative)
-    in
-    Environment.populate_shared_memory ~configuration ~scheduler ~sources
+    let qualifiers = List.map source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier) in
+    Environment.populate_shared_memory ~configuration ~scheduler qualifiers
   in
   (* Do not count external files when computing ignores / checking types / computing coverages *)
   let source_paths =

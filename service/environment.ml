@@ -72,20 +72,13 @@ let populate
   GlobalResolution.Cache.clear ()
 
 
-let build ((module Handler : Environment.Handler) as handler) ~configuration ~scheduler ~sources =
+let build ((module Handler : Environment.Handler) as handler) ~configuration ~scheduler qualifiers =
   Log.info "Building type environment...";
 
   (* This grabs all sources from shared memory. It is unavoidable: Environment must be built
      sequentially until we find a way to build the environment in parallel. *)
-  let get_sources =
-    List.fold ~init:[] ~f:(fun handles handle ->
-        let qualifier = Source.qualifier ~handle in
-        match Ast.SharedMemory.Sources.get qualifier with
-        | Some handle -> handle :: handles
-        | None -> handles)
-  in
   let timer = Timer.start () in
-  let sources = get_sources sources in
+  let sources = List.filter_map qualifiers ~f:Ast.SharedMemory.Sources.get in
   populate ~configuration ~scheduler handler sources;
   Statistics.performance ~name:"full environment built" ~timer ();
   if Log.is_enabled `Dotty then (
@@ -410,7 +403,7 @@ end
 let populate_shared_memory
     ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
     ~scheduler
-    ~sources
+    qualifiers
   =
   Log.info "Adding built-in environment information to shared memory...";
   let timer = Timer.start () in
@@ -432,7 +425,7 @@ let populate_shared_memory
   Environment.add_special_classes (module SharedHandler);
   Environment.add_dummy_modules (module SharedHandler);
   Environment.add_special_globals (module SharedHandler);
-  build (module SharedHandler) ~configuration ~scheduler ~sources;
+  build (module SharedHandler) ~configuration ~scheduler qualifiers;
   if debug then
     ClassHierarchy.check_integrity (module SharedHandler.TypeOrderHandler);
   Statistics.event

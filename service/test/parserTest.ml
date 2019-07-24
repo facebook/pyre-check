@@ -156,18 +156,18 @@ let test_parse_sources context =
 
 let test_register_modules context =
   let assert_module_exports raw_source expected_exports =
-    let configuration, sources =
+    let configuration, qualifiers =
       let project =
         ScratchProject.setup
           ~context
           ["testing.py", raw_source; "canary.py", "from .testing import *"]
       in
       let _ = ScratchProject.parse_sources project in
-      ScratchProject.configuration_of project, ScratchProject.handles_of project
+      ScratchProject.configuration_of project, ScratchProject.qualifiers_of project
     in
     (* The modules get removed after preprocessing. *)
     assert_is_none (Ast.SharedMemory.Modules.get ~qualifier:!&"testing");
-    Test.populate_shared_memory ~configuration ~sources;
+    Test.populate_shared_memory ~configuration qualifiers;
     let assert_exports ~qualifier =
       let module_definition =
         Option.value_exn (Service.EnvironmentSharedMemory.Modules.get qualifier)
