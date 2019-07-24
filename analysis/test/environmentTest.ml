@@ -183,7 +183,7 @@ let test_register_aliases _ =
     let (module Handler : Environment.Handler) = Environment.handler (create_environment ()) in
     let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
     let register source =
-      Handler.register_module source;
+      Environment.register_module (module Handler) source;
       Environment.register_class_definitions (module Handler) source |> ignore
     in
     List.iter sources ~f:register;

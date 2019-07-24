@@ -258,9 +258,7 @@ module SharedHandler : Analysis.Environment.Handler = struct
 
   let class_metadata = ClassMetadata.get
 
-  let register_module ({ Source.qualifier; _ } as source) =
-    Modules.add qualifier (Module.create source)
-
+  let register_module qualifier registered_module = Modules.add qualifier registered_module
 
   let register_implicit_submodule qualifier =
     match Modules.get qualifier with
@@ -464,6 +462,7 @@ let populate_shared_memory
   let environment = Environment.Builder.create () in
   add_to_shared_memory environment;
   Environment.add_special_classes (module SharedHandler);
+  Environment.add_dummy_modules (module SharedHandler);
   build (module SharedHandler) ~configuration ~scheduler ~sources;
   if debug then
     ClassHierarchy.check_integrity (module SharedHandler.TypeOrderHandler);

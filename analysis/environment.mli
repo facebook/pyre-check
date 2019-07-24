@@ -47,7 +47,7 @@ module type Handler = sig
 
   val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
 
-  val register_module : Source.t -> unit
+  val register_module : Reference.t -> Module.t -> unit
 
   val register_implicit_submodule : Reference.t -> unit
 
@@ -77,6 +77,8 @@ module type Handler = sig
 end
 
 val add_special_classes : (module Handler) -> unit
+
+val add_dummy_modules : (module Handler) -> unit
 
 val handler : t -> (module Handler)
 (** Provides a default in-process environment handler constructed from an [Environment.t]. Use

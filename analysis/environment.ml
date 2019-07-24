@@ -47,7 +47,7 @@ module type Handler = sig
 
   val class_metadata : Identifier.t -> GlobalResolution.class_metadata option
 
-  val register_module : Source.t -> unit
+  val register_module : Reference.t -> Module.t -> unit
 
   val register_implicit_submodule : Reference.t -> unit
 
@@ -303,6 +303,14 @@ let add_special_classes (module Handler : Handler) =
         Type.TypedDictionary.defines ~t_self_expression ~total:false ) ]
 
 
+let add_dummy_modules (module Handler : Handler) =
+  (* Register dummy module for `builtins` and `future.builtins`. *)
+  let builtins = Reference.create "builtins" in
+  Handler.register_module builtins (Ast.Module.create_implicit ~empty_stub:true ());
+  let future_builtins = Reference.create "future.builtins" in
+  Handler.register_module future_builtins (Ast.Module.create_implicit ~empty_stub:true ())
+
+
 let handler
     { class_definitions;
       class_metadata;
@@ -429,9 +437,7 @@ let handler
 
       let class_definition annotation = Hashtbl.find class_definitions annotation
 
-      let register_module ({ Source.qualifier; _ } as source) =
-        Hashtbl.set ~key:qualifier ~data:(Module.create source) modules
-
+      let register_module key data = Hashtbl.set ~key ~data modules
 
       let register_implicit_submodule qualifier =
         match Hashtbl.mem modules qualifier with
@@ -497,12 +503,15 @@ let handler
     end : Handler )
   in
   add_special_classes handler;
+  add_dummy_modules handler;
   handler
 
 
 let dependencies (module Handler : Handler) = Handler.dependencies
 
-let register_module (module Handler : Handler) source = Handler.register_module source
+let register_module (module Handler : Handler) ({ Source.qualifier; _ } as source) =
+  Handler.register_module qualifier (Module.create source)
+
 
 let register_implicit_submodules (module Handler : Handler) qualifier =
   let rec register_submodules = function
@@ -1115,12 +1124,6 @@ module Builder = struct
     let globals = Reference.Table.create () in
     let dependencies = Dependencies.create () in
     let undecorated_functions = Reference.Table.create () in
-    (* Register dummy module for `builtins` and `future.builtins`. *)
-    let builtins = Reference.create "builtins" in
-    Hashtbl.set modules ~key:builtins ~data:(Ast.Module.create_implicit ~empty_stub:true ());
-    let future_builtins = Reference.create "future.builtins" in
-    Hashtbl.set modules ~key:future_builtins ~data:(Ast.Module.create_implicit ~empty_stub:true ());
-
     (* Add `None` constant to globals. *)
     let annotation annotation =
       Annotation.create_immutable ~global:true annotation |> Node.create_with_default_location
