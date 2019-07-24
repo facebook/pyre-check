@@ -1338,8 +1338,14 @@ module ScratchProject = struct
            ~preprocessing_state:None
     in
     (* Normally we shouldn't have any parse errors in tests *)
-    assert_true (List.is_empty syntax_error);
-    assert_true (List.is_empty system_error);
+    let errors = system_error @ syntax_error in
+    ( if not (List.is_empty errors) then
+        let relative_paths =
+          List.map errors ~f:(fun { SourcePath.relative_path; _ } -> relative_path)
+          |> List.map ~f:Path.RelativePath.show
+          |> String.concat ~sep:", "
+        in
+        raise (Parser.Error (Format.sprintf "Could not parse files at `%s`" relative_paths)) );
     qualifiers_of project
     |> List.map ~f:(fun qualifier -> Option.value_exn (Ast.SharedMemory.Sources.get qualifier))
 end
