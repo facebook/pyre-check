@@ -351,7 +351,7 @@ type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   all_callables: Callable.t list;
-  environment: (module Environment.Handler)
+  environment: Environment.t
 }
 
 let initialize ?(handle = "test.py") ?models ~context source_content =

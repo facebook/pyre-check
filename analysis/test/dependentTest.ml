@@ -21,10 +21,10 @@ let test_index _ =
   in
   Test.populate ~configuration handler [parse ~handle:"test.py" source];
   let qualifier = Reference.create "test" in
-  let (module Handler : Environment.Handler) = handler in
-  assert_equal (Handler.DependencyHandler.get_class_keys ~qualifier) ["baz.baz"];
-  assert_equal (Handler.DependencyHandler.get_function_keys ~qualifier) [!&"foo"];
-  assert_equal (Handler.DependencyHandler.get_alias_keys ~qualifier) ["test._T"]
+  let (module DependencyHandler) = Environment.dependency_handler handler in
+  assert_equal (DependencyHandler.get_class_keys ~qualifier) ["baz.baz"];
+  assert_equal (DependencyHandler.get_function_keys ~qualifier) [!&"foo"];
+  assert_equal (DependencyHandler.get_alias_keys ~qualifier) ["test._T"]
 
 
 let add_dependent table handle dependent =
@@ -41,9 +41,7 @@ let add_dependent table handle dependent =
   Hashtbl.update table source ~f:update
 
 
-let get_dependencies (module Handler : Environment.Handler) qualifier =
-  Handler.dependencies qualifier
-
+let get_dependencies environment qualifier = Environment.dependencies environment qualifier
 
 let assert_dependencies ~environment ~modules ~expected function_to_test =
   let get_dependencies = get_dependencies environment in
@@ -130,9 +128,10 @@ let test_transitive_dependents _ =
 
 let test_normalize _ =
   let assert_normalized ~edges expected =
-    let (module Handler : Environment.Handler) = Environment.in_process_handler () in
+    let handler = Environment.in_process_handler () in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     let add_dependent (left, right) =
-      Handler.DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right
+      DependencyHandler.add_dependent ~qualifier:(Reference.create left) !&right
     in
     List.iter edges ~f:add_dependent;
     let all_modules =
@@ -140,7 +139,7 @@ let test_normalize _ =
       |> List.concat_map ~f:(fun (left, right) -> [left; right])
       |> List.map ~f:(fun name -> Reference.create name)
     in
-    Handler.DependencyHandler.normalize all_modules;
+    DependencyHandler.normalize all_modules;
     let assert_dependents_equal (node, expected) =
       let expected =
         List.map expected ~f:(fun name -> Reference.create name)
@@ -153,7 +152,7 @@ let test_normalize _ =
       in
       (* If the printer shows identical sets here but the equality fails, the underlying
          representation must have diverged. *)
-      assert_equal ~printer (Some expected) (Handler.DependencyHandler.dependents !&node)
+      assert_equal ~printer (Some expected) (DependencyHandler.dependents !&node)
     in
     List.iter expected ~f:assert_dependents_equal
   in

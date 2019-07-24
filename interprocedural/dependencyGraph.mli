@@ -35,9 +35,9 @@ val from_overrides : overrides -> t
 
 val from_callgraph : callgraph -> t
 
-val create_callgraph : environment:(module Environment.Handler) -> source:Source.t -> callgraph
+val create_callgraph : environment:Environment.t -> source:Source.t -> callgraph
 
-val create_overrides : environment:(module Environment.Handler) -> source:Source.t -> overrides
+val create_overrides : environment:Environment.t -> source:Source.t -> overrides
 
 val union : t -> t -> t
 

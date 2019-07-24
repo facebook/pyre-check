@@ -8,7 +8,6 @@ open Ast
 open Expression
 open Statement
 open Analysis
-open Environment
 
 type classdecorator_options = {
   init: bool;
@@ -17,7 +16,7 @@ type classdecorator_options = {
   order: bool
 }
 
-let transform_environment ~options (module Handler : Handler) resolution source =
+let transform_environment ~options environment resolution source =
   let module Visit = Visit.MakeStatementVisitor (struct
     type t = unit
 
@@ -228,7 +227,8 @@ let transform_environment ~options (module Handler : Handler) resolution source 
                 |> Analysis.Preprocessing.preprocess
                 |> Source.statements
               in
-              Handler.set_class_definition
+              Environment.set_class_definition
+                environment
                 ~name:(Reference.show parent)
                 ~definition:
                   { Node.location; value = { ast_class with Class.body = generated_methods } } )

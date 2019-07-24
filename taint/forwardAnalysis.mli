@@ -8,7 +8,7 @@ open Analysis
 open Statement
 
 val run
-  :  environment:(module Environment.Handler) ->
+  :  environment:Environment.t ->
   define:Define.t Node.t ->
   existing_model:TaintResult.call_model ->
   TaintResult.Forward.model * TaintResult.result

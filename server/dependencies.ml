@@ -10,7 +10,7 @@ open Configuration.Analysis
 open Pyre
 
 let compute_dependencies
-    ~state:{ State.environment = (module Handler : Environment.Handler); scheduler; _ }
+    ~state:{ State.environment; scheduler; _ }
     ~configuration:({ incremental_transitive_dependencies; _ } as configuration)
     source_paths
   =
@@ -57,7 +57,7 @@ let compute_dependencies
       else
         Dependencies.of_list
     in
-    get_dependencies ~get_dependencies:Handler.dependencies ~modules
+    get_dependencies ~get_dependencies:(Environment.dependencies environment) ~modules
     |> Fn.flip Set.diff (Reference.Set.of_list qualifiers)
   in
   Statistics.performance

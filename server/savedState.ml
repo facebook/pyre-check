@@ -186,7 +186,7 @@ let load
     | _ -> raise (IncompatibleState "unexpected saved state parameters")
   in
   let scheduler = Scheduler.create ~configuration () in
-  let environment = (module Environment.SharedHandler : Analysis.Environment.Handler) in
+  let environment = Environment.shared_handler in
   Memory.load_shared_memory ~path:(Path.absolute shared_memory_path);
   let old_configuration = StoredConfiguration.load () in
   if not (Configuration.Analysis.equal old_configuration configuration) then

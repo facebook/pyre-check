@@ -7,7 +7,7 @@ open Analysis
 
 type result = {
   module_tracker: ModuleTracker.t;
-  environment: (module Environment.Handler);
+  environment: Environment.t;
   errors: Error.t list
 }
 
@@ -15,7 +15,7 @@ val analyze_sources
   :  ?open_documents:string Pyre.Path.Map.t ->
   scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  environment:(module Environment.Handler) ->
+  environment:Environment.t ->
   Ast.SourcePath.t list ->
   Error.t list
 

@@ -43,7 +43,7 @@ let initial_taint define =
 module type FUNCTION_CONTEXT = sig
   val definition : Define.t Node.t
 
-  val environment : (module Environment.Handler)
+  val environment : Environment.t
 end
 
 module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct

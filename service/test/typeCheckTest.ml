@@ -22,9 +22,7 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
   List.iter ~f:File.write files;
   let module_tracker = Service.ModuleTracker.create configuration in
   let source_paths = Service.Parser.parse_all ~configuration ~scheduler module_tracker in
-  let ((module Handler : Analysis.Environment.Handler) as environment) =
-    (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
-  in
+  let environment = Service.Environment.shared_handler in
   let qualifiers = List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) in
   Test.populate_shared_memory ~configuration qualifiers;
   Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
@@ -36,7 +34,8 @@ let assert_errors ?filter_directories ?ignore_all_errors ?search_path ~root ~fil
       (Service.ModuleTracker.source_paths module_tracker)
     |> List.map ~f:(Analysis.Error.description ~show_error_traces:false)
   in
-  List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier) |> Handler.purge;
+  List.map source_paths ~f:(fun { Ast.SourcePath.qualifier; _ } -> qualifier)
+  |> Analysis.Environment.purge environment;
   assert_equal
     ~printer:(List.to_string ~f:ident)
     ~cmp:(List.equal String.equal)

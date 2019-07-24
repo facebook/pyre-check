@@ -75,7 +75,7 @@ module type ANALYZER = sig
 
   val analyze
     :  callable:Callable.real_target ->
-    environment:(module Analysis.Environment.Handler) ->
+    environment:Analysis.Environment.t ->
     define:Define.t Node.t ->
     existing:call_model option ->
     result * call_model
@@ -83,7 +83,7 @@ module type ANALYZER = sig
   (* Called once on master before analysis of individual callables. *)
   val init
     :  configuration:Yojson.Safe.json ->
-    environment:(module Analysis.Environment.Handler) ->
+    environment:Analysis.Environment.t ->
     functions:Callable.t list ->
     call_model Callable.Map.t
 end

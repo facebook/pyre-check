@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Analysis
 open Ast
 module SharedMemory = Memory
 
@@ -83,7 +82,7 @@ module ClassValue = struct
 end
 
 module ClassMetadataValue = struct
-  type t = Analysis.GlobalResolution.class_metadata
+  type t = GlobalResolution.class_metadata
 
   let prefix = Prefix.make ()
 
@@ -131,7 +130,7 @@ module OrderAnnotationValue = struct
 end
 
 module EdgeValue = struct
-  type t = Analysis.ClassHierarchy.Target.t list
+  type t = ClassHierarchy.Target.t list
 
   let prefix = Prefix.make ()
 
@@ -139,7 +138,7 @@ module EdgeValue = struct
 end
 
 module BackedgeValue = struct
-  type t = Analysis.ClassHierarchy.Target.Set.Tree.t
+  type t = ClassHierarchy.Target.Set.Tree.t
 
   let prefix = Prefix.make ()
 

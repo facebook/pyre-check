@@ -26,7 +26,7 @@ end
 module type FUNCTION_CONTEXT = sig
   val definition : Define.t Node.t
 
-  val environment : (module Environment.Handler)
+  val environment : Environment.t
 
   val check_flow
     :  location:Location.t ->

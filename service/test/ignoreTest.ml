@@ -20,9 +20,7 @@ let ignore_lines_test context =
       configuration, source_paths, qualifiers
     in
     Test.populate_shared_memory ~configuration qualifiers;
-    let ((module Handler : Analysis.Environment.Handler) as environment) =
-      (module Service.Environment.SharedHandler : Analysis.Environment.Handler)
-    in
+    let environment = Service.Environment.shared_handler in
     Test.populate ~configuration environment (typeshed_stubs ~include_helper_builtins:false ());
     add_defaults_to_environment ~configuration environment;
     let scheduler = Scheduler.mock () in
@@ -31,7 +29,7 @@ let ignore_lines_test context =
       Service.Check.analyze_sources ~scheduler ~configuration ~environment source_paths
       |> List.map ~f:(fun error -> Error.description error ~show_error_traces)
     in
-    Handler.purge qualifiers;
+    Analysis.Environment.purge environment qualifiers;
     let description_list_to_string descriptions =
       Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
     in

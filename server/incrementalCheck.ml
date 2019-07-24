@@ -38,7 +38,6 @@ let recheck
     List.map removed ~f:Reference.show
     |> String.concat ~sep:", "
     |> Log.info "Removing type information for `%s`";
-  let (module Handler : Environment.Handler) = environment in
   let scheduler =
     Scheduler.with_parallel scheduler ~is_parallel:(List.length recheck_source_paths > 5)
   in
@@ -63,7 +62,7 @@ let recheck
     (* Clean up all data related to updated files. *)
     let qualifiers = List.append removed recheck_modules in
     Ast.SharedMemory.Sources.remove qualifiers;
-    Handler.purge ~debug qualifiers;
+    Analysis.Environment.purge environment ~debug qualifiers;
     List.iter qualifiers ~f:(LookupCache.evict ~state);
     Statistics.performance
       ~name:"purged old environment"

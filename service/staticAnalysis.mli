@@ -9,7 +9,7 @@ open Statement
 open Interprocedural
 
 val record_and_merge_call_graph
-  :  environment:(module Environment.Handler) ->
+  :  environment:Environment.t ->
   call_graph:DependencyGraph.callgraph ->
   source:Source.t ->
   DependencyGraph.callgraph
@@ -24,7 +24,7 @@ val callables
 val analyze
   :  scheduler:Scheduler.t ->
   configuration:Configuration.StaticAnalysis.t ->
-  environment:(module Environment.Handler) ->
+  environment:Environment.t ->
   qualifiers:Reference.t list ->
   unit ->
   Interprocedural.Error.t list

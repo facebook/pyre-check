@@ -170,7 +170,7 @@ let test_register_modules context =
     Test.populate_shared_memory ~configuration qualifiers;
     let assert_exports ~qualifier =
       let module_definition =
-        Option.value_exn (Service.EnvironmentSharedMemory.Modules.get qualifier)
+        Option.value_exn (Analysis.EnvironmentSharedMemory.Modules.get qualifier)
       in
       assert_equal
         ~cmp:(List.equal Reference.equal)

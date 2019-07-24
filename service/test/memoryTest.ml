@@ -4,7 +4,7 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
-open Service.EnvironmentSharedMemory
+open Analysis.EnvironmentSharedMemory
 
 let test_little_endian_representation _ =
   let assert_correctly_represented ~expected ~key =

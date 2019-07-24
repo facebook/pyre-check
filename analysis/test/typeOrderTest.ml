@@ -2458,10 +2458,7 @@ let test_solve_less_or_equal _ =
         >>| Class.create
         >>| Class.constructor ~instantiated ~resolution
       in
-      let handler =
-        let (module Handler : Environment.Handler) = environment in
-        (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
-      in
+      let handler = Environment.class_hierarchy environment in
       { handler;
         constructor;
         attributes;
@@ -2522,7 +2519,6 @@ let test_solve_less_or_equal _ =
           | Type.Variable variable ->
               Type.Variable.UnaryPair (variable, parse_annotation value |> postprocess)
           | Type.Primitive primitive -> (
-              let (module Handler : Environment.Handler) = environment in
               let parse_parameters parameters =
                 match
                   parse_annotation (Printf.sprintf "typing.Callable[%s, typing.Any]" parameters)
@@ -2538,7 +2534,8 @@ let test_solve_less_or_equal _ =
                   | Type.Tuple (Bounded ordered) -> ordered
                   | _ -> failwith "impossible"
               in
-              match Handler.aliases primitive with
+              let global_resolution = Environment.resolution environment () in
+              match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
               | Some (Type.VariableAlias (ListVariadic variable)) ->
@@ -3211,10 +3208,7 @@ let test_instantiate_protocol_parameters _ =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler =
-        let (module Handler : Environment.Handler) = environment in
-        (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
-      in
+      let handler = Environment.class_hierarchy environment in
       { handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);
         attributes;
@@ -3395,10 +3389,7 @@ let test_mark_escaped_as_escaped _ =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let handler =
-      let (module Handler : Environment.Handler) = environment in
-      (module Handler.TypeOrderHandler : ClassHierarchy.Handler)
-    in
+    let handler = Environment.class_hierarchy environment in
     let handler =
       { handler;
         constructor = (fun _ ~protocol_assumptions:_ -> None);

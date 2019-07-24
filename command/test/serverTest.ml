@@ -918,22 +918,21 @@ let test_query context =
 
 let test_compute_hashes_to_keys context =
   let open Protocol in
-  let (module Handler : Analysis.Environment.Handler) =
-    (module Service.Environment.SharedHandler)
-  in
+  let environment = Service.Environment.shared_handler in
+  let (module TypeOrderHandler) = Environment.class_hierarchy environment in
   let set_up_shared_memory _ =
-    Handler.TypeOrderHandler.add_key 15;
-    Handler.TypeOrderHandler.add_key 16;
-    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.annotations ()) ~key:15 ~data:"fifteen";
-    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.indices ()) ~key:"fifteen" ~data:15;
-    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.annotations ()) ~key:16 ~data:"sixteen";
-    Handler.TypeOrderHandler.set (Handler.TypeOrderHandler.indices ()) ~key:"sixteen" ~data:16;
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.edges ())
+    TypeOrderHandler.add_key 15;
+    TypeOrderHandler.add_key 16;
+    TypeOrderHandler.set (TypeOrderHandler.annotations ()) ~key:15 ~data:"fifteen";
+    TypeOrderHandler.set (TypeOrderHandler.indices ()) ~key:"fifteen" ~data:15;
+    TypeOrderHandler.set (TypeOrderHandler.annotations ()) ~key:16 ~data:"sixteen";
+    TypeOrderHandler.set (TypeOrderHandler.indices ()) ~key:"sixteen" ~data:16;
+    TypeOrderHandler.set
+      (TypeOrderHandler.edges ())
       ~key:15
       ~data:[{ ClassHierarchy.Target.target = 16; parameters = Concrete [] }];
-    Handler.TypeOrderHandler.set
-      (Handler.TypeOrderHandler.backedges ())
+    TypeOrderHandler.set
+      (TypeOrderHandler.backedges ())
       ~key:16
       ~data:
         (ClassHierarchy.Target.Set.of_list
@@ -946,7 +945,7 @@ let test_compute_hashes_to_keys context =
       Int.Map.Tree.empty
   in
   let tear_down_shared_memory () _ =
-    let open Service.EnvironmentSharedMemory in
+    let open Analysis.EnvironmentSharedMemory in
     OrderEdges.remove_batch (OrderEdges.KeySet.of_list [15; 16]);
     OrderBackedges.remove_batch (OrderBackedges.KeySet.of_list [15; 16]);
     OrderAnnotations.remove_batch (OrderAnnotations.KeySet.of_list [15; 16]);
@@ -959,7 +958,7 @@ let test_compute_hashes_to_keys context =
     ScratchServer.start ~context ["sample.py", ""]
   in
   let expected =
-    let open Service.EnvironmentSharedMemory in
+    let open Analysis.EnvironmentSharedMemory in
     let compare { TypeQuery.hash = left; _ } { TypeQuery.hash = right; _ } =
       String.compare left right
     in
@@ -1028,11 +1027,8 @@ let test_compute_hashes_to_keys context =
 
 
 let test_decode_serialized_ocaml_values context =
-  let open Service.EnvironmentSharedMemory in
+  let open Analysis.EnvironmentSharedMemory in
   let open Protocol in
-  let (module Handler : Analysis.Environment.Handler) =
-    (module Service.Environment.SharedHandler)
-  in
   (* Note that we're not adding any values to the shared environment here. *)
   assert_response
     ~context

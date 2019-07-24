@@ -7,7 +7,7 @@ open Core
 open OUnit2
 
 let test_compute_hashes_to_keys _ =
-  let open Service.EnvironmentSharedMemory in
+  let open Analysis.EnvironmentSharedMemory in
   assert_equal
     ~cmp:(String.Map.equal String.equal)
     (String.Map.of_alist_exn

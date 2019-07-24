@@ -43,8 +43,7 @@ let populate_preprocess ?(environment = create_environment ()) ?handle source =
 
 let order_and_environment source =
   let environment = populate source in
-  let module Handler = (val environment) in
-  ( { TypeOrder.handler = (module Handler.TypeOrderHandler : ClassHierarchy.Handler);
+  ( { TypeOrder.handler = Environment.class_hierarchy environment;
       constructor = (fun _ ~protocol_assumptions:_ -> None);
       attributes = (fun _ ~protocol_assumptions:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
@@ -70,9 +69,9 @@ let create_location path start_line start_column end_line end_column =
 
 
 let test_register_class_definitions _ =
-  let (module Handler : Environment.Handler) = create_environment () in
+  let environment = create_environment () in
   Environment.register_class_definitions
-    (module Handler)
+    environment
     (parse
        {|
        class C:
@@ -85,17 +84,17 @@ let test_register_class_definitions _ =
          return C()
     |})
   |> ignore;
-  assert_equal (parse_annotation (module Handler) !"C") (Type.Primitive "C");
-  assert_equal (parse_annotation (module Handler) !"D") (Type.Primitive "D");
-  assert_equal (parse_annotation (module Handler) !"B") (Type.Primitive "B");
-  assert_equal (parse_annotation (module Handler) !"A") (Type.Primitive "A");
-  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  assert_equal (parse_annotation environment !"C") (Type.Primitive "C");
+  assert_equal (parse_annotation environment !"D") (Type.Primitive "D");
+  assert_equal (parse_annotation environment !"B") (Type.Primitive "B");
+  assert_equal (parse_annotation environment !"A") (Type.Primitive "A");
+  let order = Environment.class_hierarchy environment in
   assert_equal (ClassHierarchy.successors order "C") [];
 
   (* Annotations for classes are returned even if they already exist in the handler. *)
   let new_annotations =
     Environment.register_class_definitions
-      (module Handler)
+      environment
       (parse {|
          class C:
            ...
@@ -107,7 +106,7 @@ let test_register_class_definitions _ =
     (Type.Primitive.Set.singleton "C")
     new_annotations;
   let new_annotations =
-    Environment.register_class_definitions (module Handler) (parse "class int: pass")
+    Environment.register_class_definitions environment (parse "class int: pass")
   in
   assert_equal
     ~cmp:Type.Primitive.Set.equal
@@ -117,7 +116,7 @@ let test_register_class_definitions _ =
 
 
 let test_register_class_metadata _ =
-  let (module Handler : Environment.Handler) = create_environment ~include_helpers:false () in
+  let environment = create_environment ~include_helpers:false () in
   let source =
     parse
       {|
@@ -136,23 +135,23 @@ let test_register_class_metadata _ =
       |}
     |> Preprocessing.preprocess
   in
-  let all_annotations =
-    Environment.register_class_definitions (module Handler) source |> Set.to_list
-  in
-  let resolution = Environment.resolution (module Handler) () in
-  Environment.connect_type_order (module Handler) resolution source;
-  ClassHierarchy.deduplicate (module Handler.TypeOrderHandler) ~annotations:all_annotations;
-  ClassHierarchy.connect_annotations_to_object (module Handler.TypeOrderHandler) all_annotations;
-  ClassHierarchy.remove_extra_edges_to_object (module Handler.TypeOrderHandler) all_annotations;
-  Handler.register_class_metadata "A";
-  Handler.register_class_metadata "B";
-  Handler.register_class_metadata "C";
-  Handler.register_class_metadata "D";
-  Handler.register_class_metadata "E";
-  Handler.register_class_metadata "F";
+  let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
+  let resolution = Environment.resolution environment () in
+  Environment.connect_type_order environment resolution source;
+  let order = Environment.class_hierarchy environment in
+  ClassHierarchy.deduplicate order ~annotations:all_annotations;
+  ClassHierarchy.connect_annotations_to_object order all_annotations;
+  ClassHierarchy.remove_extra_edges_to_object order all_annotations;
+  Environment.register_class_metadata environment "A";
+  Environment.register_class_metadata environment "B";
+  Environment.register_class_metadata environment "C";
+  Environment.register_class_metadata environment "D";
+  Environment.register_class_metadata environment "E";
+  Environment.register_class_metadata environment "F";
   let assert_successors class_name expected =
     let { GlobalResolution.successors; _ } =
-      Option.value_exn (Handler.class_metadata class_name)
+      let global_resolution = Environment.resolution environment () in
+      Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
     in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
@@ -166,7 +165,8 @@ let test_register_class_metadata _ =
   assert_successors "E" ["D"; "C"; "A"; "object"];
   let assert_extends_placeholder_stub_class class_name expected =
     let { GlobalResolution.extends_placeholder_stub_class; _ } =
-      Option.value_exn (Handler.class_metadata class_name)
+      let global_resolution = Environment.resolution environment () in
+      Option.value_exn (GlobalResolution.class_metadata global_resolution (Primitive class_name))
     in
     assert_equal expected extends_placeholder_stub_class
   in
@@ -177,18 +177,18 @@ let test_register_class_metadata _ =
 
 let test_register_aliases _ =
   let register_all sources =
-    let (module Handler : Environment.Handler) = create_environment () in
+    let environment = create_environment () in
     let sources = List.map sources ~f:(fun source -> source |> Preprocessing.preprocess) in
     let register source =
-      Environment.register_module (module Handler) source;
-      Environment.register_class_definitions (module Handler) source |> ignore
+      Environment.register_module environment source;
+      Environment.register_class_definitions environment source |> ignore
     in
     List.iter sources ~f:register;
-    Environment.register_aliases (module Handler) sources;
-    (module Handler : Environment.Handler)
+    Environment.register_aliases environment sources;
+    environment
   in
   let assert_resolved sources aliases =
-    let (module Handler) = register_all sources in
+    let environment = register_all sources in
     let assert_alias (alias, target) =
       let parse_annotation handler source =
         parse_single_expression source |> parse_annotation handler
@@ -196,7 +196,7 @@ let test_register_aliases _ =
       assert_equal
         ~printer:(fun string -> string)
         target
-        (Type.show (parse_annotation (module Handler) alias))
+        (Type.show (parse_annotation environment alias))
     in
     List.iter aliases ~f:assert_alias
   in
@@ -396,9 +396,10 @@ let test_register_aliases _ =
     ["b.Foo", "b.Foo"; "b.Bar", "a.Foo"];
 
   let assert_resolved sources aliases =
-    let (module Handler) = register_all sources in
+    let environment = register_all sources in
+    let global_resolution = Environment.resolution environment () in
     let assert_alias (alias, target) =
-      match Handler.aliases alias with
+      match GlobalResolution.aliases global_resolution alias with
       | Some alias -> assert_equal ~printer:Type.show_alias target alias
       | None -> failwith "Alias is missing"
     in
@@ -421,17 +422,22 @@ let test_register_aliases _ =
 
 
 let test_register_implicit_submodules _ =
-  let (module Handler : Environment.Handler) = create_environment () in
-  Environment.register_implicit_submodules (module Handler) (Reference.create "a.b.c");
-  assert_equal None (Handler.module_definition (Reference.create "a.b.c"));
-  assert_true (Handler.is_module (Reference.create "a.b"));
-  assert_true (Handler.is_module (Reference.create "a"))
+  let environment = create_environment () in
+  Environment.register_implicit_submodules environment (Reference.create "a.b.c");
+  let global_resolution = Environment.resolution environment () in
+  assert_equal
+    None
+    (GlobalResolution.module_definition global_resolution (Reference.create "a.b.c"));
+  assert_true (Environment.is_module environment (Reference.create "a.b"));
+  assert_true (Environment.is_module environment (Reference.create "a"))
 
 
 let test_connect_definition _ =
-  let (module Handler : Environment.Handler) = create_environment () in
-  let resolution = Environment.resolution (module Handler) () in
-  let (module TypeOrderHandler : ClassHierarchy.Handler) = (module Handler.TypeOrderHandler) in
+  let environment = create_environment () in
+  let resolution = Environment.resolution environment () in
+  let (module TypeOrderHandler : ClassHierarchy.Handler) =
+    Environment.class_hierarchy environment
+  in
   ClassHierarchy.insert (module TypeOrderHandler) "C";
   ClassHierarchy.insert (module TypeOrderHandler) "D";
   let assert_edge ~predecessor ~successor =
@@ -452,21 +458,23 @@ let test_connect_definition _ =
   let class_definition =
     +{ Class.name = !&"C"; bases = []; body = []; decorators = []; docstring = None }
   in
-  Environment.connect_definition (module Handler) ~resolution ~definition:class_definition;
+  Environment.connect_definition environment ~resolution ~definition:class_definition;
   let definition = +Test.parse_single_class {|
        class D(int, float):
          ...
      |} in
-  Environment.connect_definition (module Handler) ~resolution ~definition;
+  Environment.connect_definition environment ~resolution ~definition;
   assert_edge ~predecessor:"D" ~successor:"int";
   assert_edge ~predecessor:"D" ~successor:"float"
 
 
 let test_register_globals _ =
-  let (module Handler : Environment.Handler) = create_environment () in
-  let resolution = Environment.resolution (module Handler) () in
+  let environment = create_environment () in
+  let resolution = Environment.resolution environment () in
   let assert_global reference expected =
-    let actual = !&reference |> Handler.globals >>| Node.value >>| Annotation.annotation in
+    let actual =
+      !&reference |> GlobalResolution.global resolution >>| Node.value >>| Annotation.annotation
+    in
     assert_equal
       ~printer:(function
         | Some annotation -> Type.show annotation
@@ -499,7 +507,7 @@ let test_register_globals _ =
       |}
     |> Preprocessing.preprocess
   in
-  Environment.register_values (module Handler) resolution source;
+  Environment.register_values environment resolution source;
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
   assert_global "qualifier.with_resolve" (Some Type.Top);
@@ -523,7 +531,7 @@ let test_register_globals _ =
       |}
     |> Preprocessing.preprocess
   in
-  Environment.register_values (module Handler) resolution source;
+  Environment.register_values environment resolution source;
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
   assert_global "test.GLOBAL2" (Some (Type.Primitive "test.alias"));
   let source =
@@ -534,15 +542,15 @@ let test_register_globals _ =
       |}
     |> Preprocessing.preprocess
   in
-  Environment.register_values (module Handler) resolution source;
+  Environment.register_values environment resolution source;
   assert_global "tuples.y" (Some Type.Top);
   assert_global "tuples.z" (Some Type.Top);
   ()
 
 
 let test_connect_type_order _ =
-  let (module Handler : Environment.Handler) = create_environment ~include_helpers:false () in
-  let resolution = Environment.resolution (module Handler) () in
+  let environment = create_environment ~include_helpers:false () in
+  let resolution = Environment.resolution environment () in
   let source =
     parse
       {|
@@ -559,12 +567,10 @@ let test_connect_type_order _ =
          return D()
     |}
   in
-  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
-  let all_annotations =
-    Environment.register_class_definitions (module Handler) source |> Set.to_list
-  in
-  Environment.register_aliases (module Handler) [source];
-  Environment.connect_type_order (module Handler) resolution source;
+  let order = Environment.class_hierarchy environment in
+  let all_annotations = Environment.register_class_definitions environment source |> Set.to_list in
+  Environment.register_aliases environment [source];
+  Environment.connect_type_order environment resolution source;
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
@@ -582,12 +588,10 @@ let test_connect_type_order _ =
 
 let test_populate _ =
   (* Test type resolution. *)
-  let ((module Handler : Environment.Handler) as environment) =
-    populate {|
+  let environment = populate {|
       class foo.foo(): ...
       class bar(): ...
-    |}
-  in
+    |} in
   assert_equal (parse_annotation environment !"foo.foo") (Type.Primitive "foo.foo");
   assert_equal
     (parse_annotation environment (parse_single_expression "Optional[foo.foo]"))
@@ -600,8 +604,10 @@ let test_populate _ =
     (Type.parametric "collections.defaultdict" (Concrete [Type.Any; Type.Any]));
 
   (* Check custom class definitions. *)
-  assert_is_some (Handler.class_definition "None");
-  assert_is_some (Handler.class_definition "typing.Optional");
+  let global_resolution = Environment.resolution environment () in
+  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "None"));
+  assert_is_some
+    (GlobalResolution.class_definition global_resolution (Primitive "typing.Optional"));
 
   (* Check type aliases. *)
   let environment =
@@ -622,11 +628,9 @@ let test_populate _ =
       base
       ~superclasses
     =
-    let (module Handler : Environment.Handler) = environment in
-    let index annotation =
-      Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
-    in
-    let targets = Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.edges ()) (index base) in
+    let (module TypeOrderHandler) = Environment.class_hierarchy environment in
+    let index annotation = TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation in
+    let targets = TypeOrderHandler.find (TypeOrderHandler.edges ()) (index base) in
     let to_target annotation =
       { ClassHierarchy.Target.target = index annotation;
         parameters = superclass_parameters annotation
@@ -637,9 +641,7 @@ let test_populate _ =
       | Some targets ->
           let show_target { ClassHierarchy.Target.target; parameters } =
             let index = Int.to_string target in
-            let target =
-              Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.annotations ()) target
-            in
+            let target = TypeOrderHandler.find_unsafe (TypeOrderHandler.annotations ()) target in
             Format.asprintf "%s: %s%a" index target Type.OrderedTypes.pp_concise parameters
           in
           List.to_string targets ~f:show_target
@@ -832,13 +834,12 @@ let test_populate _ =
     "CallMe"
     ~superclasses:["typing.Callable"];
   ();
-  let (module Handler : Environment.Handler) =
-    populate {|
+  let environment = populate {|
       def foo(x: int) -> str: ...
-    |}
-  in
+    |} in
+  let global_resolution = Environment.resolution environment () in
   assert_equal
-    (Handler.undecorated_signature (Reference.create "foo"))
+    (GlobalResolution.undecorated_signature global_resolution (Reference.create "foo"))
     (Some
        { Type.Callable.annotation = Type.string;
          parameters =
@@ -1053,8 +1054,7 @@ let test_supertypes_type_order _ =
       class foo(): pass
       class bar(foo): pass
     |} in
-  let module Handler = (val environment) in
-  let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+  let order = Environment.class_hierarchy environment in
   assert_equal ["object"] (ClassHierarchy.successors order "foo");
   assert_equal ["foo"; "object"] (ClassHierarchy.successors order "bar")
 
@@ -1087,15 +1087,15 @@ let test_modules _ =
         Source.create ~relative:"dingus.py" [];
         Source.create ~relative:"os/path.py" [] ]
   in
-  let module Handler = (val environment) in
-  assert_is_some (Handler.module_definition !&"wingus");
-  assert_is_some (Handler.module_definition !&"dingus");
-  assert_is_none (Handler.module_definition !&"zap");
-  assert_is_some (Handler.module_definition !&"os");
-  assert_is_some (Handler.module_definition !&"os.path");
-  assert_true (Handler.is_module !&"wingus");
-  assert_true (Handler.is_module !&"dingus");
-  assert_false (Handler.is_module !&"zap");
+  let global_resolution = Environment.resolution environment () in
+  assert_is_some (GlobalResolution.module_definition global_resolution !&"wingus");
+  assert_is_some (GlobalResolution.module_definition global_resolution !&"dingus");
+  assert_is_none (GlobalResolution.module_definition global_resolution !&"zap");
+  assert_is_some (GlobalResolution.module_definition global_resolution !&"os");
+  assert_is_some (GlobalResolution.module_definition global_resolution !&"os.path");
+  assert_true (Environment.is_module environment !&"wingus");
+  assert_true (Environment.is_module environment !&"dingus");
+  assert_false (Environment.is_module environment !&"zap");
   ()
 
 
@@ -1136,7 +1136,7 @@ let test_import_dependencies context =
 
 
 let test_register_dependencies _ =
-  let (module Handler : Environment.Handler) = create_environment () in
+  let environment = create_environment () in
   let source =
     {|
          import a # a is added here
@@ -1144,9 +1144,9 @@ let test_register_dependencies _ =
          from . import ignored # no dependency created here
       |}
   in
-  Environment.register_dependencies (module Handler) (parse ~handle:"test.py" source);
+  Environment.register_dependencies environment (parse ~handle:"test.py" source);
   let dependencies qualifier =
-    Environment.dependencies (module Handler) !&qualifier
+    Environment.dependencies environment !&qualifier
     >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
@@ -1155,7 +1155,7 @@ let test_register_dependencies _ =
 
 
 let test_purge _ =
-  let ((module Handler : Environment.Handler) as handler) = Environment.in_process_handler () in
+  let handler = Environment.in_process_handler () in
   let source =
     {|
       import a
@@ -1167,22 +1167,23 @@ let test_purge _ =
     |}
   in
   Test.populate ~configuration handler [parse ~handle:"test.py" source];
-  assert_is_some (Handler.class_definition "baz.baz");
-  assert_is_some (Handler.aliases "test._T");
+  let global_resolution = Environment.resolution handler () in
+  assert_is_some (GlobalResolution.class_definition global_resolution (Primitive "baz.baz"));
+  assert_is_some (GlobalResolution.aliases global_resolution "test._T");
   let dependencies handle =
     let handle = File.Handle.create_for_testing handle in
-    Handler.dependencies (Source.qualifier ~handle)
+    Environment.dependencies handler (Source.qualifier ~handle)
     >>| String.Set.Tree.map ~f:Reference.show
     >>| String.Set.Tree.to_list
   in
   assert_equal (dependencies "a.py") (Some ["test"]);
-  assert_is_some (Handler.class_metadata "P");
-  assert_is_some (Handler.class_metadata "baz.baz");
-  Handler.purge [Reference.create "test"];
-  assert_is_none (Handler.class_definition "baz.baz");
-  assert_is_none (Handler.class_metadata "P");
-  assert_is_none (Handler.class_metadata "baz.baz");
-  assert_is_none (Handler.aliases "test._T");
+  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "P"));
+  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "baz.baz"));
+  Environment.purge handler [Reference.create "test"];
+  assert_is_none (GlobalResolution.class_definition global_resolution (Primitive "baz.baz"));
+  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "P"));
+  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "baz.baz"));
+  assert_is_none (GlobalResolution.aliases global_resolution "test._T");
   assert_equal (dependencies "a.py") (Some [])
 
 

@@ -12,11 +12,11 @@ open Test
 let assert_environment_contains source expected =
   Annotated.Class.AttributeCache.clear ();
   let handle = "" in
-  let (module Handler : Environment.Handler) = environment ~sources:[] () in
+  let environment = environment ~sources:[] () in
   let source = parse ~handle source |> Preprocessing.preprocess in
   Test.populate
     ~configuration:(Configuration.Analysis.create ())
-    (module Handler)
+    environment
     (source :: typeshed_stubs ~include_helper_builtins:false ());
   let expected =
     List.map expected ~f:(fun definition -> parse ~handle definition |> Preprocessing.preprocess)
@@ -30,9 +30,13 @@ let assert_environment_contains source expected =
     List.map ~f:Source.statements expected
     |> List.filter_map ~f:List.hd
     |> List.filter_map ~f:get_name_if_class
+    |> List.map ~f:(fun name -> Type.Primitive name)
   in
   let assert_class_equal class_type expected =
-    let class_definition = Option.value_exn (Handler.class_definition class_type) in
+    let global_resolution = Environment.resolution environment () in
+    let class_definition =
+      Option.value_exn (GlobalResolution.class_definition global_resolution class_type)
+    in
     assert_source_equal
       expected
       (Source.create ~relative:handle [+Class (Node.value class_definition)])

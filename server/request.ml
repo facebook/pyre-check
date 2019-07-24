@@ -386,9 +386,8 @@ let process_type_query_request
     ~configuration
     ~request
   =
-  let (module Handler : Environment.Handler) = environment in
   let process_request () =
-    let order = (module Handler.TypeOrderHandler : ClassHierarchy.Handler) in
+    let order = Environment.class_hierarchy environment in
     let global_resolution = Environment.resolution environment () in
     let resolution = TypeCheck.resolution global_resolution () in
     let parse_and_validate ?(unknown_is_top = false) expression =
@@ -428,8 +427,7 @@ let process_type_query_request
           { TypeQuery.name; annotation }
         in
         parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
-        |> Type.primitive_name
-        >>= Handler.class_definition
+        |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
         >>| (fun annotated_class ->
               Annotated.Class.attributes ~resolution:global_resolution annotated_class)
@@ -442,7 +440,7 @@ let process_type_query_request
     | TypeQuery.Callees caller ->
         TypeQuery.Response (TypeQuery.Callees (Dependencies.Callgraph.get ~caller))
     | TypeQuery.ComputeHashesToKeys ->
-        let open Service.EnvironmentSharedMemory in
+        let open Analysis.EnvironmentSharedMemory in
         (* Type order. *)
         let extend_map map ~new_map =
           Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
@@ -555,7 +553,7 @@ let process_type_query_request
         >>| (fun list -> TypeQuery.Response (TypeQuery.CoverageAtLocations list))
         |> Option.value ~default
     | TypeQuery.DecodeOcamlValues values ->
-        let open Service.EnvironmentSharedMemory in
+        let open Analysis.EnvironmentSharedMemory in
         let decode key value =
           let key, value = Base64.decode key, Base64.decode value in
           match key, value with
@@ -567,8 +565,9 @@ let process_type_query_request
         in
         let serialize_decoded decoded =
           let decode index =
+            let (module ClassHierarchyHandler) = Environment.class_hierarchy environment in
             let annotation =
-              Handler.TypeOrderHandler.find (Handler.TypeOrderHandler.annotations ()) index
+              ClassHierarchyHandler.find (ClassHierarchyHandler.annotations ()) index
             in
             match annotation with
             | None -> Format.sprintf "Undecodable(%d)" index
@@ -788,10 +787,7 @@ let process_type_query_request
             ~f:(Service.ModuleTracker.lookup_path ~configuration module_tracker)
           |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
         in
-        let get_dependencies =
-          let (module Handler : Environment.Handler) = environment in
-          Handler.dependencies
-        in
+        let get_dependencies = Environment.dependencies environment in
         let dependency_set = Dependencies.transitive_of_list ~get_dependencies ~modules in
         let dependencies =
           let source_to_define_name source =
@@ -812,7 +808,10 @@ let process_type_query_request
                 ~root:(Configuration.Analysis.pyre_root configuration)
                 ~relative:"dependencies.dot"
               |> File.create
-                   ~content:(Dependencies.to_dot ~get_dependencies:Handler.dependencies ~qualifier)
+                   ~content:
+                     (Dependencies.to_dot
+                        ~get_dependencies:(Environment.dependencies environment)
+                        ~qualifier)
               |> File.write
         in
         TypeQuery.Response (TypeQuery.Success "Dependencies dumped.")
@@ -825,7 +824,7 @@ let process_type_query_request
         let timer = Timer.start () in
         (* Normalize the environment for comparison. *)
         let qualifiers = Service.ModuleTracker.qualifiers module_tracker in
-        Service.Environment.normalize_shared_memory qualifiers;
+        Analysis.Environment.normalize_shared_memory qualifiers;
         Memory.SharedMemory.save_table_sqlite path |> ignore;
         let { Memory.SharedMemory.used_slots; _ } = Memory.SharedMemory.hash_stats () in
         Log.info
@@ -883,8 +882,7 @@ let process_type_query_request
           { TypeQuery.name = name annotated_method; parameters; return_annotation }
         in
         parse_and_validate (Expression.from_reference ~location:Location.Reference.any annotation)
-        |> Type.primitive_name
-        >>= Handler.class_definition
+        |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
         >>| Annotated.Class.methods
         >>| List.map ~f:to_method
@@ -948,8 +946,7 @@ let process_type_query_request
               (Format.sprintf "No signature found for %s" (Reference.show function_name)) )
     | TypeQuery.Superclasses annotation ->
         parse_and_validate annotation
-        |> Type.primitive_name
-        >>= Handler.class_definition
+        |> GlobalResolution.class_definition global_resolution
         >>| Annotated.Class.create
         >>| Annotated.Class.superclasses ~resolution:global_resolution
         >>| List.map ~f:Annotated.Class.annotation
@@ -1103,12 +1100,11 @@ let process_get_definition_request
 
 
 let rec process
-    ~state:({ State.module_tracker; environment; connections; _ } as state)
+    ~state:({ State.module_tracker; connections; _ } as state)
     ~configuration:({ configuration; _ } as server_configuration)
     ~request
   =
   let timer = Timer.start () in
-  let (module Handler : Environment.Handler) = environment in
   let log_request_error ~error =
     Statistics.event
       ~section:`Error

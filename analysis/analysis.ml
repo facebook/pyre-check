@@ -34,3 +34,4 @@ module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
 module Inference = Inference
 module ResolutionSharedMemory = ResolutionSharedMemory
+module EnvironmentSharedMemory = EnvironmentSharedMemory

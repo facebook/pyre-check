@@ -6,14 +6,14 @@
 open Core
 open Ast
 open Analysis
-open Service.EnvironmentSharedMemory
+open Analysis.EnvironmentSharedMemory
 open Test
 open OUnit2
-module Handler = Service.Environment.SharedHandler
-module DependencyHandler = Handler.DependencyHandler
 
 let assert_keys ~add ~get keys expected =
   let qualifier = Reference.create "dummy" in
+  let handler = Service.Environment.shared_handler in
+  let (module DependencyHandler) = Environment.dependency_handler handler in
   DependencyHandler.clear_keys_batch [qualifier];
   List.iter keys ~f:(add ~qualifier);
   assert_equal expected (get ~qualifier)
@@ -23,6 +23,8 @@ let test_dependency_keys _ =
   let assert_dependencies references ~expected =
     let references = List.map references ~f:Reference.create in
     let expected = List.map expected ~f:Reference.create in
+    let handler = Service.Environment.shared_handler in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     assert_keys
       ~add:DependencyHandler.add_dependent_key
       ~get:DependencyHandler.get_dependent_keys
@@ -35,6 +37,8 @@ let test_dependency_keys _ =
 
 let test_alias_keys _ =
   let assert_aliases keys ~expected =
+    let handler = Service.Environment.shared_handler in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     assert_keys
       ~add:DependencyHandler.add_alias_key
       ~get:DependencyHandler.get_alias_keys
@@ -47,6 +51,8 @@ let test_alias_keys _ =
 
 let test_class_keys _ =
   let assert_classes keys ~expected =
+    let handler = Service.Environment.shared_handler in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     assert_keys
       ~add:DependencyHandler.add_class_key
       ~get:DependencyHandler.get_class_keys
@@ -61,6 +67,8 @@ let test_function_keys _ =
   let assert_function_keys keys ~expected =
     let keys = List.map keys ~f:Reference.create in
     let expected = List.map expected ~f:Reference.create in
+    let handler = Service.Environment.shared_handler in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     assert_keys
       ~add:DependencyHandler.add_function_key
       ~get:DependencyHandler.get_function_keys
@@ -75,6 +83,8 @@ let test_global_keys _ =
   let assert_global_keys keys ~expected =
     let keys = List.map keys ~f:Reference.create in
     let expected = List.map expected ~f:Reference.create in
+    let handler = Service.Environment.shared_handler in
+    let (module DependencyHandler) = Environment.dependency_handler handler in
     assert_keys
       ~add:DependencyHandler.add_global_key
       ~get:DependencyHandler.get_global_keys
@@ -87,6 +97,8 @@ let test_global_keys _ =
 
 let test_normalize_dependencies _ =
   let qualifier = Reference.create "dummy" in
+  let handler = Service.Environment.shared_handler in
+  let (module DependencyHandler) = Environment.dependency_handler handler in
   DependencyHandler.clear_keys_batch [qualifier];
   DependencyHandler.add_function_key ~qualifier !&"f";
 
@@ -134,17 +146,20 @@ let test_normalize_dependencies _ =
 
 
 let test_normalize _ =
-  ClassHierarchy.insert (module Handler.TypeOrderHandler) "int";
-  ClassHierarchy.insert (module Handler.TypeOrderHandler) "str";
+  let handler = Service.Environment.shared_handler in
+  let order = Analysis.Environment.class_hierarchy handler in
+  ClassHierarchy.insert order "int";
+  ClassHierarchy.insert order "str";
   let indices =
     let index_of annotation =
-      Handler.TypeOrderHandler.find_unsafe (Handler.TypeOrderHandler.indices ()) annotation
+      let (module TypeOrderHandler) = order in
+      TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation
     in
     [index_of "int"; index_of "str"] |> List.sort ~compare:Int.compare
   in
-  Service.Environment.normalize_shared_memory [];
+  Analysis.Environment.normalize_shared_memory [];
   assert_equal
-    (Service.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
+    (Analysis.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
     (Some indices)
 
 
@@ -188,8 +203,9 @@ let test_populate context =
   assert_successors "a.C" ["a.D"; "object"];
 
   (* Ensure that the memory doesn't get clobbered on a re-write. *)
+  let handler = Service.Environment.shared_handler in
   Service.Environment.populate
-    (module Handler)
+    handler
     ~configuration
     ~scheduler:(Scheduler.mock ())
     [Option.value_exn (Ast.SharedMemory.Sources.get (Reference.create "a"))];
@@ -210,9 +226,11 @@ let test_purge context =
     ScratchProject.configuration_of project
   in
   Service.Environment.populate_shared_memory ~configuration ~scheduler:(Scheduler.mock ()) [!&"x"];
-  assert_is_some (Handler.class_metadata "x.D");
-  Handler.purge [Reference.create "x"];
-  assert_is_none (Handler.class_metadata "x.D")
+  let handler = Service.Environment.shared_handler in
+  let global_resolution = Analysis.Environment.resolution handler () in
+  assert_is_some (GlobalResolution.class_metadata global_resolution (Primitive "x.D"));
+  Environment.purge handler [Reference.create "x"];
+  assert_is_none (GlobalResolution.class_metadata global_resolution (Primitive "x.D"))
 
 
 let () =

@@ -21,7 +21,7 @@ type connections = {
 
 type t = {
   module_tracker: Service.ModuleTracker.t;
-  environment: (module Analysis.Environment.Handler);
+  environment: Analysis.Environment.t;
   errors: Error.t list Ast.Reference.Table.t;
   lookups: Analysis.Lookup.t String.Table.t;
   symlink_targets_to_sources: PyrePath.t String.Table.t;
