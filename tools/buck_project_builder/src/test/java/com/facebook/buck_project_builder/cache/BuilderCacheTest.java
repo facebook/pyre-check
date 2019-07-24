@@ -1,5 +1,6 @@
 package com.facebook.buck_project_builder.cache;
 
+import com.facebook.buck_project_builder.BuilderException;
 import com.facebook.buck_project_builder.targets.ThriftLibraryTarget;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -14,6 +15,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class BuilderCacheTest {
 
@@ -31,43 +33,56 @@ public class BuilderCacheTest {
   }
 
   @Test
-  public void cacheReadWriteTest() throws IOException {
-    FileUtils.deleteDirectory(new File("/tmp/pyre/buck_builder_cache/__target"));
-    assertEquals(
-        "Expect empty cache if cache is not found.",
-        new BuilderCache(),
-        BuilderCache.readFromCache(ImmutableList.of("//target")));
+  public void cacheReadWriteTest() throws BuilderException {
+    CacheLock.synchronize(
+        () -> {
+          FileUtils.deleteQuietly(
+              new File("/tmp/pyre/buck_builder_cache/6ff3f6302227d54ed823ac603a57d864"));
+          assertEquals(
+              "Expect empty cache if cache is not found.",
+              new BuilderCache(),
+              BuilderCache.readFromCache(ImmutableList.of("//abc")));
 
-    ThriftLibraryTarget thriftLibraryTarget =
-        new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("a.thrift"));
-    new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget))
-        .writeToCache(ImmutableList.of("//target"));
-    assertEquals(
-        "Expect to read the same cache content that has just been written",
-        new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget)),
-        BuilderCache.readFromCache(ImmutableList.of("//target")));
+          ThriftLibraryTarget thriftLibraryTarget =
+              new ThriftLibraryTarget("CMD", "PATH", ImmutableList.of("a.thrift"));
+          new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget))
+              .writeToCache(ImmutableList.of("//abc"));
+          assertEquals(
+              "Expect to read the same cache content that has just been written",
+              new BuilderCache(42, ImmutableSet.of(thriftLibraryTarget)),
+              BuilderCache.readFromCache(ImmutableList.of("//abc")));
 
-    new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget))
-        .writeToCache(ImmutableList.of("//target"));
-    assertEquals(
-        "Expect to read a different cache content that has just been overridden",
-        new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget)),
-        BuilderCache.readFromCache(ImmutableList.of("//target")));
+          new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget))
+              .writeToCache(ImmutableList.of("//abc"));
+          assertEquals(
+              "Expect to read a different cache content that has just been overridden",
+              new BuilderCache(65536, ImmutableSet.of(thriftLibraryTarget)),
+              BuilderCache.readFromCache(ImmutableList.of("//abc")));
 
-    FileUtils.deleteDirectory(new File("/tmp/pyre/buck_builder_cache/__target"));
+          FileUtils.deleteQuietly(
+              new File("/tmp/pyre/buck_builder_cache/6ff3f6302227d54ed823ac603a57d864"));
+        });
   }
 
   @Test
-  public void brokenCacheJsonInvalidatesCacheTest() throws IOException {
-    String targetHash = DigestUtils.md5Hex("//target2");
-    File temporaryBadJsonFile =
-        Paths.get("/tmp/pyre/buck_builder_cache", targetHash, "cache.json").toFile();
-    File temporaryTestCacheDirectory = temporaryBadJsonFile.getParentFile();
-    temporaryTestCacheDirectory.mkdirs();
+  public void brokenCacheJsonInvalidatesCacheTest() throws BuilderException {
+    CacheLock.synchronize(
+        () -> {
+          String targetHash = DigestUtils.md5Hex("//target2");
+          File temporaryBadJsonFile =
+              Paths.get("/tmp/pyre/buck_builder_cache", targetHash, "cache.json").toFile();
+          File temporaryTestCacheDirectory = temporaryBadJsonFile.getParentFile();
+          temporaryTestCacheDirectory.mkdirs();
 
-    FileUtils.writeStringToFile(temporaryBadJsonFile, "broken", Charset.defaultCharset());
-    assertEquals(new BuilderCache(), BuilderCache.readFromCache(ImmutableList.of("//target2")));
+          try {
+            FileUtils.writeStringToFile(temporaryBadJsonFile, "broken", Charset.defaultCharset());
+          } catch (IOException exception) {
+            fail(exception.getMessage());
+          }
+          assertEquals(
+              new BuilderCache(), BuilderCache.readFromCache(ImmutableList.of("//target2")));
 
-    FileUtils.deleteDirectory(temporaryTestCacheDirectory);
+          FileUtils.deleteQuietly(temporaryTestCacheDirectory);
+        });
   }
 }

@@ -3,6 +3,7 @@
 package com.facebook.buck_project_builder;
 
 import com.facebook.buck_project_builder.cache.BuilderCache;
+import com.facebook.buck_project_builder.cache.CacheLock;
 import com.facebook.buck_project_builder.targets.BuildTargetsBuilder;
 import com.facebook.buck_project_builder.targets.BuildTargetsCollector;
 import com.google.common.collect.ImmutableList;
@@ -33,13 +34,17 @@ public final class BuckProjectBuilder {
     ImmutableList<String> targets = command.getTargets();
     BuildTargetsBuilder builder =
         new BuildTargetsBuilder(start, buckRoot, command.getOutputDirectory(), targets);
+
     try {
-      BuildTargetsCollector.collectBuckTargets(buckRoot, targets)
-          .forEach(target -> target.addToBuilder(builder));
-      DebugOutput debugOutput = builder.buildTargets();
-      if (command.isDebug()) {
-        System.out.println(new Gson().toJson(debugOutput));
-      }
+      CacheLock.synchronize(
+          () -> {
+            BuildTargetsCollector.collectBuckTargets(buckRoot, targets)
+                .forEach(target -> target.addToBuilder(builder));
+            DebugOutput debugOutput = builder.buildTargets();
+            if (command.isDebug()) {
+              System.out.println(new Gson().toJson(debugOutput));
+            }
+          });
       BuildTimeLogger.logBuildTime(start, System.currentTimeMillis(), targets);
     } catch (BuilderException exception) {
       SimpleLogger.error(exception.getMessage());

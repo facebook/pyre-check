@@ -19,6 +19,7 @@ import java.util.Set;
 
 public final class BuilderCache {
 
+  public static final String LOCK_PATH = "/tmp/pyre/buck_builder_cache/builder.lock";
   public static final String THRIFT_CACHE_PATH = "/tmp/pyre/buck_builder_cache/thrift-gen";
   public static final String WHEEL_CACHE_PATH = "/tmp/pyre/buck_builder_cache/downloaded-wheels";
 
