@@ -4,8 +4,5 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open Core
-open Analysis
 
 val compute_hashes_to_keys : indices:int list -> annotations:string list -> string String.Map.t
-
-module Handler : ClassHierarchy.Handler

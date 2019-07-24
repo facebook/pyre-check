@@ -1141,7 +1141,104 @@ let register_class_metadata (module Handler : Handler) = Handler.register_class_
 
 let transaction (module Handler : Handler) = Handler.transaction
 
+module SharedMemoryClassHierarchyHandler = struct
+  type ('key, 'value) lookup = {
+    get: 'key -> 'value option;
+    set: 'key -> 'value -> unit
+  }
+
+  let edges () =
+    { get = OrderEdges.get;
+      set =
+        (fun key value ->
+          OrderEdges.remove_batch (OrderEdges.KeySet.singleton key);
+          OrderEdges.add key value)
+    }
+
+
+  let backedges () =
+    { get = (fun key -> OrderBackedges.get key >>| ClassHierarchy.Target.Set.of_tree);
+      set =
+        (fun key value ->
+          let value = ClassHierarchy.Target.Set.to_tree value in
+          OrderBackedges.remove_batch (OrderBackedges.KeySet.singleton key);
+          OrderBackedges.add key value)
+    }
+
+
+  let indices () =
+    { get = OrderIndices.get;
+      set =
+        (fun key value ->
+          OrderIndices.remove_batch (OrderIndices.KeySet.singleton key);
+          OrderIndices.add key value)
+    }
+
+
+  let annotations () =
+    { get = OrderAnnotations.get;
+      set =
+        (fun key value ->
+          OrderAnnotations.remove_batch (OrderAnnotations.KeySet.singleton key);
+          OrderAnnotations.add key value)
+    }
+
+
+  let find { get; _ } key = get key
+
+  let find_unsafe { get; _ } key = Option.value_exn (get key)
+
+  let contains { get; _ } key = Option.is_some (get key)
+
+  let set { set; _ } ~key ~data = set key data
+
+  let length _ =
+    OrderKeys.get SharedMemory.SingletonKey.key >>| List.length |> Option.value ~default:0
+
+
+  let add_key key =
+    match OrderKeys.get SharedMemory.SingletonKey.key with
+    | None -> OrderKeys.add SharedMemory.SingletonKey.key [key]
+    | Some keys ->
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
+        OrderKeys.add SharedMemory.SingletonKey.key (key :: keys)
+
+
+  let keys () = Option.value ~default:[] (OrderKeys.get SharedMemory.SingletonKey.key)
+
+  let show () =
+    let keys = keys () |> List.sort ~compare:Int.compare in
+    let serialized_keys = List.to_string ~f:Int.to_string keys in
+    let serialized_annotations =
+      let serialize_annotation key =
+        find (annotations ()) key >>| fun annotation -> Format.asprintf "%d->%s\n" key annotation
+      in
+      List.filter_map ~f:serialize_annotation keys |> String.concat
+    in
+    let module EdgeSerializer (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
+      let serialize edges =
+        let edges_of_key key =
+          let show_successor { ClassHierarchy.Target.target = successor; _ } =
+            Option.value_exn (find (annotations ()) successor)
+          in
+          find edges key >>| ListOrSet.to_string ~f:show_successor |> Option.value ~default:""
+        in
+        List.to_string ~f:(fun key -> Format.asprintf "%d -> %s\n" key (edges_of_key key)) keys
+    end
+    in
+    let module ForwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.List) in
+    let module BackwardEdgeSerializer = EdgeSerializer (ClassHierarchy.Target.Set) in
+    Format.asprintf
+      "Keys:\n%s\nAnnotations:\n%s\nEdges:\n%s\nBackedges:\n%s\n"
+      serialized_keys
+      serialized_annotations
+      (ForwardEdgeSerializer.serialize (edges ()))
+      (BackwardEdgeSerializer.serialize (backedges ()))
+end
+
 module SharedMemoryPartialHandler = struct
+  module TypeOrderHandler = SharedMemoryClassHierarchyHandler
+
   let transaction ~f () =
     Modules.LocalChanges.push_stack ();
     FunctionKeys.LocalChanges.push_stack ();
@@ -1338,8 +1435,6 @@ module SharedMemoryPartialHandler = struct
 
   let undecorated_signature = UndecoratedFunctions.get
 
-  module TypeOrderHandler = ClassHierarchyHandler
-
   let register_dependency ~qualifier ~dependency =
     Log.log
       ~section:`Dependencies
@@ -1372,6 +1467,78 @@ module SharedMemoryPartialHandler = struct
   let register_alias ~qualifier ~key ~data =
     DependencyHandler.add_alias_key ~qualifier key;
     Aliases.add key data
+
+
+  let register_class_metadata class_name =
+    let open Statement in
+    let successors =
+      ClassHierarchy.successors (module SharedMemoryClassHierarchyHandler) class_name
+    in
+    let is_final =
+      ClassDefinitions.get class_name
+      >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
+      |> Option.value ~default:false
+    in
+    let in_test =
+      let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
+      let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
+      List.exists ~f:is_unit_test successor_classes
+    in
+    let extends_placeholder_stub_class =
+      ClassDefinitions.get class_name
+      >>| Annotated.Class.create
+      >>| Annotated.Class.extends_placeholder_stub_class ~aliases ~module_definition
+      |> Option.value ~default:false
+    in
+    ClassMetadata.add
+      class_name
+      { GlobalResolution.is_test = in_test; successors; is_final; extends_placeholder_stub_class }
+
+
+  let purge ?(debug = false) (qualifiers : Reference.t list) =
+    let purge_dependents keys =
+      let new_dependents = Reference.Table.create () in
+      let recompute_dependents key dependents =
+        let qualifiers = Reference.Set.Tree.of_list qualifiers in
+        Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
+      in
+      List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
+      Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
+      Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
+      DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
+    in
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_function_keys ~qualifier) qualifiers
+    |> fun keys ->
+    (* We add a global name for each function definition as well. *)
+    Globals.remove_batch (Globals.KeySet.of_list keys);
+
+    (* Remove the connection to the parent (if any) for all classes defined in the updated handles. *)
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
+    |> ClassHierarchy.disconnect_successors (module SharedMemoryClassHierarchyHandler);
+    let class_keys =
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
+      |> ClassDefinitions.KeySet.of_list
+    in
+    ClassDefinitions.remove_batch class_keys;
+    ClassMetadata.remove_batch class_keys;
+    List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
+    |> fun keys ->
+    Aliases.remove_batch (Aliases.KeySet.of_list keys);
+    let global_keys =
+      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier) qualifiers
+      |> Globals.KeySet.of_list
+    in
+    Globals.remove_batch global_keys;
+    UndecoratedFunctions.remove_batch global_keys;
+    List.concat_map
+      ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
+      qualifiers
+    |> List.dedup_and_sort ~compare:Reference.compare
+    |> purge_dependents;
+    DependencyHandler.clear_keys_batch qualifiers;
+    Modules.remove_batch (Modules.KeySet.of_list qualifiers);
+    if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
+      ClassHierarchy.check_integrity (module SharedMemoryClassHierarchyHandler)
 end
 
 let fill_shared_memory_with_default_typeorder () =
@@ -1391,94 +1558,9 @@ let fill_shared_memory_with_default_typeorder () =
   add_type_order (ClassHierarchy.Builder.default ())
 
 
-let shared_memory_handler (module ClassHierarchyHandler : ClassHierarchy.Handler) ~local_mode () =
+let shared_memory_handler ~local_mode () =
   ( module struct
     include SharedMemoryPartialHandler
-    module TypeOrderHandler = ClassHierarchyHandler
-
-    let register_class_metadata class_name =
-      let open Statement in
-      let successors = ClassHierarchy.successors (module ClassHierarchyHandler) class_name in
-      let is_final =
-        ClassDefinitions.get class_name
-        >>| (fun { Node.value = definition; _ } -> Class.is_final definition)
-        |> Option.value ~default:false
-      in
-      let in_test =
-        let is_unit_test { Node.value = definition; _ } = Class.is_unit_test definition in
-        let successor_classes = List.filter_map ~f:ClassDefinitions.get successors in
-        List.exists ~f:is_unit_test successor_classes
-      in
-      let extends_placeholder_stub_class =
-        ClassDefinitions.get class_name
-        >>| Annotated.Class.create
-        >>| Annotated.Class.extends_placeholder_stub_class
-              ~aliases:SharedMemoryPartialHandler.aliases
-              ~module_definition:SharedMemoryPartialHandler.module_definition
-        |> Option.value ~default:false
-      in
-      ClassMetadata.add
-        class_name
-        { GlobalResolution.is_test = in_test;
-          successors;
-          is_final;
-          extends_placeholder_stub_class
-        }
-
-
-    let purge ?(debug = false) (qualifiers : Reference.t list) =
-      let purge_dependents keys =
-        let new_dependents = Reference.Table.create () in
-        let recompute_dependents key dependents =
-          let qualifiers = Reference.Set.Tree.of_list qualifiers in
-          Hashtbl.set new_dependents ~key ~data:(Reference.Set.Tree.diff dependents qualifiers)
-        in
-        List.iter ~f:(fun key -> Dependents.get key >>| recompute_dependents key |> ignore) keys;
-        Dependents.remove_batch (Dependents.KeySet.of_list (Hashtbl.keys new_dependents));
-        Hashtbl.iteri new_dependents ~f:(fun ~key ~data -> Dependents.add key data);
-        DependentKeys.remove_batch (Dependents.KeySet.of_list qualifiers)
-      in
-      let open SharedMemoryPartialHandler in
-      List.concat_map
-        ~f:(fun qualifier -> DependencyHandler.get_function_keys ~qualifier)
-        qualifiers
-      |> fun keys ->
-      (* We add a global name for each function definition as well. *)
-      Globals.remove_batch (Globals.KeySet.of_list keys);
-
-      (* Remove the connection to the parent (if any) for all classes defined in the updated
-         handles. *)
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier) qualifiers
-      |> ClassHierarchy.disconnect_successors (module ClassHierarchyHandler);
-      let class_keys =
-        List.concat_map
-          ~f:(fun qualifier -> DependencyHandler.get_class_keys ~qualifier)
-          qualifiers
-        |> ClassDefinitions.KeySet.of_list
-      in
-      ClassDefinitions.remove_batch class_keys;
-      ClassMetadata.remove_batch class_keys;
-      List.concat_map ~f:(fun qualifier -> DependencyHandler.get_alias_keys ~qualifier) qualifiers
-      |> fun keys ->
-      Aliases.remove_batch (Aliases.KeySet.of_list keys);
-      let global_keys =
-        List.concat_map
-          ~f:(fun qualifier -> DependencyHandler.get_global_keys ~qualifier)
-          qualifiers
-        |> Globals.KeySet.of_list
-      in
-      Globals.remove_batch global_keys;
-      UndecoratedFunctions.remove_batch global_keys;
-      List.concat_map
-        ~f:(fun qualifier -> DependencyHandler.get_dependent_keys ~qualifier)
-        qualifiers
-      |> List.dedup_and_sort ~compare:Reference.compare
-      |> purge_dependents;
-      DependencyHandler.clear_keys_batch qualifiers;
-      Modules.remove_batch (Modules.KeySet.of_list qualifiers);
-      if debug then (* If in debug mode, make sure the ClassHierarchy is still consistent. *)
-        ClassHierarchy.check_integrity (module ClassHierarchyHandler)
-
 
     let local_mode = local_mode
   end : Handler )
