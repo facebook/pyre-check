@@ -4,7 +4,6 @@
  * LICENSE file in the root directory of this source tree. *)
 
 open OUnit2
-open Analysis.EnvironmentSharedMemory
 
 let test_little_endian_representation _ =
   let assert_correctly_represented ~expected ~key =
@@ -24,26 +23,46 @@ let test_little_endian_representation _ =
       Memory.unsafe_little_endian_representation ~key:"Too_long_of_a_message")
 
 
+module MockEdgeValue = struct
+  type t = Analysis.ClassHierarchy.Target.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Edges"
+end
+
+module MockEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockEdgeValue)
+
+module MockBackedgeValue = struct
+  type t = Analysis.ClassHierarchy.Target.Set.Tree.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Backedges"
+end
+
+module MockBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (MockBackedgeValue)
+
 let test_decodable _ =
   let assert_decode prefix key value expected =
     let key = Prefix.make_key prefix key in
     assert_equal (Memory.decode ~key ~value) (Ok expected)
   in
   assert_decode
-    EdgeValue.prefix
+    MockEdgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures])
-    (OrderEdges.Decoded (1234, Some []));
+    (MockEdges.Decoded (1234, Some []));
   assert_decode
-    BackedgeValue.prefix
+    MockBackedgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
     (Marshal.to_string [] [Marshal.Closures])
-    (OrderBackedges.Decoded (1234, Some Analysis.ClassHierarchy.Target.Set.Tree.empty));
+    (MockBackedges.Decoded (1234, Some Analysis.ClassHierarchy.Target.Set.Tree.empty));
   assert_decode
-    EdgeValue.prefix
+    MockEdgeValue.prefix
     (Ast.SharedMemory.IntKey.to_string 1234)
     "can't decode this"
-    (OrderEdges.Decoded (1234, None));
+    (MockEdges.Decoded (1234, None));
   assert_equal
     (Error `Malformed_key)
     (Memory.decode ~key:"" ~value:(Marshal.to_string [] [Marshal.Closures]));
@@ -57,22 +76,22 @@ let test_decodable _ =
 
 let test_serialize_key _ =
   assert_equal
-    (OrderEdges.serialize_key 1234)
-    (Prefix.make_key EdgeValue.prefix "1234" |> Base64.encode_exn);
+    (MockEdges.serialize_key 1234)
+    (Prefix.make_key MockEdgeValue.prefix "1234" |> Base64.encode_exn);
   assert_equal
-    (OrderBackedges.serialize_key 1234)
-    (Prefix.make_key BackedgeValue.prefix "1234" |> Base64.encode_exn)
+    (MockBackedges.serialize_key 1234)
+    (Prefix.make_key MockBackedgeValue.prefix "1234" |> Base64.encode_exn)
 
 
 let test_hash_of_key _ =
   assert_equal
-    (OrderEdges.hash_of_key 1234)
-    ( OrderEdges.string_of_key 1234
+    (MockEdges.hash_of_key 1234)
+    ( MockEdges.string_of_key 1234
     |> (fun key -> Memory.unsafe_little_endian_representation ~key)
     |> Int64.to_string );
   assert_equal
-    (OrderBackedges.hash_of_key 1234)
-    ( OrderBackedges.string_of_key 1234
+    (MockBackedges.hash_of_key 1234)
+    ( MockBackedges.string_of_key 1234
     |> (fun key -> Memory.unsafe_little_endian_representation ~key)
     |> Int64.to_string );
 
@@ -80,8 +99,8 @@ let test_hash_of_key _ =
   assert_equal
     false
     (String.equal
-       (OrderBackedges.hash_of_key 1234)
-       ( OrderEdges.string_of_key 1234
+       (MockBackedges.hash_of_key 1234)
+       ( MockEdges.string_of_key 1234
        |> (fun key -> Memory.unsafe_little_endian_representation ~key)
        |> Int64.to_string ))
 

@@ -6,7 +6,6 @@
 open Core
 open Ast
 open Analysis
-open Analysis.EnvironmentSharedMemory
 open Test
 open OUnit2
 
@@ -148,19 +147,17 @@ let test_normalize_dependencies _ =
 let test_normalize _ =
   let handler = Service.Environment.shared_handler in
   let order = Analysis.Environment.class_hierarchy handler in
+  let (module TypeOrderHandler) = order in
   ClassHierarchy.insert order "int";
   ClassHierarchy.insert order "str";
   let indices =
     let index_of annotation =
-      let (module TypeOrderHandler) = order in
       TypeOrderHandler.find_unsafe (TypeOrderHandler.indices ()) annotation
     in
     [index_of "int"; index_of "str"] |> List.sort ~compare:Int.compare
   in
   Analysis.Environment.normalize_shared_memory [];
-  assert_equal
-    (Analysis.EnvironmentSharedMemory.OrderKeys.get SharedMemory.SingletonKey.key)
-    (Some indices)
+  assert_equal (TypeOrderHandler.keys ()) indices
 
 
 let test_populate context =
@@ -181,13 +178,16 @@ let test_populate context =
     let _ = ScratchProject.parse_sources project in
     ScratchProject.configuration_of project
   in
+  let environment = Analysis.Environment.shared_memory_handler ~local_mode:(fun _ -> None) () in
   Service.Environment.populate_shared_memory ~configuration ~scheduler:(Scheduler.mock ()) [!&"a"];
+  let global_resolution = Analysis.Environment.resolution environment () in
+  let (module DependenciesHandler) = Environment.dependency_handler environment in
   assert_equal
     ~printer:(List.to_string ~f:Reference.show)
-    (GlobalKeys.find_unsafe (Reference.create "a"))
+    (DependenciesHandler.get_global_keys ~qualifier:(Reference.create "a"))
     (List.map ~f:Reference.create ["a.T"; "a.C"; "a.D"; "a.foo"; "a.bar"]);
   assert_equal
-    (UndecoratedFunctions.get (Reference.create "a.foo"))
+    (GlobalResolution.undecorated_signature global_resolution (Reference.create "a.foo"))
     (Some
        { Type.Callable.annotation = Type.variable "a.T";
          parameters =
@@ -197,7 +197,8 @@ let test_populate context =
          define_location = None
        });
   let assert_successors name expected_successors =
-    let { GlobalResolution.successors; _ } = ClassMetadata.find_unsafe name in
+    let metadata = Analysis.GlobalResolution.class_metadata global_resolution (Primitive name) in
+    let { GlobalResolution.successors; _ } = Option.value_exn metadata in
     assert_equal ~printer:(String.concat ~sep:", ") expected_successors successors
   in
   assert_successors "a.C" ["a.D"; "object"];

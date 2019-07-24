@@ -170,7 +170,15 @@ let test_register_modules context =
     Test.populate_shared_memory ~configuration qualifiers;
     let assert_exports ~qualifier =
       let module_definition =
-        Option.value_exn (Analysis.EnvironmentSharedMemory.Modules.get qualifier)
+        let module_get =
+          let global_resolution =
+            Analysis.Environment.resolution
+              (Analysis.Environment.shared_memory_handler ~local_mode:(fun _ -> None) ())
+              ()
+          in
+          Analysis.GlobalResolution.module_definition global_resolution
+        in
+        Option.value_exn (module_get qualifier)
       in
       assert_equal
         ~cmp:(List.equal Reference.equal)
