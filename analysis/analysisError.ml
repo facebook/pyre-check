@@ -1493,13 +1493,7 @@ let inference_information
       let annotation =
         match kind with
         | MissingParameterAnnotation
-            { name = parameter_name;
-              annotation =
-                Some
-                  (Type.Parametric
-                    { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] });
-              _
-            }
+            { name = parameter_name; annotation = Some (Optional Bottom); _ }
           when Reference.equal_sanitized (Reference.create name) parameter_name ->
             `Null
         | MissingParameterAnnotation

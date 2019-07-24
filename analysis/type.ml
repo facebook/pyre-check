@@ -604,8 +604,6 @@ let rec pp format annotation =
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom -> Format.fprintf format "None"
   | Optional parameter -> Format.fprintf format "typing.Optional[%a]" pp parameter
-  | Parametric { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] } ->
-      Format.fprintf format "None"
   | Parametric { name; parameters = Concrete parameters } ->
       let parameters =
         if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter)
@@ -716,8 +714,6 @@ let rec pp_concise format annotation =
   | Literal (String literal) -> Format.fprintf format "typing_extensions.Literal['%s']" literal
   | Optional Bottom -> Format.fprintf format "None"
   | Optional parameter -> Format.fprintf format "Optional[%a]" pp_concise parameter
-  | Parametric { name = "typing.Optional" | "Optional"; parameters = Concrete [Bottom] } ->
-      Format.fprintf format "None"
   | Parametric { name; parameters = Concrete parameters } ->
       let name = strip_qualification (reverse_substitute name) in
       if List.for_all parameters ~f:(fun parameter -> is_unbound parameter || is_top parameter)
@@ -3293,6 +3289,7 @@ let rec dequalify map annotation =
     let visit _ annotation =
       let transformed_annotation =
         match annotation with
+        | Optional Bottom -> Optional Bottom
         | Optional parameter ->
             Parametric
               { name = dequalify_string "typing.Optional"; parameters = Concrete [parameter] }

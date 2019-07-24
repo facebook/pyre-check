@@ -590,7 +590,6 @@ let test_concise _ =
   assert_concise Type.Any "Any";
   assert_concise (Type.Optional Type.Bottom) "None";
   assert_concise (Type.Optional Type.integer) "Optional[int]";
-  assert_concise (Type.parametric "Optional" ![Type.Bottom]) "None";
   assert_concise (Type.parametric "parametric" ![Type.Top; Type.Top]) "parametric[]";
   assert_concise
     (Type.parametric "parametric" ![Type.Top; Type.float])
