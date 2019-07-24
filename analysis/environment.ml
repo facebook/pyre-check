@@ -56,7 +56,7 @@ module type Handler = sig
 
   val local_mode : string -> Source.mode option
 
-  val transaction : f:(unit -> 'a) -> unit -> 'a
+  val transaction : ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
   module DependencyHandler : Dependencies.Handler
 
@@ -508,7 +508,7 @@ let in_process_handler ?(dependencies = Dependencies.create ()) () =
 
       let local_mode _ = None
 
-      let transaction ~f () = f ()
+      let transaction ?only_global_keys:_ ~f () = f ()
     end : Handler )
   in
   add_special_classes handler;
@@ -1239,56 +1239,65 @@ end
 module SharedMemoryPartialHandler = struct
   module TypeOrderHandler = SharedMemoryClassHierarchyHandler
 
-  let transaction ~f () =
-    Modules.LocalChanges.push_stack ();
-    FunctionKeys.LocalChanges.push_stack ();
-    ClassKeys.LocalChanges.push_stack ();
-    AliasKeys.LocalChanges.push_stack ();
-    GlobalKeys.LocalChanges.push_stack ();
-    DependentKeys.LocalChanges.push_stack ();
-    Dependents.LocalChanges.push_stack ();
-    ClassDefinitions.LocalChanges.push_stack ();
-    ClassMetadata.LocalChanges.push_stack ();
-    Globals.LocalChanges.push_stack ();
-    Aliases.LocalChanges.push_stack ();
-    OrderEdges.LocalChanges.push_stack ();
-    OrderBackedges.LocalChanges.push_stack ();
-    OrderAnnotations.LocalChanges.push_stack ();
-    OrderKeys.LocalChanges.push_stack ();
-    OrderIndices.LocalChanges.push_stack ();
+  let transaction ?(only_global_keys = false) ~f () =
+    if only_global_keys then
+      GlobalKeys.LocalChanges.push_stack ()
+    else (
+      Modules.LocalChanges.push_stack ();
+      FunctionKeys.LocalChanges.push_stack ();
+      ClassKeys.LocalChanges.push_stack ();
+      AliasKeys.LocalChanges.push_stack ();
+      GlobalKeys.LocalChanges.push_stack ();
+      DependentKeys.LocalChanges.push_stack ();
+      Dependents.LocalChanges.push_stack ();
+      ClassDefinitions.LocalChanges.push_stack ();
+      ClassMetadata.LocalChanges.push_stack ();
+      Aliases.LocalChanges.push_stack ();
+      OrderEdges.LocalChanges.push_stack ();
+      OrderBackedges.LocalChanges.push_stack ();
+      OrderAnnotations.LocalChanges.push_stack ();
+      OrderKeys.LocalChanges.push_stack ();
+      OrderIndices.LocalChanges.push_stack ();
+      Globals.LocalChanges.push_stack () );
     let result = f () in
-    Modules.LocalChanges.commit_all ();
-    FunctionKeys.LocalChanges.commit_all ();
-    ClassKeys.LocalChanges.commit_all ();
-    AliasKeys.LocalChanges.commit_all ();
-    GlobalKeys.LocalChanges.commit_all ();
-    DependentKeys.LocalChanges.commit_all ();
-    Dependents.LocalChanges.commit_all ();
-    ClassDefinitions.LocalChanges.commit_all ();
-    ClassMetadata.LocalChanges.commit_all ();
-    Globals.LocalChanges.commit_all ();
-    Aliases.LocalChanges.commit_all ();
-    OrderEdges.LocalChanges.commit_all ();
-    OrderBackedges.LocalChanges.commit_all ();
-    OrderAnnotations.LocalChanges.commit_all ();
-    OrderKeys.LocalChanges.commit_all ();
-    OrderIndices.LocalChanges.commit_all ();
-    Modules.LocalChanges.pop_stack ();
-    FunctionKeys.LocalChanges.pop_stack ();
-    ClassKeys.LocalChanges.pop_stack ();
-    AliasKeys.LocalChanges.pop_stack ();
-    GlobalKeys.LocalChanges.pop_stack ();
-    DependentKeys.LocalChanges.pop_stack ();
-    Dependents.LocalChanges.pop_stack ();
-    ClassDefinitions.LocalChanges.pop_stack ();
-    ClassMetadata.LocalChanges.pop_stack ();
-    Globals.LocalChanges.pop_stack ();
-    Aliases.LocalChanges.pop_stack ();
-    OrderEdges.LocalChanges.pop_stack ();
-    OrderBackedges.LocalChanges.pop_stack ();
-    OrderAnnotations.LocalChanges.pop_stack ();
-    OrderKeys.LocalChanges.pop_stack ();
-    OrderIndices.LocalChanges.pop_stack ();
+    if only_global_keys then
+      GlobalKeys.LocalChanges.commit_all ()
+    else (
+      Modules.LocalChanges.commit_all ();
+      FunctionKeys.LocalChanges.commit_all ();
+      ClassKeys.LocalChanges.commit_all ();
+      AliasKeys.LocalChanges.commit_all ();
+      GlobalKeys.LocalChanges.commit_all ();
+      DependentKeys.LocalChanges.commit_all ();
+      Dependents.LocalChanges.commit_all ();
+      ClassDefinitions.LocalChanges.commit_all ();
+      ClassMetadata.LocalChanges.commit_all ();
+      Globals.LocalChanges.commit_all ();
+      Aliases.LocalChanges.commit_all ();
+      OrderEdges.LocalChanges.commit_all ();
+      OrderBackedges.LocalChanges.commit_all ();
+      OrderAnnotations.LocalChanges.commit_all ();
+      OrderKeys.LocalChanges.commit_all ();
+      OrderIndices.LocalChanges.commit_all () );
+    if only_global_keys then
+      GlobalKeys.LocalChanges.pop_stack ()
+    else (
+      Modules.LocalChanges.pop_stack ();
+      FunctionKeys.LocalChanges.pop_stack ();
+      ClassKeys.LocalChanges.pop_stack ();
+      AliasKeys.LocalChanges.pop_stack ();
+      GlobalKeys.LocalChanges.pop_stack ();
+      DependentKeys.LocalChanges.pop_stack ();
+      Dependents.LocalChanges.pop_stack ();
+      ClassDefinitions.LocalChanges.pop_stack ();
+      ClassMetadata.LocalChanges.pop_stack ();
+      Globals.LocalChanges.pop_stack ();
+      Aliases.LocalChanges.pop_stack ();
+      OrderEdges.LocalChanges.pop_stack ();
+      OrderBackedges.LocalChanges.pop_stack ();
+      OrderAnnotations.LocalChanges.pop_stack ();
+      OrderKeys.LocalChanges.pop_stack ();
+      OrderIndices.LocalChanges.pop_stack () );
     result
 
 

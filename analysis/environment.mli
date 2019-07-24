@@ -56,7 +56,7 @@ val set_class_definition : t -> name:Identifier.t -> definition:Class.t Node.t -
 
 val register_class_metadata : t -> Identifier.t -> unit
 
-val transaction : t -> f:(unit -> 'a) -> unit -> 'a
+val transaction : t -> ?only_global_keys:bool -> f:(unit -> 'a) -> unit -> 'a
 
 val shared_memory_handler : local_mode:(string -> Source.mode option) -> unit -> t
 

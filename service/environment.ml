@@ -52,10 +52,11 @@ let populate
   in
   Scheduler.iter scheduler ~configuration ~f:register_undecorated_functions ~inputs:sources;
   let register_values sources =
-    EnvironmentSharedMemory.GlobalKeys.LocalChanges.push_stack ();
-    Environment.register_values environment resolution sources;
-    EnvironmentSharedMemory.GlobalKeys.LocalChanges.commit_all ();
-    EnvironmentSharedMemory.GlobalKeys.LocalChanges.pop_stack ()
+    Environment.transaction
+      environment
+      ~only_global_keys:true
+      ~f:(fun () -> Environment.register_values environment resolution sources)
+      ()
   in
   Scheduler.iter
     scheduler
