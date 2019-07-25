@@ -62,7 +62,9 @@ class Parser(BaseParser):
                     "callee": fragment["callee"],
                     "callee_location": fragment["location"],
                     "filename": fragment["location"]["filename"],
-                    "sources": list(fragment["leaves"]),
+                    "sources": [
+                        (kind, distance) for (_, kind, distance) in fragment["leaves"]
+                    ],
                     "caller_port": port,
                     "callee_port": fragment["port"],
                     "type_interval": {},
@@ -80,7 +82,9 @@ class Parser(BaseParser):
                     "callee_location": fragment["location"],
                     "filename": fragment["location"]["filename"],
                     "titos": fragment["titos"],
-                    "sinks": list(fragment["leaves"]),
+                    "sinks": [
+                        (kind, distance) for (_, kind, distance) in fragment["leaves"]
+                    ],
                     "caller_port": port,
                     "callee_port": fragment["port"],
                     "type_interval": {},
@@ -154,14 +158,16 @@ class Parser(BaseParser):
 
         for trace in traces:
             for fragment in self._parse_trace_fragment(leaf_port, trace):
-                fragments.append(fragment)
+                # Stripping the leaf_detail away for areas that
+                #   only expect (leaf_kind, depth)
+                new_fragment = fragment.copy()
+                new_fragment["leaves"] = [
+                    (kind, length) for (_, kind, length) in fragment["leaves"]
+                ]
+                fragments.append(new_fragment)
                 # Leaf distances should be represented as:
                 #   (leaf_detail, leaf_kind, depth)
-                # For now, no additional leaf details are attached so
-                # leaf_detail is empty. The leaf name identifies its kind.
-                leaf_info = [
-                    (None, name, depth) for (name, depth) in fragment["leaves"]
-                ]
+                leaf_info = fragment["leaves"]
                 leaf_distances.update(leaf_info)
                 all_features.extend(fragment["features"])
 
@@ -190,7 +196,7 @@ class Parser(BaseParser):
             port = call["port"]
             resolves_to = call.get("resolves_to", [])
             length = call.get("length", 0)
-            leaves = [(leaf, length) for (leaf, _) in leaves]
+            leaves = [(name, kind, length) for (name, kind, _) in leaves]
 
             for resolved in resolves_to:
                 yield {
@@ -204,8 +210,8 @@ class Parser(BaseParser):
                 }
 
     def _leaf_name(self, leaf) -> str:
-        return leaf.get("name", leaf["kind"])
+        return leaf.get("name", None)
 
-    def _parse_leaves(self, leaves) -> List[Tuple[str, int]]:
-        """Returns a list of pairs (leaf_name, distance)"""
-        return [(self._leaf_name(leaf), 0) for leaf in leaves]
+    def _parse_leaves(self, leaves) -> List[Tuple[str, str, int]]:
+        """Returns a list of pairs (leaf_name, leaf_kind, distance)"""
+        return [(self._leaf_name(leaf), leaf["kind"], 0) for leaf in leaves]
