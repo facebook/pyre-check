@@ -278,13 +278,10 @@ public final class BuildTargetsBuilder {
         .parallelStream()
         .forEach(
             source -> {
-              File outputFile = new File(source);
+              String pyiSource = source.endsWith(".py") ? source + "i" : source;
+              File outputFile = new File(pyiSource);
               if (outputFile.exists()) {
                 // Do not generate stubs for files that has already been handled.
-                return;
-              }
-              if (source.endsWith(".py") && new File(source + "i").exists()) {
-                // Do not generate stubs for files if there is already a pyi file for it.
                 return;
               }
               String relativeUnsupportedFilename =
