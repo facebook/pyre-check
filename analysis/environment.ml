@@ -8,7 +8,6 @@ open Ast
 open Expression
 open Pyre
 open Statement
-open EnvironmentSharedMemory
 
 module type Handler = sig
   val register_dependency : qualifier:Reference.t -> dependency:Reference.t -> unit
@@ -1141,11 +1140,200 @@ let register_class_metadata (module Handler : Handler) = Handler.register_class_
 
 let transaction (module Handler : Handler) = Handler.transaction
 
+module SharedMemory = struct
+  (** Keys *)
+  module StringKey = struct
+    type t = string
+
+    let to_string = ident
+
+    let compare = String.compare
+
+    type out = string
+
+    let from_string x = x
+  end
+
+  (** Values *)
+  module FunctionKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Function keys"
+  end
+
+  module GlobalKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Global keys"
+  end
+
+  module AliasKeyValue = struct
+    type t = Identifier.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Alias keys"
+  end
+
+  module ClassKeyValue = struct
+    type t = Identifier.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Class keys"
+  end
+
+  module DependentKeyValue = struct
+    type t = Reference.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependent keys"
+  end
+
+  module ClassValue = struct
+    type t = Statement.Class.t Node.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Class"
+  end
+
+  module ClassMetadataValue = struct
+    type t = GlobalResolution.class_metadata
+
+    let prefix = Prefix.make ()
+
+    let description = "Class metadata"
+  end
+
+  module AliasValue = struct
+    type t = Type.alias
+
+    let prefix = Prefix.make ()
+
+    let description = "Alias"
+  end
+
+  module GlobalValue = struct
+    type t = GlobalResolution.global
+
+    let prefix = Prefix.make ()
+
+    let description = "Global"
+  end
+
+  module DependentValue = struct
+    type t = Reference.Set.Tree.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Dependent"
+  end
+
+  module OrderIndexValue = struct
+    type t = int
+
+    let prefix = Prefix.make ()
+
+    let description = "Order indices"
+  end
+
+  module OrderAnnotationValue = struct
+    type t = string
+
+    let prefix = Prefix.make ()
+
+    let description = "Order annotations"
+  end
+
+  module EdgeValue = struct
+    type t = ClassHierarchy.Target.t list
+
+    let prefix = Prefix.make ()
+
+    let description = "Edges"
+  end
+
+  module BackedgeValue = struct
+    type t = ClassHierarchy.Target.Set.Tree.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Backedges"
+  end
+
+  module OrderKeyValue = struct
+    type t = int list
+
+    let prefix = Prefix.make ()
+
+    let description = "Order keys"
+  end
+
+  module IntValue = struct
+    type t = int
+
+    let prefix = Prefix.make ()
+
+    let description = "Refcount of implicit submodules"
+  end
+
+  module ModuleValue = struct
+    type t = Module.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Module"
+  end
+
+  module UndecoratedFunctionValue = struct
+    type t = Type.t Type.Callable.overload
+
+    let prefix = Prefix.make ()
+
+    let description = "Undecorated functions"
+  end
+
+  module ClassDefinitions = Memory.WithCache (StringKey) (ClassValue)
+  (** Shared memory maps *)
+
+  module Modules = Memory.WithCache (Reference.Key) (ModuleValue)
+  module ClassMetadata = Memory.WithCache (StringKey) (ClassMetadataValue)
+  module ImplicitSubmodules = Memory.NoCache (Reference.Key) (IntValue)
+  module Aliases = Memory.NoCache (StringKey) (AliasValue)
+  module Globals = Memory.WithCache (Reference.Key) (GlobalValue)
+  module Dependents = Memory.WithCache (Reference.Key) (DependentValue)
+  module UndecoratedFunctions = Memory.WithCache (Reference.Key) (UndecoratedFunctionValue)
+
+  module FunctionKeys = Memory.WithCache (Reference.Key) (FunctionKeyValue)
+  (** Keys *)
+
+  module ClassKeys = Memory.WithCache (Reference.Key) (ClassKeyValue)
+  module GlobalKeys = Memory.WithCache (Reference.Key) (GlobalKeyValue)
+  module AliasKeys = Memory.WithCache (Reference.Key) (AliasKeyValue)
+  module DependentKeys = Memory.WithCache (Reference.Key) (DependentKeyValue)
+
+  module OrderIndices = Memory.WithCache (StringKey) (OrderIndexValue)
+  (** Type order maps *)
+
+  module OrderAnnotations = Memory.WithCache (Ast.SharedMemory.IntKey) (OrderAnnotationValue)
+  module OrderEdges = Memory.WithCache (Ast.SharedMemory.IntKey) (EdgeValue)
+  module OrderBackedges = Memory.WithCache (Ast.SharedMemory.IntKey) (BackedgeValue)
+  module OrderKeys = Memory.WithCache (Memory.SingletonKey) (OrderKeyValue)
+end
+
 module SharedMemoryClassHierarchyHandler = struct
   type ('key, 'value) lookup = {
     get: 'key -> 'value option;
     set: 'key -> 'value -> unit
   }
+
+  open SharedMemory
 
   let edges () =
     { get = OrderEdges.get;
@@ -1192,19 +1380,17 @@ module SharedMemoryClassHierarchyHandler = struct
 
   let set { set; _ } ~key ~data = set key data
 
-  let length _ =
-    OrderKeys.get SharedMemory.SingletonKey.key >>| List.length |> Option.value ~default:0
-
+  let length _ = OrderKeys.get Memory.SingletonKey.key >>| List.length |> Option.value ~default:0
 
   let add_key key =
-    match OrderKeys.get SharedMemory.SingletonKey.key with
-    | None -> OrderKeys.add SharedMemory.SingletonKey.key [key]
+    match OrderKeys.get Memory.SingletonKey.key with
+    | None -> OrderKeys.add Memory.SingletonKey.key [key]
     | Some keys ->
-        OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
-        OrderKeys.add SharedMemory.SingletonKey.key (key :: keys)
+        OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
+        OrderKeys.add Memory.SingletonKey.key (key :: keys)
 
 
-  let keys () = Option.value ~default:[] (OrderKeys.get SharedMemory.SingletonKey.key)
+  let keys () = Option.value ~default:[] (OrderKeys.get Memory.SingletonKey.key)
 
   let show () =
     let keys = keys () |> List.sort ~compare:Int.compare in
@@ -1237,6 +1423,7 @@ module SharedMemoryClassHierarchyHandler = struct
 end
 
 module SharedMemoryPartialHandler = struct
+  open SharedMemory
   module TypeOrderHandler = SharedMemoryClassHierarchyHandler
 
   let transaction ?(only_global_keys = false) ~f () =
@@ -1551,6 +1738,7 @@ module SharedMemoryPartialHandler = struct
 end
 
 let fill_shared_memory_with_default_typeorder () =
+  let open SharedMemory in
   let add_table f = Hashtbl.iteri ~f:(fun ~key ~data -> f key data) in
   let add_type_order { ClassHierarchy.edges; backedges; indices; annotations } =
     (* Writing through the caches because we are doing a batch-add. Especially while still adding
@@ -1562,7 +1750,7 @@ let fill_shared_memory_with_default_typeorder () =
       (Hashtbl.map ~f:ClassHierarchy.Target.Set.to_tree backedges);
     add_table OrderIndices.write_through indices;
     add_table OrderAnnotations.write_through annotations;
-    OrderKeys.write_through SharedMemory.SingletonKey.key (Hashtbl.keys annotations)
+    OrderKeys.write_through Memory.SingletonKey.key (Hashtbl.keys annotations)
   in
   add_type_order (ClassHierarchy.Builder.default ())
 
@@ -1578,12 +1766,12 @@ let shared_memory_handler ~local_mode () =
 let normalize_shared_memory qualifiers =
   (* Since we don't provide an API to the raw order keys in the type order handler, handle it
      inline here. *)
-  let open EnvironmentSharedMemory in
-  ( match OrderKeys.get SharedMemory.SingletonKey.key with
+  let open SharedMemory in
+  ( match OrderKeys.get Memory.SingletonKey.key with
   | None -> ()
   | Some keys ->
-      OrderKeys.remove_batch (OrderKeys.KeySet.singleton SharedMemory.SingletonKey.key);
-      List.sort ~compare:Int.compare keys |> OrderKeys.add SharedMemory.SingletonKey.key );
+      OrderKeys.remove_batch (OrderKeys.KeySet.singleton Memory.SingletonKey.key);
+      List.sort ~compare:Int.compare keys |> OrderKeys.add Memory.SingletonKey.key );
   SharedMemoryPartialHandler.DependencyHandler.normalize qualifiers
 
 
@@ -1591,14 +1779,15 @@ let shared_memory_hash_to_key_map ~qualifiers () =
   let extend_map map ~new_map =
     Map.merge_skewed map new_map ~combine:(fun ~key:_ value _ -> value)
   in
+  let open SharedMemory in
   let map =
     let map =
       Map.set
         String.Map.empty
-        ~key:(OrderKeys.hash_of_key SharedMemory.SingletonKey.key)
-        ~data:(OrderKeys.serialize_key SharedMemory.SingletonKey.key)
+        ~key:(OrderKeys.hash_of_key Memory.SingletonKey.key)
+        ~data:(OrderKeys.serialize_key Memory.SingletonKey.key)
     in
-    match OrderKeys.get SharedMemory.SingletonKey.key with
+    match OrderKeys.get Memory.SingletonKey.key with
     | Some indices ->
         let annotations = List.filter_map indices ~f:OrderAnnotations.get in
         let class_hierarchy_map =
@@ -1673,6 +1862,7 @@ let serialize_decoded decoded =
   let decode_target { ClassHierarchy.Target.target; parameters } =
     Format.asprintf "%s[%a]" (decode target) Type.OrderedTypes.pp_concise parameters
   in
+  let open SharedMemory in
   match decoded with
   | ClassDefinitions.Decoded (key, value) ->
       let value =
@@ -1750,6 +1940,7 @@ let serialize_decoded decoded =
 
 
 let decoded_equal first second =
+  let open SharedMemory in
   match first, second with
   | ClassDefinitions.Decoded (_, first), ClassDefinitions.Decoded (_, second) ->
       Option.equal (Node.equal Statement.Class.equal) first second
