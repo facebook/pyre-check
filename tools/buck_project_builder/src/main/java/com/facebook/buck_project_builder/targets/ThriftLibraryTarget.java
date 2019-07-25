@@ -125,8 +125,6 @@ public final class ThriftLibraryTarget implements BuildTarget {
     if (canUseCachedBuild(buckRoot, cache)) {
       return true;
     }
-    FileUtils.deleteQuietly(
-        Paths.get(BuilderCache.THRIFT_CACHE_PATH, this.baseModulePath).toFile());
     try {
       return GeneratedBuildRuleRunner.runBuilderCommand(this.command, buckRoot);
     } catch (IOException exception) {
