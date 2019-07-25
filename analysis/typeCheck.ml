@@ -4651,7 +4651,11 @@ let check_define
     exit >>| dump_resolutions |> ignore;
 
     (* Store calls in shared memory. *)
-    let callees = Hashtbl.data Context.calls |> List.concat in
+    let callees =
+      Hashtbl.data Context.calls
+      |> List.concat
+      |> List.dedup_and_sort ~compare:Dependencies.Callgraph.compare_callee
+    in
     Dependencies.Callgraph.set ~caller:name ~callees;
 
     (* Schedule nested functions for analysis. *)

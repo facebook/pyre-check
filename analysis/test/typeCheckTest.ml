@@ -1742,7 +1742,23 @@ let test_calls _ =
               static_target = "qualifier.OtherClass.method";
               dispatch = Dynamic
             } ] ) ];
-  ()
+
+  (* We deduplicate calls. *)
+  assert_calls
+    {|
+    class Foo:
+      def method(): ...
+    def call_twice(foo: Foo):
+      foo.method()
+      bar = foo
+      bar.method()
+  |}
+    [ ( "qualifier.call_twice",
+        [ `Method
+            { direct_target = "qualifier.Foo.method";
+              static_target = "qualifier.Foo.method";
+              dispatch = Dynamic
+            } ] ) ]
 
 
 let () =
