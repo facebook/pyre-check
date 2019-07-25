@@ -301,12 +301,16 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
             ~method_name:attribute
           |> apply_call_targets ~resolution arguments state taint
       | _ ->
-          (* TODO(T32198746): figure out the BW and TAINT_IN_TAINT_OUT model for whatever is called
-             here. For now, we propagate taint to all args implicitly, and to the function. *)
-          let state =
-            List.fold_right arguments ~f:(analyze_argument ~resolution taint) ~init:state
+          (* No targets, treat call as obscure *)
+          let obscure_taint =
+            BackwardState.Tree.collapse taint
+            |> BackwardTaint.transform BackwardTaint.simple_feature_set ~f:Features.add_obscure
+            |> BackwardState.Tree.create_leaf
           in
-          analyze_expression ~resolution ~taint ~state ~expression:callee
+          let state =
+            List.fold_right arguments ~f:(analyze_argument ~resolution obscure_taint) ~init:state
+          in
+          analyze_expression ~resolution ~taint:obscure_taint ~state ~expression:callee
 
 
     and analyze_expression

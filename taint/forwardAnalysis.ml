@@ -414,10 +414,10 @@ module AnalysisInstance (FunctionContext : FUNCTION_CONTEXT) = struct
           |> apply_call_targets ~resolution location arguments state
           |>> add_index_breadcrumb_if_necessary
       | _ ->
-          (* TODO(T31435135): figure out the BW and TITO model for whatever is called here. *)
+          (* No target, treat call as obscure *)
           let callee_taint, state = analyze_expression ~resolution ~state ~expression:callee in
-          (* For now just join all argument and receiver taint and propagate to result. *)
           List.fold_left arguments ~f:(analyze_argument ~resolution) ~init:(callee_taint, state)
+          |>> ForwardState.Tree.transform ForwardTaint.simple_feature_set ~f:Features.add_obscure
 
 
     and analyze_attribute_access ~resolution ~state ~location base attribute =

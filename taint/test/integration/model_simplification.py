@@ -54,3 +54,7 @@ def _asdict_inner(obj: Any, dict_factory: Any) -> Any:
 
 def asdict_test(obj):
     return asdict(obj)
+
+
+def obscure_test(obj):
+    return type(obj)(__test_source())

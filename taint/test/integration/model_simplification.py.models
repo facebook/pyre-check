@@ -113,7 +113,7 @@
             "decl": null,
             "tito": [ { "line": 30, "start": 42, "end": 54 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
       },
@@ -181,7 +181,7 @@
             "decl": null,
             "tito": [ { "line": 14, "start": 30, "end": 42 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
-            "features": [ { "via": "tito" } ]
+            "features": [ { "via": "tito" }, { "via": "obscure" } ]
           }
         ]
       },
@@ -240,6 +240,42 @@
             "tito": [ { "line": 56, "start": 18, "end": 21 } ],
             "leaves": [ { "kind": "LocalReturn", "name": "" } ],
             "features": [ { "via": "tito" }, { "via": "obscure" } ]
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_simplification.obscure_test",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "root": {
+              "filename": "model_simplification.py",
+              "line": 60,
+              "start": 34,
+              "end": 36
+            },
+            "leaves": [ { "kind": "Test", "name": "__test_source" } ],
+            "features": [ { "via": "special_source" }, { "via": "obscure" } ]
+          }
+        ]
+      }
+    ],
+    "sinks": [],
+    "tito": [
+      {
+        "port": "formal(obj)",
+        "taint": [
+          {
+            "decl": null,
+            "leaves": [ { "kind": "LocalReturn", "name": "" } ],
+            "features": [ { "via": "obscure" } ]
           }
         ]
       }
