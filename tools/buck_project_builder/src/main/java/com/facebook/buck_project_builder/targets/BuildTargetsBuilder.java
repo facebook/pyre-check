@@ -275,7 +275,6 @@ public final class BuildTargetsBuilder {
     long start = System.currentTimeMillis();
     Path outputPath = Paths.get(outputDirectory);
     this.unsupportedGeneratedSources
-        .parallelStream()
         .forEach(
             source -> {
               String pyiSource = source.endsWith(".py") ? source + "i" : source;
