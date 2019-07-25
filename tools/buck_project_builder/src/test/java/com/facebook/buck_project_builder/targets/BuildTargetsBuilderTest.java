@@ -62,7 +62,7 @@ public class BuildTargetsBuilderTest {
 
     new ThriftLibraryTarget("CMD_THRIFT", "PATH", ImmutableList.of()).addToBuilder(builder);
     new SwigLibraryTarget("CMD_SWIG", ImmutableList.of()).addToBuilder(builder);
-    new Antlr4LibraryTarget("CMD_ANTLR4", ImmutableList.of()).addToBuilder(builder);
+    new Antlr4LibraryTarget("CMD_ANTLR4", "PATH", ImmutableList.of()).addToBuilder(builder);
 
     assertEquals(
         "Thrift library build commands are correctly added.",

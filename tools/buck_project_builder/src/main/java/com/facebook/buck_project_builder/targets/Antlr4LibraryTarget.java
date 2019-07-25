@@ -6,15 +6,18 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import javax.annotation.Nullable;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public final class Antlr4LibraryTarget implements BuildTarget {
 
   private final String command;
+  private final String basePath;
   private final ImmutableList<String> sources;
 
-  Antlr4LibraryTarget(String command, ImmutableList<String> sources) {
+  Antlr4LibraryTarget(String command, String basePath, ImmutableList<String> sources) {
     this.command = command;
+    this.basePath = basePath;
     this.sources = sources;
   }
 
@@ -36,7 +39,7 @@ public final class Antlr4LibraryTarget implements BuildTarget {
     if (sources == null) {
       return null;
     }
-    return new Antlr4LibraryTarget(command, sources);
+    return new Antlr4LibraryTarget(command, basePath, sources);
   }
 
   @Override
@@ -46,7 +49,8 @@ public final class Antlr4LibraryTarget implements BuildTarget {
         this.command
             .replaceFirst("mkdir .+\\$\\(exe //tools/antlr4:antlr4_wrapper\\)", "")
             .replace(
-                "--install_dir=\"$OUT\"", String.format("--install_dir=\"%s\"", outputDirectory))
+                "--install_dir=\"$OUT\"",
+                String.format("--install_dir=\"%s\"", Paths.get(outputDirectory, basePath)))
             .replace("--antlr4_command=$(location //tools/antlr4:antlr4)", "")
             .replaceFirst("--grammars .+$", "--grammars " + String.join(" ", sources));
     builder.addAntlr4LibraryBuildCommand(builderCommand);
