@@ -44,7 +44,7 @@ def tracked_constant_B():
     return d[CONSTANT_B]
 
 
-def untracked_constant():
+def test_untracked_constant():
     d = {}
     d[untracked_constant] = __test_source()
     return d[untracked_constant]

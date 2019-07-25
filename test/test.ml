@@ -694,7 +694,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         def getattr(
           o: object,
           name: str,
-          default: Any,
+          default: Any = ...,
         ) -> Any: ...
 
         def all(i: Iterable[_T]) -> bool: ...

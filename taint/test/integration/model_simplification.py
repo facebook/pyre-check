@@ -4,8 +4,17 @@ from typing import Any, Dict
 
 
 class RecordSchema:
-    pass
+    _META_PROP = ...
 
+class DictRecord:
+    items: Any = ...
+
+class MutableRecord:
+    __dict__: Dict[str, Any] = ...
+
+def _is_dataclass_instance(obj) -> bool: ...
+
+def fields(obj): ...
 
 def asdict(obj: RecordSchema, *, dict_factory: Any = dict) -> Dict[str, Any]:
     """Return the fields of a RecordSchema instance as a new dictionary mapping

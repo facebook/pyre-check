@@ -376,20 +376,21 @@ let initialize ?(handle = "test.py") ?models ~context source_content =
     environment
     [source];
   let errors =
-    TypeCheck.run ~configuration ~global_resolution ~source
-    |> List.filter ~f:(fun error -> AnalysisError.code error = 11)
-    (* Undefined types. *)
+    let keep error =
+      match AnalysisError.kind error with
+      (* TODO(T47874282): Don't filter these. *)
+      | AnalysisError.NotCallable _ -> false
+      | _ -> true
+    in
+    TypeCheck.run ~configuration ~global_resolution ~source |> List.filter ~f:keep
   in
   ( if not (List.is_empty errors) then
       let errors =
-        List.map errors ~f:(AnalysisError.description ~show_error_traces:false)
+        errors
+        |> List.map ~f:(AnalysisError.description ~show_error_traces:false)
         |> String.concat ~sep:"\n"
       in
-      failwithf
-        "Unable to construct callgraph for %s because of undefined types:\n%s"
-        handle
-        errors
-        () );
+      failwithf "Pyre errors were found in `%s`:\n%s" handle errors () );
 
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
